@@ -10,9 +10,11 @@ import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
@@ -34,21 +36,26 @@ import no.unit.nva.importcandidate.CandidateStatus;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportStatus;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.ResourceRelationship;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationstate.UnpublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.storage.ResourceRelationshipDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
@@ -164,7 +171,62 @@ public class UpdateResourceService extends ServiceWithTransactions {
         transactionItems.addAll(updateFilesTransactions(resource, userInstance, persistedResource, importSource));
         transactionItems.addAll(ticketsTransactions);
         transactionItems.addAll(updatePublicationChannelsForPublisherWhenDegree(resource, persistedResource));
+        transactionItems.addAll(createResourceRelationTransactions(persistedResource, resource));
         return transactionItems;
+    }
+
+    private Collection<TransactWriteItem> createResourceRelationTransactions(
+        Resource persistedResource,
+        Resource resource) {
+
+        if (anthologyRelationshipUnchanged(persistedResource, resource)) {
+            return List.of();
+        }
+
+        var transactions = new ArrayList<TransactWriteItem>();
+        deleteOldRelationTransaction(persistedResource).ifPresent(transactions::add);
+        persistNewRelationTransaction(resource).ifPresent(transactions::add);
+        return transactions;
+    }
+
+    private Optional<TransactWriteItem> deleteOldRelationTransaction(Resource resource) {
+        return createRelationshipDao(resource)
+                   .map(this::createDeleteTransaction);
+    }
+
+    private Optional<TransactWriteItem> persistNewRelationTransaction(Resource resource) {
+        return createRelationshipDao(resource)
+                   .map(this::createPutTransaction);
+    }
+
+    private boolean anthologyRelationshipUnchanged(Resource oldResource, Resource newResource) {
+        return Objects.equals(getAnthologyIdentifier(oldResource), getAnthologyIdentifier(newResource));
+    }
+
+    private Optional<ResourceRelationshipDao> createRelationshipDao(Resource resource) {
+        return getAnthologyIdentifier(resource)
+                   .map(parentId -> new ResourceRelationship(parentId, resource.getIdentifier()))
+                   .map(ResourceRelationshipDao::from);
+    }
+
+    private TransactWriteItem createDeleteTransaction(ResourceRelationshipDao dao) {
+        return new TransactWriteItem()
+                   .withDelete(new Delete().withTableName(RESOURCES_TABLE_NAME).withKey(dao.getPrimaryKey()));
+    }
+
+    private TransactWriteItem createPutTransaction(ResourceRelationshipDao dao) {
+        return new TransactWriteItem()
+                   .withPut(new Put().withTableName(RESOURCES_TABLE_NAME).withItem(dao.toDynamoFormat()));
+    }
+
+    private Optional<SortableIdentifier> getAnthologyIdentifier(Resource resource) {
+        return Optional.of(resource.getEntityDescription())
+                   .map(EntityDescription::getReference)
+                   .map(Reference::getPublicationContext)
+                   .filter(Anthology.class::isInstance)
+                   .map(Anthology.class::cast)
+                   .map(Anthology::getId)
+                   .map(SortableIdentifier::fromUri);
     }
 
     private Collection<? extends TransactWriteItem> updateFilesTransactions(Resource resource,

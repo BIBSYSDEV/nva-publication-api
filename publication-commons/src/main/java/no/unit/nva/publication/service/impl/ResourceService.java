@@ -51,13 +51,16 @@ import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportStatus;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Reference;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
+import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
@@ -67,6 +70,7 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.ResourceRelationship;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
@@ -79,6 +83,8 @@ import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.publication.model.storage.LogEntryDao;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.storage.ResourceRelationshipDao;
+import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.model.utils.CustomerService;
@@ -750,11 +756,34 @@ public class ResourceService extends ServiceWithTransactions {
         transactions.add(newPutTransactionItem(new ResourceDao(resource), tableName));
         transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource));
         transactions.addAll(createPublicationChannelsTransaction(resource));
+        createResourceRelationshipTransaction(resource).ifPresent(transactions::add);
 
         var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
         sendTransactionWriteRequest(transactWriteItemsRequest);
 
         return resource;
+    }
+
+    private Optional<TransactWriteItem> createResourceRelationshipTransaction(Resource resource) {
+        return getAnthologyIdentifier(resource)
+            .map(identifier -> new ResourceRelationship(identifier, resource.getIdentifier()))
+            .map(ResourceRelationshipDao::from)
+            .map(DatabaseEntryWithData::toDynamoFormat)
+            .map(this::putWithItem);
+    }
+
+    private TransactWriteItem putWithItem(Map<String, AttributeValue> item) {
+        return new TransactWriteItem().withPut(new Put().withItem(item).withTableName(tableName));
+    }
+
+    private Optional<SortableIdentifier> getAnthologyIdentifier(Resource resource) {
+        return Optional.of(resource.getEntityDescription())
+                   .map(EntityDescription::getReference)
+                   .map(Reference::getPublicationContext)
+                   .filter(Anthology.class::isInstance)
+                   .map(Anthology.class::cast)
+                   .map(Anthology::getId)
+                   .map(SortableIdentifier::fromUri);
     }
 
     private void setCuratingInstitutions(Resource newResource, CristinUnitsUtil cristinUnitsUtil) {

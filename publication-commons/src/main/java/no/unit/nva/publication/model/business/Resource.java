@@ -136,6 +136,17 @@ public class Resource implements Entity {
     @JsonProperty
     private UUID version;
 
+    public List<SortableIdentifier> getRelatedResources() {
+        return relatedResources;
+    }
+
+    public void setRelatedResources(List<SortableIdentifier> relatedResources) {
+        this.relatedResources = relatedResources;
+    }
+
+    @JsonProperty
+    private List<SortableIdentifier> relatedResources;
+
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
                              resourceIdentifier);

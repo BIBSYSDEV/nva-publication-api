@@ -274,7 +274,7 @@ public final class PublicationGenerator {
                    .build();
     }
 
-    private static Publication buildRandomPublicationFromInstance(Class<?> publicationInstanceClass) {
+    public static Publication buildRandomPublicationFromInstance(Class<?> publicationInstanceClass) {
         var entityDescription = randomEntityDescription(publicationInstanceClass);
 
         var curatingInstitutions = extractCuratingInstitutions(entityDescription);

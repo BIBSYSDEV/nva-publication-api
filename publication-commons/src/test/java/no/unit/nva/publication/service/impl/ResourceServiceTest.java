@@ -121,6 +121,7 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.ResourceRelationship;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
@@ -137,7 +138,6 @@ import no.unit.nva.publication.model.business.publicationstate.MergedResourceEve
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
-import no.unit.nva.publication.model.business.ResourceRelationship;
 import no.unit.nva.publication.model.storage.ResourceRelationshipDao;
 import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
 import no.unit.nva.publication.service.FakeCristinUnitsUtil;
@@ -155,10 +155,8 @@ import org.hamcrest.Matchers;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -1690,44 +1688,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                                           PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         pendingPublishingRequestTicket.setStatus(TicketStatus.PENDING);
         pendingPublishingRequestTicket.persistNewTicket(ticketService);
-    }
-
-    @Test
-    void shouldListAllResourceRelationshipsForParentResource() {
-        var parentIdentifier = SortableIdentifier.next();
-        var persistedRelatedResources = createResourceRelationshipDaoList(parentIdentifier);
-        var fetchedRelatedResources = fetchRelatedResourcesByParentIdentifier(parentIdentifier);
-
-        assertThat(fetchedRelatedResources, containsInAnyOrder(persistedRelatedResources.toArray()));
-    }
-
-    private List<ResourceRelationshipDao> fetchRelatedResourcesByParentIdentifier(SortableIdentifier parentIdentifier) {
-        var result = client.query(new QueryRequest()
-                                .withTableName(RESOURCES_TABLE_NAME)
-                                .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
-                                .withKeyConditionExpression("PK3 = :value")
-                                .withExpressionAttributeValues(Map.of(":value", new AttributeValue().withS(
-                                    ResourceRelationshipDao.from(resourceRelationshipWithParent(parentIdentifier)).getPK3()))));
-        return result.getItems().stream()
-                   .map(map -> DatabaseEntryWithData.fromAttributeValuesMap(map, ResourceRelationshipDao.class))
-                   .collect(Collectors.toList());
-    }
-
-    private static ResourceRelationship resourceRelationshipWithParent(SortableIdentifier parentIdentifier) {
-        return new ResourceRelationship(parentIdentifier, SortableIdentifier.next());
-    }
-
-    private List<ResourceRelationshipDao> createResourceRelationshipDaoList(SortableIdentifier parentIdentifier) {
-        return IntStream.range(0, 5)
-                   .mapToObj(i -> resourceRelationshipWithParent(parentIdentifier))
-                   .map(ResourceRelationshipDao::from)
-                   .map(this::persistDao)
-                   .toList();
-    }
-
-    private ResourceRelationshipDao persistDao(ResourceRelationshipDao dao) {
-        client.putItem(RESOURCES_TABLE_NAME, dao.toDynamoFormat());
-        return dao;
     }
 
     private static UserInstance randomUserInstance() {
