@@ -155,8 +155,10 @@ import org.hamcrest.Matchers;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -1705,16 +1707,20 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                 .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
                                 .withKeyConditionExpression("PK3 = :value")
                                 .withExpressionAttributeValues(Map.of(":value", new AttributeValue().withS(
-                                    new ResourceRelationshipDao(new ResourceRelationship(parentIdentifier, SortableIdentifier.next())).getPK3()))));
+                                    ResourceRelationshipDao.from(resourceRelationshipWithParent(parentIdentifier)).getPK3()))));
         return result.getItems().stream()
                    .map(map -> DatabaseEntryWithData.fromAttributeValuesMap(map, ResourceRelationshipDao.class))
                    .collect(Collectors.toList());
     }
 
+    private static ResourceRelationship resourceRelationshipWithParent(SortableIdentifier parentIdentifier) {
+        return new ResourceRelationship(parentIdentifier, SortableIdentifier.next());
+    }
+
     private List<ResourceRelationshipDao> createResourceRelationshipDaoList(SortableIdentifier parentIdentifier) {
         return IntStream.range(0, 5)
-                   .mapToObj(i -> new ResourceRelationship(parentIdentifier, SortableIdentifier.next()))
-                   .map(ResourceRelationshipDao::new)
+                   .mapToObj(i -> resourceRelationshipWithParent(parentIdentifier))
+                   .map(ResourceRelationshipDao::from)
                    .map(this::persistDao)
                    .toList();
     }
