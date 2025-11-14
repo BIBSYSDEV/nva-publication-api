@@ -45,12 +45,11 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
      * </ol>
      *
      * @param resource The candidate to analyze.
-     * @param associatedCustomers
      * @return {@code Optional<CustomerDto>} The customer that should approve.
      * @throws ApprovalAssignmentException if customer uri for import candidate fails to dereference.
      */
     public AssignmentServiceResult determineCustomerResponsibleForApproval(Resource resource,
-                                                                           List<URI> associatedCustomers)
+                                                                           Collection<URI> associatedCustomers)
         throws ApprovalAssignmentException {
         validateImportCandidateForCustomersPresence(resource, associatedCustomers);
         var customers = fetchAllAssociatedCustomers(associatedCustomers);
@@ -63,7 +62,7 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
         return AssignmentServiceResult.customerFound(getResponsibleCustomerContributorPair(resource, customers));
     }
 
-    private static Map<String, CustomerDto> customerByTopLevelInstitutionIdentifierMap(List<CustomerDto> customers) {
+    private static Map<String, CustomerDto> customerByTopLevelInstitutionIdentifierMap(Collection<CustomerDto> customers) {
         return customers.stream()
                    .distinct()
                    .collect(Collectors.toMap(
@@ -71,7 +70,7 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
                        customerDto -> customerDto));
     }
 
-    private static void validateImportCandidateForCustomersPresence(Resource resource, List<URI> associatedCustomers)
+    private static void validateImportCandidateForCustomersPresence(Resource resource, Collection<URI> associatedCustomers)
         throws ApprovalAssignmentException {
         if (associatedCustomers.isEmpty()) {
             var message = NO_CUSTOMERS_EXCEPTION_MESSAGE.formatted(resource.getIdentifier());
@@ -115,7 +114,7 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
     }
 
     private CustomerContributorPair getResponsibleCustomerContributorPair(Resource resource,
-                                                                          List<CustomerDto> customers)
+                                                                          Collection<CustomerDto> customers)
         throws ApprovalAssignmentException {
         var customerMap = customerByTopLevelInstitutionIdentifierMap(customers);
 
@@ -142,7 +141,7 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
                    .map(customer -> new CustomerContributorPair(customer, contributor));
     }
 
-    private List<CustomerDto> fetchAllAssociatedCustomers(List<URI> associatedCustomers)
+    private Collection<CustomerDto> fetchAllAssociatedCustomers(Collection<URI> associatedCustomers)
         throws ApprovalAssignmentException {
         var customers = new ArrayList<CustomerDto>();
         for (URI customerUri : associatedCustomers) {
