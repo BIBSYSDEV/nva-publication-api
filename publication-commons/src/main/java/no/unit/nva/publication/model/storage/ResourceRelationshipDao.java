@@ -17,13 +17,13 @@ public record ResourceRelationshipDao(ResourceRelationship resourceRelationship,
     }
 
     @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)
-    public String getParentKey() {
-        return "ParentResource:%s".formatted(resourceRelationship.parentIdentifier().toString());
+    public String getChildKey() {
+        return "ChildResource:%s".formatted(resourceRelationship.childIdentifier().toString());
     }
 
     @JsonProperty(PRIMARY_KEY_SORT_KEY_NAME)
-    public String getChildKey() {
-        return "ChildResource:%s".formatted(resourceRelationship.childIdentifier().toString());
+    public String getParentKey() {
+        return "ParentResource:%s".formatted(resourceRelationship.parentIdentifier().toString());
     }
 
     @JsonProperty(BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME)
