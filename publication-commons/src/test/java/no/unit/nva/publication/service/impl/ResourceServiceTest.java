@@ -19,6 +19,7 @@ import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeVa
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.ILLEGAL_DELETE_WHEN_NOT_DRAFT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
@@ -57,6 +58,7 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
@@ -135,6 +137,9 @@ import no.unit.nva.publication.model.business.publicationstate.MergedResourceEve
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
+import no.unit.nva.publication.model.business.ResourceRelationship;
+import no.unit.nva.publication.model.storage.ResourceRelationshipDao;
+import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
 import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
@@ -1683,6 +1688,40 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                                           PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         pendingPublishingRequestTicket.setStatus(TicketStatus.PENDING);
         pendingPublishingRequestTicket.persistNewTicket(ticketService);
+    }
+
+    @Test
+    void shouldListAllResourceRelationshipsForParentResource() {
+        var parentIdentifier = SortableIdentifier.next();
+        var persistedRelatedResources = createResourceRelationshipDaoList(parentIdentifier);
+        var fetchedRelatedResources = fetchRelatedResourcesByParentIdentifier(parentIdentifier);
+
+        assertThat(fetchedRelatedResources, containsInAnyOrder(persistedRelatedResources.toArray()));
+    }
+
+    private List<ResourceRelationshipDao> fetchRelatedResourcesByParentIdentifier(SortableIdentifier parentIdentifier) {
+        var result = client.query(new QueryRequest()
+                                .withTableName(RESOURCES_TABLE_NAME)
+                                .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+                                .withKeyConditionExpression("PK3 = :value")
+                                .withExpressionAttributeValues(Map.of(":value", new AttributeValue().withS(
+                                    new ResourceRelationshipDao(new ResourceRelationship(parentIdentifier, SortableIdentifier.next())).getPK3()))));
+        return result.getItems().stream()
+                   .map(map -> DatabaseEntryWithData.fromAttributeValuesMap(map, ResourceRelationshipDao.class))
+                   .collect(Collectors.toList());
+    }
+
+    private List<ResourceRelationshipDao> createResourceRelationshipDaoList(SortableIdentifier parentIdentifier) {
+        return IntStream.range(0, 5)
+                   .mapToObj(i -> new ResourceRelationship(parentIdentifier, SortableIdentifier.next()))
+                   .map(ResourceRelationshipDao::new)
+                   .map(this::persistDao)
+                   .toList();
+    }
+
+    private ResourceRelationshipDao persistDao(ResourceRelationshipDao dao) {
+        client.putItem(RESOURCES_TABLE_NAME, dao.toDynamoFormat());
+        return dao;
     }
 
     private static UserInstance randomUserInstance() {
