@@ -15,16 +15,15 @@ public final class ImportCandidateEnricher {
     }
 
     public static Resource createResourceToImport(RequestInfo requestInfo,
-                                                  ImportCandidate importCandidate,
+                                                  CreatePublicationRequest request,
                                                   ImportCandidate databaseVersion) throws UnauthorizedException {
         var userInstance = UserInstance.fromRequestInfo(requestInfo);
 
         var resource = ImportCandidateToResourceConverter.convert(databaseVersion);
 
         return resource.copy()
-            .withEntityDescription(ImportCandidateToResourceConverter.toEntityDescription(importCandidate))
-            .withAssociatedArtifactsList(importCandidate.getAssociatedArtifacts())
-            .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
+            .withEntityDescription(request.getEntityDescription())
+            .withAssociatedArtifactsList(request.getAssociatedArtifacts())
             .withPublisher(Organization.fromUri(userInstance.getCustomerId()))
             .withResourceOwner(new Owner(userInstance.getUsername(), userInstance.getTopLevelOrgCristinId()))
             .build();

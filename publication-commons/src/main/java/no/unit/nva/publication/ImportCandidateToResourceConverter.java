@@ -48,7 +48,7 @@ public final class ImportCandidateToResourceConverter {
                    .toList();
     }
 
-    private static Contributor toContributor(ImportContributor importContributor) {
+    public static Contributor toContributor(ImportContributor importContributor) {
         return new Contributor.Builder().withIdentity(importContributor.identity())
                    .withSequence(importContributor.sequence())
                    .withCorrespondingAuthor(importContributor.correspondingAuthor())
