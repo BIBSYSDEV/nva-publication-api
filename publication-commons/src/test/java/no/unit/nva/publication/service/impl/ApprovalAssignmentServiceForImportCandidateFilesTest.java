@@ -2,8 +2,8 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportedResourceFiles.AssignmentServiceStatus.APPROVAL_NEEDED;
-import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportedResourceFiles.AssignmentServiceStatus.NO_APPROVAL_NEEDED;
+import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.APPROVAL_NEEDED;
+import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.NO_APPROVAL_NEEDED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,22 +27,22 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportedResourceFiles.ApprovalAssignmentException;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.ApprovalAssignmentException;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class ApprovalAssignmentServiceForImportedResourceFilesTest {
+class ApprovalAssignmentServiceForImportCandidateFilesTest {
 
-    private ApprovalAssignmentServiceForImportedResourceFiles service;
+    private ApprovalAssignmentServiceForImportCandidateFiles service;
     private IdentityServiceClient identityServiceClient;
 
     @BeforeEach
     void setUp() {
         identityServiceClient = mock(IdentityServiceClient.class);
-        service = new ApprovalAssignmentServiceForImportedResourceFiles(identityServiceClient);
+        service = new ApprovalAssignmentServiceForImportCandidateFiles(identityServiceClient);
     }
 
     @Test

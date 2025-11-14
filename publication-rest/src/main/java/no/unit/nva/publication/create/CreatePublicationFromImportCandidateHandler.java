@@ -25,9 +25,9 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportedResourceFiles;
-import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportedResourceFiles.ApprovalAssignmentException;
-import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportedResourceFiles.AssignmentServiceResult;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.ApprovalAssignmentException;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
@@ -59,19 +59,19 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     private final ResourceService candidateService;
     private final ResourceService publicationService;
     private final TicketService ticketService;
-    private final ApprovalAssignmentServiceForImportedResourceFiles approvalService;
+    private final ApprovalAssignmentServiceForImportCandidateFiles approvalService;
     private final PiaClient piaClient;
     private final AssociatedArtifactsMover associatedArtifactsMover;
 
     @JacocoGenerated
     public CreatePublicationFromImportCandidateHandler() {
         this(ImportCandidateHandlerConfigs.getDefaultsConfigs(), new Environment(), TicketService.defaultService(),
-             new ApprovalAssignmentServiceForImportedResourceFiles(IdentityServiceClient.prepare()));
+             new ApprovalAssignmentServiceForImportCandidateFiles(IdentityServiceClient.prepare()));
     }
 
     public CreatePublicationFromImportCandidateHandler(
         ImportCandidateHandlerConfigs configs, Environment environment, TicketService ticketService,
-        ApprovalAssignmentServiceForImportedResourceFiles approvalService) {
+        ApprovalAssignmentServiceForImportCandidateFiles approvalService) {
         super(CreatePublicationRequest.class, environment);
         this.candidateService = configs.importCandidateService();
         this.publicationService = configs.publicationService();

@@ -97,10 +97,10 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportedResourceFiles;
-import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportedResourceFiles.ApprovalAssignmentException;
-import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportedResourceFiles.AssignmentServiceResult;
-import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportedResourceFiles.CustomerContributorPair;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.ApprovalAssignmentException;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceResult;
+import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.CustomerContributorPair;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
@@ -140,7 +140,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     private ResourceService importCandidateService;
     private ResourceService publicationService;
     private TicketService ticketService;
-    private ApprovalAssignmentServiceForImportedResourceFiles approvalService;
+    private ApprovalAssignmentServiceForImportCandidateFiles approvalService;
     private CreatePublicationFromImportCandidateHandler handler;
     private S3Client s3Client;
 
@@ -165,7 +165,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     ticketService,
                                                     s3Client,
                                                     piaClientConfig);
-        this.approvalService = mock(ApprovalAssignmentServiceForImportedResourceFiles.class);
+        this.approvalService = mock(ApprovalAssignmentServiceForImportCandidateFiles.class);
         lenient().when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
             .thenReturn(AssignmentServiceResult.noApprovalNeeded(randomCustomer(randomUri(), true)));
         handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService, approvalService);

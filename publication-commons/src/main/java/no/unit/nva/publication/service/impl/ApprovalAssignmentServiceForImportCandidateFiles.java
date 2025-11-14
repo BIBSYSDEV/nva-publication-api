@@ -19,7 +19,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.publication.model.business.Resource;
 
-public class ApprovalAssignmentServiceForImportedResourceFiles {
+public class ApprovalAssignmentServiceForImportCandidateFiles {
 
     private static final String FETCH_CUSTOMER_EXCEPTION_MESSAGE = "Could not fetch customer with id %s";
     private static final String NO_CUSTOMERS_EXCEPTION_MESSAGE = "No customers for import candidate %s";
@@ -31,7 +31,7 @@ public class ApprovalAssignmentServiceForImportedResourceFiles {
     private static final int REMOVE_SLASH = 1;
     private final IdentityServiceClient identityServiceClient;
 
-    public ApprovalAssignmentServiceForImportedResourceFiles(IdentityServiceClient identityServiceClient) {
+    public ApprovalAssignmentServiceForImportCandidateFiles(IdentityServiceClient identityServiceClient) {
         this.identityServiceClient = identityServiceClient;
     }
 
@@ -67,7 +67,7 @@ public class ApprovalAssignmentServiceForImportedResourceFiles {
         return customers.stream()
                    .distinct()
                    .collect(Collectors.toMap(
-                       ApprovalAssignmentServiceForImportedResourceFiles::extractTopLevelCristinInstitutionIdentifier,
+                       ApprovalAssignmentServiceForImportCandidateFiles::extractTopLevelCristinInstitutionIdentifier,
                        customerDto -> customerDto));
     }
 
@@ -135,7 +135,7 @@ public class ApprovalAssignmentServiceForImportedResourceFiles {
                    .map(Organization.class::cast)
                    .map(Organization::getId)
                    .filter(Objects::nonNull)
-                   .map(ApprovalAssignmentServiceForImportedResourceFiles::extractTopLevelOrganizationPart)
+                   .map(ApprovalAssignmentServiceForImportCandidateFiles::extractTopLevelOrganizationPart)
                    .map(customerMap::get)
                    .filter(Objects::nonNull)
                    .findFirst()
