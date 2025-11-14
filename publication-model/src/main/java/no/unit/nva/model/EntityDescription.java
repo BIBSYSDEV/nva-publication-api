@@ -1,5 +1,6 @@
 package no.unit.nva.model;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -12,7 +13,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.IntStream;
+
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.exceptions.UnsynchronizedPublicationChannelDateException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class EntityDescription implements WithCopy<EntityDescription.Builder> {
@@ -236,6 +241,36 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
                 .withDescription(getDescription())
                 .withReference(getReference())
                 .withMetadataSource(getMetadataSource());
+    }
+
+    /**
+     * This method will throw a runtime exception subclass when called if a validation fails.
+     */
+    public void validate() {
+        var publicationContext = this.getReference().getPublicationContext();
+        if (hasUnsynchronizedPublicationDateChannelDatePair(publicationContext)) {
+            throw new UnsynchronizedPublicationChannelDateException();
+        }
+
+    }
+
+    private boolean hasUnsynchronizedPublicationDateChannelDatePair(PublicationContext context) {
+        return nonNull(context)
+                && (isEmptyPublicationDateWithPublicationChannels(context)
+                || isNotPublicationChannelUriDateMatch(context));
+    }
+
+    private boolean isNotPublicationChannelUriDateMatch(PublicationContext context) {
+        return !context.extractPublicationContextUris().stream()
+                .map(UriWrapper::fromUri)
+                .map(UriWrapper::getLastPathElement)
+                .filter(Objects::nonNull)
+                .allMatch(uriYear -> publicationDate.getYear().equals(uriYear));
+    }
+
+    private boolean isEmptyPublicationDateWithPublicationChannels(PublicationContext context) {
+        return (isNull(publicationDate) || isNull(publicationDate.getYear()))
+                && !context.extractPublicationContextUris().isEmpty();
     }
 
     public static final class Builder {

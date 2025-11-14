@@ -1,12 +1,15 @@
 package no.unit.nva.model.contexttypes;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import no.unit.nva.model.Agent;
 import no.unit.nva.model.contexttypes.place.Place;
@@ -72,6 +75,12 @@ public class Event implements PublicationContext {
 
     public Optional<Event> getSubEvent() {
         return Optional.ofNullable(subEvent);
+    }
+
+    @JsonIgnore
+    @Override
+    public Set<URI> extractPublicationContextUris() {
+        return Collections.emptySet();
     }
 
     public static final class Builder {

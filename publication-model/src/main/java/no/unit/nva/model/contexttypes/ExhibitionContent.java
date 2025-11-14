@@ -1,6 +1,11 @@
 package no.unit.nva.model.contexttypes;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import java.net.URI;
+import java.util.Collections;
+import java.util.Set;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ExhibitionContent implements BasicContext {
@@ -18,5 +23,11 @@ public class ExhibitionContent implements BasicContext {
             return true;
         }
         return o instanceof BasicContext;
+    }
+
+    @JsonIgnore
+    @Override
+    public Set<URI> extractPublicationContextUris() {
+        return Collections.emptySet();
     }
 }

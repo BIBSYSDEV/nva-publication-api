@@ -1,9 +1,13 @@
 package no.unit.nva.model.contexttypes;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
+
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -44,6 +48,12 @@ public class Anthology implements PublicationContext {
     @Override
     public int hashCode() {
         return Objects.hash(getId());
+    }
+
+    @JsonIgnore
+    @Override
+    public Set<URI> extractPublicationContextUris() {
+        return Collections.emptySet();
     }
 
     public static final class Builder {
