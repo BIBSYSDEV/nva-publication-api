@@ -386,6 +386,11 @@ public class ResourceService extends ServiceWithTransactions {
         }
     }
 
+    /**
+     * Temporary method for database migration.
+     * TODO: Remove after migration of ResourceRelation is done.
+     */
+    @Deprecated(forRemoval = true)
     private Entity migrateResource(Resource resource) {
         var anthologyIdentifier = getAnthologyPublicationIdentifier(resource);
         if (anthologyIdentifier.isPresent()) {

@@ -144,6 +144,7 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         assertNotEquals(currentVersion, refreshedVersion);
     }
 
+    @Deprecated(forRemoval = true)
     @Test
     void shouldPersistResourceRelationshipForDatabaseEntryWhenMigratingResourceWithAnthology() {
         var anthology = persist(randomPublication(BookAnthology.class));
@@ -156,6 +157,7 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         assertEquals(chapter.getIdentifier(), persistedRelation.getRelatedResources().getFirst());
     }
 
+    @Deprecated(forRemoval = true)
     @Test
     void shouldNotPersistDuplicateResourceRelationshipForDatabaseEntryWhenRelationAlreadyExists() {
         var anthology = persist(randomPublication(BookAnthology.class));
@@ -170,6 +172,7 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         assertThat(updatedRelations, containsInAnyOrder(existingRelations.toArray()));
     }
 
+    @Deprecated(forRemoval = true)
     @ParameterizedTest
     @ValueSource(strings = {"example.com", "https://example.com/publication/123",
         "https://example.com/something/0198cc8f7d15-3bfde61e-71c3-4253-8662-714a460886f1"})
