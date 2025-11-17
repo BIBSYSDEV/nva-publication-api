@@ -120,7 +120,7 @@ public class ReadResourceService {
 
     private List<SortableIdentifier> extractResourceRelationships(List<Map<String, AttributeValue>> entries) {
         return entries.stream()
-                   .filter(map -> map.getOrDefault("type", new AttributeValue()).getS().equals("ResourceRelation"))
+                   .filter(map -> hasTypeProperty(map, ResourceRelationshipDao.TYPE))
                    .map(map -> DatabaseEntryWithData.fromAttributeValuesMap(map, ResourceRelationshipDao.class))
                    .map(ResourceRelationshipDao::getData)
                    .map(ResourceRelationship::childIdentifier)
@@ -187,7 +187,7 @@ public class ReadResourceService {
 
     private static Optional<Resource> extractResource(List<Map<String, AttributeValue>> entries) {
         return entries.stream()
-                   .filter(map -> map.getOrDefault("type", new AttributeValue()).getS().equals("Resource"))
+                   .filter(map -> hasTypeProperty(map, ResourceDao.TYPE))
                    .map(map -> parseAttributeValuesMap(map, Dao.class))
                    .filter(ResourceDao.class::isInstance)
                    .map(ResourceDao.class::cast)
@@ -195,9 +195,13 @@ public class ReadResourceService {
                    .findFirst();
     }
 
+    private static boolean hasTypeProperty(Map<String, AttributeValue> map, String type) {
+        return type.equals(map.getOrDefault("type", new AttributeValue()).getS());
+    }
+
     private static List<FileEntry> extractFileEntries(List<Map<String, AttributeValue>> entries) {
         return entries.stream()
-                   .filter(map -> map.getOrDefault("type", new AttributeValue()).getS().equals("File"))
+                   .filter(map -> hasTypeProperty(map, FileDao.TYPE))
                    .map(map -> parseAttributeValuesMap(map, Dao.class))
                    .filter(FileDao.class::isInstance)
                    .map(FileDao.class::cast)
@@ -208,7 +212,7 @@ public class ReadResourceService {
 
     private List<PublicationChannel> extractPublicationChannels(List<Map<String, AttributeValue>> entries) {
         return entries.stream()
-                   .filter(map -> map.getOrDefault("type", new AttributeValue()).getS().equals("PublicationChannel"))
+                   .filter(map -> hasTypeProperty(map, PublicationChannelDao.TYPE))
                    .map(map -> parseAttributeValuesMap(map, Dao.class))
                    .filter(PublicationChannelDao.class::isInstance)
                    .map(PublicationChannelDao.class::cast)

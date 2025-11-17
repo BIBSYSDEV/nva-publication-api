@@ -14,11 +14,13 @@ import java.util.Map;
 import no.unit.nva.publication.model.business.ResourceRelationship;
 import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
 
-@JsonTypeName("ResourceRelation")
+@JsonTypeName(ResourceRelationshipDao.TYPE)
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public record ResourceRelationshipDao(@JsonProperty("data") ResourceRelationship resourceRelationship,
                                       Instant createdDate)
     implements DatabaseEntryWithData<ResourceRelationship> {
+
+    public static final String TYPE = "ResourceRelation";
 
     public static ResourceRelationshipDao from(ResourceRelationship resourceRelationship) {
         return new ResourceRelationshipDao(resourceRelationship, Instant.now());

@@ -6,6 +6,7 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
 import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.getPublisherIdentifierWhenDegree;
+import static no.unit.nva.publication.model.utils.PublicationUtil.getAnthologyPublicationIdentifier;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
@@ -36,12 +37,9 @@ import no.unit.nva.importcandidate.CandidateStatus;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportStatus;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.Reference;
-import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
@@ -200,11 +198,11 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private boolean anthologyRelationshipUnchanged(Resource oldResource, Resource newResource) {
-        return Objects.equals(getAnthologyIdentifier(oldResource), getAnthologyIdentifier(newResource));
+        return Objects.equals(getAnthologyPublicationIdentifier(oldResource), getAnthologyPublicationIdentifier(newResource));
     }
 
     private Optional<ResourceRelationshipDao> createRelationshipDao(Resource resource) {
-        return getAnthologyIdentifier(resource)
+        return getAnthologyPublicationIdentifier(resource)
                    .map(parentId -> new ResourceRelationship(parentId, resource.getIdentifier()))
                    .map(ResourceRelationshipDao::from);
     }
@@ -217,16 +215,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private TransactWriteItem createPutTransaction(ResourceRelationshipDao dao) {
         return new TransactWriteItem()
                    .withPut(new Put().withTableName(RESOURCES_TABLE_NAME).withItem(dao.toDynamoFormat()));
-    }
-
-    private Optional<SortableIdentifier> getAnthologyIdentifier(Resource resource) {
-        return Optional.of(resource.getEntityDescription())
-                   .map(EntityDescription::getReference)
-                   .map(Reference::getPublicationContext)
-                   .filter(Anthology.class::isInstance)
-                   .map(Anthology.class::cast)
-                   .map(Anthology::getId)
-                   .map(SortableIdentifier::fromUri);
     }
 
     private Collection<? extends TransactWriteItem> updateFilesTransactions(Resource resource,

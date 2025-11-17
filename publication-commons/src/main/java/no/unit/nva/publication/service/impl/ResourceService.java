@@ -10,6 +10,7 @@ import static no.unit.nva.publication.PublicationServiceConfig.defaultDynamoDbCl
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.model.utils.PublicationUtil.getAnthologyPublicationIdentifier;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
@@ -51,16 +52,13 @@ import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportStatus;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.Reference;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
-import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
@@ -765,7 +763,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private Optional<TransactWriteItem> createResourceRelationshipTransaction(Resource resource) {
-        return getAnthologyIdentifier(resource)
+        return getAnthologyPublicationIdentifier(resource)
             .map(identifier -> new ResourceRelationship(identifier, resource.getIdentifier()))
             .map(ResourceRelationshipDao::from)
             .map(DatabaseEntryWithData::toDynamoFormat)
@@ -774,16 +772,6 @@ public class ResourceService extends ServiceWithTransactions {
 
     private TransactWriteItem putWithItem(Map<String, AttributeValue> item) {
         return new TransactWriteItem().withPut(new Put().withItem(item).withTableName(tableName));
-    }
-
-    private Optional<SortableIdentifier> getAnthologyIdentifier(Resource resource) {
-        return Optional.of(resource.getEntityDescription())
-                   .map(EntityDescription::getReference)
-                   .map(Reference::getPublicationContext)
-                   .filter(Anthology.class::isInstance)
-                   .map(Anthology.class::cast)
-                   .map(Anthology::getId)
-                   .map(SortableIdentifier::fromUri);
     }
 
     private void setCuratingInstitutions(Resource newResource, CristinUnitsUtil cristinUnitsUtil) {

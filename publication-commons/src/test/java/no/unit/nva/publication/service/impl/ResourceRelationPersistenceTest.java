@@ -4,9 +4,14 @@ import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomReference
 import static no.unit.nva.model.testing.PublicationGenerator.buildRandomPublicationFromInstance;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.net.URI;
+import java.util.List;
+import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Anthology;
@@ -16,13 +21,15 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
 
+    public static final String PUBLICATION_PATH = "publication";
     private ResourceService resourceService;
 
     @BeforeEach
@@ -31,10 +38,35 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         resourceService = getResourceService(client);
     }
 
-    @Test
-    void shouldPersistResourceRelationshipWhenPersistingAnthologyWithParentResource() throws BadRequestException {
+    @ParameterizedTest
+    @ValueSource(strings = {"example.com", "https://example.com/publication/123",
+        "https://example.com/something/0198cc8f7d15-3bfde61e-71c3-4253-8662-714a460886f1"})
+    void shouldNotCreateRelationFromAnthologyWithIdWhichIsNotPublicationId(String value) {
         var anthology = persist(randomPublication(BookAnthology.class));
-        var chapter = persist(randomChapterWithAnthology(toPublicationId(anthology.getIdentifier())));
+        persist(randomChapterWithAnthology(URI.create(value)));
+
+        var anthologyWithoutRelation = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow();
+
+        assertTrue(anthologyWithoutRelation.getRelatedResources().isEmpty());
+    }
+
+    @Test
+    void shouldListMultipleRelatedResources() {
+        var anthology = persist(randomPublication(BookAnthology.class));
+        var chapters = persistChaptersWithAnthology(anthology, 5);
+
+        var anthologyWithRelations = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow();
+
+        var expectedRelations = chapters.stream().map(Publication::getIdentifier).toList();
+
+        assertThat(expectedRelations,
+                   containsInAnyOrder(anthologyWithRelations.getRelatedResources().toArray(SortableIdentifier[]::new)));
+    }
+
+    @Test
+    void shouldPersistResourceRelationshipWhenPersistingAnthologyWithParentResource() {
+        var anthology = persist(randomPublication(BookAnthology.class));
+        var chapter = persistChaptersWithAnthology(anthology, 1).getFirst();
 
         var anthologyWithNewRelation = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow();
 
@@ -42,9 +74,9 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldRemoveResourceRelationshipWhenUpdatingResourceToTypeWithoutAnthology() throws BadRequestException {
+    void shouldRemoveResourceRelationshipWhenUpdatingResourceToTypeWithoutAnthology() {
         var anthology = persist(randomPublication(BookAnthology.class));
-        var chapter = persist(randomChapterWithAnthology(toPublicationId(anthology.getIdentifier())));
+        var chapter = persistChaptersWithAnthology(anthology, 1).getFirst();
 
         updateToNonChapter(chapter);
 
@@ -54,9 +86,9 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldRemoveOldRelationWhenUpdatingAnthologyId() throws BadRequestException {
+    void shouldRemoveOldRelationWhenUpdatingAnthologyId() {
         var anthology = persist(randomPublication(BookAnthology.class));
-        var chapter = persist(randomChapterWithAnthology(toPublicationId(anthology.getIdentifier())));
+        var chapter = persistChaptersWithAnthology(anthology, 1).getFirst();
         var newAnthology = persist(randomPublication(BookAnthology.class));
 
         moveChapterToAnthology(chapter, newAnthology.getIdentifier());
@@ -67,9 +99,9 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldAddNewRelationAndWhenUpdatingAnthologyId() throws BadRequestException {
+    void shouldAddNewRelationAndWhenUpdatingAnthologyId() {
         var anthology = persist(randomPublication(BookAnthology.class));
-        var chapter = persist(randomChapterWithAnthology(toPublicationId(anthology.getIdentifier())));
+        var chapter = persistChaptersWithAnthology(anthology, 1).getFirst();
         var newAnthology = persist(randomPublication(BookAnthology.class));
 
         moveChapterToAnthology(chapter, newAnthology.getIdentifier());
@@ -77,16 +109,6 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         var anthologyWithNewRelation = Resource.fromPublication(newAnthology).fetch(resourceService).orElseThrow();
 
         assertEquals(chapter.getIdentifier(), anthologyWithNewRelation.getRelatedResources().getFirst());
-    }
-
-    @Test
-    void shouldNotCreateRelationFromAnthologyWithoutId() throws BadRequestException {
-        var anthology = persist(randomPublication(BookAnthology.class));
-        persist(randomChapterWithAnthology(randomUri()));
-
-        var anthologyWithoutRelation = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow();
-
-        assertTrue(anthologyWithoutRelation.getRelatedResources().isEmpty());
     }
 
     private static Publication randomChapterWithAnthology(URI anthologyId) {
@@ -101,6 +123,13 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         return UriWrapper.fromUri(randomUri()).addChild("publication").addChild(anthology.toString()).getUri();
     }
 
+    private List<Publication> persistChaptersWithAnthology(Publication anthology, int numberOfChapters) {
+        return IntStream.of(numberOfChapters)
+                   .mapToObj(i -> randomChapterWithAnthology(toPublicationId(anthology.getIdentifier())))
+                   .map(this::persist)
+                   .toList();
+    }
+
     private void updateToNonChapter(Publication publication) {
         publication.getEntityDescription().setReference(randomReference(JournalArticle.class));
         Resource.fromPublication(publication).update(resourceService, UserInstance.fromPublication(publication));
@@ -108,7 +137,7 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
 
     private void moveChapterToAnthology(Publication publication, SortableIdentifier identifier) {
         var anthologyId = UriWrapper.fromUri(randomUri())
-                              .addChild("publication")
+                              .addChild(PUBLICATION_PATH)
                               .addChild(identifier.toString())
                               .getUri();
         publication.getEntityDescription()
@@ -117,9 +146,9 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         Resource.fromPublication(publication).update(resourceService, UserInstance.fromPublication(publication));
     }
 
-    private Publication persist(Publication publication) throws BadRequestException {
-        return Resource.fromPublication(publication)
-                   .persistNew(resourceService, UserInstance.fromPublication(publication));
+    private Publication persist(Publication publication) {
+        return attempt(() -> Resource.fromPublication(publication)
+                                 .persistNew(resourceService, UserInstance.fromPublication(publication))).orElseThrow();
     }
 }
 

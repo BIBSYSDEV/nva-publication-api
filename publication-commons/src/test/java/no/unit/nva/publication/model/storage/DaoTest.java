@@ -4,7 +4,6 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationGenerator.randomPublicationWithStatus;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.model.storage.DaoUtils.toPutItemRequest;
@@ -88,6 +87,8 @@ class DaoTest extends ResourcesLocalTest {
     public static final String DATA_IMPORT_DETAILS = "data.importDetails";
     public static final String RESOURCE_ASSOCIATED_CUSTOMERS = "resource.associatedCustomers";
     public static final String DATA_ASSOCIATED_CUSTOMERS = "data.associatedCustomers";
+    public static final String DATA_RELATED_RESOURCES = "data.relatedResources";
+    public static final String RESOURCE_RELATED_RESOURCES = "resource.relatedResources";
     public static final Set<String> IGNORED_FIELDS = Set.of(DATA_OWNER_AFFILIATION,
                                                             DATA_RESPONSIBILITY_AREA,
                                                             DATA_ASSIGNEE,
@@ -107,7 +108,9 @@ class DaoTest extends ResourcesLocalTest {
                                                             IMPORT_DETAILS,
                                                             DATA_IMPORT_DETAILS,
                                                             RESOURCE_ASSOCIATED_CUSTOMERS,
-                                                            DATA_ASSOCIATED_CUSTOMERS);
+                                                            DATA_ASSOCIATED_CUSTOMERS,
+                                                            DATA_RELATED_RESOURCES,
+                                                            RESOURCE_RELATED_RESOURCES);
 
     public static Stream<Named<Class<?>>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
