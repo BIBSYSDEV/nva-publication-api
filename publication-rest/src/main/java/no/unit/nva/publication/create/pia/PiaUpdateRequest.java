@@ -2,7 +2,7 @@ package no.unit.nva.publication.create.pia;
 
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
-import no.unit.nva.importcandidate.ImportContributor;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import nva.commons.core.paths.UriWrapper;
 
@@ -12,12 +12,12 @@ public record PiaUpdateRequest(PiaPublication publication,
                                String orcid,
                                int sequenceNr) implements JsonSerializable {
 
-    public static PiaUpdateRequest toPiaRequest(ImportContributor contributor, String scopusId) {
+    public static PiaUpdateRequest toPiaRequest(Contributor contributor, String scopusId) {
         return new PiaUpdateRequest(createPiaPublication(scopusId),
                                     extractContributorCristinIdentifier(contributor),
-                                    contributor.identity().getOrcId(),
+                                    contributor.getIdentity().getOrcId(),
                                     extractScopusAuid(contributor),
-                                    contributor.sequence());
+                                    contributor.getSequence());
     }
 
     @Override
@@ -29,18 +29,18 @@ public record PiaUpdateRequest(PiaPublication publication,
         return new PiaPublication(scopusId, "SCOPUS");
     }
 
-    private static String extractScopusAuid(ImportContributor contributor) {
+    private static String extractScopusAuid(Contributor contributor) {
         return extractAuid(contributor).orElseThrow().value();
     }
 
-    private static String extractContributorCristinIdentifier(ImportContributor contributor) {
-        var cristinId = contributor.identity().getId();
+    private static String extractContributorCristinIdentifier(Contributor contributor) {
+        var cristinId = contributor.getIdentity().getId();
         return UriWrapper.fromUri(cristinId).getLastPathElement();
     }
 
-    private static Optional<AdditionalIdentifier> extractAuid(ImportContributor contributor) {
+    private static Optional<AdditionalIdentifier> extractAuid(Contributor contributor) {
         return contributor
-                   .identity()
+                   .getIdentity()
                    .getAdditionalIdentifiers()
                    .stream()
                    .filter(additionalIdentifier ->

@@ -99,7 +99,7 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldAddNewRelationAndWhenUpdatingAnthologyId() {
+    void shouldAddNewRelationWhenUpdatingAnthologyId() {
         var anthology = persist(randomPublication(BookAnthology.class));
         var chapter = persistChaptersWithAnthology(anthology, 1).getFirst();
         var newAnthology = persist(randomPublication(BookAnthology.class));

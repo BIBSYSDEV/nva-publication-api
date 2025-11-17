@@ -13,12 +13,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
-import no.unit.nva.importcandidate.ImportCandidate;
-import no.unit.nva.importcandidate.ImportContributor;
-import no.unit.nva.importcandidate.ImportEntityDescription;
-import no.unit.nva.importcandidate.Affiliation;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
+import no.unit.nva.publication.model.business.Resource;
 
 public class ApprovalAssignmentServiceForImportCandidateFiles {
 
@@ -45,24 +44,25 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
      *     <li>The customer that has the contributor with the lowest contributor-sequence number</li>
      * </ol>
      *
-     * @param importCandidate The candidate to analyze.
+     * @param resource The candidate to analyze.
      * @return {@code Optional<CustomerDto>} The customer that should approve.
      * @throws ApprovalAssignmentException if customer uri for import candidate fails to dereference.
      */
-    public AssignmentServiceResult determineCustomerResponsibleForApproval(ImportCandidate importCandidate)
+    public AssignmentServiceResult determineCustomerResponsibleForApproval(Resource resource,
+                                                                           Collection<URI> associatedCustomers)
         throws ApprovalAssignmentException {
-        validateImportCandidateForCustomersPresence(importCandidate);
-        var customers = fetchAllAssociatedCustomers(importCandidate);
+        validateImportCandidateForCustomersPresence(resource, associatedCustomers);
+        var customers = fetchAllAssociatedCustomers(associatedCustomers);
 
         var customerDto = findAnyCustomerAllowingAutoApproval(customers);
         if (customerDto.isPresent()) {
             return AssignmentServiceResult.noApprovalNeeded(customerDto.get());
         }
 
-        return AssignmentServiceResult.customerFound(getResponsibleCustomerContributorPair(importCandidate, customers));
+        return AssignmentServiceResult.customerFound(getResponsibleCustomerContributorPair(resource, customers));
     }
 
-    private static Map<String, CustomerDto> customerByTopLevelInstitutionIdentifierMap(List<CustomerDto> customers) {
+    private static Map<String, CustomerDto> customerByTopLevelInstitutionIdentifierMap(Collection<CustomerDto> customers) {
         return customers.stream()
                    .distinct()
                    .collect(Collectors.toMap(
@@ -70,21 +70,21 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
                        customerDto -> customerDto));
     }
 
-    private static void validateImportCandidateForCustomersPresence(ImportCandidate importCandidate)
+    private static void validateImportCandidateForCustomersPresence(Resource resource, Collection<URI> associatedCustomers)
         throws ApprovalAssignmentException {
-        if (importCandidate.getAssociatedCustomers().isEmpty()) {
-            var message = NO_CUSTOMERS_EXCEPTION_MESSAGE.formatted(importCandidate.getIdentifier());
+        if (associatedCustomers.isEmpty()) {
+            var message = NO_CUSTOMERS_EXCEPTION_MESSAGE.formatted(resource.getIdentifier());
             throw new ApprovalAssignmentException(message);
         }
-        if (getContributors(importCandidate).isEmpty()) {
+        if (getContributors(resource).isEmpty()) {
             throw new ApprovalAssignmentException(NO_CONTRIBUTORS_EXCEPTION_MESSAGE);
         }
     }
 
-    private static Collection<ImportContributor> getContributors(ImportCandidate importCandidate) {
-        return Optional.ofNullable(importCandidate)
-                   .map(ImportCandidate::getEntityDescription)
-                   .map(ImportEntityDescription::contributors)
+    private static Collection<Contributor> getContributors(Resource resource) {
+        return Optional.ofNullable(resource)
+                   .map(Resource::getEntityDescription)
+                   .map(EntityDescription::getContributors)
                    .orElse(Collections.emptyList());
     }
 
@@ -104,20 +104,21 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
         return first.substring(START_OF_STRING, first.indexOf(CRISTIN_ID_SEPARATOR));
     }
 
-    private static Comparator<ImportContributor> compareByCorrespondingAuthorAndSequence() {
-        return Comparator.comparing(ImportContributor::correspondingAuthor, Comparator.reverseOrder())
-                   .thenComparing(ImportContributor::sequence, Comparator.nullsLast(Comparator.naturalOrder()));
+    private static Comparator<Contributor> compareByCorrespondingAuthorAndSequence() {
+        return Comparator.comparing(Contributor::isCorrespondingAuthor, Comparator.reverseOrder())
+                   .thenComparing(Contributor::getSequence, Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
     private Optional<CustomerDto> findAnyCustomerAllowingAutoApproval(Collection<CustomerDto> customers) {
         return customers.stream().filter(CustomerDto::autoPublishScopusImportFiles).findFirst();
     }
 
-    private CustomerContributorPair getResponsibleCustomerContributorPair(ImportCandidate importCandidate, List<CustomerDto> customers)
+    private CustomerContributorPair getResponsibleCustomerContributorPair(Resource resource,
+                                                                          Collection<CustomerDto> customers)
         throws ApprovalAssignmentException {
         var customerMap = customerByTopLevelInstitutionIdentifierMap(customers);
 
-        return getContributors(importCandidate)
+        return getContributors(resource)
                    .stream()
                    .sorted(compareByCorrespondingAuthorAndSequence())
                    .map(contributor -> findMatchingCustomer(contributor, customerMap))
@@ -126,10 +127,9 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
                    .orElseThrow(() -> new ApprovalAssignmentException(NO_CONTRIBUTOR_MESSAGE));
     }
 
-    private Optional<CustomerContributorPair> findMatchingCustomer(ImportContributor contributor,
+    private Optional<CustomerContributorPair> findMatchingCustomer(Contributor contributor,
                                                                    Map<String, CustomerDto> customerMap) {
-        return contributor.affiliations().stream()
-                   .map(Affiliation::targetOrganization)
+        return contributor.getAffiliations().stream()
                    .filter(Organization.class::isInstance)
                    .map(Organization.class::cast)
                    .map(Organization::getId)
@@ -141,10 +141,10 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
                    .map(customer -> new CustomerContributorPair(customer, contributor));
     }
 
-    private List<CustomerDto> fetchAllAssociatedCustomers(ImportCandidate importCandidate)
+    private Collection<CustomerDto> fetchAllAssociatedCustomers(Collection<URI> associatedCustomers)
         throws ApprovalAssignmentException {
         var customers = new ArrayList<CustomerDto>();
-        for (URI customerUri : importCandidate.getAssociatedCustomers()) {
+        for (URI customerUri : associatedCustomers) {
             var customer = getCustomerById(customerUri);
             if (customer.autoPublishScopusImportFiles()) {
                 return List.of(customer);
@@ -203,16 +203,16 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
                                                    getSequence(customerContributorPair.contributor()));
         }
 
-        private static URI getContributorId(ImportContributor contributor) {
-            return Optional.ofNullable(contributor).map(ImportContributor::identity).map(Identity::getId).orElse(null);
+        private static URI getContributorId(Contributor contributor) {
+            return Optional.ofNullable(contributor).map(Contributor::getIdentity).map(Identity::getId).orElse(null);
         }
 
-        private static boolean isCorrespondingAuthor(ImportContributor contributor) {
-            return Optional.ofNullable(contributor).map(ImportContributor::correspondingAuthor).orElse(false);
+        private static boolean isCorrespondingAuthor(Contributor contributor) {
+            return Optional.ofNullable(contributor).map(Contributor::isCorrespondingAuthor).orElse(false);
         }
 
-        private static Integer getSequence(ImportContributor contributor) {
-            return Optional.ofNullable(contributor).map(ImportContributor::sequence).orElse(null);
+        private static Integer getSequence(Contributor contributor) {
+            return Optional.ofNullable(contributor).map(Contributor::getSequence).orElse(null);
         }
 
         public CustomerDto getCustomer() {
@@ -228,5 +228,5 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
         }
     }
 
-    public record CustomerContributorPair(CustomerDto customerDto, ImportContributor contributor) {}
+    public record CustomerContributorPair(CustomerDto customerDto, Contributor contributor) {}
 }
