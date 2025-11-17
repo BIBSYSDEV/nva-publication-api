@@ -37,7 +37,7 @@ class MigrateResourceJobTest extends ResourcesLocalTest {
         when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), CRISTIN_ID))));
         this.resourceService = new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(), uriRetriever,
                                                    channelClaimClient, customerService, new FakeCristinUnitsUtil());
-        this.migrateResourceJob = new MigrateResourceJob(resourceService, new FakeCristinUnitsUtil());
+        this.migrateResourceJob = new MigrateResourceJob(resourceService);
     }
     
     @Test
