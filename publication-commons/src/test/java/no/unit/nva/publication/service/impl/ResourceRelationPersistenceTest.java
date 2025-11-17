@@ -151,7 +151,7 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
 
         resourceService.refreshResourcesByKeys(List.of(chapter.toDao().primaryKey()));
 
-        var persistedRelation = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow();
+        var persistedRelation = fetchResource(anthology);
 
         assertEquals(chapter.getIdentifier(), persistedRelation.getRelatedResources().getFirst());
     }
@@ -160,12 +160,12 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
     void shouldNotPersistDuplicateResourceRelationshipForDatabaseEntryWhenRelationAlreadyExists() {
         var anthology = persist(randomPublication(BookAnthology.class));
         var chapter = persistChaptersWithAnthology(anthology, 1).getFirst();
-        var existingRelations = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow().getRelatedResources();
+        var existingRelations = fetchResource(anthology).getRelatedResources();
 
         assertEquals(chapter.getIdentifier(), existingRelations.getFirst());
 
         resourceService.refreshResourcesByKeys(List.of(Resource.fromPublication(chapter).toDao().primaryKey()));
-        var updatedRelations = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow().getRelatedResources();
+        var updatedRelations = fetchResource(anthology).getRelatedResources();
 
         assertThat(updatedRelations, containsInAnyOrder(existingRelations.toArray()));
     }
@@ -179,7 +179,7 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
 
         resourceService.refreshResourcesByKeys(List.of(chapter.toDao().primaryKey()));
 
-        var persistedRelation = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow();
+        var persistedRelation = fetchResource(anthology);
 
         assertTrue(persistedRelation.getRelatedResources().isEmpty());
     }
