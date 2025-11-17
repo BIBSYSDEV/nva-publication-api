@@ -390,8 +390,7 @@ public class ResourceService extends ServiceWithTransactions {
         var anthologyIdentifier = getAnthologyPublicationIdentifier(resource);
         if (anthologyIdentifier.isPresent()) {
             var relationship = new ResourceRelationship(anthologyIdentifier.get(), resource.getIdentifier());
-            var dao = ResourceRelationshipDao.from(relationship);
-            client.putItem(new PutItemRequest(tableName, dao.toDynamoFormat()));
+            client.putItem(new PutItemRequest(tableName, ResourceRelationshipDao.from(relationship).toDynamoFormat()));
         }
         return resource;
     }
