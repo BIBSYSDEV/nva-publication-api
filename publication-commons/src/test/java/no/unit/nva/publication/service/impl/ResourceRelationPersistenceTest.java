@@ -129,6 +129,32 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         assertDoesNotThrow(() -> Resource.fromPublication(anthology1).fetch(resourceService).orElseThrow());
     }
 
+    @Test
+    void shouldPersistResourceRelationshipForDatabaseEntryWhenMigratingResourceWithAnthology() {
+        var anthology = persist(randomPublication(BookAnthology.class));
+        var chapter = super.persistResource(Resource.fromPublication(randomChapterWithAnthology(toPublicationId(anthology.getIdentifier()))));
+
+        resourceService.refreshResourcesByKeys(List.of(chapter.toDao().primaryKey()));
+
+        var persistedRelation = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow();
+
+        assertEquals(chapter.getIdentifier(), persistedRelation.getRelatedResources().getFirst());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"example.com", "https://example.com/publication/123",
+        "https://example.com/something/0198cc8f7d15-3bfde61e-71c3-4253-8662-714a460886f1"})
+    void shouldNotPersistResourceRelationshipWhenMigratingResourceWithAnthologyWhenAnthologyIdIsNotPublicationId(String value) {
+        var anthology = persist(randomPublication(BookAnthology.class));
+        var chapter = super.persistResource(Resource.fromPublication(randomChapterWithAnthology(URI.create(value))));
+
+        resourceService.refreshResourcesByKeys(List.of(chapter.toDao().primaryKey()));
+
+        var persistedRelation = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow();
+
+        assertTrue(persistedRelation.getRelatedResources().isEmpty());
+    }
+
     private void insertRelationBetween(SortableIdentifier parentIdentifier, SortableIdentifier childIdentifier) {
         var relationship = new ResourceRelationship(parentIdentifier, childIdentifier);
         client.putItem(new PutItemRequest(RESOURCES_TABLE_NAME, ResourceRelationshipDao.from(relationship).toDynamoFormat()));
