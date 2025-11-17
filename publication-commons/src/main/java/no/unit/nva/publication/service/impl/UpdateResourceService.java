@@ -25,6 +25,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -170,7 +171,22 @@ public class UpdateResourceService extends ServiceWithTransactions {
         transactionItems.addAll(ticketsTransactions);
         transactionItems.addAll(updatePublicationChannelsForPublisherWhenDegree(resource, persistedResource));
         transactionItems.addAll(createResourceRelationTransactions(persistedResource, resource));
+        transactionItems.addAll(createRefreshRelatedResourcesTransactions(persistedResource));
         return transactionItems;
+    }
+
+    // TODO: After PK migration to be based on resource identifier only: update version using partial update without fetching resources
+    private List<TransactWriteItem> createRefreshRelatedResourcesTransactions(Resource persistedResource) {
+        var relatedResources = persistedResource.getRelatedResources();
+        if (!relatedResources.isEmpty()) {
+            return relatedResources.stream()
+                       .map(readResourceService::getResourceByIdentifier)
+                       .filter(Optional::isPresent)
+                       .map(Optional::get)
+                       .map(this::createPutTransaction)
+                       .toList();
+        }
+        return Collections.emptyList();
     }
 
     private Collection<TransactWriteItem> createResourceRelationTransactions(
