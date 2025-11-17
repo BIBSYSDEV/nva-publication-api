@@ -4,11 +4,14 @@ import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomReference
 import static no.unit.nva.model.testing.PublicationGenerator.buildRandomPublicationFromInstance;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -19,7 +22,9 @@ import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.ResourceRelationship;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.ResourceRelationshipDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,6 +114,24 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         var anthologyWithNewRelation = Resource.fromPublication(newAnthology).fetch(resourceService).orElseThrow();
 
         assertEquals(chapter.getIdentifier(), anthologyWithNewRelation.getRelatedResources().getFirst());
+    }
+
+    @Test
+    void databaseShouldHandleMultiplePublicationsSharingTheSameRelatedResource() {
+        var anthology1 = persist(randomPublication(BookAnthology.class));
+        var anthology2 = persist(randomPublication(BookAnthology.class));
+        var childIdentifier = SortableIdentifier.next();
+
+        insertRelationBetween(anthology1.getIdentifier(), childIdentifier);
+        insertRelationBetween(anthology2.getIdentifier(), childIdentifier);
+
+        assertDoesNotThrow(() -> Resource.fromPublication(anthology2).fetch(resourceService).orElseThrow());
+        assertDoesNotThrow(() -> Resource.fromPublication(anthology1).fetch(resourceService).orElseThrow());
+    }
+
+    private void insertRelationBetween(SortableIdentifier parentIdentifier, SortableIdentifier childIdentifier) {
+        var relationship = new ResourceRelationship(parentIdentifier, childIdentifier);
+        client.putItem(new PutItemRequest(RESOURCES_TABLE_NAME, ResourceRelationshipDao.from(relationship).toDynamoFormat()));
     }
 
     private static Publication randomChapterWithAnthology(URI anthologyId) {

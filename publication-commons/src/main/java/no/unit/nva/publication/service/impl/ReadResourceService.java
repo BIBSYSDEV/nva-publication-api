@@ -25,6 +25,7 @@ import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -118,7 +119,7 @@ public class ReadResourceService {
         return resource;
     }
 
-    private List<SortableIdentifier> extractResourceRelationships(List<Map<String, AttributeValue>> entries) {
+    private List<SortableIdentifier> extractResourceRelationships(Collection<Map<String, AttributeValue>> entries) {
         return entries.stream()
                    .filter(map -> hasTypeProperty(map, ResourceRelationshipDao.TYPE))
                    .map(map -> DatabaseEntryWithData.fromAttributeValuesMap(map, ResourceRelationshipDao.class))
@@ -185,7 +186,7 @@ public class ReadResourceService {
         return !TicketStatus.REMOVED.equals(ticket.getStatus());
     }
 
-    private static Optional<Resource> extractResource(List<Map<String, AttributeValue>> entries) {
+    private static Optional<Resource> extractResource(Collection<Map<String, AttributeValue>> entries) {
         return entries.stream()
                    .filter(map -> hasTypeProperty(map, ResourceDao.TYPE))
                    .map(map -> parseAttributeValuesMap(map, Dao.class))
@@ -199,7 +200,7 @@ public class ReadResourceService {
         return type.equals(map.getOrDefault("type", new AttributeValue()).getS());
     }
 
-    private static List<FileEntry> extractFileEntries(List<Map<String, AttributeValue>> entries) {
+    private static List<FileEntry> extractFileEntries(Collection<Map<String, AttributeValue>> entries) {
         return entries.stream()
                    .filter(map -> hasTypeProperty(map, FileDao.TYPE))
                    .map(map -> parseAttributeValuesMap(map, Dao.class))
@@ -210,7 +211,7 @@ public class ReadResourceService {
                    .toList();
     }
 
-    private List<PublicationChannel> extractPublicationChannels(List<Map<String, AttributeValue>> entries) {
+    private List<PublicationChannel> extractPublicationChannels(Collection<Map<String, AttributeValue>> entries) {
         return entries.stream()
                    .filter(map -> hasTypeProperty(map, PublicationChannelDao.TYPE))
                    .map(map -> parseAttributeValuesMap(map, Dao.class))
