@@ -11,7 +11,6 @@ import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -25,6 +24,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -170,7 +170,22 @@ public class UpdateResourceService extends ServiceWithTransactions {
         transactionItems.addAll(ticketsTransactions);
         transactionItems.addAll(updatePublicationChannelsForPublisherWhenDegree(resource, persistedResource));
         transactionItems.addAll(createResourceRelationTransactions(persistedResource, resource));
+        transactionItems.addAll(createRefreshRelatedResourcesTransactions(persistedResource));
         return transactionItems;
+    }
+
+    // TODO: After PK migration to be based on resource identifier only: update version using partial update without fetching resources
+    private List<TransactWriteItem> createRefreshRelatedResourcesTransactions(Resource persistedResource) {
+        var relatedResources = persistedResource.getRelatedResources();
+        if (!relatedResources.isEmpty()) {
+            return relatedResources.stream()
+                       .map(readResourceService::getResourceByIdentifier)
+                       .filter(Optional::isPresent)
+                       .map(Optional::get)
+                       .map(this::createPutTransaction)
+                       .toList();
+        }
+        return Collections.emptyList();
     }
 
     private Collection<TransactWriteItem> createResourceRelationTransactions(
@@ -209,12 +224,12 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private TransactWriteItem createDeleteTransaction(ResourceRelationshipDao dao) {
         return new TransactWriteItem()
-                   .withDelete(new Delete().withTableName(RESOURCES_TABLE_NAME).withKey(dao.getPrimaryKey()));
+                   .withDelete(new Delete().withTableName(tableName).withKey(dao.getPrimaryKey()));
     }
 
     private TransactWriteItem createPutTransaction(ResourceRelationshipDao dao) {
         return new TransactWriteItem()
-                   .withPut(new Put().withTableName(RESOURCES_TABLE_NAME).withItem(dao.toDynamoFormat()));
+                   .withPut(new Put().withTableName(tableName).withItem(dao.toDynamoFormat()));
     }
 
     private Collection<? extends TransactWriteItem> updateFilesTransactions(Resource resource,

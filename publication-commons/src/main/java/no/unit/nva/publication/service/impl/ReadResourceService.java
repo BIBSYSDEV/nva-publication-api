@@ -66,6 +66,7 @@ public class ReadResourceService {
     public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource ";
     public static final int DEFAULT_LIMIT = 100;
     private static final String ADDITIONAL_IDENTIFIER_CRISTIN = "Cristin";
+    private static final String TYPE = "type";
     private final AmazonDynamoDB client;
     private final String tableName;
 
@@ -197,7 +198,7 @@ public class ReadResourceService {
     }
 
     private static boolean hasTypeProperty(Map<String, AttributeValue> map, String type) {
-        return type.equals(map.getOrDefault("type", new AttributeValue()).getS());
+        return type.equals(map.getOrDefault(TYPE, new AttributeValue()).getS());
     }
 
     private static List<FileEntry> extractFileEntries(Collection<Map<String, AttributeValue>> entries) {

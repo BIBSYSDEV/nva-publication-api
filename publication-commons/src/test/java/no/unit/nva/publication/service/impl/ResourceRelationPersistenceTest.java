@@ -10,6 +10,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.net.URI;
@@ -50,7 +51,7 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         var anthology = persist(randomPublication(BookAnthology.class));
         persist(randomChapterWithAnthology(URI.create(value)));
 
-        var anthologyWithoutRelation = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow();
+        var anthologyWithoutRelation = fetchResource(anthology);
 
         assertTrue(anthologyWithoutRelation.getRelatedResources().isEmpty());
     }
@@ -60,7 +61,7 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         var anthology = persist(randomPublication(BookAnthology.class));
         var chapters = persistChaptersWithAnthology(anthology, 5);
 
-        var anthologyWithRelations = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow();
+        var anthologyWithRelations = fetchResource(anthology);
 
         var expectedRelations = chapters.stream().map(Publication::getIdentifier).toList();
 
@@ -73,7 +74,7 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         var anthology = persist(randomPublication(BookAnthology.class));
         var chapter = persistChaptersWithAnthology(anthology, 1).getFirst();
 
-        var anthologyWithNewRelation = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow();
+        var anthologyWithNewRelation = fetchResource(anthology);
 
         assertEquals(chapter.getIdentifier(), anthologyWithNewRelation.getRelatedResources().getFirst());
     }
@@ -85,7 +86,7 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
 
         updateToNonChapter(chapter);
 
-        var anthologyWithNewRelation = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow();
+        var anthologyWithNewRelation = fetchResource(anthology);
 
         assertTrue(anthologyWithNewRelation.getRelatedResources().isEmpty());
     }
@@ -98,7 +99,7 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
 
         moveChapterToAnthology(chapter, newAnthology.getIdentifier());
 
-        var anthologyWithRemovedRelation = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow();
+        var anthologyWithRemovedRelation = fetchResource(anthology);
 
         assertTrue(anthologyWithRemovedRelation.getRelatedResources().isEmpty());
     }
@@ -111,7 +112,7 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
 
         moveChapterToAnthology(chapter, newAnthology.getIdentifier());
 
-        var anthologyWithNewRelation = Resource.fromPublication(newAnthology).fetch(resourceService).orElseThrow();
+        var anthologyWithNewRelation = fetchResource(newAnthology);
 
         assertEquals(chapter.getIdentifier(), anthologyWithNewRelation.getRelatedResources().getFirst());
     }
@@ -125,13 +126,37 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         insertRelationBetween(anthology1.getIdentifier(), childIdentifier);
         insertRelationBetween(anthology2.getIdentifier(), childIdentifier);
 
-        assertDoesNotThrow(() -> Resource.fromPublication(anthology2).fetch(resourceService).orElseThrow());
-        assertDoesNotThrow(() -> Resource.fromPublication(anthology1).fetch(resourceService).orElseThrow());
+        assertDoesNotThrow(() -> fetchResource(anthology1));
+        assertDoesNotThrow(() -> fetchResource(anthology2));
+    }
+
+    @Test
+    void shouldRefreshAllRelatedResourcesWhenUpdatingResourceWithRelatedResources() {
+        var anthology = persist(randomPublication(BookAnthology.class));
+        var chapter = persistChaptersWithAnthology(anthology, 1).getFirst();
+
+        var currentVersion = fetchResource(chapter).getVersion();
+
+        updatePublication(anthology);
+
+        var refreshedVersion = fetchResource(chapter).getVersion();
+
+        assertNotEquals(currentVersion, refreshedVersion);
     }
 
     private void insertRelationBetween(SortableIdentifier parentIdentifier, SortableIdentifier childIdentifier) {
         var relationship = new ResourceRelationship(parentIdentifier, childIdentifier);
         client.putItem(new PutItemRequest(RESOURCES_TABLE_NAME, ResourceRelationshipDao.from(relationship).toDynamoFormat()));
+    }
+
+    private Resource fetchResource(Publication publication) {
+        return Resource.fromPublication(publication).fetch(resourceService).orElseThrow();
+    }
+
+    private void updatePublication(Publication publication) {
+        var updatedPublication = publication.copy().withLink(randomUri()).build();
+        resourceService.updateResource(Resource.fromPublication(updatedPublication),
+                                       UserInstance.fromPublication(publication));
     }
 
     private static Publication randomChapterWithAnthology(URI anthologyId) {
