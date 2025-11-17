@@ -10,6 +10,7 @@ import static no.unit.nva.publication.PublicationServiceConfig.defaultDynamoDbCl
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.publication.model.utils.PublicationUtil.getAnthologyPublicationIdentifier;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
@@ -67,6 +68,7 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.ResourceRelationship;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
@@ -79,6 +81,8 @@ import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.publication.model.storage.LogEntryDao;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.storage.ResourceRelationshipDao;
+import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.model.utils.CustomerService;
@@ -737,11 +741,24 @@ public class ResourceService extends ServiceWithTransactions {
         transactions.add(newPutTransactionItem(new ResourceDao(resource), tableName));
         transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource));
         transactions.addAll(createPublicationChannelsTransaction(resource));
+        createResourceRelationshipTransaction(resource).ifPresent(transactions::add);
 
         var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
         sendTransactionWriteRequest(transactWriteItemsRequest);
 
         return resource;
+    }
+
+    private Optional<TransactWriteItem> createResourceRelationshipTransaction(Resource resource) {
+        return getAnthologyPublicationIdentifier(resource)
+            .map(identifier -> new ResourceRelationship(identifier, resource.getIdentifier()))
+            .map(ResourceRelationshipDao::from)
+            .map(DatabaseEntryWithData::toDynamoFormat)
+            .map(this::putWithItem);
+    }
+
+    private TransactWriteItem putWithItem(Map<String, AttributeValue> item) {
+        return new TransactWriteItem().withPut(new Put().withItem(item).withTableName(tableName));
     }
 
     private void setCuratingInstitutions(Resource newResource, CristinUnitsUtil cristinUnitsUtil) {

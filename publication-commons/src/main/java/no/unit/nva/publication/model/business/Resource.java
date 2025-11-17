@@ -135,6 +135,8 @@ public class Resource implements Entity {
     private List<PublicationChannel> publicationChannels;
     @JsonProperty
     private UUID version;
+    @JsonProperty
+    private List<SortableIdentifier> relatedResources;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
@@ -172,6 +174,15 @@ public class Resource implements Entity {
     public boolean hasResourceEvent() {
         return nonNull(getResourceEvent());
     }
+
+    public List<SortableIdentifier> getRelatedResources() {
+        return nonNull(relatedResources) ? List.copyOf(relatedResources) : Collections.emptyList();
+    }
+
+    public void setRelatedResources(List<SortableIdentifier> relatedResources) {
+        this.relatedResources = relatedResources;
+    }
+
 
     @JsonIgnore
     public List<File> getFiles() {

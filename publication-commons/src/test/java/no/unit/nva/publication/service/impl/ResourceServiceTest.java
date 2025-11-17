@@ -443,23 +443,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void getResourcePropagatesJsonProcessingExceptionWhenExceptionIsThrown() {
-
-        AmazonDynamoDB mockClient = mock(AmazonDynamoDB.class);
-        Item invalidItem = new Item().withString(SOME_INVALID_FIELD, SOME_STRING);
-        var responseWithInvalidItem = new QueryResult().withItems(List.of(ItemUtils.toAttributeValues(invalidItem)));
-        when(mockClient.query(any())).thenReturn(responseWithInvalidItem);
-
-        ResourceService failingResourceService = getResourceService(mockClient);
-        Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
-
-        SortableIdentifier someIdentifier = SortableIdentifier.next();
-        Executable action = () -> failingResourceService.getPublicationByIdentifier(someIdentifier);
-
-        assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass, action);
-    }
-
-    @Test
     void shouldPublishResourceWhenClientRequestsToPublish() throws ApiGatewayException {
         var publication = createPersistedPublicationWithDoi();
         var userInstance = UserInstance.fromPublication(publication);

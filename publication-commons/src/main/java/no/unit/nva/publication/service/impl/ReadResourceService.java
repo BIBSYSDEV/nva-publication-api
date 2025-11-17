@@ -25,6 +25,7 @@ import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,6 +42,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.ResourceRelationship;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -51,6 +53,7 @@ import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.storage.ResourceRelationshipDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
@@ -90,13 +93,12 @@ public class ReadResourceService {
                                .withExpressionAttributeNames(Map.of("#PK3", "PK3"))
                                .withExpressionAttributeValues(Map.of(":value", new AttributeValue(partitionKey)));
 
-        var entries = client.query(queryRequest).getItems().stream()
-                          .map(map -> parseAttributeValuesMap(map, Dao.class))
-                          .toList();
+        var entries = client.query(queryRequest).getItems().stream().toList();
 
         var resource = extractResource(entries);
         var fileEntries = extractFileEntries(entries);
         var publicationChannels = extractPublicationChannels(entries);
+        var resourceRelationships = extractResourceRelationships(entries);
 
         resource.ifPresent(res -> {
             var associatedArtifacts = new ArrayList<AssociatedArtifact>();
@@ -112,8 +114,18 @@ public class ReadResourceService {
             res.setFileEntries(fileEntries);
             res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
             res.setPublicationChannels(publicationChannels);
+            res.setRelatedResources(resourceRelationships);
         });
         return resource;
+    }
+
+    private List<SortableIdentifier> extractResourceRelationships(Collection<Map<String, AttributeValue>> entries) {
+        return entries.stream()
+                   .filter(map -> hasTypeProperty(map, ResourceRelationshipDao.TYPE))
+                   .map(map -> DatabaseEntryWithData.fromAttributeValuesMap(map, ResourceRelationshipDao.class))
+                   .map(ResourceRelationshipDao::getData)
+                   .map(ResourceRelationship::childIdentifier)
+                   .toList();
     }
 
     public Optional<ImportCandidate> getImportCandidateByIdentifier(SortableIdentifier identifier) {
@@ -174,16 +186,24 @@ public class ReadResourceService {
         return !TicketStatus.REMOVED.equals(ticket.getStatus());
     }
 
-    private static Optional<Resource> extractResource(List<Dao> entries) {
+    private static Optional<Resource> extractResource(Collection<Map<String, AttributeValue>> entries) {
         return entries.stream()
+                   .filter(map -> hasTypeProperty(map, ResourceDao.TYPE))
+                   .map(map -> parseAttributeValuesMap(map, Dao.class))
                    .filter(ResourceDao.class::isInstance)
                    .map(ResourceDao.class::cast)
                    .map(ResourceDao::getResource)
                    .findFirst();
     }
 
-    private static List<FileEntry> extractFileEntries(List<Dao> entries) {
+    private static boolean hasTypeProperty(Map<String, AttributeValue> map, String type) {
+        return type.equals(map.getOrDefault("type", new AttributeValue()).getS());
+    }
+
+    private static List<FileEntry> extractFileEntries(Collection<Map<String, AttributeValue>> entries) {
         return entries.stream()
+                   .filter(map -> hasTypeProperty(map, FileDao.TYPE))
+                   .map(map -> parseAttributeValuesMap(map, Dao.class))
                    .filter(FileDao.class::isInstance)
                    .map(FileDao.class::cast)
                    .map(FileDao::getFileEntry)
@@ -191,8 +211,10 @@ public class ReadResourceService {
                    .toList();
     }
 
-    private List<PublicationChannel> extractPublicationChannels(List<Dao> entries) {
+    private List<PublicationChannel> extractPublicationChannels(Collection<Map<String, AttributeValue>> entries) {
         return entries.stream()
+                   .filter(map -> hasTypeProperty(map, PublicationChannelDao.TYPE))
+                   .map(map -> parseAttributeValuesMap(map, Dao.class))
                    .filter(PublicationChannelDao.class::isInstance)
                    .map(PublicationChannelDao.class::cast)
                    .map(PublicationChannelDao::getData)
