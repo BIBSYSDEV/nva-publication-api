@@ -286,15 +286,15 @@ public class ResourceService extends ServiceWithTransactions {
         return new ScanResultWrapper(scanResult.getItems(), scanResult.getLastEvaluatedKey(), isTruncated);
     }
 
-    public void refreshResources(List<Entity> dataEntries, CristinUnitsUtil cristinUnitsUtil) {
-        final var refreshedEntries = refreshAndMigrate(dataEntries, cristinUnitsUtil);
+    public void refreshResources(List<Entity> dataEntries) {
+        final var refreshedEntries = refreshAndMigrate(dataEntries);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToDynamoInBatches(writeRequests);
     }
 
-    public void refreshResourcesByKeys(Collection<Map<String, AttributeValue>> keys, CristinUnitsUtil cristinUnitsUtil) {
+    public void refreshResourcesByKeys(Collection<Map<String, AttributeValue>> keys) {
         var entities = getEntities(keys);
-        refreshResources(entities, cristinUnitsUtil);
+        refreshResources(entities);
     }
 
     private List<Entity> getEntities(Collection<Map<String, AttributeValue>> keys) {
@@ -366,11 +366,8 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     // update this method according to current needs.
-    public Entity migrate(Entity dataEntry, CristinUnitsUtil cristinUnitsUtil) {
+    public Entity migrate(Entity dataEntry) {
         try {
-            if (dataEntry instanceof Resource resource) {
-                return migrateResource(resource, cristinUnitsUtil);
-            }
             return dataEntry;
         } catch (Exception e) {
             logger.error("Could not migrate data entry: {}, {}. Error: {}",
@@ -379,16 +376,6 @@ public class ResourceService extends ServiceWithTransactions {
                          e.getMessage());
             throw new RuntimeException("Could not migrate data entry: " + dataEntry.getIdentifier(), e);
         }
-    }
-
-    private Resource migrateResource(Resource resource,
-                                     CristinUnitsUtil cristinUnitsUtil) {
-        // Migrating curating institutions
-        var curatingInstitutions = new CuratingInstitutionsUtil(uriRetriever, customerService)
-                                       .getCuratingInstitutionsCached(resource.getEntityDescription(),
-                                                                      cristinUnitsUtil);
-        resource.setCuratingInstitutions(curatingInstitutions);
-        return resource;
     }
 
     public Stream<FileEntry> fetchFileEntriesForResource(Resource resource) {
@@ -622,9 +609,9 @@ public class ResourceService extends ServiceWithTransactions {
         toResource.setStatus(status);
     }
 
-    private List<Entity> refreshAndMigrate(List<Entity> dataEntries, CristinUnitsUtil cristinUnitsUtil) {
+    private List<Entity> refreshAndMigrate(List<Entity> dataEntries) {
         return dataEntries.stream()
-                   .map(attempt(dataEntry -> migrate(dataEntry, cristinUnitsUtil)))
+                   .map(attempt(this::migrate))
                    .map(Try::orElseThrow)
                    .toList();
     }
