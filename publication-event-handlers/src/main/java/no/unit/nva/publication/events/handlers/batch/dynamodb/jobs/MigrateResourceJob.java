@@ -9,25 +9,20 @@ import java.util.Map;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.BatchWorkItem;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchJobExecutor;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.core.JacocoGenerated;
 
 public class MigrateResourceJob implements DynamodbResourceBatchJobExecutor {
 
     private static final String JOB_TYPE = "MIGRATE_RESOURCE";
     private final ResourceService resourceService;
-    private final CristinUnitsUtil cristinUnitsUtil;
 
     @JacocoGenerated
     public MigrateResourceJob() {
-        this(ResourceService.defaultService(),
-             CristinUnitsUtil.defaultInstance());
+        this(ResourceService.defaultService());
     }
 
-    public MigrateResourceJob(ResourceService resourceService,
-                             CristinUnitsUtil cristinUnitsUtil) {
+    public MigrateResourceJob(ResourceService resourceService) {
         this.resourceService = resourceService;
-        this.cristinUnitsUtil = cristinUnitsUtil;
     }
 
     @Override
@@ -38,7 +33,7 @@ public class MigrateResourceJob implements DynamodbResourceBatchJobExecutor {
 
         var keys = workItems.stream().map(this::createKey).toList();
 
-        resourceService.refreshResourcesByKeys(keys, cristinUnitsUtil);
+        resourceService.refreshResourcesByKeys(keys);
     }
 
     private Map<String, AttributeValue> createKey(BatchWorkItem workItem) {

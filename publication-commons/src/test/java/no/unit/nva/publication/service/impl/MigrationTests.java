@@ -2,7 +2,6 @@ package no.unit.nva.publication.service.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithIdAndAffiliation;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
@@ -15,7 +14,6 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
@@ -193,7 +191,7 @@ class MigrationTests extends ResourcesLocalTest {
                           .getDatabaseEntries();
         var key = getFirstKey(entries);
 
-        resourceService.refreshResourcesByKeys(List.of(key), new FakeCristinUnitsUtil());
+        resourceService.refreshResourcesByKeys(List.of(key));
 
         var migratedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
 
@@ -210,24 +208,6 @@ class MigrationTests extends ResourcesLocalTest {
             .removeIf(attributeKey -> !Set.of(PRIMARY_KEY_PARTITION_KEY_NAME, PRIMARY_KEY_SORT_KEY_NAME)
                                            .contains(attributeKey));
         return key;
-    }
-
-    @Test
-    void shouldMigrateCuratingInstitutions() throws NotFoundException {
-        var affiliationId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
-        var customerCristinId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
-        var contributor = randomContributorWithIdAndAffiliation(randomUri(), affiliationId);
-        var publication = randomPublication(Textbook.class);
-        publication.getEntityDescription().setContributors(List.of(contributor));
-        updatePublication(publication);
-
-        migrateResources();
-        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(),
-                                                                                                       customerCristinId))));
-        var migratedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
-
-        assertTrue(migratedResource.getCuratingInstitutions().stream()
-                       .anyMatch(curatingInstitution -> curatingInstitution.id().equals(customerCristinId)));
     }
 
     private static Stream<Resource> getResourceStream(List<Map<String, AttributeValue>> allMigratedItems) {
@@ -273,6 +253,6 @@ class MigrationTests extends ResourcesLocalTest {
 
     private void migrateResources() {
         var scanResources = resourceService.scanResources(1000, START_FROM_BEGINNING, Collections.emptyList());
-        resourceService.refreshResources(scanResources.getDatabaseEntries(), new FakeCristinUnitsUtil());
+        resourceService.refreshResources(scanResources.getDatabaseEntries());
     }
 }
