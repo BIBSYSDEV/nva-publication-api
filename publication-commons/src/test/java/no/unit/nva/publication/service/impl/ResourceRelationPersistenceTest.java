@@ -141,6 +141,20 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         assertEquals(chapter.getIdentifier(), persistedRelation.getRelatedResources().getFirst());
     }
 
+    @Test
+    void shouldNotPersistDuplicateResourceRelationshipForDatabaseEntryWhenRelationAlreadyExists() {
+        var anthology = persist(randomPublication(BookAnthology.class));
+        var chapter = persistChaptersWithAnthology(anthology, 1).getFirst();
+        var existingRelations = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow().getRelatedResources();
+
+        assertEquals(chapter.getIdentifier(), existingRelations.getFirst());
+
+        resourceService.refreshResourcesByKeys(List.of(Resource.fromPublication(chapter).toDao().primaryKey()));
+        var updatedRelations = Resource.fromPublication(anthology).fetch(resourceService).orElseThrow().getRelatedResources();
+
+        assertThat(updatedRelations, containsInAnyOrder(existingRelations.toArray()));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"example.com", "https://example.com/publication/123",
         "https://example.com/something/0198cc8f7d15-3bfde61e-71c3-4253-8662-714a460886f1"})
