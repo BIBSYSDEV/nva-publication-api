@@ -149,8 +149,8 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         client.putItem(new PutItemRequest(RESOURCES_TABLE_NAME, ResourceRelationshipDao.from(relationship).toDynamoFormat()));
     }
 
-    private Resource fetchResource(Publication chapter) {
-        return Resource.fromPublication(chapter).fetch(resourceService).orElseThrow();
+    private Resource fetchResource(Publication publication) {
+        return Resource.fromPublication(publication).fetch(resourceService).orElseThrow();
     }
 
     private void updatePublication(Publication publication) {
