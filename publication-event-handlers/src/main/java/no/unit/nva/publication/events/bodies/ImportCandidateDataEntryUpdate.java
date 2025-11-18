@@ -3,14 +3,12 @@ package no.unit.nva.publication.events.bodies;
 import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.importcandidate.ImportCandidate;
 import nva.commons.core.JacocoGenerated;
 
 public class ImportCandidateDataEntryUpdate implements JsonSerializable {
@@ -23,14 +21,14 @@ public class ImportCandidateDataEntryUpdate implements JsonSerializable {
     @JsonProperty(ACTION)
     private final String action;
     @JsonProperty(OLD_DATA)
-    private final Entity oldData;
+    private final ImportCandidate oldData;
     @JsonProperty(NEW_DATA)
-    private final Entity newData;
+    private final ImportCandidate newData;
 
     @JsonCreator
     public ImportCandidateDataEntryUpdate(@JsonProperty(ACTION) String action,
-                                          @JsonProperty(OLD_DATA) Entity oldData,
-                                          @JsonProperty(NEW_DATA) Entity newData) {
+                                          @JsonProperty(OLD_DATA) ImportCandidate oldData,
+                                          @JsonProperty(NEW_DATA) ImportCandidate newData) {
 
         this.action = action;
         this.oldData = oldData;
@@ -62,18 +60,12 @@ public class ImportCandidateDataEntryUpdate implements JsonSerializable {
         return action;
     }
 
-    public Optional<Entity> getOldData() {
+    public Optional<ImportCandidate> getOldData() {
         return Optional.ofNullable(oldData);
     }
 
-    public Optional<Entity> getNewData() {
+    public Optional<ImportCandidate> getNewData() {
         return Optional.ofNullable(newData);
-    }
-
-    @JsonIgnore
-    public boolean isResource() {
-        return getNewData().stream().anyMatch(Resource.class::isInstance)
-            || getOldData().stream().anyMatch(Resource.class::isInstance);
     }
 
     @JsonProperty("topic")

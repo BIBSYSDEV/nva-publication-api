@@ -8,7 +8,6 @@ import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,21 +21,18 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
     public static final String DETAIL_TYPE = "NO_DETAIL_TYPE";
     private final ResourceService resourceService;
     private final EventBridgeClient eventBridgeClient;
-    private final CristinUnitsUtil cristinUnitsUtil;
     private final Logger logger = LoggerFactory.getLogger(EventBasedBatchScanHandler.class);
 
     @JacocoGenerated
     public EventBasedBatchScanHandler() {
-        this(ResourceService.defaultService(), defaultEventBridgeClient(), CristinUnitsUtil.defaultInstance());
+        this(ResourceService.defaultService(), defaultEventBridgeClient());
     }
 
     public EventBasedBatchScanHandler(ResourceService resourceService,
-                                      EventBridgeClient eventBridgeClient,
-                                      CristinUnitsUtil cristinUnitsUtil) {
+                                      EventBridgeClient eventBridgeClient) {
         super(ScanDatabaseRequest.class);
         this.resourceService = resourceService;
         this.eventBridgeClient = eventBridgeClient;
-        this.cristinUnitsUtil = cristinUnitsUtil;
     }
 
     @Override
@@ -44,7 +40,7 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
                                 Context context) {
         logger.info("Query starting point: {}", input.getStartMarker());
         var result = resourceService.scanResources(input.getPageSize(), input.getStartMarker(), input.getTypes());
-        resourceService.refreshResources(result.getDatabaseEntries(), cristinUnitsUtil);
+        resourceService.refreshResources(result.getDatabaseEntries());
         if (result.isTruncated()) {
             sendEventToInvokeNewRefreshRowVersionExecution(input, context, result);
         }

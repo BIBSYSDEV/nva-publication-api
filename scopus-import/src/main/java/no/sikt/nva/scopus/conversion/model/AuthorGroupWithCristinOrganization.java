@@ -3,6 +3,7 @@ package no.sikt.nva.scopus.conversion.model;
 import static java.util.Objects.isNull;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConverter.extractContentString;
+import static no.sikt.nva.scopus.conversion.AffiliationMapper.mapToAffiliation;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +14,7 @@ import no.scopus.generated.AffiliationType;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.OrganizationTp;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
-import no.unit.nva.model.Corporation;
+import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.UnconfirmedOrganization;
 
@@ -52,7 +53,7 @@ public class AuthorGroupWithCristinOrganization {
         this.cristinOrganizationId = cristinId;
     }
 
-    public List<Corporation> toCorporations() {
+    public List<Affiliation> toCorporations() {
         return isNull(cristinOrganizations) || cristinOrganizations.isEmpty()
                    ? generateCorporationFromAuthorGroupTp()
                    : generateCorporationFromCristinOrganization();
@@ -74,21 +75,27 @@ public class AuthorGroupWithCristinOrganization {
                    .collect(Collectors.joining(AFFILIATION_DELIMITER));
     }
 
-    private List<Corporation> generateCorporationFromCristinOrganization() {
+    private List<Affiliation> generateCorporationFromCristinOrganization() {
         return cristinOrganizations.stream()
-                   .map(cristinOrganization -> new Organization.Builder().withId(cristinOrganization.id()).build())
+                   .map(CristinOrganization::id)
+                   .map(Organization::fromUri)
+                   .map(this::toImportorganization)
                    .distinct()
                    .collect(Collectors.toList());
     }
 
-    private List<Corporation> generateCorporationFromAuthorGroupTp() {
+    private Affiliation toImportorganization(Organization corporation) {
+        return new Affiliation(corporation, mapToAffiliation(scopusAuthors.getAffiliation()));
+    }
+
+    private List<Affiliation> generateCorporationFromAuthorGroupTp() {
         var name = getOrganizationNameFromAuthorGroup();
         var labels = name.isPresent() && !name.get().isEmpty() ? name.map(
             organizationName -> Map.of(LanguageUtil.guessTheLanguageOfTheInputStringAsIso6391Code(organizationName),
                                        organizationName))
                          : extractCountryNameAsAffiliation();
         return isNotNorway(labels.orElse(Map.of())) && name.isPresent() && !name.get().isBlank()
-                   ? List.of(new UnconfirmedOrganization(name.get()))
+                   ? List.of(new Affiliation(new UnconfirmedOrganization(name.get()), mapToAffiliation(scopusAuthors.getAffiliation())))
                    : List.of();
     }
 

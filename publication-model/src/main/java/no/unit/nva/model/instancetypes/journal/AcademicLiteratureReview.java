@@ -23,7 +23,10 @@ public class AcademicLiteratureReview extends JournalArticle {
         if (this == o) {
             return true;
         }
-        return o instanceof AcademicLiteratureReview;
+        if (!(o instanceof AcademicLiteratureReview)) {
+            return false;
+        }
+        return super.equals(o);
     }
 
     @JacocoGenerated

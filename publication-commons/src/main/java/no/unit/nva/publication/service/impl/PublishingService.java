@@ -66,14 +66,14 @@ public class PublishingService {
         }
         validatePermissions(resource, userInstance);
 
-        publishResource(userInstance, resource);
+        var publishedResource = publishResource(userInstance, resource);
 
         if (!resource.getPendingFiles().isEmpty()) {
             publishResourceWithPendingFiles(userInstance, resource);
         }
 
-        if (nonNull(resource.getDoi())) {
-            DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
+        if (nonNull(publishedResource.getDoi())) {
+            DoiRequest.create(publishedResource, userInstance).persistNewTicket(ticketService);
         }
     }
 
@@ -101,34 +101,30 @@ public class PublishingService {
         return !scope.contains(instanceType);
     }
 
-    private void publishResource(UserInstance userInstance, Resource resource)
+    private Resource publishResource(UserInstance userInstance, Resource resource)
         throws BadGatewayException, ForbiddenException {
         var publisher = resource.getPublisherWhenDegree();
         if (publisher.isEmpty()) {
-            resource.publish(resourceService, userInstance);
-            return;
+            return resource.publish(resourceService, userInstance);
         }
 
         var channelClaim = getChannelClaimDto(publisher.get());
         if (channelClaim.isEmpty()) {
-            resource.publish(resourceService, userInstance);
-            return;
+            return resource.publish(resourceService, userInstance);
         }
 
         var instanceType = resource.getInstanceType().orElseThrow();
         var scope = channelClaim.map(ChannelClaimDto::channelClaim).map(ChannelClaim::constraint).map(ChannelConstraint::scope).orElse(List.of());
         if (isOutOfScope(scope, instanceType)) {
-            resource.publish(resourceService, userInstance);
-            return;
+            return resource.publish(resourceService, userInstance);
         }
 
         if (everyoneCanPublish(channelClaim.get())) {
-            resource.publish(resourceService, userInstance);
-            return;
+            return resource.publish(resourceService, userInstance);
         }
 
         if (isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
-            resource.publish(resourceService, userInstance);
+            return resource.publish(resourceService, userInstance);
         } else {
             throw new ForbiddenException();
         }

@@ -5,12 +5,14 @@ import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeVal
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Map;
 import java.util.Optional;
+import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
+import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
+import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 
 //TODO: rename class to DynamoJsonToInternalModelEventHandler
-
 @SuppressWarnings({"PMD.ReturnEmptyCollectionRatherThanNull"})
 public final class DynamodbStreamRecordDaoMapper {
     
@@ -34,6 +36,13 @@ public final class DynamodbStreamRecordDaoMapper {
                    .map(Dao.class::cast)
                    .map(Dao::getData)
                    .filter(DynamodbStreamRecordDaoMapper::isResourceUpdate);
+    }
+
+    public static Optional<ImportCandidate> toImportCandidate(Map<String, AttributeValue> recordImage)
+        throws JsonProcessingException {
+        return Optional.ofNullable(fromEventMapToDynamodbMap(recordImage))
+                   .map(attributeMap -> DatabaseEntryWithData.fromAttributeValuesMap(attributeMap, ImportCandidateDao.class))
+                   .map(ImportCandidateDao::getData);
     }
 
     private static boolean isDao(DynamoEntry dynamoEntry) {

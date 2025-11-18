@@ -1,6 +1,5 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.DOI_REQUEST_INDEX_IN_QUERY_RESULT;
 import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.RESOURCE_INDEX_IN_QUERY_RESULT;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceService.AWAIT_TIME_BEFORE_FETCH_RETRY;
@@ -22,7 +21,6 @@ import java.util.stream.Collectors;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.storage.Dao;
-import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
@@ -44,12 +42,28 @@ public class ServiceWithTransactions {
     }
 
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data, String tableName) {
-        Put put = new Put()
-                      .withItem(data.toDynamoFormat())
-                      .withTableName(tableName)
-                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+        var put = newPut(data, tableName);
         return new TransactWriteItem().withPut(put);
+    }
+
+    /**
+     * Creates a DynamoDB Put operation for inserting a new entry.
+     *
+     * <p>The operation includes a condition expression that ensures the item does not
+     * already exist in the table (based on primary key). This prevents accidental
+     * overwrites of existing entries.
+     *
+     * @param data the DynamoEntry to insert into DynamoDB
+     * @param tableName the name of the DynamoDB table
+     * @return a Put operation configured with the entry data, table name, and a
+     *         conditional expression that fails if the primary key already exists.
+     */
+    protected static <T extends DynamoEntry> Put newPut(T data, String tableName) {
+        return new Put()
+                   .withItem(data.toDynamoFormat())
+                   .withTableName(tableName)
+                   .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+                   .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
     }
 
     protected static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {
@@ -78,13 +92,6 @@ public class ServiceWithTransactions {
     protected <T extends WithPrimaryKey> TransactWriteItem newDeleteTransactionItem(T dynamoEntry) {
         return new TransactWriteItem()
                    .withDelete(new Delete().withTableName(RESOURCES_TABLE_NAME).withKey(dynamoEntry.primaryKey()));
-    }
-
-    protected Optional<DoiRequestDao> extractDoiRequest(List<Dao> daos) {
-        if (doiRequestExists(daos)) {
-            return Optional.of((DoiRequestDao) daos.get(DOI_REQUEST_INDEX_IN_QUERY_RESULT));
-        }
-        return Optional.empty();
     }
 
     protected ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {

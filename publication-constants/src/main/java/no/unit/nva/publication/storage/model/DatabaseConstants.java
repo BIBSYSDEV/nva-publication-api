@@ -11,6 +11,7 @@ public final class DatabaseConstants {
     public static final String ENVIRONMENT_VARIABLE_NOT_SET_WARNING =
         "Environment variable not set: {}. Defaulting to {}";
     public static final Environment environment = new Environment();
+    public static final String IMPORT_CANDIDATE_KEY_PATTERN = "ImportCandidate:%s";
     public static final String RESOURCES_TABLE_NAME_ENV_VARIABLE = "TABLE_NAME";
     public static final String DEFAULT_RESOURCES_TABLE_NAME = "NonExistingTable";
     public static final String KEY_FIELDS_DELIMITER = ":";

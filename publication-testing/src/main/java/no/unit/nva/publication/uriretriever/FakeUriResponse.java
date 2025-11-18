@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -42,10 +43,10 @@ import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.publication.ImportCandidateToResourceConverter;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
@@ -92,9 +93,8 @@ public final class FakeUriResponse {
 
     public static void setupFakeForType(ImportCandidate importCandidate, FakeUriRetriever fakeUriRetriever,
                                         ResourceService resourceService, boolean publicationContextRedirects) {
-        var publication = importCandidate.toPublication();
+        var publication = ImportCandidateToResourceConverter.convert(importCandidate).toPublication();
         fakeContributorResponses(publication, fakeUriRetriever);
-        fakeOwnerResponse(fakeUriRetriever, importCandidate.getResourceOwner().getOwnerAffiliation());
         fakePendingNviResponse(fakeUriRetriever, publication);
         fakeFundingResponses(fakeUriRetriever, publication);
         fakeProjectResponses(fakeUriRetriever, publication, emptySet());

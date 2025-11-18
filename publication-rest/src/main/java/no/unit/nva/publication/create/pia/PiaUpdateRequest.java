@@ -2,8 +2,8 @@ package no.unit.nva.publication.create.pia;
 
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import nva.commons.core.paths.UriWrapper;
 
 public record PiaUpdateRequest(PiaPublication publication,

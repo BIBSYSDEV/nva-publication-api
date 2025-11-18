@@ -11,12 +11,14 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import no.unit.nva.publication.storage.model.exceptions.EmptyValueMapException;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(Dao.class),
-    @JsonSubTypes.Type(UniquenessEntry.class)
+    @JsonSubTypes.Type(UniquenessEntry.class),
+    @JsonSubTypes.Type(ImportCandidateDao.class)
 })
 public interface DynamoEntry {
 

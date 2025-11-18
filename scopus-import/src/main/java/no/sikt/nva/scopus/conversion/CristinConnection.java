@@ -28,7 +28,6 @@ public class CristinConnection {
     private static final String CRISTIN_PERSON_RESPONSE_ERROR = "Could not fetch cristin person: ";
     private static final String CRISTIN_ORGANIZATION_RESPONSE_ERROR = "Could not fetch cristin organization: ";
     private static final String COULD_NOT_FETCH_ORGANIZATION = "Could not fetch organization: {}";
-    private static final String ORGANIZATION_SUCCESSFULLY_FETCHED = "Organization successfully fetched: {}";
     private static final String CRISTIN = "cristin";
     private static final String PERSON = "person";
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
@@ -111,16 +110,14 @@ public class CristinConnection {
 
     private String getBodyFromOrganizationResponse(HttpResponse<String> response) {
         if (response.statusCode() != HTTP_OK) {
-            logger.info(CRISTIN_ORGANIZATION_RESPONSE_ERROR + response.statusCode());
+            logger.error(CRISTIN_ORGANIZATION_RESPONSE_ERROR + response.statusCode());
             throw new RuntimeException();
         }
         return response.body();
     }
 
     private CristinOrganization convertToOrganization(String body) throws JsonProcessingException {
-        var organization = JsonUtils.dtoObjectMapper.readValue(body, CristinOrganization.class);
-        logger.info(ORGANIZATION_SUCCESSFULLY_FETCHED, organization.toJsonString());
-        return organization;
+        return JsonUtils.dtoObjectMapper.readValue(body, CristinOrganization.class);
     }
 
     private CristinPerson getCristinPersonResponse(String json) throws JsonProcessingException {
@@ -129,7 +126,7 @@ public class CristinConnection {
 
     private String getBodyFromPersonResponse(HttpResponse<String> response) {
         if (response.statusCode() != HTTP_OK) {
-            logger.info(CRISTIN_PERSON_RESPONSE_ERROR + response.statusCode());
+            logger.error(CRISTIN_PERSON_RESPONSE_ERROR + response.statusCode());
             throw new RuntimeException();
         }
         return response.body();

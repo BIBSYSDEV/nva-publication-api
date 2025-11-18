@@ -97,6 +97,10 @@ public final class PublicationGenerator {
         return buildRandomPublicationFromInstance(publicationInstanceClass);
     }
 
+    public static Publication randomPublicationWithStatus(PublicationStatus status) {
+        return randomPublication().copy().withStatus(status).build();
+    }
+
     public static Publication randomNonDegreePublication() {
         return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
     }
@@ -270,7 +274,7 @@ public final class PublicationGenerator {
                    .build();
     }
 
-    private static Publication buildRandomPublicationFromInstance(Class<?> publicationInstanceClass) {
+    public static Publication buildRandomPublicationFromInstance(Class<?> publicationInstanceClass) {
         var entityDescription = randomEntityDescription(publicationInstanceClass);
 
         var curatingInstitutions = extractCuratingInstitutions(entityDescription);

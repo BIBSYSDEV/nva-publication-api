@@ -1,9 +1,9 @@
 package no.unit.nva.publication.download;
 
 import static java.util.UUID.randomUUID;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.download.ImportCandidatePresignedUrlHandler.IMPORT_CANDIDATE_MISSES_FILE_EXCEPTION_MESSAGE;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -20,24 +20,10 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
@@ -130,34 +116,5 @@ class ImportCandidatePresignedUriHandlerTest extends ResourcesLocalTest {
                                           "fileIdentifier", fileIdentifier.toString()
                                       ))
                                       .build();
-    }
-
-    private ImportCandidate randomImportCandidate() {
-        return new ImportCandidate.Builder().withImportStatus(ImportStatusFactory.createNotImported())
-                   .withEntityDescription(randomEntityDescription())
-                   .withModifiedDate(Instant.now())
-                   .withCreatedDate(Instant.now())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withIdentifier(SortableIdentifier.next())
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier("Scopus", randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of(File.builder().withIdentifier(randomUUID()).buildOpenFile()))
-                   .build();
-    }
-
-    private EntityDescription randomEntityDescription() {
-        return new EntityDescription.Builder().withPublicationDate(
-                new PublicationDate.Builder().withYear("2020").build())
-                   .withAbstract(randomString())
-                   .withDescription(randomString())
-                   .withContributors(List.of(randomContributor()))
-                   .withMainTitle(randomString())
-                   .build();
-    }
-
-    private Contributor randomContributor() {
-        return new Contributor.Builder().withIdentity(new Identity.Builder().withName(randomString()).build())
-                   .withRole(new RoleType(Role.ACTOR))
-                   .build();
     }
 }

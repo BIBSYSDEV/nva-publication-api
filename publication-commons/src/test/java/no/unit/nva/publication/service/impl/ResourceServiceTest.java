@@ -7,7 +7,7 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
-import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedLink;
@@ -19,6 +19,7 @@ import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeVa
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.ILLEGAL_DELETE_WHEN_NOT_DRAFT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
@@ -57,6 +58,7 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
@@ -78,6 +80,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.CuratingInstitution;
@@ -118,12 +121,11 @@ import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.ResourceRelationship;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.logentry.LogOrganization;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
@@ -136,7 +138,8 @@ import no.unit.nva.publication.model.business.publicationstate.MergedResourceEve
 import no.unit.nva.publication.model.business.publicationstate.RepublishedResourceEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
-import no.unit.nva.publication.service.FakeCristinUnitsUtil;
+import no.unit.nva.publication.model.storage.ResourceRelationshipDao;
+import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
@@ -440,23 +443,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void getResourcePropagatesJsonProcessingExceptionWhenExceptionIsThrown() {
-
-        AmazonDynamoDB mockClient = mock(AmazonDynamoDB.class);
-        Item invalidItem = new Item().withString(SOME_INVALID_FIELD, SOME_STRING);
-        var responseWithInvalidItem = new QueryResult().withItems(List.of(ItemUtils.toAttributeValues(invalidItem)));
-        when(mockClient.query(any())).thenReturn(responseWithInvalidItem);
-
-        ResourceService failingResourceService = getResourceService(mockClient);
-        Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
-
-        SortableIdentifier someIdentifier = SortableIdentifier.next();
-        Executable action = () -> failingResourceService.getPublicationByIdentifier(someIdentifier);
-
-        assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass, action);
-    }
-
-    @Test
     void shouldPublishResourceWhenClientRequestsToPublish() throws ApiGatewayException {
         var publication = createPersistedPublicationWithDoi();
         var userInstance = UserInstance.fromPublication(publication);
@@ -477,7 +463,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoTitle() throws BadRequestException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.getEntityDescription().setMainTitle(null);
-        Publication savedResource = createPersistedPublicationWithoutDoi(sampleResource);
+        Publication savedResource = createPersistedPublishedPublicationWithoutDoi(sampleResource);
 
         Executable action = () -> Resource.fromPublication(savedResource)
                                       .publish(resourceService, UserInstance.fromPublication(sampleResource));
@@ -490,7 +476,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.getEntityDescription().getReference().setDoi(randomDoi());
         sampleResource.setAssociatedArtifacts(createEmptyArtifactList());
-        Publication savedResource = createPersistedPublicationWithoutDoi();
+        Publication savedResource = createPersistedPublishedPublicationWithoutDoi();
         Publication updatedResource = publishResource(savedResource);
         assertThat(updatedResource.getStatus().toString(), is(equalTo(PUBLISHED.toString())));
     }
@@ -498,7 +484,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void publishResourcePublishesResourceWhenResourceHasFilesButNoDoi() throws ApiGatewayException {
 
-        Publication sampleResource = createPersistedPublicationWithoutDoi();
+        Publication sampleResource = createPersistedPublishedPublicationWithoutDoi();
         sampleResource.setLink(null);
         sampleResource.getEntityDescription().getReference().setDoi(null);
 
@@ -579,7 +565,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist() throws BadRequestException {
-        Publication resource = createPersistedPublicationWithoutDoi();
+        Publication resource = createPersistedPublishedPublicationWithoutDoi();
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
         resourceService.updatePublication(resource);
 
@@ -620,17 +606,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
         assertThrows(TransactionFailedException.class, deleteAction);
 
         assertThatTheEntriesHaveNotBeenDeleted();
-    }
-
-    @Test
-    void deleteDraftPublicationDeletesDoiRequestWhenPublicationHasDoiRequest() throws ApiGatewayException {
-        var publication = createPersistedPublicationWithoutDoi();
-        createDoiRequest(publication);
-
-        var userInstance = UserInstance.fromPublication(publication);
-        resourceService.deleteDraftPublication(userInstance, publication.getIdentifier());
-
-        assertThatAllEntriesHaveBeenDeleted();
     }
 
     @Test
@@ -785,7 +760,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         var testAppender = LogUtils.getTestingAppenderForRootLogger();
 
-        resourceService.refreshResources(resources, new FakeCristinUnitsUtil());
+        resourceService.refreshResources(resources);
 
         assertThatFailedBatchScanLogsProperly(testAppender, userResources);
     }
@@ -1054,7 +1029,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldSetAllTicketsToNotApplicableWhenMarkingDraftPublicationAsDraftForDeletion() throws ApiGatewayException {
-        var publication = createPersistedPublicationWithoutDoi();
+        var publication = createPersistedPublicationWithDoi();
         var ticket = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
                          .withOwnerAffiliation(randomUri())
                          .withOwner(randomString())
@@ -1498,13 +1473,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void updateResourceMethodShouldRefreshTickets() throws ApiGatewayException {
-        var publication = randomPublication().copy().withAssociatedArtifacts(List.of()).build();
-        var userInstance = UserInstance.fromPublication(publication);
-        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        var publication = createPersistedPublishedPublicationWithoutDoi();
 
         var ticket = createDoiRequest(publication);
         publication.setDoi(randomUri());
-        Resource.fromPublication(publication).update(resourceService, userInstance);
+        Resource.fromPublication(publication).update(resourceService, UserInstance.fromPublication(publication));
 
         var refreshedTicket = ticket.fetch(ticketService);
 
@@ -1671,7 +1644,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldDeleteAllResourceAssociatedResources() throws ApiGatewayException {
         var userInstance = randomUserInstance();
-        var publication = Resource.fromPublication(randomPublication()).persistNew(resourceService, userInstance);
+        var publication = createPersistedPublishedPublicationWithoutDoi();
         var doiRequest = createDoiRequest(publication);
         messageService.createMessage(doiRequest, userInstance, randomString());
 
@@ -1697,6 +1670,44 @@ class ResourceServiceTest extends ResourcesLocalTest {
                                                                           PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
         pendingPublishingRequestTicket.setStatus(TicketStatus.PENDING);
         pendingPublishingRequestTicket.persistNewTicket(ticketService);
+    }
+
+    @Test
+    void shouldListAllResourceRelationshipsForParentResource() {
+        var parentIdentifier = SortableIdentifier.next();
+        var persistedRelatedResources = createResourceRelationshipDaoList(parentIdentifier);
+        var fetchedRelatedResources = fetchRelatedResourcesByParentIdentifier(parentIdentifier);
+
+        assertThat(fetchedRelatedResources, containsInAnyOrder(persistedRelatedResources.toArray()));
+    }
+
+    private List<ResourceRelationshipDao> fetchRelatedResourcesByParentIdentifier(SortableIdentifier parentIdentifier) {
+        var result = client.query(new QueryRequest()
+                                .withTableName(RESOURCES_TABLE_NAME)
+                                .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+                                .withKeyConditionExpression("PK3 = :value")
+                                .withExpressionAttributeValues(Map.of(":value", new AttributeValue().withS(
+                                    ResourceRelationshipDao.from(resourceRelationshipWithParent(parentIdentifier)).getPK3()))));
+        return result.getItems().stream()
+                   .map(map -> DatabaseEntryWithData.fromAttributeValuesMap(map, ResourceRelationshipDao.class))
+                   .collect(Collectors.toList());
+    }
+
+    private static ResourceRelationship resourceRelationshipWithParent(SortableIdentifier parentIdentifier) {
+        return new ResourceRelationship(parentIdentifier, SortableIdentifier.next());
+    }
+
+    private List<ResourceRelationshipDao> createResourceRelationshipDaoList(SortableIdentifier parentIdentifier) {
+        return IntStream.range(0, 5)
+                   .mapToObj(i -> resourceRelationshipWithParent(parentIdentifier))
+                   .map(ResourceRelationshipDao::from)
+                   .map(this::persistDao)
+                   .toList();
+    }
+
+    private ResourceRelationshipDao persistDao(ResourceRelationshipDao dao) {
+        client.putItem(RESOURCES_TABLE_NAME, dao.toDynamoFormat());
+        return dao;
     }
 
     private static UserInstance randomUserInstance() {
@@ -1738,17 +1749,6 @@ class ResourceServiceTest extends ResourcesLocalTest {
             var expected = "Resource:" + publication.getIdentifier().toString();
             assertThat(testAppender.getMessages(), containsString(expected));
         });
-    }
-
-    private ImportCandidate randomImportCandidate() {
-        return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatusFactory.createNotImported())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of(randomOpenFile()))
-                   .withEntityDescription(randomEntityDescription(JournalArticle.class))
-                   .build();
     }
 
     private Publication createPersistedPublicationWithManyContributions(int amount) throws BadRequestException {
@@ -1797,13 +1797,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private Publication createPersistedPublicationWithoutDoi() throws BadRequestException {
+    private Publication createPersistedPublishedPublicationWithoutDoi() throws BadRequestException {
         var publication = randomPublication(JournalArticle.class).copy().withDoi(null).build();
-        return Resource.fromPublication(publication)
-                   .persistNew(resourceService, UserInstance.fromPublication(publication));
+        var userInstance = UserInstance.fromPublication(publication);
+        var persostedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+        return Resource.fromPublication(persostedPublication).publish(resourceService, userInstance).toPublication();
     }
 
-    private Publication createPersistedPublicationWithoutDoi(Publication publication) throws BadRequestException {
+    private Publication createPersistedPublishedPublicationWithoutDoi(Publication publication) throws BadRequestException {
         var withoutDoi = publication.copy().withDoi(null).build();
         return Resource.fromPublication(withoutDoi)
                    .persistNew(resourceService, UserInstance.fromPublication(withoutDoi));
@@ -1876,7 +1877,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Publication createPublishedResource() throws ApiGatewayException {
-        Publication resource = createPersistedPublicationWithoutDoi();
+        Publication resource = createPersistedPublishedPublicationWithoutDoi();
         publishResource(resource);
         return resourceService.getPublicationByIdentifier(resource.getIdentifier());
     }

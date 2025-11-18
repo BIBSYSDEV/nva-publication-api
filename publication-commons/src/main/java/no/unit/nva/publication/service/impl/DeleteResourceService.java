@@ -1,14 +1,15 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.publication.storage.model.DatabaseConstants.IMPORT_CANDIDATE_KEY_PATTERN;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
+import java.util.Map;
+import no.unit.nva.importcandidate.CandidateStatus;
+import no.unit.nva.importcandidate.ImportCandidate;
 import nva.commons.apigateway.exceptions.BadMethodException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class DeleteResourceService extends ServiceWithTransactions {
 
@@ -24,24 +25,18 @@ public class DeleteResourceService extends ServiceWithTransactions {
         this.readResourceService = readResourceService;
     }
 
-    public void deleteImportCandidate(ImportCandidate candidate) throws NotFoundException, BadMethodException {
-        var importCandidate = readResourceService.getResourceByIdentifier(candidate.getIdentifier())
-                                  .orElseThrow()
-                                  .toImportCandidate();
+    public void deleteImportCandidate(ImportCandidate candidate) throws BadMethodException {
+        var importCandidate = readResourceService.getImportCandidateByIdentifier(candidate.getIdentifier()).orElseThrow();
         if (CandidateStatus.IMPORTED.equals(importCandidate.getImportStatus().candidateStatus())) {
             throw new BadMethodException(CAN_NOT_DELETE_IMPORT_CANDIDATE_MESSAGE);
         } else {
-            var transactionWriteItem = deleteResource(Resource.fromImportCandidate(importCandidate));
-            var request = new TransactWriteItemsRequest().withTransactItems(transactionWriteItem);
-            sendTransactionWriteRequest(request);
+            var primaryKey = getAttributeValue(importCandidate);
+            client.deleteItem(new DeleteItemRequest(tableName, Map.of(PRIMARY_KEY_PARTITION_KEY_NAME, primaryKey,
+                                                                      PRIMARY_KEY_SORT_KEY_NAME, primaryKey)));
         }
     }
 
-    private TransactWriteItem deleteResource(Resource resource) {
-        var delete = new Delete()
-                         .withKey(resource.toDao().primaryKey())
-                         .withTableName(tableName);
-
-        return new TransactWriteItem().withDelete(delete);
+    private static AttributeValue getAttributeValue(ImportCandidate candidate) {
+        return new AttributeValue(IMPORT_CANDIDATE_KEY_PATTERN.formatted(candidate.getIdentifier()));
     }
 }

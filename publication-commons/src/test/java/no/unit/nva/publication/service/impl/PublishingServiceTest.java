@@ -2,6 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
@@ -51,7 +52,6 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 class PublishingServiceTest extends ResourcesLocalTest {
@@ -280,7 +280,7 @@ class PublishingServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldPersistDoiRequestWhenPublishingPublicationWithDoi() throws ApiGatewayException {
-        var resource = persistResource(Resource.fromPublication(randomPublication().copy().withStatus(DRAFT).build()));
+        var resource = persistResource(Resource.fromPublication(randomNonDegreePublication().copy().withStatus(DRAFT).build()));
         var userInstance = UserInstance.fromPublication(resource.toPublication());
 
         publishingService.publishResource(resource.getIdentifier(), userInstance);
@@ -291,9 +291,22 @@ class PublishingServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldPersistDoiRequestWithPublicationStatusPublishedWhenPublishingPublicationWithDoi()
+        throws ApiGatewayException {
+        var resource = persistResource(Resource.fromPublication(randomNonDegreePublication().copy().withStatus(DRAFT).build()));
+        var userInstance = UserInstance.fromPublication(resource.toPublication());
+
+        publishingService.publishResource(resource.getIdentifier(), userInstance);
+
+        var doiRequest = getPersistedDoiRequest(resource).orElseThrow();
+
+        assertEquals(PublicationStatus.PUBLISHED, doiRequest.getResourceStatus());
+    }
+
+    @Test
     void shouldNotPersistDoiRequestWhenPublishingPublicationAlreadyPublishedPublication() throws ApiGatewayException {
         var resource =
-            persistResource(Resource.fromPublication(randomPublication().copy().withStatus(PUBLISHED).build()));
+            persistResource(Resource.fromPublication(randomNonDegreePublication().copy().withStatus(PUBLISHED).build()));
         var userInstance = UserInstance.fromPublication(resource.toPublication());
 
         publishingService.publishResource(resource.getIdentifier(), userInstance);

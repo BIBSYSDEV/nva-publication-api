@@ -2,7 +2,7 @@ package no.sikt.nva.scopus.conversion;
 
 import static no.sikt.nva.scopus.utils.ScopusTestUtils.randomCristinOrganization;
 import static no.sikt.nva.scopus.utils.ScopusTestUtils.randomCustomer;
-import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomContributorWithAffiliationId;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportContributorWithAffiliationId;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -27,8 +27,8 @@ import no.sikt.nva.scopus.exception.MissingNvaContributorException;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.clients.CustomerList;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +40,7 @@ public class ScopusConverterTest {
         generator.getDocument().getItem().getItem().getBibrecord().getHead().getCitationTitle().getTitletext().clear();
         var candidate = generateImportCandidate(generator);
 
-        assertThat(candidate.getEntityDescription().getMainTitle(), is(nullValue()));
+        assertThat(candidate.getEntityDescription().mainTitle(), is(nullValue()));
     }
 
     @Test
@@ -49,7 +49,7 @@ public class ScopusConverterTest {
         setNullTitle(generator);
         var candidate = generateImportCandidate(generator);
 
-        assertThat(candidate.getEntityDescription().getMainTitle(), is(nullValue()));
+        assertThat(candidate.getEntityDescription().mainTitle(), is(nullValue()));
     }
 
     @Test
@@ -62,7 +62,7 @@ public class ScopusConverterTest {
 
         var expectedPublicationDate = new PublicationDate.Builder().withYear("2024").withMonth("10").withDay("16").build();
 
-        assertEquals(expectedPublicationDate, candidate.getEntityDescription().getPublicationDate());
+        assertEquals(expectedPublicationDate, candidate.getEntityDescription().publicationDate());
     }
 
     @Test
@@ -77,7 +77,7 @@ public class ScopusConverterTest {
         var expectedPublicationDate =
             new PublicationDate.Builder().withYear(dateSort.getYear()).withMonth(dateSort.getMonth()).withDay(dateSort.getDay()).build();
 
-        assertEquals(expectedPublicationDate, candidate.getEntityDescription().getPublicationDate());
+        assertEquals(expectedPublicationDate, candidate.getEntityDescription().publicationDate());
     }
 
     @Test
@@ -89,7 +89,7 @@ public class ScopusConverterTest {
         var expectedPublicationDate =
             new PublicationDate.Builder().withYear(dateSort.getYear()).withMonth(dateSort.getMonth()).withDay(dateSort.getDay()).build();
 
-        assertEquals(expectedPublicationDate, candidate.getEntityDescription().getPublicationDate());
+        assertEquals(expectedPublicationDate, candidate.getEntityDescription().publicationDate());
     }
 
     @Test
@@ -101,7 +101,7 @@ public class ScopusConverterTest {
         var nonNvaOrgId = randomUri();
         when(contributorExtractor.generateContributors(any()))
             .thenReturn(new ContributorsOrganizationsWrapper(
-                List.of(randomContributorWithAffiliationId(nonNvaOrgId)),
+                List.of(randomImportContributorWithAffiliationId(nonNvaOrgId)),
                 List.of(nonNvaOrgId)
             ));
 
@@ -126,7 +126,7 @@ public class ScopusConverterTest {
         var scopusDocument = createScopusDocumentWithCitationTypeAndCitationTitle(citationTitle);
         var importCandidate = generateImportCandidate(scopusDocument);
 
-        assertEquals(citationTitle, importCandidate.getEntityDescription().getMainTitle());
+        assertEquals(citationTitle, importCandidate.getEntityDescription().mainTitle());
     }
 
     private static ScopusGenerator createScopusDocumentWithCitationTypeAndCitationTitle(String nonOriginalTitle) {
@@ -146,7 +146,8 @@ public class ScopusConverterTest {
         var contributorExtractor = mock(ContributorExtractor.class);
         var affiliationId = randomUri();
         when(contributorExtractor.generateContributors(any()))
-            .thenReturn(new ContributorsOrganizationsWrapper(List.of(randomContributorWithAffiliationId(affiliationId)), List.of(affiliationId)));
+            .thenReturn(new ContributorsOrganizationsWrapper(List.of(
+                randomImportContributorWithAffiliationId(affiliationId)), List.of(affiliationId)));
         var converter = new ScopusConverter(generator.getDocument(),
                                             mock(PublicationChannelConnection.class),
                                             identityServiceClient,

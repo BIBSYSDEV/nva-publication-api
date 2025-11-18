@@ -1,28 +1,21 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.importcandidate.CandidateStatus.IMPORTED;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomAssociatedArtifacts;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
-import static no.unit.nva.publication.model.business.importcandidate.CandidateStatus.IMPORTED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
-import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -47,7 +40,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
         var persistedImportCandidate = resourceService.persistImportCandidate(importCandidate);
         var fetchedImportCandidate = resourceService.getImportCandidateByIdentifier(
             persistedImportCandidate.getIdentifier());
-        assertThat(persistedImportCandidate, is(equalTo(fetchedImportCandidate)));
+        assertEquals(persistedImportCandidate, fetchedImportCandidate);
     }
 
     @Test
@@ -60,7 +53,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldDeleteImportCandidatePermanently() throws BadMethodException, NotFoundException {
+    void shouldDeleteImportCandidatePermanently() throws BadMethodException {
         var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
         resourceService.deleteImportCandidate(importCandidate);
         assertThrows(NotFoundException.class,
@@ -123,21 +116,11 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
     @Test
     void shouldThrowExceptionWhenCanNotFetchImportCandidateWhenUpdatingIt() {
         var importCandidate = randomImportCandidate();
-        assertThrows(TransactionFailedException.class, () -> resourceService.updateImportCandidate(importCandidate));
+        assertThrows(NotFoundException.class, () -> resourceService.updateImportCandidate(importCandidate));
     }
 
     private ImportCandidate update(ImportCandidate importCandidate) {
         importCandidate.setAssociatedArtifacts(new AssociatedArtifactList(randomAssociatedArtifacts()));
         return importCandidate;
-    }
-
-    private ImportCandidate randomImportCandidate() {
-        return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatusFactory.createNotImported())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of())
-                   .build();
     }
 }

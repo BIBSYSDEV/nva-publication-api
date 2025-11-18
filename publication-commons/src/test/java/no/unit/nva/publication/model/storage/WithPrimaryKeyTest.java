@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.storage;
 
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
@@ -16,10 +17,8 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
@@ -77,7 +76,7 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
     private static List<Resource> sampleResourcesOfSameOwner() {
         ResourceOwner commonOwner = new ResourceOwner(randomUsername(), null);
         Organization commonPublisher = new Organization.Builder().withId(randomUri()).build();
-        return Stream.of(draftPublicationWithoutDoi(), draftPublicationWithoutDoi())
+        return Stream.of(publishedPublicationWithoutDoi(), publishedPublicationWithoutDoi())
                    .map(Publication::copy)
                    .map(publication -> publication.withResourceOwner(commonOwner))
                    .map(publication -> publication.withPublisher(commonPublisher))
@@ -90,8 +89,8 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
         return new Username(randomString());
     }
 
-    private static Publication draftPublicationWithoutDoi() {
-        return randomDegreePublication().copy().withDoi(null).withStatus(PublicationStatus.DRAFT).build();
+    private static Publication publishedPublicationWithoutDoi() {
+        return randomDegreePublication().copy().withDoi(null).withStatus(PUBLISHED).build();
     }
     
     private static List<TicketEntry> sampleTickets() {

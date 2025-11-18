@@ -99,7 +99,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     void handleRequestThrowsExceptionWhenEventContainsResourceUpdateThatCannotBeReferenced()
         throws ApiGatewayException, IOException {
 
-        var doiRequestWithoutIdentifier = sampleDoiRequestForExistingPublication();
+        var doiRequestWithoutIdentifier = sampleDoiRequestForExistingPublishedPublication();
         doiRequestWithoutIdentifier.setIdentifier(null);
         try (var event = createEvent(null, doiRequestWithoutIdentifier)) {
             Executable action = () -> handler.handleRequest(event, outputStream, context);
@@ -122,7 +122,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     void handleRequestThrowsExceptionWhenEventContainsResourceUpdateWithoutReferenceToResource()
         throws ApiGatewayException, IOException {
 
-        var doiRequestWithoutResourceIdentifier = sampleDoiRequestForExistingPublication();
+        var doiRequestWithoutResourceIdentifier = sampleDoiRequestForExistingPublishedPublication();
         doiRequestWithoutResourceIdentifier.setResourceIdentifier(null);
         try (var event = createEvent(null, doiRequestWithoutResourceIdentifier)) {
             Executable action = () -> handler.handleRequest(event, outputStream, context);
@@ -134,8 +134,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     @Test
     void shouldNotPropagateEventWhenThereIsNoDoiRequestButThePublicationHasBeenAssignedANonFindableDoiByNvaPredecessor()
         throws IOException, BadRequestException {
-        //Given a publication has a public Doi
-        var publication = persistPublicationWithDoi();
+        var publication = persistPublishedPublicationWithDoi();
         var publicationUpdate = updateTitle(publication);
         assertThat(publication.getDoi(), is(not(nullValue())));
         assertThat(publicationUpdate.getDoi(), is(equalTo(publication.getDoi())));
@@ -175,7 +174,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     void shouldCreateUpdateEventWhenPublicationHasNoDoiAndADraftDoiRequestGetsApproved()
         throws IOException,
                ApiGatewayException {
-        var publication = persistPublicationWithoutDoi(PublicationStatus.PUBLISHED);
+        var publication = persistPublishedPublicationWithoutDoi();
         var draftRequest = DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
         var approvedRequest = draftRequest.complete(publication, UserInstance.create(randomString(), randomUri()));
         var event = createEvent(draftRequest, approvedRequest);
@@ -193,7 +192,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotCreateEventForPublicationsWithoutDoi() throws IOException, ApiGatewayException {
-        var publication = persistPublicationWithoutDoi();
+        var publication = persistPublishedPublicationWithoutDoi();
         var publicationUpdate = publication.copy().withModifiedDate(randomInstant()).build();
         assertThat(publication.getModifiedDate(), is(not(equalTo(publicationUpdate.getModifiedDate()))));
 
@@ -209,8 +208,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     @ParameterizedTest(name = "should ignore events when old and new image are identical")
     @MethodSource("entityProvider")
     void shouldIgnoreEventsWhenNewAndOldImageAreIdentical(Function<Publication, Entity> entityProvider)
-        throws IOException, BadRequestException {
-        var publication = persistPublicationWithDoi();
+        throws IOException, ApiGatewayException {
+        var publication = persistPublishedPublicationWithoutDoi();
         var entity = entityProvider.apply(publication);
         var event = createEvent(entity, entity);
         handler.handleRequest(event, outputStream, context);
@@ -222,7 +221,7 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
     @Test
     void shouldNotSendRequestForDraftingADoiWhenThereHasBeenVeryRecentPreviousDoiRequestButNoDoiHasBeenCreated()
         throws ApiGatewayException, IOException {
-        var publication = persistPublicationWithoutDoi();
+        var publication = persistPublishedPublicationWithoutDoi();
         var resource = Resource.fromPublication(publication);
         var userInstance = UserInstance.fromPublication(publication);
         var oldDoiRequest = DoiRequest.create(resource, userInstance);
@@ -300,25 +299,25 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         return new DataEntryUpdateEvent(randomElement(OperationType.values()).toString(), draftRequest, approvedRequest);
     }
 
-    private Publication persistPublicationWithDoi() throws BadRequestException {
-        return persistPublication(randomPublication());
-    }
-
-    private Publication persistPublicationWithoutDoi() throws ApiGatewayException {
-        return persistPublicationWithoutDoi(randomElement(PublicationStatus.values()));
-    }
-
-    private Publication persistPublicationWithoutDoi(PublicationStatus publicationStatus) throws ApiGatewayException {
+    private Publication persistPublishedPublicationWithoutDoi() throws ApiGatewayException {
         var publication = randomPublication();
         publication.setDoi(null);
         publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
         var persistedPublication = persistPublication(publication);
 
-        if (PublicationStatus.PUBLISHED.equals(publicationStatus)) {
-            Resource.fromPublication(persistedPublication)
-                .publish(resourceService, UserInstance.fromPublication(persistedPublication));
-        }
-        return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+        return Resource.fromPublication(persistedPublication)
+                   .publish(resourceService, UserInstance.fromPublication(persistedPublication))
+                   .toPublication();
+    }
+
+    private Publication persistPublishedPublicationWithDoi() throws BadRequestException {
+        var publication = randomPublication();
+        publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
+        var persistedPublication = persistPublication(publication);
+
+        return Resource.fromPublication(persistedPublication)
+                   .publish(resourceService, UserInstance.fromPublication(persistedPublication))
+                   .toPublication();
     }
 
     private Publication updateTitle(Publication publication) {
@@ -333,8 +332,8 @@ class DoiRequestEventProducerTest extends ResourcesLocalTest {
         return FakeHttpResponse.create(null, HTTP_FOUND);
     }
 
-    private DoiRequest sampleDoiRequestForExistingPublication() throws ApiGatewayException {
-        var publication = persistPublicationWithoutDoi();
+    private DoiRequest sampleDoiRequestForExistingPublishedPublication() throws ApiGatewayException {
+        var publication = persistPublishedPublicationWithoutDoi();
         return DoiRequest.create(Resource.fromPublication(publication),
                                  UserInstance.fromPublication(publication));
     }

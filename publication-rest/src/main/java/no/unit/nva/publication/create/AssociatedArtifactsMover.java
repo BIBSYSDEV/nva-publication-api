@@ -1,9 +1,9 @@
 package no.unit.nva.publication.create;
 
 import java.util.UUID;
+import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 

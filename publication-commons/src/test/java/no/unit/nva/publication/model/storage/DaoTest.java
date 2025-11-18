@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDegreePublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
@@ -36,28 +37,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
-import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelPolicy;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
 import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
@@ -101,6 +87,8 @@ class DaoTest extends ResourcesLocalTest {
     public static final String DATA_IMPORT_DETAILS = "data.importDetails";
     public static final String RESOURCE_ASSOCIATED_CUSTOMERS = "resource.associatedCustomers";
     public static final String DATA_ASSOCIATED_CUSTOMERS = "data.associatedCustomers";
+    public static final String DATA_RELATED_RESOURCES = "data.relatedResources";
+    public static final String RESOURCE_RELATED_RESOURCES = "resource.relatedResources";
     public static final Set<String> IGNORED_FIELDS = Set.of(DATA_OWNER_AFFILIATION,
                                                             DATA_RESPONSIBILITY_AREA,
                                                             DATA_ASSIGNEE,
@@ -120,7 +108,9 @@ class DaoTest extends ResourcesLocalTest {
                                                             IMPORT_DETAILS,
                                                             DATA_IMPORT_DETAILS,
                                                             RESOURCE_ASSOCIATED_CUSTOMERS,
-                                                            DATA_ASSOCIATED_CUSTOMERS);
+                                                            DATA_ASSOCIATED_CUSTOMERS,
+                                                            DATA_RELATED_RESOURCES,
+                                                            RESOURCE_RELATED_RESOURCES);
 
     public static Stream<Named<Class<?>>> entityProvider() {
         return TypeProvider.listSubTypes(Entity.class);
@@ -128,20 +118,6 @@ class DaoTest extends ResourcesLocalTest {
 
     public static Stream<Named<Class<?>>> ticketProvider() {
         return TypeProvider.listSubTypes(TicketEntry.class);
-    }
-
-    public static Publication draftPublicationWithoutDoi() {
-        return randomPublication().copy()
-                   .withStatus(PublicationStatus.DRAFT)
-                   .withDoi(null)
-                   .build();
-    }
-
-    public static Publication draftDegreePublicationWithoutDoi() {
-        return randomDegreePublication().copy()
-                   .withStatus(PublicationStatus.DRAFT)
-                   .withDoi(null)
-                   .build();
     }
 
     @Override
@@ -314,13 +290,9 @@ class DaoTest extends ResourcesLocalTest {
     }
 
     private static TicketEntry createTicket(Class<? extends TicketEntry> entityType) throws ConflictException {
-        if (FilesApprovalThesis.class.equals(entityType)) {
-            return TicketEntry.createNewTicket(draftDegreePublicationWithoutDoi(), entityType, SortableIdentifier::next)
-                       .withOwner(randomString());
-        } else {
-            return TicketEntry.createNewTicket(draftPublicationWithoutDoi(), entityType, SortableIdentifier::next)
-                       .withOwner(randomString());
-        }
+        return TicketEntry.createNewTicket(randomDegreePublication().copy().withStatus(PUBLISHED).build(), entityType,
+                                           SortableIdentifier::next)
+                   .withOwner(randomString());
     }
 
     private static Stream<Dao> instanceProvider() {
@@ -333,8 +305,6 @@ class DaoTest extends ResourcesLocalTest {
 
         if (Resource.class.equals(entityType)) {
             return Resource.fromPublication(randomPublication());
-        } else if (ImportCandidate.class.equals(entityType)) {
-            return Resource.fromImportCandidate(randomImportCandidate());
         } else if (TicketEntry.class.isAssignableFrom(entityType)) {
             return createTicket((Class<? extends TicketEntry>) entityType);
         } else if (Message.class.equals(entityType)) {
@@ -366,37 +336,6 @@ class DaoTest extends ResourcesLocalTest {
     private FileEntry createRandomFileEntry() {
         return FileEntry.create(randomOpenFile(), SortableIdentifier.next(),
                                 UserInstance.fromPublication(randomPublication()));
-    }
-
-    private ImportCandidate randomImportCandidate() {
-        return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatusFactory.createNotImported())
-                   .withEntityDescription(randomEntityDescription())
-                   .withModifiedDate(Instant.now())
-                   .withCreatedDate(Instant.now())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withIdentifier(SortableIdentifier.next())
-                   .withAdditionalIdentifiers(Set.of(new AdditionalIdentifier(randomString(), randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of())
-                   .build();
-    }
-
-    private EntityDescription randomEntityDescription() {
-        return new EntityDescription.Builder()
-                   .withPublicationDate(new PublicationDate.Builder().withYear("2020").build())
-                   .withAbstract(randomString())
-                   .withDescription(randomString())
-                   .withContributors(List.of(randomContributor()))
-                   .withMainTitle(randomString())
-                   .build();
-    }
-
-    private Contributor randomContributor() {
-        return new Contributor.Builder()
-                   .withIdentity(new Identity.Builder().withName(randomString()).build())
-                   .withRole(new RoleType(Role.ACTOR))
-                   .build();
     }
 
     private JsonNode serializeInstance(Dao daoInstance) throws JsonProcessingException {

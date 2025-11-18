@@ -75,12 +75,12 @@ class CuratingInstitutionsUtilTest {
         var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
         var customerService = mock(CustomerService.class);
         var uriRetriever = mock(UriRetriever.class);
+        var curatingInstitutionsUtil = new CuratingInstitutionsUtil(uriRetriever, customerService);
         when(uriRetriever.getRawContent(eq(orgId), any())).thenReturn(
             Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
         when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(
             RandomDataGenerator.randomUri(),
             topLevelId))));
-        var curatingInstitutionsUtil = new CuratingInstitutionsUtil(uriRetriever, customerService);
 
         var publication = randomPublication();
         publication.getEntityDescription().setContributors(List.of(contributorWithOrganization(orgId)));

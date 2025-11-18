@@ -56,8 +56,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatus;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
 import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicationChannel;
@@ -122,10 +120,6 @@ public class Resource implements Entity {
     @JsonProperty
     private String rightsHolder;
     @JsonProperty
-    private ImportStatus importStatus;
-    @JsonProperty
-    private List<URI> associatedCustomers;
-    @JsonProperty
     private List<PublicationNoteBase> publicationNotes;
     @JsonProperty
     private URI duplicateOf;
@@ -141,6 +135,8 @@ public class Resource implements Entity {
     private List<PublicationChannel> publicationChannels;
     @JsonProperty
     private UUID version;
+    @JsonProperty
+    private List<SortableIdentifier> relatedResources;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUser(), userInstance.getCustomerId(),
@@ -178,6 +174,15 @@ public class Resource implements Entity {
     public boolean hasResourceEvent() {
         return nonNull(getResourceEvent());
     }
+
+    public List<SortableIdentifier> getRelatedResources() {
+        return nonNull(relatedResources) ? List.copyOf(relatedResources) : Collections.emptyList();
+    }
+
+    public void setRelatedResources(List<SortableIdentifier> relatedResources) {
+        this.relatedResources = relatedResources;
+    }
+
 
     @JsonIgnore
     public List<File> getFiles() {
@@ -307,18 +312,6 @@ public class Resource implements Entity {
         this.version = version;
     }
 
-    public List<URI> getAssociatedCustomers() {
-        return nonNull(associatedCustomers)
-                   ? associatedCustomers.stream().filter(Objects::nonNull).toList()
-                   : Collections.emptyList();
-    }
-
-    public void setAssociatedCustomers(Collection<URI> associatedCustomers) {
-        this.associatedCustomers = nonNull(associatedCustomers)
-                                       ? associatedCustomers.stream().filter(Objects::nonNull).toList()
-                                       : Collections.emptyList();
-    }
-
     private Boolean isWithingChannelClaimScope(ClaimedPublicationChannel claimedPublicationChannel) {
         return getInstanceType()
                    .map(claimedPublicationChannel::instanceTypeIsWithinScope)
@@ -397,29 +390,8 @@ public class Resource implements Entity {
                    .toList();
     }
 
-    private static Resource convertToResource(ImportCandidate importCandidate) {
-        return Resource.builder()
-                   .withIdentifier(importCandidate.getIdentifier())
-                   .withResourceOwner(Owner.fromResourceOwner(importCandidate.getResourceOwner()))
-                   .withCreatedDate(importCandidate.getCreatedDate())
-                   .withModifiedDate(importCandidate.getModifiedDate())
-                   .withStatus(importCandidate.getStatus())
-                   .withAssociatedArtifactsList(importCandidate.getAssociatedArtifacts())
-                   .withPublisher(importCandidate.getPublisher())
-                   .withEntityDescription(importCandidate.getEntityDescription())
-                   .withFilesEntries(getFileEntriesFromPublication(importCandidate.toPublication()))
-                   .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
-                   .withImportStatus(importCandidate.getImportStatus())
-                   .withAssociatedCustomers(importCandidate.getAssociatedCustomers())
-                   .build();
-    }
-
     public static ResourceBuilder builder() {
         return new ResourceBuilder();
-    }
-
-    public static Resource fromImportCandidate(ImportCandidate importCandidate) {
-        return Optional.ofNullable(importCandidate).map(Resource::convertToResource).orElse(null);
     }
 
     public Publication persistNew(ResourceService resourceService, UserInstance userInstance)
@@ -452,15 +424,18 @@ public class Resource implements Entity {
         return attempt(() -> resourceService.getResourceByIdentifier(this.getIdentifier())).toOptional();
     }
 
-    public void publish(ResourceService resourceService, UserInstance userInstance) {
-        fetch(resourceService)
-            .filter(Resource::isNotPublished)
-            .ifPresent(resource -> resource.publish(userInstance, resourceService));
+    public Resource publish(ResourceService resourceService, UserInstance userInstance) {
+        var resource = fetch(resourceService);
+        if (resource.isPresent() && resource.get().isNotPublished()) {
+            return resource.get().publish(userInstance, resourceService);
+        } else {
+            return resource.orElseThrow();
+        }
     }
 
-    private void publish(UserInstance userInstance, ResourceService resourceService) {
+    private Resource publish(UserInstance userInstance, ResourceService resourceService) {
         publish(userInstance);
-        resourceService.updateResource(this, userInstance);
+        return resourceService.updateResource(this, userInstance);
     }
 
     public void publish(UserInstance userInstance) {
@@ -560,19 +535,6 @@ public class Resource implements Entity {
         this.identifier = identifier;
     }
 
-    /**
-     * This gets the import status for importCandidate and should be null in other context.
-     *
-     * @return importStatus if Resource is an ImportCandidate
-     */
-    public Optional<ImportStatus> getImportStatus() {
-        return Optional.ofNullable(importStatus);
-    }
-
-    public void setImportStatus(ImportStatus importStatus) {
-        this.importStatus = importStatus;
-    }
-
     public List<PublicationNoteBase> getPublicationNotes() {
         return nonNull(publicationNotes) ? publicationNotes : List.of();
     }
@@ -618,21 +580,6 @@ public class Resource implements Entity {
                    .withDuplicateOf(getDuplicateOf())
                    .withCuratingInstitutions(getCuratingInstitutions())
                    .withImportDetails(getImportDetails())
-                   .build();
-    }
-
-    public ImportCandidate toImportCandidate() {
-        return new ImportCandidate.Builder()
-                   .withIdentifier(getIdentifier())
-                   .withResourceOwner(extractResourceOwner())
-                   .withCreatedDate(getCreatedDate())
-                   .withModifiedDate(getModifiedDate())
-                   .withPublisher(getPublisher())
-                   .withEntityDescription(getEntityDescription())
-                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                   .withAssociatedArtifacts(getAssociatedArtifacts())
-                   .withImportStatus(getImportStatus().orElse(null))
-                   .withAssociatedCustomers(getAssociatedCustomers())
                    .build();
     }
 

@@ -7,8 +7,15 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_CREATED;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static java.util.Collections.emptyList;
+import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomReference;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportContributor;
+import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.publication.ImportCandidateToResourceConverter.toContributor;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.IMPORT_PROCESS_WENT_WRONG;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE;
@@ -26,7 +33,6 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -48,6 +54,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -56,14 +63,17 @@ import java.util.UUID;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.importcandidate.CandidateStatus;
+import no.unit.nva.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportContributor;
+import no.unit.nva.importcandidate.ImportEntityDescription;
+import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.ImportSource.Source;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
@@ -73,8 +83,11 @@ import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import no.unit.nva.model.testing.ImportCandidateGenerator;
+import no.unit.nva.publication.ImportCandidateToResourceConverter;
 import no.unit.nva.publication.create.pia.PiaClientConfig;
 import no.unit.nva.publication.create.pia.PiaUpdateRequest;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -82,9 +95,6 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles;
@@ -156,7 +166,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     s3Client,
                                                     piaClientConfig);
         this.approvalService = mock(ApprovalAssignmentServiceForImportCandidateFiles.class);
-        lenient().when(approvalService.determineCustomerResponsibleForApproval(any()))
+        lenient().when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
             .thenReturn(AssignmentServiceResult.noApprovalNeeded(randomCustomer(randomUri(), true)));
         handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService, approvalService);
         mockPostAuidWriting();
@@ -258,6 +268,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         );
         handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService,
                                                                   approvalService);
+        when(importCandidateService.getImportCandidateByIdentifier(any())).thenReturn(importCandidate);
         when(importCandidateService.updateImportStatus(any(), any()))
             .thenThrow(new TransactionFailedException(new Exception()));
 
@@ -268,15 +279,14 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void shouldReturnBadGatewayWhenCanNotAccessImportCandidate()
+    void shouldReturnNotFoundWhenImportCandidateIsDoesNotExist()
         throws IOException {
-        var importCandidate = createImportCandidate();
-        importCandidateService = getResourceService(client);
+        var importCandidate = randomImportCandidate();
         var request = createRequest(importCandidate);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
 
     @Test
@@ -305,6 +315,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     piaClientConfig);
         handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService,
                                                                   approvalService);
+        when(importCandidateService.getImportCandidateByIdentifier(any())).thenReturn(importCandidate);
         when(importCandidateService.updateImportStatus(any(), any()))
             .thenCallRealMethod()
             .thenThrow(new NotFoundException(""));
@@ -331,7 +342,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     @Test
     void shouldReturnBadRequestWhenImportCandidateIsMissingScopusIdentifier() throws IOException,
                                                                                      NotFoundException {
-        var importCandidate = createImportCandidateWithoutScopusId();
+        var importCandidate = randomImportCandidateWithoutScopusId();
         var request = createRequest(importCandidate);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -343,15 +354,45 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     @Test
     void shouldCreateNvaResourceBasedOnUserInput() throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
-        var userInput = importCandidate.copy().build();
-        var userInputContributor = randomContributor();
-        userInput.getEntityDescription().setContributors(List.of(userInputContributor));
-        var request = createRequest(userInput);
+        var userInputContributor = randomContributorWithId(randomUri());
+        var userInput = importCandidateWithContributors(importCandidate, userInputContributor);
+        var request = createRequest(userInput, importCandidate.getIdentifier());
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
         var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
-        assertThat(publication.getEntityDescription().getContributors(),
-                   hasItem(samePropertyValuesAs(userInputContributor)));
+
+        var expectedContributor = new Contributor.Builder()
+                                      .withCorrespondingAuthor(userInputContributor.isCorrespondingAuthor())
+                                      .withSequence(1)
+                                      .withIdentity(userInputContributor.getIdentity())
+                                      .withAffiliations(userInputContributor.getAffiliations())
+                                      .withRole(userInputContributor.getRole())
+                                      .build();
+        assertEquals(expectedContributor, publication.getEntityDescription().getContributors().getFirst());
+    }
+
+    private CreatePublicationRequest importCandidateWithContributors(ImportCandidate importCandidate,
+                                                            Contributor... userInputContributor) {
+        var currentEntityDescription = importCandidate.getEntityDescription();
+        var entityDescription = convertToEntityDescription(userInputContributor, currentEntityDescription);
+        var createPublicationRequest = createPublicationRequestFromImportCandidate(importCandidate);
+        createPublicationRequest.setEntityDescription(entityDescription);
+        return createPublicationRequest;
+    }
+
+    private static EntityDescription convertToEntityDescription(Contributor[] userInputContributor,
+                                              ImportEntityDescription currentEntityDescription) {
+        return new EntityDescription.Builder()
+                   .withMainTitle(currentEntityDescription.mainTitle())
+                   .withLanguage(currentEntityDescription.language())
+                   .withPublicationDate(currentEntityDescription.publicationDate())
+                   .withContributors(Arrays.asList(userInputContributor))
+                   .withAbstract(currentEntityDescription.mainAbstract())
+                   .withAlternativeAbstracts(currentEntityDescription.alternativeAbstracts())
+                   .withTags(currentEntityDescription.tags().stream().toList())
+                   .withDescription(currentEntityDescription.description())
+                   .withReference(currentEntityDescription.reference())
+                   .build();
     }
 
     @Test
@@ -394,8 +435,10 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     void shouldThrowBadRequestExceptionWhenTryingToImportCandideWithoutTitle()
         throws NotFoundException, IOException {
         var importCandidate = createPersistedImportCandidate();
-        var userInput = importCandidate.copy().build();
-        userInput.getEntityDescription().setMainTitle(null);
+        var userInput = importCandidate.copy()
+                            .withEntityDescription(
+                                randomImportEntityDescriptionWithoutMainTitle(List.of(randomImportContributor())))
+                            .build();
         var request = createRequest(userInput);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -421,13 +464,12 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     @Test
     void shouldWriteToPiaWhenCristinIdHasBeenUpdatedByUser() throws NotFoundException, IOException {
         var auid = randomString();
-        var contributorWithAuid = createContributorWithAuid(auid, 1);
+        var contributorWithAuid = createImportContributorWithAuid(auid, 1);
         var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
         var cristinId = randomUri();
-        var contributorUpdatedWithCristinId = updateContributorWithCristinId(contributorWithAuid, cristinId);
-        var userInput = importCandidate.copy().build();
-        userInput.getEntityDescription().setContributors(List.of(contributorUpdatedWithCristinId));
-        var request = createRequest(importCandidate);
+        var contributorUpdatedWithCristinId = updateContributorWithCristinId(toContributor(contributorWithAuid), cristinId);
+        var userInput = importCandidateWithContributors(importCandidate, contributorUpdatedWithCristinId);
+        var request = createRequest(userInput, importCandidate.getIdentifier());
         var expectedBody = List.of(PiaUpdateRequest.toPiaRequest(contributorUpdatedWithCristinId,
                                                                  extractScopusId(importCandidate)));
         handler.handleRequest(request, output, context);
@@ -438,18 +480,19 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     @Test
     void shouldWriteToPiaWithSeveralContributorsAtOnce() throws NotFoundException, IOException {
         var auid1 = randomString();
-        var contributorWithAuid1 = createContributorWithAuid(auid1, 1);
+        var contributorWithAuid1 = createImportContributorWithAuid(auid1, 1);
         var auid2 = randomString();
-        var contributorWithAuid2 = createContributorWithAuid(auid2, 2);
-        var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid1, contributorWithAuid2));
+        var contributorWithAuid2 = createImportContributorWithAuid(auid2, 2);
+        var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid1,
+                                                                     contributorWithAuid2));
         var cristinId1 = randomUri();
         var cristinId2 = randomUri();
-        var contributorUpdatedWithCristinId1 = updateContributorWithCristinId(contributorWithAuid1, cristinId1);
-        var contributorUpdatedWithCristinId2 = updateContributorWithCristinId(contributorWithAuid2, cristinId2);
-        var userInput = importCandidate.copy().build();
-        userInput.getEntityDescription().setContributors(List.of(contributorUpdatedWithCristinId1,
-                                                                 contributorUpdatedWithCristinId2));
-        var request = createRequest(importCandidate);
+        var contributorUpdatedWithCristinId1 = updateContributorWithCristinId(toContributor(contributorWithAuid1),
+                                                                              cristinId1);
+        var contributorUpdatedWithCristinId2 = updateContributorWithCristinId(toContributor(contributorWithAuid2),
+                                                                              cristinId2);
+        var userInput = importCandidateWithContributors(importCandidate, contributorUpdatedWithCristinId1, contributorUpdatedWithCristinId2);
+        var request = createRequest(userInput, importCandidate.getIdentifier());
         handler.handleRequest(request, output, context);
         var expectedNumberOfTimesPostRequestIsSent = 1;
         var expectedBody = List.of(PiaUpdateRequest.toPiaRequest(contributorUpdatedWithCristinId1,
@@ -465,13 +508,13 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     void shouldContinueImportingEvenWhenPiaRestRespondsWithErrorCodes()
         throws NotFoundException, IOException {
         var auid = randomString();
-        var contributorWithAuid = createContributorWithAuid(auid, 1);
+        var contributorWithAuid = createImportContributorWithAuid(auid, 1);
         var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
         var cristinId = randomUri();
-        var contributorUpdatedWithCristinId = updateContributorWithCristinId(contributorWithAuid, cristinId);
-        var userInput = importCandidate.copy().build();
-        userInput.getEntityDescription().setContributors(List.of(contributorUpdatedWithCristinId));
-        var request = createRequest(importCandidate);
+        var contributorUpdatedWithCristinId = updateContributorWithCristinId(toContributor(contributorWithAuid),
+                                                                             cristinId);
+        var userInput = importCandidateWithContributors(importCandidate, contributorUpdatedWithCristinId);
+        var request = createRequest(userInput, importCandidate.getIdentifier());
         mockBadRequestResponseFromPia();
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
@@ -496,7 +539,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     @Test
     void shouldPersistPublishingRequestWhenImportingCandidateWithFilesAndCustomerRequiresApproval()
         throws IOException, ApprovalAssignmentException {
-        var candidate = createImportCandidate();
+        var candidate = randomImportCandidate();
         var file = randomOpenFile();
         candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
         var customerRequiringApproval = randomUri();
@@ -504,8 +547,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var importCandidate = importCandidateService.persistImportCandidate(candidate);
         var request = createRequest(importCandidate);
 
-        when(approvalService.determineCustomerResponsibleForApproval(importCandidate))
-            .thenReturn(AssignmentServiceResult.customerFound(new CustomerContributorPair(randomCustomer(customerRequiringApproval, false), randomContributor())));
+        when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
+            .thenReturn(AssignmentServiceResult.customerFound(new CustomerContributorPair(randomCustomer(customerRequiringApproval, false), randomContributorWithId(randomUri()))));
 
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
@@ -526,7 +569,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     @Test
     void shouldPublishFileWhenImportingCandidateWithFilesAndNoneOfCustomerRequiresApproval()
         throws IOException, ApprovalAssignmentException {
-        var candidate = createImportCandidate();
+        var candidate = randomImportCandidate();
         var file = randomOpenFile();
         candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
         var customerAllowingPublishing = randomUri();
@@ -534,7 +577,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var importCandidate = importCandidateService.persistImportCandidate(candidate);
         var request = createRequest(importCandidate);
 
-        when(approvalService.determineCustomerResponsibleForApproval(importCandidate))
+        when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
             .thenReturn(AssignmentServiceResult.noApprovalNeeded(randomCustomer(customerAllowingPublishing, true)));
 
         handler.handleRequest(request, output, context);
@@ -596,18 +639,13 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                                        .getAdditionalIdentifiers())
                                         .withName(randomString())
                                         .build();
-        return contributorWithAuid.copy()
-                   .withIdentity(identityWithCristinId)
-                   .build();
+        return new Contributor(identityWithCristinId, emptyList(), new RoleType(Role.CREATOR),
+                                     contributorWithAuid.getSequence(), false);
     }
 
-    private Contributor createContributorWithAuid(String auid, int sequence) {
-        return new Contributor.Builder()
-                   .withSequence(sequence)
-                   .withIdentity(identityWithAuid(auid))
-                   .withRole(new RoleType(Role.CREATOR))
-                   .withAffiliations(List.of(randomAffiliation()))
-                   .build();
+    private ImportContributor createImportContributorWithAuid(String auid, int sequence) {
+        return new ImportContributor(identityWithAuid(auid), emptyList(), new RoleType(Role.CREATOR),
+                                     sequence, false);
     }
 
     private Identity identityWithAuid(String auid) {
@@ -619,12 +657,6 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
     private AdditionalIdentifier additionalIdentifierFromAuid(String auid) {
         return new AdditionalIdentifier("scopus-auid", auid);
-    }
-
-    private Organization randomAffiliation() {
-        return new Organization.Builder()
-                   .withId(randomUri())
-                   .build();
     }
 
     private OpenFile randomFile() {
@@ -641,37 +673,36 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                  new UserUploadDetails(randomPerson(), null));
     }
 
-    private ImportCandidate createImportCandidateWithoutScopusId() throws NotFoundException {
-        var candidate = createImportCandidate();
+    private ImportCandidate randomImportCandidateWithoutScopusId() throws NotFoundException {
+        var candidate = randomImportCandidate();
         candidate.setAdditionalIdentifiers(Set.of());
         var importCandidate = importCandidateService.persistImportCandidate(candidate);
         return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }
 
     private ImportCandidate createImportedPersistedImportCandidate() throws NotFoundException {
-        var candidate = createImportCandidate();
+        var candidate = randomImportCandidate();
         candidate.setImportStatus(ImportStatusFactory.createImported(randomString(), SortableIdentifier.next()));
         var importCandidate = importCandidateService.persistImportCandidate(candidate);
         return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }
 
-    private ImportCandidate createPersistedImportCandidate(List<Contributor> contributors)
+    private ImportCandidate createPersistedImportCandidate(List<ImportContributor> contributors)
         throws NotFoundException {
-        var candidate = createImportCandidate();
-        candidate.getEntityDescription().setContributors(contributors);
+        var candidate = ImportCandidateGenerator.randomImportCandidate(contributors);
         var importCandidate = importCandidateService.persistImportCandidate(candidate);
         return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }
 
     private ImportCandidate createPersistedImportCandidate() throws NotFoundException {
-        var candidate = createImportCandidate();
+        var candidate = randomImportCandidate();
         var importCandidate = importCandidateService.persistImportCandidate(candidate);
         return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
     }
 
     private ImportCandidate createPersistedImportCandidate(AssociatedArtifactList associatedArtifacts)
         throws NotFoundException {
-        var candidate = createImportCandidate();
+        var candidate = randomImportCandidate();
         candidate.setAssociatedArtifacts(associatedArtifacts);
         var importCandidate = importCandidateService.persistImportCandidate(candidate);
         return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
@@ -683,22 +714,28 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
     private InputStream createRequestWithoutAccessRights(ImportCandidate importCandidate) throws
                                                                                           JsonProcessingException {
+        var jsonBody = createPublicationRequestFromImportCandidate(importCandidate);
         var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-        var user = UserInstance.create(randomString(), importCandidate.getPublisher().getId());
-        return new HandlerRequestBuilder<ImportCandidate>(restApiMapper)
+        return new HandlerRequestBuilder<CreatePublicationRequest>(restApiMapper)
                    .withHeaders(headers)
-                   .withBody(importCandidate)
-                   .withCurrentCustomer(user.getCustomerId())
+                   .withBody(jsonBody)
+                   .withCurrentCustomer(randomUri())
                    .build();
     }
 
     private InputStream createRequest(ImportCandidate importCandidate) throws JsonProcessingException {
+        var requestBody = createPublicationRequestFromImportCandidate(importCandidate);
+        return createRequest(requestBody, importCandidate.getIdentifier());
+    }
+
+    private static InputStream createRequest(CreatePublicationRequest requestBody, SortableIdentifier identifier) throws JsonProcessingException {
         var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-        var user = UserInstance.create(randomString(), importCandidate.getPublisher().getId());
-        return new HandlerRequestBuilder<ImportCandidate>(restApiMapper)
+        var user = UserInstance.create(randomString(), randomUri());
+        return new HandlerRequestBuilder<CreatePublicationRequest>(restApiMapper)
                    .withHeaders(headers)
+                   .withPathParameters(Map.of("importCandidateIdentifier", identifier.toString()))
                    .withUserName(randomString())
-                   .withBody(importCandidate)
+                   .withBody(requestBody)
                    .withCurrentCustomer(user.getCustomerId())
                    .withAccessRights(user.getCustomerId(), AccessRight.MANAGE_IMPORT)
                    .withTopLevelCristinOrgId(randomUri())
@@ -706,44 +743,14 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                    .build();
     }
 
-    private ImportCandidate createImportCandidate() {
-        return new ImportCandidate.Builder()
-                   .withImportStatus(ImportStatusFactory.createNotImported())
-                   .withEntityDescription(randomEntityDescription())
-                   .withModifiedDate(Instant.now())
-                   .withCreatedDate(Instant.now())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withIdentifier(SortableIdentifier.next())
-                   .withAdditionalIdentifiers(Set.of(ScopusIdentifier.fromValue(randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of(File.builder()
-                                                        .withName("some_name.pdf")
-                                                        .withMimeType("application/pdf")
-                                                        .withSize(123L)
-                                                        .withIdentifier(UUID.randomUUID())
-                                                        .withLicense(URI.create("https://hei"))
-                                                        .withPublisherVersion(PublisherVersion.PUBLISHED_VERSION)
-                                                        .buildOpenFile()))
-                   .build();
+    private static CreatePublicationRequest createPublicationRequestFromImportCandidate(ImportCandidate importCandidate) {
+        var request = new CreatePublicationRequest();
+        request.setEntityDescription(ImportCandidateToResourceConverter.toEntityDescription(importCandidate));
+        request.setAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers());
+        request.setAssociatedArtifacts(importCandidate.getAssociatedArtifacts());
+        return request;
     }
 
-    private EntityDescription randomEntityDescription() {
-        return new EntityDescription.Builder()
-                   .withPublicationDate(new PublicationDate.Builder().withYear("2020").build())
-                   .withAbstract(randomString())
-                   .withDescription(randomString())
-                   .withContributors(List.of(randomContributor()))
-                   .withMainTitle(randomString())
-                   .build();
-    }
-
-    private Contributor randomContributor() {
-        return new Contributor.Builder()
-                   .withIdentity(new Identity.Builder().withName(randomString()).build())
-                   .withRole(new RoleType(Role.ACTOR))
-                   .withSequence(1)
-                   .build();
-    }
 
     private CustomerDto randomCustomer(URI customerId, boolean autoPublishScopusImportFiles) {
         return new CustomerDto(customerId,
@@ -756,9 +763,18 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                randomBoolean(),
                                randomBoolean(),
                                randomBoolean(),
-                               Collections.emptyList(),
+                               emptyList(),
                                new CustomerDto.RightsRetentionStrategy(randomString(),
                                                                        RandomDataGenerator.randomUri()),
                                autoPublishScopusImportFiles);
+    }
+
+    private ImportEntityDescription randomImportEntityDescriptionWithoutMainTitle(List<ImportContributor> contributors) {
+        return new ImportEntityDescription(null, RandomDataGenerator.randomUri(),
+                                           new PublicationDate.Builder().withYear("2020").build(),
+                                           contributors,
+                                           randomString(), Collections.emptyMap(), emptyList(),
+                                           randomString(),
+                                           randomReference(JournalArticle.class));
     }
 }

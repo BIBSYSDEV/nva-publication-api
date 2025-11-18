@@ -1,6 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
+import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.APPROVAL_NEEDED;
 import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.NO_APPROVAL_NEEDED;
@@ -20,11 +20,13 @@ import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.ApprovalAssignmentException;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -45,22 +47,23 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
 
     @Test
     void shouldThrowExceptionWhenAssociatedCustomersAreEmpty() {
-        var importCandidate = createImportCandidateWithoutCustomers();
+        var resource = createResourceWithoutCustomers();
 
         var exception = assertThrows(ApprovalAssignmentException.class,
-                                     () -> service.determineCustomerResponsibleForApproval(importCandidate));
+                                     () -> service.determineCustomerResponsibleForApproval(resource, List.of()));
 
-        assertEquals("No customers for import candidate " + importCandidate.getIdentifier(), exception.getMessage());
+        assertEquals("No customers for import candidate " + resource.getIdentifier(), exception.getMessage());
     }
 
     @Test
     void shouldThrowExceptionWhenUnableToFetchCustomer() throws NotFoundException {
         var customerId = randomUri();
         when(identityServiceClient.getCustomerById(customerId)).thenThrow(RuntimeException.class);
-        var importCandidate = createImportCandidate(customerId);
+        var resource = createResource();
 
         var exception = assertThrows(ApprovalAssignmentException.class,
-                                     () -> service.determineCustomerResponsibleForApproval(importCandidate));
+                                     () -> service.determineCustomerResponsibleForApproval(resource,
+                                                                                           List.of(customerId)));
 
         assertEquals("Could not fetch customer with id " + customerId, exception.getMessage());
     }
@@ -70,12 +73,12 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         var customer = new CustomerSetup();
         mockCustomer(customer);
 
-        var importCandidate = createImportCandidate(
-            List.of(customer.customerId),
-            createContributor(createCristinId(), true, 1));
+        var resource = createResource(
+            createContributorContributor(createCristinId(), true, 1));
 
         assertThrows(ApprovalAssignmentException.class,
-                     () -> service.determineCustomerResponsibleForApproval(importCandidate));
+                     () -> service.determineCustomerResponsibleForApproval(resource,
+                                                                           List.of(customer.customerId)));
     }
 
     @Test
@@ -83,19 +86,20 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         var customer = new CustomerSetup();
         mockCustomer(customer);
 
-        var importCandidate = createImportCandidate(List.of(customer.customerId));
+        var resource = resourceWithoutContributors();
 
         assertThrows(ApprovalAssignmentException.class,
-                     () -> service.determineCustomerResponsibleForApproval(importCandidate));
+                     () -> service.determineCustomerResponsibleForApproval(resource,
+                                                                           List.of(customer.customerId)));
     }
 
     @Test
     void shouldReturnNoApprovalNeededWhenCustomerAllowsAutoPublishing() throws Exception {
         var customerId = randomUri();
         mockCustomer(customerId, randomUri(), true);
-        var importCandidate = createImportCandidate(customerId);
+        var resource = createResource();
 
-        var result = service.determineCustomerResponsibleForApproval(importCandidate);
+        var result = service.determineCustomerResponsibleForApproval(resource, List.of(customerId));
 
         assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
         assertTrue(result.getReason().contains("allows auto publishing"));
@@ -106,11 +110,11 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         var customer = new CustomerSetup();
         mockCustomer(customer);
 
-        var importCandidate = createImportCandidate(
-            List.of(customer.customerId),
-            createContributor(customer.cristinId, true, 1));
+        var resource = createResource(
+            createContributorContributor(customer.cristinId, true, 1));
 
-        var result = service.determineCustomerResponsibleForApproval(importCandidate).getStatus();
+        var associatedCustomers = List.of(customer.customerId);
+        var result = service.determineCustomerResponsibleForApproval(resource, associatedCustomers).getStatus();
 
         assertEquals(APPROVAL_NEEDED, result);
     }
@@ -123,12 +127,13 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         mockCustomer(correspondenceCustomer);
         mockCustomer(nonCorrespondenceCustomer);
 
-        var importCandidate = createImportCandidate(
-            List.of(nonCorrespondenceCustomer.customerId, correspondenceCustomer.customerId),
-            createContributor(nonCorrespondenceCustomer.cristinId, false, 1),
-            createContributor(correspondenceCustomer.cristinId, true, 2));
+        var resource = createResource(
+            createContributorContributor(nonCorrespondenceCustomer.cristinId, false, 1),
+            createContributorContributor(correspondenceCustomer.cristinId, true, 2));
 
-        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomer();
+        var associatedCustomers = List.of(nonCorrespondenceCustomer.customerId, correspondenceCustomer.customerId);
+        var customerDto = service.determineCustomerResponsibleForApproval(resource,
+                                                                          associatedCustomers).getCustomer();
 
         assertEquals(correspondenceCustomer.customerId, customerDto.id());
     }
@@ -141,12 +146,12 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         mockCustomer(lowestSequenceCustomer);
         mockCustomer(otherCustomer);
 
-        var importCandidate = createImportCandidate(
-            List.of(otherCustomer.customerId, lowestSequenceCustomer.customerId),
-            createContributor(otherCustomer.cristinId, false, 2),
-            createContributor(lowestSequenceCustomer.cristinId, false, 1));
+        var associatedCustomers = List.of(otherCustomer.customerId, lowestSequenceCustomer.customerId);
+        var resource = createResource(
+            createContributorContributor(otherCustomer.cristinId, false, 2),
+            createContributorContributor(lowestSequenceCustomer.cristinId, false, 1));
 
-        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomer();
+        var customerDto = service.determineCustomerResponsibleForApproval(resource, associatedCustomers).getCustomer();
 
         assertEquals(lowestSequenceCustomer.customerId, customerDto.id());
     }
@@ -159,12 +164,12 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         mockCustomer(firstCustomer);
         mockCustomer(secondCustomer);
 
-        var importCandidate = createImportCandidate(
-            List.of(firstCustomer.customerId, secondCustomer.customerId),
+        var associatedCustomers = List.of(firstCustomer.customerId, secondCustomer.customerId);
+        var resource = createResource(
             createNonCorrespondenceContributorWithoutSequence(firstCustomer.cristinId, false),
             createNonCorrespondenceContributorWithoutSequence(secondCustomer.cristinId, false));
 
-        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate);
+        var customerDto = service.determineCustomerResponsibleForApproval(resource, associatedCustomers);
 
         assertEquals(firstCustomer.customerId, customerDto.getCustomer().id());
     }
@@ -177,12 +182,13 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         mockCustomer(correspondenceCustomer);
         mockCustomer(otherCustomer);
 
-        var importCandidate = createImportCandidate(
-            List.of(otherCustomer.customerId, correspondenceCustomer.customerId),
-            createContributor(otherCustomer.cristinId, false, 1),
+        var resource = createResource(
+            createContributorContributor(otherCustomer.cristinId, false, 1),
             createNonCorrespondenceContributorWithoutSequence(correspondenceCustomer.cristinId, true));
 
-        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomer();
+        var associatedCustomers = List.of(otherCustomer.customerId, correspondenceCustomer.customerId);
+        var customerDto = service.determineCustomerResponsibleForApproval(resource,
+                                                                          associatedCustomers).getCustomer();
 
         assertEquals(correspondenceCustomer.customerId, customerDto.id());
     }
@@ -198,28 +204,35 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         mockCustomer(higherSequenceCorrespondenceCustomer);
         mockCustomer(nonCorrespondenceCustomer);
 
-        var importCandidate = createImportCandidate(
-            List.of(
-                lowestSequenceCorrespondenceCustomer.customerId,
-                higherSequenceCorrespondenceCustomer.customerId,
-                nonCorrespondenceCustomer.customerId
-            ),
-            createContributor(nonCorrespondenceCustomer.cristinId, false, 1),
-            createContributor(higherSequenceCorrespondenceCustomer.cristinId, true, 3),
-            createContributor(lowestSequenceCorrespondenceCustomer.cristinId, true, 2)
+        var associatedCustomers = associatedCustomers(lowestSequenceCorrespondenceCustomer, 
+                                                      higherSequenceCorrespondenceCustomer, 
+                                                      nonCorrespondenceCustomer);
+        var resource = createResource(
+            createContributorContributor(nonCorrespondenceCustomer.cristinId, false, 1),
+            createContributorContributor(higherSequenceCorrespondenceCustomer.cristinId, true, 3),
+            createContributorContributor(lowestSequenceCorrespondenceCustomer.cristinId, true, 2)
         );
 
-        var customerDto = service.determineCustomerResponsibleForApproval(importCandidate).getCustomer();
+        var customerDto = service.determineCustomerResponsibleForApproval(resource, associatedCustomers).getCustomer();
 
         assertEquals(lowestSequenceCorrespondenceCustomer.customerId, customerDto.id());
+    }
+    
+    private static List<URI> associatedCustomers(CustomerSetup lowestSequenceCorrespondenceCustomer,
+                                                 CustomerSetup higherSequenceCorrespondenceCustomer,
+                                                 CustomerSetup nonCorrespondenceCustomer) {
+        return List.of(
+            lowestSequenceCorrespondenceCustomer.customerId,
+            higherSequenceCorrespondenceCustomer.customerId,
+            nonCorrespondenceCustomer.customerId
+        );
     }
 
     private static Contributor createNonCorrespondenceContributorWithoutSequence(URI cristinId,
                                                                                  boolean correspondingAuthor) {
-        return new Contributor.Builder()
-                   .withAffiliations(List.of(Organization.fromUri(cristinId)))
-                   .withCorrespondingAuthor(correspondingAuthor)
-                   .build();
+        return new Contributor(new Identity.Builder().build(),
+                                     List.of(Organization.fromUri(cristinId)),
+                                     new RoleType(Role.CREATOR), null, correspondingAuthor);
     }
 
     private static CustomerDto createCustomerDto(URI customerId, URI cristinId, boolean allowsPublishing) {
@@ -230,10 +243,13 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
                                allowsPublishing);
     }
 
-    private static Contributor createContributor(URI cristinId, boolean isCorrespondence, int sequence) {
-        return new Contributor.Builder().withAffiliations(List.of(Organization.fromUri(cristinId)))
-                   .withCorrespondingAuthor(isCorrespondence)
+    private static Contributor createContributorContributor(URI cristinId, boolean isCorrespondence, int sequence) {
+        return new Contributor.Builder()
+                   .withIdentity(new Identity.Builder().build())
+                   .withAffiliations(List.of(Organization.fromUri(cristinId)))
+                   .withRole(new RoleType(Role.CREATOR))
                    .withSequence(sequence)
+                   .withCorrespondingAuthor(isCorrespondence)
                    .build();
     }
 
@@ -254,29 +270,33 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
             createCustomerDto(customerId, cristinId, allowsPublishing));
     }
 
-    private ImportCandidate createImportCandidate(URI customerId) {
-        return new ImportCandidate.Builder()
+    private Resource createResource() {
+        return Resource.builder()
                    .withIdentifier(SortableIdentifier.next())
-                   .withImportStatus(ImportStatusFactory.createNotImported())
-                   .withAssociatedCustomers(List.of(customerId))
                    .withEntityDescription(randomEntityDescription(JournalArticle.class))
                    .build();
     }
 
-    private ImportCandidate createImportCandidateWithoutCustomers() {
-        return new ImportCandidate.Builder()
+    private Resource createResourceWithoutCustomers() {
+        return Resource.builder()
                    .withIdentifier(SortableIdentifier.next())
-                   .withImportStatus(ImportStatusFactory.createNotImported())
                    .build();
     }
 
-    private ImportCandidate createImportCandidate(List<URI> customers, Contributor... contributors) {
-        var entityDescription = randomEntityDescription(JournalArticle.class);
-        entityDescription.setContributors(Arrays.asList(contributors));
-        return new ImportCandidate.Builder().withImportStatus(ImportStatusFactory.createNotImported())
-                   .withAssociatedCustomers(customers)
+    private Resource createResource(Contributor... contributors) {
+        var entityDescription = randomEntityDescription(JournalArticle.class)
+                                    .copy()
+                                    .withContributors(Arrays.asList(contributors))
+                                    .build();
+        return Resource.builder()
                    .withEntityDescription(entityDescription)
                    .build();
+    }
+
+    private Resource resourceWithoutContributors() {
+        var resource = createResource();
+        resource.getEntityDescription().setContributors(Collections.emptyList());
+        return resource;
     }
 
     private static class CustomerSetup {

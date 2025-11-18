@@ -146,7 +146,7 @@ public final class EntityDescriptionBuilder {
         return randomString();
     }
 
-    private static Reference randomReference(Class<?> publicationInstanceClass) {
+    public static Reference randomReference(Class<?> publicationInstanceClass) {
         return new Reference.Builder()
                    .withPublicationInstance(randomPublicationInstance(publicationInstanceClass))
                    .withPublishingContext(randomPublicationContext(publicationInstanceClass))

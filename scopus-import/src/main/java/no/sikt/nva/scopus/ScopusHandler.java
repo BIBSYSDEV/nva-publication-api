@@ -2,7 +2,6 @@ package no.sikt.nva.scopus;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static no.sikt.nva.scopus.ScopusConverter.RESOURCE_OWNER_SIKT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -33,14 +32,14 @@ import no.sikt.nva.scopus.conversion.files.TikaUtils;
 import no.sikt.nva.scopus.update.ScopusUpdater;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
+import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Reference;
-import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.SearchService;
@@ -139,7 +138,8 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     }
 
     private static void setStatusImported(ImportCandidate importCandidate, Resource resource) {
-        importCandidate.setImportStatus(ImportStatusFactory.createImported(RESOURCE_OWNER_SIKT, resource.getIdentifier()));
+        importCandidate.setImportStatus(ImportStatusFactory.createImported(resource.getResourceOwner().getUser().toString(),
+                                                                           resource.getIdentifier()));
     }
 
     private Optional<Resource> fetchPublicationsWithScopusIdentifier(String scopusIdentifier) {
@@ -154,7 +154,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     }
 
     private Optional<Resource> fetchPublicationsWithDoi(ImportCandidate importCandidate) {
-        return Optional.ofNullable(importCandidate.getEntityDescription().getReference())
+        return Optional.ofNullable(importCandidate.getEntityDescription().reference())
                       .map(Reference::getDoi)
                       .flatMap(this::searchPublicationByDoi);
     }
@@ -291,7 +291,8 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
                                  String.valueOf(now.getYear()));
     }
 
-    private Try<ImportCandidate> persistOrUpdateInDatabase(ImportCandidate importCandidate) throws BadRequestException {
+    private Try<ImportCandidate> persistOrUpdateInDatabase(ImportCandidate importCandidate)
+        throws BadRequestException, NotFoundException {
         if (nonNull(importCandidate.getIdentifier())) {
             return Try.of(importCandidateService.updateImportCandidate(importCandidate));
         }

@@ -1,11 +1,10 @@
 package no.unit.nva.publication.create;
 
 import java.util.Optional;
+import no.unit.nva.importcandidate.CandidateStatus;
+import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.core.StringUtils;
 
 public final class ImportCandidateValidator {
 
@@ -16,22 +15,21 @@ public final class ImportCandidateValidator {
     private ImportCandidateValidator() {
     }
 
-    public static void validate(ImportCandidate candidate) throws BadRequestException {
+    public static void validate(ImportCandidate candidate, CreatePublicationRequest input) throws BadRequestException {
         if (CandidateStatus.IMPORTED.equals(candidate.getImportStatus().candidateStatus())) {
             throw new BadRequestException(RESOURCE_HAS_ALREADY_BEEN_IMPORTED);
         }
         if (candidate.getScopusIdentifier().isEmpty()) {
             throw new BadRequestException(RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER);
         }
-        if (isNotPublishable(candidate)) {
+        if (isNotPublishable(input)) {
             throw new BadRequestException(RESOURCE_IS_NOT_PUBLISHABLE);
         }
     }
 
-    private static boolean isNotPublishable(ImportCandidate importCandidate) {
-        return Optional.ofNullable(importCandidate.getEntityDescription())
+    private static boolean isNotPublishable(CreatePublicationRequest createPublicationRequest) {
+        return Optional.ofNullable(createPublicationRequest.getEntityDescription())
                    .map(EntityDescription::getMainTitle)
-                   .filter(string -> !StringUtils.isEmpty(string))
                    .isEmpty();
     }
 }

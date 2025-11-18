@@ -49,9 +49,10 @@ public class ResourceTest {
     protected static final String PUBLICATION_CHANNELS = "publicationChannels";
     protected static final String VERSION = "version";
     protected static final String ASSOCIATED_CUSTOMERS = "associatedCustomers";
+    protected static final String RELATED_RESOURCES = "relatedResources";
     public static final Set<String> FIELDS_TO_IGNORE = Set.of(IMPORT_STATUS, REVISION, IMPORT_DETAILS, RESOURCE_EVENT,
                                                               FILES_FIELD, FILE_ENTRIES_FIELD, PUBLICATION_CHANNELS,
-                                                              VERSION, ASSOCIATED_CUSTOMERS);
+                                                              VERSION, ASSOCIATED_CUSTOMERS, RELATED_RESOURCES);
     private final Javers javers = JaversBuilder.javers()
                                       .registerEntity(EntityDefinitionBuilder.entityDefinition(Resource.class)
                                                           .withIdPropertyName("identifier")

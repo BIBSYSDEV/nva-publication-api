@@ -23,6 +23,8 @@ import static no.unit.nva.language.LanguageConstants.MISCELLANEOUS;
 import static no.unit.nva.language.LanguageConstants.MULTIPLE;
 import static no.unit.nva.language.LanguageConstants.NORWEGIAN;
 import static no.unit.nva.language.LanguageConstants.UNDEFINED_LANGUAGE;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
+import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportContributorWithName;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -75,7 +77,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -113,6 +114,7 @@ import no.scopus.generated.UpwOpenAccessType;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.ContributorExtractor.ContributorsOrganizationsWrapper;
+import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
@@ -142,17 +144,15 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.models.Doi;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
-import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.importcandidate.CandidateStatus;
+import no.unit.nva.importcandidate.ImportCandidate;
+import no.unit.nva.importcandidate.ImportContributor;
+import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.language.LanguageDescription;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -171,14 +171,9 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.business.importcandidate.CandidateStatus;
-import no.unit.nva.publication.model.business.importcandidate.ImportCandidate;
-import no.unit.nva.publication.model.business.importcandidate.ImportStatusFactory;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.SearchService;
@@ -197,7 +192,6 @@ import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.apache.tika.io.TikaInputStream;
 import org.hamcrest.Matchers;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -234,6 +228,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private static final String PUBLICATION_MONTH_FIELD_NAME = "month";
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
+    public static final String HOST = new Environment().readEnv(PiaConnection.API_HOST);
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
@@ -278,7 +273,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         contributorExtractor = mock(ContributorExtractor.class);
         var organization = randomUri();
         when(contributorExtractor.generateContributors(any()))
-            .thenReturn(new ContributorsOrganizationsWrapper(List.of(randomContributor()), List.of(organization)));
+            .thenReturn(new ContributorsOrganizationsWrapper(List.of(randomImportContributorWithName(randomString())),
+                                                             List.of(organization)));
         identityServiceClient = mock(IdentityServiceClient.class);
         when(attempt(identityServiceClient::getAllCustomers).orElseThrow())
             .thenReturn(customerList(organization));
@@ -317,7 +313,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private static URI searchUriWithParam(String searchParam) {
-        return UriWrapper.fromHost(new Environment().readEnv(API_HOST))
+        return UriWrapper.fromHost(HOST)
                    .addChild("search")
                    .addChild("resources")
                    .addQueryParameter(searchParam, null)
@@ -429,7 +425,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var expectedURI = Doi.fromDoiIdentifier(scopusData.getDocument().getMeta().getDoi()).getUri();
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        assertThat(publication.getEntityDescription().getReference().getDoi(), equalToObject(expectedURI));
+        assertThat(publication.getEntityDescription().reference().getDoi(), equalToObject(expectedURI));
     }
 
     @Test
@@ -439,7 +435,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var titleObject = extractTitle(scopusData);
         var expectedTitleString = expectedTitle(titleObject);
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualMainTitle = publication.getEntityDescription().getMainTitle();
+        var actualMainTitle = publication.getEntityDescription().mainTitle();
         assertThat(actualMainTitle, is(equalTo(expectedTitleString)));
     }
 
@@ -451,7 +447,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var expectedTitleString = IoUtils.stringFromResources(
             Path.of(EXPECTED_RESULTS_PATH, EXPECTED_CONTENT_STRING_TXT));
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualMainTitle = publication.getEntityDescription().getMainTitle();
+        var actualMainTitle = publication.getEntityDescription().mainTitle();
         assertThat(actualMainTitle, is(equalTo(expectedTitleString)));
     }
 
@@ -462,7 +458,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
     }
 
@@ -475,7 +471,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData.addIssn(VALID_ISSN, ISSN_TYPE_PRINT);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
     }
 
@@ -500,7 +496,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
     }
 
@@ -511,7 +507,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.B);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
         var actualPublisher = ((Book) actualPublicationContext).getPublisher();
         var expectedPublisherName = scopusData.getDocument()
@@ -534,9 +530,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         removePublishers();
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
-        var publicationContext = (Book) publication.getEntityDescription().getReference().getPublicationContext();
+        var publicationContext = (Book) publication.getEntityDescription().reference().getPublicationContext();
         assertThat(publicationContext.getPublisher(), instanceOf(UnconfirmedPublisher.class));
     }
 
@@ -557,7 +553,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             FakeHttpResponse.create(new PublicationChannelResponse(1,
                                                             List.of(new PublicationChannelHit(expectedPublisherId))).toJsonString(), HTTP_OK)));
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
         var actualPublisher = ((Book) actualPublicationContext).getPublisher();
         assertThat(actualPublisher, instanceOf(Publisher.class));
@@ -577,7 +573,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData.setPublishername(expectedPublisherName);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Anthology.class));
         var actualContextUri = ((Anthology) actualPublicationContext).getId();
         assertThat(actualContextUri, is(ScopusConstants.DUMMY_URI));
@@ -596,7 +592,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             FakeHttpResponse.create(new PublicationChannelResponse(1,
                                                             List.of(new PublicationChannelHit(expectedPublisherId))).toString(), HTTP_OK)));
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
         var actualPublisher = ((Report) actualPublicationContext).getPublisher();
         assertThat(actualPublisher, instanceOf(Publisher.class));
@@ -616,7 +612,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
         var actualSeries = ((Book) actualPublicationContext).getSeries();
         assertThat(actualSeries, instanceOf(UnconfirmedSeries.class));
@@ -636,7 +632,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var event = createSqsEvent(uri);
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
         var actualIssn = ((UnconfirmedJournal) actualPublicationContext).getOnlineIssn();
         assertThat(actualIssn, is(expectedIssn));
@@ -654,7 +650,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var event = createSqsEvent(uri);
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Anthology.class));
         var actualContextUri = ((Anthology) actualPublicationContext).getId();
         assertThat(actualContextUri, is(ScopusConstants.DUMMY_URI));
@@ -676,7 +672,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             FakeHttpResponse.create(new PublicationChannelResponse(1,
                                                                    List.of(new PublicationChannelHit(expectedSeriesId))).toJsonString(), HTTP_OK)));
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
         var actualSeries = ((Book) actualPublicationContext).getSeries();
         assertThat(actualSeries, instanceOf(Series.class));
@@ -700,7 +696,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             FakeHttpResponse.create(new PublicationChannelResponse(1,
                                                                    List.of(new PublicationChannelHit(expectedJournalId))).toJsonString(), HTTP_OK)));
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Journal.class));
         var actualJournalUri = ((Journal) actualPublicationContext).getId();
         assertThat(actualJournalUri, is(expectedJournalId));
@@ -718,7 +714,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var event = createNewScopusPublicationEvent();
         when(authorizedBackendUriRetriever.getRawContent(any(), any())).thenReturn(Optional.of(randomString()));
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().getReference().getPublicationContext();
+        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
     }
 
@@ -767,7 +763,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var publication = scopusHandler.handleRequest(event, CONTEXT);
         var expectedKeywords = List.of(HARDCODED_EXPECTED_KEYWORD_1, HARDCODED_EXPECTED_KEYWORD_2,
                                        HARDCODED_EXPECTED_KEYWORD_3);
-        var actualPlaintextKeyWords = publication.getEntityDescription().getTags();
+        var actualPlaintextKeyWords = publication.getEntityDescription().tags();
         assertThat(actualPlaintextKeyWords, containsInAnyOrder(expectedKeywords.toArray()));
     }
 
@@ -775,8 +771,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     void shouldHaveNoDuplicateContributors() throws IOException {
         createEmptyPiaMock();
         var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var contributors = publication.getEntityDescription().getContributors();
+        var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
+        var contributors = importCandidate.getEntityDescription().contributors();
         checkForDuplicateContributors(contributors);
     }
 
@@ -790,7 +786,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData.setPublicationDate(year, month, day);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationDate = publication.getEntityDescription().getPublicationDate();
+        var actualPublicationDate = publication.getEntityDescription().publicationDate();
         assertThat(actualPublicationDate, allOf(hasProperty(PUBLICATION_DAY_FIELD_NAME, is(day)),
                                                 hasProperty(PUBLICATION_MONTH_FIELD_NAME, is(month)),
                                                 hasProperty(PUBLICATION_YEAR_FIELD_NAME, is(year))));
@@ -803,7 +799,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
         var event = createSqsEvent(uri);
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualMainAbstract = publication.getEntityDescription().getAbstract();
+        var actualMainAbstract = publication.getEntityDescription().mainAbstract();
         var expectedAbstract = IoUtils.stringFromResources(
             Path.of(EXPECTED_RESULTS_PATH, FILENAME_EXPECTED_ABSTRACT_IN_0000469852));
         assertThat(actualMainAbstract, is(equalTo(expectedAbstract)));
@@ -823,7 +819,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = ScopusGenerator.create(CitationtypeAtt.AR);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().getReference().getPublicationInstance();
+        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalArticle.class));
     }
 
@@ -833,7 +829,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = ScopusGenerator.create(CitationtypeAtt.RE);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().getReference().getPublicationInstance();
+        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalArticle.class));
     }
 
@@ -847,7 +843,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().getReference().getPublicationInstance();
+        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalLeader.class));
         assertThat(expectedVolume, is(((JournalLeader) actualPublicationInstance).getVolume()));
         assertThat(expectedIssue, is(((JournalLeader) actualPublicationInstance).getIssue()));
@@ -863,7 +859,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().getReference().getPublicationInstance();
+        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalCorrigendum.class));
         assertThat(ScopusConstants.DUMMY_URI, is(((JournalCorrigendum) actualPublicationInstance).getCorrigendumFor()));
     }
@@ -878,7 +874,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().getReference().getPublicationInstance();
+        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalLetter.class));
         assertThat(expectedIssue, is(((JournalLetter) actualPublicationInstance).getIssue()));
     }
@@ -897,7 +893,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().getReference().getPublicationInstance();
+        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalArticle.class));
         assertThat(expectedIssue, is(((JournalArticle) actualPublicationInstance).getIssue()));
     }
@@ -916,7 +912,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPagesEnd);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().getReference().getPublicationInstance();
+        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(ChapterArticle.class));
         assertThat(expectedPagesEnd, is(((ChapterArticle) actualPublicationInstance).getPages().getEnd()));
     }
@@ -958,7 +954,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = ScopusGenerator.create(CitationtypeAtt.BK);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().getReference().getPublicationInstance();
+        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(BookMonograph.class));
     }
 
@@ -968,7 +964,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = ScopusGenerator.create(CitationtypeAtt.CH);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().getReference().getPublicationInstance();
+        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(ChapterArticle.class));
     }
 
@@ -991,7 +987,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
         var actualPublicationInstance = (JournalArticle) publication.getEntityDescription()
-                                                             .getReference()
+                                                             .reference()
                                                              .getPublicationInstance();
         assertThat(actualPublicationInstance.getVolume(), is(expectedVolume));
         assertThat(actualPublicationInstance.getIssue(), is(expectedIssue));
@@ -1005,7 +1001,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = ScopusGenerator.createScopusGeneratorWithSpecificLanguage(new LanguagesWrapper(languageCodes));
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualLanguageUri = publication.getEntityDescription().getLanguage();
+        var actualLanguageUri = publication.getEntityDescription().language();
         assertEquals(expectedLanguageUri, actualLanguageUri);
     }
 
@@ -1015,12 +1011,12 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var publication = scopusHandler.handleRequest(event, CONTEXT);
         var actualContributorsSorted = publication
                                            .getEntityDescription()
-                                           .getContributors()
+                                           .contributors()
                                            .stream()
-                                           .sorted(Comparator.comparingInt(Contributor::getSequence))
+                                           .sorted(Comparator.comparingInt(ImportContributor::sequence))
                                            .toList();
         for (var contributorIndex = 0; contributorIndex < actualContributorsSorted.size(); contributorIndex++) {
-            assertThat(actualContributorsSorted.get(contributorIndex).getSequence(),
+            assertThat(actualContributorsSorted.get(contributorIndex).sequence(),
                        is(Matchers.equalTo(contributorIndex + 1)));
         }
     }
@@ -1035,7 +1031,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
         publication.getEntityDescription()
-            .getContributors()
+            .contributors()
             .forEach(contributor -> hasBeenFetchedFromCristin(contributor, piaCristinIdAndAuthors.keySet()));
     }
 
@@ -1050,7 +1046,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                                                                                       cristinOrganizationId));
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualContributors = publication.getEntityDescription().getContributors();
+        var actualContributors = publication.getEntityDescription().contributors();
         actualContributors.forEach(ScopusHandlerTest::hasNoAffiliationWithId);
     }
 
@@ -1059,7 +1055,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = generateScopusDataWithOneAffiliation();
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualContributors = publication.getEntityDescription().getContributors();
+        var actualContributors = publication.getEntityDescription().contributors();
         actualContributors.forEach(ScopusHandlerTest::hasNoAffiliationWithId);
     }
 
@@ -1068,11 +1064,12 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         scopusData = generateScopusDataWithOneAffiliation();
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualContributors = publication.getEntityDescription().getContributors();
+        var actualContributors = publication.getEntityDescription().contributors();
 
         var affiliationIds = actualContributors.stream()
-                                 .map(Contributor::getAffiliations)
-                                 .flatMap(List::stream)
+                                 .map(ImportContributor::affiliations)
+                                 .flatMap(Collection::stream)
+                                 .map(Affiliation::targetOrganization)
                                  .filter(Organization.class::isInstance)
                                  .map(Organization.class::cast)
                                  .filter(org -> nonNull(org.getId()))
@@ -1103,10 +1100,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         authors.forEach(this::createPiaAuthorMock);
         var event = createNewScopusPublicationEvent();
         var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualContributors = publication.getEntityDescription().getContributors();
+        var actualContributors = publication.getEntityDescription().contributors();
         actualContributors.stream()
             .filter(contributor -> isAuthor(contributor, authorTypes))
-            .forEach(contributor -> assertNull(contributor.getIdentity().getId()));
+            .forEach(contributor -> assertNull(contributor.identity().getId()));
     }
 
     @Test
@@ -1125,14 +1122,23 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldMergeIncomingImportCandidateIntoExistingOneWhenScopusIdsMatch() throws IOException {
-        var existingImportCandidate = createPersistedImportCandidate();
+        var existingImportCandidate = importCandidateService.persistImportCandidate(randomImportCandidate());
         createEmptyPiaMock();
-        when(uriRetriever.getRawContent(any(), any())).thenReturn(toResponse(existingImportCandidate));
+        var scopusIdentifier = existingImportCandidate.getScopusIdentifier().orElseThrow();
+        var uri = UriWrapper.fromHost(HOST)
+                      .addChild("search")
+                      .addChild("customer")
+                      .addChild("import-candidates")
+                      .addQueryParameter("scopusIdentifier", scopusIdentifier)
+                      .addQueryParameter("aggregation", "none")
+                      .getUri();
+        when(uriRetriever.getRawContent(uri, APPLICATION_JSON)).thenReturn(toResponse(existingImportCandidate));
         scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
         var expectedIssue = String.valueOf(randomInteger());
         var expectedVolume = randomString();
         var expectedPages = randomString();
         scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+        scopusData.getDocument().getMeta().setEid(scopusIdentifier);
         var event = createNewScopusPublicationEvent();
         var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
 
@@ -1246,8 +1252,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                                                                 publication)).orElseThrow();
     }
 
-    void hasBeenFetchedFromCristin(Contributor contributor, Set<Integer> cristinIds) {
-        var contributorId = contributor.getIdentity().getId();
+    void hasBeenFetchedFromCristin(ImportContributor contributor, Set<Integer> cristinIds) {
+        var contributorId = contributor.identity().getId();
         if (nonNull(contributorId)) {
             assertThat(cristinIds, hasItem(toCristinIdentifier(contributorId)));
         }
@@ -1267,10 +1273,11 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                     .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
 
-    private static void hasNoAffiliationWithId(Contributor contributor) {
-        contributor.getAffiliations()
+    private static void hasNoAffiliationWithId(ImportContributor contributor) {
+        contributor.affiliations()
             .stream()
             .filter(Objects::nonNull)
+            .map(Affiliation::targetOrganization)
             .filter(Organization.class::isInstance)
             .map(Organization.class::cast)
             .forEach(affiliation -> assertThat(affiliation.getId(), is(equalTo(null))));
@@ -1321,9 +1328,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     private static Optional<String> toResponse(ImportCandidate importCandidate) {
-        return Optional.of(String.valueOf(new ImportCandidateSearchApiResponse(
-            List.of(ExpandedImportCandidate
-                        .fromImportCandidate(importCandidate, mock(AuthorizedBackendUriRetriever.class))), 1)));
+        var expandedImportCandidate = new ExpandedImportCandidate();
+        expandedImportCandidate.setIdentifier(UriWrapper.fromUri(randomUri()).addChild(importCandidate.getIdentifier().toString()).getUri());
+        return Optional.of(new ImportCandidateSearchApiResponse(List.of(expandedImportCandidate), 1).toString());
     }
 
     private String getEid() {
@@ -1380,40 +1387,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var string = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl()).addChild(randomString()).toString();
         location.setUpwUrlForPdf(string);
         return location;
-    }
-
-    private ImportCandidate createPersistedImportCandidate() {
-        var importCandidate = randomImportCandidate();
-        return importCandidateService.persistImportCandidate(importCandidate);
-    }
-
-    private ImportCandidate randomImportCandidate() {
-        return new ImportCandidate.Builder().withImportStatus(ImportStatusFactory.createNotImported())
-                   .withEntityDescription(randomEntityDescription())
-                   .withModifiedDate(Instant.now())
-                   .withCreatedDate(Instant.now())
-                   .withPublisher(new Organization.Builder().withId(randomUri()).build())
-                   .withIdentifier(SortableIdentifier.next())
-                   .withAdditionalIdentifiers(Set.of(ScopusIdentifier.fromValue(randomString())))
-                   .withResourceOwner(new ResourceOwner(new Username(randomString()), randomUri()))
-                   .withAssociatedArtifacts(List.of())
-                   .build();
-    }
-
-    private EntityDescription randomEntityDescription() {
-        return new EntityDescription.Builder().withPublicationDate(
-                new PublicationDate.Builder().withYear("2020").build())
-                   .withAbstract(randomString())
-                   .withDescription(randomString())
-                   .withContributors(List.of(randomContributor()))
-                   .withMainTitle(randomString())
-                   .build();
-    }
-
-    private Contributor randomContributor() {
-        return new Contributor.Builder().withIdentity(new Identity.Builder().withName(randomString()).build())
-                   .withRole(new RoleType(Role.ACTOR))
-                   .build();
     }
 
     private void removePublishers() {
@@ -1474,7 +1447,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return resourceService;
     }
 
-    @NotNull
     private ScopusGenerator generateScopusDataWithOneAffiliation() {
         return ScopusGenerator.createWithSpecifiedAffiliations(List.of(createAffiliation(List.of("Some Name"))));
     }
@@ -1555,18 +1527,18 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return new ContentWrapper(contentWithSupInftagsScopus14244261628());
     }
 
-    private void checkForDuplicateContributors(List<Contributor> contributors) {
+    private void checkForDuplicateContributors(Collection<ImportContributor> contributors) {
         List<Integer> sequenceNumbers = new ArrayList<>();
         List<String> orcids = new ArrayList<>();
         contributors.forEach(contributor -> isNotDuplicated(sequenceNumbers, orcids, contributor));
     }
 
-    private void isNotDuplicated(List<Integer> sequenceNumbers, List<String> orcids, Contributor contributor) {
-        assertThat(sequenceNumbers, not(hasItem(contributor.getSequence())));
-        sequenceNumbers.add(contributor.getSequence());
-        if (nonNull(contributor.getIdentity().getOrcId())) {
-            assertThat(orcids, not(hasItem(contributor.getIdentity().getOrcId())));
-            orcids.add(contributor.getIdentity().getOrcId());
+    private void isNotDuplicated(List<Integer> sequenceNumbers, List<String> orcids, ImportContributor contributor) {
+        assertThat(sequenceNumbers, not(hasItem(contributor.sequence())));
+        sequenceNumbers.add(contributor.sequence());
+        if (nonNull(contributor.identity().getOrcId())) {
+            assertThat(orcids, not(hasItem(contributor.identity().getOrcId())));
+            orcids.add(contributor.identity().getOrcId());
         }
     }
 
@@ -1575,12 +1547,12 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return actualPublicationContributors.stream().filter(Contributor::isCorrespondingAuthor).findAny().orElse(null);
     }
 
-    private boolean isAuthor(Contributor contributor, Collection<AuthorTp> authorTypes) {
+    private boolean isAuthor(ImportContributor contributor, Collection<AuthorTp> authorTypes) {
         return authorTypes.stream().anyMatch(authorTp -> isEqualContributor(contributor, authorTp));
     }
 
-    private boolean isEqualContributor(Contributor contributor, AuthorTp authorTp) {
-        var authorId = contributor.getIdentity().getAdditionalIdentifiers()
+    private boolean isEqualContributor(ImportContributor contributor, AuthorTp authorTp) {
+        var authorId = contributor.identity().getAdditionalIdentifiers()
                            .stream()
                            .filter(additionalIdentifier ->
                                        "scopus-auid".equalsIgnoreCase(additionalIdentifier.sourceName()))
