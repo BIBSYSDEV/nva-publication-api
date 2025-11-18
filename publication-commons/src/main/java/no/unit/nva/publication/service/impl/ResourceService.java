@@ -778,7 +778,7 @@ public class ResourceService extends ServiceWithTransactions {
         transactions.add(createRelationshipTransaction(resource, identifier));
         createRefreshAnthologyTransaction(identifier).ifPresent(transactions::add);
 
-        return transactions;
+        return List.copyOf(transactions);
     }
 
     private Optional<TransactWriteItem> createRefreshAnthologyTransaction(SortableIdentifier anthologyId) {

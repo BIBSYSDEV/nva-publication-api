@@ -12,7 +12,7 @@ import nva.commons.core.paths.UriWrapper;
 
 public final class PublicationUtil {
 
-    public static final String PUBLICATION_PATH = "publication";
+    private static final String PUBLICATION_PATH = "publication";
 
     private PublicationUtil() {
     }

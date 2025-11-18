@@ -35,6 +35,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.book.Textbook;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
@@ -230,7 +231,7 @@ class MigrationTests extends ResourcesLocalTest {
     }
 
     private Publication createPublicationForOldDoiRequestFormatInResources(SortableIdentifier hardCodedIdentifier) {
-        var publication = randomPublication();
+        var publication = randomPublication(JournalArticle.class);
         publication.getEntityDescription()
             .getContributors()
             .forEach(contributor ->

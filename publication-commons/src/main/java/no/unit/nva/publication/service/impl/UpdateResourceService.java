@@ -188,19 +188,19 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return Collections.emptyList();
     }
 
-    private Collection<TransactWriteItem> createResourceRelationTransactions(
+    private List<TransactWriteItem> createResourceRelationTransactions(
         Resource persistedResource,
         Resource resource) {
 
         if (anthologyRelationshipUnchanged(persistedResource, resource)) {
-            return List.of();
+            return Collections.emptyList();
         }
 
         var transactions = new ArrayList<TransactWriteItem>();
         deleteOldRelationTransaction(persistedResource).ifPresent(transactions::add);
         persistNewRelationTransaction(resource).ifPresent(transactions::add);
         transactions.addAll(createRefreshAnthologyTransactions(persistedResource, resource));
-        return transactions;
+        return List.copyOf(transactions);
     }
 
     // TODO: After PK migration to be based on resource identifier only: update version using partial update without fetching resources
