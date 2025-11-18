@@ -1108,7 +1108,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
                                                Resource.fromPublication(publication).fetch(resourceService).orElseThrow());
 
-        assertEquals(expandedResource.asJsonNode().get("relatedResources").get(0).asText(),
+        assertEquals(expandedResource.asJsonNode().get("childPublications").get(0).asText(),
                      chapter.getIdentifier().toString());
     }
 

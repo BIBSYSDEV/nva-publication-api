@@ -83,7 +83,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     public static final String CONTRIBUTORS_PREVIEW = "contributorsPreview";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExpandedResource.class);
-    public static final String RELATED_RESOURCES = "relatedResources";
+    public static final String CHILD_PUBLICATIONS = "childPublications";
 
     @JsonAnySetter
     private final Map<String, Object> allFields;
@@ -208,7 +208,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         injectJoinField(publication, objectNode);
         injectContributorCount(objectNode);
         injectContributorsPreview(objectNode);
-        objectNode.putPOJO(RELATED_RESOURCES, resource.getRelatedResources());
+        objectNode.putPOJO(CHILD_PUBLICATIONS, resource.getRelatedResources());
         return objectNode;
     }
 
