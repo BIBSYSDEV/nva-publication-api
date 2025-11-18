@@ -144,6 +144,49 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         assertNotEquals(currentVersion, refreshedVersion);
     }
 
+    @Deprecated(forRemoval = true)
+    @Test
+    void shouldPersistResourceRelationshipForDatabaseEntryWhenMigratingResourceWithAnthology() {
+        var anthology = persist(randomPublication(BookAnthology.class));
+        var chapter = super.persistResource(Resource.fromPublication(randomChapterWithAnthology(toPublicationId(anthology.getIdentifier()))));
+
+        resourceService.refreshResourcesByKeys(List.of(chapter.toDao().primaryKey()));
+
+        var persistedRelation = fetchResource(anthology);
+
+        assertEquals(chapter.getIdentifier(), persistedRelation.getRelatedResources().getFirst());
+    }
+
+    @Deprecated(forRemoval = true)
+    @Test
+    void shouldNotPersistDuplicateResourceRelationshipForDatabaseEntryWhenRelationAlreadyExists() {
+        var anthology = persist(randomPublication(BookAnthology.class));
+        var chapter = persistChaptersWithAnthology(anthology, 1).getFirst();
+        var existingRelations = fetchResource(anthology).getRelatedResources();
+
+        assertEquals(chapter.getIdentifier(), existingRelations.getFirst());
+
+        resourceService.refreshResourcesByKeys(List.of(Resource.fromPublication(chapter).toDao().primaryKey()));
+        var updatedRelations = fetchResource(anthology).getRelatedResources();
+
+        assertThat(updatedRelations, containsInAnyOrder(existingRelations.toArray()));
+    }
+
+    @Deprecated(forRemoval = true)
+    @ParameterizedTest
+    @ValueSource(strings = {"example.com", "https://example.com/publication/123",
+        "https://example.com/something/0198cc8f7d15-3bfde61e-71c3-4253-8662-714a460886f1"})
+    void shouldNotPersistResourceRelationshipWhenMigratingResourceWithAnthologyWhenAnthologyIdIsNotPublicationId(String value) {
+        var anthology = persist(randomPublication(BookAnthology.class));
+        var chapter = super.persistResource(Resource.fromPublication(randomChapterWithAnthology(URI.create(value))));
+
+        resourceService.refreshResourcesByKeys(List.of(chapter.toDao().primaryKey()));
+
+        var persistedRelation = fetchResource(anthology);
+
+        assertTrue(persistedRelation.getRelatedResources().isEmpty());
+    }
+
     private void insertRelationBetween(SortableIdentifier parentIdentifier, SortableIdentifier childIdentifier) {
         var relationship = new ResourceRelationship(parentIdentifier, childIdentifier);
         client.putItem(new PutItemRequest(RESOURCES_TABLE_NAME, ResourceRelationshipDao.from(relationship).toDynamoFormat()));

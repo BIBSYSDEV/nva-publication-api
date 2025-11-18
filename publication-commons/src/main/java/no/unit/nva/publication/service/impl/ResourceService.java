@@ -27,6 +27,7 @@ import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.KeysAndAttributes;
 import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
@@ -370,8 +371,11 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     // update this method according to current needs.
-    public Entity migrate(Entity dataEntry) {
+    private Entity migrate(Entity dataEntry) {
         try {
+            if (dataEntry instanceof Resource resource) {
+                return migrateResource(resource);
+            }
             return dataEntry;
         } catch (Exception e) {
             logger.error("Could not migrate data entry: {}, {}. Error: {}",
@@ -380,6 +384,20 @@ public class ResourceService extends ServiceWithTransactions {
                          e.getMessage());
             throw new RuntimeException("Could not migrate data entry: " + dataEntry.getIdentifier(), e);
         }
+    }
+
+    /**
+     * Temporary method for database migration.
+     * TODO: Remove after migration of ResourceRelation is done.
+     */
+    @Deprecated(forRemoval = true)
+    private Entity migrateResource(Resource resource) {
+        var anthologyIdentifier = getAnthologyPublicationIdentifier(resource);
+        if (anthologyIdentifier.isPresent()) {
+            var relationship = new ResourceRelationship(anthologyIdentifier.get(), resource.getIdentifier());
+            client.putItem(new PutItemRequest(tableName, ResourceRelationshipDao.from(relationship).toDynamoFormat()));
+        }
+        return resource;
     }
 
     public Stream<FileEntry> fetchFileEntriesForResource(Resource resource) {
