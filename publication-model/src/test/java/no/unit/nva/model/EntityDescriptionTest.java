@@ -13,7 +13,6 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.Series;
-import no.unit.nva.model.exceptions.UnsynchronizedPublicationChannelDateException;
 import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
@@ -22,6 +21,8 @@ import no.unit.nva.model.instancetypes.journal.JournalReview;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.testing.EntityDescriptionBuilder;
+import no.unit.nva.model.validation.EntityDescriptionValidationException;
+import no.unit.nva.model.validation.EntityDescriptionValidatorImpl;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
@@ -35,7 +36,6 @@ import java.net.URI;
 import java.time.Year;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -43,12 +43,11 @@ import static no.unit.nva.DatamodelConfig.dataModelObjectMapper;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Named.named;
 
@@ -268,7 +267,9 @@ class EntityDescriptionTest {
         entityDescription.setPublicationDate(value);
         var reference = entityDescription.getReference();
         reference.setPublicationContext(new Journal(URI.create(SERIAL_PUBLICATION_CHANNEL_URI_TEMPLATE.formatted(Year.now().getValue()))));
-        assertThrows(UnsynchronizedPublicationChannelDateException.class, entityDescription::validate);
+        var validator = new EntityDescriptionValidatorImpl();
+        var validationResult = validator.validate(entityDescription);
+        assertThat(validationResult.errors(), is(not(empty())));
     }
 
     @ParameterizedTest
@@ -280,7 +281,9 @@ class EntityDescriptionTest {
         var channelUri = URI.create(SERIAL_PUBLICATION_CHANNEL_URI_TEMPLATE.formatted(value));
         reference.setPublicationContext(new Journal(channelUri));
         entityDescription.setPublicationDate(publicationDateWithYearOnly(String.valueOf(Year.now().getValue())));
-        assertThrows(UnsynchronizedPublicationChannelDateException.class, entityDescription::validate);
+        var validator = new EntityDescriptionValidatorImpl();
+        var validationResult = validator.validate(entityDescription);
+        assertThat(validationResult.errors(), is(not(empty())));
     }
 
     @ParameterizedTest
@@ -288,7 +291,9 @@ class EntityDescriptionTest {
     void shouldNotThrowWhenPublicationDateIsSynchronizedWithPublicationChannelDate(Class<? extends BasicContext> clazz) {
         var publicationYear = String.valueOf(Year.now().getValue());
         var entityDescription = createEntityDescriptionForTypeWithChannelAndPublicationDate(clazz, publicationYear, publicationYear);
-        assertDoesNotThrow(entityDescription::validate);
+        var validator = new EntityDescriptionValidatorImpl();
+        var validationResult = validator.validate(entityDescription);
+        assertThat(validationResult.passes(), is(true));
     }
 
     @ParameterizedTest
@@ -299,7 +304,9 @@ class EntityDescriptionTest {
         var publicationYear = String.valueOf(year.getValue());
         var publicationChannelYear = String.valueOf(Year.now().getValue() + 1);
         var entityDescription = createEntityDescriptionForTypeWithChannelAndPublicationDate(clazz, publicationYear, publicationChannelYear);
-        assertThrows(UnsynchronizedPublicationChannelDateException.class, entityDescription::validate);
+        var validator = new EntityDescriptionValidatorImpl();
+        var validationResult = validator.validate(entityDescription);
+        assertThat(validationResult.errors(), is(not(empty())));
     }
 
     @ParameterizedTest
@@ -315,7 +322,9 @@ class EntityDescriptionTest {
                 List.of(randomIsbn13()),
                 Revision.UNREVISED);
         reference.setPublicationContext(book);
-        assertThrows(UnsynchronizedPublicationChannelDateException.class, entityDescription::validate);
+        var validator = new EntityDescriptionValidatorImpl();
+        var validationResult = validator.validate(entityDescription);
+        assertThat(validationResult.errors(), is(not(empty())));
     }
 
     @Test
@@ -330,11 +339,28 @@ class EntityDescriptionTest {
                 List.of(randomIsbn13()),
                 Revision.UNREVISED);
         reference.setPublicationContext(book);
-        assertDoesNotThrow(entityDescription::validate);
+        var validator = new EntityDescriptionValidatorImpl();
+        var validationResult = validator.validate(entityDescription);
+        assertThat(validationResult.passes(), is(true));
+    }
+
+    @Test
+    void shouldThrowWhenPublicationDateIsNotSynchronized() {
+        var entityDescription = entityDescriptionFromContext(Book.class);
+        var dateSeriesPublisher = new DateSeriesPublisher("2022", "2025", "2025");
+        entityDescription.setPublicationDate(dateSeriesPublisher.date());
+        var reference = entityDescription.getReference();
+        var book = new Book(new Series(dateSeriesPublisher.series()),
+                randomString(),
+                new Publisher(dateSeriesPublisher.publisher()),
+                List.of(randomIsbn13()),
+                Revision.UNREVISED);
+        reference.setPublicationContext(book);
+        assertThrows(EntityDescriptionValidationException.class, entityDescription::validate);
     }
 
     private static EntityDescription createEntityDescriptionForTypeWithChannelAndPublicationDate(
-            Class<? extends BasicContext> clazz, String publicationYear, String publicationChannelYear) {
+            Class<? extends PublicationContext> clazz, String publicationYear, String publicationChannelYear) {
         var entityDescription = entityDescriptionFromContext(clazz);
         var reference = entityDescription.getReference();
         reference.setPublicationContext(createContextForType(reference, publicationChannelYear));
@@ -343,30 +369,21 @@ class EntityDescriptionTest {
     }
 
     private static PublicationContext createContextForType(Reference reference, String publicationChannelYear) {
-        if (isAssignableFrom(reference, Book.class)) {
-            return createBookSubclassWithSeriesAndPublisher((Book) reference.getPublicationContext(), publicationChannelYear);
-        } else if (isAssignableFrom(reference, Degree.class)) {
-            return createBookSubclassWithSeriesAndPublisher((Degree) reference.getPublicationContext(), publicationChannelYear);
-        } else if (isAssignableFrom(reference, GeographicalContent.class)) {
-            return new GeographicalContent(publisher(publicationChannelYear));
-        } else if (isAssignableFrom(reference, Journal.class)) {
-            return new Journal(serialPublicationUri(publicationChannelYear));
-        } else if (isAssignableFrom(reference, Report.class)) {
-            return  createBookSubclassWithSeriesAndPublisher((Report) reference.getPublicationContext(), publicationChannelYear);
-        } else if (isAssignableFrom(reference, ResearchData.class)) {
-            return new ResearchData(publisher(publicationChannelYear));
-        } else {
-            throw new IllegalStateException("Unexpected value: " + reference.getPublicationContext());
-        }
+        return switch (reference.getPublicationContext()) {
+            case Degree degree -> createBookSubclassWithSeriesAndPublisher(degree, publicationChannelYear);
+            case Report report -> createBookSubclassWithSeriesAndPublisher(report, publicationChannelYear);
+            case Book book -> createBookSubclassWithSeriesAndPublisher(book, publicationChannelYear);
+            case GeographicalContent ignored -> new GeographicalContent(publisher(publicationChannelYear));
+            case Journal ignored -> new Journal(serialPublicationUri(publicationChannelYear));
+            case ResearchData ignored -> new ResearchData(publisher(publicationChannelYear));
+            case null -> throw new IllegalStateException("PublicationContext cannot be null");
+            default -> throw new IllegalStateException("Unexpected value: " + reference.getPublicationContext());
+        };
     }
 
     private static Book createBookSubclassWithSeriesAndPublisher(Book book, String publicationYear) {
         return book.copy()
                 .withSeries(seriesUri(publicationYear)).withPublisher(publisher(publicationYear)).build();
-    }
-
-    private static boolean isAssignableFrom(Reference reference, Class<? extends PublicationContext> clazz) {
-        return Objects.requireNonNull(reference.getPublicationContext()).getClass().isAssignableFrom(clazz);
     }
 
     private static EntityDescription entityDescriptionFromContext(Class<? extends PublicationContext> clazz) {

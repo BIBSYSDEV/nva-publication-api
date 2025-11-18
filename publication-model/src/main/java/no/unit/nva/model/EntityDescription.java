@@ -1,6 +1,5 @@
 package no.unit.nva.model;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -14,14 +13,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.exceptions.UnsynchronizedPublicationChannelDateException;
+import no.unit.nva.model.validation.EntityDescriptionValidationException;
+import no.unit.nva.model.validation.EntityDescriptionValidatorImpl;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class EntityDescription implements WithCopy<EntityDescription.Builder> {
 
+    private final EntityDescriptionValidatorImpl validator;
     private String mainTitle;
     private Map<String, String> alternativeTitles;
     private URI language;
@@ -40,6 +39,7 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
     private URI metadataSource;
 
     public EntityDescription() {
+        this.validator = new EntityDescriptionValidatorImpl();
         contributors = Collections.emptyList();
         tags = Collections.emptyList();
         alternativeTitles = Collections.emptyMap();
@@ -47,6 +47,7 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
     }
 
     private EntityDescription(Builder builder) {
+        this.validator = new EntityDescriptionValidatorImpl();
         this.mainTitle = builder.mainTitle;
         this.alternativeTitles = builder.alternativeTitles;
         this.language = builder.language;
@@ -247,30 +248,10 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
      * This method will throw a runtime exception subclass when called if a validation fails.
      */
     public void validate() {
-        var publicationContext = this.getReference().getPublicationContext();
-        if (hasUnsynchronizedPublicationDateChannelDatePair(publicationContext)) {
-            throw new UnsynchronizedPublicationChannelDateException();
+        var validation = validator.validate(this);
+        if (!validation.passes()) {
+            throw new EntityDescriptionValidationException(String.join(", ", validation.errors()));
         }
-
-    }
-
-    private boolean hasUnsynchronizedPublicationDateChannelDatePair(PublicationContext context) {
-        return nonNull(context)
-                && (isEmptyPublicationDateWithPublicationChannels(context)
-                || isNotPublicationChannelUriDateMatch(context));
-    }
-
-    private boolean isNotPublicationChannelUriDateMatch(PublicationContext context) {
-        return !context.extractPublicationContextUris().stream()
-                .map(UriWrapper::fromUri)
-                .map(UriWrapper::getLastPathElement)
-                .filter(Objects::nonNull)
-                .allMatch(uriYear -> publicationDate.getYear().equals(uriYear));
-    }
-
-    private boolean isEmptyPublicationDateWithPublicationChannels(PublicationContext context) {
-        return (isNull(publicationDate) || isNull(publicationDate.getYear()))
-                && !context.extractPublicationContextUris().isEmpty();
     }
 
     public static final class Builder {
