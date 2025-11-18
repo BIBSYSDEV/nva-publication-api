@@ -28,11 +28,11 @@ public class EntityDescriptionValidatorImpl implements EntityDescriptionValidato
 
     private boolean hasUnsynchronizedPublicationDateChannelDatePair(PublicationContext context,
                                                                     PublicationDate publicationDate) {
-        return nonNull(context) && checkYears(context, publicationDate);
+        return nonNull(context) && hasInvalidChannelYears(context, publicationDate);
 
     }
 
-    private boolean checkYears(PublicationContext context, PublicationDate publicationDate) {
+    private boolean hasInvalidChannelYears(PublicationContext context, PublicationDate publicationDate) {
         var channelYears = extractPublicationChannelYears(context);
         return hasMultipleChannelYears(channelYears)
                 || hasMismatchedPublicationDate(channelYears.getFirst(), publicationDate);
