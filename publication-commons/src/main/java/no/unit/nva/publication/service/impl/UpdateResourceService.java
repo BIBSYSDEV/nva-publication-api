@@ -4,9 +4,9 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
+import static no.unit.nva.publication.model.business.ResourceRelationship.fromResource;
 import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
 import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.getPublisherIdentifierWhenDegree;
-import static no.unit.nva.publication.model.utils.PublicationUtil.getAnthologyPublicationIdentifier;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
@@ -205,13 +205,14 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     // TODO: After PK migration to be based on resource identifier only: update version using partial update without fetching resources
     private List<TransactWriteItem> createRefreshAnthologyTransactions(Resource persistedResource, Resource resource) {
-        var oldAnthologyId = getAnthologyPublicationIdentifier(persistedResource);
-        var newAnthologyId = getAnthologyPublicationIdentifier(resource);
+        var oldAnthologyId = fromResource(persistedResource);
+        var newAnthologyId = fromResource(resource);
 
         return Stream.of(oldAnthologyId, newAnthologyId)
                    .filter(Optional::isPresent)
                    .flatMap(Optional::stream)
                    .distinct()
+                   .map(ResourceRelationship::parentIdentifier)
                    .map(readResourceService::getResourceByIdentifier)
                    .filter(Optional::isPresent)
                    .map(Optional::get)
@@ -220,23 +221,19 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private Optional<TransactWriteItem> deleteOldRelationTransaction(Resource resource) {
-        return createRelationshipDao(resource)
-                   .map(this::createDeleteTransaction);
+        return createRelationshipDao(resource).map(this::createDeleteTransaction);
     }
 
     private Optional<TransactWriteItem> persistNewRelationTransaction(Resource resource) {
-        return createRelationshipDao(resource)
-                   .map(this::createPutTransaction);
+        return createRelationshipDao(resource).map(this::createPutTransaction);
     }
 
     private boolean anthologyRelationshipUnchanged(Resource oldResource, Resource newResource) {
-        return Objects.equals(getAnthologyPublicationIdentifier(oldResource), getAnthologyPublicationIdentifier(newResource));
+        return Objects.equals(fromResource(oldResource), fromResource(newResource));
     }
 
     private Optional<ResourceRelationshipDao> createRelationshipDao(Resource resource) {
-        return getAnthologyPublicationIdentifier(resource)
-                   .map(parentId -> new ResourceRelationship(parentId, resource.getIdentifier()))
-                   .map(ResourceRelationshipDao::from);
+        return ResourceRelationship.fromResource(resource).map(ResourceRelationshipDao::from);
     }
 
     private TransactWriteItem createDeleteTransaction(ResourceRelationshipDao dao) {
