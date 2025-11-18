@@ -144,6 +144,34 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         assertNotEquals(currentVersion, refreshedVersion);
     }
 
+    @Test
+    void shouldRefreshAnthologyWhenNewRelationIsPersistedOnResourceCreation() {
+        var anthology = persist(randomPublication(BookAnthology.class));
+
+        var currentVersion = fetchResource(anthology).getVersion();
+
+        persistChaptersWithAnthology(anthology, 1).getFirst();
+
+        var refreshedVersion = fetchResource(anthology).getVersion();
+
+        assertNotEquals(currentVersion, refreshedVersion);
+    }
+
+    @Test
+    void shouldRefreshAnthologyWhenRelationIsPersistedOnUpdateOfExistingResource() {
+        var anthology = persist(randomPublication(BookAnthology.class));
+        var chapter = persistChaptersWithAnthology(anthology, 1).getFirst();
+
+        var newAnthology = persist(randomPublication(BookAnthology.class));
+        var currentVersion = fetchResource(newAnthology).getVersion();
+
+        moveChapterToAnthology(chapter, newAnthology.getIdentifier());
+
+        var refreshedVersion = fetchResource(newAnthology).getVersion();
+
+        assertNotEquals(currentVersion, refreshedVersion);
+    }
+
     @Deprecated(forRemoval = true)
     @Test
     void shouldPersistResourceRelationshipForDatabaseEntryWhenMigratingResourceWithAnthology() {

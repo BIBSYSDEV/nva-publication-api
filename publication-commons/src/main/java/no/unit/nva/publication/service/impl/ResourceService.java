@@ -83,7 +83,6 @@ import no.unit.nva.publication.model.storage.LogEntryDao;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.ResourceRelationshipDao;
-import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.model.utils.CustomerService;
@@ -759,7 +758,7 @@ public class ResourceService extends ServiceWithTransactions {
         transactions.add(newPutTransactionItem(new ResourceDao(resource), tableName));
         transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource));
         transactions.addAll(createPublicationChannelsTransaction(resource));
-        createResourceRelationshipTransaction(resource).ifPresent(transactions::add);
+        transactions.addAll(createResourceRelationshipTransactions(resource));
 
         var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
         sendTransactionWriteRequest(transactWriteItemsRequest);
@@ -767,12 +766,35 @@ public class ResourceService extends ServiceWithTransactions {
         return resource;
     }
 
-    private Optional<TransactWriteItem> createResourceRelationshipTransaction(Resource resource) {
-        return getAnthologyPublicationIdentifier(resource)
-            .map(identifier -> new ResourceRelationship(identifier, resource.getIdentifier()))
-            .map(ResourceRelationshipDao::from)
-            .map(DatabaseEntryWithData::toDynamoFormat)
-            .map(this::putWithItem);
+    //TODO: After PK migration to be based on resource identifier only: update version using partial update without fetching resources
+    private List<TransactWriteItem> createResourceRelationshipTransactions(Resource resource) {
+        var anthologyId = getAnthologyPublicationIdentifier(resource);
+        if (anthologyId.isEmpty()) {
+            return List.of();
+        }
+
+        var identifier = anthologyId.get();
+        var transactions = new ArrayList<TransactWriteItem>();
+        transactions.add(createRelationshipTransaction(resource, identifier));
+        createRefreshAnthologyTransaction(identifier).ifPresent(transactions::add);
+
+        return transactions;
+    }
+
+    private Optional<TransactWriteItem> createRefreshAnthologyTransaction(SortableIdentifier anthologyId) {
+        return readResourceService.getResourceByIdentifier(anthologyId).map(this::createPutTransaction);
+    }
+
+    private TransactWriteItem createRelationshipTransaction(Resource resource, SortableIdentifier anthologyId) {
+        var relationship = new ResourceRelationship(anthologyId, resource.getIdentifier());
+        return putWithItem(ResourceRelationshipDao.from(relationship).toDynamoFormat());
+    }
+
+    private TransactWriteItem createPutTransaction(Resource resourceUpdate) {
+        return new TransactWriteItem()
+                   .withPut(new Put()
+                                .withItem(new ResourceDao(resourceUpdate).toDynamoFormat())
+                                .withTableName(tableName));
     }
 
     private TransactWriteItem putWithItem(Map<String, AttributeValue> item) {

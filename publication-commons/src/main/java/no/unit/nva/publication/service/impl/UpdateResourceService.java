@@ -199,7 +199,24 @@ public class UpdateResourceService extends ServiceWithTransactions {
         var transactions = new ArrayList<TransactWriteItem>();
         deleteOldRelationTransaction(persistedResource).ifPresent(transactions::add);
         persistNewRelationTransaction(resource).ifPresent(transactions::add);
+        transactions.addAll(createRefreshAnthologyTransactions(persistedResource, resource));
         return transactions;
+    }
+
+    // TODO: After PK migration to be based on resource identifier only: update version using partial update without fetching resources
+    private List<TransactWriteItem> createRefreshAnthologyTransactions(Resource persistedResource, Resource resource) {
+        var oldAnthologyId = getAnthologyPublicationIdentifier(persistedResource);
+        var newAnthologyId = getAnthologyPublicationIdentifier(resource);
+
+        return Stream.of(oldAnthologyId, newAnthologyId)
+                   .filter(Optional::isPresent)
+                   .flatMap(Optional::stream)
+                   .distinct()
+                   .map(readResourceService::getResourceByIdentifier)
+                   .filter(Optional::isPresent)
+                   .map(Optional::get)
+                   .map(this::createPutTransaction)
+                   .toList();
     }
 
     private Optional<TransactWriteItem> deleteOldRelationTransaction(Resource resource) {
