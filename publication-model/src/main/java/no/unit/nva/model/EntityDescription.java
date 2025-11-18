@@ -249,8 +249,8 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
      */
     public void validate() {
         var validation = validator.validate(this);
-        if (!validation.passes()) {
-            throw new EntityDescriptionValidationException(String.join(", ", validation.errors()));
+        if (!validation.isValid()) {
+            throw new EntityDescriptionValidationException(validation.errors());
         }
     }
 

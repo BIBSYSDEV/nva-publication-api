@@ -294,7 +294,7 @@ class EntityDescriptionTest {
         var entityDescription = createEntityDescriptionForTypeWithChannelAndPublicationDate(clazz, publicationYear, publicationYear);
         var validator = new EntityDescriptionValidatorImpl();
         var validationResult = validator.validate(entityDescription);
-        assertThat(validationResult.passes(), is(true));
+        assertThat(validationResult.isValid(), is(true));
     }
 
     @ParameterizedTest
@@ -342,7 +342,7 @@ class EntityDescriptionTest {
         reference.setPublicationContext(book);
         var validator = new EntityDescriptionValidatorImpl();
         var validationResult = validator.validate(entityDescription);
-        assertThat(validationResult.passes(), is(true));
+        assertThat(validationResult.isValid(), is(true));
     }
 
     @Test

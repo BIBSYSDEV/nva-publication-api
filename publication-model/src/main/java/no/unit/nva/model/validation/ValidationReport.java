@@ -4,8 +4,7 @@ import java.util.Set;
 
 public interface ValidationReport {
 
-    boolean passes();
+    boolean isValid();
 
     Set<String> errors();
-
 }

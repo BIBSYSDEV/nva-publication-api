@@ -10,7 +10,7 @@ public record EntityDescriptionValidationReport(Set<String> errors) implements V
     }
 
     @Override
-    public boolean passes() {
+    public boolean isValid() {
         return errors.isEmpty();
     }
 }
