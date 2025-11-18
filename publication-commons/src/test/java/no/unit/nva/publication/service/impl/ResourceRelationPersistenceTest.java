@@ -1,6 +1,5 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomReference;
 import static no.unit.nva.model.testing.PublicationGenerator.buildRandomPublicationFromInstance;
@@ -31,16 +30,16 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.ResourceRelationship;
 import no.unit.nva.publication.model.business.ThirdPartySystem;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceRelationshipDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UriWrapper;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
@@ -54,10 +53,11 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
         resourceService = getResourceService(client);
     }
 
-    @Test
-    void shouldNotCreateResourceRelationForNonPublishedResource() {
+    @ParameterizedTest
+    @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"PUBLISHED"})
+    void shouldNotCreateResourceRelationForNonPublishedResource(PublicationStatus publicationStatus) {
         var anthology = persist(randomPublication(BookAnthology.class));
-        persistChaptersWithAnthology(anthology, 1, DRAFT).getFirst();
+        persistChaptersWithAnthology(anthology, 1, publicationStatus).getFirst();
 
         var anthologyWithNewRelation = fetchResource(anthology);
 
