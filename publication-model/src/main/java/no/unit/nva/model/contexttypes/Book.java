@@ -130,6 +130,19 @@ public class Book implements BasicContext {
                && Objects.equals(getRevision(), book.getRevision());
     }
 
+    @JsonIgnore
+    @Override
+    public Set<URI> extractPublicationContextUris() {
+        var uris = new HashSet<URI>();
+        if (nonNull(publisher) && publisher instanceof Publisher publisherWithId && nonNull(publisherWithId.getId())) {
+            uris.add(publisherWithId.getId());
+        }
+        if (nonNull(series) && series instanceof Series seriesWithId && nonNull(seriesWithId.getId())) {
+            uris.add(seriesWithId.getId());
+        }
+        return Collections.unmodifiableSet(uris);
+    }
+
     /**
      * Returns the ISBN list to the object after checking that the ISBNs are valid and removing ISBN-punctuation.
      *
@@ -145,19 +158,6 @@ public class Book implements BasicContext {
                    .map(ISBN_VALIDATOR::validate)
                    .filter(Objects::nonNull)
                    .toList();
-    }
-
-    @JsonIgnore
-    @Override
-    public Set<URI> extractPublicationContextUris() {
-        var uris = new HashSet<URI>();
-        if (nonNull(publisher) && publisher instanceof Publisher publisherWithId && nonNull(publisherWithId.getId())) {
-            uris.add(publisherWithId.getId());
-        }
-        if (nonNull(series) && series instanceof Series seriesWithId && nonNull(seriesWithId.getId())) {
-            uris.add(seriesWithId.getId());
-        }
-        return Collections.unmodifiableSet(uris);
     }
 
     public static final class BookBuilder {

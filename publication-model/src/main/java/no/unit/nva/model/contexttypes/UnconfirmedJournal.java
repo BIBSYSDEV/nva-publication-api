@@ -1,15 +1,9 @@
 package no.unit.nva.model.contexttypes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
-import java.net.URI;
-import java.util.Collections;
 import java.util.Objects;
-import java.util.Set;
-
 import no.unit.nva.model.contexttypes.utils.IssnUtil;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.core.JacocoGenerated;
@@ -60,11 +54,5 @@ public class UnconfirmedJournal implements Periodical {
     @Override
     public int hashCode() {
         return Objects.hash(getTitle(), getPrintIssn(), getOnlineIssn());
-    }
-
-    @JsonIgnore
-    @Override
-    public Set<URI> extractPublicationContextUris() {
-        return Collections.emptySet();
     }
 }

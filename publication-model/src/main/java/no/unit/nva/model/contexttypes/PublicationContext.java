@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -33,5 +34,6 @@ import java.util.Set;
 public interface PublicationContext {
 
     @JsonIgnore
-    Set<URI> extractPublicationContextUris();
-}
+    default Set<URI> extractPublicationContextUris() {
+        return Collections.emptySet();
+    }}
