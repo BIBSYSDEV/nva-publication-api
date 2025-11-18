@@ -44,6 +44,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
@@ -91,8 +92,10 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     public static ExpandedResource fromPublication(RawContentRetriever uriRetriever,
-                                                   ResourceService resourceService, QueueClient queueClient, Publication publication)
+                                                   ResourceService resourceService, QueueClient queueClient,
+                                                   Resource resource)
         throws JsonProcessingException {
+        var publication = resource.toPublication();
         var documentWithId = transformToJsonLd(publication);
         var enrichedJson = enrichJson(uriRetriever, resourceService, queueClient, documentWithId);
         var jsonWithAddedFields = addFields(enrichedJson, publication);

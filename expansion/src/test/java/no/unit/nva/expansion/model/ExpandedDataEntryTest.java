@@ -332,7 +332,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                                                              UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
+                                               Resource.fromPublication(resource));
         var json = objectMapper.readTree(expandedResource.toJsonString());
         assertThat(json.get(TYPE).textValue(), is(equalTo(EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY)));
     }
@@ -557,7 +558,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             Publication publication,
             RawContentRetriever uriRetriever) {
             ExpandedResource expandedResource =
-                attempt(() -> fromPublication(uriRetriever, resourceService, sqsClient, publication)).orElseThrow();
+                attempt(() -> fromPublication(uriRetriever, resourceService, sqsClient,
+                                              Resource.fromPublication(publication))).orElseThrow();
             return new ExpandedDataEntryWithAssociatedPublication(expandedResource);
         }
 

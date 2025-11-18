@@ -187,7 +187,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        final ExpandedResource indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
+        final ExpandedResource indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient,
+                                                               Resource.fromPublication(resource));
         final JsonNode framedResultNode = indexDocument.asJsonNode();
 
         var publisherResultString = framedResultNode.at(PublicationJsonPointers.PUBLISHER_JSON_PTR).toString();
@@ -214,7 +215,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication)
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
+        var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient,
+                                            Resource.fromPublication(resource));
         var framedResultNode = indexDocument.asJsonNode();
 
         var contributorsPreviewNode = (ArrayNode) framedResultNode.at("/entityDescription")
@@ -235,7 +237,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var channel = ((Journal) resource.getEntityDescription().getReference().getPublicationContext()).getId();
         fakeUriRetriever.registerResponse(channel, 404, APPLICATION_JSON_LD, "");
-        assertDoesNotThrow(() -> fromPublication(fakeUriRetriever, resourceService, sqsClient, resource));
+        assertDoesNotThrow(() -> fromPublication(fakeUriRetriever, resourceService, sqsClient,
+                                                 Resource.fromPublication(resource)));
 
         var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
         assertEquals(resource.getIdentifier().toString(),
@@ -252,7 +255,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         fakeUriRetriever.registerResponse(affiliation.getId(), 500, APPLICATION_JSON_LD, "");
-        assertDoesNotThrow(() -> fromPublication(fakeUriRetriever, resourceService, sqsClient, resource));
+        assertDoesNotThrow(() -> fromPublication(fakeUriRetriever, resourceService, sqsClient,
+                                                 Resource.fromPublication(resource)));
 
         var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
 
@@ -272,7 +276,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource);
+            , Resource.fromPublication(resource));
         var framedResultNode = indexDocument.asJsonNode();
 
         var contributorsCountNode = (IntNode) framedResultNode.at("/entityDescription")
@@ -303,7 +307,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource).asJsonNode();
+            , Resource.fromPublication(resource)).asJsonNode();
         var topLevelNodes = (ArrayNode) framedResultNode.at(JSON_PTR_TOP_LEVEL_ORGS);
         var topLevelForExpandedAffiliation = getTopLevel(topLevelNodes, HARD_CODED_TOP_LEVEL_ORG_URI.toString());
 
@@ -327,7 +331,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource).asJsonNode();
+            , Resource.fromPublication(resource)).asJsonNode();
         var contributorOrganizationsNode = framedResultNode.at(JSON_CONTRIBUTOR_ORGANIZATIONS);
         var actualOrganizations = Lists.newArrayList(contributorOrganizationsNode.elements())
                                       .stream()
@@ -357,7 +361,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource).asJsonNode();
+            , Resource.fromPublication(resource)).asJsonNode();
         var topLevelNodes = (ArrayNode) framedResultNode.at(JSON_PTR_TOP_LEVEL_ORGS);
         var topLevelForExpandedAffiliation = getTopLevel(topLevelNodes, affiliationToBeExpanded.toString());
 
@@ -373,7 +377,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource).asJsonNode();
+            , Resource.fromPublication(resource)).asJsonNode();
         var contributorsJson = framedResultNode.at("/entityDescription/contributors");
 
         List<Contributor> contributors = objectMapper.convertValue(contributorsJson,
@@ -393,7 +397,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource).asJsonNode();
+            , Resource.fromPublication(resource)).asJsonNode();
         var id = URI.create(framedResultNode.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
 
         assertThat(id, is(not(nullValue())));
@@ -408,7 +412,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         final var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource).asJsonNode();
+            , Resource.fromPublication(resource)).asJsonNode();
         final var extractedSourceId = extractSourceId(framedResultNode);
 
         // TODO: Better test here?
@@ -428,7 +432,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
         assertHasExpectedFundings(sourceUri0, sourceUri1,
                                   fromPublication(fakeUriRetriever, resourceService, sqsClient
-                                      , resource).asJsonNode());
+                                      , Resource.fromPublication(resource)).asJsonNode());
     }
 
     @Test
@@ -439,7 +443,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource).asJsonNode();
+            , Resource.fromPublication(resource)).asJsonNode();
         var type = new TypeReference<List<FundingResult>>() {
         };
 
@@ -465,7 +469,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                 fakeUriRetriever.registerResponse(uri, statusCode, MediaType.ANY_APPLICATION_TYPE, "");
             });
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource).asJsonNode();
+            , Resource.fromPublication(resource)).asJsonNode();
 
         assertTrue(expandedResource.at(JsonPointer.compile("/fundings/1/source")).has("id"));
         assertTrue(expandedResource.at(JsonPointer.compile("/fundings/0/source")).has("id"));
@@ -483,7 +487,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, fundings);
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
+                                               Resource.fromPublication(resource))
                                    .asJsonNode();
 
         assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
@@ -499,7 +504,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptySet());
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
+                                               Resource.fromPublication(resource))
                                    .asJsonNode();
 
         assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
@@ -517,7 +523,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, existingFundings);
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
+                                               Resource.fromPublication(resource))
                                    .asJsonNode();
 
         assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
@@ -539,7 +546,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, projectFundings);
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
+                                               Resource.fromPublication(resource))
                                    .asJsonNode();
 
         assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
@@ -557,7 +565,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptySet());
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, resource)
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
+                                               Resource.fromPublication(resource))
                                    .asJsonNode();
 
         var fundingsNode = expandedResource.at(JsonPointer.compile("/fundings"));
@@ -579,7 +588,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
         ObjectNode framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource).asJsonNode();
+            , Resource.fromPublication(resource)).asJsonNode();
 
         var affiliations = framedResultNode.findValues("affiliations").getFirst();
         affiliations.forEach(aff -> {
@@ -600,7 +609,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource);
+            , Resource.fromPublication(resource));
         var json = (ObjectNode) objectMapper.readTree(indexDocument.toJsonString());
         var expectedUri = UriWrapper.fromUri(HOST_URI).addChild(resource.getIdentifier().toString()).getUri();
         var actualUri = URI.create(json.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
@@ -619,7 +628,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         ExpandedResource actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource);
+            , Resource.fromPublication(resource));
         assertThat(actualDocument.getPublicationContextUris(), hasItems(expectedSeriesUri));
     }
 
@@ -634,7 +643,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         ExpandedResource actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource);
+            , Resource.fromPublication(resource));
         assertThat(actualDocument.getPublicationContextUris(), contains(expectedJournalUri));
     }
 
@@ -660,7 +669,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                       APPLICATION_JSON_LD,
                                       "Not Found");
 
-        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient, resource)
+        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient,
+                                               Resource.fromPublication(resource))
                                    .asJsonNode();
 
         var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
@@ -711,7 +721,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                                         }
                                         """);
 
-        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient, resource)
+        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient,
+                                               Resource.fromPublication(resource))
                                    .asJsonNode();
 
         var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
@@ -739,7 +750,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var uriRetriever = FakeUriRetriever.newInstance();
         FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
 
-        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient, resource)
+        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient,
+                                               Resource.fromPublication(resource))
                                    .asJsonNode();
 
         var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
@@ -785,7 +797,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var uriRetriever = FakeUriRetriever.newInstance();
         FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
 
-        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient, resource).asJsonNode();
+        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient,
+                                               Resource.fromPublication(resource)).asJsonNode();
         var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
 
         assertFalse(fundingSource.isTextual(),
@@ -802,7 +815,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         ExpandedResource actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource);
+            , Resource.fromPublication(resource));
         Book book = extractBook(publication);
         Series confirmedSeries = (Series) book.getSeries();
         URI expectedSeriesId = confirmedSeries.getId();
@@ -821,7 +834,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         ExpandedResource actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource);
+            , Resource.fromPublication(resource));
         Journal journal = extractJournal(resource);
         URI expectedJournalId = journal.getId();
         assertThat(actualDocument.getPublicationContextUris(), containsInAnyOrder(expectedJournalId));
@@ -838,7 +851,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         fakeUriRetriever.registerResponse(journal.getId(), 200, APPLICATION_JSON_LD,
                                           FakeUriResponse.createSeries(journal.getId()));
         var actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource);
+            , Resource.fromPublication(resource));
         var expectedJournalType = journal.getClass().getSimpleName();
         var actualJournalType = actualDocument.asJsonNode().at(CONTEXT_TYPE_JSON_PTR).textValue();
         assertEquals(expectedJournalType, actualJournalType);
@@ -855,7 +868,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var bookAnthology = resourceService.getPublicationByIdentifier(SortableIdentifier.fromUri(parentUri.getId()));
         var expectedPublicationChannelIds = getPublicationContextUris(extractBook(bookAnthology));
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource);
+            , Resource.fromPublication(resource));
         var expandedResourceJsonNode = expandedResource.asJsonNode();
         var actualPublicationChannelUris = extractActualPublicationChannelUris(expandedResourceJsonNode);
         assertThat(actualPublicationChannelUris, containsInAnyOrder(expectedPublicationChannelIds.toArray()));
@@ -871,7 +884,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
         resource.getEntityDescription().getReference().setPublicationContext(null);
         assertThat(fromPublication(uriRetriever, resourceService, sqsClient
-            , resource), is(not(nullValue())));
+            , Resource.fromPublication(resource)), is(not(nullValue())));
     }
 
     @Test
@@ -884,7 +897,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
         resource.getEntityDescription().getReference().setPublicationInstance(null);
         assertThat(fromPublication(uriRetriever, resourceService, sqsClient
-            , resource), is(not(nullValue())));
+            , Resource.fromPublication(resource)), is(not(nullValue())));
     }
 
     @Test
@@ -896,7 +909,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         resource.getEntityDescription().setMainTitle(null);
         assertThat(fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource), is(not(nullValue())));
+            , Resource.fromPublication(resource)), is(not(nullValue())));
     }
 
     @Test
@@ -906,7 +919,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(publication));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         assertDoesNotThrow(() -> fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource));
+            , Resource.fromPublication(resource)));
     }
 
     @Test
@@ -916,7 +929,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource);
+            , Resource.fromPublication(resource));
 
         var actualDoi = expandedResource.getAllFields().get("doi");
 
@@ -930,8 +943,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(bookAnthology)
                            .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource);
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
 
         var actualHandle = expandedResource.getAllFields().get("handle");
 
@@ -946,7 +958,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource);
+            , Resource.fromPublication(resource));
 
         var actualLink = expandedResource.getAllFields().get("link");
 
@@ -962,7 +974,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(academicChapter));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource);
+            , Resource.fromPublication(resource));
         var expandedResourceJsonNode = expandedResource.asJsonNode();
         var actualSeriesLevel = expandedResourceJsonNode.at(SERIES_LEVEL_JSON_PTR).textValue();
         var actualPublisherLevel = expandedResourceJsonNode.at(PUBLISHER_LEVEL_JSON_PTR).textValue();
@@ -978,7 +990,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                            .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
         FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource).asJsonNode();
+            , Resource.fromPublication(resource)).asJsonNode();
 
         var actualNode = expandedResource.get("joinField");
         var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
@@ -994,7 +1006,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var publicationContext = (Anthology) part.getEntityDescription().getReference().getPublicationContext();
         FakeUriResponse.setupFakeForType(part, fakeUriRetriever, resourceService, false);
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , part).asJsonNode();
+            , Resource.fromPublication(part)).asJsonNode();
         var actualNode = expandedResource.get("joinField");
         var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
         expectedNode.put("name", "partOf");
@@ -1031,7 +1043,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
             });
 
         var actual = fromPublication(uriRetriever, resourceService, sqsClient
-            , resource).toJsonString();
+            , Resource.fromPublication(resource)).toJsonString();
         assertThat(actual, containsString("Happy duck"));
     }
 
@@ -1050,7 +1062,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         context.setId(null);
 
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , resource).asJsonNode();
+            , Resource.fromPublication(resource)).asJsonNode();
 
         var actualNode = expandedResource.get("joinField");
         var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
@@ -1079,7 +1091,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                 unconfirmedFunding.getSource(), 404, APPLICATION_JSON_LD, "Not Found");
 
         assertDoesNotThrow(
-                () -> fromPublication(uriRetriever, resourceService, sqsClient, resource));
+                () -> fromPublication(uriRetriever, resourceService, sqsClient,
+                                      Resource.fromPublication(resource)));
     }
 
     private static Contributor contributorWithOneAffiliation(Organization contributor1org) {
@@ -1358,7 +1371,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                     Resource.fromPublication(publication)
                             .persistNew(resourceService, UserInstance.fromPublication(publication));
             FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-            return fromPublication(fakeUriRetriever, resourceService, sqsClient, resource);
+            return fromPublication(fakeUriRetriever, resourceService, sqsClient,
+                                   Resource.fromPublication(resource));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

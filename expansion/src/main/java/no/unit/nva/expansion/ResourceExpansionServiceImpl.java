@@ -137,7 +137,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         var expandedResource = ExpandedResource.fromPublication(uriRetriever,
                                                                 resourceService,
                                                                 queueClient,
-                                                                resource.toPublication());
+                                                                resource);
         var resourceWithContextUri = useUriContext
                                          ? replaceInlineContextWithUriContext(expandedResource)
                                          : replaceContextWithInlineContext(expandedResource);
