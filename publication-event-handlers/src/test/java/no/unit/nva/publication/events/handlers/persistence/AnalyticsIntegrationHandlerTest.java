@@ -165,7 +165,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         var fakeUrlRetriever = FakeUriRetriever.newInstance();
         FakeUriResponse.setupFakeForType(publication, fakeUrlRetriever, resourceService, false);
         var expandedPublication = ExpandedResource.fromPublication(fakeUrlRetriever, resourceService, new FakeSqsClient(),
-                                                                   publication);
+                                                                   Resource.fromPublication(publication));
         var resourceJson = DTO_OBJECT_MAPPER.writeValueAsString(expandedPublication);
         var randomPath = formatPublicationFilename(expandedPublication);
         return s3Driver.insertFile(randomPath, resourceJson);
