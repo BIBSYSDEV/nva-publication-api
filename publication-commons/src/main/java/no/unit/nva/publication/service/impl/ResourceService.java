@@ -10,7 +10,6 @@ import static no.unit.nva.publication.PublicationServiceConfig.defaultDynamoDbCl
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.business.publicationchannel.PublicationChannelUtil.createPublicationChannelDao;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.model.utils.PublicationUtil.getAnthologyPublicationIdentifier;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
@@ -391,11 +390,10 @@ public class ResourceService extends ServiceWithTransactions {
      */
     @Deprecated(forRemoval = true)
     private Entity migrateResource(Resource resource) {
-        var anthologyIdentifier = getAnthologyPublicationIdentifier(resource);
-        if (anthologyIdentifier.isPresent()) {
-            var relationship = new ResourceRelationship(anthologyIdentifier.get(), resource.getIdentifier());
-            client.putItem(new PutItemRequest(tableName, ResourceRelationshipDao.from(relationship).toDynamoFormat()));
-        }
+        var relationship = ResourceRelationship.fromResource(resource);
+        relationship.ifPresent(resourceRelationship ->
+                                   client.putItem(new PutItemRequest(tableName, ResourceRelationshipDao.from(resourceRelationship)
+                                                                                             .toDynamoFormat())));
         return resource;
     }
 
@@ -768,15 +766,14 @@ public class ResourceService extends ServiceWithTransactions {
 
     //TODO: After PK migration to be based on resource identifier only: update version using partial update without fetching resources
     private List<TransactWriteItem> createResourceRelationshipTransactions(Resource resource) {
-        var anthologyId = getAnthologyPublicationIdentifier(resource);
-        if (anthologyId.isEmpty()) {
+        var relationship = ResourceRelationship.fromResource(resource);
+        if (relationship.isEmpty()) {
             return List.of();
         }
 
-        var identifier = anthologyId.get();
         var transactions = new ArrayList<TransactWriteItem>();
-        transactions.add(createRelationshipTransaction(resource, identifier));
-        createRefreshAnthologyTransaction(identifier).ifPresent(transactions::add);
+        transactions.add(createRelationshipTransaction(relationship.get()));
+        createRefreshAnthologyTransaction(relationship.get().parentIdentifier()).ifPresent(transactions::add);
 
         return List.copyOf(transactions);
     }
@@ -785,8 +782,7 @@ public class ResourceService extends ServiceWithTransactions {
         return readResourceService.getResourceByIdentifier(anthologyId).map(this::createPutTransaction);
     }
 
-    private TransactWriteItem createRelationshipTransaction(Resource resource, SortableIdentifier anthologyId) {
-        var relationship = new ResourceRelationship(anthologyId, resource.getIdentifier());
+    private TransactWriteItem createRelationshipTransaction(ResourceRelationship relationship) {
         return putWithItem(ResourceRelationshipDao.from(relationship).toDynamoFormat());
     }
 
