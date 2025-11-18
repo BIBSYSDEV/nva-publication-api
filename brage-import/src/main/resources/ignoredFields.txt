@@ -33,7 +33,5 @@ entityDescription.reference.publicationContext.disseminationChannel
 entityDescription.alternativeTitles
 entityDescription.description
 entityDescription.metadataSource
-
-
-
+entityDescription.validator.errors
 

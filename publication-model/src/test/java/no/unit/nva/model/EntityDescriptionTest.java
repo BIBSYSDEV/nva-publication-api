@@ -13,6 +13,9 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
+import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
@@ -23,6 +26,7 @@ import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.testing.EntityDescriptionBuilder;
 import no.unit.nva.model.validation.EntityDescriptionValidationException;
 import no.unit.nva.model.validation.EntityDescriptionValidatorImpl;
+import nva.commons.core.paths.UriWrapper;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
@@ -31,6 +35,7 @@ import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.URI;
 import java.time.Year;
@@ -42,6 +47,7 @@ import java.util.stream.Stream;
 import static no.unit.nva.DatamodelConfig.dataModelObjectMapper;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
+import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -49,6 +55,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Named.named;
 
@@ -354,6 +361,37 @@ class EntityDescriptionTest {
         var book = new Book(new Series(dateSeriesPublisher.series()),
                 randomString(),
                 new Publisher(dateSeriesPublisher.publisher()),
+                List.of(randomIsbn13()),
+                Revision.UNREVISED);
+        reference.setPublicationContext(book);
+        assertThrows(EntityDescriptionValidationException.class, entityDescription::validate);
+    }
+
+    @Test
+    void shouldHandleEntityDescriptionWithoutPublicationContextUris() throws InvalidIssnException {
+        var entityDescription = entityDescriptionFromContext(Book.class);
+        var dateSeriesPublisher = new DateSeriesPublisher("2022", "2025", "2025");
+        entityDescription.setPublicationDate(dateSeriesPublisher.date());
+        var reference = entityDescription.getReference();
+        var book = new Book(new UnconfirmedSeries(randomString(), randomIssn(), randomIssn()),
+                randomString(),
+                new UnconfirmedPublisher(randomString()),
+                List.of(randomIsbn13()),
+                Revision.UNREVISED);
+        reference.setPublicationContext(book);
+        assertDoesNotThrow(entityDescription::validate);
+    }
+
+    @ParameterizedTest(name = "Should throw when publication channel URI is invalid: {0}")
+    @ValueSource(strings = {"https://example.com", "https://example.com/abc", "https://example.com/1234/abc"})
+    void shouldHandleInvalidPublicationContextUris(String uri) throws InvalidIssnException {
+        var entityDescription = entityDescriptionFromContext(Book.class);
+        var dateSeriesPublisher = new DateSeriesPublisher(randomString(), "2025", "2025");
+        entityDescription.setPublicationDate(dateSeriesPublisher.date());
+        var reference = entityDescription.getReference();
+        var book = new Book(new UnconfirmedSeries(randomString(), randomIssn(), randomIssn()),
+                randomString(),
+                new Publisher(UriWrapper.fromUri(uri).getUri()),
                 List.of(randomIsbn13()),
                 Revision.UNREVISED);
         reference.setPublicationContext(book);

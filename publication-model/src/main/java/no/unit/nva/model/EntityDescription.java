@@ -2,6 +2,7 @@ package no.unit.nva.model;
 
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
@@ -20,6 +21,7 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class EntityDescription implements WithCopy<EntityDescription.Builder> {
 
+    @JsonIgnore
     private final EntityDescriptionValidatorImpl validator;
     private String mainTitle;
     private Map<String, String> alternativeTitles;
