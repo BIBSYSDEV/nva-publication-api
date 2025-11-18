@@ -7,6 +7,7 @@ import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.model.testing.PublicationGenerator.buildRandomPublicationFromInstance;
 import static no.unit.nva.model.testing.PublicationGenerator.randomDoi;
 import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -63,6 +64,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.contexttypes.Anthology;
@@ -107,6 +109,7 @@ import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.indexing.verification.FundingResult;
 import no.unit.nva.publication.indexing.verification.PublisherResult;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -970,11 +973,11 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     void shouldReturnExpandedResourceWithAnthologyPublicationChannelLevelWhenPublicationIsAcademicChapter()
         throws IOException, BadRequestException {
         var academicChapter = PublicationGenerator.randomPublication(AcademicChapter.class);
-        var resource = Resource.fromPublication(academicChapter)
+        var publication = Resource.fromPublication(academicChapter)
                            .persistNew(resourceService, UserInstance.fromPublication(academicChapter));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
         var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource));
+            , Resource.fromPublication(publication).fetch(resourceService).orElseThrow());
         var expandedResourceJsonNode = expandedResource.asJsonNode();
         var actualSeriesLevel = expandedResourceJsonNode.at(SERIES_LEVEL_JSON_PTR).textValue();
         var actualPublisherLevel = expandedResourceJsonNode.at(PUBLISHER_LEVEL_JSON_PTR).textValue();
@@ -1093,6 +1096,32 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         assertDoesNotThrow(
                 () -> fromPublication(uriRetriever, resourceService, sqsClient,
                                       Resource.fromPublication(resource)));
+    }
+
+    @Test
+    void shouldIncludeRelatedResourcesInExpandedDocument() throws IOException, BadRequestException {
+        var publication = Resource.fromPublication(bookAnthologyWithDoiReferencedInAssociatedLink())
+                           .persistNew(resourceService, UserInstance.create(randomString(), randomUri()));
+        var chapter = randomChapterWithAnthology(publication.getIdentifier());
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
+
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
+                                               Resource.fromPublication(publication).fetch(resourceService).orElseThrow());
+
+        assertEquals(expandedResource.asJsonNode().get("relatedResources").get(0).asText(),
+                     chapter.getIdentifier().toString());
+    }
+
+    private Publication randomChapterWithAnthology(SortableIdentifier anthologyIdentifier) throws BadRequestException {
+        var chapter = buildRandomPublicationFromInstance(AcademicChapter.class);
+        var uri = UriWrapper.fromUri(randomUri()).addChild("publication").addChild(anthologyIdentifier.toString()).getUri();
+        chapter.getEntityDescription()
+            .getReference()
+            .setPublicationContext(new Anthology.Builder().withId(uri).build());
+        chapter.setStatus(PUBLISHED);
+        return Resource.fromPublication(chapter)
+            .persistNew(resourceService, UserInstance.createExternalUser(chapter.getResourceOwner(), randomUri(),
+                                                                         ThirdPartySystem.OTHER));
     }
 
     private static Contributor contributorWithOneAffiliation(Organization contributor1org) {

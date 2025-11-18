@@ -83,6 +83,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     public static final String CONTRIBUTORS_PREVIEW = "contributorsPreview";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExpandedResource.class);
+    public static final String RELATED_RESOURCES = "relatedResources";
 
     @JsonAnySetter
     private final Map<String, Object> allFields;
@@ -95,10 +96,9 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
                                                    ResourceService resourceService, QueueClient queueClient,
                                                    Resource resource)
         throws JsonProcessingException {
-        var publication = resource.toPublication();
-        var documentWithId = transformToJsonLd(publication);
+        var documentWithId = transformToJsonLd(resource.toPublication());
         var enrichedJson = enrichJson(uriRetriever, resourceService, queueClient, documentWithId);
-        var jsonWithAddedFields = addFields(enrichedJson, publication);
+        var jsonWithAddedFields = addFields(enrichedJson, resource);
         try {
             return objectMapper.treeToValue(jsonWithAddedFields, ExpandedResource.class);
         } catch (JsonProcessingException exception) {
@@ -199,7 +199,8 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return toJsonString();
     }
 
-    private static ObjectNode addFields(String jsonString, Publication publication) {
+    private static ObjectNode addFields(String jsonString, Resource resource) {
+        var publication = resource.toPublication();
         var objectNode = strToJson(jsonString);
         sortContributors(objectNode);
         injectHasFileEnum(publication, objectNode);
@@ -207,6 +208,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         injectJoinField(publication, objectNode);
         injectContributorCount(objectNode);
         injectContributorsPreview(objectNode);
+        objectNode.putPOJO(RELATED_RESOURCES, resource.getRelatedResources());
         return objectNode;
     }
 
