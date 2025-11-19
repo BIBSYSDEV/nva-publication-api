@@ -64,7 +64,6 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.contexttypes.Anthology;
@@ -76,31 +75,11 @@ import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.model.funding.FundingBuilder;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.model.funding.UnconfirmedFunding;
-import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.instancetypes.book.Encyclopedia;
-import no.unit.nva.model.instancetypes.book.ExhibitionCatalog;
-import no.unit.nva.model.instancetypes.book.NonFictionMonograph;
-import no.unit.nva.model.instancetypes.book.PopularScienceMonograph;
-import no.unit.nva.model.instancetypes.book.Textbook;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
-import no.unit.nva.model.instancetypes.chapter.ChapterConferenceAbstract;
-import no.unit.nva.model.instancetypes.chapter.ChapterInReport;
-import no.unit.nva.model.instancetypes.chapter.EncyclopediaChapter;
-import no.unit.nva.model.instancetypes.chapter.ExhibitionCatalogChapter;
-import no.unit.nva.model.instancetypes.chapter.Introduction;
-import no.unit.nva.model.instancetypes.chapter.NonFictionChapter;
-import no.unit.nva.model.instancetypes.chapter.PopularScienceChapter;
-import no.unit.nva.model.instancetypes.chapter.TextbookChapter;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
-import no.unit.nva.model.instancetypes.report.ConferenceReport;
-import no.unit.nva.model.instancetypes.report.ReportBasic;
-import no.unit.nva.model.instancetypes.report.ReportBookOfAbstract;
-import no.unit.nva.model.instancetypes.report.ReportPolicy;
-import no.unit.nva.model.instancetypes.report.ReportResearch;
-import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -985,39 +964,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         assertThat(actualPublisherLevel, is(not(nullValue())));
     }
 
-    @ParameterizedTest
-    @MethodSource("validAnthologyContainersProvider")
-    void shouldSetHasPartsRelationForBookAnthology(Class<?> publicationType) throws IOException, BadRequestException {
-        var bookAnthology = PublicationGenerator.randomPublication(publicationType);
-        var resource = Resource.fromPublication(bookAnthology)
-                           .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)).asJsonNode();
-
-        var actualNode = expandedResource.get("joinField");
-        var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
-        expectedNode.put("name", "hasParts");
-
-        assertThat(actualNode, is(equalTo(expectedNode)));
-    }
-
-    @ParameterizedTest
-    @MethodSource("validAnthologyMembersProvider")
-    void shouldSetPartOfRelationForAnthologyMember(Class<?> publicationType) throws IOException, BadRequestException {
-        var part = randomPersistedPublication(publicationType);
-        var publicationContext = (Anthology) part.getEntityDescription().getReference().getPublicationContext();
-        FakeUriResponse.setupFakeForType(part, fakeUriRetriever, resourceService, false);
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(part)).asJsonNode();
-        var actualNode = expandedResource.get("joinField");
-        var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
-        expectedNode.put("name", "partOf");
-        expectedNode.put("parent", SortableIdentifier.fromUri(publicationContext.getId()).toString());
-
-        assertThat(actualNode, is(equalTo(expectedNode)));
-    }
-
     @Test
     void shouldUseApiVersionWhenLookingUpOrganizations() throws JsonProcessingException, BadRequestException {
         var publication = PublicationGenerator.randomPublication();
@@ -1048,31 +994,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var actual = fromPublication(uriRetriever, resourceService, sqsClient
             , Resource.fromPublication(resource)).toJsonString();
         assertThat(actual, containsString("Happy duck"));
-    }
-
-    @ParameterizedTest
-    @MethodSource("validAnthologyMembersProvider")
-    void shouldNotFailWhenAnthologyParentIsMissing(Class<?> publicationType)
-        throws IOException, BadRequestException {
-        var academicChapter = PublicationGenerator.randomPublication(publicationType);
-        var resource = Resource.fromPublication(academicChapter)
-                           .persistNew(resourceService, UserInstance.fromPublication(academicChapter));
-        var context = (Anthology) resource.getEntityDescription().getReference().getPublicationContext();
-
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-
-        // Remove the publication context ID to simulate a publication that is missing the parent reference
-        context.setId(null);
-
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)).asJsonNode();
-
-        var actualNode = expandedResource.get("joinField");
-        var expectedNode = new ObjectNode(objectMapper.getNodeFactory());
-        expectedNode.put("name", "partOf");
-        expectedNode.put("parent", "PARENT_IDENTIFIER_NOT_FOUND");
-
-        assertThat(actualNode, is(equalTo(expectedNode)));
     }
 
     @Test
@@ -1136,35 +1057,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         return new Contributor.Builder().withIdentity(new Identity.Builder().withName(randomString()).build())
                    .withSequence(sequence)
                    .build();
-    }
-
-    private static Stream<Class<?>> validAnthologyContainersProvider() {
-        return Stream.of(
-            AcademicMonograph.class,
-            NonFictionMonograph.class,
-            PopularScienceMonograph.class,
-            Textbook.class,
-            Encyclopedia.class,
-            ExhibitionCatalog.class,
-            BookAnthology.class,
-            ReportResearch.class,
-            ReportPolicy.class,
-            ReportWorkingPaper.class,
-            ReportBookOfAbstract.class,
-            ConferenceReport.class,
-            ReportBasic.class);
-    }
-
-    private static Stream<Class<?>> validAnthologyMembersProvider() {
-        return Stream.of(AcademicChapter.class,
-                         EncyclopediaChapter.class,
-                         ExhibitionCatalogChapter.class,
-                         Introduction.class,
-                         NonFictionChapter.class,
-                         PopularScienceChapter.class,
-                         TextbookChapter.class,
-                         ChapterConferenceAbstract.class,
-                         ChapterInReport.class);
     }
 
     private static JsonNode getTopLevel(ArrayNode topLevelNodes, String topLevelOrgId) {

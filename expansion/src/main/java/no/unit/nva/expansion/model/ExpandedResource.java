@@ -1,6 +1,5 @@
 package no.unit.nva.expansion.model;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.AFFILIATIONS_POINTER;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
@@ -39,11 +38,7 @@ import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.expansion.ExpansionConfig;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.Reference;
-import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -65,15 +60,6 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     public static final String CONTRIBUTOR_SEQUENCE = "sequence";
     public static final String LICENSE_FIELD = "license";
     public static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
-
-    // The join field is used by the search index to create a relationship between parent and child documents.
-    private static final String JOIN_FIELD_PARENT_LABEL = "hasParts";
-    private static final String JOIN_FIELD_CHILD_LABEL = "partOf";
-    private static final String JOIN_FIELD_NODE_LABEL = "joinField";
-    private static final String JOIN_FIELD_RELATION_KEY = "name";
-    private static final String JOIN_FIELD_PARENT_KEY = "parent";
-    public static final String JOIN_FIELD_DUMMY_PARENT_IDENTIFIER = "PARENT_IDENTIFIER_NOT_FOUND";
-
     private static final String ID_FIELD_NAME = "id";
     private static final String JSON_LD_CONTEXT_FIELD = "@context";
     private static final String CONTEXT_TYPE_ANTHOLOGY = "Anthology";
@@ -205,7 +191,6 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         sortContributors(objectNode);
         injectHasFileEnum(publication, objectNode);
         expandLicenses(objectNode);
-        injectJoinField(publication, objectNode);
         injectContributorCount(objectNode);
         injectContributorsPreview(objectNode);
         objectNode.putPOJO(CHILD_PUBLICATIONS, resource.getRelatedResources());
@@ -241,59 +226,6 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
         return contributorsList.stream()
                    .sorted(Comparator.comparingInt(contributor -> contributor.get(CONTRIBUTOR_SEQUENCE).asInt()))
                    .limit(MAX_CONTRIBUTORS_PREVIEW).toList();
-    }
-
-    /**
-     * Injects a join field into the JSON document, intended to be used by OpenSearch. The join
-     * field is used to create a relationship between parent and child documents, where all
-     * documents are considered to either be a potential parent or a child depending on type.
-     * "Children" containing a reference to a parent will have this reference in the join field.
-     * Note that non-publication contexts (e.g. journals) are not handled and the join field will
-     * have an invalid/dummy parent identifier.
-     */
-    private static void injectJoinField(Publication publication, ObjectNode sortedJson) {
-        Optional.ofNullable(publication.getEntityDescription())
-                .map(EntityDescription::getReference)
-                .ifPresent(reference -> addJoinField(sortedJson, reference));
-    }
-
-    private static void addJoinField(ObjectNode sortedJson, Reference reference) {
-        var publicationContext = reference.getPublicationContext();
-        if (canBeParent(publicationContext)) {
-            addJoinField(sortedJson, JOIN_FIELD_PARENT_LABEL, null);
-        } else {
-            var parentIdentifier = getParentIdentifier(sortedJson);
-            addJoinField(sortedJson, JOIN_FIELD_CHILD_LABEL, parentIdentifier);
-        }
-    }
-
-    private static String getParentIdentifier(ObjectNode sortedJson) {
-        return extractPublicationContextUri(sortedJson)
-                .filter(uri -> isNotBlank(uri.toString()))
-                .map(ExpandedResource::publicationUriToIdentifier)
-                .orElse(JOIN_FIELD_DUMMY_PARENT_IDENTIFIER);
-    }
-
-    /**
-     * Extracts the publication identifier (last segment) from a URI, assuming it is a publication
-     * URI. Note that other URIs (e.g. journals) will not be handled and will return null.
-     */
-    private static String publicationUriToIdentifier(URI uri) {
-        return attempt(() -> SortableIdentifier.fromUri(uri))
-                .map(SortableIdentifier::toString)
-                .orElse(failure -> null);
-    }
-
-    private static boolean canBeParent(PublicationContext context) {
-        return context instanceof Book;
-    }
-
-    private static void addJoinField(ObjectNode sortedJson, String name, String parent) {
-        var newNode = sortedJson.putObject(JOIN_FIELD_NODE_LABEL);
-        newNode.put(JOIN_FIELD_RELATION_KEY, name);
-        if (nonNull(parent)) {
-            newNode.put(JOIN_FIELD_PARENT_KEY, parent);
-        }
     }
 
     private static void expandLicenses(JsonNode node) {
