@@ -1,10 +1,16 @@
 package no.unit.nva.model.contexttypes;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import nva.commons.core.JacocoGenerated;
 
+import java.net.URI;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
+
+import static java.util.Objects.nonNull;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class GeographicalContent implements BasicContext {
@@ -38,5 +44,14 @@ public class GeographicalContent implements BasicContext {
     @Override
     public int hashCode() {
         return Objects.hash(getPublisher());
+    }
+
+    @JsonIgnore
+    @Override
+    public Set<URI> extractPublicationContextUris() {
+        if (nonNull(publisher) && publisher instanceof Publisher publisherWithId && nonNull(publisherWithId.getId())) {
+            return Set.of(publisherWithId.getId());
+        }
+        return Collections.emptySet();
     }
 }

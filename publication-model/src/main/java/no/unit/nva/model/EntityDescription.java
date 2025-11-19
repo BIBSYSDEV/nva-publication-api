@@ -2,6 +2,7 @@ package no.unit.nva.model;
 
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
@@ -12,11 +13,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.IntStream;
+
+import no.unit.nva.model.validation.EntityDescriptionValidationException;
+import no.unit.nva.model.validation.EntityDescriptionValidatorImpl;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class EntityDescription implements WithCopy<EntityDescription.Builder> {
 
+    @JsonIgnore
+    private final EntityDescriptionValidatorImpl validator;
     private String mainTitle;
     private Map<String, String> alternativeTitles;
     private URI language;
@@ -35,6 +41,7 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
     private URI metadataSource;
 
     public EntityDescription() {
+        this.validator = new EntityDescriptionValidatorImpl();
         contributors = Collections.emptyList();
         tags = Collections.emptyList();
         alternativeTitles = Collections.emptyMap();
@@ -42,6 +49,7 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
     }
 
     private EntityDescription(Builder builder) {
+        this.validator = new EntityDescriptionValidatorImpl();
         this.mainTitle = builder.mainTitle;
         this.alternativeTitles = builder.alternativeTitles;
         this.language = builder.language;
@@ -236,6 +244,16 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
                 .withDescription(getDescription())
                 .withReference(getReference())
                 .withMetadataSource(getMetadataSource());
+    }
+
+    /**
+     * This method will throw a runtime exception subclass when called if a validation fails.
+     */
+    public void validate() {
+        var validation = validator.validate(this);
+        if (!validation.isValid()) {
+            throw new EntityDescriptionValidationException(validation.errors());
+        }
     }
 
     public static final class Builder {

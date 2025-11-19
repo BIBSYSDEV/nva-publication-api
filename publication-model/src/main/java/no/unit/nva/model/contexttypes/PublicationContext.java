@@ -1,7 +1,12 @@
 package no.unit.nva.model.contexttypes;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import java.net.URI;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * PublicationContext provides a common root object for contexts of type
@@ -28,4 +33,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 })
 public interface PublicationContext {
 
-}
+    @JsonIgnore
+    default Set<URI> extractPublicationContextUris() {
+        return Collections.emptySet();
+    }}

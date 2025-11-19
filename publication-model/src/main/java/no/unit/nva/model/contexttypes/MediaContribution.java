@@ -79,7 +79,6 @@ public class MediaContribution implements PublicationContext {
         return Objects.hash(getMedium(), getFormat(), getDisseminationChannel(), getPartOf());
     }
 
-
     public static final class Builder {
         private MediaSubType medium;
         private MediaFormat format;

@@ -5,7 +5,7 @@ import static org.hamcrest.Matchers.is;
 import java.net.URI;
 import org.junit.jupiter.api.Test;
 
-public class PublicationUriValidatorTest {
+public class PublicationUriEntityDescriptionValidatorTest {
 
     public static final String HOST = "localhost";
     private static final String INVALID_SORTABLE_IDENTIFIER = "0193cfbef040-20d8938d-1096-44e9-8a9e-XXX";

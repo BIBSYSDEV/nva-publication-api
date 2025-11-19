@@ -1,9 +1,17 @@
 package no.unit.nva.model.contexttypes;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import java.net.URI;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
+
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -42,5 +50,14 @@ public class ResearchData implements PublicationContext {
     @Override
     public int hashCode() {
         return Objects.hash(publisher);
+    }
+
+    @JsonIgnore
+    @Override
+    public Set<URI> extractPublicationContextUris() {
+        if (nonNull(publisher) && publisher instanceof Publisher publisherWithId && nonNull(publisherWithId.getId())) {
+            return Set.of(publisherWithId.getId());
+        }
+        return Collections.emptySet();
     }
 }

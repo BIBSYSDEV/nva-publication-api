@@ -327,8 +327,8 @@ public final class PublicationInstanceBuilder {
     public static Stream<Class<?>> journalArticleInstanceTypes() {
         return listPublicationInstanceTypes().stream()
                 .map(PublicationInstanceBuilder::getPublicationContext)
-                .filter(contextAndInstanceTuple -> contextAndInstanceTuple.getContext() instanceof Journal)
-                .map(ContextAndInstanceTuple::getInstanceType);
+                .filter(contextAndInstanceTuple -> contextAndInstanceTuple.context() instanceof Journal)
+                .map(ContextAndInstanceTuple::instanceType);
     }
 
     public static List<Class<?>> listPublicationInstanceTypes() {
