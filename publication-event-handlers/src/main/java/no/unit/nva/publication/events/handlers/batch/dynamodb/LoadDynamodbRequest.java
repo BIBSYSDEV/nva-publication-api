@@ -13,14 +13,16 @@ public record LoadDynamodbRequest(String jobType,
                                   Map<String, AttributeValue> startMarker,
                                   List<KeyField> types,
                                   Integer segment,
-                                  Integer totalSegments) implements JsonSerializable {
+                                  Integer totalSegments,
+                                  String filter) implements JsonSerializable {
 
     public boolean isSegmentedScan() {
         return nonNull(segment) && nonNull(totalSegments);
     }
 
     public LoadDynamodbRequest withStartMarker(Map<String, AttributeValue> newStartMarker) {
-        return new LoadDynamodbRequest(this.jobType, newStartMarker, this.types, this.segment, this.totalSegments);
+        return new LoadDynamodbRequest(this.jobType, newStartMarker, this.types, this.segment, this.totalSegments,
+                                       this.filter);
     }
 
     public PutEventsRequestEntry createNewEventEntry(String eventBusName,

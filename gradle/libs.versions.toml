@@ -11,6 +11,7 @@ commonsValidator = { strictly = '1.10.0' }
 configTypesafe = { strictly = '1.4.3' }
 cucumber = { strictly = '7.23.0' }
 datafaker = { strictly = '2.4.4' }
+jsonpath = { strictly = '2.9.0' }
 dynamoDbLocal = { strictly = '2.0.0' }
 glassfish-el = { strictly = '4.0.2' }
 guava = { strictly = '33.4.8-jre' }
@@ -131,6 +132,7 @@ swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.re
 mockito-junit-jupiter = {group= 'org.mockito', name= 'mockito-junit-jupiter', version= '5.3.1'}
 open-csv = { group = 'com.opencsv', name = 'opencsv', version = '5.9' } # open-csv is used by cristin-import, can be deleted when cristin-import is deleted
 reflections = { group = 'org.reflections', name = 'reflections', version.ref = 'reflections' }
+jsonpath = { group = 'com.jayway.jsonpath', name = 'json-path', version.ref = 'jsonpath' }
 
 [bundles]
 validation = ['jakarta-validation-api', 'jakarta-el-api', 'glassfish-el', 'apache-bval']

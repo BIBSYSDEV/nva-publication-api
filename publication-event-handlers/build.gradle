@@ -46,6 +46,7 @@ dependencies {
 
     implementation libs.vavr
     implementation libs.resilience4j.all
+    implementation libs.jsonpath
 
     testImplementation libs.bundles.testing
     testImplementation libs.nva.identifiers

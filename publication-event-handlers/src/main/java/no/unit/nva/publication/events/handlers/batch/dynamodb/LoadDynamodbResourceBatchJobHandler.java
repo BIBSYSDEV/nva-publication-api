@@ -1,13 +1,22 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb;
 
 import static java.lang.Integer.parseInt;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.events.handlers.ConfigurationForPushingDirectlyToEventBridge.EVENT_BUS_NAME;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
+import static no.unit.nva.publication.model.storage.DynamoEntry.CONTAINED_DATA_FIELD_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import no.unit.nva.publication.model.storage.Dao;
+import no.unit.nva.publication.model.storage.DataCompressor;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.collect.Lists;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,11 +24,9 @@ import java.util.UUID;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.publication.model.ScanResultWrapper;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
@@ -37,6 +44,7 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     private static final String SQS_BATCH_SIZE_ENV = "SQS_BATCH_SIZE";
     private static final String TOTAL_SEGMENTS_ENV = "TOTAL_SEGMENTS";
     public static final String DETAIL_TYPE = "PublicationService.DataEntry.LoadDynamodbResourceBatchJob";
+    private static final String EMPTY_BRACKETS = "[]";
 
     private final SqsClient sqsClient;
     private final EventBridgeClient eventBridgeClient;
@@ -56,11 +64,9 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
              parseInt(new Environment().readEnv(TOTAL_SEGMENTS_ENV)));
     }
 
-    public LoadDynamodbResourceBatchJobHandler(SqsClient sqsClient,
-                                               EventBridgeClient eventBridgeClient, String queueUrl,
-                                               String processingEnabled, ResourceService resourceService,
-                                               int scanPageSize,
-                                               int sqsBatchSize,
+    public LoadDynamodbResourceBatchJobHandler(SqsClient sqsClient, EventBridgeClient eventBridgeClient,
+                                               String queueUrl, String processingEnabled,
+                                               ResourceService resourceService, int scanPageSize, int sqsBatchSize,
                                                int totalSegments) {
         super(LoadDynamodbRequest.class);
         this.resourceService = resourceService;
@@ -92,17 +98,11 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     }
 
     private LoadDynamodbResponse initiateParallelScan(LoadDynamodbRequest input, Context context) {
-        logger.info("Initiating parallel scan with {} segments for job type: {}", totalSegments,
-                    input.jobType());
+        logger.info("Initiating parallel scan with {} segments for job type: {}", totalSegments, input.jobType());
 
         for (int segment = 0; segment < totalSegments; segment++) {
-            var segmentRequest = new LoadDynamodbRequest(
-                input.jobType(),
-                null,
-                input.types(),
-                segment,
-                totalSegments
-            );
+            var segmentRequest = new LoadDynamodbRequest(input.jobType(), null, input.types(), segment, totalSegments,
+                                                         input.filter());
 
             var segmentEvent = segmentRequest.createNewEventEntry(EVENT_BUS_NAME, DETAIL_TYPE,
                                                                   context.getInvokedFunctionArn());
@@ -118,13 +118,14 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     }
 
     private LoadDynamodbResponse processSegment(LoadDynamodbRequest input, Context context) {
-        logger.info("Processing segment {} of {} for job type: {}, starting from marker: {}",
-                    input.segment(), input.totalSegments(), input.jobType(), input.startMarker());
+        logger.info("Processing segment {} of {} for job type: {}, starting from marker: {}", input.segment(),
+                    input.totalSegments(), input.jobType(), input.startMarker());
 
-        var scan = resourceService.scanResourcesRaw(scanPageSize, input.startMarker(), input.types(),
-                                                    input.segment(), input.totalSegments());
+        var scan = resourceService.scanResourcesRaw(scanPageSize, input.startMarker(), input.types(), input.segment(),
+                                                    input.totalSegments());
 
-        var workItems = createWorkItems(input, scan);
+        var filteredItems = applyJsonPathFilter(scan.items(), input.filter());
+        var workItems = createWorkItems(input, filteredItems);
 
         var messagesQueued = queueWorkItems(workItems);
 
@@ -147,8 +148,9 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
         return batches.stream().mapToInt(this::sendBatchToQueue).sum();
     }
 
-    private static List<BatchWorkItem> createWorkItems(LoadDynamodbRequest input, ScanResultWrapper scan) {
-        return scan.items().stream().map(item -> {
+    private static List<BatchWorkItem> createWorkItems(LoadDynamodbRequest input,
+                                                       Collection<Map<String, AttributeValue>> items) {
+        return items.stream().map(item -> {
             var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(item.get(PRIMARY_KEY_PARTITION_KEY_NAME).getS(),
                                                                    item.get(PRIMARY_KEY_SORT_KEY_NAME).getS());
             return new BatchWorkItem(dynamoDbKey, input.jobType());
@@ -156,25 +158,37 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     }
 
     private void validateInput(LoadDynamodbRequest input) {
-        Optional.ofNullable(input)
-            .map(LoadDynamodbRequest::jobType)
-            .filter(StringUtils::isNotBlank)
-            .orElseThrow(() -> new IllegalArgumentException(
+        if (isNull(input)) {
+            throw new IllegalArgumentException("Input cannot be null");
+        }
+
+        if (isNull(input.jobType()) || input.jobType().isBlank()) {
+            throw new IllegalArgumentException(
                 "Missing required field 'jobType'. This lambda requires a jobType to be specified in the input. "
-                + "Example input: {\"jobType\": \"REINDEX_RECORD\"}"));
+                + "Example input: {\"jobType\": \"REINDEX_RECORD\"}");
+        }
+
+        validateFilterSyntax(input.filter());
+    }
+
+    private static void validateFilterSyntax(String filter) {
+        if (isNull(filter) || filter.isBlank()) {
+            return;
+        }
+
+        try {
+            JsonPath.compile(filter);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(
+                "Invalid JsonPath filter expression: '" + filter + "'. Error: " + e.getMessage(), e);
+        }
     }
 
     private boolean isProcessingEnabled() {
-        return Optional.ofNullable(processingEnabled)
-                   .map(Boolean::parseBoolean)
-                   .orElse(true);
+        return Optional.ofNullable(processingEnabled).map(Boolean::parseBoolean).orElse(true);
     }
 
     private int sendBatchToQueue(List<BatchWorkItem> workItems) {
-        if (workItems.isEmpty()) {
-            return 0;
-        }
-
         try {
             var entries = workItems.stream().map(this::getSendMessageBatchRequestEntry).toList();
 
@@ -218,5 +232,48 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
 
         eventBridgeClient.putEvents(putEventsRequest);
         logger.info("Sent event for next batch processing");
+    }
+
+    private Collection<Map<String, AttributeValue>> applyJsonPathFilter(Collection<Map<String, AttributeValue>> items,
+                                                                        String filterExpression) {
+        if (isNull(filterExpression) || filterExpression.isBlank()) {
+            return items;
+        }
+
+        var jsonPathCompiled = JsonPath.compile(filterExpression);
+        var jsonPathConfiguration = Configuration.defaultConfiguration();
+
+        return items.stream().filter(item -> matchesFilter(item, jsonPathCompiled, jsonPathConfiguration)).toList();
+    }
+
+    private boolean matchesFilter(Map<String, AttributeValue> item, JsonPath compiledPath,
+                                  Configuration configuration) {
+        try {
+            var jsonString =
+                isCompressedData(item) ? convertCompressedItemToJson(item) : convertUncompressedItemToJson(item);
+            var result = compiledPath.read(jsonString, configuration);
+            return nonNull(result) && !EMPTY_BRACKETS.equals(result.toString());
+        } catch (Exception e) {
+            logger.warn("Item excluded from filter due to error: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    static boolean isCompressedData(Map<String, AttributeValue> item) {
+        var dataAttribute = item.get(CONTAINED_DATA_FIELD_NAME);
+        return nonNull(dataAttribute) && nonNull(dataAttribute.getB());
+    }
+
+    static String convertCompressedItemToJson(Map<String, AttributeValue> item) {
+        try {
+            var dao = DataCompressor.decompressDao(item, Dao.class);
+            return JsonUtils.dtoObjectMapper.writeValueAsString(dao);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to convert compressed item to JSON", e);
+        }
+    }
+
+    static String convertUncompressedItemToJson(Map<String, AttributeValue> item) {
+        return ItemUtils.toItem(item).toJSON();
     }
 }
