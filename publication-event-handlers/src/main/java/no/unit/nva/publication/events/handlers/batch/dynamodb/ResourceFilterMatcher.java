@@ -14,26 +14,26 @@ public class ResourceFilterMatcher implements EntityFilterMatcher {
 
   @Override
   public boolean matches(Dao dao, BatchFilter filter) {
-    if (!(dao instanceof ResourceDao resourceDao)) {
-      return false;
+    if (dao instanceof ResourceDao resourceDao) {
+      var resource = resourceDao.getResource();
+      return matchesPublicationYears(resource, filter) && matchesStatuses(resource, filter);
     }
-    var resource = resourceDao.getResource();
-    return matchesPublicationYear(resource, filter) && matchesStatus(resource, filter);
+    return false;
   }
 
-  private boolean matchesPublicationYear(Resource resource, BatchFilter filter) {
+  private boolean matchesPublicationYears(Resource resource, BatchFilter filter) {
     if (nonNull(filter.publicationYears()) && !filter.publicationYears().isEmpty()) {
       return extractYear(resource)
-          .map(year -> filter.publicationYears().contains(year))
-          .orElse(false);
+          .filter(filter.publicationYears()::contains)
+          .isPresent();
     }
     if (nonNull(filter.publicationYear())) {
-      return extractYear(resource).map(year -> year.equals(filter.publicationYear())).orElse(false);
+      return extractYear(resource).filter(filter.publicationYear()::equals).isPresent();
     }
     return true;
   }
 
-  private boolean matchesStatus(Resource resource, BatchFilter filter) {
+  private boolean matchesStatuses(Resource resource, BatchFilter filter) {
     if (nonNull(filter.statuses()) && !filter.statuses().isEmpty()) {
       return Optional.ofNullable(resource.getStatus())
           .map(

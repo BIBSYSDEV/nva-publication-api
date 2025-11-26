@@ -27,6 +27,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -301,56 +302,6 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
         verify(mockSqsClient, atLeast(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
     }
 
-    private static LoadDynamodbRequest getRequest() {
-        return new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE), SEGMENT, ONE_TOTAL_SEGMENTS, null);
-    }
-
-    private SendMessageBatchResponse createSendMessageBatchResponse(InvocationOnMock invocation) {
-        SendMessageBatchRequest batchRequest = invocation.getArgument(0);
-        return createSendMessageBatchResponse(batchRequest.entries().size());
-    }
-
-    private static SendMessageBatchResponse createSendMessageBatchResponse(int count) {
-        var successfulEntries = IntStream.range(0, count)
-                                    .mapToObj(i -> SendMessageBatchResultEntry.builder().id(String.valueOf(i)).build())
-                                    .toList();
-
-        return SendMessageBatchResponse.builder()
-                   .successful(successfulEntries)
-                   .failed(List.of())
-                   .build();
-    }
-
-    private void createTestItems(int count) {
-        IntStream.range(0, count)
-            .mapToObj(i -> randomPublication())
-            .forEach(publication ->
-                         attempt(() -> Resource.fromPublication(publication).persistNew(resourceService,
-                                                                                        UserInstance.fromPublication(
-                                                                                            publication))).orElseThrow());
-    }
-
-    private void createTestItemsWithYear(int count, String year) {
-        IntStream.range(0, count)
-            .mapToObj(i -> {
-                var publication = randomPublication();
-                var publicationDate = new PublicationDate.Builder().withYear(year).build();
-                publication.getEntityDescription().setPublicationDate(publicationDate);
-                return publication;
-            })
-            .forEach(publication ->
-                         attempt(() -> Resource.fromPublication(publication).persistNew(resourceService,
-                                                                                        UserInstance.fromPublication(
-                                                                                            publication))).orElseThrow());
-    }
-
-    private void createPublishedTestItems(int count) {
-        IntStream.range(0, count)
-            .mapToObj(i -> randomPublication())
-            .forEach(publication -> Resource.fromPublication(publication)
-                         .importResource(resourceService, ImportSource.fromSource(Source.CRISTIN)));
-    }
-
     @Test
     void shouldFilterByPublicationYear() {
         var targetYear = "2025";
@@ -557,5 +508,57 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
         assertThat(response.itemsProcessed(), is(equalTo(0)));
         verify(sqsClient, never()).sendMessageBatch(any(SendMessageBatchRequest.class));
+    }
+
+    private static LoadDynamodbRequest getRequest() {
+        return new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE), SEGMENT, ONE_TOTAL_SEGMENTS, null);
+    }
+
+    private SendMessageBatchResponse createSendMessageBatchResponse(InvocationOnMock invocation) {
+        SendMessageBatchRequest batchRequest = invocation.getArgument(0);
+        return createSendMessageBatchResponse(batchRequest.entries().size());
+    }
+
+    private static SendMessageBatchResponse createSendMessageBatchResponse(int count) {
+        var successfulEntries = IntStream.range(0, count)
+                                    .mapToObj(i -> SendMessageBatchResultEntry.builder().id(String.valueOf(i)).build())
+                                    .toList();
+
+        return SendMessageBatchResponse.builder()
+                   .successful(successfulEntries)
+                   .failed(List.of())
+                   .build();
+    }
+
+    private void createTestItems(int count) {
+        IntStream.range(0, count)
+            .mapToObj(index -> randomPublication())
+            .forEach(publication ->
+                         attempt(() -> Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                        UserInstance.fromPublication(
+                                                                                            publication))).orElseThrow());
+    }
+
+    private void createTestItemsWithYear(int count, String year) {
+        IntStream.range(0, count)
+            .mapToObj(index -> randomPublicationWithYear(year))
+            .forEach(publication ->
+                         attempt(() -> Resource.fromPublication(publication).persistNew(resourceService,
+                                                                                        UserInstance.fromPublication(
+                                                                                            publication))).orElseThrow());
+    }
+
+    private static Publication randomPublicationWithYear(String year) {
+        var publication = randomPublication();
+        var publicationDate = new PublicationDate.Builder().withYear(year).build();
+        publication.getEntityDescription().setPublicationDate(publicationDate);
+        return publication;
+    }
+
+    private void createPublishedTestItems(int count) {
+        IntStream.range(0, count)
+            .mapToObj(index -> randomPublication())
+            .forEach(publication -> Resource.fromPublication(publication)
+                         .importResource(resourceService, ImportSource.fromSource(Source.CRISTIN)));
     }
 }

@@ -164,7 +164,7 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
 
     private void validateInput(LoadDynamodbRequest input) {
         var validInput = Optional.ofNullable(input)
-                             .filter(i -> StringUtils.isNotBlank(i.jobType()))
+                             .filter(request -> StringUtils.isNotBlank(request.jobType()))
                              .orElseThrow(() -> new IllegalArgumentException(
                                  "Missing required field 'jobType'. This lambda requires a jobType to be specified "
                                  + "in the input. Example input: {\"jobType\": \"REINDEX_RECORD\"}"));
