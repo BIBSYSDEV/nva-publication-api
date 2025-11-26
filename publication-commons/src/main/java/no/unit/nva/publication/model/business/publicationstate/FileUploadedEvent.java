@@ -12,7 +12,6 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
-import nva.commons.core.JacocoGenerated;
 
 public record FileUploadedEvent(Instant date, User user, URI institution, SortableIdentifier identifier,
                                 ImportSource importSource) implements FileEvent {
@@ -25,19 +24,10 @@ public record FileUploadedEvent(Instant date, User user, URI institution, Sortab
 
     private static ImportSource getImportSource(UserInstance userInstance) {
         return userInstance.getThirdPartySystem()
-                   .map(FileUploadedEvent::toSource)
+                   .map(ThirdPartySystem::toSource)
                    .map(ImportSource::fromSource)
                    .orElse(ImportSource.fromSource(Source.OTHER));
 
-    }
-
-    @JacocoGenerated
-    private static Source toSource(ThirdPartySystem thirdPartySystem) {
-        return switch (thirdPartySystem) {
-            case INSPERA -> Source.INSPERA;
-            case WISE_FLOW -> Source.CRISTIN;
-            case OTHER -> Source.OTHER;
-        };
     }
 
     @Override
