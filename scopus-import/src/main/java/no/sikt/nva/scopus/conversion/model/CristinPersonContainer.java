@@ -1,7 +1,7 @@
 package no.sikt.nva.scopus.conversion.model;
 
 import java.net.URI;
-import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
+import no.unit.nva.publication.external.services.cristin.CristinPerson;
 
 public record CristinPersonContainer(AuthorIdentifiers authorIdentifiers, URI cristinId, CristinPerson cristinPerson) {
 

@@ -1,4 +1,4 @@
-package no.sikt.nva.scopus.utils;
+package no.unit.nva.publication.external.services.cristin;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -13,21 +13,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
-import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
-import no.sikt.nva.scopus.conversion.model.cristin.Role;
-import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
-import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import nva.commons.core.paths.UriWrapper;
 
 public class CristinGenerator {
 
     private static final int MAX_NUMBER_OF_AFFILIATIONS = 10;
+    private static final String FIRST_NAME = "FirstName";
+    private static final String LAST_NAME = "LastName";
 
     public static CristinPerson generateCristinPerson(URI cristinId, String firstname, String surname) {
-        var names = Set.of(new TypedValue("FirstName", firstname), new TypedValue("LastName", surname));
+        var names = Set.of(new TypedValue(FIRST_NAME, firstname), new TypedValue(LAST_NAME, surname));
         return new CristinPerson.Builder().withId(cristinId)
                    .withNames(names)
                    .withAffiliations(generateAffiliations())
@@ -38,7 +34,7 @@ public class CristinGenerator {
 
     public static CristinPerson generateCristinPersonWithSingleActiveAffiliation(URI cristinId, String firstname,
                                                                                  String surname) {
-        var names = Set.of(new TypedValue("FirstName", firstname), new TypedValue("LastName", surname));
+        var names = Set.of(new TypedValue(FIRST_NAME, firstname), new TypedValue(LAST_NAME, surname));
         return new CristinPerson.Builder().withId(cristinId)
                    .withNames(names)
                    .withAffiliations(generateAffiliationsWithSingleActiveAffiliation())
@@ -48,7 +44,7 @@ public class CristinGenerator {
     }
 
     public static CristinPerson generateCristinPersonWithoutOrcId(URI cristinId, String firstname, String surname) {
-        var names = Set.of(new TypedValue("FirstName", firstname), new TypedValue("LastName", surname));
+        var names = Set.of(new TypedValue(FIRST_NAME, firstname), new TypedValue(LAST_NAME, surname));
         return new CristinPerson.Builder().withId(cristinId)
                    .withNames(names)
                    .withAffiliations(generateAffiliationsWithSingleActiveAffiliation())
@@ -58,7 +54,7 @@ public class CristinGenerator {
 
     public static CristinPerson generateCristinPersonWithoutAffiliations(URI cristinId, String firstname,
                                                                          String surname) {
-        var names = Set.of(new TypedValue("FirstName", firstname), new TypedValue("LastName", surname));
+        var names = Set.of(new TypedValue(FIRST_NAME, firstname), new TypedValue(LAST_NAME, surname));
         return new CristinPerson.Builder().withId(cristinId)
                    .withNames(names)
                    .withIdentifiers(Set.of(new TypedValue("orcid", randomString())))

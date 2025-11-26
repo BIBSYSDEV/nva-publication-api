@@ -24,7 +24,7 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import no.scopus.generated.DocTp;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
-import no.sikt.nva.scopus.conversion.CristinConnection;
+import no.unit.nva.publication.external.services.cristin.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;

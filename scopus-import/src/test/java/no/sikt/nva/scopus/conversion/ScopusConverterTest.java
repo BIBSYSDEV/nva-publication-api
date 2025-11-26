@@ -25,6 +25,7 @@ import no.sikt.nva.scopus.conversion.ContributorExtractor.ContributorsOrganizati
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.sikt.nva.scopus.exception.MissingNvaContributorException;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
+import no.unit.nva.publication.external.services.cristin.CristinConnection;
 import no.unit.nva.clients.CustomerList;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.importcandidate.ImportCandidate;

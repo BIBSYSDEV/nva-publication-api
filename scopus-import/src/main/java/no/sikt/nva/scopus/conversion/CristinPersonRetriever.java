@@ -9,7 +9,8 @@ import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.sikt.nva.scopus.conversion.model.AuthorIdentifiers;
 import no.sikt.nva.scopus.conversion.model.CristinPersonContainer;
-import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
+import no.unit.nva.publication.external.services.cristin.CristinConnection;
+import no.unit.nva.publication.external.services.cristin.CristinPerson;
 import no.sikt.nva.scopus.paralleliseutils.ParallelizeListProcessing;
 
 public class CristinPersonRetriever {

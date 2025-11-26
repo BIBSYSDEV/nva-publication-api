@@ -20,6 +20,7 @@ dependencies {
     testImplementation project(path: ':tickets-test')
     testImplementation libs.bundles.testing
     testImplementation libs.jsonassert
+    testImplementation(testFixtures(project(":publication-commons")))
 }
 
 test {

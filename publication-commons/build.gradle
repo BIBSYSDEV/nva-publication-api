@@ -48,6 +48,11 @@ dependencies {
     testFixturesImplementation project(":publication-model")
     testFixturesImplementation libs.nva.testutils
     testFixturesImplementation libs.nva.apigateway
+    testFixturesImplementation libs.nva.json
+    testFixturesImplementation libs.nva.core
+    testFixturesImplementation libs.bundles.jackson
+
+    testImplementation libs.wiremock
 }
 
 test {

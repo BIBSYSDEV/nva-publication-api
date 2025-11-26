@@ -13,7 +13,7 @@ import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AffiliationType;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.OrganizationTp;
-import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.publication.external.services.cristin.CristinOrganization;
 import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.UnconfirmedOrganization;

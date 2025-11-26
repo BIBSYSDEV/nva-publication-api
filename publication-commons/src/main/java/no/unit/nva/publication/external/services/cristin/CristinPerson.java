@@ -1,18 +1,16 @@
-package no.sikt.nva.scopus.conversion.model.cristin;
-
-//Copied from nva-cristin-service, is it possible to import this instead of copying?
+package no.unit.nva.publication.external.services.cristin;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
-import static no.sikt.nva.scopus.conversion.model.cristin.JsonPropertyNames.AFFILIATIONS;
-import static no.sikt.nva.scopus.conversion.model.cristin.JsonPropertyNames.CONTACT_DETAILS;
-import static no.sikt.nva.scopus.conversion.model.cristin.JsonPropertyNames.ID;
-import static no.sikt.nva.scopus.conversion.model.cristin.JsonPropertyNames.IDENTIFIERS;
-import static no.sikt.nva.scopus.conversion.model.cristin.JsonPropertyNames.IMAGE;
-import static no.sikt.nva.scopus.conversion.model.cristin.JsonPropertyNames.NAMES;
-import static no.sikt.nva.scopus.conversion.model.cristin.JsonPropertyNames.NATIONAL_IDENTITY_NUMBER;
-import static no.sikt.nva.scopus.conversion.model.cristin.JsonPropertyNames.RESERVED;
-import static no.sikt.nva.scopus.conversion.model.cristin.JsonPropertyNames.TYPE;
 import static no.unit.nva.model.util.ContextUtil.CONTEXT;
+import static no.unit.nva.publication.external.services.cristin.JsonPropertyNames.AFFILIATIONS;
+import static no.unit.nva.publication.external.services.cristin.JsonPropertyNames.CONTACT_DETAILS;
+import static no.unit.nva.publication.external.services.cristin.JsonPropertyNames.ID;
+import static no.unit.nva.publication.external.services.cristin.JsonPropertyNames.IDENTIFIERS;
+import static no.unit.nva.publication.external.services.cristin.JsonPropertyNames.IMAGE;
+import static no.unit.nva.publication.external.services.cristin.JsonPropertyNames.NAMES;
+import static no.unit.nva.publication.external.services.cristin.JsonPropertyNames.NATIONAL_IDENTITY_NUMBER;
+import static no.unit.nva.publication.external.services.cristin.JsonPropertyNames.RESERVED;
+import static no.unit.nva.publication.external.services.cristin.JsonPropertyNames.TYPE;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -55,19 +53,8 @@ public class CristinPerson implements JsonSerializable {
     private Boolean isVerified;
 
     private CristinPerson() {
-
     }
 
-    /**
-     * Creates a Person for serialization to client.
-     *
-     * @param id             Identifier of Person.
-     * @param identifiers    Different identifiers related to this object.
-     * @param names          Different names for this Person.
-     * @param contactDetails How to contact this Person.
-     * @param image          URI to picture of this Person.
-     * @param affiliations   This person's organization affiliations.
-     */
     @JsonCreator
     public CristinPerson(@JsonProperty("id") URI id, @JsonProperty("identifiers") Set<TypedValue> identifiers,
                          @JsonProperty("names") Set<TypedValue> names,

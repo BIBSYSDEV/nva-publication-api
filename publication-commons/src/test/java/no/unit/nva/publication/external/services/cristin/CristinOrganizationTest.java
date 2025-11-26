@@ -1,4 +1,4 @@
-package no.unit.nva.expansion.model.cristin;
+package no.unit.nva.publication.external.services.cristin;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;

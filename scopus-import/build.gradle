@@ -38,6 +38,7 @@ dependencies {
     testImplementation libs.nva.json
 
     testImplementation libs.wiremock
+    testImplementation(testFixtures(project(":publication-commons")))
     testImplementation project(":brage-import")
     testImplementation project(":brage-import")
     testImplementation project(":publication-testing")

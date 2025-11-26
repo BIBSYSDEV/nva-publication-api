@@ -9,7 +9,7 @@ import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.SCOPUS_AUID;
-import static no.sikt.nva.scopus.utils.CristinGenerator.generateCristinOrganizationWithCountry;
+import static no.unit.nva.publication.external.services.cristin.CristinGenerator.generateCristinOrganizationWithCountry;
 import static no.sikt.nva.scopus.utils.ScopusTestUtils.randomCustomer;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -49,15 +49,16 @@ import no.scopus.generated.DocTp;
 import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.PersonalnameType;
 import no.sikt.nva.scopus.conversion.ContributorExtractor.ContributorsOrganizationsWrapper;
-import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
-import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
-import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
-import no.sikt.nva.scopus.utils.CristinGenerator;
+import no.unit.nva.publication.external.services.cristin.CristinGenerator;
 import no.sikt.nva.scopus.utils.PiaResponseGenerator;
 import no.sikt.nva.scopus.utils.ScopusGenerator;
 import no.unit.nva.clients.CustomerList;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.publication.external.services.cristin.CristinConnection;
+import no.unit.nva.publication.external.services.cristin.CristinOrganization;
+import no.unit.nva.publication.external.services.cristin.CristinPerson;
+import no.unit.nva.publication.external.services.cristin.SearchOrganizationResponse;
+import no.unit.nva.publication.external.services.cristin.TypedValue;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.model.ContributorVerificationStatus;
@@ -306,7 +307,7 @@ public class ContributorExtractorTest {
         var corporations = getCorporations(contributorExtractorFromDocument().generateContributors(document));
 
         var expectedAffiliations = cristinPerson.getAffiliations().stream().filter(
-            no.sikt.nva.scopus.conversion.model.cristin.Affiliation::isActive).toList();
+            no.unit.nva.publication.external.services.cristin.Affiliation::isActive).toList();
         var actualOrganization = (Organization) corporations.getFirst();
 
         assertThat(corporations.size(), is(equalTo(expectedAffiliations.size())));
@@ -665,9 +666,9 @@ public class ContributorExtractorTest {
                    .toString();
     }
 
-    private static List<no.sikt.nva.scopus.conversion.model.cristin.Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {
+    private static List<no.unit.nva.publication.external.services.cristin.Affiliation> getActiveAffiliations(CristinPerson expectedCristinPerson) {
         return expectedCristinPerson.getAffiliations().stream().filter(
-            no.sikt.nva.scopus.conversion.model.cristin.Affiliation::isActive).toList();
+            no.unit.nva.publication.external.services.cristin.Affiliation::isActive).toList();
     }
 
     private static AuthorTp getFirstAuthor(DocTp document) {
@@ -770,8 +771,8 @@ public class ContributorExtractorTest {
                                                     .collect(Collectors.toList());
         var expectedOrganizationFromAffiliation = expectedCristinPerson.getAffiliations()
                                                       .stream()
-                                                      .filter(no.sikt.nva.scopus.conversion.model.cristin.Affiliation::isActive)
-                                                      .map(no.sikt.nva.scopus.conversion.model.cristin.Affiliation::getOrganization)
+                                                      .filter(no.unit.nva.publication.external.services.cristin.Affiliation::isActive)
+                                                      .map(no.unit.nva.publication.external.services.cristin.Affiliation::getOrganization)
                                                       .toList();
 
         assertThat(actualOrganizationFromAffiliation, containsInAnyOrder(

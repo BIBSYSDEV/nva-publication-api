@@ -1,6 +1,4 @@
-package no.sikt.nva.scopus.conversion.model.cristin;
-
-//Copied from nva-cristin-service
+package no.unit.nva.publication.external.services.cristin;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -19,12 +17,6 @@ public class Role {
     private final URI id;
     private final Map<String, String> labels;
 
-    /**
-     * Creates a Role for serialization to client.
-     *
-     * @param id     URI to ontology.
-     * @param labels Labels in different languages describing this role.
-     */
     @JsonCreator
     public Role(@JsonProperty("id") URI id, @JsonProperty("labels") Map<String, String> labels) {
         this.id = id;
@@ -57,5 +49,4 @@ public class Role {
     public int hashCode() {
         return Objects.hash(getId(), getLabels());
     }
-
 }

@@ -8,8 +8,8 @@ import static org.hamcrest.Matchers.is;
 import java.util.Set;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.PersonalnameType;
-import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
-import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
+import no.unit.nva.publication.external.services.cristin.CristinPerson;
+import no.unit.nva.publication.external.services.cristin.TypedValue;
 import nva.commons.core.StringUtils;
 import org.junit.jupiter.api.Test;
 

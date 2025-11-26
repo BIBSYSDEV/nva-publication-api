@@ -27,7 +27,7 @@ import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.publication.external.services.cristin.CristinOrganization;
 import no.unit.nva.expansion.model.nvi.NviCandidateResponse;
 import no.unit.nva.expansion.model.nvi.ScientificIndex;
 import no.unit.nva.expansion.utils.FramedJsonGenerator;

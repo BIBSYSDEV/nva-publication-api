@@ -1,6 +1,4 @@
-package no.sikt.nva.scopus.conversion.model.cristin;
-
-//Copied from nva-cristin-service
+package no.unit.nva.publication.external.services.cristin;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -40,5 +38,4 @@ public class ContactDetails {
     public int hashCode() {
         return Objects.hash(getTelephone());
     }
-
 }

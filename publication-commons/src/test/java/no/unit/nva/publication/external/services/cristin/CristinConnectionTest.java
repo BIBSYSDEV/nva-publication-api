@@ -1,4 +1,4 @@
-package no.sikt.nva.scopus.conversion;
+package no.unit.nva.publication.external.services.cristin;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -20,9 +20,6 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.List;
-import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
-import no.sikt.nva.scopus.utils.CristinGenerator;
-import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.stubs.WiremockHttpClient;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;

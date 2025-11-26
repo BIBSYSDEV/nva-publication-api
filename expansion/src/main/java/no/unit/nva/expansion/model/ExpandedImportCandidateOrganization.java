@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.Map;
-import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.publication.external.services.cristin.CristinOrganization;
 
 
 @JsonTypeName(ExpandedImportCandidateOrganization.TYPE)

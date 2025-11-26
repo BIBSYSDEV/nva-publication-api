@@ -1,4 +1,4 @@
-package no.unit.nva.expansion.model.cristin;
+package no.unit.nva.publication.external.services.cristin;
 
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -19,8 +19,7 @@ public record CristinOrganization(@JsonProperty(ID) URI id,
                                   @JsonProperty(TYPE) String type,
                                   @JsonProperty(PART_OF) List<CristinOrganization> partOf,
                                   @JsonProperty(COUNTRY) String country,
-                                  @JsonProperty(LABELS) Map<String, String> labels
-)
+                                  @JsonProperty(LABELS) Map<String, String> labels)
     implements JsonSerializable {
 
     public static final String PART_OF = "partOf";
@@ -34,16 +33,12 @@ public record CristinOrganization(@JsonProperty(ID) URI id,
     @JsonIgnore
     public CristinOrganization getTopLevelOrg() {
         if (hasPartOf(this)) {
-
             var organization = partOf().stream().collect(SingletonCollector.collect());
-
             while (hasPartOf(organization)) {
                 organization = organization.partOf().stream().collect(SingletonCollector.collect());
             }
-
             return organization;
         }
-
         return this;
     }
 

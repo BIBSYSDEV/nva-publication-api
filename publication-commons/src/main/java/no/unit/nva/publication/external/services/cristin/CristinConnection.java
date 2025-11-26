@@ -1,4 +1,4 @@
-package no.sikt.nva.scopus.conversion;
+package no.unit.nva.publication.external.services.cristin;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.net.HttpURLConnection.HTTP_OK;
@@ -12,10 +12,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
-import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
-import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -25,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 public class CristinConnection {
 
+    public static final String HTTPS_SCHEME = "https://";
     private static final String CRISTIN_PERSON_RESPONSE_ERROR = "Could not fetch cristin person: ";
     private static final String CRISTIN_ORGANIZATION_RESPONSE_ERROR = "Could not fetch cristin organization: ";
     private static final String COULD_NOT_FETCH_ORGANIZATION = "Could not fetch organization: {}";
@@ -88,7 +86,7 @@ public class CristinConnection {
     }
 
     private URI constructSearchCristinOrganizationUri(String organization) {
-        return UriWrapper.fromUri(PiaConnection.HTTPS_SCHEME + environment.readEnv(API_HOST))
+        return UriWrapper.fromUri(HTTPS_SCHEME + environment.readEnv(API_HOST))
                    .addChild(CRISTIN)
                    .addChild(ORGANIZATION)
                    .addQueryParameter(QUERY, organization)
@@ -96,7 +94,7 @@ public class CristinConnection {
     }
 
     private URI createCristinPersonUri(String orcId) {
-        return UriWrapper.fromUri(PiaConnection.HTTPS_SCHEME + environment.readEnv(API_HOST))
+        return UriWrapper.fromUri(HTTPS_SCHEME + environment.readEnv(API_HOST))
                    .addChild(CRISTIN)
                    .addChild(PERSON)
                    .addChild(UriWrapper.fromUri(orcId).getLastPathElement())

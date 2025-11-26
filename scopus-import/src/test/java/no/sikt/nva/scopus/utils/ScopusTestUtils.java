@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import no.unit.nva.clients.CustomerDto;
-import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.publication.external.services.cristin.CristinOrganization;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.testutils.RandomDataGenerator;
 

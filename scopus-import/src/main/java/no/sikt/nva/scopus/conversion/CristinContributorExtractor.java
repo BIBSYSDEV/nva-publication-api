@@ -15,9 +15,9 @@ import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.PersonalnameType;
 import no.sikt.nva.scopus.conversion.model.AuthorGroupWithCristinOrganization;
-import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
-import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
-import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.publication.external.services.cristin.CristinOrganization;
+import no.unit.nva.publication.external.services.cristin.CristinPerson;
+import no.unit.nva.publication.external.services.cristin.TypedValue;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.model.ContributorVerificationStatus;
@@ -102,7 +102,7 @@ public final class CristinContributorExtractor {
                    : ContributorVerificationStatus.NOT_VERIFIED;
     }
 
-    private static Collection<Affiliation> generateOrganizations(Set<no.sikt.nva.scopus.conversion.model.cristin.Affiliation> affiliations,
+    private static Collection<Affiliation> generateOrganizations(Set<no.unit.nva.publication.external.services.cristin.Affiliation> affiliations,
                                                                  AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
         var cristinPersonActiveAffiliations = createOrganizationsFromActiveCristinPersonAffiliations(affiliations, authorGroupWithCristinOrganization);
         var organizationsFromAuthorGroup = createOrganizationFromCristinOrganization(authorGroupWithCristinOrganization).toList();
@@ -112,12 +112,12 @@ public final class CristinContributorExtractor {
     }
 
     private static Collection<Affiliation> createOrganizationsFromActiveCristinPersonAffiliations(
-        Set<no.sikt.nva.scopus.conversion.model.cristin.Affiliation> affiliations, AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
+        Set<no.unit.nva.publication.external.services.cristin.Affiliation> affiliations, AuthorGroupWithCristinOrganization authorGroupWithCristinOrganization) {
         var list = new ArrayList<Affiliation>();
         list.add(new Affiliation(null,
                                  AffiliationMapper.mapToAffiliation(getAffiliation(authorGroupWithCristinOrganization))));
         list.addAll(affiliations.stream()
-                        .filter(no.sikt.nva.scopus.conversion.model.cristin.Affiliation::isActive)
+                        .filter(no.unit.nva.publication.external.services.cristin.Affiliation::isActive)
                         .map(CristinContributorExtractor::toOrganization)
                         .distinct()
                         .toList());
@@ -130,7 +130,7 @@ public final class CristinContributorExtractor {
             AuthorGroupWithCristinOrganization::getScopusAuthors).map(AuthorGroupTp::getAffiliation).orElse(null);
     }
 
-    private static Affiliation toOrganization(no.sikt.nva.scopus.conversion.model.cristin.Affiliation affiliation) {
+    private static Affiliation toOrganization(no.unit.nva.publication.external.services.cristin.Affiliation affiliation) {
         return new Affiliation(Organization.fromUri(affiliation.getOrganization()), null);
     }
 

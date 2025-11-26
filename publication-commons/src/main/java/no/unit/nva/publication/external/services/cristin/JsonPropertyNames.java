@@ -1,6 +1,4 @@
-package no.sikt.nva.scopus.conversion.model.cristin;
-
-//Copied from nva-cristin-service
+package no.unit.nva.publication.external.services.cristin;
 
 import nva.commons.core.JacocoGenerated;
 

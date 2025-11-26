@@ -13,9 +13,10 @@ import no.scopus.generated.AffiliationType;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.OrganizationTp;
 import no.sikt.nva.scopus.conversion.model.AuthorGroupWithCristinOrganization;
-import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
+import no.unit.nva.publication.external.services.cristin.SearchOrganizationResponse;
 import no.sikt.nva.scopus.paralleliseutils.ParallelizeListProcessing;
-import no.unit.nva.expansion.model.cristin.CristinOrganization;
+import no.unit.nva.publication.external.services.cristin.CristinConnection;
+import no.unit.nva.publication.external.services.cristin.CristinOrganization;
 
 public class AffiliationGenerator {
 
