@@ -303,26 +303,8 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldFilterByPublicationYear() {
-        var targetYear = "2025";
-        var filter = new BatchFilter(targetYear, null, null, null);
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE),
-                                              SEGMENT, ONE_TOTAL_SEGMENTS, filter);
-
-        createTestItemsWithYear(3, targetYear);
-        createTestItemsWithYear(2, "2024");
-
-        when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
-            .thenAnswer(this::createSendMessageBatchResponse);
-
-        var response = handler.processInput(request, event, context);
-
-        assertThat(response.itemsProcessed(), is(equalTo(3)));
-    }
-
-    @Test
-    void shouldFilterByMultiplePublicationYears() {
-        var filter = new BatchFilter(null, List.of("2024", "2025"), null, null);
+    void shouldFilterByPublicationYears() {
+        var filter = new BatchFilter(List.of("2024", "2025"), null);
         var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE),
                                               SEGMENT, ONE_TOTAL_SEGMENTS, filter);
 
@@ -339,25 +321,8 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldFilterByStatus() {
-        var filter = new BatchFilter(null, null, "DRAFT", null);
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE),
-                                              SEGMENT, ONE_TOTAL_SEGMENTS, filter);
-
-        createTestItems(3);
-        createPublishedTestItems(2);
-
-        when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
-            .thenAnswer(this::createSendMessageBatchResponse);
-
-        var response = handler.processInput(request, event, context);
-
-        assertThat(response.itemsProcessed(), is(equalTo(3)));
-    }
-
-    @Test
-    void shouldFilterByMultipleStatuses() {
-        var filter = new BatchFilter(null, null, null, List.of("DRAFT", "PUBLISHED"));
+    void shouldFilterByStatuses() {
+        var filter = new BatchFilter(null, List.of("DRAFT", "PUBLISHED"));
         var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE),
                                               SEGMENT, ONE_TOTAL_SEGMENTS, filter);
 
@@ -373,8 +338,8 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldFilterByCombinedYearAndStatus() {
-        var filter = new BatchFilter("2025", null, "DRAFT", null);
+    void shouldFilterByCombinedYearsAndStatuses() {
+        var filter = new BatchFilter(List.of("2025"), List.of("DRAFT"));
         var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE),
                                               SEGMENT, ONE_TOTAL_SEGMENTS, filter);
 
@@ -406,7 +371,7 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnAllItemsWhenFilterIsEmpty() {
-        var filter = new BatchFilter(null, null, null, null);
+        var filter = new BatchFilter(null, null);
         var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE),
                                               SEGMENT, ONE_TOTAL_SEGMENTS, filter);
 
@@ -421,22 +386,8 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldThrowExceptionForInvalidYearFormat() {
-        var filter = new BatchFilter("invalid", null, null, null);
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE),
-                                              SEGMENT, ONE_TOTAL_SEGMENTS, filter);
-
-        var exception = assertThrows(IllegalArgumentException.class,
-                                     () -> handler.processInput(request, event, context));
-
-        assertThat(exception.getMessage(), containsString("Invalid publicationYear format"));
-        verifyNoInteractions(resourceService);
-        verifyNoInteractions(sqsClient);
-    }
-
-    @Test
     void shouldThrowExceptionForInvalidYearInList() {
-        var filter = new BatchFilter(null, List.of("2025", "invalid"), null, null);
+        var filter = new BatchFilter(List.of("2025", "invalid"), null);
         var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE),
                                               SEGMENT, ONE_TOTAL_SEGMENTS, filter);
 
@@ -444,27 +395,13 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
                                      () -> handler.processInput(request, event, context));
 
         assertThat(exception.getMessage(), containsString("Invalid publicationYear format"));
-        verifyNoInteractions(resourceService);
-        verifyNoInteractions(sqsClient);
-    }
-
-    @Test
-    void shouldThrowExceptionForInvalidStatus() {
-        var filter = new BatchFilter(null, null, "INVALID_STATUS", null);
-        var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE),
-                                              SEGMENT, ONE_TOTAL_SEGMENTS, filter);
-
-        var exception = assertThrows(IllegalArgumentException.class,
-                                     () -> handler.processInput(request, event, context));
-
-        assertThat(exception.getMessage(), containsString("Invalid status value"));
         verifyNoInteractions(resourceService);
         verifyNoInteractions(sqsClient);
     }
 
     @Test
     void shouldThrowExceptionForInvalidStatusInList() {
-        var filter = new BatchFilter(null, null, null, List.of("DRAFT", "INVALID_STATUS"));
+        var filter = new BatchFilter(null, List.of("DRAFT", "INVALID_STATUS"));
         var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE),
                                               SEGMENT, ONE_TOTAL_SEGMENTS, filter);
 
@@ -479,7 +416,7 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldPropagateFilterToParallelSegments() {
         when(context.getInvokedFunctionArn()).thenReturn(TEST_FUNCTION_ARN);
-        var filter = new BatchFilter("2025", null, "PUBLISHED", null);
+        var filter = new BatchFilter(List.of("2025"), List.of("PUBLISHED"));
         var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE),
                                               null, null, filter);
 
@@ -491,14 +428,14 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
         eventBridgeClient.getRequestEntries().forEach(entry -> {
             var segmentRequest = attempt(() -> JsonUtils.dtoObjectMapper.readValue(
                 entry.detail(), LoadDynamodbRequest.class)).orElseThrow();
-            assertThat(segmentRequest.filter().publicationYear(), is(equalTo("2025")));
-            assertThat(segmentRequest.filter().status(), is(equalTo("PUBLISHED")));
+            assertThat(segmentRequest.filter().publicationYears(), is(equalTo(List.of("2025"))));
+            assertThat(segmentRequest.filter().statuses(), is(equalTo(List.of("PUBLISHED"))));
         });
     }
 
     @Test
     void shouldFilterOutItemsWithNoMatchingYear() {
-        var filter = new BatchFilter("9999", null, null, null);
+        var filter = new BatchFilter(List.of("9999"), null);
         var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE),
                                               SEGMENT, ONE_TOTAL_SEGMENTS, filter);
 

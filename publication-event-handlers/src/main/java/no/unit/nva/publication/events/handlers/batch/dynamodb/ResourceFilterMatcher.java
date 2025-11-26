@@ -1,7 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 import java.util.Optional;
 import no.unit.nva.model.EntityDescription;
@@ -22,31 +21,19 @@ public class ResourceFilterMatcher implements EntityFilterMatcher {
   }
 
   private boolean matchesPublicationYears(Resource resource, BatchFilter filter) {
-    if (nonNull(filter.publicationYears()) && !filter.publicationYears().isEmpty()) {
-      return extractYear(resource)
-          .filter(filter.publicationYears()::contains)
-          .isPresent();
+    if (isNull(filter.publicationYears()) || filter.publicationYears().isEmpty()) {
+      return true;
     }
-    if (nonNull(filter.publicationYear())) {
-      return extractYear(resource).filter(filter.publicationYear()::equals).isPresent();
-    }
-    return true;
+    return extractYear(resource).filter(filter.publicationYears()::contains).isPresent();
   }
 
   private boolean matchesStatuses(Resource resource, BatchFilter filter) {
-    if (nonNull(filter.statuses()) && !filter.statuses().isEmpty()) {
-      return Optional.ofNullable(resource.getStatus())
-          .map(
-              status ->
-                  filter.statuses().stream()
-                      .anyMatch(filterStatus -> filterStatus.equalsIgnoreCase(status.toString())))
-          .orElse(false);
-    }
-    if (isNull(filter.status())) {
+    if (isNull(filter.statuses()) || filter.statuses().isEmpty()) {
       return true;
     }
     return Optional.ofNullable(resource.getStatus())
-        .map(status -> status.toString().equalsIgnoreCase(filter.status()))
+        .map(status -> filter.statuses().stream()
+            .anyMatch(filterStatus -> filterStatus.equalsIgnoreCase(status.toString())))
         .orElse(false);
   }
 

@@ -19,19 +19,8 @@ public final class BatchFilterValidator {
     if (isNull(filter)) {
       return;
     }
-    validatePublicationYear(filter.publicationYear());
     validatePublicationYears(filter.publicationYears());
-    validateStatus(filter.status());
     validateStatuses(filter.statuses());
-  }
-
-  private static void validatePublicationYear(String year) {
-    if (isNull(year)) {
-      return;
-    }
-    if (!YEAR_PATTERN.matcher(year).matches()) {
-      throw new IllegalArgumentException(INVALID_YEAR_MESSAGE + year);
-    }
   }
 
   private static void validatePublicationYears(Collection<String> years) {
@@ -41,14 +30,9 @@ public final class BatchFilterValidator {
     years.forEach(BatchFilterValidator::validatePublicationYear);
   }
 
-  private static void validateStatus(String status) {
-    if (isNull(status)) {
-      return;
-    }
-    try {
-      PublicationStatus.lookup(status);
-    } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException(INVALID_STATUS_MESSAGE + status, e);
+  private static void validatePublicationYear(String year) {
+    if (!YEAR_PATTERN.matcher(year).matches()) {
+      throw new IllegalArgumentException(INVALID_YEAR_MESSAGE + year);
     }
   }
 
@@ -57,5 +41,13 @@ public final class BatchFilterValidator {
       return;
     }
     statuses.forEach(BatchFilterValidator::validateStatus);
+  }
+
+  private static void validateStatus(String status) {
+    try {
+      PublicationStatus.lookup(status);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(INVALID_STATUS_MESSAGE + status, e);
+    }
   }
 }
