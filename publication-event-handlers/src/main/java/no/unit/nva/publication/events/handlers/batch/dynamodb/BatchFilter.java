@@ -14,9 +14,9 @@ public record BatchFilter(
     implements JsonSerializable {
 
   public boolean isEmpty() {
-    return StringUtils.isNotBlank(publicationYear)
+    return StringUtils.isBlank(publicationYear)
            && (isNull(publicationYears) || publicationYears.isEmpty())
-           && StringUtils.isNotBlank(status)
+           && StringUtils.isBlank(status)
            && (isNull(statuses) || statuses.isEmpty());
   }
 }
