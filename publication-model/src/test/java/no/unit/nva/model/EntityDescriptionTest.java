@@ -518,8 +518,6 @@ class EntityDescriptionTest {
         assertThrows(EntityDescriptionValidationException.class, entityDescription::validate);
     }
 
-
-
     private static EntityDescription createEntityDescriptionForTypeWithChannelAndPublicationDate(
             Class<? extends PublicationContext> clazz, String publicationYear, String publicationChannelYear) {
         var entityDescription = entityDescriptionFromContext(clazz);
