@@ -36,15 +36,17 @@ public class ResourceFilterMatcher implements EntityFilterMatcher {
   private boolean matchesStatus(Resource resource, BatchFilter filter) {
     if (nonNull(filter.statuses()) && !filter.statuses().isEmpty()) {
       return Optional.ofNullable(resource.getStatus())
-          .map(status -> filter.statuses().stream()
-              .anyMatch(s -> s.equalsIgnoreCase(status.getValue())))
+          .map(
+              status ->
+                  filter.statuses().stream()
+                      .anyMatch(filterStatus -> filterStatus.equalsIgnoreCase(status.toString())))
           .orElse(false);
     }
     if (isNull(filter.status())) {
       return true;
     }
     return Optional.ofNullable(resource.getStatus())
-        .map(status -> status.getValue().equalsIgnoreCase(filter.status()))
+        .map(status -> status.toString().equalsIgnoreCase(filter.status()))
         .orElse(false);
   }
 

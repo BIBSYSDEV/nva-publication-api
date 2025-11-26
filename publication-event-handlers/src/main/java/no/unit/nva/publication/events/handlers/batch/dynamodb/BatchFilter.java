@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 
 import java.util.Collection;
 import no.unit.nva.commons.json.JsonSerializable;
+import nva.commons.core.StringUtils;
 
 public record BatchFilter(
     String publicationYear,
@@ -13,9 +14,9 @@ public record BatchFilter(
     implements JsonSerializable {
 
   public boolean isEmpty() {
-    return isNull(publicationYear)
-        && (isNull(publicationYears) || publicationYears.isEmpty())
-        && isNull(status)
-        && (isNull(statuses) || statuses.isEmpty());
+    return StringUtils.isNotBlank(publicationYear)
+           && (isNull(publicationYears) || publicationYears.isEmpty())
+           && StringUtils.isNotBlank(status)
+           && (isNull(statuses) || statuses.isEmpty());
   }
 }
