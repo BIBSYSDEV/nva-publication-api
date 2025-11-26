@@ -21,11 +21,12 @@ import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtype;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtypeEnum;
 import no.unit.nva.model.instancetypes.artistic.film.realization.Broadcast;
-import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOutput;
 import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArts;
 import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArtsSubtype;
 import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArtsSubtypeEnum;
+import no.unit.nva.model.instancetypes.artistic.literaryarts.manifestation.LiteraryArtsManifestation;
 import no.unit.nva.model.instancetypes.artistic.literaryarts.manifestation.LiteraryArtsMonograph;
+import no.unit.nva.model.instancetypes.artistic.literaryarts.manifestation.LiteraryArtsWeb;
 import no.unit.nva.model.instancetypes.artistic.music.AudioVisualPublication;
 import no.unit.nva.model.instancetypes.artistic.music.MusicMediaSubtype;
 import no.unit.nva.model.instancetypes.artistic.music.MusicMediaType;
@@ -46,7 +47,6 @@ import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.testing.EntityDescriptionBuilder;
 import no.unit.nva.model.time.Instant;
 import no.unit.nva.model.time.duration.DefinedDuration;
-import no.unit.nva.model.time.duration.Duration;
 import no.unit.nva.model.validation.EntityDescriptionValidationException;
 import no.unit.nva.model.validation.EntityDescriptionValidatorImpl;
 import nva.commons.core.paths.UriWrapper;
@@ -57,7 +57,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -70,6 +69,7 @@ import java.util.stream.Stream;
 
 import static no.unit.nva.DatamodelConfig.dataModelObjectMapper;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomIsmn;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomIsrc;
 import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomMonographPages;
@@ -135,6 +135,15 @@ class EntityDescriptionTest {
                         List.of(new MusicTrack(randomString(), randomString(), randomString())), randomIsrc()),
                 new MusicScore(randomString(), randomString(), randomString(),
                         new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()), randomIsmn())
+        );
+    }
+
+    public static Stream<LiteraryArtsManifestation> literaryArtsManifestationProvider() {
+        return Stream.of(
+                new LiteraryArtsMonograph(new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()),
+                        INVALID_DATE_SERIES_PUBLISHER.date, randomIsbn13(), randomMonographPages()),
+                new LiteraryArtsWeb(randomUri(), new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()),
+                        INVALID_DATE_SERIES_PUBLISHER.date())
         );
     }
 
@@ -459,14 +468,14 @@ class EntityDescriptionTest {
         assertThrows(EntityDescriptionValidationException.class, entityDescription::validate);
     }
 
-    @Test
-    void shouldThrowWhenLiteraryArtsHasUnsynchronizedDateInUri() {
+    @ParameterizedTest
+    @MethodSource("literaryArtsManifestationProvider")
+    void shouldThrowWhenLiteraryArtsHasUnsynchronizedDateInUri(LiteraryArtsManifestation literaryArtsManifestation) {
         var entityDescription = randomEntityDescription(LiteraryArts.class);
         entityDescription.setPublicationDate(INVALID_DATE_SERIES_PUBLISHER.date());
         var reference = entityDescription.getReference();
         var instance = new LiteraryArts(LiteraryArtsSubtype.create(LiteraryArtsSubtypeEnum.NOVEL),
-                List.of(new LiteraryArtsMonograph(new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()),
-                        INVALID_DATE_SERIES_PUBLISHER.date, randomIsbn13(), randomMonographPages())), randomString());
+                List.of(literaryArtsManifestation), randomString());
         reference.setPublicationInstance(instance);
         assertThrows(EntityDescriptionValidationException.class, entityDescription::validate);
     }
