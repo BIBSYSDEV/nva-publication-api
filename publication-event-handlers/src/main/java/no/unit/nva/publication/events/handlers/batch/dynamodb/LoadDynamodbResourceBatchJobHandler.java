@@ -259,12 +259,12 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
         }
     }
 
-    static boolean isCompressedData(Map<String, AttributeValue> item) {
+    private static boolean isCompressedData(Map<String, AttributeValue> item) {
         var dataAttribute = item.get(CONTAINED_DATA_FIELD_NAME);
         return nonNull(dataAttribute) && nonNull(dataAttribute.getB());
     }
 
-    static String convertCompressedItemToJson(Map<String, AttributeValue> item) {
+    private static String convertCompressedItemToJson(Map<String, AttributeValue> item) {
         try {
             var dao = DataCompressor.decompressDao(item, Dao.class);
             return JsonUtils.dtoObjectMapper.writeValueAsString(dao);
@@ -273,7 +273,7 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
         }
     }
 
-    static String convertUncompressedItemToJson(Map<String, AttributeValue> item) {
+    private static String convertUncompressedItemToJson(Map<String, AttributeValue> item) {
         return ItemUtils.toItem(item).toJSON();
     }
 }

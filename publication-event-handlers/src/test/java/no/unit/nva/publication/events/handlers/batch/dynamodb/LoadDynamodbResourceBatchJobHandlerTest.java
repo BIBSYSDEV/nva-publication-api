@@ -10,7 +10,6 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
-import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -461,63 +460,6 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldConvertCompressedDataToJson() {
-        createTestItems(1);
-
-        var scan = resourceService.scanResourcesRaw(10, null, List.of(KeyField.RESOURCE), 0, 1);
-
-        assertThat(scan.items().size(), is(greaterThan(0)));
-
-        var firstItem = scan.items().iterator().next();
-        var filter = "$[?(@.data.status)]";
-
-        var compiledPath = com.jayway.jsonpath.JsonPath.compile(filter);
-        var configuration = com.jayway.jsonpath.Configuration.defaultConfiguration();
-
-        var jsonString = LoadDynamodbResourceBatchJobHandler.isCompressedData(firstItem)
-                             ? LoadDynamodbResourceBatchJobHandler.convertCompressedItemToJson(firstItem)
-                             : LoadDynamodbResourceBatchJobHandler.convertUncompressedItemToJson(firstItem);
-
-        assertThat(jsonString, containsString("status"));
-        assertThat(jsonString, containsString("data"));
-
-        var result = compiledPath.read(jsonString, configuration);
-        assertThat(result, is(not(equalTo("[]"))));
-    }
-
-    @Test
-    void shouldConvertUncompressedDataToJson() {
-        var uncompressedData = createUncompressedItem("test-id", "PublicationLogEntry", "PublicationUpdated");
-
-        assertThat(LoadDynamodbResourceBatchJobHandler.isCompressedData(uncompressedData), is(false));
-
-        var jsonString = LoadDynamodbResourceBatchJobHandler.convertUncompressedItemToJson(uncompressedData);
-
-        assertThat(jsonString, containsString("identifier"));
-        assertThat(jsonString, containsString("test-id"));
-        assertThat(jsonString, containsString("PublicationLogEntry"));
-
-        var filter = "$[?(@.data.type == 'PublicationLogEntry')]";
-        var compiledPath = com.jayway.jsonpath.JsonPath.compile(filter);
-        var configuration = com.jayway.jsonpath.Configuration.defaultConfiguration();
-
-        var result = compiledPath.read(jsonString, configuration);
-        assertThat(result, is(not(equalTo("[]"))));
-    }
-
-    @Test
-    void shouldDetectCompressedVsUncompressedData() {
-        createTestItems(1);
-
-        var scan = resourceService.scanResourcesRaw(10, null, List.of(KeyField.RESOURCE), 0, 1);
-        var compressedItem = scan.items().iterator().next();
-        var uncompressedItem = createUncompressedItem("test-id", "TestType", null);
-
-        assertThat(LoadDynamodbResourceBatchJobHandler.isCompressedData(compressedItem), is(true));
-        assertThat(LoadDynamodbResourceBatchJobHandler.isCompressedData(uncompressedItem), is(false));
-    }
-
-    @Test
     void shouldHandlePathNotFoundExceptionWhenFilteringItems() {
         var filter = "$.nonExistent.deeply.nested.path";
         var request = new LoadDynamodbRequest(TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE), SEGMENT,
@@ -593,13 +535,6 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldDetectDataAttributeWithoutBinaryAsUncompressed() {
-        var itemWithDataMapNotBinary = createItemWithDataFieldAsMap();
-
-        assertThat(LoadDynamodbResourceBatchJobHandler.isCompressedData(itemWithDataMapNotBinary), is(false));
-    }
-
-    @Test
     void shouldHandleJsonPathReturningNullForDefinitePath() {
         var uncompressedItem = createUncompressedItem("test-id", "TestType", null);
         var scanResult = new ScanResultWrapper(List.of(uncompressedItem), null, false);
@@ -615,16 +550,6 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
         assertThat(response.itemsProcessed(), is(equalTo(0)));
         assertThat(response.messagesQueued(), is(equalTo(0)));
-    }
-
-    private static Map<String, AttributeValue> createItemWithDataFieldAsMap() {
-        return Map.of(
-            CONTAINED_DATA_FIELD_NAME, new AttributeValue().withM(Map.of(
-                "someKey", new AttributeValue().withS("someValue")
-            )),
-            "PK0", new AttributeValue().withS("Resource#customer#owner"),
-            "SK0", new AttributeValue().withS("Resource#identifier")
-        );
     }
 
     private static Map<String, AttributeValue> createUncompressedItem(String identifier, String type,
