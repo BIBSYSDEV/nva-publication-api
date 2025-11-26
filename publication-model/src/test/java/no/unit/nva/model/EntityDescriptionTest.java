@@ -21,6 +21,8 @@ import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtype;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtypeEnum;
 import no.unit.nva.model.instancetypes.artistic.film.realization.Broadcast;
+import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOutput;
+import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
 import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArts;
 import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArtsSubtype;
 import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArtsSubtypeEnum;
@@ -144,6 +146,16 @@ class EntityDescriptionTest {
                         INVALID_DATE_SERIES_PUBLISHER.date, randomIsbn13(), randomMonographPages()),
                 new LiteraryArtsWeb(randomUri(), new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()),
                         INVALID_DATE_SERIES_PUBLISHER.date())
+        );
+    }
+
+    public static Stream<MovingPictureOutput> movingPictureOutputProvider() {
+        return Stream.of(
+                new Broadcast(new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()),
+                        new Instant(java.time.Instant.now()), 1),
+                new OtherRelease(randomString(), randomUnconfirmedPlace(),
+                        new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()),
+                        new Instant(java.time.Instant.now()), 1)
         );
     }
 
@@ -457,13 +469,14 @@ class EntityDescriptionTest {
         assertThrows(EntityDescriptionValidationException.class, entityDescription::validate);
     }
 
-    @Test
-    void shouldThrowWhenBroadcastHasUnsynchronizedDateInUri() {
+    @ParameterizedTest
+    @MethodSource("movingPictureOutputProvider")
+    void shouldThrowWhenMovingPictureHasUnsynchronizedDateInUri(MovingPictureOutput output) {
         var entityDescription = randomEntityDescription(MovingPicture.class);
         entityDescription.setPublicationDate(INVALID_DATE_SERIES_PUBLISHER.date());
         var reference = entityDescription.getReference();
-        var broadcast = new Broadcast(new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()), new Instant(java.time.Instant.now()), 1);
-        var instance = new MovingPicture(MovingPictureSubtype.fromJson(MovingPictureSubtypeEnum.FILM, null), randomString(), List.of(broadcast), DefinedDuration.builder().withHours(1).withMinutes(10).build());
+        var instance = new MovingPicture(MovingPictureSubtype.fromJson(MovingPictureSubtypeEnum.FILM, null),
+                randomString(), List.of(output), DefinedDuration.builder().withHours(1).withMinutes(10).build());
         reference.setPublicationInstance(instance);
         assertThrows(EntityDescriptionValidationException.class, entityDescription::validate);
     }
