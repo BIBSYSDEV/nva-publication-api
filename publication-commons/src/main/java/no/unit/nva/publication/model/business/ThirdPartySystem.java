@@ -22,7 +22,7 @@ public enum ThirdPartySystem {
     public Source toSource() {
         return switch (this) {
             case INSPERA -> Source.INSPERA;
-            case WISE_FLOW -> Source.CRISTIN;
+            case WISE_FLOW -> Source.WISE_FLOW;
             case THESIS_PORTAL -> Source.THESIS_PORTAL;
             case OTHER -> Source.OTHER;
         };
