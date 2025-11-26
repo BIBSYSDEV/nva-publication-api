@@ -8,6 +8,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.collect.Lists;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,7 +16,6 @@ import java.util.UUID;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.publication.model.ScanResultWrapper;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -43,6 +43,7 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     private final String queueUrl;
     private final String processingEnabled;
     private final ResourceService resourceService;
+    private final BatchFilterService batchFilterService;
     private final int scanPageSize;
     private final int sqsBatchSize;
     private final int totalSegments;
@@ -51,6 +52,7 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     public LoadDynamodbResourceBatchJobHandler() {
         this(SqsClient.create(), defaultEventBridgeClient(), new Environment().readEnv(WORK_QUEUE_URL_ENV),
              new Environment().readEnv(PROCESSING_ENABLED_ENV), ResourceService.defaultService(),
+             new BatchFilterService(),
              parseInt(new Environment().readEnv(SCAN_PAGE_SIZE_ENV)),
              parseInt(new Environment().readEnv(SQS_BATCH_SIZE_ENV)),
              parseInt(new Environment().readEnv(TOTAL_SEGMENTS_ENV)));
@@ -59,11 +61,13 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     public LoadDynamodbResourceBatchJobHandler(SqsClient sqsClient,
                                                EventBridgeClient eventBridgeClient, String queueUrl,
                                                String processingEnabled, ResourceService resourceService,
+                                               BatchFilterService batchFilterService,
                                                int scanPageSize,
                                                int sqsBatchSize,
                                                int totalSegments) {
         super(LoadDynamodbRequest.class);
         this.resourceService = resourceService;
+        this.batchFilterService = batchFilterService;
         this.sqsClient = sqsClient;
         this.eventBridgeClient = eventBridgeClient;
         this.queueUrl = queueUrl;
@@ -101,7 +105,8 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
                 null,
                 input.types(),
                 segment,
-                totalSegments
+                totalSegments,
+                input.filter()
             );
 
             var segmentEvent = segmentRequest.createNewEventEntry(EVENT_BUS_NAME, DETAIL_TYPE,
@@ -124,12 +129,13 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
         var scan = resourceService.scanResourcesRaw(scanPageSize, input.startMarker(), input.types(),
                                                     input.segment(), input.totalSegments());
 
-        var workItems = createWorkItems(input, scan);
+        var filteredItems = batchFilterService.applyFilter(scan.items(), input.filter());
+        var workItems = createWorkItems(input.jobType(), filteredItems);
 
         var messagesQueued = queueWorkItems(workItems);
 
-        logger.info("Segment {} processed {} items, queued {} messages", input.segment(), workItems.size(),
-                    messagesQueued);
+        logger.info("Segment {} scanned {} items, filtered to {} items, queued {} messages",
+                    input.segment(), scan.items().size(), workItems.size(), messagesQueued);
 
         if (scan.isTruncated()) {
             sendEventForNextBatch(input, scan.nextKey(), context);
@@ -147,21 +153,22 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
         return batches.stream().mapToInt(this::sendBatchToQueue).sum();
     }
 
-    private static List<BatchWorkItem> createWorkItems(LoadDynamodbRequest input, ScanResultWrapper scan) {
-        return scan.items().stream().map(item -> {
+    private static List<BatchWorkItem> createWorkItems(String jobType,
+                                                       Collection<Map<String, AttributeValue>> items) {
+        return items.stream().map(item -> {
             var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(item.get(PRIMARY_KEY_PARTITION_KEY_NAME).getS(),
                                                                    item.get(PRIMARY_KEY_SORT_KEY_NAME).getS());
-            return new BatchWorkItem(dynamoDbKey, input.jobType());
+            return new BatchWorkItem(dynamoDbKey, jobType);
         }).toList();
     }
 
     private void validateInput(LoadDynamodbRequest input) {
-        Optional.ofNullable(input)
-            .map(LoadDynamodbRequest::jobType)
-            .filter(StringUtils::isNotBlank)
-            .orElseThrow(() -> new IllegalArgumentException(
-                "Missing required field 'jobType'. This lambda requires a jobType to be specified in the input. "
-                + "Example input: {\"jobType\": \"REINDEX_RECORD\"}"));
+        var validInput = Optional.ofNullable(input)
+                             .filter(i -> StringUtils.isNotBlank(i.jobType()))
+                             .orElseThrow(() -> new IllegalArgumentException(
+                                 "Missing required field 'jobType'. This lambda requires a jobType to be specified "
+                                 + "in the input. Example input: {\"jobType\": \"REINDEX_RECORD\"}"));
+        BatchFilterValidator.validate(validInput.filter());
     }
 
     private boolean isProcessingEnabled() {
