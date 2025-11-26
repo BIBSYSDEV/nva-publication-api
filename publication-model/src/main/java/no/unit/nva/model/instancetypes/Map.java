@@ -5,6 +5,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import no.unit.nva.model.pages.MonographPages;
 import nva.commons.core.JacocoGenerated;
 
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import static no.unit.nva.model.instancetypes.PublicationInstance.Constants.PAGES_FIELD;
@@ -26,6 +29,11 @@ public class Map implements PublicationInstance<MonographPages> {
     @Override
     public MonographPages getPages() {
         return pages;
+    }
+
+    @Override
+    public List<URI> extractPublicationContextUris() {
+        return Collections.emptyList();
     }
 
     public String getDescription() {

@@ -5,7 +5,9 @@ import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.model.instancetypes.degree.RelatedDocument;
@@ -66,6 +68,11 @@ public class DataSet implements no.unit.nva.model.instancetypes.PublicationInsta
     @Override
     public NullPages getPages() {
         return NullPages.NULL_PAGES;
+    }
+
+    @Override
+    public List<URI> extractPublicationContextUris() {
+        return Collections.emptyList();
     }
 
     @JacocoGenerated

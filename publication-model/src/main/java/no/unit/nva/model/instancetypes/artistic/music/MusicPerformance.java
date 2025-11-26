@@ -4,8 +4,13 @@ import static no.unit.nva.model.util.SerializationUtils.nullListAsEmpty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+
+import no.unit.nva.model.Published;
+import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.NullPages;
 import no.unit.nva.model.time.duration.Duration;
@@ -35,6 +40,19 @@ public class MusicPerformance implements PublicationInstance<NullPages> {
     @Override
     public NullPages getPages() {
         return NullPages.NULL_PAGES;
+    }
+
+    @Override
+    public List<URI> extractPublicationContextUris() {
+        return manifestations.stream()
+                .filter(Published.class::isInstance)
+                .map(Published.class::cast)
+                .map(Published::getPublisher)
+                .filter(Publisher.class::isInstance)
+                .map(Publisher.class::cast)
+                .map(Publisher::getId)
+                .distinct()
+                .toList();
     }
 
     public Duration getDuration() {

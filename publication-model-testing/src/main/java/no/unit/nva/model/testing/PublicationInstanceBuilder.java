@@ -431,11 +431,11 @@ public final class PublicationInstanceBuilder {
                 randomIsmn());
     }
 
-    private static Isrc randomIsrc() {
+    public static Isrc randomIsrc() {
         return attempt(() -> new Isrc("USRC17607839")).orElseThrow();
     }
 
-    private static Ismn randomIsmn() {
+    public static Ismn randomIsmn() {
         return attempt(() -> new Ismn(randomElement(VALID_ISMN_13, VALID_ISMN_10))).orElseThrow();
     }
 

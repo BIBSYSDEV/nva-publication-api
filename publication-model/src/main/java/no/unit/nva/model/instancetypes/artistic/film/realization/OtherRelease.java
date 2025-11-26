@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Objects;
+
+import no.unit.nva.model.Published;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
@@ -12,7 +14,7 @@ import no.unit.nva.model.time.Instant;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class OtherRelease implements MovingPictureOutput, UnconfirmedPublisherMigrator {
+public class OtherRelease implements MovingPictureOutput, UnconfirmedPublisherMigrator, Published {
     public static final String DESCRIPTION_FIELD = "description";
     public static final String PLACE_FIELD = "place";
     public static final String PUBLISHER_FIELD = "publisher";
@@ -62,6 +64,7 @@ public class OtherRelease implements MovingPictureOutput, UnconfirmedPublisherMi
         return place;
     }
 
+    @Override
     public PublishingHouse getPublisher() {
         return publisher;
     }

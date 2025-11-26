@@ -7,6 +7,8 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.NullPages;
 import nva.commons.core.JacocoGenerated;
 
+import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -41,6 +43,11 @@ public class Architecture implements PublicationInstance<NullPages> {
     @Override
     public NullPages getPages() {
         return NullPages.NULL_PAGES;
+    }
+
+    @Override
+    public List<URI> extractPublicationContextUris() {
+        return Collections.emptyList();
     }
 
     public ArchitectureSubtype getSubtype() {

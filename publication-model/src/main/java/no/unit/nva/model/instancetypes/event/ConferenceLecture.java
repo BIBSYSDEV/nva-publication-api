@@ -7,6 +7,10 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.NullPages;
 import nva.commons.core.JacocoGenerated;
 
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
+
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ConferenceLecture implements PublicationInstance<NullPages> {
 
@@ -19,6 +23,11 @@ public class ConferenceLecture implements PublicationInstance<NullPages> {
     @Override
     public NullPages getPages() {
         return NullPages.NULL_PAGES;
+    }
+
+    @Override
+    public List<URI> extractPublicationContextUris() {
+        return Collections.emptyList();
     }
 
     @JacocoGenerated

@@ -3,6 +3,8 @@ package no.unit.nva.model.instancetypes.artistic.film;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import no.unit.nva.model.Published;
+import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOutput;
 import no.unit.nva.model.pages.NullPages;
@@ -10,6 +12,7 @@ import no.unit.nva.model.time.duration.Duration;
 import no.unit.nva.model.time.duration.NullDuration;
 import nva.commons.core.JacocoGenerated;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 
@@ -58,6 +61,19 @@ public class MovingPicture implements PublicationInstance<NullPages> {
     @Override
     public NullPages getPages() {
         return NullPages.NULL_PAGES;
+    }
+
+    @Override
+    public List<URI> extractPublicationContextUris() {
+        return outputs.stream()
+                .filter(Published.class::isInstance)
+                .map(Published.class::cast)
+                .map(Published::getPublisher)
+                .filter(Publisher.class::isInstance)
+                .map(Publisher.class::cast)
+                .map(Publisher::getId)
+                .distinct()
+                .toList();
     }
 
     public Duration getDuration() {

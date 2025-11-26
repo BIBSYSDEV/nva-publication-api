@@ -69,6 +69,9 @@ import no.unit.nva.model.instancetypes.researchdata.DataManagementPlan;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.pages.Pages;
 
+import java.net.URI;
+import java.util.List;
+
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = "AcademicCommentary", value = AcademicCommentary.class),
@@ -146,6 +149,8 @@ public interface PublicationInstance<P extends Pages> {
     default String getInstanceType() {
         return this.getClass().getSimpleName();
     }
+
+    List<URI> extractPublicationContextUris();
 
     class Constants {
         public static final String  PAGES_FIELD = "pages";

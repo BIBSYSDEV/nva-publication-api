@@ -7,6 +7,9 @@ import no.unit.nva.model.instancetypes.artistic.design.realization.Venue;
 import no.unit.nva.model.pages.NullPages;
 import nva.commons.core.JacocoGenerated;
 
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -68,5 +71,10 @@ public class VisualArts implements PublicationInstance<NullPages> {
     @Override
     public NullPages getPages() {
         return NullPages.NULL_PAGES;
+    }
+
+    @Override
+    public List<URI> extractPublicationContextUris() {
+        return Collections.emptyList();
     }
 }
