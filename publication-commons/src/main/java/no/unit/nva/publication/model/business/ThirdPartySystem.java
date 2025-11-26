@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import no.unit.nva.model.ImportSource.Source;
 
 public enum ThirdPartySystem {
-    WISE_FLOW("WISEflow"), INSPERA("Inspera"), THESIS_PORTAL("Avhandlingsportalen"), OTHER("Other");
+    WISE_FLOW("WISEflow"), INSPERA("Inspera"), AVHANDLINGSPORTALEN("Avhandlingsportalen"), OTHER("Other");
 
     private final String value;
 
@@ -23,7 +23,7 @@ public enum ThirdPartySystem {
         return switch (this) {
             case INSPERA -> Source.INSPERA;
             case WISE_FLOW -> Source.WISE_FLOW;
-            case THESIS_PORTAL -> Source.THESIS_PORTAL;
+            case AVHANDLINGSPORTALEN -> Source.AVHANDLINGSPORTALEN;
             case OTHER -> Source.OTHER;
         };
     }
