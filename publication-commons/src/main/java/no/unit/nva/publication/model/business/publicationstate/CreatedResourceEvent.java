@@ -11,7 +11,6 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
-import nva.commons.core.JacocoGenerated;
 
 public record CreatedResourceEvent(Instant date, User user, URI institution, SortableIdentifier identifier,
                                    ImportSource importSource)
@@ -26,19 +25,10 @@ public record CreatedResourceEvent(Instant date, User user, URI institution, Sor
 
     private static ImportSource getImportSource(UserInstance userInstance) {
         return userInstance.getThirdPartySystem()
-                   .map(CreatedResourceEvent::toSource)
+                   .map(ThirdPartySystem::toSource)
                    .map(ImportSource::fromSource)
                    .orElse(ImportSource.fromSource(Source.OTHER));
 
-    }
-
-    @JacocoGenerated
-    private static Source toSource(ThirdPartySystem thirdPartySystem) {
-        return switch (thirdPartySystem) {
-            case INSPERA -> Source.INSPERA;
-            case WISE_FLOW -> Source.WISE_FLOW;
-            case OTHER -> Source.OTHER;
-        };
     }
 
     @Override
