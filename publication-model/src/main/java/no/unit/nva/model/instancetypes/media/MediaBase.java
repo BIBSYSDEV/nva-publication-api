@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.NullPages;
+import nva.commons.core.JacocoGenerated;
 
 import java.util.Objects;
-import nva.commons.core.JacocoGenerated;
 
 public class MediaBase implements PublicationInstance<NullPages> {
 

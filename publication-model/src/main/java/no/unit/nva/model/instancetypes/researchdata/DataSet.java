@@ -1,16 +1,18 @@
 package no.unit.nva.model.instancetypes.researchdata;
 
-import static java.util.Collections.emptySet;
-import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import no.unit.nva.model.instancetypes.degree.RelatedDocument;
+import no.unit.nva.model.pages.NullPages;
+import nva.commons.core.JacocoGenerated;
+
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import no.unit.nva.model.instancetypes.degree.RelatedDocument;
-import no.unit.nva.model.pages.NullPages;
-import nva.commons.core.JacocoGenerated;
+
+import static java.util.Collections.emptySet;
+import static java.util.Objects.nonNull;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class DataSet implements no.unit.nva.model.instancetypes.PublicationInstance<NullPages> {

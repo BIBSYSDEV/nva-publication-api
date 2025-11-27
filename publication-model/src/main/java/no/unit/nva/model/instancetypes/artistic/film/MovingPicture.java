@@ -10,6 +10,8 @@ import no.unit.nva.model.time.duration.Duration;
 import no.unit.nva.model.time.duration.NullDuration;
 import nva.commons.core.JacocoGenerated;
 
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -58,6 +60,11 @@ public class MovingPicture implements PublicationInstance<NullPages> {
     @Override
     public NullPages getPages() {
         return NullPages.NULL_PAGES;
+    }
+
+    @Override
+    public List<URI> extractPublicationContextUris() {
+        return extractExhibitionContextUris(new ArrayList<>(outputs));
     }
 
     public Duration getDuration() {

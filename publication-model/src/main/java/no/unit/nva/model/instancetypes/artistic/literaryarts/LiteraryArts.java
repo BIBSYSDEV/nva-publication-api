@@ -8,6 +8,8 @@ import no.unit.nva.model.instancetypes.artistic.literaryarts.manifestation.Liter
 import no.unit.nva.model.pages.NullPages;
 import nva.commons.core.JacocoGenerated;
 
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -34,6 +36,11 @@ public class LiteraryArts implements PublicationInstance<NullPages> {
     @Override
     public NullPages getPages() {
         return NullPages.NULL_PAGES;
+    }
+
+    @Override
+    public List<URI> extractPublicationContextUris() {
+        return extractExhibitionContextUris(new ArrayList<>(manifestations));
     }
 
     public LiteraryArtsSubtype getSubtype() {

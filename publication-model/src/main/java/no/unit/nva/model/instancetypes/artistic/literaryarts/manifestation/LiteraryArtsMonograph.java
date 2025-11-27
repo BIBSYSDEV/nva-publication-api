@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.PublisherInInstance;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.pages.MonographPages;
 import nva.commons.core.JacocoGenerated;
@@ -18,7 +19,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class LiteraryArtsMonograph implements LiteraryArtsManifestation {
+public class LiteraryArtsMonograph implements LiteraryArtsManifestation, PublisherInInstance {
     public static final String PUBLISHER_FIELD = "publisher";
     public static final String DATE_FIELD = "publicationDate";
     public static final String ISBN_LIST_FIELD = "isbnList";
@@ -54,6 +55,7 @@ public class LiteraryArtsMonograph implements LiteraryArtsManifestation {
         }
     }
 
+    @Override
     public PublishingHouse getPublisher() {
         return publisher;
     }

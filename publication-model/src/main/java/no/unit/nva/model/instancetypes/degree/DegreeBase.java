@@ -30,6 +30,7 @@ public class DegreeBase implements PublicationInstance<MonographPages> {
         return pages;
     }
 
+
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {

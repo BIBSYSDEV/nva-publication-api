@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import no.unit.nva.model.PublisherInInstance;
+import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.instancetypes.artistic.architecture.Architecture;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
@@ -68,6 +70,10 @@ import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.instancetypes.researchdata.DataManagementPlan;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.pages.Pages;
+
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -145,6 +151,24 @@ public interface PublicationInstance<P extends Pages> {
     @JsonIgnore
     default String getInstanceType() {
         return this.getClass().getSimpleName();
+    }
+
+    @JsonIgnore
+    default List<URI> extractPublicationContextUris() {
+        return Collections.emptyList();
+    }
+
+    @JsonIgnore
+    default List<URI> extractExhibitionContextUris(List<Object> manifestations) {
+        return manifestations.stream()
+                .filter(PublisherInInstance.class::isInstance)
+                .map(PublisherInInstance.class::cast)
+                .map(PublisherInInstance::getPublisher)
+                .filter(Publisher.class::isInstance)
+                .map(Publisher.class::cast)
+                .map(Publisher::getId)
+                .distinct()
+                .toList();
     }
 
     class Constants {

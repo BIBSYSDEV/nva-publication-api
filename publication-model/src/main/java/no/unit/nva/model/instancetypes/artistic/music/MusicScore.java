@@ -5,13 +5,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.util.Objects;
+
+import no.unit.nva.model.PublisherInInstance;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.artistic.UnconfirmedPublisherMigrator;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public class MusicScore implements MusicPerformanceManifestation, UnconfirmedPublisherMigrator {
+public class MusicScore implements MusicPerformanceManifestation, UnconfirmedPublisherMigrator, PublisherInInstance {
 
     public static final String ENSEMBLE_FIELD = "ensemble";
     public static final String MOVEMENTS_FIELD = "movements";
@@ -90,6 +92,7 @@ public class MusicScore implements MusicPerformanceManifestation, UnconfirmedPub
         return extent;
     }
 
+    @Override
     public PublishingHouse getPublisher() {
         return publisher;
     }

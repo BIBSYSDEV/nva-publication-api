@@ -9,6 +9,8 @@ import no.unit.nva.model.instancetypes.exhibition.manifestations.ExhibitionProdu
 import no.unit.nva.model.pages.NullPages;
 import nva.commons.core.JacocoGenerated;
 
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -41,6 +43,11 @@ public class ExhibitionProduction implements PublicationInstance<NullPages> {
     @Override
     public NullPages getPages() {
         return new NullPages();
+    }
+
+    @Override
+    public List<URI> extractPublicationContextUris() {
+        return extractExhibitionContextUris(new ArrayList<>(manifestations));
     }
 
     @Override

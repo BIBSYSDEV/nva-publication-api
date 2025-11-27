@@ -2,10 +2,11 @@ package no.unit.nva.model.validation;
 
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.contexttypes.PublicationContext;
 import nva.commons.core.paths.UriWrapper;
 
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,30 +15,41 @@ import static nva.commons.core.attempt.Try.attempt;
 
 public class EntityDescriptionValidatorImpl implements EntityDescriptionValidator {
 
-    private static final String UNSYNCHRONIZED_PUBLICATION_CHANNEL_DATE_MESSAGE =
-            "EntityDescription contains unsynchronized publication-date and publication-channel combinations";
+    private static final String CONTEXT_UNSYNCHRONIZED_PUBLICATION_CHANNEL_DATE_MESSAGE =
+            "EntityDescription PublicationContext contains unsynchronized publication-date "
+                    + "and publication-channel combinations";
+    private static final String INSTANCE_UNSYNCHRONIZED_PUBLICATION_CHANNEL_DATE_MESSAGE =
+            "EntityDescription PublicationInstance contains unsynchronized publication-date "
+                    + "and publication-channel combinations";
     private static final String POST_SECOND_MILLENNIUM_YEAR_REGEX = "[0-9]{4}";
     private static List<String> errors;
 
     @Override
     public ValidationReport validate(EntityDescription entityDescription) {
         errors = new ArrayList<>();
-        var publicationContext = entityDescription.getReference().getPublicationContext();
+        var reference = entityDescription.getReference();
+        var publicationContext = reference.getPublicationContext();
         var publicationDate = entityDescription.getPublicationDate();
-        if (hasUnsynchronizedPublicationDateChannelDatePair(publicationContext, publicationDate)) {
-            errors.add(UNSYNCHRONIZED_PUBLICATION_CHANNEL_DATE_MESSAGE);
+        if (hasUnsynchronizedPublicationDateChannelDatePair(publicationContext.extractPublicationContextUris(),
+                publicationDate)) {
+            errors.add(CONTEXT_UNSYNCHRONIZED_PUBLICATION_CHANNEL_DATE_MESSAGE);
+        }
+        var publicationInstance = reference.getPublicationInstance();
+        if (hasUnsynchronizedPublicationDateChannelDatePair(publicationInstance.extractPublicationContextUris(),
+                publicationDate)) {
+            errors.add(INSTANCE_UNSYNCHRONIZED_PUBLICATION_CHANNEL_DATE_MESSAGE);
         }
         return new EntityDescriptionValidationReport(errors);
     }
 
-    private boolean hasUnsynchronizedPublicationDateChannelDatePair(PublicationContext context,
+    private boolean hasUnsynchronizedPublicationDateChannelDatePair(Collection<URI> uris,
                                                                     PublicationDate publicationDate) {
-        return nonNull(context) && hasInvalidChannelYears(context, publicationDate);
+        return nonNull(uris) && hasInvalidChannelYears(uris, publicationDate);
 
     }
 
-    private boolean hasInvalidChannelYears(PublicationContext context, PublicationDate publicationDate) {
-        var channelYears = extractPublicationChannelYears(context);
+    private boolean hasInvalidChannelYears(Collection<URI> uris, PublicationDate publicationDate) {
+        var channelYears = extractPublicationChannelYears(uris);
         return !channelYears.isEmpty() && (hasMultipleChannelYears(channelYears)
                 || hasMismatchedPublicationDate(channelYears.getFirst(), publicationDate));
     }
@@ -53,8 +65,8 @@ public class EntityDescriptionValidatorImpl implements EntityDescriptionValidato
                 .orElse(true);
     }
 
-    private static List<String> extractPublicationChannelYears(PublicationContext context) {
-        return context.extractPublicationContextUris().stream()
+    private static List<String> extractPublicationChannelYears(Collection<URI> uris) {
+        return uris.stream()
                 .map(UriWrapper::fromUri)
                 .map(EntityDescriptionValidatorImpl::extractPublicationChannelYear)
                 .filter(Optional::isPresent)

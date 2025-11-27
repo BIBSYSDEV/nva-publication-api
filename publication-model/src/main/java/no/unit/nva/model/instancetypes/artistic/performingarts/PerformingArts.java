@@ -1,6 +1,5 @@
 package no.unit.nva.model.instancetypes.artistic.performingarts;
 
-import static no.unit.nva.model.util.SerializationUtils.nullListAsEmpty;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -10,6 +9,8 @@ import nva.commons.core.JacocoGenerated;
 
 import java.util.List;
 import java.util.Objects;
+
+import static no.unit.nva.model.util.SerializationUtils.nullListAsEmpty;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class PerformingArts implements PublicationInstance<NullPages> {

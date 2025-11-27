@@ -17,13 +17,38 @@ import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.Map;
+import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
+import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtype;
+import no.unit.nva.model.instancetypes.artistic.film.MovingPictureSubtypeEnum;
+import no.unit.nva.model.instancetypes.artistic.film.realization.Broadcast;
+import no.unit.nva.model.instancetypes.artistic.film.realization.MovingPictureOutput;
+import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
+import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArts;
+import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArtsSubtype;
+import no.unit.nva.model.instancetypes.artistic.literaryarts.LiteraryArtsSubtypeEnum;
+import no.unit.nva.model.instancetypes.artistic.literaryarts.manifestation.LiteraryArtsManifestation;
+import no.unit.nva.model.instancetypes.artistic.literaryarts.manifestation.LiteraryArtsMonograph;
+import no.unit.nva.model.instancetypes.artistic.literaryarts.manifestation.LiteraryArtsWeb;
+import no.unit.nva.model.instancetypes.artistic.music.AudioVisualPublication;
+import no.unit.nva.model.instancetypes.artistic.music.MusicMediaSubtype;
+import no.unit.nva.model.instancetypes.artistic.music.MusicMediaType;
+import no.unit.nva.model.instancetypes.artistic.music.MusicPerformance;
+import no.unit.nva.model.instancetypes.artistic.music.MusicPerformanceManifestation;
+import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
+import no.unit.nva.model.instancetypes.artistic.music.MusicTrack;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.instancetypes.exhibition.ExhibitionProduction;
+import no.unit.nva.model.instancetypes.exhibition.ExhibitionProductionSubtype;
+import no.unit.nva.model.instancetypes.exhibition.ExhibitionProductionSubtypeEnum;
+import no.unit.nva.model.instancetypes.exhibition.manifestations.ExhibitionOtherPresentation;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalReview;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.testing.EntityDescriptionBuilder;
+import no.unit.nva.model.time.Instant;
+import no.unit.nva.model.time.duration.DefinedDuration;
 import no.unit.nva.model.validation.EntityDescriptionValidationException;
 import no.unit.nva.model.validation.EntityDescriptionValidatorImpl;
 import nva.commons.core.paths.UriWrapper;
@@ -46,6 +71,11 @@ import java.util.stream.Stream;
 
 import static no.unit.nva.DatamodelConfig.dataModelObjectMapper;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomIsmn;
+import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomIsrc;
+import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomMonographPages;
+import static no.unit.nva.model.testing.PublicationInstanceBuilder.randomUnconfirmedPlace;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -66,6 +96,8 @@ class EntityDescriptionTest {
             "https://api.nva.sikt.no/publication-channel/serial-publication/12345/%s";
     private static final String PUBLISHER_CHANNEL_URI_TEMPLATE =
             "https://api.nva.sikt.no/publication-channel/publisher/12345/%s";
+    public static final DateSeriesPublisher INVALID_DATE_SERIES_PUBLISHER = new DateSeriesPublisher("2022", "2025", "2025");
+
     private static Stream<Named<PublicationDate>> yearValueProvider() {
 
         return Stream.of(
@@ -94,6 +126,36 @@ class EntityDescriptionTest {
                 named("Series out of bound", new DateSeriesPublisher("2024", "2020", "2024")),
                 named("Publisher out of bound", new DateSeriesPublisher("2024", "2024", "2020")),
                 named("Series and Publisher out of bound", new DateSeriesPublisher("2022", "2024", "2020"))
+        );
+    }
+
+    public static Stream<MusicPerformanceManifestation> musicPerformanceManifestationProvider() {
+        return Stream.of(
+                new AudioVisualPublication(new MusicMediaSubtype(MusicMediaType.DVD),
+                        new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()),
+                        randomString(),
+                        List.of(new MusicTrack(randomString(), randomString(), randomString())), randomIsrc()),
+                new MusicScore(randomString(), randomString(), randomString(),
+                        new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()), randomIsmn())
+        );
+    }
+
+    public static Stream<LiteraryArtsManifestation> literaryArtsManifestationProvider() {
+        return Stream.of(
+                new LiteraryArtsMonograph(new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()),
+                        INVALID_DATE_SERIES_PUBLISHER.date, randomIsbn13(), randomMonographPages()),
+                new LiteraryArtsWeb(randomUri(), new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()),
+                        INVALID_DATE_SERIES_PUBLISHER.date())
+        );
+    }
+
+    public static Stream<MovingPictureOutput> movingPictureOutputProvider() {
+        return Stream.of(
+                new Broadcast(new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()),
+                        new Instant(java.time.Instant.now()), 1),
+                new OtherRelease(randomString(), randomUnconfirmedPlace(),
+                        new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()),
+                        new Instant(java.time.Instant.now()), 1)
         );
     }
 
@@ -355,7 +417,7 @@ class EntityDescriptionTest {
     @Test
     void shouldThrowWhenPublicationDateIsNotSynchronized() {
         var entityDescription = entityDescriptionFromContext(Book.class);
-        var dateSeriesPublisher = new DateSeriesPublisher("2022", "2025", "2025");
+        var dateSeriesPublisher = INVALID_DATE_SERIES_PUBLISHER;
         entityDescription.setPublicationDate(dateSeriesPublisher.date());
         var reference = entityDescription.getReference();
         var book = new Book(new Series(dateSeriesPublisher.series()),
@@ -370,7 +432,7 @@ class EntityDescriptionTest {
     @Test
     void shouldHandleEntityDescriptionWithoutPublicationContextUris() throws InvalidIssnException {
         var entityDescription = entityDescriptionFromContext(Book.class);
-        var dateSeriesPublisher = new DateSeriesPublisher("2022", "2025", "2025");
+        var dateSeriesPublisher = INVALID_DATE_SERIES_PUBLISHER;
         entityDescription.setPublicationDate(dateSeriesPublisher.date());
         var reference = entityDescription.getReference();
         var book = new Book(new UnconfirmedSeries(randomString(), randomIssn(), randomIssn()),
@@ -395,6 +457,64 @@ class EntityDescriptionTest {
                 List.of(randomIsbn13()),
                 Revision.UNREVISED);
         reference.setPublicationContext(book);
+        assertThrows(EntityDescriptionValidationException.class, entityDescription::validate);
+    }
+
+    @Test
+    void shouldThrowWhenContextIsResearchDataAndPublicationChannelUriIsInvalid() {
+        var entityDescription = entityDescriptionFromContext(ResearchData.class);
+        entityDescription.setPublicationDate(INVALID_DATE_SERIES_PUBLISHER.date());
+        var reference = entityDescription.getReference();
+        reference.setPublicationContext(new ResearchData(new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher)));
+        assertThrows(EntityDescriptionValidationException.class, entityDescription::validate);
+    }
+
+    @ParameterizedTest
+    @MethodSource("movingPictureOutputProvider")
+    void shouldThrowWhenMovingPictureHasUnsynchronizedDateInUri(MovingPictureOutput output) {
+        var entityDescription = randomEntityDescription(MovingPicture.class);
+        entityDescription.setPublicationDate(INVALID_DATE_SERIES_PUBLISHER.date());
+        var reference = entityDescription.getReference();
+        var instance = new MovingPicture(MovingPictureSubtype.fromJson(MovingPictureSubtypeEnum.FILM, null),
+                randomString(), List.of(output), DefinedDuration.builder().withHours(1).withMinutes(10).build());
+        reference.setPublicationInstance(instance);
+        assertThrows(EntityDescriptionValidationException.class, entityDescription::validate);
+    }
+
+    @ParameterizedTest
+    @MethodSource("literaryArtsManifestationProvider")
+    void shouldThrowWhenLiteraryArtsHasUnsynchronizedDateInUri(LiteraryArtsManifestation literaryArtsManifestation) {
+        var entityDescription = randomEntityDescription(LiteraryArts.class);
+        entityDescription.setPublicationDate(INVALID_DATE_SERIES_PUBLISHER.date());
+        var reference = entityDescription.getReference();
+        var instance = new LiteraryArts(LiteraryArtsSubtype.create(LiteraryArtsSubtypeEnum.NOVEL),
+                List.of(literaryArtsManifestation), randomString());
+        reference.setPublicationInstance(instance);
+        assertThrows(EntityDescriptionValidationException.class, entityDescription::validate);
+    }
+
+    @ParameterizedTest
+    @MethodSource("musicPerformanceManifestationProvider")
+    void shouldThrowWhenMusicPerformanceContainsUnsynchronizedDateInUri(MusicPerformanceManifestation manifestation) {
+        var entityDescription = randomEntityDescription(MusicPerformance.class);
+        entityDescription.setPublicationDate(INVALID_DATE_SERIES_PUBLISHER.date());
+        var reference = entityDescription.getReference();
+        var instance = new MusicPerformance(List.of(manifestation), DefinedDuration.builder()
+                .withHours(1).withMinutes(10).build());
+        reference.setPublicationInstance(instance);
+        assertThrows(EntityDescriptionValidationException.class, entityDescription::validate);
+    }
+
+    @Test
+    void shouldThrowWhenExhibitionProductionHasUnsynchronizedDateInUri() {
+        var entityDescription = randomEntityDescription(ExhibitionProduction.class);
+        entityDescription.setPublicationDate(INVALID_DATE_SERIES_PUBLISHER.date());
+        var reference = entityDescription.getReference();
+        var instance = new ExhibitionProduction(new ExhibitionProductionSubtype(ExhibitionProductionSubtypeEnum.OTHER),
+                List.of(new ExhibitionOtherPresentation(randomString(), randomString(), randomUnconfirmedPlace(),
+                        new Publisher(INVALID_DATE_SERIES_PUBLISHER.publisher()),
+                        new Instant(java.time.Instant.now()))));
+        reference.setPublicationInstance(instance);
         assertThrows(EntityDescriptionValidationException.class, entityDescription::validate);
     }
 
