@@ -6,9 +6,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.MonographPages;
 import nva.commons.core.JacocoGenerated;
 
-import java.net.URI;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 
 import static no.unit.nva.model.instancetypes.PublicationInstance.Constants.PAGES_FIELD;
@@ -33,10 +30,6 @@ public class DegreeBase implements PublicationInstance<MonographPages> {
         return pages;
     }
 
-    @Override
-    public List<URI> extractPublicationContextUris() {
-        return Collections.emptyList();
-    }
 
     @Override
     @JacocoGenerated

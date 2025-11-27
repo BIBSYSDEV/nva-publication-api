@@ -3,14 +3,13 @@ package no.unit.nva.model.instancetypes.artistic.literaryarts;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import no.unit.nva.model.Published;
-import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.artistic.literaryarts.manifestation.LiteraryArtsManifestation;
 import no.unit.nva.model.pages.NullPages;
 import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -41,15 +40,7 @@ public class LiteraryArts implements PublicationInstance<NullPages> {
 
     @Override
     public List<URI> extractPublicationContextUris() {
-        return manifestations.stream()
-                .filter(Published.class::isInstance)
-                .map(Published.class::cast)
-                .map(Published::getPublisher)
-                .filter(Publisher.class::isInstance)
-                .map(Publisher.class::cast)
-                .map(Publisher::getId)
-                .distinct()
-                .toList();
+        return extractExhibitionContextUris(new ArrayList<>(manifestations));
     }
 
     public LiteraryArtsSubtype getSubtype() {

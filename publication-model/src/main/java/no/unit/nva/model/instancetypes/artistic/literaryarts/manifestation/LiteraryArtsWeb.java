@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.Published;
+import no.unit.nva.model.PublisherInInstance;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import nva.commons.core.JacocoGenerated;
 
@@ -12,7 +12,7 @@ import java.net.URI;
 import java.util.Objects;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class LiteraryArtsWeb implements LiteraryArtsManifestation, Published {
+public class LiteraryArtsWeb implements LiteraryArtsManifestation, PublisherInInstance {
     public static final String PUBLICATION_DATE_FIELD = "publicationDate";
     public static final String PUBLISHER_FIELD = "publisher";
     public static final String ID_FIELD = "id";

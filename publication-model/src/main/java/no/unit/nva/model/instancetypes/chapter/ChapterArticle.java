@@ -7,9 +7,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
 
-import java.net.URI;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 
 import static java.util.Objects.isNull;
@@ -51,11 +48,6 @@ public class ChapterArticle implements PublicationInstance<Range> {
     @Override
     public Range getPages() {
         return pages;
-    }
-
-    @Override
-    public List<URI> extractPublicationContextUris() {
-        return Collections.emptyList();
     }
 
     @Override

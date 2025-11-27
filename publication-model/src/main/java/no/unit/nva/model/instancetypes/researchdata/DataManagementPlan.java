@@ -1,19 +1,17 @@
 package no.unit.nva.model.instancetypes.researchdata;
 
-import static java.util.Objects.nonNull;
-import static no.unit.nva.model.instancetypes.PublicationInstance.Constants.PAGES_FIELD;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
-import java.net.URI;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.RelatedDocument;
 import no.unit.nva.model.pages.MonographPages;
 import nva.commons.core.JacocoGenerated;
+
+import java.util.Objects;
+import java.util.Set;
+
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.instancetypes.PublicationInstance.Constants.PAGES_FIELD;
 
 /**
  * A data management plan is a document that describes the administrative processes around data sets.
@@ -44,11 +42,6 @@ public class DataManagementPlan implements PublicationInstance<MonographPages> {
     @Override
     public MonographPages getPages() {
         return pages;
-    }
-
-    @Override
-    public List<URI> extractPublicationContextUris() {
-        return Collections.emptyList();
     }
 
     @Override

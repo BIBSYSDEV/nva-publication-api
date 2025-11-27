@@ -1,11 +1,9 @@
 package no.unit.nva.model.instancetypes;
 
-import java.net.URI;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
+
+import java.util.Objects;
 
 public class NonPeerReviewedPaper implements PublicationInstance<Range> {
     private Range pages;
@@ -22,11 +20,6 @@ public class NonPeerReviewedPaper implements PublicationInstance<Range> {
     @Override
     public Range getPages() {
         return this.pages;
-    }
-
-    @Override
-    public List<URI> extractPublicationContextUris() {
-        return Collections.emptyList();
     }
 
     @JacocoGenerated

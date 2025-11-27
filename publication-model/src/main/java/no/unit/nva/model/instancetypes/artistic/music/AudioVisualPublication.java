@@ -9,14 +9,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import no.unit.nva.model.Published;
+import no.unit.nva.model.PublisherInInstance;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.artistic.UnconfirmedPublisherMigrator;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class AudioVisualPublication implements MusicPerformanceManifestation, UnconfirmedPublisherMigrator, Published {
+public class AudioVisualPublication implements MusicPerformanceManifestation, UnconfirmedPublisherMigrator, PublisherInInstance {
 
     public static final String MEDIA_TYPE_FIELD = "mediaType";
     public static final String PUBLISHER_FIELD = "publisher";

@@ -3,7 +3,7 @@ package no.unit.nva.model.instancetypes.artistic.film.realization;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import no.unit.nva.model.Published;
+import no.unit.nva.model.PublisherInInstance;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.artistic.UnconfirmedPublisherMigrator;
@@ -13,7 +13,7 @@ import nva.commons.core.JacocoGenerated;
 import java.util.Objects;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class Broadcast implements MovingPictureOutput, UnconfirmedPublisherMigrator, Published {
+public class Broadcast implements MovingPictureOutput, UnconfirmedPublisherMigrator, PublisherInInstance {
 
     public static final String PUBLISHER_FIELD = "publisher";
     public static final String DATE_FIELD = "date";

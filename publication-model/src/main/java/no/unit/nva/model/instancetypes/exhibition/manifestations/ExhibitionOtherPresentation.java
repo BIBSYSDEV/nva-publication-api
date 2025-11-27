@@ -3,7 +3,7 @@ package no.unit.nva.model.instancetypes.exhibition.manifestations;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import no.unit.nva.model.Published;
+import no.unit.nva.model.PublisherInInstance;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.time.Instant;
@@ -12,7 +12,7 @@ import nva.commons.core.JacocoGenerated;
 import java.util.Objects;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class ExhibitionOtherPresentation implements ExhibitionProductionManifestation, Published {
+public class ExhibitionOtherPresentation implements ExhibitionProductionManifestation, PublisherInInstance {
     public static final String DESCRIPTION_FIELD = "description";
     public static final String PLACE_FIELD = "place";
     public static final String PUBLISHER_FIELD = "publisher";
