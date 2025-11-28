@@ -96,6 +96,10 @@ public class UserInstance implements JsonSerializable {
                                 accessRights, UserClientType.INTERNAL, null);
     }
 
+    public static UserInstance fromResource(Resource resource) {
+        return fromPublication(resource.toPublication());
+    }
+
     public static UserInstance fromPublication(Publication publication) {
         return new UserInstance(Optional.ofNullable(publication.getResourceOwner()).map(ResourceOwner::getOwner).map(
             Username::getValue).orElse(null),
