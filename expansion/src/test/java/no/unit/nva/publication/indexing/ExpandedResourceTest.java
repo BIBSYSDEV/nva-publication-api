@@ -857,6 +857,24 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldReturnExpandedResourceWithAnthologyInstanceType()
+        throws JsonProcessingException, NotFoundException, BadRequestException {
+        var publication = PublicationGenerator.randomPublication(AcademicChapter.class);
+        var resource = Resource.fromPublication(publication)
+                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+        var parentUri = (Anthology) resource.getEntityDescription().getReference().getPublicationContext();
+        var bookAnthology = resourceService.getPublicationByIdentifier(SortableIdentifier.fromUri(parentUri.getId()));
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
+            , Resource.fromPublication(resource));
+        var expandedResourceJsonNode = expandedResource.asJsonNode();
+        var anthologyInstanceType = expandedResourceJsonNode.get("entityDescription").get("reference").get(
+            "publicationContext").get("entityDescription").get("reference").get("publicationInstance").get("type").textValue();
+        assertThat(anthologyInstanceType,
+                   is(equalTo(bookAnthology.getEntityDescription().getReference().getPublicationInstance().getInstanceType())));
+    }
+
+    @Test
     void shouldNotFailWhenThereIsNoPublicationContext() throws JsonProcessingException, BadRequestException {
 
         Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
