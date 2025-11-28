@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 class ETagTest {
 
     private static final String ETAG_SEPARATOR = ":";
+    private static final String BLANK_STRING = " ";
 
     @Test
     void shouldThrowIllegalArgumentExceptionWhenCreatingETagWithoutVersion() {
@@ -56,7 +57,7 @@ class ETagTest {
         var version = randomString();
         var username = randomString();
 
-        var etag = ETag.fromString(username + ":" + version);
+        var etag = ETag.fromString(username + ETAG_SEPARATOR + version);
         var expectedETag = ETag.create(username, version);
 
         assertEquals(expectedETag, etag);
@@ -74,6 +75,6 @@ class ETagTest {
 
     @Test
     void shouldThrowIllegalArgumentExceptionWhenCreatingETagFromBlankString() {
-        assertThrows(IllegalArgumentException.class, () -> ETag.fromString(" "));
+        assertThrows(IllegalArgumentException.class, () -> ETag.fromString(BLANK_STRING));
     }
 }
