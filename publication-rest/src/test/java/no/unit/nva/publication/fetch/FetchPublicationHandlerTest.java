@@ -87,6 +87,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.validation.ETag;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.WiremockHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -507,7 +508,8 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         throws IOException, ApiGatewayException {
         var publication = createUnpublishedPublicationWithDuplicate(null);
 
-        var request = generateCuratorRequestWithShouldNotRedirectPathParam(publication);
+        var userName = randomString();
+        var request = generateCuratorRequestWithShouldNotRedirectPathParam(publication, userName);
 
         fetchPublicationHandler.handleRequest(request, output, context);
 
@@ -516,7 +518,9 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publicationResponse = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(),
                                                                       PublicationResponseElevatedUser.class);
 
-        var expectedEtag = Resource.fromPublication(publication).fetch(publicationService).orElseThrow().getVersion();
+        var expectedEtag =
+            ETag.create(userName,
+                        Resource.fromPublication(publication).fetch(publicationService).orElseThrow().getVersion().toString());
 
         assertEquals(gatewayResponse.getHeaders().get(ETAG), expectedEtag.toString());
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
@@ -619,7 +623,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         return publicationService.getPublicationByIdentifier(publication.getIdentifier());
     }
 
-    private InputStream generateCuratorRequestWithShouldNotRedirectPathParam(Publication publication) throws JsonProcessingException {
+    private InputStream generateCuratorRequestWithShouldNotRedirectPathParam(Publication publication, String userName) throws JsonProcessingException {
         return new HandlerRequestBuilder<InputStream>(restApiMapper).withHeaders(
                 Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType()))
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString(),
@@ -629,7 +633,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                                      AccessRight.MANAGE_RESOURCES_STANDARD, AccessRight.MANAGE_PUBLISHING_REQUESTS,
                                      AccessRight.MANAGE_RESOURCE_FILES, AccessRight.MANAGE_DEGREE,
                                      AccessRight.MANAGE_DEGREE_EMBARGO)
-                   .withUserName(randomString())
+                   .withUserName(userName)
                    .withTopLevelCristinOrgId(publication.getCuratingInstitutions().iterator().next().id())
                    .withPersonCristinId(randomUri())
                    .build();

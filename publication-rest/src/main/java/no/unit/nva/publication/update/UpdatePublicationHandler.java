@@ -174,7 +174,7 @@ public class UpdatePublicationHandler
 
             default -> throw new BadRequestException("Unknown input body type");
         };
-        addEtagHeaderForUpdatedPublication(updatedResource);
+        addEtagHeaderForUpdatedPublication(requestInfo.getUserName(), updatedResource);
         return PublicationResponseFactory.create(updatedResource, requestInfo, identityServiceClient);
     }
 
@@ -182,9 +182,9 @@ public class UpdatePublicationHandler
         return existingResource.getVersion().toString();
     }
 
-    private void addEtagHeaderForUpdatedPublication(Resource updatedResource) {
-        addAdditionalHeaders(() -> Map.of(ETAG, getVersion(updatedResource), ACCESS_CONTROL_EXPOSE_HEADERS,
-                                          ETAG));
+    private void addEtagHeaderForUpdatedPublication(String userName, Resource updatedResource) {
+        addAdditionalHeaders(() -> Map.of(ETAG, ETag.create(userName, getVersion(updatedResource)).toString(),
+                                          ACCESS_CONTROL_EXPOSE_HEADERS, ETAG));
     }
 
     private Resource updatePublication(UpdateRequest input, SortableIdentifier identifierInPath,

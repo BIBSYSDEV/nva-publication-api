@@ -110,7 +110,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var resource = fetchResource(identifier);
 
-        if (!userIsAuthenticated(requestInfo) && eTagMatches(requestInfo, resource)) {
+        if (eTagMatches(requestInfo, resource)) {
             statusCode = HttpURLConnection.HTTP_NOT_MODIFIED;
             return FetchPublicationHandler.NO_BODY;
         }
@@ -120,10 +120,6 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
             case UNPUBLISHED, DELETED -> produceRemovedPublicationResponse(resource, requestInfo);
             default -> throwNotFoundException();
         };
-    }
-
-    private boolean userIsAuthenticated(RequestInfo requestInfo) {
-        return !requestInfo.getAccessRights().isEmpty();
     }
 
     private boolean eTagMatches(RequestInfo requestInfo, Resource resource) {
@@ -222,7 +218,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
             statusCode = HTTP_SEE_OTHER;
             headers.put(LOCATION, landingPageLocation(resource.getIdentifier()).toString());
         } else {
-            headers.put(ETAG, resource.getVersion().toString());
+            headers.put(ETAG, ETag.create(getUsername(requestInfo), getResourceVersion(resource)).toString());
             headers.put(ACCESS_CONTROL_EXPOSE_HEADERS, ETAG);
             response = createPublicationResponse(requestInfo, resource);
         }
@@ -238,7 +234,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private String createPublicationResponse(RequestInfo requestInfo, Resource resource) {
         var response = PublicationResponseFactory.create(resource, requestInfo, identityServiceClient);
-        addAdditionalHeaders(() -> Map.of(ETAG, getResourceVersion(resource)));
+        addAdditionalHeaders(() -> Map.of(ETAG, ETag.create(getUsername(requestInfo), getResourceVersion(resource)).toString()));
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(response)).orElseThrow();
     }
 
