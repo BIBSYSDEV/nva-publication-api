@@ -23,6 +23,12 @@
       "@explicit": true,
       "publicationContext": {
         "@default": "@null"
+      },
+      "publicationInstance": {
+        "@explicit": true,
+        "type": {
+          "@default": "@null"
+        }
       }
     }
   }
