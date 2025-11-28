@@ -15,6 +15,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
+import static no.unit.nva.publication.RequestUtil.getETagValueFromIfNoneMatchHeader;
 import static no.unit.nva.publication.service.impl.ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
@@ -39,6 +40,7 @@ import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.validation.ETag;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
 import no.unit.nva.transformer.Transformer;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -125,10 +127,17 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private boolean eTagMatches(RequestInfo requestInfo, Resource resource) {
-        var eTagFromIfNoneMatchHeader = RequestUtil.getETagFromIfNoneMatchHeader(requestInfo);
-        var version = resource.getVersion().toString();
+        var clientETag = getETagValueFromIfNoneMatchHeader(requestInfo).map(ETag::fromString);
+        var serverETag = ETag.create(getUsername(requestInfo), getResourceVersion(resource));
+        return clientETag.map(etag -> etag.equals(serverETag)).orElse(false);
+    }
 
-        return eTagFromIfNoneMatchHeader.isPresent() && eTagFromIfNoneMatchHeader.get().equals(version);
+    private static String getResourceVersion(Resource resource) {
+        return resource.getVersion().toString();
+    }
+
+    private static String getUsername(RequestInfo requestInfo) {
+        return attempt(requestInfo::getUserName).orElse(failure -> null);
     }
 
     private boolean shouldRedirectToDuplicate(RequestInfo requestInfo, Resource resource) {
@@ -229,7 +238,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private String createPublicationResponse(RequestInfo requestInfo, Resource resource) {
         var response = PublicationResponseFactory.create(resource, requestInfo, identityServiceClient);
-        addAdditionalHeaders(() -> Map.of(ETAG, resource.getVersion().toString()));
+        addAdditionalHeaders(() -> Map.of(ETAG, getResourceVersion(resource)));
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(response)).orElseThrow();
     }
 

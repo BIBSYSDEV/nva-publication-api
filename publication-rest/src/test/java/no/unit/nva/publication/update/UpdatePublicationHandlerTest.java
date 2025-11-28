@@ -172,6 +172,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
+import no.unit.nva.publication.validation.ETag;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeSecretsManagerClient;
@@ -2064,7 +2065,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(persistedPublication).fetch(resourceService).orElseThrow();
         var version = resource.getVersion().toString();
         var input = request(userInstance, partialUpdateRequest, persistedPublication.getIdentifier(),
-                            Map.of("If-Match", version));
+                            Map.of("If-Match", ETag.create(userInstance.getUsername(), version).toString()));
         updatePublicationHandler.handleRequest(input, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Problem.class);

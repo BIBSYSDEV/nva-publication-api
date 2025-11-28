@@ -42,6 +42,7 @@ import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.rightsretention.FileRightsRetentionService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.validation.ETag;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -138,13 +139,14 @@ public class UpdatePublicationHandler
                                                Context context)
         throws ApiGatewayException {
         var identifierInPath = RequestUtil.getIdentifier(requestInfo);
-        var etag = RequestUtil.getETagFromIfMatchHeader(requestInfo);
+        var clientETag = RequestUtil.getETagValueFromIfMatchHeader(requestInfo).map(ETag::fromString);
 
         var existingResource = fetchResource(identifierInPath);
 
-        if (etag.isPresent()) {
-            logger.info("ETag provided {} for resource {}", etag.get(), identifierInPath);
-            if (!existingResource.getVersion().toString().equals(etag.get())) {
+        if (clientETag.isPresent()) {
+            logger.info("ETag provided {} for resource {}", clientETag.get(), identifierInPath);
+            var serverETag = ETag.create(requestInfo.getUserName(), getVersion(existingResource));
+            if (!serverETag.equals(clientETag.get())) {
                 throw new PreconditionFailedException(ETAG_DOES_NOT_MATCH_MESSAGE);
             }
         } else {
@@ -176,8 +178,12 @@ public class UpdatePublicationHandler
         return PublicationResponseFactory.create(updatedResource, requestInfo, identityServiceClient);
     }
 
+    private static String getVersion(Resource existingResource) {
+        return existingResource.getVersion().toString();
+    }
+
     private void addEtagHeaderForUpdatedPublication(Resource updatedResource) {
-        addAdditionalHeaders(() -> Map.of(ETAG, updatedResource.getVersion().toString(), ACCESS_CONTROL_EXPOSE_HEADERS,
+        addAdditionalHeaders(() -> Map.of(ETAG, getVersion(updatedResource), ACCESS_CONTROL_EXPOSE_HEADERS,
                                           ETAG));
     }
 
