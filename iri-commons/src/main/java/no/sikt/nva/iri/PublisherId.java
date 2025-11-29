@@ -1,0 +1,31 @@
+package no.sikt.nva.iri;
+
+import com.fasterxml.jackson.annotation.JsonValue;
+
+import java.net.URI;
+import java.time.Year;
+import java.util.UUID;
+
+public record PublisherId(UUID identifier, Year year) implements PublicationChannelId {
+
+    private static final ChannelType CHANNEL_TYPE = ChannelType.PUBLISHER;
+
+    public PublisherId(UuidYearPair uuidYearPair) {
+        this(uuidYearPair.uuid(), uuidYearPair.year());
+    }
+
+    public static PublisherId from(URI uri) {
+        return new PublisherId(PublicationChannelId.validate(uri, CHANNEL_TYPE));
+    }
+
+    @Override
+    public ChannelType type() {
+        return CHANNEL_TYPE;
+    }
+
+    @JsonValue
+    @Override
+    public String value() {
+        return PublicationChannelId.value(CHANNEL_TYPE, identifier, year);
+    }
+}
