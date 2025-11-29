@@ -21,3 +21,5 @@ include 'tickets-test'
 include 'publication-log'
 include 'publication-file'
 
+
+include 'iri-commons'
