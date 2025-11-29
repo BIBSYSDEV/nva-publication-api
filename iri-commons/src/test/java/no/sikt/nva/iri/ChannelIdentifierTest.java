@@ -16,6 +16,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class ChannelIdentifierTest {
 
 
+    private static final String EMPTY_STRING = "";
+    private static final String QUOTED_STRING = "\"";
+
     @ParameterizedTest
     @ValueSource(strings = {
             "https://api.nva.unit.no/publication-channels-v2/serial-publication/360B8D2C-736F-450A-8D34-9596BFE28CB4/2025",
@@ -24,9 +27,21 @@ public class ChannelIdentifierTest {
     void shouldSerializeJsonString(String uriString) throws JsonProcessingException {
         var uri = URI.create(uriString);
         var channel = PublicationChannelId.from(uri);
-        var expected = "\"%s\"".formatted(uriString.replace("https://api.nva.unit.no", "")
+        var expected = "\"%s\"".formatted(uriString.replace("https://api.nva.unit.no", EMPTY_STRING)
                 .toLowerCase(Locale.getDefault()));
         assertEquals(expected, JsonUtils.dtoObjectMapper.writeValueAsString(channel));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "\"/publication-channels-v2/serial-publication/360B8D2C-736F-450A-8D34-9596BFE28CB4/2025\"",
+            "\"/publication-channels-v2/publisher/360B8D2C-736F-450A-8D34-9596BFE28CB4/2025\""
+
+    })
+    void shouldDeserializeJsonString(String uriString) throws JsonProcessingException {
+        var json = JsonUtils.dtoObjectMapper.readValue(uriString, PublicationChannelId.class);
+        var expected = uriString.toLowerCase(Locale.getDefault()).replace(QUOTED_STRING, EMPTY_STRING);
+        assertEquals(expected, json.value());
     }
 
 
@@ -38,7 +53,7 @@ public class ChannelIdentifierTest {
     void shouldCreateString(String uriString) {
         var uri = URI.create(uriString);
         var channel = PublicationChannelId.from(uri);
-        var expected = uriString.replace("https://api.nva.unit.no", "").toLowerCase(Locale.getDefault());
+        var expected = uriString.replace("https://api.nva.unit.no", EMPTY_STRING).toLowerCase(Locale.getDefault());
         assertEquals(expected, channel.value());
     }
 

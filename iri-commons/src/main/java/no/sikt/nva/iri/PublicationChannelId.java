@@ -1,6 +1,7 @@
 package no.sikt.nva.iri;
 
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.net.URI;
@@ -29,6 +30,15 @@ public interface PublicationChannelId {
     int EXPECTED_PATH_LENGTH = 5;
     String HTTPS_SCHEME = "https";
     String SCHEME_SEPARATOR = "://";
+    String PLACEHOLDER_QUALIFIED_HOST = "https://example.org";
+    String QUOTED_STRING = "\"";
+    String EMPTY_STRING = "";
+
+    @JsonCreator
+    static PublicationChannelId create(String json) {
+        var uri = URI.create(PLACEHOLDER_QUALIFIED_HOST + json.replace(QUOTED_STRING, EMPTY_STRING));
+        return from(uri);
+    }
 
     static PublicationChannelId from(URI uri) {
         if (nonNull(uri) && uri.toString().contains(ChannelType.PUBLISHER.getType())) {
