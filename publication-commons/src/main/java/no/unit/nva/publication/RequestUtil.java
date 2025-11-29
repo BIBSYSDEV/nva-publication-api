@@ -83,11 +83,11 @@ public final class RequestUtil {
         return attempt(requestInfo::getUserName).orElseThrow(fail -> new UnauthorizedException());
     }
 
-    public static Optional<String> getETagFromIfMatchHeader(RequestInfo requestInfo) {
+    public static Optional<String> getETagValueFromIfMatchHeader(RequestInfo requestInfo) {
         return requestInfo.getHeaderOptional(HttpHeaders.IF_MATCH);
     }
 
-    public static Optional<String> getETagFromIfNoneMatchHeader(RequestInfo requestInfo) {
+    public static Optional<String> getETagValueFromIfNoneMatchHeader(RequestInfo requestInfo) {
         return requestInfo.getHeaderOptional(HttpHeaders.IF_NONE_MATCH);
     }
 

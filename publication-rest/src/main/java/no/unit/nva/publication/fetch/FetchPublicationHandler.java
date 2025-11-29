@@ -15,6 +15,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationOperation.UPDATE;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
+import static no.unit.nva.publication.RequestUtil.getETagValueFromIfNoneMatchHeader;
 import static no.unit.nva.publication.service.impl.ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
@@ -39,6 +40,7 @@ import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.validation.ETag;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
 import no.unit.nva.transformer.Transformer;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -108,7 +110,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         var identifier = RequestUtil.getIdentifier(requestInfo);
         var resource = fetchResource(identifier);
 
-        if (!userIsAuthenticated(requestInfo) && eTagMatches(requestInfo, resource)) {
+        if (eTagMatches(requestInfo, resource)) {
             statusCode = HttpURLConnection.HTTP_NOT_MODIFIED;
             return FetchPublicationHandler.NO_BODY;
         }
@@ -120,15 +122,18 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         };
     }
 
-    private boolean userIsAuthenticated(RequestInfo requestInfo) {
-        return !requestInfo.getAccessRights().isEmpty();
+    private boolean eTagMatches(RequestInfo requestInfo, Resource resource) {
+        var clientETag = getETagValueFromIfNoneMatchHeader(requestInfo).map(ETag::fromString);
+        var serverETag = ETag.create(getUsername(requestInfo), getResourceVersion(resource));
+        return clientETag.map(etag -> etag.equals(serverETag)).orElse(false);
     }
 
-    private boolean eTagMatches(RequestInfo requestInfo, Resource resource) {
-        var eTagFromIfNoneMatchHeader = RequestUtil.getETagFromIfNoneMatchHeader(requestInfo);
-        var version = resource.getVersion().toString();
+    private static String getResourceVersion(Resource resource) {
+        return resource.getVersion().toString();
+    }
 
-        return eTagFromIfNoneMatchHeader.isPresent() && eTagFromIfNoneMatchHeader.get().equals(version);
+    private static String getUsername(RequestInfo requestInfo) {
+        return attempt(requestInfo::getUserName).orElse(failure -> null);
     }
 
     private boolean shouldRedirectToDuplicate(RequestInfo requestInfo, Resource resource) {
@@ -213,7 +218,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
             statusCode = HTTP_SEE_OTHER;
             headers.put(LOCATION, landingPageLocation(resource.getIdentifier()).toString());
         } else {
-            headers.put(ETAG, resource.getVersion().toString());
+            headers.put(ETAG, ETag.create(getUsername(requestInfo), getResourceVersion(resource)).toString());
             headers.put(ACCESS_CONTROL_EXPOSE_HEADERS, ETAG);
             response = createPublicationResponse(requestInfo, resource);
         }
@@ -229,7 +234,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     private String createPublicationResponse(RequestInfo requestInfo, Resource resource) {
         var response = PublicationResponseFactory.create(resource, requestInfo, identityServiceClient);
-        addAdditionalHeaders(() -> Map.of(ETAG, resource.getVersion().toString()));
+        addAdditionalHeaders(() -> Map.of(ETAG, ETag.create(getUsername(requestInfo), getResourceVersion(resource)).toString()));
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(response)).orElseThrow();
     }
 

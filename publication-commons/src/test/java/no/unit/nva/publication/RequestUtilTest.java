@@ -209,7 +209,7 @@ class RequestUtilTest {
         var eTag = SortableIdentifier.next().toString();
         requestInfo.setHeaders(Map.of("If-Match", eTag));
 
-        var result = RequestUtil.getETagFromIfMatchHeader(requestInfo);
+        var result = RequestUtil.getETagValueFromIfMatchHeader(requestInfo);
 
         assertEquals(eTag, result.orElseThrow());
     }
@@ -220,7 +220,7 @@ class RequestUtilTest {
         var eTag = SortableIdentifier.next().toString();
         requestInfo.setHeaders(Map.of("If-None-Match", eTag));
 
-        var result = RequestUtil.getETagFromIfNoneMatchHeader(requestInfo);
+        var result = RequestUtil.getETagValueFromIfNoneMatchHeader(requestInfo);
 
         assertEquals(eTag, result.orElseThrow());
     }
