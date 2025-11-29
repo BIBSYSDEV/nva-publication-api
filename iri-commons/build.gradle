@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.github.bibsysdev'
+version = 'unspecified'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation(libs.jackson.annotations)
+    testImplementation(libs.nva.json)
+    testImplementation(libs.bundles.jackson)
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
