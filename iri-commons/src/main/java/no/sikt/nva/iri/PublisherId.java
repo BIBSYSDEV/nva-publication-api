@@ -10,8 +10,8 @@ public record PublisherId(UUID identifier, Year year) implements PublicationChan
 
     private static final ChannelType CHANNEL_TYPE = ChannelType.PUBLISHER;
 
-    public PublisherId(UuidYearPair pair) {
-        this(pair.uuid(), pair.year());
+    public PublisherId(UuidYearPair uuidYearPair) {
+        this(uuidYearPair.uuid(), uuidYearPair.year());
     }
 
     public static PublisherId from(URI uri) {

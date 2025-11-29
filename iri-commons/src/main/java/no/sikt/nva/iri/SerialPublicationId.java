@@ -10,8 +10,8 @@ public record SerialPublicationId(UUID identifier, Year year) implements Publica
 
     private static final ChannelType CHANNEL_TYPE = ChannelType.SERIAL_PUBLICATION;
 
-    public SerialPublicationId(UuidYearPair validate) {
-        this(validate.uuid(), validate.year());
+    public SerialPublicationId(UuidYearPair uuidYearPair) {
+        this(uuidYearPair.uuid(), uuidYearPair.year());
     }
 
     public static SerialPublicationId from(URI uri) {

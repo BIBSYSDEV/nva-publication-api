@@ -57,7 +57,7 @@ public interface PublicationChannelId {
     String value();
 
     static String value(ChannelType type, UUID identifier, Year year) {
-        return "/%s/%s/%s/%s".formatted(PATH_ELEMENT_ONE, type.getType(), identifier, year);
+        return PATH_TEMPLATE.formatted(PATH_ELEMENT_ONE, type.getType(), identifier, year);
     }
 
     default URI uri(String host) {
@@ -95,7 +95,7 @@ public interface PublicationChannelId {
     }
 
     private static void checkRootPathElement(String string, ChannelType type) {
-        if (!string.equals(PATH_ELEMENT_ONE)) {
+        if (!PATH_ELEMENT_ONE.equals(string)) {
             throw new IllegalArgumentException(INVALID_PATH_START.formatted(type.getType()));
         }
     }
