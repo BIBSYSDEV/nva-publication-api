@@ -16,7 +16,7 @@ dependencies {
     implementation nvaLibs.s3
     implementation nvaLibs.secrets
     implementation nvaLibs.json
-    implementation libs.nva.doi
+    implementation nvaLibs.doi
     implementation nvaLibs.core
     implementation nvaLibs.eventhandlers
     implementation nvaLibs.apigateway

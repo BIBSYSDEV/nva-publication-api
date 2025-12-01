@@ -39,6 +39,7 @@ dependencyResolutionManagement {
             library("auth", "com.github.bibsysdev", "auth").versionRef("nva")
             library("clients", "com.github.bibsysdev", "clients").versionRef("nva")
             library("core", "com.github.bibsysdev", "core").versionRef("nva")
+            library("doi", "com.github.bibsysdev", "doi").versionRef("nva")
             library("eventhandlers", "com.github.bibsysdev", "eventhandlers").versionRef("nva")
             library("identifiers", "com.github.bibsysdev", "identifiers").versionRef("nva")
             library("json", "com.github.bibsysdev", "json").versionRef("nva")

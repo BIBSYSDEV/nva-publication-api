@@ -16,7 +16,6 @@ dependencies {
     implementation nvaLibs.apigateway
     implementation nvaLibs.auth
     implementation nvaLibs.clients
-    implementation libs.aws.core
     implementation nvaCatalog.aws.lambda.core
     implementation nvaCatalog.aws.lambda.events
     implementation nvaCatalog.aws.java.sdk.core

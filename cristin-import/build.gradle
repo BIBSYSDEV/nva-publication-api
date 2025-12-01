@@ -10,7 +10,7 @@ dependencies {
     implementation nvaLibs.core
     implementation nvaLibs.json
     implementation nvaLibs.eventhandlers
-    implementation libs.nva.doi
+    implementation nvaLibs.doi
     implementation nvaLibs.auth
     implementation nvaLibs.apigateway
 
@@ -30,7 +30,7 @@ dependencies {
     implementation libs.typesafe.config
     implementation nvaCatalog.bundles.logging
 
-    implementation libs.open.csv
+    implementation nvaCatalog.opencsv
 
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")

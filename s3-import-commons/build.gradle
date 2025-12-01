@@ -16,7 +16,6 @@ dependencies {
 
     implementation nvaCatalog.aws.lambda.core
 
-    implementation libs.aws.core
     implementation nvaCatalog.aws.sdk2.core
     implementation nvaCatalog.aws.sdk2.eventbridge
     implementation nvaCatalog.aws.sdk2.urlconnection
@@ -27,7 +26,7 @@ dependencies {
     implementation nvaCatalog.aws.sdk.dynamo
     implementation libs.aws.sdk.sqs
 
-    implementation libs.aws.ion
+    implementation nvaCatalog.aws.ion
 
     implementation libs.apache.commons.collections
     implementation nvaCatalog.bundles.logging
