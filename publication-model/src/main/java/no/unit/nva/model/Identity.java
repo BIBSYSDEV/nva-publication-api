@@ -81,6 +81,16 @@ public class Identity {
         this.verificationStatus = verificationStatus;
     }
 
+    public Builder copy() {
+        return new Builder()
+                   .withId(id)
+                   .withName(name)
+                   .withNameType(nameType)
+                   .withOrcId(orcId)
+                   .withAdditionalIdentifiers(additionalIdentifiers)
+                   .withVerificationStatus(verificationStatus);
+    }
+
     @JacocoGenerated
     @Override
     public int hashCode() {

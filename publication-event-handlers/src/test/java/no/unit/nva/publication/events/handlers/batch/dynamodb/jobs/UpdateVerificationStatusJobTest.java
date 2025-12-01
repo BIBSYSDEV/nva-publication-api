@@ -1,14 +1,15 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb.jobs;
 
+import static java.util.UUID.randomUUID;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.net.URI;
 import java.time.Clock;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.clients.cristin.CristinPersonDto;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Identity;
@@ -26,13 +28,13 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.BatchWorkItem;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchDynamoDbKey;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.utils.CustomerList;
 import no.unit.nva.publication.model.utils.CustomerSummary;
 import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +43,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     private static final URI CRISTIN_ORG_ID =
         URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
     private static final String CRISTIN_PERSON_PATH = "/cristin/person/";
+    private static final String API = "https://api.unittest.nva.aws.unit.no";
 
     private ResourceService resourceService;
     private CristinClient cristinClient;
@@ -59,17 +62,17 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdateVerificationStatusToVerifiedWhenCristinPersonIsVerified() throws NotFoundException {
+    void shouldUpdateVerificationStatusToVerifiedWhenCristinPersonIsVerified() throws Exception {
         var cristinPersonId = createCristinPersonUri("12345");
         var publication = createPublicationWithContributor(cristinPersonId, ContributorVerificationStatus.NOT_VERIFIED);
-        persistPublication(publication);
+        var persistedPublication = persistPublication(publication);
 
         mockCristinClientReturnsVerifiedPerson(cristinPersonId);
 
-        var workItem = createWorkItemForPublication(publication);
+        var workItem = createWorkItemForPublication(persistedPublication);
         updateVerificationStatusJob.executeBatch(List.of(workItem));
 
-        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
         var updatedContributor = updatedResource.getEntityDescription().getContributors().getFirst();
 
         assertEquals(ContributorVerificationStatus.VERIFIED,
@@ -77,17 +80,17 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldUpdateVerificationStatusToNotVerifiedWhenCristinPersonIsNotVerified() throws NotFoundException {
+    void shouldUpdateVerificationStatusToNotVerifiedWhenCristinPersonIsNotVerified() throws Exception {
         var cristinPersonId = createCristinPersonUri("12345");
         var publication = createPublicationWithContributor(cristinPersonId, ContributorVerificationStatus.VERIFIED);
-        persistPublication(publication);
+        var persistedPublication = persistPublication(publication);
 
         mockCristinClientReturnsNotVerifiedPerson(cristinPersonId);
 
-        var workItem = createWorkItemForPublication(publication);
+        var workItem = createWorkItemForPublication(persistedPublication);
         updateVerificationStatusJob.executeBatch(List.of(workItem));
 
-        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
         var updatedContributor = updatedResource.getEntityDescription().getContributors().getFirst();
 
         assertEquals(ContributorVerificationStatus.NOT_VERIFIED,
@@ -95,17 +98,17 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetCannotBeEstablishedWhenCristinClientReturnsEmpty() throws NotFoundException {
+    void shouldSetCannotBeEstablishedWhenCristinClientReturnsEmpty() throws Exception {
         var cristinPersonId = createCristinPersonUri("12345");
         var publication = createPublicationWithContributor(cristinPersonId, ContributorVerificationStatus.VERIFIED);
-        persistPublication(publication);
+        var persistedPublication = persistPublication(publication);
 
-        when(cristinClient.getPerson(any(URI.class))).thenReturn(Optional.empty());
+        mockCristinClientReturnsEmpty();
 
-        var workItem = createWorkItemForPublication(publication);
+        var workItem = createWorkItemForPublication(persistedPublication);
         updateVerificationStatusJob.executeBatch(List.of(workItem));
 
-        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
         var updatedContributor = updatedResource.getEntityDescription().getContributors().getFirst();
 
         assertEquals(ContributorVerificationStatus.CANNOT_BE_ESTABLISHED,
@@ -113,31 +116,31 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotUpdateWhenContributorHasNoCristinId() throws NotFoundException {
+    void shouldNotUpdateWhenContributorHasNoCristinId() throws Exception {
         var publication = createPublicationWithContributorWithoutCristinId();
-        persistPublication(publication);
+        var persistedPublication = persistPublication(publication);
 
-        var workItem = createWorkItemForPublication(publication);
+        var workItem = createWorkItemForPublication(persistedPublication);
         updateVerificationStatusJob.executeBatch(List.of(workItem));
 
-        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
         var updatedContributor = updatedResource.getEntityDescription().getContributors().getFirst();
 
         assertEquals(null, updatedContributor.getIdentity().getVerificationStatus());
     }
 
     @Test
-    void shouldNotUpdateWhenVerificationStatusIsUnchanged() throws NotFoundException {
+    void shouldNotUpdateWhenVerificationStatusIsUnchanged() throws Exception {
         var cristinPersonId = createCristinPersonUri("12345");
         var publication = createPublicationWithContributor(cristinPersonId, ContributorVerificationStatus.VERIFIED);
-        persistPublication(publication);
+        var persistedPublication = persistPublication(publication);
 
         mockCristinClientReturnsVerifiedPerson(cristinPersonId);
 
-        var workItem = createWorkItemForPublication(publication);
+        var workItem = createWorkItemForPublication(persistedPublication);
         updateVerificationStatusJob.executeBatch(List.of(workItem));
 
-        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
         var updatedContributor = updatedResource.getEntityDescription().getContributors().getFirst();
 
         assertEquals(ContributorVerificationStatus.VERIFIED,
@@ -146,8 +149,15 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
 
     @Test
     void shouldHandleEmptyBatch() {
-        updateVerificationStatusJob.executeBatch(List.of());
-        assertNotNull(updateVerificationStatusJob);
+        assertDoesNotThrow(() -> updateVerificationStatusJob.executeBatch(List.of()));
+    }
+
+    @Test
+    void shouldHandleResourceNotFound() {
+        var nonExistentKey = getRandomKey();
+        var workItem = new BatchWorkItem(nonExistentKey, "UPDATE_VERIFICATION_STATUS");
+
+        assertDoesNotThrow(() -> updateVerificationStatusJob.executeBatch(List.of(workItem)));
     }
 
     @Test
@@ -156,7 +166,49 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldHandleMultipleContributors() throws NotFoundException {
+    void shouldNotUpdateWhenContributorListIsEmpty() throws Exception {
+        var publication = randomPublication(Textbook.class);
+        publication.getEntityDescription().setContributors(List.of());
+        var persistedPublication = persistPublication(publication);
+
+        var workItem = createWorkItemForPublication(persistedPublication);
+        updateVerificationStatusJob.executeBatch(List.of(workItem));
+
+        var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
+
+        assertEquals(List.of(), updatedResource.getEntityDescription().getContributors());
+    }
+
+    @Test
+    void shouldPreserveContributorOrderAfterUpdate() throws Exception {
+        var publication = randomPublication(Textbook.class);
+        var contributors = List.of(
+            createContributor(createCristinPersonUri("11111"), ContributorVerificationStatus.NOT_VERIFIED, 1),
+            createContributor(createCristinPersonUri("22222"), ContributorVerificationStatus.VERIFIED, 2),
+            createContributor(createCristinPersonUri("33333"), ContributorVerificationStatus.NOT_VERIFIED, 3)
+        );
+        publication.getEntityDescription().setContributors(contributors);
+        var persistedPublication = persistPublication(publication);
+
+        contributors.stream()
+            .map(contributor -> contributor.getIdentity().getId())
+            .forEach(this::mockCristinClientReturnsVerifiedPerson);
+
+        var workItem = createWorkItemForPublication(persistedPublication);
+        updateVerificationStatusJob.executeBatch(List.of(workItem));
+
+        var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
+        var updatedContributors = updatedResource.getEntityDescription().getContributors();
+
+        for (int index = 0; index < contributors.size(); index++) {
+            assertEquals(contributors.get(index).getIdentity().getId(),
+                         updatedContributors.get(index).getIdentity().getId());
+            assertEquals(index + 1, updatedContributors.get(index).getSequence());
+        }
+    }
+
+    @Test
+    void shouldHandleMultipleContributors() throws Exception {
         var cristinPersonId1 = createCristinPersonUri("11111");
         var cristinPersonId2 = createCristinPersonUri("22222");
 
@@ -165,15 +217,15 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
 
         var publication = randomPublication(Textbook.class);
         publication.getEntityDescription().setContributors(List.of(contributor1, contributor2));
-        persistPublication(publication);
+        var persistedPublication = persistPublication(publication);
 
         mockCristinClientReturnsVerifiedPerson(cristinPersonId1);
         mockCristinClientReturnsNotVerifiedPerson(cristinPersonId2);
 
-        var workItem = createWorkItemForPublication(publication);
+        var workItem = createWorkItemForPublication(persistedPublication);
         updateVerificationStatusJob.executeBatch(List.of(workItem));
 
-        var updatedResource = resourceService.getResourceByIdentifier(publication.getIdentifier());
+        var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
         var updatedContributors = updatedResource.getEntityDescription().getContributors();
 
         assertEquals(ContributorVerificationStatus.VERIFIED,
@@ -183,7 +235,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     }
 
     private URI createCristinPersonUri(String personId) {
-        return URI.create("https://api.dev.nva.aws.unit.no" + CRISTIN_PERSON_PATH + personId);
+        return URI.create(API + CRISTIN_PERSON_PATH + personId);
     }
 
     private Publication createPublicationWithContributor(URI cristinPersonId,
@@ -231,10 +283,14 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
         when(cristinClient.getPerson(cristinPersonId)).thenReturn(Optional.of(cristinPerson));
     }
 
-    private void persistPublication(Publication publication) {
+    private void mockCristinClientReturnsEmpty() {
+        when(cristinClient.getPerson(any(URI.class))).thenReturn(Optional.empty());
+    }
+
+    private Publication persistPublication(Publication publication) throws Exception {
         var resource = Resource.fromPublication(publication);
-        var dao = resource.toDao();
-        client.putItem(new PutItemRequest().withTableName(RESOURCES_TABLE_NAME).withItem(dao.toDynamoFormat()));
+        var userInstance = UserInstance.fromPublication(publication);
+        return resource.persistNew(resourceService, userInstance);
     }
 
     private BatchWorkItem createWorkItemForPublication(Publication publication) {
@@ -242,5 +298,11 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
         var dao = (ResourceDao) resource.toDao();
         var key = new DynamodbResourceBatchDynamoDbKey(dao.getPrimaryKeyPartitionKey(), dao.getPrimaryKeySortKey());
         return new BatchWorkItem(key, "UPDATE_VERIFICATION_STATUS");
+    }
+
+    private static DynamodbResourceBatchDynamoDbKey getRandomKey() {
+        return new DynamodbResourceBatchDynamoDbKey(
+            "Resource:%s:%s@20754.0.0.0".formatted(randomUUID(), randomInteger()),
+            "Resource:%s".formatted(SortableIdentifier.next()));
     }
 }

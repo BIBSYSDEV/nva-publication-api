@@ -10,7 +10,6 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -31,6 +30,14 @@ class UserInstanceTest {
         var userInstance = UserInstance.fromPublication(publication);
         assertThat(userInstance.getUsername(), is(equalTo(publication.getResourceOwner().getOwner().getValue())));
         assertThat(userInstance.getCustomerId(), is(equalTo(publication.getPublisher().getId())));
+    }
+
+    @Test
+    void shouldReturnUserInstanceFromResource() {
+        var resource = Resource.fromPublication(randomPublication());
+        var userInstance = UserInstance.fromResource(resource);
+        assertThat(userInstance.getUsername(), is(equalTo(resource.getResourceOwner().getUser().toString())));
+        assertThat(userInstance.getCustomerId(), is(equalTo(resource.getPublisher().getId())));
     }
 
     @Test

@@ -1,14 +1,16 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb.jobs;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.BatchWorkItem;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchJobExecutor;
@@ -41,13 +43,11 @@ public class UpdateVerificationStatusJob implements DynamodbResourceBatchJobExec
 
     @Override
     public void executeBatch(List<BatchWorkItem> workItems) {
-        if (workItems.isEmpty()) {
-            return;
-        }
-
         workItems.stream()
             .map(this::extractIdentifier)
-            .forEach(this::updateVerificationStatusForResource);
+            .flatMap(this::fetchResource)
+            .flatMap(this::updateVerificationStatus)
+            .forEach(this::persistResourceUpdate);
     }
 
     @Override
@@ -61,69 +61,63 @@ public class UpdateVerificationStatusJob implements DynamodbResourceBatchJobExec
         return new SortableIdentifier(parts[IDENTIFIER_INDEX]);
     }
 
-    private void updateVerificationStatusForResource(SortableIdentifier identifier) {
+    private Stream<Resource> fetchResource(SortableIdentifier identifier) {
         try {
-            var resource = resourceService.getResourceByIdentifier(identifier);
-            updateVerificationStatus(resource);
+            return Stream.of(resourceService.getResourceByIdentifier(identifier));
         } catch (NotFoundException e) {
             logger.warn("Resource not found: {}", identifier);
+            return Stream.empty();
         }
     }
 
-    private void updateVerificationStatus(Resource resource) {
-        var entityDescription = resource.getEntityDescription();
-
-        if (entityDescription == null) {
-            return;
-        }
-
-        var contributors = entityDescription.getContributors();
-
-        if (contributors == null || contributors.isEmpty()) {
-            return;
-        }
-
-        var updatedContributors = contributors.stream()
-                                      .map(this::updateContributorVerificationStatus)
-                                      .toList();
-
-        if (hasChanges(contributors, updatedContributors)) {
-            entityDescription.setContributors(updatedContributors);
-            resourceService.updateResource(resource, UserInstance.fromResource(resource));
-            logger.info("Updated verification status for resource: {}", resource.getIdentifier());
-        }
+    private Stream<Resource> updateVerificationStatus(Resource resource) {
+        return Optional.ofNullable(resource.getEntityDescription())
+                   .map(EntityDescription::getContributors)
+                   .map(this::updateContributors)
+                   .filter(updatedContributors -> hasChanges(resource.getEntityDescription().getContributors(),
+                                                             updatedContributors))
+                   .map(updatedContributors -> applyContributorUpdates(resource, updatedContributors))
+                   .stream();
     }
 
-    private boolean hasChanges(List<Contributor> original, List<Contributor> updated) {
+    private List<Contributor> updateContributors(Collection<Contributor> contributors) {
+        return contributors.stream()
+                   .map(this::updateContributorVerificationStatus)
+                   .toList();
+    }
+
+    private Resource applyContributorUpdates(Resource resource, List<Contributor> updatedContributors) {
+        resource.getEntityDescription().setContributors(updatedContributors);
+        return resource;
+    }
+
+    private void persistResourceUpdate(Resource resource) {
+        resourceService.updateResource(resource, UserInstance.fromResource(resource));
+        logger.info("Updated verification status for resource: {}", resource.getIdentifier());
+    }
+
+    private boolean hasChanges(Collection<Contributor> original, Collection<Contributor> updated) {
         return !original.equals(updated);
     }
 
     private Contributor updateContributorVerificationStatus(Contributor contributor) {
-        var identity = contributor.getIdentity();
-        var cristinId = extractCristinId(identity);
-
-        if (cristinId.isEmpty()) {
-            return contributor;
-        }
-
-        var verificationStatus = fetchVerificationStatus(cristinId.get());
-
-        if (verificationStatus.equals(identity.getVerificationStatus())) {
-            return contributor;
-        }
-
-        var updatedIdentity = createUpdatedIdentity(identity, verificationStatus);
-        return contributor.copy().withIdentity(updatedIdentity).build();
+        return extractCristinId(contributor)
+                   .map(this::fetchVerificationStatus)
+                   .flatMap(status -> applyVerificationStatus(contributor, status))
+                   .orElse(contributor);
     }
 
-    private Optional<URI> extractCristinId(Identity identity) {
-        return Optional.ofNullable(identity)
-                   .map(Identity::getId)
-                   .filter(this::isCristinPersonUri);
+    private Optional<URI> extractCristinId(Contributor contributor) {
+        return Optional.ofNullable(contributor.getIdentity())
+                   .map(Identity::getId);
     }
 
-    private boolean isCristinPersonUri(URI uri) {
-        return nonNull(uri) && uri.toString().contains("/cristin/person/");
+    private Optional<Contributor> applyVerificationStatus(Contributor contributor,
+                                                          ContributorVerificationStatus status) {
+        return Optional.of(contributor.getIdentity())
+                   .filter(identity -> !status.equals(identity.getVerificationStatus()))
+                   .map(identity -> createUpdatedIdentity(identity, status))
+                   .map(updatedIdentity -> contributor.copy().withIdentity(updatedIdentity).build());
     }
 
     private ContributorVerificationStatus fetchVerificationStatus(URI cristinId) {
@@ -135,12 +129,7 @@ public class UpdateVerificationStatusJob implements DynamodbResourceBatchJobExec
     }
 
     private Identity createUpdatedIdentity(Identity original, ContributorVerificationStatus verificationStatus) {
-        return new Identity.Builder()
-                   .withId(original.getId())
-                   .withName(original.getName())
-                   .withNameType(original.getNameType())
-                   .withOrcId(original.getOrcId())
-                   .withAdditionalIdentifiers(original.getAdditionalIdentifiers())
+        return original.copy()
                    .withVerificationStatus(verificationStatus)
                    .build();
     }
