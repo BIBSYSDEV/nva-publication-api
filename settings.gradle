@@ -21,3 +21,32 @@ include 'tickets-test'
 include 'publication-log'
 include 'publication-file'
 
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+    versionCatalogs {
+        // Version catalog imported from nva-commons
+        create("nvaCatalog") {
+            from("com.github.bibsysdev:versions:${nvaCommonsVersion}")
+        }
+
+        // Local version catalog for libraries in nva-commons
+        // This is defined programmatically to reference the version from gradle.properties
+        create("nvaLibs") {
+            version('nva', "${nvaCommonsVersion}")
+            library("apigateway", "com.github.bibsysdev", "apigateway").versionRef("nva")
+            library("auth", "com.github.bibsysdev", "auth").versionRef("nva")
+            library("clients", "com.github.bibsysdev", "clients").versionRef("nva")
+            library("core", "com.github.bibsysdev", "core").versionRef("nva")
+            library("eventhandlers", "com.github.bibsysdev", "eventhandlers").versionRef("nva")
+            library("identifiers", "com.github.bibsysdev", "identifiers").versionRef("nva")
+            library("json", "com.github.bibsysdev", "json").versionRef("nva")
+            library("logutils", "com.github.bibsysdev", "logutils").versionRef("nva")
+            library("pagination", "com.github.bibsysdev", "pagination").versionRef("nva")
+            library("s3", "com.github.bibsysdev", "s3").versionRef("nva")
+            library("secrets", "com.github.bibsysdev", "secrets").versionRef("nva")
+            library("testutils", "com.github.bibsysdev", "nvatestutils").versionRef("nva")
+        }
+    }
+}
