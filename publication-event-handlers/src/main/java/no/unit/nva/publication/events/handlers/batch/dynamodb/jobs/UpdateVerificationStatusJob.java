@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import no.unit.nva.clients.cristin.CristinClient;
+import no.unit.nva.clients.cristin.CristinPersonDto;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
@@ -92,7 +93,7 @@ public class UpdateVerificationStatusJob implements DynamodbResourceBatchJobExec
     }
 
     private void persistResourceUpdate(Resource resource) {
-        resourceService.updateResource(resource, UserInstance.fromResource(resource));
+        resourceService.updateResource(resource, UserInstance.fromPublication(resource.toPublication()));
         logger.info("Updated verification status for resource: {}", resource.getIdentifier());
     }
 
@@ -122,10 +123,9 @@ public class UpdateVerificationStatusJob implements DynamodbResourceBatchJobExec
 
     private ContributorVerificationStatus fetchVerificationStatus(URI cristinId) {
         return cristinClient.getPerson(cristinId)
-                   .map(person -> person.verified()
-                                      ? ContributorVerificationStatus.VERIFIED
-                                      : ContributorVerificationStatus.NOT_VERIFIED)
-                   .orElse(ContributorVerificationStatus.CANNOT_BE_ESTABLISHED);
+                   .filter(CristinPersonDto::verified)
+                   .map(person -> ContributorVerificationStatus.VERIFIED)
+                   .orElse(ContributorVerificationStatus.NOT_VERIFIED);
     }
 
     private Identity createUpdatedIdentity(Identity original, ContributorVerificationStatus verificationStatus) {

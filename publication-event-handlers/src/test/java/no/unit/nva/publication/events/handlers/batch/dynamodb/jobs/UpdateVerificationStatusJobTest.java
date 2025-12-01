@@ -92,7 +92,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetCannotBeEstablishedWhenCristinClientReturnsEmpty() throws Exception {
+    void shouldSetNotVerifiedWhenCristinClientReturnsEmpty() throws Exception {
         var cristinPersonId = createCristinPersonUri("12345");
         var publication = createPublicationWithContributor(cristinPersonId, ContributorVerificationStatus.VERIFIED);
         var persistedPublication = persistPublication(publication);
@@ -105,7 +105,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
         var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
         var updatedContributor = updatedResource.getEntityDescription().getContributors().getFirst();
 
-        assertEquals(ContributorVerificationStatus.CANNOT_BE_ESTABLISHED,
+        assertEquals(ContributorVerificationStatus.NOT_VERIFIED,
                      updatedContributor.getIdentity().getVerificationStatus());
     }
 
