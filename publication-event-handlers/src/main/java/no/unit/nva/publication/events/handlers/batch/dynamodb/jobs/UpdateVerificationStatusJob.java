@@ -46,7 +46,7 @@ public class UpdateVerificationStatusJob implements DynamodbResourceBatchJobExec
     public void executeBatch(List<BatchWorkItem> workItems) {
         workItems.stream()
             .map(this::extractIdentifier)
-            .flatMap(this::fetchResource)
+            .map(this::fetchResource)
             .flatMap(this::updateVerificationStatus)
             .forEach(this::persistResourceUpdate);
     }
@@ -62,12 +62,11 @@ public class UpdateVerificationStatusJob implements DynamodbResourceBatchJobExec
         return new SortableIdentifier(parts[IDENTIFIER_INDEX]);
     }
 
-    private Stream<Resource> fetchResource(SortableIdentifier identifier) {
+    private Resource fetchResource(SortableIdentifier identifier) {
         try {
-            return Stream.of(resourceService.getResourceByIdentifier(identifier));
+            return resourceService.getResourceByIdentifier(identifier);
         } catch (NotFoundException e) {
-            logger.warn("Resource not found: {}", identifier);
-            return Stream.empty();
+            throw new RuntimeException("Resource not found: " + identifier, e);
         }
     }
 

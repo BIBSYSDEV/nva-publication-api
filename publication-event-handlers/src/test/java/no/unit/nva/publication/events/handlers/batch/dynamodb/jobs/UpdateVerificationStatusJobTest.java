@@ -6,6 +6,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -147,11 +148,12 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldHandleResourceNotFound() {
+    void shouldThrowExceptionWhenResourceNotFound() {
         var nonExistentKey = getRandomKey();
         var workItem = new BatchWorkItem(nonExistentKey, JOB_TYPE);
 
-        assertDoesNotThrow(() -> updateVerificationStatusJob.executeBatch(List.of(workItem)));
+        assertThrows(RuntimeException.class,
+                     () -> updateVerificationStatusJob.executeBatch(List.of(workItem)));
     }
 
     @Test
