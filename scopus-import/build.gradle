@@ -8,36 +8,36 @@ dependencies {
     implementation libs.apache.commons.collections
     implementation project(":scopus-generate")
     implementation libs.xsd2java.jakarta
-    implementation libs.aws.sdk2.s3
-    implementation libs.aws.lambda.events
-    implementation libs.aws.sdk.dynamodb
-    implementation libs.aws.sdk2.secrets
+    implementation nvaCatalog.aws.sdk2.s3
+    implementation nvaCatalog.aws.lambda.events
+    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.secrets
 
-    implementation libs.nva.s3
-    implementation libs.nva.secrets
-    implementation libs.nva.json
-    implementation libs.nva.doi
-    implementation libs.nva.core
-    implementation libs.nva.events
-    implementation libs.nva.apigateway
+    implementation nvaLibs.s3
+    implementation nvaLibs.secrets
+    implementation nvaLibs.json
+    implementation nvaLibs.doi
+    implementation nvaLibs.core
+    implementation nvaLibs.eventhandlers
+    implementation nvaLibs.apigateway
     implementation libs.nva.language
-    implementation libs.nva.logutils
-    implementation libs.nva.auth
-    implementation libs.nva.identifiers
-    implementation libs.nva.clients
+    implementation nvaLibs.logutils
+    implementation nvaLibs.auth
+    implementation nvaLibs.identifiers
+    implementation nvaLibs.clients
 
-    implementation libs.aws.lambda.java.core
-    implementation libs.aws.lambda.events
-    implementation libs.bundles.logging
-    implementation libs.bundles.jackson
+    implementation nvaCatalog.aws.lambda.core
+    implementation nvaCatalog.aws.lambda.events
+    implementation nvaCatalog.bundles.logging
+    implementation nvaCatalog.bundles.jackson
     implementation project(":publication-commons")
     implementation project(":s3-import-commons")
     implementation project(":expansion")
 
-    testImplementation libs.nva.testutils
-    testImplementation libs.nva.json
+    testImplementation nvaLibs.testutils
+    testImplementation nvaLibs.json
 
-    testImplementation libs.wiremock
+    testImplementation nvaCatalog.wiremock
     testImplementation project(":brage-import")
     testImplementation project(":brage-import")
     testImplementation project(":publication-testing")

@@ -3,24 +3,24 @@ dependencies {
     implementation project(":publication-rest")
     implementation project(":publication-model")
 
-    implementation libs.nva.apigateway
-    implementation libs.nva.core
-    implementation libs.nva.json
-    implementation libs.nva.identifiers
-    implementation libs.nva.secrets
-    implementation libs.nva.auth
-    implementation libs.nva.clients
+    implementation nvaLibs.apigateway
+    implementation nvaLibs.core
+    implementation nvaLibs.json
+    implementation nvaLibs.identifiers
+    implementation nvaLibs.secrets
+    implementation nvaLibs.auth
+    implementation nvaLibs.clients
 
-    implementation libs.jackson.databind
-    implementation libs.jackson.core
+    implementation nvaCatalog.jackson.databind
+    implementation nvaCatalog.jackson.core
 
-    implementation libs.aws.sdk.dynamodb
-    implementation libs.guava
-    implementation libs.zalando
+    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.guava
+    implementation nvaCatalog.zalando
 
     implementation libs.apache.commons.text
 
-    testImplementation libs.nva.testutils
+    testImplementation nvaLibs.testutils
 
     testImplementation project(":publication-testing")
     testImplementation project(":publication-model-testing")

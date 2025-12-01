@@ -2,18 +2,18 @@ apply plugin: 'io.freefair.lombok'
 
 dependencies {
     implementation(project(':publication-commons'))
-    implementation libs.nva.core
-    implementation libs.nva.json
-    implementation libs.nva.auth
-    implementation libs.nva.apigateway
-    implementation libs.nva.identifiers
-    implementation libs.nva.secrets
+    implementation nvaLibs.core
+    implementation nvaLibs.json
+    implementation nvaLibs.auth
+    implementation nvaLibs.apigateway
+    implementation nvaLibs.identifiers
+    implementation nvaLibs.secrets
     implementation project(":publication-model")
-    implementation libs.guava
-    implementation libs.aws.sdk.dynamodb
-    implementation libs.aws.sdk2.sqs
-    implementation libs.bundles.jena
-    implementation libs.bundles.logging
+    implementation nvaCatalog.guava
+    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.sqs
+    implementation nvaCatalog.bundles.jena
+    implementation nvaCatalog.bundles.logging
 
     testImplementation(project(':publication-testing'))
     testImplementation project(":publication-model-testing")

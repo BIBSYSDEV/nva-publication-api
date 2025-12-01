@@ -8,51 +8,50 @@ dependencies {
 
     implementation project(":publication-model")
 
-    implementation libs.nva.eventhandlers
-    implementation libs.nva.core
-    implementation libs.nva.json
-    implementation libs.nva.s3
-    implementation libs.nva.secrets
-    implementation libs.nva.apigateway
-    implementation libs.nva.auth
-    implementation libs.nva.clients
-    implementation libs.aws.core
-    implementation libs.aws.lambda.java.core
-    implementation libs.aws.lambda.events
-    implementation libs.aws.java.sdk.core
-    implementation libs.guava
+    implementation nvaLibs.eventhandlers
+    implementation nvaLibs.core
+    implementation nvaLibs.json
+    implementation nvaLibs.s3
+    implementation nvaLibs.secrets
+    implementation nvaLibs.apigateway
+    implementation nvaLibs.auth
+    implementation nvaLibs.clients
+    implementation nvaCatalog.aws.lambda.core
+    implementation nvaCatalog.aws.lambda.events
+    implementation nvaCatalog.aws.java.sdk.core
+    implementation nvaCatalog.guava
 
-    implementation libs.aws.sdk.dynamodb
-    implementation libs.aws.sdk2.s3
-    implementation libs.aws.sdk2.urlconnectionclient
-    implementation libs.aws.sdk2.eventbridge
-    implementation libs.aws.sdk2.sqs
+    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.s3
+    implementation nvaCatalog.aws.sdk2.urlconnection
+    implementation nvaCatalog.aws.sdk2.eventbridge
+    implementation nvaCatalog.aws.sdk2.sqs
     implementation libs.aws.sdk2.httpClientApi
     implementation libs.aws.sdk2.auth
-    implementation libs.aws.sdk2.regions
-    implementation libs.aws.sdk2.core
-    implementation libs.aws.sdk2.secrets
-    implementation libs.aws.apache.client
+    implementation nvaCatalog.aws.sdk2.regions
+    implementation nvaCatalog.aws.sdk2.core
+    implementation nvaCatalog.aws.sdk2.secrets
+    implementation nvaCatalog.aws.apache.client
 
-    implementation libs.jackson.annotations
-    implementation libs.jackson.databind
-    implementation libs.jackson.core
+    implementation nvaCatalog.jackson.annotations
+    implementation nvaCatalog.jackson.databind
+    implementation nvaCatalog.jackson.core
 
     implementation libs.jakarta.validation.api
 
-    implementation libs.bundles.logging
+    implementation nvaCatalog.bundles.logging
 
-    testImplementation libs.wiremock
+    testImplementation nvaCatalog.wiremock
 
     implementation libs.vavr
     implementation libs.resilience4j.all
 
     testImplementation libs.bundles.testing
-    testImplementation libs.nva.identifiers
+    testImplementation nvaLibs.identifiers
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
 
-    compileOnly(libs.nva.identifiers) {
+    compileOnly(nvaLibs.identifiers) {
         because "PMD complains about no/unit/nva/identifiers/SortableIdentifier"
     }
 }

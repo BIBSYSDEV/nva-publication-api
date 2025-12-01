@@ -6,64 +6,64 @@ dependencies {
     implementation project(":s3-import-commons")
     implementation project(":publication-model")
 
-    implementation libs.nva.s3
-    implementation libs.nva.core
-    implementation libs.nva.json
-    implementation libs.nva.eventhandlers
-    implementation libs.nva.doi
-    implementation libs.nva.auth
-    implementation libs.nva.apigateway
+    implementation nvaLibs.s3
+    implementation nvaLibs.core
+    implementation nvaLibs.json
+    implementation nvaLibs.eventhandlers
+    implementation nvaLibs.doi
+    implementation nvaLibs.auth
+    implementation nvaLibs.apigateway
 
-    implementation libs.bundles.jackson
+    implementation nvaCatalog.bundles.jackson
 
-    implementation libs.hamcrest.base
+    implementation nvaCatalog.hamcrest
 
-    implementation libs.aws.sdk.dynamodb
+    implementation nvaCatalog.aws.sdk.dynamo
     implementation libs.aws.sdk.sqs
-    implementation libs.aws.lambda.events
-    implementation libs.aws.java.sdk.core
-    implementation libs.aws.sdk2.core
+    implementation nvaCatalog.aws.lambda.events
+    implementation nvaCatalog.aws.java.sdk.core
+    implementation nvaCatalog.aws.sdk2.core
     implementation libs.aws.sdk2.httpClientApi
-    implementation libs.aws.sdk2.urlconnectionclient
-    implementation libs.aws.sdk2.regions
+    implementation nvaCatalog.aws.sdk2.urlconnection
+    implementation nvaCatalog.aws.sdk2.regions
 
     implementation libs.typesafe.config
-    implementation libs.bundles.logging
+    implementation nvaCatalog.bundles.logging
 
-    implementation libs.open.csv
+    implementation nvaCatalog.opencsv
 
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
-    testImplementation libs.nva.testutils
-    testImplementation libs.logutils
-    testImplementation libs.nva.identifiers
-    testImplementation libs.datafaker
+    testImplementation nvaLibs.testutils
+    testImplementation nvaLibs.logutils
+    testImplementation nvaLibs.identifiers
+    testImplementation nvaCatalog.datafaker
     testImplementation(libs.javers) {
         because "For comparing java objects and detailing the differences in readable way"
     }
-    testImplementation libs.aws.sdk2.s3
+    testImplementation nvaCatalog.aws.sdk2.s3
 
-    testImplementation libs.jackson.core
+    testImplementation nvaCatalog.jackson.core
 
-    compileOnly libs.aws.sdk2.eventbridge
-    compileOnly libs.aws.sdk2.s3
+    compileOnly nvaCatalog.aws.sdk2.eventbridge
+    compileOnly nvaCatalog.aws.sdk2.s3
 
-    compileOnly libs.nva.apigateway
-    compileOnly libs.zalando
-    compileOnly libs.aws.lambda.java.core
-    compileOnly libs.nva.identifiers
+    compileOnly nvaLibs.apigateway
+    compileOnly nvaCatalog.zalando
+    compileOnly nvaCatalog.aws.lambda.core
+    compileOnly nvaLibs.identifiers
 
     compileOnly(libs.aws.sdk2.auth) {
         because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "
     }
 
-    compileOnly(group: 'commons-validator', name: 'commons-validator', version: '1.7') {
+    compileOnly(nvaCatalog.commons.validator) {
         because "PMD org/apache/commons/validator/routines/ISBNValidator"
     }
 
-    testImplementation libs.cucumber.java
+    testImplementation nvaCatalog.cucumber.java
     testImplementation libs.cucumber.junit
-    testImplementation libs.cucumber.picocontainer
+    testImplementation nvaCatalog.cucumber.picocontainer
 
 }
 

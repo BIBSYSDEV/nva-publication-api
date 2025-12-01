@@ -6,38 +6,38 @@ dependencies {
     implementation project(":publication-constants")
     implementation project(":publication-model")
 
-    implementation libs.nva.apigateway
-    implementation libs.nva.core
-    implementation libs.nva.json
-    implementation libs.nva.identifiers
-    implementation libs.nva.auth
-    implementation libs.nva.secrets
-    implementation libs.nva.clients
+    implementation nvaLibs.apigateway
+    implementation nvaLibs.core
+    implementation nvaLibs.json
+    implementation nvaLibs.identifiers
+    implementation nvaLibs.auth
+    implementation nvaLibs.secrets
+    implementation nvaLibs.clients
 
-    implementation libs.aws.java.sdk.core
-    implementation libs.aws.sdk.dynamodb
-    implementation libs.aws.sdk2.secrets
-    implementation libs.aws.sdk2.urlconnectionclient
-    implementation libs.aws.apache.client
-    implementation libs.aws.sdk2.s3
-    implementation libs.aws.sdk2.sqs
+    implementation nvaCatalog.aws.java.sdk.core
+    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.secrets
+    implementation nvaCatalog.aws.sdk2.urlconnection
+    implementation nvaCatalog.aws.apache.client
+    implementation nvaCatalog.aws.sdk2.s3
+    implementation nvaCatalog.aws.sdk2.sqs
 
-    implementation libs.guava
-    implementation libs.zalando
-    implementation libs.bundles.jena
-    implementation (libs.bundles.jackson) {
+    implementation nvaCatalog.guava
+    implementation nvaCatalog.zalando
+    implementation nvaCatalog.bundles.jena
+    implementation (nvaCatalog.bundles.jackson) {
         exclude group: 'org.zalando', module : 'jackson-datatype-problem'
     }
 
-    implementation libs.jackson.datatype.problem
+    implementation nvaCatalog.jackson.datatype.problem
     implementation libs.vavr
     implementation libs.resilience4j.all
 
-    implementation libs.bundles.logging
+    implementation nvaCatalog.bundles.logging
 
-    testImplementation libs.cucumber.java
+    testImplementation nvaCatalog.cucumber.java
     testImplementation libs.cucumber.junit
-    testImplementation libs.cucumber.picocontainer
+    testImplementation nvaCatalog.cucumber.picocontainer
 
     testImplementation project(":tickets-test")
     testImplementation libs.bundles.testing
@@ -46,8 +46,8 @@ dependencies {
 
 
     testFixturesImplementation project(":publication-model")
-    testFixturesImplementation libs.nva.testutils
-    testFixturesImplementation libs.nva.apigateway
+    testFixturesImplementation nvaLibs.testutils
+    testFixturesImplementation nvaLibs.apigateway
 }
 
 test {
