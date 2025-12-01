@@ -2,7 +2,6 @@ package no.unit.nva.publication.events.handlers.batch.dynamodb.jobs;
 
 import static java.util.UUID.randomUUID;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -30,8 +29,6 @@ import no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBa
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.ResourceDao;
-import no.unit.nva.publication.model.utils.CustomerList;
-import no.unit.nva.publication.model.utils.CustomerSummary;
 import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -40,8 +37,6 @@ import org.junit.jupiter.api.Test;
 
 class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
 
-    private static final URI CRISTIN_ORG_ID =
-        URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
     private static final String CRISTIN_PERSON_PATH = "/cristin/person/";
     private static final String API = "https://api.unittest.nva.aws.unit.no";
 
@@ -52,8 +47,6 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     @BeforeEach
     void setUp() {
         super.init();
-        when(customerService.fetchCustomers())
-            .thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), CRISTIN_ORG_ID))));
         this.resourceService = new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(),
                                                    uriRetriever, channelClaimClient, customerService,
                                                    new FakeCristinUnitsUtil());

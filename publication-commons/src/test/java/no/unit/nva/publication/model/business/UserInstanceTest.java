@@ -33,14 +33,6 @@ class UserInstanceTest {
     }
 
     @Test
-    void shouldReturnUserInstanceFromResource() {
-        var resource = Resource.fromPublication(randomPublication());
-        var userInstance = UserInstance.fromResource(resource);
-        assertThat(userInstance.getUsername(), is(equalTo(resource.getResourceOwner().getUser().toString())));
-        assertThat(userInstance.getCustomerId(), is(equalTo(resource.getPublisher().getId())));
-    }
-
-    @Test
     void shouldReturnUserInstanceFromPublicationWhenPublisherIsNull() {
         var publication = randomPublication();
         publication.setPublisher(null);
