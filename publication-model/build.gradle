@@ -3,21 +3,21 @@ plugins {
 }
 
 dependencies {
-    implementation( libs.nva.core )
-    implementation( libs.nva.json )
-    implementation( libs.nva.identifiers )
-    implementation ( libs.commons.validator )
-    implementation( libs.jackson.databind )
-    implementation libs.bundles.logging
+    implementation( nvaLibs.core )
+    implementation( nvaLibs.json )
+    implementation( nvaLibs.identifiers )
+    implementation ( nvaCatalog.commons.validator )
+    implementation( nvaCatalog.jackson.databind )
+    implementation nvaCatalog.bundles.logging
 
     testImplementation( libs.reflections )
-    testImplementation( libs.jena.core )
-    testImplementation( libs.jena.arq )
+    testImplementation( nvaCatalog.jena.core )
+    testImplementation( nvaCatalog.jena.arq )
 
-    testImplementation( libs.nva.testutils )
+    testImplementation( nvaLibs.testutils )
     testImplementation( libs.javers )
     testImplementation( libs.swagger.core )
-    testImplementation( libs.nva.logutils )
+    testImplementation( nvaLibs.logutils )
     testImplementation project(":publication-model-testing")
 }
 

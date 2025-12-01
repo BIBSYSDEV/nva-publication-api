@@ -8,32 +8,32 @@ dependencies {
     implementation project(":tickets")
     implementation project(":publication-event-handlers")
 
-    implementation libs.nva.apigateway
-    implementation libs.nva.core
-    implementation libs.nva.auth
-    implementation libs.nva.json
-    implementation libs.nva.s3
-    implementation libs.nva.identifiers
-    implementation libs.nva.clients
+    implementation nvaLibs.apigateway
+    implementation nvaLibs.core
+    implementation nvaLibs.auth
+    implementation nvaLibs.json
+    implementation nvaLibs.s3
+    implementation nvaLibs.identifiers
+    implementation nvaLibs.clients
     implementation project(":publication-model")
-    implementation libs.nva.secrets
+    implementation nvaLibs.secrets
 
     implementation libs.nva.doi.partner.data
 
     implementation libs.bundles.jaxb
-    implementation libs.jackson.databind
-    implementation libs.jackson.core
-    implementation libs.bundles.logging
+    implementation nvaCatalog.jackson.databind
+    implementation nvaCatalog.jackson.core
+    implementation nvaCatalog.bundles.logging
     implementation libs.bundles.jaxb
 
-    implementation libs.aws.sdk.dynamodb
-    implementation libs.aws.lambda.java.core
-    implementation libs.guava
-    implementation libs.aws.sdk2.secrets
-    implementation libs.aws.sdk2.s3
-    implementation libs.zalando
-    implementation libs.aws.sdk2.eventbridge
-    implementation libs.aws.sdk2.urlconnectionclient
+    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.lambda.core
+    implementation nvaCatalog.guava
+    implementation nvaCatalog.aws.sdk2.secrets
+    implementation nvaCatalog.aws.sdk2.s3
+    implementation nvaCatalog.zalando
+    implementation nvaCatalog.aws.sdk2.eventbridge
+    implementation nvaCatalog.aws.sdk2.urlconnection
     implementation libs.bundles.validation
 
     implementation libs.apache.commons.text
@@ -42,10 +42,10 @@ dependencies {
     testImplementation project(":tickets-test")
     testImplementation libs.bundles.testing
     testImplementation project(":publication-model-testing")
-    testImplementation libs.logutils
-    testImplementation libs.nva.testutils
-    testImplementation libs.zalando
-    testImplementation libs.wiremock
+    testImplementation nvaLibs.logutils
+    testImplementation nvaLibs.testutils
+    testImplementation nvaCatalog.zalando
+    testImplementation nvaCatalog.wiremock
     testImplementation(libs.httpcore) {
         because "aws-java-sdk-dynamodb needs and we are using it indirectly"
     }

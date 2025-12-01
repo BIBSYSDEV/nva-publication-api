@@ -2,24 +2,24 @@ dependencies {
     implementation project(":publication-commons")
     implementation project(":s3-import-commons")
 
-    implementation libs.aws.sdk2.s3
-    implementation libs.aws.lambda.java.core
-    implementation libs.aws.lambda.events
-    implementation libs.aws.sdk.dynamodb
-    implementation libs.hamcrest.base
-    implementation libs.nva.apigateway
-    implementation libs.nva.clients
-    implementation libs.nva.auth
+    implementation nvaCatalog.aws.sdk2.s3
+    implementation nvaCatalog.aws.lambda.core
+    implementation nvaCatalog.aws.lambda.events
+    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.hamcrest
+    implementation nvaLibs.apigateway
+    implementation nvaLibs.clients
+    implementation nvaLibs.auth
 
-    implementation libs.bundles.logging
+    implementation nvaCatalog.bundles.logging
 
-    implementation libs.nva.eventhandlers
+    implementation nvaLibs.eventhandlers
 
-    implementation libs.nva.s3
-    implementation libs.nva.core
-    implementation libs.nva.json
+    implementation nvaLibs.s3
+    implementation nvaLibs.core
+    implementation nvaLibs.json
     implementation libs.nva.language
-    implementation libs.nva.identifiers
+    implementation nvaLibs.identifiers
     implementation project(":publication-model")
     testImplementation(libs.dynamodDbLocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
@@ -35,10 +35,10 @@ dependencies {
 
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.12.646'
 
-    testImplementation libs.nva.testutils
-    testImplementation libs.cucumber.java
+    testImplementation nvaLibs.testutils
+    testImplementation nvaCatalog.cucumber.java
     testImplementation libs.cucumber.junit
-    testImplementation libs.cucumber.picocontainer
+    testImplementation nvaCatalog.cucumber.picocontainer
     testImplementation project(":publication-model-testing")
     testImplementation project(path: ':publication-testing')
 }

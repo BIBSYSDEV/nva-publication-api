@@ -2,28 +2,28 @@ dependencies {
 
     implementation project(":publication-commons")
 
-    implementation libs.nva.apigateway
-    implementation libs.nva.core
-    implementation libs.nva.json
-    implementation libs.nva.identifiers
+    implementation nvaLibs.apigateway
+    implementation nvaLibs.core
+    implementation nvaLibs.json
+    implementation nvaLibs.identifiers
     implementation project(":publication-model")
 
-    implementation libs.aws.sdk.dynamodb
-    implementation libs.aws.lambda.java.core
-    implementation libs.guava
+    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.lambda.core
+    implementation nvaCatalog.guava
     testImplementation project(path: ':tickets-test')
 
-    runtimeOnly libs.jackson.databind
-    testImplementation libs.jackson.databind
-    runtimeOnly libs.jackson.core
-    testImplementation libs.jackson.core
+    runtimeOnly nvaCatalog.jackson.databind
+    testImplementation nvaCatalog.jackson.databind
+    runtimeOnly nvaCatalog.jackson.core
+    testImplementation nvaCatalog.jackson.core
 
     testImplementation project(":publication-testing")
     testImplementation project(":publication-model-testing")
 
 
-    testImplementation libs.zalando
-    testImplementation libs.nva.testutils
+    testImplementation nvaCatalog.zalando
+    testImplementation nvaLibs.testutils
 }
 
 test {

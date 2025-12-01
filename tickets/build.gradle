@@ -3,36 +3,36 @@ dependencies {
     implementation project(":publication-doi-commons")
     implementation project(":datacite-commons")
 
-    implementation libs.nva.apigateway
-    implementation libs.nva.identifiers
-    implementation libs.nva.secrets
-    implementation libs.nva.core
-    implementation libs.nva.json
-    implementation libs.nva.auth
+    implementation nvaLibs.apigateway
+    implementation nvaLibs.identifiers
+    implementation nvaLibs.secrets
+    implementation nvaLibs.core
+    implementation nvaLibs.json
+    implementation nvaLibs.auth
     implementation project(":publication-model")
-    implementation libs.aws.sdk.dynamodb
-    implementation libs.aws.sdk2.secrets
+    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.secrets
 
-    implementation libs.jackson.annotations
-    implementation libs.jackson.databind
+    implementation nvaCatalog.jackson.annotations
+    implementation nvaCatalog.jackson.databind
 
-    implementation libs.guava
-    implementation libs.zalando
-    implementation libs.bundles.logging
+    implementation nvaCatalog.guava
+    implementation nvaCatalog.zalando
+    implementation nvaCatalog.bundles.logging
 
-    runtimeOnly libs.jackson.core
+    runtimeOnly nvaCatalog.jackson.core
 
     testImplementation project(":publication-model-testing")
-    testImplementation libs.jackson.core
+    testImplementation nvaCatalog.jackson.core
     testImplementation project(':publication-testing')
-    testImplementation libs.nva.testutils
+    testImplementation nvaLibs.testutils
     testImplementation project(":tickets-test")
-    testImplementation libs.logutils
-    testImplementation libs.wiremock
+    testImplementation nvaLibs.logutils
+    testImplementation nvaCatalog.wiremock
     testImplementation libs.bundles.testing
 
-    compileOnly libs.zalando
-    compileOnly libs.aws.lambda.java.core
+    compileOnly nvaCatalog.zalando
+    compileOnly nvaCatalog.aws.lambda.core
 }
 
 test {

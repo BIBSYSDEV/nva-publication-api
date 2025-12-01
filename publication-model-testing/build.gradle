@@ -1,13 +1,13 @@
 dependencies {
     implementation project(":publication-model")
-    implementation( libs.nva.core )
+    implementation( nvaLibs.core )
     implementation( libs.nva.language )
-    implementation( libs.nva.identifiers )
-    implementation ( libs.nva.json )
-    implementation( libs.nva.testutils )
-    implementation( libs.datafaker )
+    implementation( nvaLibs.identifiers )
+    implementation ( nvaLibs.json )
+    implementation( nvaLibs.testutils )
+    implementation( nvaCatalog.datafaker )
     implementation( libs.javers )
-    implementation( libs.jackson.annotations )
+    implementation( nvaCatalog.jackson.annotations )
 }
 
 tasks.named('check').configure {

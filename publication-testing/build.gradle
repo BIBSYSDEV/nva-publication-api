@@ -3,25 +3,25 @@ dependencies {
     implementation project(":publication-commons")
     implementation project(":publication-model")
     implementation project(":publication-model-testing")
-    implementation libs.nva.core
-    implementation libs.nva.json
-    implementation libs.nva.identifiers
-    implementation libs.nva.s3
+    implementation nvaLibs.core
+    implementation nvaLibs.json
+    implementation nvaLibs.identifiers
+    implementation nvaLibs.s3
     implementation libs.nva.language
-    implementation libs.nva.clients
-    implementation libs.nva.auth
+    implementation nvaLibs.clients
+    implementation nvaLibs.auth
 
-    compileOnly libs.nva.apigateway
+    compileOnly nvaLibs.apigateway
 
-    implementation libs.junit.jupiter.api
+    implementation nvaCatalog.junit.jupiter.api
 
 
-    implementation libs.aws.sdk.dynamodb
-    implementation libs.aws.sdk2.s3
-    implementation libs.aws.sdk2.sqs
+    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.s3
+    implementation nvaCatalog.aws.sdk2.sqs
 
     implementation libs.bundles.testing
-    implementation libs.bundles.jackson
+    implementation nvaCatalog.bundles.jackson
     implementation(libs.dynamodDbLocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
