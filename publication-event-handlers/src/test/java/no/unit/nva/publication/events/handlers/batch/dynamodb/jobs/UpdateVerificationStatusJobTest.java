@@ -39,6 +39,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
 
     private static final String CRISTIN_PERSON_PATH = "/cristin/person/";
     private static final String API = "https://api.unittest.nva.aws.unit.no";
+    private static final String JOB_TYPE = "UPDATE_VERIFICATION_STATUS";
 
     private ResourceService resourceService;
     private CristinClient cristinClient;
@@ -148,14 +149,14 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     @Test
     void shouldHandleResourceNotFound() {
         var nonExistentKey = getRandomKey();
-        var workItem = new BatchWorkItem(nonExistentKey, "UPDATE_VERIFICATION_STATUS");
+        var workItem = new BatchWorkItem(nonExistentKey, JOB_TYPE);
 
         assertDoesNotThrow(() -> updateVerificationStatusJob.executeBatch(List.of(workItem)));
     }
 
     @Test
     void shouldReturnCorrectJobType() {
-        assertEquals("UPDATE_VERIFICATION_STATUS", updateVerificationStatusJob.getJobType());
+        assertEquals(JOB_TYPE, updateVerificationStatusJob.getJobType());
     }
 
     @Test
@@ -290,7 +291,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
         var resource = Resource.fromPublication(publication);
         var dao = (ResourceDao) resource.toDao();
         var key = new DynamodbResourceBatchDynamoDbKey(dao.getPrimaryKeyPartitionKey(), dao.getPrimaryKeySortKey());
-        return new BatchWorkItem(key, "UPDATE_VERIFICATION_STATUS");
+        return new BatchWorkItem(key, JOB_TYPE);
     }
 
     private static DynamodbResourceBatchDynamoDbKey getRandomKey() {
