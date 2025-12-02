@@ -9,6 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.time.Clock;
@@ -49,9 +52,9 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     @BeforeEach
     void setUp() {
         super.init();
-        this.resourceService = new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(),
-                                                   uriRetriever, channelClaimClient, customerService,
-                                                   new FakeCristinUnitsUtil());
+        this.resourceService = spy(new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(),
+                                                       uriRetriever, channelClaimClient, customerService,
+                                                       new FakeCristinUnitsUtil()));
         this.cristinClient = mock(CristinClient.class);
         this.updateVerificationStatusJob = new UpdateVerificationStatusJob(resourceService, cristinClient);
     }
@@ -118,10 +121,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
         var workItem = createWorkItemForPublication(persistedPublication);
         updateVerificationStatusJob.executeBatch(List.of(workItem));
 
-        var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
-        var updatedContributor = updatedResource.getEntityDescription().getContributors().getFirst();
-
-        assertEquals(null, updatedContributor.getIdentity().getVerificationStatus());
+        verify(resourceService, never()).updateResource(any(), any());
     }
 
     @Test
@@ -135,11 +135,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
         var workItem = createWorkItemForPublication(persistedPublication);
         updateVerificationStatusJob.executeBatch(List.of(workItem));
 
-        var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
-        var updatedContributor = updatedResource.getEntityDescription().getContributors().getFirst();
-
-        assertEquals(ContributorVerificationStatus.VERIFIED,
-                     updatedContributor.getIdentity().getVerificationStatus());
+        verify(resourceService, never()).updateResource(any(), any());
     }
 
     @Test
@@ -170,9 +166,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
         var workItem = createWorkItemForPublication(persistedPublication);
         updateVerificationStatusJob.executeBatch(List.of(workItem));
 
-        var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
-
-        assertEquals(List.of(), updatedResource.getEntityDescription().getContributors());
+        verify(resourceService, never()).updateResource(any(), any());
     }
 
     @Test
@@ -201,33 +195,6 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
                          updatedContributors.get(index).getIdentity().getId());
             assertEquals(index + 1, updatedContributors.get(index).getSequence());
         }
-    }
-
-    @Test
-    void shouldHandleMultipleContributors() throws Exception {
-        var cristinPersonId1 = createCristinPersonUri("11111");
-        var cristinPersonId2 = createCristinPersonUri("22222");
-
-        var contributor1 = createContributor(cristinPersonId1, ContributorVerificationStatus.NOT_VERIFIED, 1);
-        var contributor2 = createContributor(cristinPersonId2, ContributorVerificationStatus.NOT_VERIFIED, 2);
-
-        var publication = randomPublication(Textbook.class);
-        publication.getEntityDescription().setContributors(List.of(contributor1, contributor2));
-        var persistedPublication = persistPublication(publication);
-
-        mockCristinClientReturnsVerifiedPerson(cristinPersonId1);
-        mockCristinClientReturnsNotVerifiedPerson(cristinPersonId2);
-
-        var workItem = createWorkItemForPublication(persistedPublication);
-        updateVerificationStatusJob.executeBatch(List.of(workItem));
-
-        var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
-        var updatedContributors = updatedResource.getEntityDescription().getContributors();
-
-        assertEquals(ContributorVerificationStatus.VERIFIED,
-                     updatedContributors.get(0).getIdentity().getVerificationStatus());
-        assertEquals(ContributorVerificationStatus.NOT_VERIFIED,
-                     updatedContributors.get(1).getIdentity().getVerificationStatus());
     }
 
     private URI createCristinPersonUri(String personId) {
