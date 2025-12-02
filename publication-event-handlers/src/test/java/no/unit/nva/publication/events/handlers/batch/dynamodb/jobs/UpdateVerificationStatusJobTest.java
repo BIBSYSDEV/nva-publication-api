@@ -96,7 +96,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSetNotVerifiedWhenCristinClientReturnsEmpty() throws Exception {
+    void shouldThrowExceptionWhenCristinClientReturnsEmpty() throws Exception {
         var cristinPersonId = createCristinPersonUri("12345");
         var publication = createPublicationWithContributor(cristinPersonId, ContributorVerificationStatus.VERIFIED);
         var persistedPublication = persistPublication(publication);
@@ -104,13 +104,9 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
         mockCristinClientReturnsEmpty();
 
         var workItem = createWorkItemForPublication(persistedPublication);
-        updateVerificationStatusJob.executeBatch(List.of(workItem));
 
-        var updatedResource = resourceService.getResourceByIdentifier(persistedPublication.getIdentifier());
-        var updatedContributor = updatedResource.getEntityDescription().getContributors().getFirst();
-
-        assertEquals(ContributorVerificationStatus.NOT_VERIFIED,
-                     updatedContributor.getIdentity().getVerificationStatus());
+        assertThrows(RuntimeException.class,
+                     () -> updateVerificationStatusJob.executeBatch(List.of(workItem)));
     }
 
     @Test
@@ -148,8 +144,8 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
         var nonExistentKey = getRandomKey();
         var workItem = new BatchWorkItem(nonExistentKey, JOB_TYPE);
 
-        assertThrows(RuntimeException.class,
-                     () -> updateVerificationStatusJob.executeBatch(List.of(workItem)));
+        var workItems = List.of(workItem);
+        assertThrows(RuntimeException.class, () -> updateVerificationStatusJob.executeBatch(workItems));
     }
 
     @Test

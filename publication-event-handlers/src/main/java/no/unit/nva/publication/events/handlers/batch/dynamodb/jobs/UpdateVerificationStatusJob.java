@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import no.unit.nva.clients.cristin.CristinClient;
-import no.unit.nva.clients.cristin.CristinPersonDto;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ContributorVerificationStatus;
@@ -96,7 +95,7 @@ public class UpdateVerificationStatusJob implements DynamodbResourceBatchJobExec
         logger.info("Updated verification status for resource: {}", resource.getIdentifier());
     }
 
-    private boolean hasChanges(Collection<Contributor> original, Collection<Contributor> updated) {
+    private boolean hasChanges(List<Contributor> original, List<Contributor> updated) {
         return !original.equals(updated);
     }
 
@@ -116,15 +115,23 @@ public class UpdateVerificationStatusJob implements DynamodbResourceBatchJobExec
                                                           ContributorVerificationStatus status) {
         return Optional.of(contributor.getIdentity())
                    .filter(identity -> !status.equals(identity.getVerificationStatus()))
+                   .map(identity -> logStatusChange(identity, status))
                    .map(identity -> createUpdatedIdentity(identity, status))
                    .map(updatedIdentity -> contributor.copy().withIdentity(updatedIdentity).build());
     }
 
+    private Identity logStatusChange(Identity identity, ContributorVerificationStatus newStatus) {
+        logger.info("Updating verification status for contributor {}: {} -> {}",
+                    identity.getId(), identity.getVerificationStatus(), newStatus);
+        return identity;
+    }
+
     private ContributorVerificationStatus fetchVerificationStatus(URI cristinId) {
-        return cristinClient.getPerson(cristinId)
-                   .filter(CristinPersonDto::verified)
-                   .map(person -> ContributorVerificationStatus.VERIFIED)
-                   .orElse(ContributorVerificationStatus.NOT_VERIFIED);
+        var person = cristinClient.getPerson(cristinId)
+                         .orElseThrow(() -> new RuntimeException("Cristin person not found: " + cristinId));
+        return person.verified()
+                   ? ContributorVerificationStatus.VERIFIED
+                   : ContributorVerificationStatus.NOT_VERIFIED;
     }
 
     private Identity createUpdatedIdentity(Identity original, ContributorVerificationStatus verificationStatus) {

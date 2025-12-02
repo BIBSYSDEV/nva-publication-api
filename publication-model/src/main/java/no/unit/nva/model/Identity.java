@@ -160,7 +160,7 @@ public class Identity {
         }
 
         public Builder withAdditionalIdentifiers(List<AdditionalIdentifier> additionalIdentifiers) {
-            this.additionalIdentifiers = additionalIdentifiers;
+            this.additionalIdentifiers = nonNull(additionalIdentifiers) ? List.copyOf(additionalIdentifiers) : null;
             return this;
         }
 
