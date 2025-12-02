@@ -40,7 +40,10 @@ dependencies {
     testImplementation nvaCatalog.cucumber.picocontainer
 
     testImplementation project(":tickets-test")
-    testImplementation libs.bundles.testing
+    testImplementation nvaLibs.testutils
+    testImplementation nvaLibs.logutils
+    testImplementation libs.javers
+    testImplementation libs.hamcrest.optional
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
 
