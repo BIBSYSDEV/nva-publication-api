@@ -31,6 +31,7 @@ class ServiceWithTransactionsTest extends ResourcesLocalTest {
 
         sendTransaction(dao);
 
+        dao.setVersion(UUID.randomUUID());
         var transactItem = ServiceWithTransactions.newPutTransactionItemWithLocking(
             dao, originalVersion, RESOURCES_TABLE_NAME);
         var request = new TransactWriteItemsRequest().withTransactItems(transactItem);

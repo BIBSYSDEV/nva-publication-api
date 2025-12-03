@@ -75,7 +75,6 @@ public class ServiceWithTransactions {
 
     protected static <T extends Dao> TransactWriteItem newPutTransactionItemWithLocking(
         T dao, UUID expectedVersion, String tableName) {
-        dao.setVersion(UUID.randomUUID());
         var put = new Put()
                       .withTableName(tableName)
                       .withItem(dao.toDynamoFormat())
