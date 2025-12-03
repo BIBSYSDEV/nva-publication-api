@@ -31,6 +31,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.jobs.MigrateResourceJob;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.jobs.NoGsiResultsException;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.jobs.ReindexRecordJob;
+import no.unit.nva.publication.events.handlers.batch.dynamodb.jobs.UpdateVerificationStatusJob;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
@@ -46,7 +47,11 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
     private static final String MESSAGE_BODY_ATTRIBUTE = "MessageBody";
     private static final String TABLE_NAME_ENV = "TABLE_NAME";
 
-    private static final DynamodbResourceBatchJobExecutor[] JOBS = {new ReindexRecordJob(), new MigrateResourceJob()};
+    private static final DynamodbResourceBatchJobExecutor[] JOBS = {
+        new ReindexRecordJob(),
+        new MigrateResourceJob(),
+        new UpdateVerificationStatusJob()
+    };
     private static final String DEFAULT_TO_ONE_ITEM = "1";
     private static final String APPROXIMATE_RECEIVE_COUNT = "ApproximateReceiveCount";
 
