@@ -1,10 +1,14 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb.jobs;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -15,39 +19,53 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.BatchWorkItem;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchJobExecutor;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.ServiceWithTransactions;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UpdateVerificationStatusJob implements DynamodbResourceBatchJobExecutor {
+public class UpdateVerificationStatusJob extends ServiceWithTransactions
+    implements DynamodbResourceBatchJobExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(UpdateVerificationStatusJob.class);
     private static final String JOB_TYPE = "UPDATE_VERIFICATION_STATUS";
+    private static final String TABLE_NAME_ENV = "TABLE_NAME";
     private static final int IDENTIFIER_INDEX = 1;
 
     private final ResourceService resourceService;
     private final CristinClient cristinClient;
+    private final String tableName;
 
     @JacocoGenerated
     public UpdateVerificationStatusJob() {
-        this(ResourceService.defaultService(), CristinClient.defaultClient());
+        this(ResourceService.defaultService(), CristinClient.defaultClient(),
+             AmazonDynamoDBClientBuilder.defaultClient(), new Environment().readEnv(TABLE_NAME_ENV));
     }
 
-    public UpdateVerificationStatusJob(ResourceService resourceService, CristinClient cristinClient) {
+    public UpdateVerificationStatusJob(ResourceService resourceService, CristinClient cristinClient,
+                                        AmazonDynamoDB dynamoDbClient, String tableName) {
+        super(dynamoDbClient);
         this.resourceService = resourceService;
         this.cristinClient = cristinClient;
+        this.tableName = tableName;
     }
 
     @Override
     public void executeBatch(List<BatchWorkItem> workItems) {
-        workItems.stream()
-            .map(this::extractIdentifier)
-            .map(this::fetchResource)
-            .flatMap(this::updateVerificationStatus)
-            .forEach(this::persistResourceUpdate);
+        var transactItems = workItems.stream()
+                                .map(this::extractIdentifier)
+                                .map(this::fetchResourceWithVersion)
+                                .flatMap(this::updateVerificationStatus)
+                                .map(this::toTransactWriteItem)
+                                .toList();
+
+        if (!transactItems.isEmpty()) {
+            sendTransactionWriteRequest(newTransactWriteItemsRequest(transactItems));
+        }
     }
 
     @Override
@@ -61,22 +79,33 @@ public class UpdateVerificationStatusJob implements DynamodbResourceBatchJobExec
         return new SortableIdentifier(parts[IDENTIFIER_INDEX]);
     }
 
-    private Resource fetchResource(SortableIdentifier identifier) {
+    private ResourceWithOriginalVersion fetchResourceWithVersion(SortableIdentifier identifier) {
         try {
-            return resourceService.getResourceByIdentifier(identifier);
+            var resource = resourceService.getResourceByIdentifier(identifier);
+            return new ResourceWithOriginalVersion(resource, resource.getVersion());
         } catch (NotFoundException e) {
             throw new RuntimeException("Resource not found: " + identifier, e);
         }
     }
 
-    private Stream<Resource> updateVerificationStatus(Resource resource) {
+    private Stream<ResourceWithOriginalVersion> updateVerificationStatus(
+        ResourceWithOriginalVersion resourceWithVersion) {
+        var resource = resourceWithVersion.resource();
         return Optional.ofNullable(resource.getEntityDescription())
                    .map(EntityDescription::getContributors)
                    .map(this::updateContributors)
                    .filter(updatedContributors -> hasChanges(resource.getEntityDescription().getContributors(),
                                                              updatedContributors))
                    .map(updatedContributors -> applyContributorUpdates(resource, updatedContributors))
+                   .map(updatedResource -> new ResourceWithOriginalVersion(updatedResource,
+                                                                            resourceWithVersion.originalVersion()))
                    .stream();
+    }
+
+    private TransactWriteItem toTransactWriteItem(
+        ResourceWithOriginalVersion resourceWithVersion) {
+        var dao = (ResourceDao) resourceWithVersion.resource().toDao();
+        return newPutTransactionItemWithLocking(dao, resourceWithVersion.originalVersion(), tableName);
     }
 
     private List<Contributor> updateContributors(Collection<Contributor> contributors) {
@@ -88,11 +117,6 @@ public class UpdateVerificationStatusJob implements DynamodbResourceBatchJobExec
     private Resource applyContributorUpdates(Resource resource, List<Contributor> updatedContributors) {
         resource.getEntityDescription().setContributors(updatedContributors);
         return resource;
-    }
-
-    private void persistResourceUpdate(Resource resource) {
-        resourceService.updateResource(resource, UserInstance.fromPublication(resource.toPublication()));
-        logger.info("Updated verification status for resource: {}", resource.getIdentifier());
     }
 
     private boolean hasChanges(List<Contributor> original, List<Contributor> updated) {
@@ -138,5 +162,9 @@ public class UpdateVerificationStatusJob implements DynamodbResourceBatchJobExec
         return original.copy()
                    .withVerificationStatus(verificationStatus)
                    .build();
+    }
+
+    private record ResourceWithOriginalVersion(Resource resource, UUID originalVersion) {
+
     }
 }

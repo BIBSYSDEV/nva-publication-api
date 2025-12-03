@@ -8,6 +8,7 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
@@ -15,7 +16,9 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -34,6 +37,10 @@ public class ServiceWithTransactions {
     public static final String STATUS_FIELD_IN_RESOURCE = "status";
     private static final Integer MAX_FETCH_ATTEMPTS = 3;
     private static final int TRANSACTION_BATCH_SIZE = 100;
+    private static final String VERSION_FIELD = "version";
+    private static final String VERSION_CONDITION_EXPRESSION = "#version = :expectedVersion";
+    private static final String VERSION_ATTRIBUTE_NAME = "#version";
+    private static final String EXPECTED_VERSION_VALUE = ":expectedVersion";
 
     protected final AmazonDynamoDB client;
 
@@ -64,6 +71,20 @@ public class ServiceWithTransactions {
                    .withTableName(tableName)
                    .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
                    .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+    }
+
+    protected static <T extends Dao> TransactWriteItem newPutTransactionItemWithLocking(
+        T dao, UUID expectedVersion, String tableName) {
+        dao.setVersion(UUID.randomUUID());
+        var put = new Put()
+                      .withTableName(tableName)
+                      .withItem(dao.toDynamoFormat())
+                      .withConditionExpression(VERSION_CONDITION_EXPRESSION)
+                      .withExpressionAttributeNames(Map.of(VERSION_ATTRIBUTE_NAME, VERSION_FIELD))
+                      .withExpressionAttributeValues(Map.of(
+                          EXPECTED_VERSION_VALUE,
+                          new AttributeValue().withS(expectedVersion.toString())));
+        return new TransactWriteItem().withPut(put);
     }
 
     protected static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {

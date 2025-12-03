@@ -13,6 +13,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import java.net.URI;
 import java.time.Clock;
 import java.util.List;
@@ -47,16 +49,19 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
 
     private ResourceService resourceService;
     private CristinClient cristinClient;
+    private AmazonDynamoDB dynamoDbClient;
     private UpdateVerificationStatusJob updateVerificationStatusJob;
 
     @BeforeEach
     void setUp() {
         super.init();
-        this.resourceService = spy(new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(),
-                                                       uriRetriever, channelClaimClient, customerService,
-                                                       new FakeCristinUnitsUtil()));
+        this.resourceService = new ResourceService(client, RESOURCES_TABLE_NAME, Clock.systemDefaultZone(),
+                                                   uriRetriever, channelClaimClient, customerService,
+                                                   new FakeCristinUnitsUtil());
         this.cristinClient = mock(CristinClient.class);
-        this.updateVerificationStatusJob = new UpdateVerificationStatusJob(resourceService, cristinClient);
+        this.dynamoDbClient = spy(client);
+        this.updateVerificationStatusJob = new UpdateVerificationStatusJob(resourceService, cristinClient,
+                                                                            dynamoDbClient, RESOURCES_TABLE_NAME);
     }
 
     @Test
@@ -117,7 +122,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
         var workItem = createWorkItemForPublication(persistedPublication);
         updateVerificationStatusJob.executeBatch(List.of(workItem));
 
-        verify(resourceService, never()).updateResource(any(), any());
+        verify(dynamoDbClient, never()).transactWriteItems(any(TransactWriteItemsRequest.class));
     }
 
     @Test
@@ -131,7 +136,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
         var workItem = createWorkItemForPublication(persistedPublication);
         updateVerificationStatusJob.executeBatch(List.of(workItem));
 
-        verify(resourceService, never()).updateResource(any(), any());
+        verify(dynamoDbClient, never()).transactWriteItems(any(TransactWriteItemsRequest.class));
     }
 
     @Test
@@ -162,7 +167,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
         var workItem = createWorkItemForPublication(persistedPublication);
         updateVerificationStatusJob.executeBatch(List.of(workItem));
 
-        verify(resourceService, never()).updateResource(any(), any());
+        verify(dynamoDbClient, never()).transactWriteItems(any(TransactWriteItemsRequest.class));
     }
 
     @Test
