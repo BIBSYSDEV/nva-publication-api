@@ -91,9 +91,10 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
     private Stream<ResourceWithOriginalVersion> updateVerificationStatus(
         ResourceWithOriginalVersion resourceWithVersion) {
         var resource = resourceWithVersion.resource();
+        var resourceIdentifier = resource.getIdentifier();
         return Optional.ofNullable(resource.getEntityDescription())
                    .map(EntityDescription::getContributors)
-                   .map(this::updateContributors)
+                   .map(contributors -> updateContributors(contributors, resourceIdentifier))
                    .filter(updatedContributors -> hasChanges(resource.getEntityDescription().getContributors(),
                                                              updatedContributors))
                    .map(updatedContributors -> applyContributorUpdates(resource, updatedContributors))
@@ -108,9 +109,10 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
         return newPutTransactionItemWithLocking(dao, resourceWithVersion.originalVersion(), tableName);
     }
 
-    private List<Contributor> updateContributors(Collection<Contributor> contributors) {
+    private List<Contributor> updateContributors(Collection<Contributor> contributors,
+                                                    SortableIdentifier resourceIdentifier) {
         return contributors.stream()
-                   .map(this::updateContributorVerificationStatus)
+                   .map(contributor -> updateContributorVerificationStatus(contributor, resourceIdentifier))
                    .toList();
     }
 
@@ -123,10 +125,11 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
         return !original.equals(updated);
     }
 
-    private Contributor updateContributorVerificationStatus(Contributor contributor) {
+    private Contributor updateContributorVerificationStatus(Contributor contributor,
+                                                               SortableIdentifier resourceIdentifier) {
         return extractCristinId(contributor)
                    .map(this::fetchVerificationStatus)
-                   .flatMap(status -> applyVerificationStatus(contributor, status))
+                   .flatMap(status -> applyVerificationStatus(contributor, status, resourceIdentifier))
                    .orElse(contributor);
     }
 
@@ -136,17 +139,19 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
     }
 
     private Optional<Contributor> applyVerificationStatus(Contributor contributor,
-                                                          ContributorVerificationStatus status) {
+                                                          ContributorVerificationStatus status,
+                                                          SortableIdentifier resourceIdentifier) {
         return Optional.of(contributor.getIdentity())
                    .filter(identity -> !status.equals(identity.getVerificationStatus()))
-                   .map(identity -> logStatusChange(identity, status))
+                   .map(identity -> logStatusChange(identity, status, resourceIdentifier))
                    .map(identity -> createUpdatedIdentity(identity, status))
                    .map(updatedIdentity -> contributor.copy().withIdentity(updatedIdentity).build());
     }
 
-    private Identity logStatusChange(Identity identity, ContributorVerificationStatus newStatus) {
-        logger.info("Updating verification status for contributor {}: {} -> {}",
-                    identity.getId(), identity.getVerificationStatus(), newStatus);
+    private Identity logStatusChange(Identity identity, ContributorVerificationStatus newStatus,
+                                      SortableIdentifier resourceIdentifier) {
+        logger.info("Updating verification status for contributor {} in publication {}: {} -> {}",
+                    identity.getId(), resourceIdentifier, identity.getVerificationStatus(), newStatus);
         return identity;
     }
 

@@ -36,7 +36,10 @@ public class BatchFilterService {
 
       return matcher.matches(dao, filter);
     } catch (Exception e) {
-      logger.warn("Failed to parse item for filtering, excluding item: {}", e.getMessage());
+      var partitionKey = item.getOrDefault("PK0", new AttributeValue("unknown")).getS();
+      var sortKey = item.getOrDefault("SK0", new AttributeValue("unknown")).getS();
+      logger.warn("Failed to parse item for filtering, excluding item with PK0={}, SK0={}: {}",
+                  partitionKey, sortKey, e.getMessage());
       return false;
     }
   }
