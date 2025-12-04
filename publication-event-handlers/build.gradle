@@ -26,8 +26,8 @@ dependencies {
     implementation nvaCatalog.aws.sdk2.urlconnection
     implementation nvaCatalog.aws.sdk2.eventbridge
     implementation nvaCatalog.aws.sdk2.sqs
-    implementation libs.aws.sdk2.httpClientApi
-    implementation libs.aws.sdk2.auth
+    implementation nvaCatalog.aws.sdk2.http.client
+    implementation nvaCatalog.aws.sdk2.auth
     implementation nvaCatalog.aws.sdk2.regions
     implementation nvaCatalog.aws.sdk2.core
     implementation nvaCatalog.aws.sdk2.secrets
