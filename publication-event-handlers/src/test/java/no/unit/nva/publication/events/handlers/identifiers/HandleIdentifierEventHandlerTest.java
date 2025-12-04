@@ -25,6 +25,8 @@ import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
@@ -215,11 +217,23 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
         assertThat(logger.getMessages(), containsString("Error response from server: 400"));
     }
 
+    @Test
+    void shouldSkipEventWhenNewDataIsNull() throws IOException, BadRequestException, NotFoundException {
+        var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
+
+        var request = emulateSqsWrappedEvent(oldImage, null);
+        handler.handleRequest(request, CONTEXT);
+
+        var publication = resourceService.getPublicationByIdentifier(oldImage.getIdentifier());
+        assertThat(publication.getAdditionalIdentifiers().size(), is(equalTo(1)));
+    }
+
     private URI createSampleBlob(Object oldImage, Object newImage) throws IOException {
         var oldImageResource = crateDataEntry(oldImage);
         var newImageResource = crateDataEntry(newImage);
         var dataEntryUpdateEvent =
-            new DataEntryUpdateEvent(RESOURCE_UPDATE_EVENT_TOPIC, oldImageResource, newImageResource);
+                new DataEntryUpdateEvent(
+                        OperationType.MODIFY.toString(), oldImageResource, newImageResource);
         var filePath = UnixPath.of(UUID.randomUUID().toString());
         return s3Driver.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
     }

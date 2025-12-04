@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.auth.AuthorizedBackendClient;
 import no.unit.nva.auth.CognitoCredentials;
@@ -122,19 +123,23 @@ public class HandleIdentifierEventHandler
         var eventBlob = s3Driver.readEvent(input.getUri());
 
         if (RESOURCE_UPDATE_EVENT_TOPIC.equals(input.getTopic())) {
-            var resourceUpdate = parseResourceUpdateInput(eventBlob);
-            if (isPublished(resourceUpdate) && isMissingHandle(resourceUpdate)) {
-                logger.info("Creating handle for publication: {}", resourceUpdate.getIdentifier());
-                var publication = fetchPublication(resourceUpdate.getIdentifier());
-                var additionalIdentifiers = new HashSet<>(publication.getAdditionalIdentifiers());
-                var handle = createNewHandle(getLandingPage(publication.getIdentifier()));
-                logger.info("Created handle: {}", handle.value());
-                additionalIdentifiers.add(handle);
-                publication.setAdditionalIdentifiers(additionalIdentifiers);
-                attempt(() -> resourceService.updatePublication(publication));
-            }
+            parseResourceUpdateInput(eventBlob)
+                    .filter(HandleIdentifierEventHandler::isPublished)
+                    .filter(HandleIdentifierEventHandler::isMissingHandle)
+                    .ifPresent(this::createAndAssignHandle);
         }
         return null;
+    }
+
+    private void createAndAssignHandle(Resource resourceUpdate) {
+        logger.info("Creating handle for publication: {}", resourceUpdate.getIdentifier());
+        var publication = fetchPublication(resourceUpdate.getIdentifier());
+        var additionalIdentifiers = new HashSet<>(publication.getAdditionalIdentifiers());
+        var handle = createNewHandle(getLandingPage(publication.getIdentifier()));
+        logger.info("Created handle: {}", handle.value());
+        additionalIdentifiers.add(handle);
+        publication.setAdditionalIdentifiers(additionalIdentifiers);
+        attempt(() -> resourceService.updatePublication(publication));
     }
 
     private URI getLandingPage(SortableIdentifier identifier) {
@@ -171,8 +176,8 @@ public class HandleIdentifierEventHandler
         return attempt(() -> resourceService.getPublicationByIdentifier(publicationIdentifier)).orElseThrow();
     }
 
-    private static Resource parseResourceUpdateInput(String eventBlob) {
+    private static Optional<Resource> parseResourceUpdateInput(String eventBlob) {
         var entryUpdate = DataEntryUpdateEvent.fromJson(eventBlob);
-        return (Resource) entryUpdate.getNewData();
+        return Optional.ofNullable(entryUpdate.getNewData()).map(Resource.class::cast);
     }
 }
