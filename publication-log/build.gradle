@@ -15,7 +15,8 @@ dependencies {
 
     implementation nvaCatalog.bundles.logging
 
-    testImplementation libs.bundles.testing
+    testImplementation nvaLibs.testutils
+    testImplementation nvaCatalog.zalando
 
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")

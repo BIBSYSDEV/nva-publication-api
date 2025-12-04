@@ -18,7 +18,8 @@ dependencies {
     testImplementation(project(':publication-testing'))
     testImplementation project(":publication-model-testing")
     testImplementation project(path: ':tickets-test')
-    testImplementation libs.bundles.testing
+    testImplementation nvaLibs.testutils
+    testImplementation nvaLibs.logutils
     testImplementation libs.jsonassert
 }
 

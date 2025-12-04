@@ -20,7 +20,12 @@ dependencies {
     implementation nvaCatalog.aws.sdk2.s3
     implementation nvaCatalog.aws.sdk2.sqs
 
-    implementation libs.bundles.testing
+    implementation nvaCatalog.bundles.testing.junit
+    implementation nvaCatalog.bundles.testing.mockito
+    implementation nvaCatalog.bundles.testing.hamcrest
+    implementation nvaCatalog.guava
+    implementation nvaCatalog.datafaker
+    implementation nvaLibs.testutils
     implementation nvaCatalog.bundles.jackson
     implementation(libs.dynamodDbLocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'

@@ -23,7 +23,7 @@ dependencies {
 
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
-    testImplementation libs.bundles.testing
+    testImplementation nvaLibs.testutils
     testImplementation(nvaCatalog.wiremock) {
         exclude group: 'org.apache.commons', module: 'commons-lang3'
     }
