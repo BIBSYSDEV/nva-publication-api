@@ -47,7 +47,7 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
     }
 
     public UpdateVerificationStatusJob(ResourceService resourceService, CristinClient cristinClient,
-                                        AmazonDynamoDB dynamoDbClient, String tableName) {
+                                       AmazonDynamoDB dynamoDbClient, String tableName) {
         super(dynamoDbClient);
         this.resourceService = resourceService;
         this.cristinClient = cristinClient;
@@ -99,7 +99,7 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
                                                              updatedContributors))
                    .map(updatedContributors -> applyContributorUpdates(resource, updatedContributors))
                    .map(updatedResource -> new ResourceWithOriginalVersion(updatedResource,
-                                                                            resourceWithVersion.originalVersion()))
+                                                                           resourceWithVersion.originalVersion()))
                    .stream();
     }
 
@@ -110,7 +110,7 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
     }
 
     private List<Contributor> updateContributors(Collection<Contributor> contributors,
-                                                    SortableIdentifier resourceIdentifier) {
+                                                 SortableIdentifier resourceIdentifier) {
         return contributors.stream()
                    .map(contributor -> updateContributorVerificationStatus(contributor, resourceIdentifier))
                    .toList();
@@ -126,9 +126,9 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
     }
 
     private Contributor updateContributorVerificationStatus(Contributor contributor,
-                                                               SortableIdentifier resourceIdentifier) {
+                                                            SortableIdentifier resourceIdentifier) {
         return extractCristinId(contributor)
-                   .map(this::fetchVerificationStatus)
+                   .map(cristinId -> fetchVerificationStatus(cristinId, resourceIdentifier))
                    .flatMap(status -> applyVerificationStatus(contributor, status, resourceIdentifier))
                    .orElse(contributor);
     }
@@ -149,15 +149,18 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
     }
 
     private Identity logStatusChange(Identity identity, ContributorVerificationStatus newStatus,
-                                      SortableIdentifier resourceIdentifier) {
+                                     SortableIdentifier resourceIdentifier) {
         logger.info("Updating verification status for contributor {} in publication {}: {} -> {}",
                     identity.getId(), resourceIdentifier, identity.getVerificationStatus(), newStatus);
         return identity;
     }
 
-    private ContributorVerificationStatus fetchVerificationStatus(URI cristinId) {
+    private ContributorVerificationStatus fetchVerificationStatus(URI cristinId,
+                                                                  SortableIdentifier resourceIdentifier) {
         var person = cristinClient.getPerson(cristinId)
-                         .orElseThrow(() -> new RuntimeException("Cristin person not found: " + cristinId));
+                         .orElseThrow(() -> new RuntimeException(
+                             "Cristin person not found: %s for publication: %s".formatted(cristinId,
+                                                                                          resourceIdentifier)));
         return person.verified()
                    ? ContributorVerificationStatus.VERIFIED
                    : ContributorVerificationStatus.NOT_VERIFIED;
