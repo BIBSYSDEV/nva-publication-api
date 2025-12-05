@@ -19,7 +19,7 @@ dependencies {
     implementation nvaCatalog.aws.sdk.dynamo
     implementation nvaCatalog.aws.lambda.core
     implementation nvaCatalog.aws.sdk2.secrets
-    implementation libs.aws.sdk2.httpClientApi
+    implementation nvaCatalog.aws.sdk2.http.client
 
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")

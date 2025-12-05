@@ -2,17 +2,14 @@
 apache-bval = { strictly = '3.0.2' }
 apacheCommonsCollections = { strictly = '4.5.0' }
 apacheCommonsText = { strictly = '1.13.1' }
-awsSdk = { strictly = '1.12.787' }
-awsSdk2 = { strictly = '2.31.78' }
 configTypesafe = { strictly = '1.4.3' }
 cucumber = { strictly = '7.23.0' }
 dynamoDbLocal = { strictly = '2.0.0' }
 glassfish-el = { strictly = '4.0.2' }
 hamcrestSpotify = { strictly = '1.3.2' }
-httpcore = { strictly = '5.3.4' }
+httpcore = { strictly = '5.3.6' }
 jakarta-el-api = { strictly = '6.0.1' }
 jakarta-validation-api = { strictly = '3.1.1' }
-javers = { strictly = '7.8.0' }
 jsonassert = { strictly = '1.5.3'}
 junit = { strictly = '5.13.3' }
 nva-language = { strictly = '1.2.1' }
@@ -31,12 +28,7 @@ jakarta-validation-api = { group = 'jakarta.validation', name = 'jakarta.validat
 jakarta-el-api = {group = 'jakarta.el', name = 'jakarta.el-api', version.ref = 'jakarta-el-api' }
 glassfish-el = {group = 'org.glassfish', name = 'jakarta.el', version.ref = 'glassfish-el' }
 apache-bval = { group= 'org.apache.bval', name= 'bval-jsr', version.ref= 'apache-bval'}
-aws-sdk-apigateway = { group = 'com.amazonaws', name = 'aws-java-sdk-api-gateway', version.ref = 'awsSdk' }
-aws-sdk-sqs = {group = 'com.amazonaws', name = 'aws-java-sdk-sqs', version.ref = 'awsSdk'}
 httpcore = { group = 'org.apache.httpcomponents.core5', name = 'httpcore5', version.ref = 'httpcore' }
-aws-sdk2-httpClientApi = { group = 'software.amazon.awssdk', name = 'http-client-spi', version.ref = 'awsSdk2' }
-aws-sdk2-utils = { group = 'software.amazon.awssdk', name = 'utils', version.ref = 'awsSdk2' }
-aws-sdk2-auth = { group = 'software.amazon.awssdk', name = 'auth', version.ref = 'awsSdk2' }
 apache-commons-collections = { group = 'org.apache.commons', name = 'commons-collections4', version.ref = 'apacheCommonsCollections' }
 apache-commons-text = { group = 'org.apache.commons', name = 'commons-text', version.ref = 'apacheCommonsText' }
 jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version = '2.3.1' }
@@ -46,7 +38,6 @@ xsd2java-api = { group = 'javax.xml.bind', name = 'jaxb-api', version = '2.4.0-b
 xsd2java-activation = { group = 'javax.activation', name = 'javax.activation-api', version = '1.2.0' }
 xsd2java-jakarta = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version = '3.0.1' }
 dynamodDbLocal = { group = 'com.amazonaws', name = 'DynamoDBLocal', version.ref = 'dynamoDbLocal' }
-javers = { group = 'org.javers', name = 'javers-core', version.ref = 'javers' }
 typesafe-config = { group = 'com.typesafe', name = 'config', version.ref = 'configTypesafe' }
 hamcrest-optional = { group = 'com.spotify', name = 'hamcrest-optional', version.ref = 'hamcrestSpotify' }
 hamcrest-json = {  group = 'uk.co.datumedge', name = 'hamcrest-json', version = '0.3' }

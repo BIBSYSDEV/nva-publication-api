@@ -42,7 +42,7 @@ dependencies {
     testImplementation project(":tickets-test")
     testImplementation nvaLibs.testutils
     testImplementation nvaLibs.logutils
-    testImplementation libs.javers
+    testImplementation nvaCatalog.javers
     testImplementation libs.hamcrest.optional
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")

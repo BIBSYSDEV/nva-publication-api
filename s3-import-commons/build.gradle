@@ -22,9 +22,9 @@ dependencies {
     implementation nvaCatalog.aws.sdk2.s3
     implementation nvaCatalog.aws.lambda.events
     implementation nvaCatalog.aws.sdk2.regions
-    implementation libs.aws.sdk2.httpClientApi
+    implementation nvaCatalog.aws.sdk2.http.client
     implementation nvaCatalog.aws.sdk.dynamo
-    implementation libs.aws.sdk.sqs
+    implementation nvaCatalog.aws.sdk.sqs
 
     implementation nvaCatalog.aws.ion
 
@@ -37,7 +37,7 @@ dependencies {
     testImplementation project(":publication-testing")
     testImplementation nvaLibs.testutils
     testImplementation nvaLibs.logutils
-    testImplementation libs.aws.sdk2.utils
+    testImplementation nvaCatalog.aws.sdk2.utils
     testImplementation nvaCatalog.aws.sdk2.s3
     testImplementation nvaCatalog.datafaker
     testImplementation libs.mockito.junit.jupiter
@@ -45,10 +45,10 @@ dependencies {
     compileOnly nvaLibs.apigateway
     compileOnly nvaCatalog.zalando
 
-    compileOnly(libs.aws.sdk2.auth) {
+    compileOnly(nvaCatalog.aws.sdk2.auth) {
         because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "
     }
-    compileOnly(libs.aws.sdk.apigateway) {
+    compileOnly(nvaCatalog.aws.sdk.apigateway) {
         because "PMD complains for the com/amazonaws/regions/Regions class"
     }
     compileOnly(nvaCatalog.commons.validator) {

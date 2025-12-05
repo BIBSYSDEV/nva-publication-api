@@ -19,11 +19,11 @@ dependencies {
     implementation nvaCatalog.hamcrest
 
     implementation nvaCatalog.aws.sdk.dynamo
-    implementation libs.aws.sdk.sqs
+    implementation nvaCatalog.aws.sdk.sqs
     implementation nvaCatalog.aws.lambda.events
     implementation nvaCatalog.aws.java.sdk.core
     implementation nvaCatalog.aws.sdk2.core
-    implementation libs.aws.sdk2.httpClientApi
+    implementation nvaCatalog.aws.sdk2.http.client
     implementation nvaCatalog.aws.sdk2.urlconnection
     implementation nvaCatalog.aws.sdk2.regions
 
@@ -38,7 +38,7 @@ dependencies {
     testImplementation nvaLibs.logutils
     testImplementation nvaLibs.identifiers
     testImplementation nvaCatalog.datafaker
-    testImplementation(libs.javers) {
+    testImplementation(nvaCatalog.javers) {
         because "For comparing java objects and detailing the differences in readable way"
     }
     testImplementation nvaCatalog.aws.sdk2.s3
@@ -53,7 +53,7 @@ dependencies {
     compileOnly nvaCatalog.aws.lambda.core
     compileOnly nvaLibs.identifiers
 
-    compileOnly(libs.aws.sdk2.auth) {
+    compileOnly(nvaCatalog.aws.sdk2.auth) {
         because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "
     }
 
