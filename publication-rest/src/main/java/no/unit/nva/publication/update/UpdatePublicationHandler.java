@@ -145,7 +145,7 @@ public class UpdatePublicationHandler
 
         if (clientETag.isPresent()) {
             logger.info("ETag provided {} for resource {}", clientETag.get(), identifierInPath);
-            var serverETag = ETag.create(requestInfo.getUserName(), getVersion(existingResource));
+            var serverETag = ETag.create(requestInfo.getUserNameOptional().orElse(null), getVersion(existingResource));
             if (!serverETag.equals(clientETag.get())) {
                 throw new PreconditionFailedException(ETAG_DOES_NOT_MATCH_MESSAGE);
             }
@@ -174,7 +174,7 @@ public class UpdatePublicationHandler
 
             default -> throw new BadRequestException("Unknown input body type");
         };
-        addEtagHeaderForUpdatedPublication(requestInfo.getUserName(), updatedResource);
+        addEtagHeaderForUpdatedPublication(requestInfo.getUserNameOptional().orElse(null), updatedResource);
         return PublicationResponseFactory.create(updatedResource, requestInfo, identityServiceClient);
     }
 
