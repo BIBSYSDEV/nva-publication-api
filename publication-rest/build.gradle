@@ -40,7 +40,8 @@ dependencies {
 
     testImplementation project(":publication-testing")
     testImplementation project(":tickets-test")
-    testImplementation libs.bundles.testing
+    testImplementation libs.mockito.junit.jupiter
+    testImplementation nvaCatalog.javers
     testImplementation project(":publication-model-testing")
     testImplementation nvaLibs.logutils
     testImplementation nvaLibs.testutils
@@ -55,7 +56,7 @@ dependencies {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
 
-    compileOnly(libs.aws.sdk.apigateway) {
+    compileOnly(nvaCatalog.aws.sdk.apigateway) {
         because "PMD complains for the com/amazonaws/regions/Regions class"
     }
 }

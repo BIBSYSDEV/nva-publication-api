@@ -15,7 +15,7 @@ dependencies {
     testImplementation( nvaCatalog.jena.arq )
 
     testImplementation( nvaLibs.testutils )
-    testImplementation( libs.javers )
+    testImplementation( nvaCatalog.javers )
     testImplementation( libs.swagger.core )
     testImplementation( nvaLibs.logutils )
     testImplementation project(":publication-model-testing")

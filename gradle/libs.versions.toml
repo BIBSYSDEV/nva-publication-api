@@ -2,24 +2,16 @@
 apache-bval = { strictly = '3.0.2' }
 apacheCommonsCollections = { strictly = '4.5.0' }
 apacheCommonsText = { strictly = '1.13.1' }
-awsSdk = { strictly = '1.12.787' }
-awsSdk2 = { strictly = '2.31.78' }
 configTypesafe = { strictly = '1.4.3' }
 cucumber = { strictly = '7.23.0' }
-datafaker = { strictly = '2.4.4' }
 dynamoDbLocal = { strictly = '2.0.0' }
 glassfish-el = { strictly = '4.0.2' }
-guava = { strictly = '33.4.8-jre' }
-hamcrest = { strictly = '3.0' }
 hamcrestSpotify = { strictly = '1.3.2' }
-httpcore = { strictly = '5.3.4' }
+httpcore = { strictly = '5.3.6' }
 jakarta-el-api = { strictly = '6.0.1' }
 jakarta-validation-api = { strictly = '3.1.1' }
-javers = { strictly = '7.8.0' }
 jsonassert = { strictly = '1.5.3'}
 junit = { strictly = '5.13.3' }
-mockito = { strictly = '5.18.0' }
-nva = { strictly = '2.3.16' } # Keep in sync with root gradle.properties
 nva-language = { strictly = '1.2.1' }
 nvaDoiPartnerData = { strictly = '0.5.8' }
 reflections = { strictly = '0.10.2' }
@@ -27,48 +19,29 @@ resilience4j = { strictly = '2.3.0' }
 swaggerCoreVersion = { strictly = '2.2.34' }
 tika = { strictly = '3.2.0' }
 vavrVersion = { strictly = '0.10.6' }
-zalandoProblem = { strictly = '0.27.1' }
 
 [libraries]
-logutils = { group = 'com.github.bibsysdev', name = 'logutils', version.ref = 'nva' }
 nva-language = { group = 'com.github.bibsysdev', name = 'nva-language', version.ref = 'nva-language' }
-nva-testutils = { group = 'com.github.bibsysdev', name = 'nvatestutils', version.ref = 'nva' }
 nva-doi-partner-data = { group = 'com.github.BIBSYSDEV.nva-doi-partner-data', name = 'datacite-transform', version.ref = 'nvaDoiPartnerData' }
 jsonassert = { group = 'org.skyscreamer', name = 'jsonassert', version.ref = 'jsonassert' }
 jakarta-validation-api = { group = 'jakarta.validation', name = 'jakarta.validation-api', version.ref = 'jakarta-validation-api' }
 jakarta-el-api = {group = 'jakarta.el', name = 'jakarta.el-api', version.ref = 'jakarta-el-api' }
 glassfish-el = {group = 'org.glassfish', name = 'jakarta.el', version.ref = 'glassfish-el' }
 apache-bval = { group= 'org.apache.bval', name= 'bval-jsr', version.ref= 'apache-bval'}
-aws-sdk-apigateway = { group = 'com.amazonaws', name = 'aws-java-sdk-api-gateway', version.ref = 'awsSdk' }
-aws-sdk-sqs = {group = 'com.amazonaws', name = 'aws-java-sdk-sqs', version.ref = 'awsSdk'}
 httpcore = { group = 'org.apache.httpcomponents.core5', name = 'httpcore5', version.ref = 'httpcore' }
-aws-sdk2-httpClientApi = { group = 'software.amazon.awssdk', name = 'http-client-spi', version.ref = 'awsSdk2' }
-aws-sdk2-utils = { group = 'software.amazon.awssdk', name = 'utils', version.ref = 'awsSdk2' }
-aws-sdk2-auth = { group = 'software.amazon.awssdk', name = 'auth', version.ref = 'awsSdk2' }
 apache-commons-collections = { group = 'org.apache.commons', name = 'commons-collections4', version.ref = 'apacheCommonsCollections' }
 apache-commons-text = { group = 'org.apache.commons', name = 'commons-text', version.ref = 'apacheCommonsText' }
-guava = { group = 'com.google.guava', name = 'guava', version.ref = 'guava' }
 jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version = '2.3.1' }
 xsd2java-xjc = { group = 'com.sun.xml.bind', name = 'jaxb-xjc', version = '4.0.5' }
 xsd2java-impl = { group = 'com.sun.xml.bind', name = 'jaxb-impl', version = '4.0.5' }
 xsd2java-api = { group = 'javax.xml.bind', name = 'jaxb-api', version = '2.4.0-b180830.0359' }
 xsd2java-activation = { group = 'javax.activation', name = 'javax.activation-api', version = '1.2.0' }
 xsd2java-jakarta = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version = '3.0.1' }
-hamcrest-base = { group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest' }
-hamcrest-core = { group = 'org.hamcrest', name = 'hamcrest-core', version.ref = 'hamcrest' }
 dynamodDbLocal = { group = 'com.amazonaws', name = 'DynamoDBLocal', version.ref = 'dynamoDbLocal' }
-javers = { group = 'org.javers', name = 'javers-core', version.ref = 'javers' }
-zalando = { group = 'org.zalando', name = 'problem', version.ref = 'zalandoProblem' }
 typesafe-config = { group = 'com.typesafe', name = 'config', version.ref = 'configTypesafe' }
 hamcrest-optional = { group = 'com.spotify', name = 'hamcrest-optional', version.ref = 'hamcrestSpotify' }
 hamcrest-json = {  group = 'uk.co.datumedge', name = 'hamcrest-json', version = '0.3' }
-datafaker = { group = 'net.datafaker', name = 'datafaker', version.ref = 'datafaker' }
-junit-jupiter-params = { group = 'org.junit.jupiter', name = 'junit-jupiter-params', version.ref = 'junit' }
-junit-jupiter-api = { group = 'org.junit.jupiter', name = 'junit-jupiter-api', version.ref = 'junit' }
 junit-vintage-engine = { group = 'org.junit.vintage', name = 'junit-vintage-engine', version.ref = 'junit' }
-junit-jupiter-engine = { group = 'org.junit.jupiter', name = 'junit-jupiter-engine', version.ref = 'junit' }
-mockito-junit = { group = 'org.mockito', name = 'mockito-junit-jupiter', version.ref = 'mockito' }
-mockito-core = { group = 'org.mockito', name = 'mockito-core', version.ref = 'mockito' }
 cucumber-junit = { group = 'io.cucumber', name = 'cucumber-junit', version.ref = 'cucumber' }
 tika-core = { group = 'org.apache.tika', name = 'tika-core', version.ref = 'tika' }
 tika-langdetect = { group = 'org.apache.tika', name = 'tika-langdetect', version.ref = 'tika' }
@@ -81,9 +54,5 @@ reflections = { group = 'org.reflections', name = 'reflections', version.ref = '
 
 [bundles]
 validation = ['jakarta-validation-api', 'jakarta-el-api', 'glassfish-el', 'apache-bval']
-testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine', 'guava',
-    'junit-jupiter-engine', 'mockito-core', 'mockito-junit', 'hamcrest-base', 'hamcrest-core',
-    'hamcrest-optional', 'logutils', 'nva-testutils', 'javers', 'zalando',
-    'mockito-junit-jupiter','datafaker']
 jaxb = ['xsd2java-api', 'jaxb-runtime', 'xsd2java-jakarta']
 xsd2java = ["xsd2java-xjc", "xsd2java-impl", "xsd2java-api", "xsd2java-activation", "xsd2java-jakarta"]

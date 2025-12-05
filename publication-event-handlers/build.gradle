@@ -26,8 +26,8 @@ dependencies {
     implementation nvaCatalog.aws.sdk2.urlconnection
     implementation nvaCatalog.aws.sdk2.eventbridge
     implementation nvaCatalog.aws.sdk2.sqs
-    implementation libs.aws.sdk2.httpClientApi
-    implementation libs.aws.sdk2.auth
+    implementation nvaCatalog.aws.sdk2.http.client
+    implementation nvaCatalog.aws.sdk2.auth
     implementation nvaCatalog.aws.sdk2.regions
     implementation nvaCatalog.aws.sdk2.core
     implementation nvaCatalog.aws.sdk2.secrets
@@ -46,7 +46,9 @@ dependencies {
     implementation libs.vavr
     implementation libs.resilience4j.all
 
-    testImplementation libs.bundles.testing
+    testImplementation nvaLibs.testutils
+    testImplementation nvaLibs.logutils
+    testImplementation libs.mockito.junit.jupiter
     testImplementation nvaLibs.identifiers
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")

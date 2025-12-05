@@ -6,7 +6,7 @@ dependencies {
     implementation ( nvaLibs.json )
     implementation( nvaLibs.testutils )
     implementation( nvaCatalog.datafaker )
-    implementation( libs.javers )
+    implementation( nvaCatalog.javers )
     implementation( nvaCatalog.jackson.annotations )
 }
 
