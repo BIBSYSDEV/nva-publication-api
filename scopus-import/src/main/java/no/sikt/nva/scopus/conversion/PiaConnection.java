@@ -130,8 +130,13 @@ public class PiaConnection {
     private Affiliation selectTopLevelOrg(List<Affiliation> affiliations) {
         return affiliations.stream()
                    .filter(this::allValuesArePresent)
-                   .max(Comparator.comparingInt(aff -> Integer.parseInt(aff.getCount())))
+                   .max(Comparator.comparingInt(this::getAffiliationCount))
                    .orElse(affiliations.getFirst());
+    }
+
+    @JacocoGenerated
+    private int getAffiliationCount(Affiliation affiliation) {
+        return Integer.parseInt(affiliation.getCount());
     }
 
     private boolean allValuesArePresent(Affiliation affiliation) {

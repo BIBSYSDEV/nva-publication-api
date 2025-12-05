@@ -17,7 +17,7 @@ nvaDoiPartnerData = { strictly = '0.5.8' }
 reflections = { strictly = '0.10.2' }
 resilience4j = { strictly = '2.3.0' }
 swaggerCoreVersion = { strictly = '2.2.34' }
-tika = { strictly = '3.2.0' }
+tika = { strictly = '3.2.3' }
 vavrVersion = { strictly = '0.10.6' }
 
 [libraries]
