@@ -178,6 +178,8 @@ public class HandleIdentifierEventHandler
 
     private static Optional<Resource> parseResourceUpdateInput(String eventBlob) {
         var entryUpdate = DataEntryUpdateEvent.fromJson(eventBlob);
-        return Optional.ofNullable(entryUpdate.getNewData()).map(Resource.class::cast);
+        return Optional.ofNullable(entryUpdate.getNewData())
+                .filter(Resource.class::isInstance)
+                .map(Resource.class::cast);
     }
 }
