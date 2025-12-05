@@ -29,7 +29,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -67,9 +66,6 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier, JoinW
         this.identifier = fileEntry.getIdentifier();
         this.resourceIdentifier = fileEntry.getResourceIdentifier();
         this.modifiedDate = fileEntry.getModifiedDate();
-        if (fileEntry.getVersion() != null) {
-            setVersion(fileEntry.getVersion());
-        }
     }
 
     public static FileDao fromFileEntry(FileEntry fileEntry) {
@@ -143,16 +139,7 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier, JoinW
 
     @Override
     public void updateExistingEntry(AmazonDynamoDB client) {
-        var currentVersion = getVersion();
-        setVersion(UUID.randomUUID());
-        var request = new PutItemRequest()
-                          .withTableName(RESOURCES_TABLE_NAME)
-                          .withItem(toDynamoFormat())
-                          .withConditionExpression("#version = :expectedVersion")
-                          .withExpressionAttributeNames(Map.of("#version", VERSION_FIELD))
-                          .withExpressionAttributeValues(Map.of(
-                              ":expectedVersion",
-                              new AttributeValue().withS(currentVersion.toString())));
+        var request = new PutItemRequest().withTableName(RESOURCES_TABLE_NAME).withItem(toDynamoFormat());
         client.putItem(request);
     }
 
@@ -221,8 +208,6 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier, JoinW
 
     @JsonIgnore
     public FileEntry getFileEntry() {
-        var fileEntry = (FileEntry) getData();
-        fileEntry.setVersion(getVersion());
-        return fileEntry;
+        return (FileEntry) getData();
     }
 }

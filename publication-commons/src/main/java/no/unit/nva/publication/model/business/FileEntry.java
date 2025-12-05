@@ -49,7 +49,6 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
     private Instant modifiedDate;
     private File file;
     private FileEvent fileEvent;
-    private UUID version;
 
     /**
      * Constructor for FileEntry.
@@ -98,7 +97,7 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
     }
 
     public static FileEntry fromDao(FileDao fileDao) {
-        return fileDao.getFileEntry();
+        return (FileEntry) fileDao.getData();
     }
 
     public static FileEntry createFromImportSource(File file, SortableIdentifier identifier,
@@ -352,9 +351,5 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
 
     private void setFileEvent(FileEvent fileEvent) {
         this.fileEvent = fileEvent;
-    }
-
-    public UUID getVersion() {
-        return version;
     }
 }
