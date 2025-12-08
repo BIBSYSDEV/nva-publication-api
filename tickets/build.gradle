@@ -28,7 +28,7 @@ dependencies {
     testImplementation nvaLibs.testutils
     testImplementation project(":tickets-test")
     testImplementation nvaLibs.logutils
-    testImplementation nvaCatalog.wiremock
+    testImplementation nvaCatalog.bundles.wiremock
     compileOnly nvaCatalog.zalando
     compileOnly nvaCatalog.aws.lambda.core
 }

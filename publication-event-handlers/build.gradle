@@ -41,7 +41,7 @@ dependencies {
 
     implementation nvaCatalog.bundles.logging
 
-    testImplementation nvaCatalog.wiremock
+    testImplementation nvaCatalog.bundles.wiremock
 
     implementation libs.vavr
     implementation libs.resilience4j.all

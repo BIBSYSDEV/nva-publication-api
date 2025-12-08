@@ -37,7 +37,7 @@ dependencies {
     testImplementation nvaLibs.testutils
     testImplementation nvaLibs.json
 
-    testImplementation nvaCatalog.wiremock
+    testImplementation nvaCatalog.bundles.wiremock
     testImplementation project(":brage-import")
     testImplementation project(":brage-import")
     testImplementation project(":publication-testing")
