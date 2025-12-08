@@ -21,3 +21,4 @@ This application is deployed in AWS via CodePipeline. Build/deploy pipelines are
 ## Contributing code
 
 The build is configured to maintain code standards. Contribute via PR with description and context for change.
+
