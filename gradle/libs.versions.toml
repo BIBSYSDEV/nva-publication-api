@@ -1,7 +1,7 @@
 [versions]
 apache-bval = { strictly = '3.0.2' }
 apacheCommonsCollections = { strictly = '4.5.0' }
-apacheCommonsText = { strictly = '1.13.1' }
+apacheCommonsText = { strictly = '1.14.0' }
 configTypesafe = { strictly = '1.4.3' }
 cucumber = { strictly = '7.23.0' }
 dynamoDbLocal = { strictly = '2.0.0' }

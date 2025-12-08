@@ -46,7 +46,7 @@ dependencies {
     testImplementation nvaLibs.logutils
     testImplementation nvaLibs.testutils
     testImplementation nvaCatalog.zalando
-    testImplementation nvaCatalog.wiremock
+    testImplementation nvaCatalog.bundles.wiremock
     testImplementation(libs.httpcore) {
         because "aws-java-sdk-dynamodb needs and we are using it indirectly"
     }
