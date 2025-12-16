@@ -1,0 +1,6 @@
+extends:
+  - spectral:oas
+
+rules:
+  # Disabled because we use non-standard AWS extensions
+  oas3-operation-security-defined: off

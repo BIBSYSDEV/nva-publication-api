@@ -1,4 +1,8 @@
 name: Build
+permissions:
+  contents: write # To submit dependency graph
+  checks: write # To publish test results
+  pull-requests: write # To comment on PRs
 
 on:
   push:
@@ -8,6 +12,8 @@ on:
 
 jobs:
   build:
-    uses: BIBSYSDEV/nva-github-workflows/.github/workflows/java.yml@v1
+    uses: BIBSYSDEV/nva-github-workflows/.github/workflows/java.yml@v2
+    with:
+      openapi_files: "docs/*.yaml"
     secrets:
       codacy_token: ${{ secrets.CODACY_PROJECT_TOKEN }}
