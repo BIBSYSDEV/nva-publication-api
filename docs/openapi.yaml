@@ -87,7 +87,7 @@ paths:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}:live/invocations
         responses:
-          301:
+          "301":
             statusCode: "301"
             responseParameters:
               method.response.header.Location: "integration.response.body.redirect.url"
@@ -183,31 +183,31 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        200:
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PublicationResponse'
-        202:
+        '202':
           description: Accepted
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PublicationResponse'
-        400:
+        '400':
           description: Bad Request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        401:
+        '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        403:
+        '403':
           description: Forbidden
           content:
             application/json:
@@ -276,37 +276,37 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        202:
+        '202':
           description: Accepted - Publication is being publish
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PublicationResponse'
-        400:
+        '400':
           description: Bad Request - Publication is not publishable
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        401:
+        '401':
           description: Unauthorized - User is not authorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        403:
+        '403':
           description: Forbidden - User has no permissions to publish publication
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        404:
+        '404':
           description: Not found - Publication does not exist
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        502:
+        '502':
           description: Bad Gateway - Error in external service
           content:
             application/json:
@@ -350,8 +350,7 @@ paths:
           schema:
             type: string
           required: true
-          example:
-            doi: '10.3848/135f2cf8-b816-11ed-afa1-0242ac120002'
+          example: '135f2cf8-b816-11ed-afa1-0242ac120002'
           style: simple
           explode: false
           description: UUID identifier of the Publication to fetch.
@@ -421,7 +420,7 @@ paths:
             schema:
               $ref: "#/components/schemas/NewTicketRequest"
       responses:
-        201:
+        '201':
           description: ACCEPTED
           headers:
             Location:
@@ -470,31 +469,31 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateTicketRequest'
       responses:
-        202:
+        '202':
           description: Accepted
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/UpdateTicketRequest"
-        400:
+        '400':
           description: Bad Request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        401:
+        '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        403:
+        '403':
           description: Forbidden
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        502:
+        '502':
           description: Bad gateway
           content:
             application/json:
@@ -512,27 +511,27 @@ paths:
       operationId: deleteTicketForPublication
       description: Delete existing ticket
       responses:
-        200:
+        '200':
           description: Ok
-        400:
+        '400':
           description: Bad Request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        401:
+        '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        404:
+        '404':
           description: Not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        502:
+        '502':
           description: Bad gateway
           content:
             application/json:
@@ -550,13 +549,13 @@ paths:
       operationId: fetchTicketForPublication
       description: Get an existing ticket
       responses:
-        200:
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Ticket"
-        502:
+        '502':
           description: Bad gateway
           content:
             application/json:
@@ -656,7 +655,7 @@ paths:
               description: Message has been successfully deleted
               schema:
                 type: string
-        401:
+        '401':
           description: Unauthorized
           content:
             application/json:
@@ -708,13 +707,13 @@ paths:
             type: string
             format: uuid
       responses:
-        200:
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PresignedUriResponse'
-        401:
+        '401':
           description: Unauthorized
           content:
             application/json:
@@ -1143,7 +1142,7 @@ paths:
             type: string
             format: uuid
       responses:
-        301:
+        '301':
           description: Permanently moved
           headers:
             Location:
@@ -1151,7 +1150,7 @@ paths:
                 type: string
                 format: uri
               description: The URI that this redirects to
-        401:
+        '401':
           description: Unauthorized
           content:
             application/json:
@@ -1189,19 +1188,19 @@ paths:
       operationId: listTicketsForPublication
       description: List tickets for publication
       responses:
-        200:
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/TicketCollection"
-        401:
+        '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        403:
+        '403':
           description: Forbidden
           content:
             application/json:
@@ -1238,19 +1237,19 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        200:
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PublicationLogResponse"
-        401:
+        '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        403:
+        '403':
           description: Forbidden
           content:
             application/json:
@@ -1719,7 +1718,7 @@ components:
         id:
           type: string
           format: uri
-          example: "https://api.<environment>.nva.aws.unit.no/publication/14d3030c-3b61-4070-b902-342f80e99364/ticket/8758ec62-5772-48ff-8856-38d3f3038383/message/a228ecf2-5442-49fd-2256-3d43f3f383ff"
+          example: "https://api.dev.nva.aws.unit.no/publication/14d3030c-3b61-4070-b902-342f80e99364/ticket/8758ec62-5772-48ff-8856-38d3f3038383/message/a228ecf2-5442-49fd-2256-3d43f3f383ff"
         identifier:
           type: string
           example: "a228ecf2-5442-49fd-2256-3d43f3f383ff"
@@ -1795,7 +1794,7 @@ components:
         ownerAffiliation:
           type: string
           format: uri
-          example: "https://api.<environment>.nva.aws.unit.no/cristin/organization/123.0.0.0"
+          example: "https://api.dev.nva.aws.unit.no/cristin/organization/123.0.0.0"
         publicationIdentifier:
           type: string
         status:
@@ -2490,7 +2489,7 @@ components:
         size:
           type: string
           description: Size of file in bytes
-          example: 3027
+          example: "3027"
         mimetype:
           type: string
           description: MIME type of file
@@ -2498,7 +2497,7 @@ components:
         lastmodified:
           type: string
           description: last modified time of the file, in millisecond since the UNIX epoch
-          example: 1462097794000
+          example: "1462097794000"
         md5hash:
           type: string
           description: MD5 Hash to verify file after upload
@@ -3571,11 +3570,11 @@ components:
         PartNumber:
           type: string
           description: The index in the file of the uploaded part.
-          example: 1
+          example: "1"
         Size:
           type: string
           description: The size of the part in bytes.
-          example: 3027
+          example: "3027"
         ETag:
           type: string
           description: The ETag of the part, used to identify it when completing the multipart upload and combining all parts into a single file.
@@ -4215,7 +4214,7 @@ components:
         body:
           type: string
           description: This parts content. Its provided by Uppy, but not used by the API.
-          example: { }
+          example: ""
         number:
           type: integer
           description: The index of this part in the file (PartNumber in S3 terminology). Starts at 1
