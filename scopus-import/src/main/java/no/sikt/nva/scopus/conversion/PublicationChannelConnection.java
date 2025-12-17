@@ -24,7 +24,7 @@ public class PublicationChannelConnection {
     public static final String YEAR = "year";
     public static final String CONTENT_TYPE = "application/json";
     public static final int SINGLE_ITEM = 1;
-    public static final Logger logger = LoggerFactory.getLogger(PublicationChannelConnection.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PublicationChannelConnection.class);
     private static final String API_HOST = new Environment().readEnv("API_HOST");
     private final AuthorizedBackendUriRetriever uriRetriever;
 
@@ -34,13 +34,18 @@ public class PublicationChannelConnection {
 
     public Optional<URI> fetchSerialPublication(String printIssn, String electronicIssn, String sourceTitle,
                                                 Integer publicationYear) {
-        var uriStream = Stream.of(printIssn, electronicIssn, sourceTitle)
-                            .map(item -> constructSearchUri(SERIAL_PUBLICATION, item, publicationYear));
+        LOGGER.info("Searching for serial publication with printIssn={}, electronicIssn={}, sourceTitle={}, year={}",
+                    printIssn, electronicIssn, sourceTitle, publicationYear);
+        var uriStream =
+                Stream.of(printIssn, electronicIssn, sourceTitle)
+                        .filter(Objects::nonNull)
+                        .map(item -> constructSearchUri(SERIAL_PUBLICATION, item, publicationYear));
         return fetchPublicationChannelId(uriStream);
     }
 
-    public Optional<URI> fetchPublisher(String publisherName, Integer publicationYer) {
-        var uriToRetrieve = constructSearchUri(PUBLISHER, publisherName, publicationYer);
+    public Optional<URI> fetchPublisher(String publisherName, Integer publicationYear) {
+        LOGGER.info("Searching for publisher with publisherName={}, year={}", publisherName, publicationYear);
+        var uriToRetrieve = constructSearchUri(PUBLISHER, publisherName, publicationYear);
         return fetchPublicationChannelId(Stream.of(uriToRetrieve));
     }
 
@@ -71,7 +76,7 @@ public class PublicationChannelConnection {
 
     private String handleResponse(HttpResponse<String> response) {
         if (HTTP_OK != response.statusCode()) {
-            logger.error("Publication channels API responded with {} when searching for {}", response.statusCode(),
+            LOGGER.error("Publication channels API responded with {} when searching for {}", response.statusCode(),
                          response.request().uri());
         }
         return response.body();
