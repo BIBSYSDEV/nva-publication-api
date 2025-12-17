@@ -967,6 +967,31 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldNotExpandDuplicateOfWhenParentPublicationExistsInGraph() throws BadRequestException, IOException {
+        var academicChapter = PublicationGenerator.randomPublication(AcademicChapter.class);
+        var chapterResource = Resource.fromPublication(academicChapter)
+                                  .persistNew(resourceService, UserInstance.fromPublication(academicChapter));
+        FakeUriResponse.setupFakeForType(chapterResource, fakeUriRetriever, resourceService, false);
+
+        var anthologyUri = ((Anthology) chapterResource.getEntityDescription()
+                                            .getReference()
+                                            .getPublicationContext()).getId();
+        chapterResource.setDuplicateOf(anthologyUri);
+        resourceService.updateResource(Resource.fromPublication(chapterResource),
+                                        UserInstance.fromPublication(chapterResource));
+
+        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
+                                               Resource.fromPublication(chapterResource)
+                                                   .fetch(resourceService)
+                                                   .orElseThrow());
+
+        var actualDuplicateOf = expandedResource.getAllFields().get("duplicateOf");
+
+        assertThat(actualDuplicateOf,
+                   allOf(Matchers.instanceOf(String.class), is(equalTo(anthologyUri.toString()))));
+    }
+
+    @Test
     void shouldReturnExpandedResourceWithAnthologyPublicationChannelLevelWhenPublicationIsAcademicChapter()
         throws IOException, BadRequestException {
         var academicChapter = PublicationGenerator.randomPublication(AcademicChapter.class);
@@ -1146,12 +1171,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
     private static boolean isBlankJsonNode(JsonNode jsonNode) {
         return jsonNode.isMissingNode();
-    }
-
-    private Publication randomPersistedPublication(Class<?> publicationType) throws BadRequestException {
-        var publication = PublicationGenerator.randomPublication(publicationType);
-        return Resource.fromPublication(publication).persistNew(resourceService,
-                                                                UserInstance.fromPublication(publication));
     }
 
     private Publication bookAnthologyWithDoiReferencedInAssociatedLink() {

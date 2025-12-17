@@ -76,6 +76,9 @@
   "contributorOrganization": {
     "@embed": "@never"
   },
+  "duplicateOf": {
+    "@embed": "@never"
+  },
   "topLevelOrganizations": {
     "@embed": "@always"
   }
