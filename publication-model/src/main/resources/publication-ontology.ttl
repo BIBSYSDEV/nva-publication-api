@@ -1470,7 +1470,7 @@ nva:embargoDate a rdf:Property ;
   rdfs:label "" ;
   rdfs:isDefinedBy nva: ;
   rdfs:domain nva:File ;
-  rdfs:range xsd:datetime .
+  rdfs:range xsd:dateTime .
 
 nva:seriesNumber a rdf:Property ;
   rdfs:comment "" ;
@@ -1491,7 +1491,7 @@ nva:createdDate a rdf:Property ;
   rdfs:label "" ;
   rdfs:isDefinedBy nva: ;
   rdfs:domain nva:Publication ;
-  rdfs:range xsd:datetime .
+  rdfs:range xsd:dateTime .
 
 nva:mainTitle a rdf:Property ;
   rdfs:comment "" ;
@@ -1541,14 +1541,14 @@ nva:publishedDate a rdf:Property ;
   rdfs:label "" ;
   rdfs:isDefinedBy nva: ;
   rdfs:domain nva:Publication ;
-  rdfs:range xsd:datetime .
+  rdfs:range xsd:dateTime .
 
 nva:to a rdf:Property ;
   rdfs:comment "" ;
   rdfs:label "" ;
   rdfs:isDefinedBy nva: ;
   rdfs:domain nva:Period ;
-  rdfs:range xsd:datetime .
+  rdfs:range xsd:dateTime .
 
 # This is a bit problematic since the range is just about any possible date class.
 nva:date a rdf:Property ;
@@ -1641,14 +1641,14 @@ nva:activeFrom a rdf:Property ;
   rdfs:label "" ;
   rdfs:isDefinedBy nva: ;
   rdfs:domain nva:UnconfirmedFunding, nva:ConfirmedFunding ;
-  rdfs:range xsd:datetime .
+  rdfs:range xsd:dateTime .
 
 nva:activeTo a rdf:Property ;
   rdfs:comment "" ;
   rdfs:label "" ;
   rdfs:isDefinedBy nva: ;
   rdfs:domain nva:UnconfirmedFunding, nva:ConfirmedFunding ;
-  rdfs:range xsd:datetime .
+  rdfs:range xsd:dateTime .
 
 nva:language a rdf:Property ;
   rdfs:comment "" ;
@@ -1717,7 +1717,7 @@ nva:from a rdf:Property ;
   rdfs:label "" ;
   rdfs:isDefinedBy nva: ;
   rdfs:domain nva:Period ;
-  rdfs:range xsd:datetime .
+  rdfs:range xsd:dateTime .
 
 nva:tag a rdf:Property ;
   rdfs:comment "" ;
@@ -1828,7 +1828,7 @@ nva:modifiedDate a rdf:Property ;
   rdfs:label "" ;
   rdfs:isDefinedBy nva: ;
   rdfs:domain nva:Publication ;
-  rdfs:range xsd:datetime .
+  rdfs:range xsd:dateTime .
 
 nva:publisher a rdf:Property ;
   rdfs:comment "" ;
@@ -2035,7 +2035,7 @@ nva:indexedDate a rdf:Property ;
   rdfs:label "" ;
   rdfs:isDefinedBy nva: ;
   rdfs:domain nva:Publication ;
-  rdfs:range xsd:datetime .
+  rdfs:range xsd:dateTime .
 
 nva:onlineIssn a rdf:Property ;
   rdfs:comment "" ;
@@ -2148,7 +2148,7 @@ nva:importDate a rdf:Property ;
   rdfs:label "Import date" ;
   rdfs:isDefinedBy nva: ;
   rdfs:domain nva:ImportDetail ;
-  rdfs:range xsd:datetime .
+  rdfs:range xsd:dateTime .
 
 nva:source a rdf:Property ;
            rdfs:comment "A description of the origin for a thing" ;
@@ -2473,7 +2473,7 @@ nva:approvalDate a rdf:Property ;
   rdfs:label "approval date" ;
   rdfs:isDefinedBy nva: ;
   rdfs:domain nva:Approval ;
-  rdfs:range xsd:datetime .
+  rdfs:range xsd:dateTime .
 
 nva:typeDescription a rdf:Property ;
   rdfs:comment "" ;
@@ -2528,7 +2528,7 @@ nva:uploadedDate a rdf:Property ;
                   rdfs:label "uploadedDate" ;
                   rdfs:isDefinedBy nva: ;
                   rdfs:domain nva:UserUploadDetails ;
-                  rdfs:range xsd:datetime .
+                  rdfs:range xsd:dateTime .
 
 nva:legalNote a rdf:Property ;
               rdfs:comment "" ;
