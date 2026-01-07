@@ -991,6 +991,10 @@ nva:ArtisticDesign a rdfs:Class ;
   rdfs:isDefinedBy nva: ;
   rdfs:subClassOf nva:Publication .
 
+nva:ArtisticDesignOther a rdfs:Class ;
+  rdfs:comment "" ;
+  rdfs:isDefinedBy nva: .
+
 nva:LiteraryArtsMonograph a rdfs:Class ;
   rdfs:comment "" ;
   rdfs:isDefinedBy nva: ;
