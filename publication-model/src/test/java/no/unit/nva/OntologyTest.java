@@ -33,7 +33,6 @@ import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class OntologyTest {
@@ -48,12 +47,12 @@ class OntologyTest {
         return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
     }
 
-    public static Stream<Arguments> modelPropertiesProvider() {
-        return Stream.of(Arguments.of(getModelProperties().toArray()));
+    public static Stream<String> modelPropertiesProvider() {
+        return getModelProperties().stream();
     }
 
-    public static Stream<Arguments> modelClassProvider() {
-        return Stream.of(Arguments.of(getModelClasses().toArray()));
+    public static Stream<String> modelClassProvider() {
+        return getModelClasses().stream();
     }
 
     @Test

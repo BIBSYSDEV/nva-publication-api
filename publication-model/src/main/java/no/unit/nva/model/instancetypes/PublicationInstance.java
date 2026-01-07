@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import no.unit.nva.model.PublisherInInstance;
 import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.instancetypes.artistic.OtherArtisticOutput;
 import no.unit.nva.model.instancetypes.artistic.architecture.Architecture;
 import no.unit.nva.model.instancetypes.artistic.design.ArtisticDesign;
 import no.unit.nva.model.instancetypes.artistic.film.MovingPicture;
@@ -139,7 +140,8 @@ import java.util.List;
     @JsonSubTypes.Type(name = "VisualArts", value = VisualArts.class),
     @JsonSubTypes.Type(name = "Map", value = Map.class),
     @JsonSubTypes.Type(name = "LiteraryArts", value = LiteraryArts.class),
-    @JsonSubTypes.Type(name = "ExhibitionProduction", value = ExhibitionProduction.class)
+    @JsonSubTypes.Type(name = "ExhibitionProduction", value = ExhibitionProduction.class),
+    @JsonSubTypes.Type(name = "OtherArtisticOutput", value = OtherArtisticOutput.class)
 })
 
 public interface PublicationInstance<P extends Pages> {

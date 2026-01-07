@@ -72,3 +72,4 @@ nva:OtherPresentation rdfs:subClassOf schema:PresentationDigitalDocument .
 nva:JournalReview rdfs:subClassOf schema:ScholarlyArticle .
 nva:MediaFeatureArticle rdfs:subClassOf schema:NewsArticle .
 nva:Architecture rdfs:subClassOf schema:CreativeWork .
+nva:OtherArtisticOutput rdfs:subClassOf schema:CreativeWork .

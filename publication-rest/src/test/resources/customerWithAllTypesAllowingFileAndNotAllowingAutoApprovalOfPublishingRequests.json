@@ -62,7 +62,8 @@
     "LiteraryArts",
     "ExhibitionProduction",
     "AcademicCommentary",
-    "FeatureArticle"
+    "FeatureArticle",
+    "OtherArtisticOutput"
   ],
   "publicationWorkflow": "RegistratorPublishesMetadataOnly",
   "rightsRetentionStrategy": {

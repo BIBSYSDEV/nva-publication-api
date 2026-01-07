@@ -18,6 +18,10 @@
     "@container": "@set",
     "@id": "affiliation"
   },
+  "alternativeAbstracts": {
+    "@container": "@language",
+    "@id": "alternativeTitle"
+  },
   "alternativeTitles": {
     "@container": "@language",
     "@id": "alternativeTitle"

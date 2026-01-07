@@ -28,7 +28,8 @@ import nva.commons.core.JacocoGenerated;
  */
 @SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(name = PendingOpenFile.TYPE, value = PendingOpenFile.class),
+@JsonSubTypes({
+    @JsonSubTypes.Type(name = PendingOpenFile.TYPE, value = PendingOpenFile.class),
     @JsonSubTypes.Type(name = OpenFile.TYPE, value = OpenFile.class),
     @JsonSubTypes.Type(name = InternalFile.TYPE, value = InternalFile.class),
     @JsonSubTypes.Type(name = PendingInternalFile.TYPE, value = PendingInternalFile.class),
