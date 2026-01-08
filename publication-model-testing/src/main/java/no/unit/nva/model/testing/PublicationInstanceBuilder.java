@@ -21,6 +21,7 @@ import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.place.UnconfirmedPlace;
 import no.unit.nva.model.instancetypes.Map;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.artistic.OtherArtisticOutput;
 import no.unit.nva.model.instancetypes.artistic.architecture.Architecture;
 import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureOutput;
 import no.unit.nva.model.instancetypes.artistic.architecture.ArchitectureSubtype;
@@ -310,9 +311,14 @@ public final class PublicationInstanceBuilder {
                 return generateMap();
             case "ExhibitionProduction":
                 return generateExhibitionProduction();
+            case "OtherArtisticOutput": return generateOtherArtisticOutput();
             default:
                 throw new UnsupportedOperationException("Publication instance not supported: " + typeName);
         }
+    }
+
+    private static OtherArtisticOutput generateOtherArtisticOutput() {
+        return new OtherArtisticOutput(randomString(), randomString(), randomVenues());
     }
 
     private static AcademicCommentary generateAcademicCommentary() {
