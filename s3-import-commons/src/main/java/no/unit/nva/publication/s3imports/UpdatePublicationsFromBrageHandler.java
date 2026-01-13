@@ -60,7 +60,7 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
             PublicationCsvRow.class).withIgnoreLeadingWhiteSpace(true).withThrowExceptions(true).build();
         try {
             var rows = csvToBean.parse();
-            rows.stream().map(PublicationCsvRow::getIdentifier).filter(Objects::nonNull).findAny().orElseThrow();
+            rows.stream().map(PublicationCsvRow::getIdentifier).findAny().orElseThrow();
             return extractIdentifiers(rows);
         } catch (RuntimeException e) {
             throw new IllegalArgumentException("Failed to parse CSV: " + e.getMessage(), e);
@@ -69,6 +69,7 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
 
     private static List<SortableIdentifier> extractIdentifiers(List<PublicationCsvRow> rows) {
         return rows.stream()
+                   .filter(Objects::nonNull)
                    .map(PublicationCsvRow::getIdentifier)
                    .filter(StringUtils::isNotBlank)
                    .map(SortableIdentifier::new)
@@ -81,9 +82,9 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
     }
 
     private void process(SortableIdentifier sortableIdentifier, String archive) {
-        var resource = getResource(sortableIdentifier);
+        var resource = fetchResource(sortableIdentifier);
         if (resource.isPresent()) {
-            var dublinCore = getDublinCoreFile(resource.get(), archive);
+            var dublinCore = readDublinCoreFromResource(resource.get(), archive);
             if (dublinCore.isPresent()) {
                 processResourceWithDublinCore(dublinCore.get());
             } else {
@@ -100,7 +101,7 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
                     dublinCore.getHandle().orElse(null));
     }
 
-    private Optional<File> getDublinCoreFile(Resource resource, String archive) {
+    private Optional<File> readDublinCoreFromResource(Resource resource, String archive) {
         return resource.getFiles()
                    .stream()
                    .filter(HiddenFile.class::isInstance)
@@ -114,7 +115,7 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
             importDetails.archive());
     }
 
-    private Optional<Resource> getResource(SortableIdentifier identifier) {
+    private Optional<Resource> fetchResource(SortableIdentifier identifier) {
         return Resource.resourceQueryObject(identifier).fetch(resourceService);
     }
 }
