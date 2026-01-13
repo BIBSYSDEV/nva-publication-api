@@ -2164,18 +2164,15 @@ Resources:
     Properties:
       Description: 'Updates publications from Brage by consuming reference to csv file and archive name'
       CodeUri: s3-import-commons
-      Handler: no.unit.nva.publication.s3imports.FilenameEventEmitter::handleRequest
+      Handler: no.unit.nva.publication.s3imports.UpdatePublicationsFromBrageHandler::handleRequest
       Timeout: 900 # 15 min timeout
       ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
-          EVENT_BUS_NAME: !GetAtt InternalBus.Name
           BATCH_EMISSION_INTERVAL_MILLIS: 700
-          CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !Ref CristinImportDataEntryQueue
-          CRISTIN_IMPORT_PATCH_QUEUE_URL: !Ref CristinImportPatchQueue
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
 
   ImportCandidatesBatchScanStartHandler:
     DependsOn: EventsLambdaManagedPolicy
