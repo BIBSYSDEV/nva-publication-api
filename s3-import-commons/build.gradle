@@ -26,6 +26,9 @@ dependencies {
     implementation nvaCatalog.aws.sdk.dynamo
     implementation nvaCatalog.aws.sdk.sqs
 
+    implementation libs.bundles.jaxb
+    implementation nvaCatalog.opencsv
+
     implementation nvaCatalog.aws.ion
 
     implementation libs.apache.commons.collections
@@ -35,6 +38,7 @@ dependencies {
     runtimeOnly nvaCatalog.jackson.datatype.jdk8
 
     testImplementation project(":publication-testing")
+    testImplementation project(":publication-model-testing")
     testImplementation nvaLibs.testutils
     testImplementation nvaLibs.logutils
     testImplementation nvaCatalog.aws.sdk2.utils
@@ -67,4 +71,6 @@ test {
     environment "CRISTIN_IMPORT_PATCH_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
     environment "CRISTIN_IMPORT_NVI_PATCH_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
     environment "BRAGE_IMPORT_PATCH_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
+    environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "persistedStorage"
+    environment "AWS_REGION", "eu-west-1"
 }
