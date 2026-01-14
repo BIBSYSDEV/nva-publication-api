@@ -66,11 +66,13 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
     }
 
     private void writeResultsToFile(UpdatePublicationsFromBrageRequest request) throws IOException {
-        var value = updatedPublicationIdentifiers.stream()
-                             .map(Object::toString)
-                             .collect(Collectors.joining(System.lineSeparator()));
-        s3DriverForBucket(request.uri().getHost())
-            .insertFile(UnixPath.of("%s-%s".formatted(request.archive(), Instant.now())), value);
+        if (!dryRun) {
+            var value = updatedPublicationIdentifiers.stream()
+                                 .map(Object::toString)
+                                 .collect(Collectors.joining(System.lineSeparator()));
+            s3DriverForBucket(request.uri().getHost())
+                .insertFile(UnixPath.of("%s-%s".formatted(request.archive(), Instant.now())), value);
+        }
     }
 
     private S3Driver s3DriverForBucket(String request) {
