@@ -3,13 +3,14 @@ package no.unit.nva.publication.s3imports;
 import javax.xml.bind.annotation.XmlEnumValue;
 import nva.commons.core.JacocoGenerated;
 
-public enum Element {
+public enum Language {
 
-    @XmlEnumValue("identifier") IDENTIFIER("identifier"), @XmlEnumValue("description") DESCRIPTION("description");
+    @XmlEnumValue("en_US") ENGLISH("en_US"),
+    @XmlEnumValue("nb_no") NORWEGIAN("nb_no");
 
     private final String value;
 
-    Element(String value) {
+    Language(String value) {
         this.value = value;
     }
 
