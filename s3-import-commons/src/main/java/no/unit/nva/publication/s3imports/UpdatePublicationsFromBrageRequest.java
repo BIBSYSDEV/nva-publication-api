@@ -8,7 +8,7 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.ioutils.IoUtils;
 
-public record UpdatePublicationsFromBrageRequest(URI uri, String archive) implements JsonSerializable {
+public record UpdatePublicationsFromBrageRequest(URI uri, String archive, boolean dryRun) implements JsonSerializable {
 
     public UpdatePublicationsFromBrageRequest {
         requireNonNull(uri, "Uri cannot be missing");

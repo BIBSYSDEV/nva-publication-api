@@ -1,17 +1,15 @@
 package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.publication.s3imports.Element.IDENTIFIER;
 import static nva.commons.core.attempt.Try.attempt;
 import java.io.StringReader;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
 
 @XmlRootElement(name = "dublin_core")
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -33,8 +31,12 @@ public class DublinCore {
         return attempt(() -> unmarshallValue(value)).orElseThrow();
     }
 
-    public Optional<DcValue> getHandle() {
-        return dcValues.stream().filter(DublinCore::isHandle).findFirst();
+    public List<DcValue> getAbstracts() {
+        return dcValues.stream()
+                   .filter(Objects::nonNull)
+                   .filter(DcValue::isAbstract)
+                   .filter(DcValue::hasValue)
+                   .toList();
     }
 
     private static JAXBContext createJaxbContext() {
@@ -48,9 +50,5 @@ public class DublinCore {
     private static DublinCore unmarshallValue(String value) throws JAXBException {
         var unmarshaller = JAXB_CONTEXT.createUnmarshaller();
         return (DublinCore) unmarshaller.unmarshal(new StringReader(value));
-    }
-
-    private static boolean isHandle(DcValue dcValue) {
-        return IDENTIFIER.equals(dcValue.getElement()) && Qualifier.URI.equals(dcValue.getQualifier());
     }
 }

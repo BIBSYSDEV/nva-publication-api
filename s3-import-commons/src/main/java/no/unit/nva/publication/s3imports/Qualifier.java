@@ -9,8 +9,8 @@ import nva.commons.core.JacocoGenerated;
 @XmlEnum
 public enum Qualifier {
 
-    @XmlEnumValue("uri") URI("uri");
-    //elements collected from this specification: https://dok.unit.no/brage/veiledninger/metadatafelter
+    @XmlEnumValue("uri") URI("uri"), @XmlEnumValue("abstract") ABSTRACT("abstract");
+
     private final String value;
 
     Qualifier(String value) {

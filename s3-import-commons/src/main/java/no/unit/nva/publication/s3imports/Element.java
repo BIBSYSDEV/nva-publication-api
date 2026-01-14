@@ -5,7 +5,7 @@ import nva.commons.core.JacocoGenerated;
 
 public enum Element {
 
-    @XmlEnumValue("identifier") IDENTIFIER("identifier");
+    @XmlEnumValue("identifier") IDENTIFIER("identifier"), @XmlEnumValue("description") DESCRIPTION("description");
 
     private final String value;
 

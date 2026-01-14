@@ -7,10 +7,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
@@ -33,6 +37,8 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
     private final S3Client s3Client;
     private final ResourceService resourceService;
     private final Environment environment;
+    private boolean dryRun = true;
+    private final List<SortableIdentifier> updatedPublicationIdentifiers = new ArrayList<>();
 
     @JacocoGenerated
     public UpdatePublicationsFromBrageHandler() {
@@ -49,10 +55,28 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
     @Override
     public void handleRequest(InputStream input, OutputStream outputStream, Context context) throws IOException {
         var request = UpdatePublicationsFromBrageRequest.fromInputStream(input);
-        var file = new S3Driver(s3Client, request.uri().getHost()).getFile(UnixPath.of(request.uri().getPath()));
+        this.dryRun = request.dryRun();
+        updatedPublicationIdentifiers.clear();
+        var file = s3DriverForBucket(request.uri().getHost()).readFile(request.uri());
         var publicationIdentifiers = getPublicationIdentifiersFromCsv(file);
 
         publicationIdentifiers.forEach(identifier -> process(identifier, request.archive()));
+
+        writeResultsToFile(request);
+    }
+
+    private void writeResultsToFile(UpdatePublicationsFromBrageRequest request) throws IOException {
+        if (!dryRun) {
+            var value = updatedPublicationIdentifiers.stream()
+                                 .map(Object::toString)
+                                 .collect(Collectors.joining(System.lineSeparator()));
+            s3DriverForBucket(request.uri().getHost())
+                .insertFile(UnixPath.of("%s-%s".formatted(request.archive(), Instant.now())), value);
+        }
+    }
+
+    private S3Driver s3DriverForBucket(String request) {
+        return new S3Driver(s3Client, request);
     }
 
     private static List<SortableIdentifier> getPublicationIdentifiersFromCsv(String value) {
@@ -76,8 +100,14 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
                    .toList();
     }
 
+    private static Optional<String> getAbstract(Resource resource) {
+        return Optional.ofNullable(resource.getEntityDescription())
+                   .map(EntityDescription::getAbstract)
+                   .filter(StringUtils::isNotBlank);
+    }
+
     private String fetchFile(File file) {
-        return new S3Driver(s3Client, environment.readEnv(PERSISTED_STORAGE_BUCKET_NAME)).getFile(
+        return s3DriverForBucket(environment.readEnv(PERSISTED_STORAGE_BUCKET_NAME)).getFile(
             UnixPath.of(file.getIdentifier().toString()));
     }
 
@@ -86,7 +116,7 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
         if (resource.isPresent()) {
             var dublinCore = readDublinCoreFromResource(resource.get(), archive);
             if (dublinCore.isPresent()) {
-                processResourceWithDublinCore(dublinCore.get());
+                processResourceWithDublinCore(resource.get(), dublinCore.get());
             } else {
                 LOGGER.info(String.format("Dublin core does not exist at publication %s", sortableIdentifier));
             }
@@ -95,10 +125,30 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
         }
     }
 
-    private void processResourceWithDublinCore(File file) {
+    private void processResourceWithDublinCore(Resource resource, File file) {
         var dublinCore = DublinCore.fromString(fetchFile(file));
-        LOGGER.info("Successfully parsed dublin core file with identifier: {} and handle {}", file.getIdentifier(),
-                    dublinCore.getHandle().orElse(null));
+        updateAbstractsWithAbstractFromDublinCore(resource, dublinCore);
+    }
+
+    private void updateAbstractsWithAbstractFromDublinCore(Resource resource, DublinCore dublinCore) {
+        var resourceAbstract = getAbstract(resource).orElse(null);
+        var currentAlternativeAbstracts = resource.getEntityDescription().getAlternativeAbstracts();
+        var updatedAlternativeAbstracts = DublinCoreAbstractMerger.mergeAbstracts(dublinCore.getAbstracts(),
+                                                                                  resourceAbstract,
+                                                                                  currentAlternativeAbstracts);
+
+        if (!updatedAlternativeAbstracts.equals(currentAlternativeAbstracts)) {
+            resource.getEntityDescription().setAlternativeAbstracts(updatedAlternativeAbstracts);
+            updateResource(resource);
+        }
+    }
+
+    private void updateResource(Resource resource) {
+        if (!dryRun) {
+            resourceService.updatePublication(resource.toPublication());
+            updatedPublicationIdentifiers.add(resource.getIdentifier());
+            LOGGER.info(String.format("Publication updated %s", resource.getIdentifier()));
+        }
     }
 
     private Optional<File> readDublinCoreFromResource(Resource resource, String archive) {
