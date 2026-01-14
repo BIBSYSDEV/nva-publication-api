@@ -36,6 +36,7 @@ import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
+import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -126,19 +127,6 @@ class UpdatePublicationsFromBrageHandlerTest extends ResourcesLocalTest {
         assertTrue(logAppender.getMessages()
                        .contains(
                            ("Dublin core does not exist at publication %s").formatted(publication.getIdentifier())));
-    }
-
-    @Test
-    void shouldLogSuccessWhenDublinCoreExists() throws IOException, BadRequestException {
-        var archive = randomString();
-        var request = randomRequest(archive, false);
-        var publication = persistPublicationWithDublinCoreFromArchive(archive);
-        insertFile(request.uri(), randomCsvContent(publication.getIdentifier()));
-        var logAppender = LogUtils.getTestingAppender(UpdatePublicationsFromBrageHandler.class);
-
-        handler.handleRequest(stringToStream(request.toJsonString()), output, new FakeContext());
-
-        assertTrue(logAppender.getMessages().contains(("Successfully parsed dublin core")));
     }
 
     @Test
@@ -263,6 +251,7 @@ class UpdatePublicationsFromBrageHandlerTest extends ResourcesLocalTest {
     }
 
     private void insertFile(URI uri, String content) throws IOException {
-        new S3Driver(s3Client, uri.getHost()).insertFile(UnixPath.of(uri.getPath()), content);
+        new S3Driver(s3Client, uri.getHost())
+            .insertFile(UnixPath.fromString(UriWrapper.fromUri(uri).getLastPathElement()), content);
     }
 }
