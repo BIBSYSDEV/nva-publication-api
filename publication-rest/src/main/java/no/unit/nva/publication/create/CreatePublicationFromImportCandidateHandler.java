@@ -120,7 +120,8 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
         var importedResource = !resourceToImport.getFiles().isEmpty()
                                    ? handleResourceWithFiles(resourceToImport, requestInfo, databaseVersion.getAssociatedCustomers())
-                                   : resourceToImport.importResource(publicationService, ImportSource.fromSource(Source.SCOPUS));
+                                   : resourceToImport.importResource(publicationService, ImportSource.fromSource(Source.SCOPUS),
+                                                                     UserInstance.fromPublication(resourceToImport.toPublication()));
 
         return finalizeImport(importedResource, databaseVersion);
     }
@@ -134,7 +135,8 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
         return switch (serviceResult.getStatus()) {
             case APPROVAL_NEEDED -> createPublicationWithFilesApprovalTicket(resourceToImport, serviceResult, requestInfo);
             case NO_APPROVAL_NEEDED -> resourceToImport.importResource(publicationService,
-                                                                       ImportSource.fromSource(Source.SCOPUS));
+                                                                       ImportSource.fromSource(Source.SCOPUS),
+                                                                       UserInstance.fromPublication(resourceToImport.toPublication()));
         };
     }
 
@@ -143,9 +145,10 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                                                               RequestInfo requestInfo)
         throws ApiGatewayException {
         resourceToImport.setAssociatedArtifacts(convertFilesToPending(resourceToImport));
-        var importedResource = resourceToImport.importResource(publicationService,
-                                                               ImportSource.fromSource(Source.SCOPUS));
         var userInstance = createUserInstanceFromCustomer(requestInfo, serviceResult.getCustomer());
+        var importedResource = resourceToImport.importResource(publicationService,
+                                                               ImportSource.fromSource(Source.SCOPUS),
+                                                               userInstance);
         var fileApproval = PublishingRequestCase.createWithFilesForApproval(
             importedResource,
             userInstance,

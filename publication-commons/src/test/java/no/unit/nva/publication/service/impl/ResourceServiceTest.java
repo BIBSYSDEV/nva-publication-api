@@ -1361,8 +1361,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldImportResourceAndSetImportedResourceEventWhenImportingPublication() {
         var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication)
-                           .importResource(resourceService, ImportSource.fromSource(Source.SCOPUS));
+                           .importResource(resourceService, ImportSource.fromSource(Source.SCOPUS), userInstance);
 
         var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
 

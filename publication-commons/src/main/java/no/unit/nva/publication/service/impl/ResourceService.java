@@ -189,8 +189,8 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setResourceEvent(CreatedResourceEvent.create(userInstance, currentTime));
     }
 
-    public Resource importResource(Resource resource, ImportSource importSource) {
-        return insertImportedResource(resource, importSource);
+    public Resource importResource(Resource resource, ImportSource importSource, UserInstance userInstance) {
+        return insertImportedResource(resource, importSource, userInstance);
     }
 
     public Publication createPublicationFromImportedEntry(Publication inputData, ImportSource importSource) {
@@ -535,14 +535,13 @@ public class ResourceService extends ServiceWithTransactions {
                    .toList();
     }
 
-    private Resource insertImportedResource(Resource resource, ImportSource importSource) {
+    private Resource insertImportedResource(Resource resource, ImportSource importSource, UserInstance userInstance) {
         if (resource.getCuratingInstitutions().isEmpty()) {
             setCuratingInstitutions(resource, cristinUnitsUtil);
         }
 
         mutateResourceIfMissingCristinIdentifier(resource);
 
-        var userInstance = UserInstance.fromPublication(resource.toPublication());
         var fileTransactionWriteItems = resource.getFiles()
                                             .stream()
                                             .map(

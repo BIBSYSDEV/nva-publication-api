@@ -236,7 +236,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     piaClientConfig);
         handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService,
                                                                   approvalService);
-        when(publicationService.importResource(any(), any())).thenThrow(
+        when(publicationService.importResource(any(), any(), any())).thenThrow(
             new TransactionFailedException(new Exception()));
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
