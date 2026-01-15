@@ -1,5 +1,7 @@
 package no.unit.nva.publication.s3imports;
 
+import static no.unit.nva.publication.s3imports.UpdatePublicationsFromBrageRequest.UpdateType.ABSTRACT;
+import static no.unit.nva.publication.s3imports.UpdatePublicationsFromBrageRequest.UpdateType.AFFILIATION;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.opencsv.bean.CsvToBeanBuilder;
@@ -125,9 +127,11 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
     }
 
     private void updateResource(UpdatePublicationsFromBrageRequest request, Resource resource) {
-        switch (request.type()) {
-            case ABSTRACT -> updateAbstract(request, resource);
-            case AFFILIATION -> updateAffiliation(request, resource);
+        if (ABSTRACT.equals(request.type())) {
+            updateAbstract(request, resource);
+        }
+        if (AFFILIATION.equals(request.type())) {
+            updateAffiliation(request, resource);
         }
     }
 
