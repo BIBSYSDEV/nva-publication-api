@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
+import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
@@ -37,8 +40,8 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
     private final S3Client s3Client;
     private final ResourceService resourceService;
     private final Environment environment;
-    private boolean dryRun = true;
     private final List<SortableIdentifier> updatedPublicationIdentifiers = new ArrayList<>();
+    private boolean dryRun = true;
 
     @JacocoGenerated
     public UpdatePublicationsFromBrageHandler() {
@@ -60,23 +63,9 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
         var file = s3DriverForBucket(request.uri().getHost()).readFile(request.uri());
         var publicationIdentifiers = getPublicationIdentifiersFromCsv(file);
 
-        publicationIdentifiers.forEach(identifier -> process(identifier, request.archive()));
+        publicationIdentifiers.forEach(identifier -> process(identifier, request));
 
         writeResultsToFile(request);
-    }
-
-    private void writeResultsToFile(UpdatePublicationsFromBrageRequest request) throws IOException {
-        if (!dryRun) {
-            var value = updatedPublicationIdentifiers.stream()
-                                 .map(Object::toString)
-                                 .collect(Collectors.joining(System.lineSeparator()));
-            s3DriverForBucket(request.uri().getHost())
-                .insertFile(UnixPath.of("%s-%s".formatted(request.archive(), Instant.now())), value);
-        }
-    }
-
-    private S3Driver s3DriverForBucket(String request) {
-        return new S3Driver(s3Client, request);
     }
 
     private static List<SortableIdentifier> getPublicationIdentifiersFromCsv(String value) {
@@ -106,22 +95,70 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
                    .filter(StringUtils::isNotBlank);
     }
 
+    private void writeResultsToFile(UpdatePublicationsFromBrageRequest request) throws IOException {
+        if (!dryRun) {
+            var value = updatedPublicationIdentifiers.stream()
+                            .map(Object::toString)
+                            .collect(Collectors.joining(System.lineSeparator()));
+            s3DriverForBucket(request.uri().getHost()).insertFile(
+                UnixPath.of("%s-%s".formatted(request.archive(), Instant.now())), value);
+        }
+    }
+
+    private S3Driver s3DriverForBucket(String request) {
+        return new S3Driver(s3Client, request);
+    }
+
     private String fetchFile(File file) {
         return s3DriverForBucket(environment.readEnv(PERSISTED_STORAGE_BUCKET_NAME)).getFile(
             UnixPath.of(file.getIdentifier().toString()));
     }
 
-    private void process(SortableIdentifier sortableIdentifier, String archive) {
+    private void process(SortableIdentifier sortableIdentifier, UpdatePublicationsFromBrageRequest request) {
         var resource = fetchResource(sortableIdentifier);
+
         if (resource.isPresent()) {
-            var dublinCore = readDublinCoreFromResource(resource.get(), archive);
-            if (dublinCore.isPresent()) {
-                processResourceWithDublinCore(resource.get(), dublinCore.get());
-            } else {
-                LOGGER.info(String.format("Dublin core does not exist at publication %s", sortableIdentifier));
-            }
+            updateResource(request, resource.get());
         } else {
             LOGGER.info(String.format("Publication does not exist %s, nothing to update!", sortableIdentifier));
+        }
+    }
+
+    private void updateResource(UpdatePublicationsFromBrageRequest request, Resource resource) {
+        switch (request.type()) {
+            case ABSTRACT -> updateAbstract(request, resource);
+            case AFFILIATION -> updateAffiliation(request, resource);
+        }
+    }
+
+    private void updateAffiliation(UpdatePublicationsFromBrageRequest request, Resource resource) {
+        var contributors = resource.getEntityDescription()
+            .getContributors()
+            .stream()
+            .map(contributor -> updateContributor(contributor, request))
+            .toList();
+        resource.getEntityDescription().setContributors(contributors);
+        updateResource(resource);
+    }
+
+    private Contributor updateContributor(Contributor contributor, UpdatePublicationsFromBrageRequest request) {
+        return hasAffiliations(contributor)
+                   ? contributor
+                   : contributor.copy()
+                         .withAffiliations(List.of(Organization.fromUri(URI.create(request.value()))))
+                         .build();
+    }
+
+    private static boolean hasAffiliations(Contributor contributor) {
+        return !contributor.getAffiliations().isEmpty();
+    }
+
+    private void updateAbstract(UpdatePublicationsFromBrageRequest request, Resource resource) {
+        var dublinCore = readDublinCoreFromResource(resource, request.archive());
+        if (dublinCore.isPresent()) {
+            processResourceWithDublinCore(resource, dublinCore.get());
+        } else {
+            LOGGER.info(String.format("Dublin core does not exist at publication %s", resource.getIdentifier()));
         }
     }
 

@@ -2,8 +2,12 @@ package no.unit.nva.publication.s3imports;
 
 import static java.util.UUID.randomUUID;
 import static javax.xml.bind.Marshaller.JAXB_FORMATTED_OUTPUT;
+import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomContributorWithSequence;
+import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.s3imports.Language.ENGLISH;
+import static no.unit.nva.publication.s3imports.UpdatePublicationsFromBrageRequest.UpdateType.ABSTRACT;
+import static no.unit.nva.publication.s3imports.UpdatePublicationsFromBrageRequest.UpdateType.AFFILIATION;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
@@ -17,10 +21,14 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.xml.bind.JAXBContext;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -28,6 +36,7 @@ import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails.Source;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.s3imports.UpdatePublicationsFromBrageRequest.UpdateType;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
@@ -64,7 +73,7 @@ class UpdatePublicationsFromBrageHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldThrowExceptionWhenInputIsMissingMandatoryFields() {
-        assertThrows(NullPointerException.class, () -> new UpdatePublicationsFromBrageRequest(null, null, false));
+        assertThrows(NullPointerException.class, () -> new UpdatePublicationsFromBrageRequest(null, null, false, null, null));
     }
 
     @Test
@@ -78,11 +87,15 @@ class UpdatePublicationsFromBrageHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldThrowExceptionWhenCsvFileIsNotParsable() throws IOException {
         var uri = randomUri();
-        var request = new UpdatePublicationsFromBrageRequest(uri, randomString(), false);
+        var request = createRequest(uri);
         var input = stringToStream(request.toJsonString());
         insertFile(uri, "identifier, asoidhjoeift\noiwheohomoaishdoihgfw");
 
         assertThrows(RuntimeException.class, () -> handler.handleRequest(input, output, new FakeContext()));
+    }
+
+    private static UpdatePublicationsFromBrageRequest createRequest(URI uri) {
+        return new UpdatePublicationsFromBrageRequest(uri, randomString(), false, ABSTRACT, null);
     }
 
     @Test
@@ -105,14 +118,6 @@ class UpdatePublicationsFromBrageHandlerTest extends ResourcesLocalTest {
 
         assertTrue(
             logAppender.getMessages().contains("Publication does not exist %s".formatted(publicationIdentifier)));
-    }
-
-    private static UpdatePublicationsFromBrageRequest randomRequest(boolean dryRun) {
-        return new UpdatePublicationsFromBrageRequest(randomUri(), randomString(), dryRun);
-    }
-
-    private static UpdatePublicationsFromBrageRequest randomRequest(String archive, boolean dryRun) {
-        return new UpdatePublicationsFromBrageRequest(randomUri(), archive, dryRun);
     }
 
     @Test
@@ -169,6 +174,48 @@ class UpdatePublicationsFromBrageHandlerTest extends ResourcesLocalTest {
         assertEquals(beforeModifiedDate, afterModifiedDate);
     }
 
+    @Test
+    void shouldSetContributorAffiliationToValueFromRequestWhenContributorIsMissingAffiliation()
+        throws BadRequestException, IOException {
+        var affiliationId = randomUri();
+        var publicationWithRequest = createPublicationWithRequestValueAndContributor(affiliationId,
+                                                                                     randomContributorWithAffiliations(Collections.emptyList()));
+        handler.handleRequest(stringToStream(publicationWithRequest.request().toJsonString()), output, new FakeContext());
+
+        var updatedResource = fetchResource(publicationWithRequest.publication().getIdentifier());
+
+        assertEquals(updatedResource.getEntityDescription().getContributors().getFirst().getAffiliations().getFirst(),
+                     Organization.fromUri(affiliationId));
+    }
+
+    @Test
+    void shouldNotSetContributorAffiliationToValueFromRequestWhenContributorHasAffiliation()
+        throws BadRequestException, IOException {
+        var affiliationId = randomUri();
+        var contributor = randomContributorWithAffiliations(List.of(randomOrganization()));
+        var publicationWithRequest = createPublicationWithRequestValueAndContributor(affiliationId, contributor);
+        handler.handleRequest(stringToStream(publicationWithRequest.request().toJsonString()), output, new FakeContext());
+
+        var updatedResource = fetchResource(publicationWithRequest.publication().getIdentifier());
+
+        assertEquals(updatedResource.getEntityDescription().getContributors().getFirst().getAffiliations(),
+                     publicationWithRequest.publication().getEntityDescription().getContributors().getFirst().getAffiliations());
+    }
+
+    private Contributor randomContributorWithAffiliations(List<Corporation> affiliations) {
+        return randomContributorWithSequence(null).copy().withAffiliations(affiliations).build();
+    }
+
+    private TestData createPublicationWithRequestValueAndContributor(URI affiliationId, Contributor contributor)
+        throws BadRequestException, IOException {
+        var publication = randomPublication();
+        publication.getEntityDescription().setContributors(List.of(contributor));
+        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance());
+        var request = randomRequest(AFFILIATION, affiliationId.toString());
+        insertFile(request.uri(), randomCsvContent(persistedPublication.getIdentifier()));
+        return new TestData(request, persistedPublication);
+    }
+
     private Resource fetchResource(SortableIdentifier identifier) {
         return Resource.resourceQueryObject(identifier).fetch(resourceService).orElseThrow();
     }
@@ -183,6 +230,18 @@ class UpdatePublicationsFromBrageHandlerTest extends ResourcesLocalTest {
         return new TestData(request, persistedPublication);
     }
 
+    private static UpdatePublicationsFromBrageRequest randomRequest(boolean dryRun) {
+        return new UpdatePublicationsFromBrageRequest(randomUri(), randomString(), dryRun, ABSTRACT, null);
+    }
+
+    private static UpdatePublicationsFromBrageRequest randomRequest(String archive, boolean dryRun) {
+        return new UpdatePublicationsFromBrageRequest(randomUri(), archive, dryRun, ABSTRACT, null);
+    }
+
+    private static UpdatePublicationsFromBrageRequest randomRequest(UpdateType updateType, String value) {
+        return new UpdatePublicationsFromBrageRequest(randomUri(), randomString(), false, updateType, value);
+    }
+
     private record TestData(UpdatePublicationsFromBrageRequest request, Publication publication) {
     }
 
@@ -194,11 +253,6 @@ class UpdatePublicationsFromBrageHandlerTest extends ResourcesLocalTest {
 
     private static UserInstance userInstance() {
         return UserInstance.create(randomString(), randomUri());
-    }
-
-    private Publication persistPublicationWithDublinCoreFromArchive(String archive)
-        throws BadRequestException, IOException {
-        return persistPublicationWithDublinCoreFromArchive(archive, randomPublication(), List.of());
     }
 
     private Publication persistPublicationWithDublinCoreFromArchive(String archive,
