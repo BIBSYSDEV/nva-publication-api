@@ -28,6 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.publication.events.handlers.batch.dynamodb.jobs.FixFileOwnershipJob;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.jobs.MigrateResourceJob;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.jobs.NoGsiResultsException;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.jobs.ReindexRecordJob;
@@ -50,7 +51,8 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
     private static final DynamodbResourceBatchJobExecutor[] JOBS = {
         new ReindexRecordJob(),
         new MigrateResourceJob(),
-        new UpdateVerificationStatusJob()
+        new UpdateVerificationStatusJob(),
+        new FixFileOwnershipJob()
     };
     private static final String DEFAULT_TO_ONE_ITEM = "1";
     private static final String APPROXIMATE_RECEIVE_COUNT = "ApproximateReceiveCount";
