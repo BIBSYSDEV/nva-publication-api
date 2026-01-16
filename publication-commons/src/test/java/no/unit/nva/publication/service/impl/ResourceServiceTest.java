@@ -1361,12 +1361,27 @@ class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void shouldImportResourceAndSetImportedResourceEventWhenImportingPublication() {
         var publication = randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
         var resource = Resource.fromPublication(publication)
-                           .importResource(resourceService, ImportSource.fromSource(Source.SCOPUS));
+                           .importResource(resourceService, ImportSource.fromSource(Source.SCOPUS), userInstance);
 
         var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
 
         assertEquals(Source.SCOPUS, resourceEvent.importSource().getSource());
+    }
+
+    @Test
+    void shouldImportResourceAndSetFileOwnerAndOwnerAffiliationBasedOnUserInstance() {
+        var userInstance = UserInstance.create(new ResourceOwner(new Username(randomString()), randomUri()), randomUri());
+        var resource = Resource.fromPublication(randomPublication())
+                           .importResource(resourceService, ImportSource.fromSource(Source.SCOPUS), userInstance);
+
+        var fileEntries = resource.getFileEntries();
+
+        fileEntries.forEach(entry -> {
+            assertEquals(userInstance.getTopLevelOrgCristinId(), entry.getOwnerAffiliation());
+            assertEquals(userInstance.getUser(), entry.getOwner());
+        });
     }
 
     @Test

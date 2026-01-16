@@ -236,7 +236,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                                     piaClientConfig);
         handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService,
                                                                   approvalService);
-        when(publicationService.importResource(any(), any())).thenThrow(
+        when(publicationService.importResource(any(), any(), any())).thenThrow(
             new TransactionFailedException(new Exception()));
         var importCandidate = createPersistedImportCandidate();
         var request = createRequest(importCandidate);
@@ -567,6 +567,35 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
+    void shouldSetFileOwnerToCustomerOwningTicketWhenCustomerRequiresApproval()
+        throws IOException, ApprovalAssignmentException {
+        var candidate = randomImportCandidate();
+        var file = randomOpenFile();
+        candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
+        var customerRequiringApproval = randomUri();
+        candidate.setAssociatedCustomers(List.of(customerRequiringApproval));
+        var importCandidate = importCandidateService.persistImportCandidate(candidate);
+        var request = createRequest(importCandidate);
+
+        var customerDto = randomCustomer(customerRequiringApproval, false);
+        when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
+            .thenReturn(AssignmentServiceResult.customerFound(new CustomerContributorPair(customerDto, randomContributorWithId(randomUri()))));
+
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var resource = Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
+                           .fetch(publicationService)
+                           .orElseThrow();
+
+        var publishingRequest = (PublishingRequestCase) publicationService.fetchAllTicketsForResource(resource).findFirst().orElseThrow();
+
+        assertEquals(customerDto.cristinId(), publishingRequest.getOwnerAffiliation());
+        resource.getFileEntries().forEach(fileEntry -> {
+            assertEquals(customerDto.cristinId(), fileEntry.getOwnerAffiliation());
+        });
+    }
+
+    @Test
     void shouldPublishFileWhenImportingCandidateWithFilesAndNoneOfCustomerRequiresApproval()
         throws IOException, ApprovalAssignmentException {
         var candidate = randomImportCandidate();
@@ -588,6 +617,32 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
         assertTrue(publicationService.fetchAllTicketsForResource(resource).toList().isEmpty());
         assertInstanceOf(OpenFile.class, resource.getFileByIdentifier(file.getIdentifier()).orElseThrow());
+    }
+
+    @Test
+    void shouldSetCustomerAsFileOwnerWhenCustomerDoesNotRequiresApproval()
+        throws IOException, ApprovalAssignmentException {
+        var candidate = randomImportCandidate();
+        var file = randomOpenFile();
+        candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
+        var customerAllowingPublishing = randomUri();
+        candidate.setAssociatedCustomers(List.of(customerAllowingPublishing));
+        var importCandidate = importCandidateService.persistImportCandidate(candidate);
+        var request = createRequest(importCandidate);
+
+        var customerDto = randomCustomer(customerAllowingPublishing, true);
+        when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
+            .thenReturn(AssignmentServiceResult.noApprovalNeeded(customerDto));
+
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+        var resource = Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
+                           .fetch(publicationService)
+                           .orElseThrow();
+
+        resource.getFileEntries().forEach(fileEntry -> {
+            assertEquals(customerDto.cristinId(), fileEntry.getOwnerAffiliation());
+        });
     }
 
     private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
