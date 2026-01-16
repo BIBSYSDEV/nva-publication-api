@@ -252,9 +252,13 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
         return this;
     }
 
-    public void updateOwnerAffiliation(ResourceService resourceService, URI ownerAffiliation) {
+    public void setOwnerAffiliation(URI ownerAffiliation) {
         this.ownerAffiliation = ownerAffiliation;
         this.modifiedDate = Instant.now();
+    }
+
+    public void updateOwnerAffiliation(ResourceService resourceService, URI ownerAffiliation) {
+        setOwnerAffiliation(ownerAffiliation);
         resourceService.updateFile(this);
     }
 
