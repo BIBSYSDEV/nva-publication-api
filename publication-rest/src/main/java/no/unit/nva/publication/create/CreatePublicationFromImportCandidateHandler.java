@@ -145,13 +145,13 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                                                               RequestInfo requestInfo)
         throws ApiGatewayException {
         resourceToImport.setAssociatedArtifacts(convertFilesToPending(resourceToImport));
-        var userInstance = createUserInstanceFromCustomer(requestInfo, serviceResult.getCustomer());
+        var fileOwner = createUserInstanceFromCustomer(requestInfo, serviceResult.getCustomer());
         var importedResource = resourceToImport.importResource(publicationService,
                                                                ImportSource.fromSource(Source.SCOPUS),
-                                                               userInstance);
+                                                               fileOwner);
         var fileApproval = PublishingRequestCase.createWithFilesForApproval(
             importedResource,
-            userInstance,
+            fileOwner,
             PublishingWorkflow.lookUp(serviceResult.getCustomer().publicationWorkflow()),
             importedResource.getPendingFiles()
         );

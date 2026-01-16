@@ -189,8 +189,8 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setResourceEvent(CreatedResourceEvent.create(userInstance, currentTime));
     }
 
-    public Resource importResource(Resource resource, ImportSource importSource, UserInstance userInstance) {
-        return insertImportedResource(resource, importSource, userInstance);
+    public Resource importResource(Resource resource, ImportSource importSource, UserInstance fileOwner) {
+        return insertImportedResource(resource, importSource, fileOwner);
     }
 
     public Publication createPublicationFromImportedEntry(Publication inputData, ImportSource importSource) {
@@ -535,24 +535,22 @@ public class ResourceService extends ServiceWithTransactions {
                    .toList();
     }
 
-    private Resource insertImportedResource(Resource resource, ImportSource importSource, UserInstance userInstance) {
+    private Resource insertImportedResource(Resource resource, ImportSource importSource, UserInstance fileOwner) {
         if (resource.getCuratingInstitutions().isEmpty()) {
             setCuratingInstitutions(resource, cristinUnitsUtil);
         }
 
         mutateResourceIfMissingCristinIdentifier(resource);
 
-        var fileTransactionWriteItems = resource.getFiles()
-                                            .stream()
-                                            .map(
-                                                file -> FileEntry.createFromImportSource(file, resource.getIdentifier(),
-                                                                                         userInstance, importSource))
+        var fileEntries = createFileEntries(resource, importSource, fileOwner);
+        resource.setFileEntries(fileEntries);
+        var fileEntriesTransactions = fileEntries.stream()
                                             .map(FileEntry::toDao)
                                             .map(dao -> dao.toPutNewTransactionItem(tableName))
                                             .toList();
 
         var transactions = new ArrayList<TransactWriteItem>();
-        transactions.addAll(fileTransactionWriteItems);
+        transactions.addAll(fileEntriesTransactions);
         transactions.add(newPutTransactionItem(new ResourceDao(resource), tableName));
         transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource));
         transactions.addAll(createPublicationChannelsTransaction(resource));
@@ -561,6 +559,16 @@ public class ResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(transactWriteItemsRequest);
 
         return resource;
+    }
+
+    private static List<FileEntry> createFileEntries(Resource resource, ImportSource importSource,
+                                                        UserInstance fileOwner) {
+        return resource.getFiles()
+                   .stream()
+                   .map(
+                       file -> FileEntry.createFromImportSource(file, resource.getIdentifier(),
+                                                                fileOwner, importSource))
+                   .toList();
     }
 
     private Collection<? extends TransactWriteItem> createPublicationChannelsTransaction(Resource resource) {

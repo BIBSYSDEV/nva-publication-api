@@ -1371,6 +1371,20 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldImportResourceAndSetFileOwnerAndOwnerAffiliationBasedOnUserInstance() {
+        var userInstance = UserInstance.create(new ResourceOwner(new Username(randomString()), randomUri()), randomUri());
+        var resource = Resource.fromPublication(randomPublication())
+                           .importResource(resourceService, ImportSource.fromSource(Source.SCOPUS), userInstance);
+
+        var fileEntries = resource.getFileEntries();
+
+        fileEntries.forEach(entry -> {
+            assertEquals(userInstance.getTopLevelOrgCristinId(), entry.getOwnerAffiliation());
+            assertEquals(userInstance.getUser(), entry.getOwner());
+        });
+    }
+
+    @Test
     void shouldUpdateResourceFromImportAndSetMergedResourceEventUserAndInstitutionToUserInstanceFromInput()
         throws BadRequestException, NotFoundException {
         var publication = createPersistedPublicationWithDoi();

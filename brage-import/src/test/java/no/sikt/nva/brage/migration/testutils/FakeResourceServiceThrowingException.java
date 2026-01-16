@@ -25,7 +25,7 @@ public class FakeResourceServiceThrowingException extends ResourceService {
     }
 
     @Override
-    public Resource importResource(Resource resource, ImportSource importSource, UserInstance userInstance) {
+    public Resource importResource(Resource resource, ImportSource importSource, UserInstance fileOwner) {
         numberOfAttempts++;
         throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
     }
