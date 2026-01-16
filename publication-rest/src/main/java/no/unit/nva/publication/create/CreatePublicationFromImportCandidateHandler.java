@@ -136,7 +136,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
             case APPROVAL_NEEDED -> createPublicationWithFilesApprovalTicket(resourceToImport, serviceResult, requestInfo);
             case NO_APPROVAL_NEEDED -> resourceToImport.importResource(publicationService,
                                                                        ImportSource.fromSource(Source.SCOPUS),
-                                                                       UserInstance.fromPublication(resourceToImport.toPublication()));
+                                                                       createUserInstanceFromCustomer(requestInfo, serviceResult.getCustomer()));
         };
     }
 
