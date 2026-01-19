@@ -7,17 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
-import java.time.Instant;
 import java.util.List;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
-import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
-import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.FileDao;
@@ -37,16 +31,6 @@ class FileFilterMatcherTest {
   @Test
   void shouldMatchFileWithScopusImportSourceFromEvent() {
     var fileEntry = createFileEntryWithImportSource(ImportSource.Source.SCOPUS, SIKT_AFFILIATION);
-    var fileDao = FileDao.fromFileEntry(fileEntry);
-    var filter = new BatchFilter(null, null, List.of("SCOPUS"), null);
-
-    assertTrue(matcher.matches(fileDao, filter));
-  }
-
-  @Test
-  void shouldMatchFileWithScopusImportSourceFromUploadDetails() {
-    var file = createFileWithScopusUploadDetails();
-    var fileEntry = createFileEntryWithFile(file, SIKT_AFFILIATION);
     var fileDao = FileDao.fromFileEntry(fileEntry);
     var filter = new BatchFilter(null, null, List.of("SCOPUS"), null);
 
@@ -124,31 +108,8 @@ class FileFilterMatcherTest {
         file, resourceIdentifier, userInstance, ImportSource.fromSource(source));
   }
 
-  private FileEntry createFileEntryWithFile(File file, URI ownerAffiliation) {
-    var userInstance = createUserInstance(ownerAffiliation);
-    var resourceIdentifier = SortableIdentifier.next();
-    return FileEntry.create(file, resourceIdentifier, userInstance);
-  }
-
   private UserInstance createUserInstance(URI ownerAffiliation) {
     return UserInstance.createBackendUser(
         new ResourceOwner(new Username(randomString()), ownerAffiliation), randomUri());
-  }
-
-  private File createFileWithScopusUploadDetails() {
-    var uploadDetails =
-        new ImportUploadDetails(ImportUploadDetails.Source.SCOPUS, null, Instant.now());
-    return File.builder()
-        .withIdentifier(java.util.UUID.randomUUID())
-        .withName(randomString())
-        .withMimeType("application/pdf")
-        .withSize(1024L)
-        .withLicense(randomUri())
-        .withPublisherVersion(PublisherVersion.PUBLISHED_VERSION)
-        .withRightsRetentionStrategy(
-            NullRightsRetentionStrategy.create(
-                RightsRetentionStrategyConfiguration.NULL_RIGHTS_RETENTION_STRATEGY))
-        .withUploadDetails(uploadDetails)
-        .buildOpenFile();
   }
 }

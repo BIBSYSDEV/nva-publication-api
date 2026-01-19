@@ -4,13 +4,11 @@ import static java.util.Objects.isNull;
 
 import java.util.Optional;
 import no.unit.nva.model.ImportSource;
-import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
-import nva.commons.core.paths.UriWrapper;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
+import nva.commons.core.paths.UriWrapper;
 
 public class FileFilterMatcher implements EntityFilterMatcher {
 
@@ -27,13 +25,9 @@ public class FileFilterMatcher implements EntityFilterMatcher {
     if (isNull(filter.fileImportSources()) || filter.fileImportSources().isEmpty()) {
       return true;
     }
-    var sourceFromEvent = extractImportSourceFromEvent(fileEntry);
-    var sourceFromUploadDetails = extractImportSourceFromUploadDetails(fileEntry);
-
-    return sourceFromEvent.filter(source -> filter.fileImportSources().contains(source)).isPresent()
-        || sourceFromUploadDetails
-            .filter(source -> filter.fileImportSources().contains(source))
-            .isPresent();
+    return extractImportSource(fileEntry)
+        .filter(source -> filter.fileImportSources().contains(source))
+        .isPresent();
   }
 
   private boolean matchesOwnerAffiliation(FileEntry fileEntry, BatchFilter filter) {
@@ -47,21 +41,12 @@ public class FileFilterMatcher implements EntityFilterMatcher {
         .isPresent();
   }
 
-  private Optional<String> extractImportSourceFromEvent(FileEntry fileEntry) {
+  private Optional<String> extractImportSource(FileEntry fileEntry) {
     return Optional.ofNullable(fileEntry.getFileEvent())
         .filter(FileImportedEvent.class::isInstance)
         .map(FileImportedEvent.class::cast)
         .map(FileImportedEvent::importSource)
         .map(ImportSource::getSource)
         .map(ImportSource.Source::name);
-  }
-
-  private Optional<String> extractImportSourceFromUploadDetails(FileEntry fileEntry) {
-    return Optional.ofNullable(fileEntry.getFile())
-        .map(File::getUploadDetails)
-        .filter(ImportUploadDetails.class::isInstance)
-        .map(ImportUploadDetails.class::cast)
-        .map(ImportUploadDetails::source)
-        .map(ImportUploadDetails.Source::name);
   }
 }
