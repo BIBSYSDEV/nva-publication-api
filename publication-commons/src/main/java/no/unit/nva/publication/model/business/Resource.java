@@ -399,16 +399,17 @@ public class Resource implements Entity {
         return resourceService.createPublication(userInstance, this.toPublication());
     }
 
-    public Resource importResource(ResourceService resourceService, ImportSource importSource) {
+    public Resource importResource(ResourceService resourceService, ImportSource importSource,
+                                   UserInstance fileOwner) {
         var now = Instant.now();
         this.setCreatedDate(now);
         this.setModifiedDate(now);
         this.setPublishedDate(now);
         this.setIdentifier(SortableIdentifier.next());
         this.setStatus(PUBLISHED);
-        var userInstance = UserInstance.fromPublication(this.toPublication());
-        this.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, userInstance, now));
-        return resourceService.importResource(this, importSource);
+        var publicationOwner = UserInstance.fromPublication(this.toPublication());
+        this.setResourceEvent(ImportedResourceEvent.fromImportSource(importSource, publicationOwner, now));
+        return resourceService.importResource(this, importSource, fileOwner);
     }
 
     public Resource updateResourceFromImport(ResourceService resourceService, ImportSource importSource, UserInstance userInstance) {
