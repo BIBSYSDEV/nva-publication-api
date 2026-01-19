@@ -63,7 +63,7 @@ class FixFileOwnershipJobTest extends ResourcesLocalTest {
     this.ticketService = getTicketService();
     this.dynamoDbClient = spy(client);
     this.fixFileOwnershipJob =
-        new FixFileOwnershipJob(ticketService, dynamoDbClient, RESOURCES_TABLE_NAME);
+        new FixFileOwnershipJob(resourceService, dynamoDbClient, RESOURCES_TABLE_NAME);
   }
 
   @Test

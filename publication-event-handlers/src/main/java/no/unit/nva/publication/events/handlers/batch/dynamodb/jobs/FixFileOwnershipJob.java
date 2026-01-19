@@ -13,9 +13,10 @@ import no.unit.nva.publication.events.handlers.batch.dynamodb.BatchWorkItem;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchJobExecutor;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.storage.FileDao;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.ServiceWithTransactions;
-import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
@@ -28,22 +29,22 @@ public class FixFileOwnershipJob extends ServiceWithTransactions
   private static final String JOB_TYPE = "FIX_FILE_OWNERSHIP";
   private static final String TABLE_NAME_ENV = "TABLE_NAME";
 
-  private final TicketService ticketService;
+  private final ResourceService resourceService;
   private final AmazonDynamoDB dynamoDbClient;
   private final String tableName;
 
   @JacocoGenerated
   public FixFileOwnershipJob() {
     this(
-        TicketService.defaultService(),
+        ResourceService.defaultService(),
         AmazonDynamoDBClientBuilder.defaultClient(),
         new Environment().readEnv(TABLE_NAME_ENV));
   }
 
   public FixFileOwnershipJob(
-      TicketService ticketService, AmazonDynamoDB dynamoDbClient, String tableName) {
+      ResourceService resourceService, AmazonDynamoDB dynamoDbClient, String tableName) {
     super(dynamoDbClient);
-    this.ticketService = ticketService;
+    this.resourceService = resourceService;
     this.dynamoDbClient = dynamoDbClient;
     this.tableName = tableName;
   }
@@ -85,9 +86,8 @@ public class FixFileOwnershipJob extends ServiceWithTransactions
   private Optional<FileDaoWithVersion> updateFileOwnership(FileDaoWithVersion fileDaoWithVersion) {
     var fileEntry = fileDaoWithVersion.fileDao().getFileEntry();
     var resourceIdentifier = fileEntry.getResourceIdentifier();
-    var customerId = fileEntry.getCustomerId();
 
-    return fetchPublishingRequestTicket(customerId, resourceIdentifier)
+    return fetchPublishingRequestTicket(resourceIdentifier)
         .map(PublishingRequestCase::getOwnerAffiliation)
         .filter(ticketAffiliation -> !ticketAffiliation.equals(fileEntry.getOwnerAffiliation()))
         .map(
@@ -97,11 +97,18 @@ public class FixFileOwnershipJob extends ServiceWithTransactions
   }
 
   private Optional<PublishingRequestCase> fetchPublishingRequestTicket(
-      URI customerId, SortableIdentifier resourceIdentifier) {
+      SortableIdentifier resourceIdentifier) {
     try {
+      var resource =
+          Resource.resourceQueryObject(resourceIdentifier)
+              .fetch(resourceService)
+              .orElseThrow(() -> new RuntimeException("Resource not found: " + resourceIdentifier));
       var ticket =
-          ticketService.fetchTicketByResourceIdentifier(
-              customerId, resourceIdentifier, PublishingRequestCase.class);
+          resourceService
+              .fetchAllTicketsForResource(resource)
+              .filter(PublishingRequestCase.class::isInstance)
+              .map(PublishingRequestCase.class::cast)
+              .findFirst();
       if (ticket.isEmpty()) {
         LOGGER.warn("No PublishingRequestCase found for resource {}", resourceIdentifier);
       }
