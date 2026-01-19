@@ -116,6 +116,23 @@ class FixFileOwnershipJobTest extends ResourcesLocalTest {
     assertEquals(JOB_TYPE, fixFileOwnershipJob.getJobType());
   }
 
+  @Test
+  void shouldHandleExceptionWhenResourceNotFound() throws Exception {
+    var publication = persistPublicationWithFile(SIKT_AFFILIATION);
+    var fileEntry = getPersistedFileEntry(publication);
+    var workItem = createWorkItemForFile(fileEntry);
+
+    deleteResourceFromDynamoDb(publication);
+
+    assertDoesNotThrow(() -> fixFileOwnershipJob.executeBatch(List.of(workItem)));
+    verify(dynamoDbClient, never()).transactWriteItems(any(TransactWriteItemsRequest.class));
+  }
+
+  private void deleteResourceFromDynamoDb(Publication publication) {
+    var resourceDao = Resource.fromPublication(publication).toDao();
+    client.deleteItem(RESOURCES_TABLE_NAME, resourceDao.primaryKey());
+  }
+
   private Publication persistPublicationWithFile(URI fileOwnerAffiliation) throws Exception {
     var publication = randomPublication(Textbook.class);
     var userInstance =
