@@ -1,6 +1,8 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -496,6 +498,7 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
         IntStream.range(0, count)
             .mapToObj(index -> randomPublication())
             .forEach(publication -> Resource.fromPublication(publication)
-                         .importResource(resourceService, ImportSource.fromSource(Source.CRISTIN)));
+                         .importResource(resourceService, ImportSource.fromSource(Source.CRISTIN),
+                                         UserInstance.create(randomString(), randomUri())));
     }
 }

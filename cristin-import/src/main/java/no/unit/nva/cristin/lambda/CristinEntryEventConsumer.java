@@ -382,8 +382,10 @@ public class CristinEntryEventConsumer
     }
 
     private Publication createPublication(Publication publication) {
+        var userInstance = UserInstance.fromPublication(publication);
         return Resource.fromPublication(publication)
-                   .importResource(resourceService, ImportSource.fromSource(Source.CRISTIN))
+                   .importResource(resourceService, ImportSource.fromSource(Source.CRISTIN),
+                                   userInstance)
                    .toPublication();
     }
 

@@ -186,7 +186,7 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
 
         public static AssignmentServiceResult noApprovalNeeded(CustomerDto customerDto) {
             var reason = "Customer %s allows auto publishing".formatted(customerDto);
-            return new AssignmentServiceResult(AssignmentServiceStatus.NO_APPROVAL_NEEDED, reason, null);
+            return new AssignmentServiceResult(AssignmentServiceStatus.NO_APPROVAL_NEEDED, reason, customerDto);
         }
 
         public static AssignmentServiceResult customerFound(CustomerContributorPair customerContributorPair) {

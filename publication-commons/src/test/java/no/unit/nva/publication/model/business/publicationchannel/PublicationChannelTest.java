@@ -159,7 +159,8 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
         when(channelClaimClient.fetchChannelClaim(toChannelClaimId(channelIdentifier))).thenReturn(claim);
 
         var resource = Resource.fromPublication(publication).importResource(resourceService,
-                                                             ImportSource.fromBrageArchive(randomString()));
+                                                                            ImportSource.fromBrageArchive(randomString()),
+                                                                            UserInstance.fromPublication(publication));
 
         var fetchedResource = resourceService.getResourceByIdentifier(resource.getIdentifier());
 

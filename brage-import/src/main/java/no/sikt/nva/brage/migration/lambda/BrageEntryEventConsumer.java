@@ -394,8 +394,9 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
     private PublicationRepresentation createPublication(PublicationRepresentation publicationRepresentation) {
         var importSource = createImportSource(publicationRepresentation);
         var publication = publicationRepresentation.publication();
-
-        var resource = Resource.fromPublication(publication).importResource(resourceService, importSource);
+        var userInstance = UserInstance.fromPublication(publication);
+        var resource = Resource.fromPublication(publication).importResource(resourceService, importSource,
+                                                                            userInstance);
 
         return new PublicationRepresentation(publicationRepresentation.brageRecord(), resource.toPublication());
     }
