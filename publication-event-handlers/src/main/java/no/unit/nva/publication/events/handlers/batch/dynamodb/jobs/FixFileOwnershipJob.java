@@ -1,17 +1,11 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb.jobs;
 
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -77,21 +71,15 @@ public class FixFileOwnershipJob extends ServiceWithTransactions
   }
 
   private Optional<FileDaoWithVersion> fetchFileDaoFromDynamoDB(BatchWorkItem workItem) {
-    var primaryKey = createPrimaryKey(workItem);
-    var request = new GetItemRequest().withTableName(tableName).withKey(primaryKey);
+    var request =
+        new GetItemRequest()
+            .withTableName(tableName)
+            .withKey(workItem.dynamoDbKey().toPrimaryKey());
     var result = dynamoDbClient.getItem(request);
 
     return Optional.ofNullable(result.getItem())
         .map(FileDao::fromDynamoFormat)
         .map(dao -> new FileDaoWithVersion(dao, dao.getVersion()));
-  }
-
-  private Map<String, AttributeValue> createPrimaryKey(BatchWorkItem workItem) {
-    var key = new HashMap<String, AttributeValue>();
-    key.put(
-        PRIMARY_KEY_PARTITION_KEY_NAME, new AttributeValue(workItem.dynamoDbKey().partitionKey()));
-    key.put(PRIMARY_KEY_SORT_KEY_NAME, new AttributeValue(workItem.dynamoDbKey().sortKey()));
-    return key;
   }
 
   private Optional<FileDaoWithVersion> updateFileOwnership(FileDaoWithVersion fileDaoWithVersion) {
