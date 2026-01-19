@@ -6,6 +6,7 @@ import java.util.Optional;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
+import nva.commons.core.paths.UriWrapper;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.publicationstate.FileImportedEvent;
 import no.unit.nva.publication.model.storage.Dao;
@@ -40,10 +41,9 @@ public class FileFilterMatcher implements EntityFilterMatcher {
       return true;
     }
     return Optional.ofNullable(fileEntry.getOwnerAffiliation())
-        .map(Object::toString)
-        .filter(
-            affiliation ->
-                filter.fileOwnerAffiliationContains().stream().anyMatch(affiliation::contains))
+        .map(UriWrapper::fromUri)
+        .map(UriWrapper::getLastPathElement)
+        .filter(orgId -> filter.fileOwnerAffiliationContains().stream().anyMatch(orgId::startsWith))
         .isPresent();
   }
 

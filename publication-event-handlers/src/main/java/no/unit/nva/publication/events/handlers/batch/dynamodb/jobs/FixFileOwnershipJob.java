@@ -12,10 +12,8 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import nva.commons.core.paths.UriWrapper;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.BatchWorkItem;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchJobExecutor;
@@ -35,7 +33,6 @@ public class FixFileOwnershipJob extends ServiceWithTransactions
   private static final Logger LOGGER = LoggerFactory.getLogger(FixFileOwnershipJob.class);
   private static final String JOB_TYPE = "FIX_FILE_OWNERSHIP";
   private static final String TABLE_NAME_ENV = "TABLE_NAME";
-  private static final String SIKT_AFFILIATION_IDENTIFIER = "20754.";
 
   private final TicketService ticketService;
   private final AmazonDynamoDB dynamoDbClient;
@@ -63,7 +60,6 @@ public class FixFileOwnershipJob extends ServiceWithTransactions
         workItems.stream()
             .map(this::fetchFileDaoFromDynamoDB)
             .flatMap(Optional::stream)
-            .filter(this::hasSiktOwnerAffiliation)
             .map(this::updateFileOwnership)
             .flatMap(Optional::stream)
             .map(this::toTransactWriteItem)
@@ -98,14 +94,6 @@ public class FixFileOwnershipJob extends ServiceWithTransactions
     return key;
   }
 
-  private boolean hasSiktOwnerAffiliation(FileDaoWithVersion fileDaoWithVersion) {
-    return Optional.ofNullable(fileDaoWithVersion.fileDao().getFileEntry().getOwnerAffiliation())
-        .map(UriWrapper::fromUri)
-        .map(UriWrapper::getLastPathElement)
-        .filter(orgId -> orgId.startsWith(SIKT_AFFILIATION_IDENTIFIER))
-        .isPresent();
-  }
-
   private Optional<FileDaoWithVersion> updateFileOwnership(FileDaoWithVersion fileDaoWithVersion) {
     var fileEntry = fileDaoWithVersion.fileDao().getFileEntry();
     var resourceIdentifier = fileEntry.getResourceIdentifier();
@@ -113,7 +101,6 @@ public class FixFileOwnershipJob extends ServiceWithTransactions
 
     return fetchPublishingRequestTicket(customerId, resourceIdentifier)
         .map(PublishingRequestCase::getOwnerAffiliation)
-        .filter(Objects::nonNull)
         .filter(ticketAffiliation -> !ticketAffiliation.equals(fileEntry.getOwnerAffiliation()))
         .map(
             newAffiliation ->

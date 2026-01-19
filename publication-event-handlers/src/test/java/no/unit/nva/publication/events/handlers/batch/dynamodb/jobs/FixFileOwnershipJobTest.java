@@ -4,7 +4,6 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -68,8 +67,7 @@ class FixFileOwnershipJobTest extends ResourcesLocalTest {
   }
 
   @Test
-  void shouldUpdateFileOwnershipFromTicketWhenFileHasSiktAffiliationAndTicketHasDifferent()
-      throws Exception {
+  void shouldUpdateFileOwnershipFromTicketWhenTicketHasDifferentAffiliation() throws Exception {
     var publication = persistPublicationWithFile(SIKT_AFFILIATION);
     var fileEntry = getPersistedFileEntry(publication);
 
@@ -82,19 +80,6 @@ class FixFileOwnershipJobTest extends ResourcesLocalTest {
         FileEntry.queryObject(fileEntry.getIdentifier()).fetch(resourceService).orElseThrow();
 
     assertEquals(NTNU_AFFILIATION, updatedFileEntry.getOwnerAffiliation());
-  }
-
-  @Test
-  void shouldNotUpdateFileWhenOwnerAffiliationIsNotSikt() throws Exception {
-    var publication = persistPublicationWithFile(NTNU_AFFILIATION);
-    var fileEntry = getPersistedFileEntry(publication);
-
-    persistPublishingRequestWithOwnerAffiliation(publication, randomUri());
-
-    var workItem = createWorkItemForFile(fileEntry);
-    fixFileOwnershipJob.executeBatch(List.of(workItem));
-
-    verify(dynamoDbClient, never()).transactWriteItems(any(TransactWriteItemsRequest.class));
   }
 
   @Test

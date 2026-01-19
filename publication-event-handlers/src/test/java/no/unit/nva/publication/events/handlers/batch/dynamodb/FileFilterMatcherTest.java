@@ -66,7 +66,7 @@ class FileFilterMatcherTest {
   void shouldMatchFileWithSiktOwnerAffiliation() {
     var fileEntry = createFileEntryWithImportSource(ImportSource.Source.SCOPUS, SIKT_AFFILIATION);
     var fileDao = FileDao.fromFileEntry(fileEntry);
-    var filter = new BatchFilter(null, null, null, List.of("20754"));
+    var filter = new BatchFilter(null, null, null, List.of("20754."));
 
     assertTrue(matcher.matches(fileDao, filter));
   }
@@ -75,7 +75,7 @@ class FileFilterMatcherTest {
   void shouldNotMatchFileWithDifferentOwnerAffiliation() {
     var fileEntry = createFileEntryWithImportSource(ImportSource.Source.SCOPUS, OTHER_AFFILIATION);
     var fileDao = FileDao.fromFileEntry(fileEntry);
-    var filter = new BatchFilter(null, null, null, List.of("20754"));
+    var filter = new BatchFilter(null, null, null, List.of("20754."));
 
     assertFalse(matcher.matches(fileDao, filter));
   }
@@ -84,7 +84,7 @@ class FileFilterMatcherTest {
   void shouldMatchFileWhenBothFiltersApply() {
     var fileEntry = createFileEntryWithImportSource(ImportSource.Source.SCOPUS, SIKT_AFFILIATION);
     var fileDao = FileDao.fromFileEntry(fileEntry);
-    var filter = new BatchFilter(null, null, List.of("SCOPUS"), List.of("20754"));
+    var filter = new BatchFilter(null, null, List.of("SCOPUS"), List.of("20754."));
 
     assertTrue(matcher.matches(fileDao, filter));
   }
@@ -93,7 +93,7 @@ class FileFilterMatcherTest {
   void shouldNotMatchFileWhenOnlyImportSourceMatches() {
     var fileEntry = createFileEntryWithImportSource(ImportSource.Source.SCOPUS, OTHER_AFFILIATION);
     var fileDao = FileDao.fromFileEntry(fileEntry);
-    var filter = new BatchFilter(null, null, List.of("SCOPUS"), List.of("20754"));
+    var filter = new BatchFilter(null, null, List.of("SCOPUS"), List.of("20754."));
 
     assertFalse(matcher.matches(fileDao, filter));
   }
