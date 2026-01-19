@@ -31,13 +31,13 @@ public class FileFilterMatcher implements EntityFilterMatcher {
   }
 
   private boolean matchesOwnerAffiliation(FileEntry fileEntry, BatchFilter filter) {
-    if (isNull(filter.fileOwnerAffiliationContains()) || filter.fileOwnerAffiliationContains().isEmpty()) {
+    if (isNull(filter.fileOwnerAffiliationPrefixes()) || filter.fileOwnerAffiliationPrefixes().isEmpty()) {
       return true;
     }
     return Optional.ofNullable(fileEntry.getOwnerAffiliation())
         .map(UriWrapper::fromUri)
         .map(UriWrapper::getLastPathElement)
-        .filter(orgId -> filter.fileOwnerAffiliationContains().stream().anyMatch(orgId::startsWith))
+        .filter(orgId -> filter.fileOwnerAffiliationPrefixes().stream().anyMatch(orgId::startsWith))
         .isPresent();
   }
 

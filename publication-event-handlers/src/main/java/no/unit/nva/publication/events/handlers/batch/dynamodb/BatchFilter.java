@@ -9,13 +9,13 @@ public record BatchFilter(
     Collection<String> publicationYears,
     Collection<String> statuses,
     Collection<String> fileImportSources,
-    Collection<String> fileOwnerAffiliationContains)
+    Collection<String> fileOwnerAffiliationPrefixes)
     implements JsonSerializable {
 
   public boolean isEmpty() {
     return (isNull(publicationYears) || publicationYears.isEmpty())
         && (isNull(statuses) || statuses.isEmpty())
         && (isNull(fileImportSources) || fileImportSources.isEmpty())
-        && (isNull(fileOwnerAffiliationContains) || fileOwnerAffiliationContains.isEmpty());
+        && (isNull(fileOwnerAffiliationPrefixes) || fileOwnerAffiliationPrefixes.isEmpty());
   }
 }
