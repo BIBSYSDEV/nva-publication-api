@@ -2,8 +2,11 @@ package no.unit.nva.publication.events.handlers.batch.dynamodb;
 
 import static java.util.Objects.isNull;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.PublicationStatus;
 
 public final class BatchFilterValidator {
@@ -12,6 +15,7 @@ public final class BatchFilterValidator {
   private static final String INVALID_YEAR_MESSAGE =
       "Invalid publicationYear format. Expected 4-digit year: ";
   private static final String INVALID_STATUS_MESSAGE = "Invalid status value: ";
+  private static final String INVALID_IMPORT_SOURCE_MESSAGE = "Invalid import source value: ";
 
   private BatchFilterValidator() {}
 
@@ -21,6 +25,7 @@ public final class BatchFilterValidator {
     }
     validatePublicationYears(filter.publicationYears());
     validateStatuses(filter.statuses());
+    validateImportSources(filter.fileImportSources());
   }
 
   private static void validatePublicationYears(Collection<String> years) {
@@ -46,8 +51,23 @@ public final class BatchFilterValidator {
   private static void validateStatus(String status) {
     try {
       PublicationStatus.lookup(status);
-    } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException(INVALID_STATUS_MESSAGE + status, e);
+    } catch (IllegalArgumentException exception) {
+      throw new IllegalArgumentException(INVALID_STATUS_MESSAGE + status, exception);
+    }
+  }
+
+  private static void validateImportSources(Collection<String> importSources) {
+    if (isNull(importSources) || importSources.isEmpty()) {
+      return;
+    }
+    importSources.forEach(BatchFilterValidator::validateImportSource);
+  }
+
+  private static void validateImportSource(String importSource) {
+    var validSources =
+        Arrays.stream(ImportSource.Source.values()).map(Enum::name).collect(Collectors.toSet());
+    if (!validSources.contains(importSource)) {
+      throw new IllegalArgumentException(INVALID_IMPORT_SOURCE_MESSAGE + importSource);
     }
   }
 }

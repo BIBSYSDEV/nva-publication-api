@@ -14,7 +14,9 @@ public class BatchFilterService {
 
   private static final Logger logger = LoggerFactory.getLogger(BatchFilterService.class);
   private static final Map<String, EntityFilterMatcher> FILTER_MATCHERS =
-      Map.of("Resource", new ResourceFilterMatcher());
+      Map.of(
+          "Resource", new ResourceFilterMatcher(),
+          "File", new FileFilterMatcher());
 
   public Collection<Map<String, AttributeValue>> applyFilter(
       Collection<Map<String, AttributeValue>> items, BatchFilter filter) {
@@ -38,8 +40,11 @@ public class BatchFilterService {
     } catch (Exception e) {
       var partitionKey = item.getOrDefault("PK0", new AttributeValue("unknown")).getS();
       var sortKey = item.getOrDefault("SK0", new AttributeValue("unknown")).getS();
-      logger.warn("Failed to parse item for filtering, excluding item with PK0={}, SK0={}: {}",
-                  partitionKey, sortKey, e.getMessage());
+      logger.warn(
+          "Failed to parse item for filtering, excluding item with PK0={}, SK0={}: {}",
+          partitionKey,
+          sortKey,
+          e.getMessage());
       return false;
     }
   }
