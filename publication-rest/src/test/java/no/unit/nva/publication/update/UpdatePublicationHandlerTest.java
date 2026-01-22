@@ -4,7 +4,10 @@ import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.ETAG;
+import static java.net.HttpURLConnection.HTTP_ACCEPTED;
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_PRECON_FAILED;
@@ -60,12 +63,6 @@ import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
-import static org.apache.http.HttpStatus.SC_ACCEPTED;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.HttpStatus.SC_NOT_FOUND;
-import static org.apache.http.HttpStatus.SC_OK;
-import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -188,7 +185,6 @@ import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
-import org.apache.http.entity.ContentType;
 import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
@@ -364,7 +360,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         final var ticket = ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
                                                                          publicationUpdate.getIdentifier(),
                                                                          PublishingRequestCase.class);
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
         assertThat(ticket.map(PublishingRequestCase::getStatus).orElseThrow(), is(equalTo(PENDING)));
@@ -386,7 +382,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         final var ticket = ticketService.fetchTicketByResourceIdentifier(publicationUpdate.getPublisher().getId(),
                                                                          publicationUpdate.getIdentifier(),
                                                                          PublishingRequestCase.class);
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
         assertThat(ticket.map(PublishingRequestCase::getStatus).orElseThrow(),
@@ -446,7 +442,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
         final var tickets = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publishedPublication))
                                 .toList();
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
         assertTrue(containsOneCompletedAndOnePendingPublishingRequest(tickets));
@@ -502,7 +498,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
 
@@ -526,7 +522,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
 
@@ -542,7 +538,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
 
         var gatewayResponse = toGatewayResponseProblem();
-        assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(IDENTIFIER_IS_NOT_A_VALID_UUID));
     }
 
@@ -565,7 +561,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
 
         var gatewayResponse = toGatewayResponseProblem();
-        assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_INTERNAL_ERROR, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(
             MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
     }
@@ -588,7 +584,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication, randomUri());
         updatePublicationHandler.handleRequest(event, output, context);
         var gatewayResponse = toGatewayResponseProblem();
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_INTERNAL_SERVER_ERROR)));
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
         assertThat(appender.getMessages(), containsString(SOME_MESSAGE));
     }
 
@@ -650,7 +646,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(savedPublication.getIdentifier());
 
@@ -687,7 +683,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(journalArticle.getIdentifier());
 
@@ -762,7 +758,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(savedPublication.getIdentifier());
 
@@ -905,7 +901,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Publication.class);
-        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(savedPublication.getIdentifier());
         publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
@@ -944,7 +940,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Publication.class);
-        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(savedPublication.getIdentifier());
 
@@ -986,7 +982,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
-        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(degreePublication.getIdentifier());
         publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
@@ -1031,7 +1027,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
 
@@ -1129,7 +1125,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(request, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
 
         var updatedPublication = resourceService.getPublicationByIdentifier(resourceWithRrs.getIdentifier());
         var actualPublishedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
@@ -1204,7 +1200,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @Test
@@ -1217,7 +1213,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @Test
@@ -1235,7 +1231,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @Test
@@ -1257,7 +1253,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
         assertThat(updatedPublication.getStatus(), is(equalTo(PUBLISHED)));
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @Test
@@ -1275,7 +1271,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
         assertThat(updatedPublication.getStatus(), is(equalTo(PUBLISHED)));
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @Test
@@ -1382,7 +1378,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var gatewayResponse = toGatewayResponseProblem();
 
-        assertThat(gatewayResponse.getStatusCode(), Is.is(IsEqual.equalTo(SC_BAD_REQUEST)));
+        assertThat(gatewayResponse.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_BAD_REQUEST)));
         assertThat(getProblemDetail(gatewayResponse), containsString(MUST_BE_A_VALID_PUBLICATION_API_URI));
     }
 
@@ -1432,7 +1428,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_ACCEPTED)));
     }
 
     @Test
@@ -1445,7 +1441,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @Test
@@ -1469,7 +1465,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(request.build(), output, context);
         var gatewayResponse = toGatewayResponseProblem();
 
-        assertThat(gatewayResponse.getStatusCode(), Is.is(IsEqual.equalTo(SC_BAD_REQUEST)));
+        assertThat(gatewayResponse.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_BAD_REQUEST)));
         assertThat(getProblemDetail(gatewayResponse), containsString(UNPUBLISH_REQUEST_REQUIRES_A_COMMENT));
     }
 
@@ -1480,7 +1476,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_NOT_FOUND)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_NOT_FOUND)));
     }
 
     @Test
@@ -1513,7 +1509,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_ACCEPTED)));
 
         var unpublishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
         assertThat(unpublishedPublication.getStatus(), Is.is(IsEqual.equalTo(PublicationStatus.UNPUBLISHED)));
@@ -1530,7 +1526,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_ACCEPTED)));
     }
 
     @Test
@@ -1543,7 +1539,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @Test
@@ -1562,7 +1558,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_ACCEPTED)));
         assertThat(updatedPublication.getDuplicateOf(), Is.is(IsEqual.equalTo(duplicate)));
     }
 
@@ -1583,7 +1579,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_ACCEPTED)));
     }
 
     @Test
@@ -1603,7 +1599,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(inputStream, output, context);
 
         var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @Test
@@ -1621,7 +1617,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         var deletePublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_ACCEPTED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_ACCEPTED)));
         assertThat(deletePublication.getStatus(), Is.is(IsEqual.equalTo(PublicationStatus.DELETED)));
     }
 
@@ -1637,7 +1633,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         updatePublicationHandler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, Void.class);
 
-        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(SC_UNAUTHORIZED)));
+        assertThat(response.getStatusCode(), Is.is(IsEqual.equalTo(HTTP_UNAUTHORIZED)));
     }
 
     @Test
@@ -2607,7 +2603,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private Map<String, String> generateHeaders() {
         Map<String, String> headers = new ConcurrentHashMap<>();
-        headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+        headers.put(CONTENT_TYPE, "application/json");
         return headers;
     }
 

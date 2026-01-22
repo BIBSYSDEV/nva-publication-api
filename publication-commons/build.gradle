@@ -48,12 +48,6 @@ dependencies {
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
 
-    // SDK v1 dependency for test compatibility during migration
-    testImplementation(libs.aws.java.sdk.dynamodb) {
-        exclude group: 'software.amazon.awssdk'
-    }
-
-
     testFixturesImplementation project(":publication-model")
     testFixturesImplementation nvaLibs.testutils
     testFixturesImplementation nvaLibs.apigateway

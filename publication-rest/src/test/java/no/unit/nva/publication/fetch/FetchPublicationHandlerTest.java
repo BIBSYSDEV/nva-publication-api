@@ -9,6 +9,7 @@ import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.ETAG;
 import static com.google.common.net.HttpHeaders.LOCATION;
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.UUID.randomUUID;
@@ -28,9 +29,6 @@ import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.r
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.ApiGatewayHandler.RESOURCE;
 import static nva.commons.core.attempt.Try.attempt;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_NOT_FOUND;
-import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -100,7 +98,6 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
-import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -164,7 +161,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
         var gatewayResponse = parseHandlerResponse();
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
@@ -218,7 +215,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier, headers, NO_QUERY_PARAMS),
                                               output, context);
         var gatewayResponse = parseHandlerResponse();
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
         assertEquals(MediaTypes.APPLICATION_DATACITE_XML.toString(), gatewayResponse.getHeaders().get(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
@@ -249,7 +246,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         createCustomerMock(publication.getPublisher());
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
         var gatewayResponse = parseHandlerResponse();
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getBody(), containsString("allowedOperations"));
     }
 
@@ -282,7 +279,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
         var gatewayResponse = parseFailureResponse();
 
-        assertEquals(SC_NOT_FOUND, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_NOT_FOUND, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
 
@@ -301,7 +298,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(inputStream, output, context);
         var gatewayResponse = parseFailureResponse();
         var actualDetail = gatewayResponse.getBodyObject(Problem.class).getDetail();
-        assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(actualDetail, containsString(IDENTIFIER_NULL_ERROR));
     }
 
@@ -312,7 +309,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         fetchPublicationHandler.handleRequest(inputStream, output, context);
         var gatewayResponse = parseFailureResponse();
         var actualDetail = getProblemDetail(gatewayResponse);
-        assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(actualDetail, containsString(IDENTIFIER_NULL_ERROR));
     }
 
@@ -359,7 +356,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                                         .addChild(SortableIdentifier.next().toString())
                                         .getUri();
         var publication = createDeletedPublicationWithDuplicate(duplicateOfIdentifier);
-        var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+        var headers = Map.of(ACCEPT, "application/json");
         var queryParams = Map.of(DO_NOT_REDIRECT_QUERY_PARAM, "true");
         var handlerRequest = generateHandlerRequest(publication.getIdentifier().toString(), headers, queryParams);
         fetchPublicationHandler.handleRequest(handlerRequest, output, context);
@@ -388,7 +385,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publication = createPublication();
         fetchPublicationHandler.handleRequest(generateCuratorRequest(publication), output, context);
         var gatewayResponse = parseHandlerResponse();
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
@@ -398,7 +395,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publication = createPublication();
         fetchPublicationHandler.handleRequest(generateOwnerRequest(publication), output, context);
         var gatewayResponse = parseHandlerResponse();
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
@@ -625,7 +622,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     private InputStream generateCuratorRequestWithShouldNotRedirectPathParam(Publication publication, String userName) throws JsonProcessingException {
         return new HandlerRequestBuilder<InputStream>(restApiMapper).withHeaders(
-                Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType()))
+                Map.of(ACCEPT, "application/json"))
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString(),
                                               "shouldNotRedirect", "true"))
                    .withCurrentCustomer(publication.getPublisher().getId())
@@ -641,7 +638,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     private InputStream generateCuratorRequest(Publication publication) throws JsonProcessingException {
         return new HandlerRequestBuilder<InputStream>(restApiMapper).withHeaders(
-                Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType()))
+                Map.of(ACCEPT, "application/json"))
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withAccessRights(publication.getPublisher().getId(), AccessRight.MANAGE_DOI,
@@ -656,7 +653,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     private InputStream generateOwnerRequest(Publication publication) throws JsonProcessingException {
         return new HandlerRequestBuilder<InputStream>(restApiMapper).withHeaders(
-                Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType()))
+                Map.of(ACCEPT, "application/json"))
                    .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
                    .withCurrentCustomer(publication.getPublisher().getId())
                    .withUserName(publication.getResourceOwner().getOwner().toString())
@@ -706,18 +703,18 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
                    .withTopLevelCristinOrgId(publication.getCuratingInstitutions().iterator().next().id())
                    .withUserName(randomString())
                    .withPersonCristinId(randomUri())
-                   .withHeaders(Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType()))
+                   .withHeaders(Map.of(ACCEPT, "application/json"))
                    .build();
     }
 
     private InputStream generateHandlerRequest(String publicationIdentifier) throws JsonProcessingException {
-        Map<String, String> headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+        Map<String, String> headers = Map.of(ACCEPT, "application/json");
         return generateHandlerRequest(publicationIdentifier, headers, NO_QUERY_PARAMS);
     }
 
     private InputStream generateHandlerRequestWithMissingPathParameter() throws JsonProcessingException {
         return new HandlerRequestBuilder<InputStream>(restApiMapper).withHeaders(
-            Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType())).build();
+            Map.of(ACCEPT, "application/json")).build();
     }
 
     private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {

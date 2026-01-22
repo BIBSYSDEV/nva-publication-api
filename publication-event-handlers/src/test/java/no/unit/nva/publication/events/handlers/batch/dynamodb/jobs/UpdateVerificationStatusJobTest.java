@@ -13,8 +13,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 import java.net.URI;
 import java.time.Clock;
 import java.util.List;
@@ -49,7 +49,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
 
     private ResourceService resourceService;
     private CristinClient cristinClient;
-    private AmazonDynamoDB dynamoDbClient;
+    private DynamoDbClient dynamoDbClient;
     private UpdateVerificationStatusJob updateVerificationStatusJob;
 
     @BeforeEach
