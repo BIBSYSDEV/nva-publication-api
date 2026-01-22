@@ -24,7 +24,7 @@ dependencies {
     implementation nvaCatalog.aws.sdk2.regions
     implementation nvaCatalog.aws.sdk2.http.client
     implementation nvaCatalog.aws.sdk.dynamo
-    implementation nvaCatalog.aws.sdk.sqs
+    implementation nvaCatalog.aws.sdk2.sqs
 
     implementation libs.bundles.jaxb
     implementation nvaCatalog.opencsv

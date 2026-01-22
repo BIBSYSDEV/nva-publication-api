@@ -3,8 +3,6 @@ package no.unit.nva.cristin.lambda;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.InputStream;
@@ -28,6 +26,7 @@ import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
 
@@ -47,11 +46,11 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
     public CristinRerunErrorsEventEmitter() {
         this.s3Driver = new S3Driver(S3Driver.defaultS3Client().build(),
                                      new Environment().readEnv("CRISTIN_IMPORT_BUCKET"));
-        this.batchMessenger = new SqsBatchMessenger(defaultAmazonSQS(),
+        this.batchMessenger = new SqsBatchMessenger(defaultSqsClient(),
                                                     new Environment().readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL"));
     }
 
-    public CristinRerunErrorsEventEmitter(S3Client s3Client, AmazonSQS sqsClient) {
+    public CristinRerunErrorsEventEmitter(S3Client s3Client, SqsClient sqsClient) {
         this.s3Driver = new S3Driver(s3Client, new Environment().readEnv("CRISTIN_IMPORT_BUCKET"));
         this.batchMessenger = new SqsBatchMessenger(sqsClient,
                                                     new Environment().readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL"));
@@ -82,8 +81,8 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
     }
 
     @JacocoGenerated
-    private static AmazonSQS defaultAmazonSQS() {
-        return AmazonSQSClientBuilder.defaultClient();
+    private static SqsClient defaultSqsClient() {
+        return SqsClient.create();
     }
 
     private static RerunFailedEntriesEvent getRerunFailedEntriesEvent(InputStream inputStream) {

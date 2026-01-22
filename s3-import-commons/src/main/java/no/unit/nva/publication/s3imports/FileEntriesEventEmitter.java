@@ -11,8 +11,6 @@ import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUPPORTED_S
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -40,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 /**
  * The body of the event (field "detail") is of type {@link FileContentsEvent} and it contains the data of the file
@@ -65,7 +64,7 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
     private static final String BEGINNING_OF_ARRAY = "[";
     public static final String WRONG_SUBTOPIC = "event does not contain the correct subtopic: ";
 
-    private final AmazonSQS amazonSQS;
+    private final SqsClient sqsClient;
     private final S3Client s3Client;
     private final Map<String, String> subtopicToQueueUrl;
 
@@ -75,7 +74,7 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
     }
 
     public FileEntriesEventEmitter(S3Client s3Client,
-                                   AmazonSQS amazonSQS) {
+                                   SqsClient sqsClient) {
         super(EventReference.class);
         this.subtopicToQueueUrl = Map.of(SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
                                          new Environment().readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL"),
@@ -86,7 +85,7 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
                                          SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER,
                                          new Environment().readEnv("BRAGE_IMPORT_PATCH_QUEUE_URL"));
         this.s3Client = s3Client;
-        this.amazonSQS = amazonSQS;
+        this.sqsClient = sqsClient;
     }
 
     @Override
@@ -97,8 +96,9 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
         return attemptToPlaceMessagesOnQueue(input);
     }
 
-    private static AmazonSQS defaultSqsClient() {
-        return AmazonSQSClientBuilder.defaultClient();
+    @JacocoGenerated
+    private static SqsClient defaultSqsClient() {
+        return SqsClient.create();
     }
 
     private PutSqsMessageResult attemptToPlaceMessagesOnQueue(EventReference input) {
@@ -193,7 +193,7 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
 
     private PutSqsMessageResult placeOnQueue(
         List<EventReference> eventBodies, EventReference input) {
-        var client = new SqsBatchMessenger(amazonSQS, inferQueueUrlFromEventReference(input));
+        var client = new SqsBatchMessenger(sqsClient, inferQueueUrlFromEventReference(input));
         return client.sendMessages(eventBodies);
     }
 
@@ -247,29 +247,29 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
         }
         return result.orElseThrow();
     }
-    
+
     private List<JsonNode> parseContentsAsIonFormat(String content) {
         return S3IonReader.extractJsonNodesFromIonContent(content).collect(Collectors.toList());
     }
-    
+
     private List<JsonNode> parseContentsAsIndependentConsecutiveJsonObjects(String content) {
-        
+
         return attempt(() -> content.replaceAll(CONSECUTIVE_JSON_OBJECTS, NODES_IN_ARRAY))
                    .map(jsonObjectStrings -> BEGINNING_OF_ARRAY + jsonObjectStrings + END_OF_ARRAY)
                    .map(jsonArrayString -> (ArrayNode) s3ImportsMapper.readTree(jsonArrayString))
                    .map(array -> toStream(array).collect(Collectors.toList()))
                    .orElseThrow();
     }
-    
+
     private Stream<JsonNode> toStream(ArrayNode root) {
         return StreamSupport
                    .stream(Spliterators.spliteratorUnknownSize(root.elements(), Spliterator.ORDERED), SEQUENTIAL);
     }
-    
+
     private List<JsonNode> parseContentAsJsonArray(String content) throws JsonProcessingException {
         return toStream(parseAsArrayNode(content)).collect(Collectors.toList());
     }
-    
+
     private ArrayNode parseAsArrayNode(String content) throws JsonProcessingException {
         JsonNode jsonNode = s3ImportsMapper.readTree(content);
         if (jsonNode.isArray()) {

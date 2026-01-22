@@ -2,11 +2,6 @@ package no.unit.nva.publication.s3imports;
 
 import static java.util.stream.Collectors.groupingBy;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
-import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -19,17 +14,22 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchResultEntry;
 
 public class SqsBatchMessenger {
 
     public static final int MAX_NUMBER_OF_MESSAGES_PER_BATCH_ALLOWED_BY_AWS = 10;
     private static final Logger logger = LoggerFactory.getLogger(SqsBatchMessenger.class);
-    private final AmazonSQS client;
+    private final SqsClient client;
     private final String queue;
 
     private final Map<String, EventReference> requestIdToMessageBody;
 
-    public SqsBatchMessenger(AmazonSQS client, String queue) {
+    public SqsBatchMessenger(SqsClient client, String queue) {
         this.client = client;
         this.queue = queue;
         this.requestIdToMessageBody = new HashMap<>();
@@ -39,7 +39,7 @@ public class SqsBatchMessenger {
         var messageRequestEntries = createMessageRequestEntries(messageBodies);
         var batches = batchEventReferences(messageRequestEntries);
         return batches.stream()
-                .map(this::mapToSendMessageBatchRequestEntry)
+                .map(this::mapToSendMessageBatchRequest)
                 .map(this::sendToSqs)
                 .reduce(PutSqsMessageResult::combine)
                 .orElseThrow();
@@ -54,9 +54,9 @@ public class SqsBatchMessenger {
                                                       SendMessageBatchRequest request) {
         logger.error("Exception when sending message to SQS queue: " + failure.getException().getMessage());
         var result = new PutSqsMessageResult();
-        result.setFailures(request.getEntries()
+        result.setFailures(request.entries()
                                .stream()
-                               .map(SendMessageBatchRequestEntry::getId)
+                               .map(SendMessageBatchRequestEntry::id)
                                .map(requestIdToMessageBody::get)
                                .map(reference ->
                                         new PutSqsMessageResultFailureEntry(reference,
@@ -66,13 +66,13 @@ public class SqsBatchMessenger {
         return result;
     }
 
-    private PutSqsMessageResult createPutSqsMessageResult(SendMessageBatchResult response) {
+    private PutSqsMessageResult createPutSqsMessageResult(SendMessageBatchResponse response) {
         var result = new PutSqsMessageResult();
         var failures =
-                response.getFailed().stream()
+                response.failed().stream()
                         .map(errorEntry ->
-                                new PutSqsMessageResultFailureEntry(requestIdToMessageBody.get(errorEntry.getId()),
-                                        errorEntry.getMessage()))
+                                new PutSqsMessageResultFailureEntry(requestIdToMessageBody.get(errorEntry.id()),
+                                        errorEntry.message()))
                         .collect(
                                 Collectors.toList());
         result.setFailures(failures);
@@ -80,20 +80,20 @@ public class SqsBatchMessenger {
         return result;
     }
 
-    private Stream<String> getSuccesses(SendMessageBatchResult response) {
-        return response.getSuccessful().stream().map(SendMessageBatchResultEntry::getId);
+    private Stream<String> getSuccesses(SendMessageBatchResponse response) {
+        return response.successful().stream().map(SendMessageBatchResultEntry::id);
     }
 
     private List<EventReference> mapToEventReferences(Stream<String> requestIds) {
         return requestIds.map(requestIdToMessageBody::get).collect(Collectors.toList());
     }
 
-    private SendMessageBatchRequest mapToSendMessageBatchRequestEntry(
+    private SendMessageBatchRequest mapToSendMessageBatchRequest(
         List<SendMessageBatchRequestEntry> batchedEvents) {
-        var sendMessageBatchRequest = new SendMessageBatchRequest();
-        sendMessageBatchRequest.withEntries(batchedEvents);
-        sendMessageBatchRequest.withQueueUrl(queue);
-        return sendMessageBatchRequest;
+        return SendMessageBatchRequest.builder()
+                   .entries(batchedEvents)
+                   .queueUrl(queue)
+                   .build();
     }
 
     private Collection<List<SendMessageBatchRequestEntry>> batchEventReferences(
@@ -111,9 +111,9 @@ public class SqsBatchMessenger {
     private SendMessageBatchRequestEntry toMessageRequestEntry(EventReference message) {
         var requestId = SortableIdentifier.next().toString();
         requestIdToMessageBody.put(requestId, message);
-        var sendMessageBatchRequestEntry = new SendMessageBatchRequestEntry();
-        sendMessageBatchRequestEntry.setMessageBody(message.toJsonString());
-        sendMessageBatchRequestEntry.setId(requestId);
-        return sendMessageBatchRequestEntry;
+        return SendMessageBatchRequestEntry.builder()
+                   .messageBody(message.toJsonString())
+                   .id(requestId)
+                   .build();
     }
 }
