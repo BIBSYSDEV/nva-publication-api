@@ -2,11 +2,6 @@ package no.unit.nva.publication.file.upload;
 
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.publication.file.upload.config.MultipartUploadConfig.BUCKET_NAME;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,28 +35,32 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 
 public class FileService {
 
     private static final String RESOURCE_NOT_FOUND_MESSAGE = "Resource not found!";
     private static final String FILE_NOT_FOUND_MESSAGE = "File not found!";
-    private final AmazonS3 amazonS3;
+    private final S3Client s3Client;
     private final CustomerApiClient customerApiClient;
     private final ResourceService resourceService;
 
-    public FileService(AmazonS3 amazonS3, CustomerApiClient customerApiClient, ResourceService resourceService) {
-        this.amazonS3 = amazonS3;
+    public FileService(S3Client s3Client, CustomerApiClient customerApiClient, ResourceService resourceService) {
+        this.s3Client = s3Client;
         this.customerApiClient = customerApiClient;
         this.resourceService = resourceService;
     }
 
     @JacocoGenerated
     public static FileService defaultFileService() {
-        return new FileService(AmazonS3ClientBuilder.defaultClient(), JavaHttpClientCustomerApiClient.defaultInstance(),
+        return new FileService(S3Client.create(), JavaHttpClientCustomerApiClient.defaultInstance(),
                                ResourceService.defaultService());
     }
 
-    public InitiateMultipartUploadResult initiateMultipartUpload(SortableIdentifier resourceIdentifier,
+    public CreateMultipartUploadResponse initiateMultipartUpload(SortableIdentifier resourceIdentifier,
                                                                  UserInstance userInstance,
                                                                  CreateUploadRequestBody createUploadRequestBody)
         throws NotFoundException, ForbiddenException {
@@ -70,9 +69,9 @@ public class FileService {
 
         validateUploadPermissions(userInstance, resource);
 
-        var request = createUploadRequestBody.toInitiateMultipartUploadRequest(BUCKET_NAME);
+        var request = createUploadRequestBody.toCreateMultipartUploadRequest(BUCKET_NAME);
 
-        return amazonS3.initiateMultipartUpload(request);
+        return s3Client.createMultipartUpload(request);
     }
 
     public File completeMultipartUpload(SortableIdentifier resourceIdentifier,
@@ -82,13 +81,13 @@ public class FileService {
         var resource = fetchResource(resourceIdentifier);
 
         var completeMultipartUploadRequest = request.toCompleteMultipartUploadRequest(BUCKET_NAME);
-        var completeMultipartUploadResult = amazonS3.completeMultipartUpload(completeMultipartUploadRequest);
-        var s3ObjectKey = completeMultipartUploadResult.getKey();
-        var objectMetadata = getObjectMetadata(s3ObjectKey);
+        var completeMultipartUploadResponse = s3Client.completeMultipartUpload(completeMultipartUploadRequest);
+        var s3ObjectKey = completeMultipartUploadResponse.key();
+        var headObjectResponse = getObjectMetadata(s3ObjectKey);
 
         var file = userInstance.isExternalClient() && request instanceof ExternalCompleteUploadRequest externalRequest
-                       ? constructFileForExternalClient(UUID.fromString(s3ObjectKey), externalRequest, objectMetadata)
-                       : constructUploadedFile(UUID.fromString(s3ObjectKey), objectMetadata, userInstance);
+                       ? constructFileForExternalClient(UUID.fromString(s3ObjectKey), externalRequest, headObjectResponse)
+                       : constructUploadedFile(UUID.fromString(s3ObjectKey), headObjectResponse, userInstance);
 
         validateUploadPermissions(userInstance, resource);
 
@@ -109,12 +108,12 @@ public class FileService {
 
     public File constructFileForExternalClient(UUID identifier,
                                                ExternalCompleteUploadRequest uploadRequest,
-                                               ObjectMetadata metadata) throws BadRequestException {
+                                               HeadObjectResponse metadata) throws BadRequestException {
         var builder = File.builder()
                           .withIdentifier(identifier)
-                          .withName(Filename.fromContentDispositionValue(metadata.getContentDisposition()))
-                          .withSize(metadata.getContentLength())
-                          .withMimeType(metadata.getContentType())
+                          .withName(Filename.fromContentDispositionValue(metadata.contentDisposition()))
+                          .withSize(metadata.contentLength())
+                          .withMimeType(metadata.contentType())
                           .withLicense(uploadRequest.license())
                           .withPublisherVersion(uploadRequest.publisherVersion())
                           .withEmbargoDate(uploadRequest.embargoDate());
@@ -178,14 +177,14 @@ public class FileService {
                    .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
     }
 
-    private ObjectMetadata getObjectMetadata(String key) {
-        return amazonS3.getObjectMetadata(new GetObjectMetadataRequest(BUCKET_NAME, key));
+    private HeadObjectResponse getObjectMetadata(String key) {
+        return s3Client.headObject(HeadObjectRequest.builder().bucket(BUCKET_NAME).key(key).build());
     }
 
-    private UploadedFile constructUploadedFile(UUID identifier, ObjectMetadata metadata, UserInstance userInstance) {
-        return new UploadedFile(identifier, Filename.fromContentDispositionValue(metadata.getContentDisposition()),
-                                metadata.getContentType(),
-                                metadata.getContentLength(), getRrs(userInstance),
+    private UploadedFile constructUploadedFile(UUID identifier, HeadObjectResponse metadata, UserInstance userInstance) {
+        return new UploadedFile(identifier, Filename.fromContentDispositionValue(metadata.contentDisposition()),
+                                metadata.contentType(),
+                                metadata.contentLength(), getRrs(userInstance),
                                 createUploadDetails(userInstance));
     }
 

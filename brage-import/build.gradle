@@ -5,7 +5,7 @@ dependencies {
     implementation nvaCatalog.aws.sdk2.s3
     implementation nvaCatalog.aws.lambda.core
     implementation nvaCatalog.aws.lambda.events
-    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamo
     implementation nvaCatalog.hamcrest
     implementation nvaLibs.apigateway
     implementation nvaLibs.clients

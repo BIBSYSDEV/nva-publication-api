@@ -13,12 +13,12 @@ import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.core.attempt.Try.attempt;
-import static org.apache.http.HttpHeaders.AUTHORIZATION;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.HttpStatus.SC_NOT_FOUND;
-import static org.apache.http.HttpStatus.SC_OK;
+import static com.google.common.net.HttpHeaders.AUTHORIZATION;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
+import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
-import com.amazonaws.SdkClientException;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
@@ -149,7 +149,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
                 .build();
         HttpResponse<String> mockedResponse = mock(HttpResponse.class);
         attempt(() -> when(mockedResponse.body()).thenReturn(dtoObjectMapper.writeValueAsString(user))).orElseThrow();
-        when(mockedResponse.statusCode()).thenReturn(SC_OK);
+        when(mockedResponse.statusCode()).thenReturn(HTTP_OK);
         attempt(() -> when(httpClient.send(
             argThat(request -> request.uri().toString().endsWith("/oauth2/userInfo")),
             ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()
@@ -165,7 +165,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(request, output, context);
 
         var gatewayResponse = GatewayResponse.fromString(output.toString(), Problem.class);
-        assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_NOT_FOUND, APPLICATION_PROBLEM_JSON);
     }
 
     private CreatePresignedDownloadUrlHandler getCreatePresignedDownloadUrlHandler() {
@@ -184,7 +184,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(request, output, context);
 
         var gatewayResponse = GatewayResponse.fromString(output.toString(), Problem.class);
-        assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_NOT_FOUND, APPLICATION_PROBLEM_JSON);
     }
 
     @ParameterizedTest(name = "Published publication is downloadable by user {0}")
@@ -197,7 +197,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(request, output, context);
 
         var gatewayResponse = GatewayResponse.fromString(output.toString(), PresignedUriResponse.class);
-        assertBasicRestRequirements(gatewayResponse, SC_OK, APPLICATION_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_OK, APPLICATION_JSON);
         assertExpectedResponseBody(gatewayResponse);
     }
 
@@ -213,7 +213,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(request, output, context);
 
         var gatewayResponse = GatewayResponse.fromString(output.toString(), PresignedUriResponse.class);
-        assertBasicRestRequirements(gatewayResponse, SC_OK, APPLICATION_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_OK, APPLICATION_JSON);
         assertExpectedResponseBody(gatewayResponse);
     }
 
@@ -235,7 +235,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
                               context);
 
         var gatewayResponse = GatewayResponse.fromString(output.toString(), PresignedUriResponse.class);
-        assertBasicRestRequirements(gatewayResponse, SC_OK, APPLICATION_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_OK, APPLICATION_JSON);
         assertExpectedResponseBody(gatewayResponse);
     }
 
@@ -250,7 +250,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
                                             publication.getIdentifier(), FILE_IDENTIFIER, httpClient), output, context);
 
         var gatewayResponse = GatewayResponse.fromString(output.toString(), PresignedUriResponse.class);
-        assertBasicRestRequirements(gatewayResponse, SC_OK, APPLICATION_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_OK, APPLICATION_JSON);
         assertExpectedResponseBody(gatewayResponse);
     }
 
@@ -268,7 +268,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
                               context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_NOT_FOUND, APPLICATION_PROBLEM_JSON);
     }
 
     @ParameterizedTest(name = "Unpublished publication downloadable by user {0}")
@@ -290,7 +290,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
             output, context);
 
         var gatewayResponse = GatewayResponse.fromString(output.toString(), PresignedUriResponse.class);
-        assertBasicRestRequirements(gatewayResponse, SC_OK, APPLICATION_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_OK, APPLICATION_JSON);
         assertExpectedResponseBody(gatewayResponse);
     }
 
@@ -311,14 +311,14 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
                               output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_NOT_FOUND, APPLICATION_PROBLEM_JSON);
     }
 
     @Test
     void shouldReturnServiceUnavailableResponseOnS3ServiceException() throws IOException {
         var publication = buildPublication(PUBLISHED, pendingFileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
         var publicationIdentifier = publication.getIdentifier();
-        when(s3Presigner.presignGetObject((GetObjectPresignRequest) any())).thenThrow(new SdkClientException("test"));
+        when(s3Presigner.presignGetObject((GetObjectPresignRequest) any())).thenThrow(SdkClientException.builder().message("test").build());
         var handler = getCreatePresignedDownloadUrlHandler();
 
         handler.handleRequest(
@@ -330,7 +330,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
             output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertBasicRestRequirements(gatewayResponse, SC_BAD_GATEWAY, APPLICATION_PROBLEM_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_BAD_GATEWAY, APPLICATION_PROBLEM_JSON);
     }
 
     @Test
@@ -341,7 +341,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(createAnonymousRequest(publication.getIdentifier()), output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_NOT_FOUND, APPLICATION_PROBLEM_JSON);
     }
 
     @ParameterizedTest(name = "Should return Not Found when requester is not owner and embargo is in place")
@@ -350,7 +350,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         var handler = getCreatePresignedDownloadUrlHandler();
         handler.handleRequest(request, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_NOT_FOUND, APPLICATION_PROBLEM_JSON);
     }
 
     @Test
@@ -372,7 +372,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
                               context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertBasicRestRequirements(gatewayResponse, SC_INTERNAL_SERVER_ERROR, APPLICATION_PROBLEM_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_INTERNAL_ERROR, APPLICATION_PROBLEM_JSON);
     }
 
     private static Stream<String> userSupplier() {

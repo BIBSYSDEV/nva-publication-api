@@ -11,7 +11,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -113,11 +113,11 @@ class ResourceDaoTest extends ResourcesLocalTest {
         var daoWithoutCristinId = createResourceDaoWithoutCristinIdentifier();
         client.putItem(toPutItemRequest(daoWithCristinId));
         client.putItem(toPutItemRequest(daoWithoutCristinId));
-        var result = client.scan(
-            new ScanRequest()
-                .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
-                .withIndexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME));
-        assertThat(result.getCount(), Matchers.is(Matchers.equalTo(1)));
+        var result = client.scan(ScanRequest.builder()
+                                     .tableName(DatabaseConstants.RESOURCES_TABLE_NAME)
+                                     .indexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME)
+                                     .build());
+        assertThat(result.count(), Matchers.is(Matchers.equalTo(1)));
     }
 
     @Test
@@ -157,7 +157,7 @@ class ResourceDaoTest extends ResourcesLocalTest {
     private ResourceDao queryDbFindByCristinIdentifier(ResourceDao dao) {
         var queryRequest = dao.createQueryFindByCristinIdentifier();
         return client.query(queryRequest)
-                   .getItems()
+                   .items()
                    .stream()
                    .map(item -> DynamoEntry.parseAttributeValuesMap(item, dao.getClass()))
                    .collect(SingletonCollector.collectOrElse(null));

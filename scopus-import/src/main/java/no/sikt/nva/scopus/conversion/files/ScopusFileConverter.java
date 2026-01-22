@@ -10,7 +10,6 @@ import static java.util.stream.Collectors.toCollection;
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.AM;
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.s3.Headers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,7 +44,7 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
-import org.apache.http.entity.ContentType;
+import com.google.common.net.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -105,7 +104,7 @@ public class ScopusFileConverter {
 
     private static String getFilename(HttpResponse<InputStream> response) {
         return response.headers()
-                   .firstValue(Headers.CONTENT_DISPOSITION)
+                   .firstValue("Content-Disposition")
                    .map(ScopusFileConverter::extractFileNameFromContentDisposition)
                    .filter(Optional::isPresent)
                    .map(Optional::get)
@@ -196,7 +195,7 @@ public class ScopusFileConverter {
 
     private static boolean isElsevierPlainTextResource(CrossrefLink crossrefLink) {
         return ELSEVIER_HOST.equals(crossrefLink.getUri().getHost()) &&
-               crossrefLink.getContentType().equals(ContentType.TEXT_PLAIN.getMimeType());
+               crossrefLink.getContentType().equals(MediaType.PLAIN_TEXT_UTF_8.withoutParameters().toString());
     }
 
     private Optional<List<AssociatedArtifact>> fetchFilesFromDoi(DocTp docTp) {

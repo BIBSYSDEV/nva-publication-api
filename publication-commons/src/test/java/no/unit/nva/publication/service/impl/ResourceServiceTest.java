@@ -51,20 +51,23 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
+import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.time.Clock;
@@ -206,7 +209,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         var customTable = "CustomTable";
         super.init(customTable);
         var resourceService = getResourceService(client, customTable);
-        List<String> tableNames = resourceService.getClient().listTables().getTableNames();
+        var tableNames = resourceService.getClient().listTables().tableNames();
         assertThat(tableNames, hasItem(customTable));
     }
 
@@ -316,17 +319,17 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void createResourceThrowsTransactionFailedExceptionWithInternalCauseWhenCreatingResourceFails() {
-        AmazonDynamoDB client = mock(AmazonDynamoDB.class);
-        String expectedMessage = "expectedMessage";
-        RuntimeException expectedCause = new RuntimeException(expectedMessage);
-        when(client.transactWriteItems(any(TransactWriteItemsRequest.class))).thenThrow(expectedCause);
+        var mockClient = mock(DynamoDbClient.class);
+        var expectedMessage = "expectedMessage";
+        var expectedCause = new RuntimeException(expectedMessage);
+        when(mockClient.transactWriteItems(any(TransactWriteItemsRequest.class))).thenThrow(expectedCause);
 
-        ResourceService failingService = getResourceService(client);
+        var failingService = getResourceService(mockClient);
 
-        Publication resource = publicationWithIdentifier();
+        var resource = publicationWithIdentifier();
         Executable action = () -> createPersistedPublicationWithDoi(failingService, resource);
-        TransactionFailedException actualException = assertThrows(TransactionFailedException.class, action);
-        Throwable actualCause = actualException.getCause();
+        var actualException = assertThrows(TransactionFailedException.class, action);
+        var actualCause = actualException.getCause();
         assertThat(actualCause.getMessage(), is(equalTo(expectedMessage)));
     }
 
@@ -339,12 +342,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void getResourcePropagatesExceptionWithWhenGettingResourceFailsForUnknownReason() {
-        var client = mock(AmazonDynamoDB.class);
+        var mockClient = mock(DynamoDbClient.class);
         var expectedMessage = new RuntimeException("expectedMessage");
-        when(client.query(any(QueryRequest.class))).thenThrow(expectedMessage);
+        when(mockClient.query(any(QueryRequest.class))).thenThrow(expectedMessage);
         var resource = publicationWithIdentifier();
 
-        var failingResourceService = getResourceService(client);
+        var failingResourceService = getResourceService(mockClient);
 
         Executable action = () -> failingResourceService.getPublicationByIdentifier(resource.getIdentifier());
         var exception = assertThrows(RuntimeException.class, action);
@@ -412,29 +415,27 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void getResourcesByOwnerPropagatesExceptionWhenExceptionIsThrown() {
-        AmazonDynamoDB client = mock(AmazonDynamoDB.class);
-        String expectedMessage = "expectedMessage";
-        RuntimeException expectedException = new RuntimeException(expectedMessage);
-        when(client.query(any(QueryRequest.class))).thenThrow(expectedException);
+        var mockClient = mock(DynamoDbClient.class);
+        var expectedMessage = "expectedMessage";
+        var expectedException = new RuntimeException(expectedMessage);
+        when(mockClient.query(any(QueryRequest.class))).thenThrow(expectedException);
 
-        var failingResourceService = getResourceService(client);
+        var failingResourceService = getResourceService(mockClient);
 
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                                                  () -> failingResourceService.getPublicationSummaryByOwner(
-                                                      SAMPLE_USER));
+        var exception = assertThrows(RuntimeException.class,
+                                     () -> failingResourceService.getPublicationSummaryByOwner(SAMPLE_USER));
 
         assertThat(exception.getMessage(), is(equalTo(expectedMessage)));
     }
 
     @Test
     void getResourcesByOwnerPropagatesJsonProcessingExceptionWhenExceptionIsThrown() {
-        AmazonDynamoDB mockClient = mock(AmazonDynamoDB.class);
-        Item invalidItem = new Item().withString(SOME_INVALID_FIELD, SOME_STRING);
-        QueryResult responseWithInvalidItem = new QueryResult().withItems(
-            List.of(ItemUtils.toAttributeValues(invalidItem)));
+        var mockClient = mock(DynamoDbClient.class);
+        var invalidItem = Map.of(SOME_INVALID_FIELD, AttributeValue.builder().s(SOME_STRING).build());
+        var responseWithInvalidItem = QueryResponse.builder().items(List.of(invalidItem)).build();
         when(mockClient.query(any(QueryRequest.class))).thenReturn(responseWithInvalidItem);
 
-        ResourceService failingResourceService = getResourceService(mockClient);
+        var failingResourceService = getResourceService(mockClient);
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass,
@@ -749,8 +750,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldLogIdentifiersOfRecordsWhenBatchScanWriteFails() {
-        var failingClient = new FailingDynamoClient(this.client);
-        resourceService = getResourceService(failingClient);
+        var spyClient = spy(this.client);
+        doThrow(DynamoDbException.builder().message("ERRROOOOOOOOOOR").build())
+            .when(spyClient).batchWriteItem(any(BatchWriteItemRequest.class));
+        resourceService = getResourceService(spyClient);
 
         var userInstance = randomUserInstance();
         var userResources = createSamplePublicationsOfSingleOwner(userInstance);
@@ -1510,16 +1513,20 @@ class ResourceServiceTest extends ResourcesLocalTest {
         fileEntry.persist(resourceService, userInstance);
 
         var persistedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
-        var persistedResult = client.getItem(new GetItemRequest().withTableName(RESOURCES_TABLE_NAME)
-                                                 .withKey(fileEntry.toDao().primaryKey()));
-        var persistedDao = Optional.ofNullable(persistedResult.getItem()).map(FileDao::fromDynamoFormat).orElseThrow();
+        var persistedResult = client.getItem(GetItemRequest.builder()
+                                                 .tableName(RESOURCES_TABLE_NAME)
+                                                 .key(fileEntry.toDao().primaryKey())
+                                                 .build());
+        var persistedDao = Optional.ofNullable(persistedResult.item()).map(FileDao::fromDynamoFormat).orElseThrow();
 
         resourceService.refreshFile(fileEntry.getIdentifier());
 
         var refreshedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
-        var refreshedResult = client.getItem(new GetItemRequest().withTableName(RESOURCES_TABLE_NAME)
-                                                 .withKey(fileEntry.toDao().primaryKey()));
-        var refreshedDao = Optional.ofNullable(refreshedResult.getItem()).map(FileDao::fromDynamoFormat).orElseThrow();
+        var refreshedResult = client.getItem(GetItemRequest.builder()
+                                                 .tableName(RESOURCES_TABLE_NAME)
+                                                 .key(fileEntry.toDao().primaryKey())
+                                                 .build());
+        var refreshedDao = Optional.ofNullable(refreshedResult.item()).map(FileDao::fromDynamoFormat).orElseThrow();
 
         assertEquals(persistedFileEntry, refreshedFileEntry);
         assertNotEquals(persistedDao.getVersion(), refreshedDao.getVersion());
@@ -1646,12 +1653,12 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.refreshResource(publication.getIdentifier());
 
-        var version = super.client.scan(new ScanRequest(RESOURCES_TABLE_NAME)).getItems().stream()
-                          .filter(attribute -> attribute.get("type").getS().equals("Resource"))
+        var version = super.client.scan(ScanRequest.builder().tableName(RESOURCES_TABLE_NAME).build()).items().stream()
+                          .filter(attribute -> attribute.get("type").s().equals("Resource"))
                           .findFirst()
                           .orElseThrow()
                           .get("version")
-                          .getS();
+                          .s();
 
         assertNotEquals(persistedVersion.toString(), version);
     }
@@ -1665,8 +1672,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
         resourceService.deleteAllResourceAssociatedEntries(publication.getPublisher().getId(), publication.getIdentifier());
 
-        assertTrue(client.scan(new ScanRequest(RESOURCES_TABLE_NAME).withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME))
-                       .getItems().isEmpty());
+        assertTrue(client.scan(ScanRequest.builder()
+                                   .tableName(RESOURCES_TABLE_NAME)
+                                   .indexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                                   .build())
+                       .items().isEmpty());
     }
 
     private void createTickets(Resource resource, UserInstance userInstance) throws ApiGatewayException {
@@ -1697,13 +1707,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private List<ResourceRelationshipDao> fetchRelatedResourcesByParentIdentifier(SortableIdentifier parentIdentifier) {
-        var result = client.query(new QueryRequest()
-                                .withTableName(RESOURCES_TABLE_NAME)
-                                .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
-                                .withKeyConditionExpression("PK3 = :value")
-                                .withExpressionAttributeValues(Map.of(":value", new AttributeValue().withS(
-                                    ResourceRelationshipDao.from(resourceRelationshipWithParent(parentIdentifier)).getPK3()))));
-        return result.getItems().stream()
+        var pk3Value = ResourceRelationshipDao.from(resourceRelationshipWithParent(parentIdentifier)).getPK3();
+        var result = client.query(QueryRequest.builder()
+                                      .tableName(RESOURCES_TABLE_NAME)
+                                      .indexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+                                      .keyConditionExpression("PK3 = :value")
+                                      .expressionAttributeValues(Map.of(":value", AttributeValue.builder().s(pk3Value).build()))
+                                      .build());
+        return result.items().stream()
                    .map(map -> DatabaseEntryWithData.fromAttributeValuesMap(map, ResourceRelationshipDao.class))
                    .collect(Collectors.toList());
     }
@@ -1721,7 +1732,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private ResourceRelationshipDao persistDao(ResourceRelationshipDao dao) {
-        client.putItem(RESOURCES_TABLE_NAME, dao.toDynamoFormat());
+        client.putItem(PutItemRequest.builder().tableName(RESOURCES_TABLE_NAME).item(dao.toDynamoFormat()).build());
         return dao;
     }
 
@@ -1734,10 +1745,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Dao getDao(Resource persistedResource) {
-        var getRefreshedResourceResult = client.getItem(
-            new GetItemRequest().withTableName(RESOURCES_TABLE_NAME)
-                .withKey(persistedResource.toDao().primaryKey()));
-        return parseAttributeValuesMap(getRefreshedResourceResult.getItem(), Dao.class);
+        var getRefreshedResourceResult = client.getItem(GetItemRequest.builder()
+                                                            .tableName(RESOURCES_TABLE_NAME)
+                                                            .key(persistedResource.toDao().primaryKey())
+                                                            .build());
+        return parseAttributeValuesMap(getRefreshedResourceResult.item(), Dao.class);
     }
 
     private Username randomPerson() {
@@ -1759,7 +1771,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private void assertThatFailedBatchScanLogsProperly(TestAppender testAppender, Set<Publication> userResources) {
-        assertThat(testAppender.getMessages(), containsString("AmazonDynamoDBException"));
+        assertThat(testAppender.getMessages(), containsString("DynamoDbException"));
         userResources.forEach(publication -> {
             var expected = "Resource:" + publication.getIdentifier().toString();
             assertThat(testAppender.getMessages(), containsString(expected));
@@ -1872,8 +1884,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private void assertThatResourceAndIdentifierEntryExist() {
-        ScanResult result = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME));
-        assertThat(result.getCount(), is(doesNotHaveEmptyValues()));
+        var result = client.scan(ScanRequest.builder().tableName(RESOURCES_TABLE_NAME).build());
+        assertThat(result.count(), is(doesNotHaveEmptyValues()));
     }
 
     private void assertThatTheEntriesHaveNotBeenDeleted() {
@@ -1881,8 +1893,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private void assertThatAllEntriesHaveBeenDeleted() {
-        ScanResult result = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME));
-        assertThat(result.getCount(), is(equalTo(0)));
+        var result = client.scan(ScanRequest.builder().tableName(RESOURCES_TABLE_NAME).build());
+        assertThat(result.count(), is(equalTo(0)));
     }
 
     private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {

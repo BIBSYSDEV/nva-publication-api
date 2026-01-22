@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -194,7 +194,10 @@ public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
 
     private void insertRelationBetween(SortableIdentifier parentIdentifier, SortableIdentifier childIdentifier) {
         var relationship = new ResourceRelationship(parentIdentifier, childIdentifier);
-        client.putItem(new PutItemRequest(RESOURCES_TABLE_NAME, ResourceRelationshipDao.from(relationship).toDynamoFormat()));
+        client.putItem(PutItemRequest.builder()
+                           .tableName(RESOURCES_TABLE_NAME)
+                           .item(ResourceRelationshipDao.from(relationship).toDynamoFormat())
+                           .build());
     }
 
     private Resource fetchResource(Publication publication) {

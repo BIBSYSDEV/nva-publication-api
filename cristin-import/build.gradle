@@ -18,10 +18,10 @@ dependencies {
 
     implementation nvaCatalog.hamcrest
 
-    implementation nvaCatalog.aws.sdk.dynamo
-    implementation nvaCatalog.aws.sdk.sqs
+    implementation nvaCatalog.aws.sdk2.dynamo
+    implementation nvaCatalog.aws.sdk2.sqs
     implementation nvaCatalog.aws.lambda.events
-    implementation nvaCatalog.aws.java.sdk.core
+    implementation nvaCatalog.aws.sdk2.core
     implementation nvaCatalog.aws.sdk2.core
     implementation nvaCatalog.aws.sdk2.http.client
     implementation nvaCatalog.aws.sdk2.urlconnection

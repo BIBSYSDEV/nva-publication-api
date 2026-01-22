@@ -5,10 +5,10 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static no.unit.nva.testutils.TestHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.testutils.TestHeaders.APPLICATION_PROBLEM_JSON;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpHeaders.LOCATION;
-import static org.apache.http.HttpStatus.SC_MOVED_PERMANENTLY;
-import static org.apache.http.HttpStatus.SC_NOT_FOUND;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.google.common.net.HttpHeaders.LOCATION;
+import static java.net.HttpURLConnection.HTTP_MOVED_PERM;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -57,7 +57,7 @@ class ResolveShortenedUrlHandlerTest {
             output,
             CONTEXT);
         var gatewayResponse = GatewayResponse.fromString(output.toString(), Problem.class);
-        assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_NOT_FOUND, APPLICATION_PROBLEM_JSON);
     }
 
     @Test
@@ -70,7 +70,7 @@ class ResolveShortenedUrlHandlerTest {
             output,
             CONTEXT);
         var gatewayResponse = GatewayResponse.fromString(output.toString(), Void.class);
-        assertBasicRestRequirements(gatewayResponse, SC_MOVED_PERMANENTLY, APPLICATION_JSON);
+        assertBasicRestRequirements(gatewayResponse, HTTP_MOVED_PERM, APPLICATION_JSON);
         assertThat(gatewayResponse.getHeaders().get(LOCATION), equalTo(expectedUri.toString()));
     }
 

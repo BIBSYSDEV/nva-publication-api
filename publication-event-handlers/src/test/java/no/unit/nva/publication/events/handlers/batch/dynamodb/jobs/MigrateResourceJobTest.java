@@ -6,7 +6,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import java.net.URI;
 import java.time.Clock;
 import java.util.List;
@@ -108,7 +108,7 @@ class MigrateResourceJobTest extends ResourcesLocalTest {
     private void updatePublication(Publication publication) {
         var resource = Resource.fromPublication(publication);
         var dao = resource.toDao();
-        client.putItem(new PutItemRequest().withTableName(RESOURCES_TABLE_NAME).withItem(dao.toDynamoFormat()));
+        client.putItem(PutItemRequest.builder().tableName(RESOURCES_TABLE_NAME).item(dao.toDynamoFormat()).build());
     }
     
     private BatchWorkItem createWorkItem(String partitionKey, String sortKey) {

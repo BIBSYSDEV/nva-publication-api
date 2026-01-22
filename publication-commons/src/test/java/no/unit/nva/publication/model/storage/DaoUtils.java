@@ -11,7 +11,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -67,8 +67,10 @@ public final class DaoUtils extends TestDataSource {
     }
 
     static PutItemRequest toPutItemRequest(Dao resource) {
-        return new PutItemRequest().withTableName(RESOURCES_TABLE_NAME)
-                   .withItem(resource.toDynamoFormat());
+        return PutItemRequest.builder()
+                   .tableName(RESOURCES_TABLE_NAME)
+                   .item(resource.toDynamoFormat())
+                   .build();
     }
 
     private static FilesApprovalThesisDao sampleFilesApprovalThesisDao() {

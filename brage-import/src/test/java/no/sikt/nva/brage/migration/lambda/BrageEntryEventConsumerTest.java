@@ -75,7 +75,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
-import org.apache.http.HttpStatus;
+import java.net.HttpURLConnection;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -2454,7 +2454,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                   .toList();
         var searchResourceApiResponse = new SearchResourceApiResponse(resourceWithIds.size(), resourceWithIds);
         var response = mock(HttpResponse.class);
-        when(response.statusCode()).thenReturn(HttpStatus.SC_OK);
+        when(response.statusCode()).thenReturn(HttpURLConnection.HTTP_OK);
         when(response.body()).thenReturn(searchResourceApiResponse.toString());
         when(this.uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
     }

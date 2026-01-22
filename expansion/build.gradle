@@ -10,10 +10,11 @@ dependencies {
     implementation nvaLibs.secrets
     implementation project(":publication-model")
     implementation nvaCatalog.guava
-    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamo
     implementation nvaCatalog.aws.sdk2.sqs
     implementation nvaCatalog.bundles.jena
     implementation nvaCatalog.bundles.logging
+    implementation nvaCatalog.bundles.jackson
 
     testImplementation(project(':publication-testing'))
     testImplementation project(":publication-model-testing")

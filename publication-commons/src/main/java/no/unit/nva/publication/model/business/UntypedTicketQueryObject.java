@@ -1,11 +1,10 @@
 package no.unit.nva.publication.model.business;
 
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.core.JacocoGenerated;
-
-import java.net.URI;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 public final class UntypedTicketQueryObject extends TicketDao {
     

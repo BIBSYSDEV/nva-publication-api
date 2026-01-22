@@ -8,16 +8,14 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AN
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.Map;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
+import software.amazon.awssdk.enhanced.dynamodb.document.EnhancedDocument;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 @SuppressWarnings("PMD.UnusedPrivateMethod")
 public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier resourceIdentifier, Instant createdDate,
@@ -27,8 +25,8 @@ public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier reso
     private static final String KEY_PATTERN = "%s:%s";
 
     public static LogEntryDao fromDynamoFormat(Map<String, AttributeValue> map) {
-        return attempt(() -> ItemUtils.toItem(map)).map(Item::toJSON)
-                   .map(json -> dynamoDbObjectMapper.readValue(json, LogEntryDao.class))
+        var document = EnhancedDocument.fromAttributeValueMap(map);
+        return attempt(() -> dynamoDbObjectMapper.readValue(document.toJson(), LogEntryDao.class))
                    .orElseThrow();
     }
 
@@ -41,9 +39,8 @@ public record LogEntryDao(SortableIdentifier identifier, SortableIdentifier reso
     }
 
     public Map<String, AttributeValue> toDynamoFormat() {
-        return attempt(() -> JsonUtils.dynamoObjectMapper.writeValueAsString(this)).map(Item::fromJSON)
-                   .map(ItemUtils::toAttributeValues)
-                   .orElseThrow();
+        var json = attempt(() -> dynamoDbObjectMapper.writeValueAsString(this)).orElseThrow();
+        return EnhancedDocument.fromJson(json).toMap();
     }
 
     @JsonProperty(BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME)

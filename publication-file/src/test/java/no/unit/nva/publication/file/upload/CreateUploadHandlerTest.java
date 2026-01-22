@@ -16,11 +16,11 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.amazonaws.SdkClientException;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
@@ -66,7 +66,7 @@ public class CreateUploadHandlerTest {
     private CreateUploadHandler createUploadHandler;
     private ByteArrayOutputStream outputStream;
     private Context context;
-    private AmazonS3Client s3client;
+    private S3Client s3client;
     private CustomerApiClient customerApiClient;
     private ResourceService resourceService;
 
@@ -82,16 +82,16 @@ public class CreateUploadHandlerTest {
         return new CreateUploadRequestBody(null, SAMPLE_SIZE_STRING, SAMPLE_MIMETYPE);
     }
 
-    protected InitiateMultipartUploadResult uploadResult() {
-        var uploadResult = new InitiateMultipartUploadResult();
-        uploadResult.setKey(SAMPLE_UPLOAD_KEY);
-        uploadResult.setUploadId(SAMPLE_UPLOAD_ID);
-        return uploadResult;
+    protected CreateMultipartUploadResponse uploadResult() {
+        return CreateMultipartUploadResponse.builder()
+            .key(SAMPLE_UPLOAD_KEY)
+            .uploadId(SAMPLE_UPLOAD_ID)
+            .build();
     }
 
     @BeforeEach
     void setUp() throws NotFoundException {
-        s3client = mock(AmazonS3Client.class);
+        s3client = mock(S3Client.class);
         customerApiClient = mock(CustomerApiClient.class);
         resourceService = mock(ResourceService.class);
         var identityServiceClient = mock(IdentityServiceClient.class);
@@ -110,7 +110,7 @@ public class CreateUploadHandlerTest {
             randomNonDegreePublication().copy().withStatus(PublicationStatus.PUBLISHED).build());
         var user = UserInstance.fromPublication(resource.toPublication());
 
-        when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class))).thenReturn(uploadResult());
+        when(s3client.createMultipartUpload(any(CreateMultipartUploadRequest.class))).thenReturn(uploadResult());
         when(resourceService.getResourceByIdentifier(any())).thenReturn(resource);
         when(customerApiClient.fetch(any())).thenReturn(new Customer(
             Set.of(resource.getEntityDescription().getReference().getPublicationInstance().getInstanceType()), null,
@@ -138,7 +138,7 @@ public class CreateUploadHandlerTest {
 
     @Test
     void createUploadWithS3ErrorReturnsNotFound() throws IOException, NotFoundException {
-        when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class)))
+        when(s3client.createMultipartUpload(any(CreateMultipartUploadRequest.class)))
             .thenThrow(SdkClientException.class);
         var resource = Resource.fromPublication(randomPublication().copy().withStatus(PublicationStatus.DRAFT).build());
         when(resourceService.getResourceByIdentifier(any())).thenReturn(resource);
@@ -156,7 +156,7 @@ public class CreateUploadHandlerTest {
 
     @Test
     void createUploadWithRuntimeErrorReturnsServerError() throws IOException, NotFoundException {
-        when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class)))
+        when(s3client.createMultipartUpload(any(CreateMultipartUploadRequest.class)))
             .thenThrow(RuntimeException.class);
         var resource = Resource.fromPublication(randomPublication().copy().withStatus(PublicationStatus.DRAFT).build());
         when(resourceService.getResourceByIdentifier(any())).thenReturn(resource);
@@ -190,9 +190,8 @@ public class CreateUploadHandlerTest {
     void createUploadRequestBodyReturnsValidContentDispositionWhenInputIsValid() {
         var requestBody = new CreateUploadRequestBody(SAMPLE_FILENAME, SAMPLE_SIZE_STRING,
                                                       SAMPLE_MIMETYPE);
-        var actual = requestBody.toInitiateMultipartUploadRequest(randomString())
-                         .getObjectMetadata()
-                         .getContentDisposition();
+        var actual = requestBody.toCreateMultipartUploadRequest(randomString())
+                         .contentDisposition();
         var expected = generateContentDisposition(SAMPLE_FILENAME);
 
         assertThat(actual, is(equalTo(expected)));
@@ -201,9 +200,8 @@ public class CreateUploadHandlerTest {
     @Test
     void createUploadRequestBodyReturnsValidContentDispositionWhenFilenameIsNull() {
         var requestBody = new CreateUploadRequestBody(null, SAMPLE_SIZE_STRING, SAMPLE_MIMETYPE);
-        var actual = requestBody.toInitiateMultipartUploadRequest(randomString())
-                         .getObjectMetadata()
-                         .getContentDisposition();
+        var actual = requestBody.toCreateMultipartUploadRequest(randomString())
+                         .contentDisposition();
         var expected = generateContentDisposition(NULL_STRING);
 
         assertThat(actual, is(equalTo(expected)));
@@ -212,9 +210,8 @@ public class CreateUploadHandlerTest {
     @Test
     void createUploadRequestBodyReturnsValidContentDispositionWhenFilenameIsEmptyString() {
         var requestBody = new CreateUploadRequestBody(EMPTY_STRING, SAMPLE_SIZE_STRING, SAMPLE_MIMETYPE);
-        var actual = requestBody.toInitiateMultipartUploadRequest(randomString())
-                         .getObjectMetadata()
-                         .getContentDisposition();
+        var actual = requestBody.toCreateMultipartUploadRequest(randomString())
+                         .contentDisposition();
         var expected = generateContentDisposition(EMPTY_STRING);
 
         assertThat(actual, is(equalTo(expected)));
@@ -223,7 +220,7 @@ public class CreateUploadHandlerTest {
     @Test
     void createUploadRequestBodyReturnsNullContentTypeWhenMimeTypeIsNull() {
         var requestBody = new CreateUploadRequestBody(SAMPLE_FILENAME, SAMPLE_SIZE_STRING, null);
-        var actual = requestBody.toInitiateMultipartUploadRequest(randomString()).getObjectMetadata().getContentType();
+        var actual = requestBody.toCreateMultipartUploadRequest(randomString()).contentType();
 
         assertThat(actual, is(nullValue()));
     }
@@ -231,7 +228,7 @@ public class CreateUploadHandlerTest {
     @Test
     void createUploadRequestBodyReturnsEmptyStringContentTypeWhenMimeTypeIsEmptyString() {
         var requestBody = new CreateUploadRequestBody(SAMPLE_FILENAME, SAMPLE_SIZE_STRING, EMPTY_STRING);
-        var actual = requestBody.toInitiateMultipartUploadRequest(randomString()).getObjectMetadata().getContentType();
+        var actual = requestBody.toCreateMultipartUploadRequest(randomString()).contentType();
 
         assertThat(actual, is(equalTo(EMPTY_STRING)));
     }
@@ -239,7 +236,7 @@ public class CreateUploadHandlerTest {
     @Test
     void createUploadRequestBodyReturnsContentTypeWhenMimeTypeIsInvalidString() {
         var requestBody = new CreateUploadRequestBody(SAMPLE_FILENAME, SAMPLE_SIZE_STRING, INVALID_MIME_TYPE);
-        var actual = requestBody.toInitiateMultipartUploadRequest(randomString()).getObjectMetadata().getContentType();
+        var actual = requestBody.toCreateMultipartUploadRequest(randomString()).contentType();
 
         assertThat(actual, is(equalTo(INVALID_MIME_TYPE)));
     }
@@ -247,9 +244,8 @@ public class CreateUploadHandlerTest {
     @Test
     void createUploadRequestReturnsValidContentDispositionWithEscapedUnicodeWhenInputIsUnicode() {
         var requestBody = new CreateUploadRequestBody(SAMPLE_UNICODE_FILENAME, SAMPLE_SIZE_STRING, SAMPLE_MIMETYPE);
-        var actual = requestBody.toInitiateMultipartUploadRequest(randomString())
-                         .getObjectMetadata()
-                         .getContentDisposition();
+        var actual = requestBody.toCreateMultipartUploadRequest(randomString())
+                         .contentDisposition();
         var expected = generateContentDisposition(EXPECTED_ESCAPED_FILENAME);
 
         assertThat(actual, is(equalTo(expected)));

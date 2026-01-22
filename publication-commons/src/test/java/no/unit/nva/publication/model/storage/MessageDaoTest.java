@@ -7,7 +7,8 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import java.net.URI;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
@@ -75,8 +76,11 @@ class MessageDaoTest extends ResourcesLocalTest {
     }
     
     private Message fetchMessageFromDatabase(MessageDao queryObject) {
-        return attempt(() -> client.getItem(RESOURCES_TABLE_NAME, queryObject.primaryKey()))
-                   .map(GetItemResult::getItem)
+        return attempt(() -> client.getItem(GetItemRequest.builder()
+                                                .tableName(RESOURCES_TABLE_NAME)
+                                                .key(queryObject.primaryKey())
+                                                .build()))
+                   .map(GetItemResponse::item)
                    .map(item -> parseAttributeValuesMap(item, MessageDao.class))
                    .map(MessageDao::getMessage)
                    .orElseThrow();

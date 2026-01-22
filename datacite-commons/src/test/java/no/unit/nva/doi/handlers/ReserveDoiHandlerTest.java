@@ -58,7 +58,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
@@ -276,7 +275,7 @@ public class ReserveDoiHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream generateRequestWithOwner(Publication publication, String owner) throws JsonProcessingException {
-        Map<String, String> headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+        Map<String, String> headers = Map.of(ACCEPT, "application/json");
         Map<String, String> pathParameters = Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString(),
                                                     DOI, DOI);
         return new HandlerRequestBuilder<InputStream>(JsonUtils.dtoObjectMapper)

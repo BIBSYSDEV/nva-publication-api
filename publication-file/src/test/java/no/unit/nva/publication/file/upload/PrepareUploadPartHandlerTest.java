@@ -11,14 +11,12 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
 import no.unit.nva.publication.file.upload.restmodel.PrepareUploadPartRequestBody;
 import no.unit.nva.publication.file.upload.restmodel.PrepareUploadPartResponseBody;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -28,6 +26,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.zalando.problem.Problem;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedUploadPartRequest;
+import software.amazon.awssdk.services.s3.presigner.model.UploadPartPresignRequest;
 
 public class PrepareUploadPartHandlerTest {
 
@@ -38,12 +40,12 @@ public class PrepareUploadPartHandlerTest {
     private PrepareUploadPartHandler prepareUploadPartHandler;
     private ByteArrayOutputStream outputStream;
     private Context context;
-    private AmazonS3Client s3client;
+    private S3Presigner s3Presigner;
 
     @BeforeEach
     void setUp() {
-        s3client = mock(AmazonS3Client.class);
-        prepareUploadPartHandler = new PrepareUploadPartHandler(s3client, new Environment());
+        s3Presigner = mock(S3Presigner.class);
+        prepareUploadPartHandler = new PrepareUploadPartHandler(s3Presigner, new Environment());
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
     }
@@ -51,7 +53,9 @@ public class PrepareUploadPartHandlerTest {
     @Test
     void canPrepareUploadPart() throws IOException {
         var dummyUrl = URI.create("http://localhost").toURL();
-        when(s3client.generatePresignedUrl(Mockito.any(GeneratePresignedUrlRequest.class))).thenReturn(dummyUrl);
+        var presignedRequest = mock(PresignedUploadPartRequest.class);
+        when(presignedRequest.url()).thenReturn(dummyUrl);
+        when(s3Presigner.presignUploadPart(Mockito.any(UploadPartPresignRequest.class))).thenReturn(presignedRequest);
 
         prepareUploadPartHandler.handleRequest(prepareUploadPartRequestWithBody(), outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, PrepareUploadPartResponseBody.class);
@@ -72,8 +76,8 @@ public class PrepareUploadPartHandlerTest {
 
     @Test
     void prepareUploadPartWithS3ErrorReturnsInternalServerError() throws IOException {
-        when(s3client.generatePresignedUrl(Mockito.any(GeneratePresignedUrlRequest.class)))
-            .thenThrow(AmazonS3Exception.class);
+        when(s3Presigner.presignUploadPart(Mockito.any(UploadPartPresignRequest.class)))
+            .thenThrow(S3Exception.class);
 
         prepareUploadPartHandler.handleRequest(prepareUploadPartRequestWithBody(), outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);

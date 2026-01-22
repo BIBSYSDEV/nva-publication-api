@@ -1,18 +1,22 @@
 package no.unit.nva.publication.file.upload.restmodel;
 
 import static java.util.Objects.requireNonNull;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.google.common.net.MediaType;
 import java.util.UUID;
 import no.unit.nva.publication.file.upload.Filename;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 
 public record CreateUploadRequestBody(String filename, String size, String mimetype) {
 
-    public InitiateMultipartUploadRequest toInitiateMultipartUploadRequest(String bucketName) {
+    public CreateMultipartUploadRequest toCreateMultipartUploadRequest(String bucketName) {
         var key = UUID.randomUUID().toString();
-        return new InitiateMultipartUploadRequest(bucketName, key, constructObjectMetadata());
+        return CreateMultipartUploadRequest.builder()
+                   .bucket(bucketName)
+                   .key(key)
+                   .contentDisposition(Filename.toContentDispositionValue(filename()))
+                   .contentType(mimetype())
+                   .build();
     }
 
     public void validate() throws BadRequestException {
@@ -23,13 +27,5 @@ public record CreateUploadRequestBody(String filename, String size, String mimet
         } catch (Exception e) {
             throw new BadRequestException("Invalid input");
         }
-    }
-
-    private ObjectMetadata constructObjectMetadata() {
-        var objectMetadata = new ObjectMetadata();
-        objectMetadata.setContentMD5(null);
-        objectMetadata.setContentDisposition(Filename.toContentDispositionValue(filename()));
-        objectMetadata.setContentType(mimetype());
-        return objectMetadata;
     }
 }

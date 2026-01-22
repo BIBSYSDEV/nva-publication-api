@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import java.util.ArrayList;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;

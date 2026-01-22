@@ -1,6 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -49,11 +49,11 @@ public class TicketService extends ServiceWithTransactions {
     private final ResourceService resourceService;
     private final String tableName;
 
-    public TicketService(AmazonDynamoDB client, RawContentRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
+    public TicketService(DynamoDbClient client, RawContentRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
         this(client, DEFAULT_IDENTIFIER_PROVIDER, uriRetriever, cristinUnitsUtil);
     }
 
-    protected TicketService(AmazonDynamoDB client,
+    protected TicketService(DynamoDbClient client,
                             Supplier<SortableIdentifier> identifierProvider,
                             RawContentRetriever uriRetriever,
                             CristinUnitsUtil cristinUnitsUtil) {

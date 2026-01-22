@@ -32,7 +32,7 @@ import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.secrets.SecretsReader;
-import org.apache.http.HttpStatus;
+import static java.net.HttpURLConnection.HTTP_CREATED;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
@@ -141,7 +141,7 @@ public class CreatePublicationHandler
 
     @Override
     protected Integer getSuccessStatusCode(CreatePublicationRequest input, PublicationResponse output) {
-        return HttpStatus.SC_CREATED;
+        return HTTP_CREATED;
     }
 
     protected URI getLocation(SortableIdentifier identifier) {

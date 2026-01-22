@@ -19,7 +19,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.s3.AmazonS3;
+import software.amazon.awssdk.services.s3.S3Client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -61,7 +61,7 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
         this.output = new ByteArrayOutputStream();
         this.resourceService = getResourceService(client);
         this.handler = new UpdateFileHandler(
-            new FileService(mock(AmazonS3.class), mock(CustomerApiClient.class), resourceService), new Environment());
+            new FileService(mock(S3Client.class), mock(CustomerApiClient.class), resourceService), new Environment());
     }
 
     @Test
@@ -179,7 +179,7 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
             Optional.of(FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance)));
         doThrow(new RuntimeException()).when(resourceService).updateFile(any());
         return new UpdateFileHandler(
-            new FileService(mock(AmazonS3.class), mock(CustomerApiClient.class), resourceService), new Environment());
+            new FileService(mock(S3Client.class), mock(CustomerApiClient.class), resourceService), new Environment());
     }
 
     private InputStream createRequestForUserWithPermissions(UUID fileIdentifier,

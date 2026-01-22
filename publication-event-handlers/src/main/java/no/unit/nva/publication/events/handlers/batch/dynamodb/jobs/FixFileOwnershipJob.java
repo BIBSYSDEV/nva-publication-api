@@ -1,9 +1,5 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb.jobs;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +17,9 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
 
 public class FixFileOwnershipJob extends ServiceWithTransactions
     implements DynamodbResourceBatchJobExecutor {
@@ -30,19 +29,19 @@ public class FixFileOwnershipJob extends ServiceWithTransactions
   private static final String TABLE_NAME_ENV = "TABLE_NAME";
 
   private final ResourceService resourceService;
-  private final AmazonDynamoDB dynamoDbClient;
+  private final DynamoDbClient dynamoDbClient;
   private final String tableName;
 
   @JacocoGenerated
   public FixFileOwnershipJob() {
     this(
         ResourceService.defaultService(),
-        AmazonDynamoDBClientBuilder.defaultClient(),
+        DynamoDbClient.create(),
         new Environment().readEnv(TABLE_NAME_ENV));
   }
 
   public FixFileOwnershipJob(
-      ResourceService resourceService, AmazonDynamoDB dynamoDbClient, String tableName) {
+      ResourceService resourceService, DynamoDbClient dynamoDbClient, String tableName) {
     super(dynamoDbClient);
     this.resourceService = resourceService;
     this.dynamoDbClient = dynamoDbClient;
@@ -72,13 +71,14 @@ public class FixFileOwnershipJob extends ServiceWithTransactions
   }
 
   private Optional<FileDaoWithVersion> fetchFileDaoFromDynamoDB(BatchWorkItem workItem) {
-    var request =
-        new GetItemRequest()
-            .withTableName(tableName)
-            .withKey(workItem.dynamoDbKey().toPrimaryKey());
+    var request = GetItemRequest.builder()
+            .tableName(tableName)
+            .key(workItem.dynamoDbKey().toPrimaryKey())
+            .build();
     var result = dynamoDbClient.getItem(request);
 
-    return Optional.ofNullable(result.getItem())
+    return Optional.ofNullable(result.item())
+        .filter(item -> !item.isEmpty())
         .map(FileDao::fromDynamoFormat)
         .map(dao -> new FileDaoWithVersion(dao, dao.getVersion()));
   }

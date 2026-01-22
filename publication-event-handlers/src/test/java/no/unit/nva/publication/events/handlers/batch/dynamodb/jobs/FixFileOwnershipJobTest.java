@@ -11,8 +11,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 import java.net.URI;
 import java.time.Clock;
 import java.util.List;
@@ -45,7 +46,7 @@ class FixFileOwnershipJobTest extends ResourcesLocalTest {
 
   private ResourceService resourceService;
   private TicketService ticketService;
-  private AmazonDynamoDB dynamoDbClient;
+  private DynamoDbClient dynamoDbClient;
   private FixFileOwnershipJob fixFileOwnershipJob;
 
   @BeforeEach
@@ -130,7 +131,10 @@ class FixFileOwnershipJobTest extends ResourcesLocalTest {
 
   private void deleteResourceFromDynamoDb(Publication publication) {
     var resourceDao = Resource.fromPublication(publication).toDao();
-    client.deleteItem(RESOURCES_TABLE_NAME, resourceDao.primaryKey());
+    client.deleteItem(DeleteItemRequest.builder()
+                          .tableName(RESOURCES_TABLE_NAME)
+                          .key(resourceDao.primaryKey())
+                          .build());
   }
 
   private Publication persistPublicationWithFile(URI fileOwnerAffiliation) throws Exception {
