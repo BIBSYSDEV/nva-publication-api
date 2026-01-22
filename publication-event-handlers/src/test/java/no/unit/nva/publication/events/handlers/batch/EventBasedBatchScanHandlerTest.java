@@ -309,7 +309,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     }
 
     private Map<String, AttributeValue> getLatestEmittedStartingPoint() {
-        return consumeLatestEmittedEvent().getStartMarker();
+        return consumeLatestEmittedEvent().getExclusiveStartKey();
     }
 
     private ScanDatabaseRequest consumeLatestEmittedEvent() {
