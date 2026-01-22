@@ -18,13 +18,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
-import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3Object;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -78,7 +78,7 @@ class FileServiceTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private FileService fileService;
     private CustomerApiClient customerApiClient;
-    private AmazonS3Client s3client;
+    private S3Client s3client;
 
     public static Stream<Arguments> invalidFileConversionsProvider() {
         return Stream.of(Arguments.of(PendingOpenFile.class, OpenFile.class),
@@ -149,17 +149,17 @@ class FileServiceTest extends ResourcesLocalTest {
         return Stream.of(Arguments.of(OpenFile.class, "OpenFile"), Arguments.of(InternalFile.class, "InternalFile"));
     }
 
-    protected InitiateMultipartUploadResult uploadResult() {
-        var uploadResult = new InitiateMultipartUploadResult();
-        uploadResult.setKey(randomString());
-        uploadResult.setUploadId(randomString());
-        return uploadResult;
+    protected CreateMultipartUploadResponse uploadResult() {
+        return CreateMultipartUploadResponse.builder()
+            .key(randomString())
+            .uploadId(randomString())
+            .build();
     }
 
     @BeforeEach
     void setUp() {
         super.init();
-        s3client = mock(AmazonS3Client.class);
+        s3client = mock(S3Client.class);
         customerApiClient = mock(CustomerApiClient.class);
         resourceService = getResourceService(client);
         fileService = new FileService(s3client, customerApiClient, resourceService);
@@ -198,11 +198,11 @@ class FileServiceTest extends ResourcesLocalTest {
         var uploadRequest = randomUploadRequest();
         var instanceType = publication.getEntityDescription().getReference().getPublicationInstance().getInstanceType();
         when(customerApiClient.fetch(owner.getCustomerId())).thenReturn(new Customer(Set.of(instanceType), null, null));
-        when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class))).thenReturn(uploadResult());
+        when(s3client.createMultipartUpload(any(CreateMultipartUploadRequest.class))).thenReturn(uploadResult());
 
         var uploadResponse = fileService.initiateMultipartUpload(resource.getIdentifier(), owner, uploadRequest);
 
-        assertNotNull(uploadResponse.getKey());
+        assertNotNull(uploadResponse.key());
     }
 
     @Test
@@ -214,11 +214,11 @@ class FileServiceTest extends ResourcesLocalTest {
         var uploadRequest = randomUploadRequest();
         var userInstance = externalUserInstance(resource);
 
-        when(s3client.initiateMultipartUpload(any(InitiateMultipartUploadRequest.class))).thenReturn(uploadResult());
+        when(s3client.createMultipartUpload(any(CreateMultipartUploadRequest.class))).thenReturn(uploadResult());
         var uploadResponse = fileService.initiateMultipartUpload(resource.getIdentifier(), userInstance, uploadRequest);
         verify(customerApiClient, never()).fetch(any());
 
-        assertNotNull(uploadResponse.getKey());
+        assertNotNull(uploadResponse.key());
     }
 
     @Test
@@ -379,7 +379,7 @@ class FileServiceTest extends ResourcesLocalTest {
         mockCustomerResponse(userInstance);
         fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance);
 
-        var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.getKey()),
+        var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.key()),
                                               resource.getIdentifier()).fetch(resourceService).orElseThrow();
 
         var expectedFile = constructExpectedFile(completeMultipartUploadResult, userInstance, fileEntry);
@@ -401,7 +401,7 @@ class FileServiceTest extends ResourcesLocalTest {
         var userInstance = externalUserInstance(publication);
         fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance);
 
-        var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.getKey()),
+        var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.key()),
                                               resource.getIdentifier()).fetch(resourceService).orElseThrow();
 
         assertEquals(request.license(), fileEntry.getFile().getLicense());
@@ -436,16 +436,16 @@ class FileServiceTest extends ResourcesLocalTest {
         mockCustomerResponseWithNullRrs(userInstance);
         fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance);
 
-        var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.getKey()),
+        var fileEntry = FileEntry.queryObject(UUID.fromString(completeMultipartUploadResult.key()),
                                               resource.getIdentifier()).fetch(resourceService).orElseThrow();
 
         assertEquals(fileEntry.getFile().getRightsRetentionStrategy(),
                      NullRightsRetentionStrategy.create(NULL_RIGHTS_RETENTION_STRATEGY));
     }
 
-    private static File constructExpectedFile(CompleteMultipartUploadResult completeMultipartUploadResult,
+    private static File constructExpectedFile(CompleteMultipartUploadResponse completeMultipartUploadResponse,
                                               UserInstance userInstance, FileEntry fileEntry) {
-        return new UploadedFile(UUID.fromString(completeMultipartUploadResult.getKey()), FILE_NAME, CONTENT_TYPE,
+        return new UploadedFile(UUID.fromString(completeMultipartUploadResponse.key()), FILE_NAME, CONTENT_TYPE,
                                 (long) CONTENT_LENGTH,
                                 CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY),
                                 new UserUploadDetails(new Username(userInstance.getUsername()),
@@ -474,19 +474,18 @@ class FileServiceTest extends ResourcesLocalTest {
                                                                                                 randomString())));
     }
 
-    private CompleteMultipartUploadResult mockCompleteMultipartUpload() {
-        var completeMultipartUploadResult = new CompleteMultipartUploadResult();
-        completeMultipartUploadResult.setKey(UUID.randomUUID().toString());
+    private CompleteMultipartUploadResponse mockCompleteMultipartUpload() {
+        var completeMultipartUploadResponse = CompleteMultipartUploadResponse.builder()
+            .key(UUID.randomUUID().toString())
+            .build();
         when(s3client.completeMultipartUpload(Mockito.any(CompleteMultipartUploadRequest.class))).thenReturn(
-            completeMultipartUploadResult);
-        var s3object = new S3Object();
-        s3object.setKey(randomString());
-        var metadata = new ObjectMetadata();
-        metadata.setContentLength(CONTENT_LENGTH);
-        metadata.setContentDisposition(FILE_NAME);
-        metadata.setContentType(CONTENT_TYPE);
-        s3object.setObjectMetadata(metadata);
-        when(s3client.getObjectMetadata(any())).thenReturn(metadata);
-        return completeMultipartUploadResult;
+            completeMultipartUploadResponse);
+        var headObjectResponse = HeadObjectResponse.builder()
+            .contentLength((long) CONTENT_LENGTH)
+            .contentDisposition(FILE_NAME)
+            .contentType(CONTENT_TYPE)
+            .build();
+        when(s3client.headObject(any(HeadObjectRequest.class))).thenReturn(headObjectResponse);
+        return completeMultipartUploadResponse;
     }
 }
