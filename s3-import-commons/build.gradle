@@ -23,7 +23,7 @@ dependencies {
     implementation nvaCatalog.aws.lambda.events
     implementation nvaCatalog.aws.sdk2.regions
     implementation nvaCatalog.aws.sdk2.http.client
-    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamo
     implementation nvaCatalog.aws.sdk2.sqs
 
     implementation libs.bundles.jaxb
@@ -52,8 +52,8 @@ dependencies {
     compileOnly(nvaCatalog.aws.sdk2.auth) {
         because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "
     }
-    compileOnly(nvaCatalog.aws.sdk.apigateway) {
-        because "PMD complains for the com/amazonaws/regions/Regions class"
+    compileOnly(nvaCatalog.aws.sdk2.regions) {
+        because "PMD complains for the software/amazon/awssdk/regions/Region class"
     }
     compileOnly(nvaCatalog.commons.validator) {
         because "PMD org/apache/commons/validator/routines/ISBNValidator"

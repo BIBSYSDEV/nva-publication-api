@@ -8,7 +8,7 @@ dependencies {
     implementation nvaLibs.json
     implementation nvaLibs.identifiers
     implementation nvaLibs.clients
-    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamo
 
     implementation nvaCatalog.jackson.core
     implementation nvaCatalog.jackson.databind

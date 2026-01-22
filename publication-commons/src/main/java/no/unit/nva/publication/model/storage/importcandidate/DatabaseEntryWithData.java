@@ -2,10 +2,10 @@ package no.unit.nva.publication.model.storage.importcandidate;
 
 import static no.unit.nva.publication.model.storage.DataCompressor.compress;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
 import no.unit.nva.publication.model.storage.DataCompressor;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public interface DatabaseEntryWithData<I> {
 

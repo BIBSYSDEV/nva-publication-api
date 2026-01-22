@@ -16,7 +16,7 @@ dependencies {
     implementation project(":publication-model")
     implementation project(":publication-commons")
 
-    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamo
     implementation nvaCatalog.aws.lambda.core
     implementation nvaCatalog.aws.sdk2.secrets
     implementation nvaCatalog.aws.sdk2.http.client

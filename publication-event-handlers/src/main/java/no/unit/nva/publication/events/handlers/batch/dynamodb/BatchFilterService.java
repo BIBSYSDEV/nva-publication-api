@@ -2,13 +2,13 @@ package no.unit.nva.publication.events.handlers.batch.dynamodb;
 
 import static java.util.Objects.isNull;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import java.util.Collection;
 import java.util.Map;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class BatchFilterService {
 
@@ -38,8 +38,8 @@ public class BatchFilterService {
 
       return matcher.matches(dao, filter);
     } catch (Exception e) {
-      var partitionKey = item.getOrDefault("PK0", new AttributeValue("unknown")).getS();
-      var sortKey = item.getOrDefault("SK0", new AttributeValue("unknown")).getS();
+      var partitionKey = item.getOrDefault("PK0", AttributeValue.builder().s("unknown").build()).s();
+      var sortKey = item.getOrDefault("SK0", AttributeValue.builder().s("unknown").build()).s();
       logger.warn(
           "Failed to parse item for filtering, excluding item with PK0={}, SK0={}: {}",
           partitionKey,

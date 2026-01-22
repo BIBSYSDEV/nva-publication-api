@@ -12,12 +12,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
-import com.amazonaws.services.dynamodbv2.model.Condition;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -46,6 +40,12 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
+import software.amazon.awssdk.services.dynamodb.model.Condition;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(ResourceDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -122,7 +122,7 @@ public class ResourceDao extends Dao
 
     @JacocoGenerated
     @Override
-    public void updateExistingEntry(AmazonDynamoDB client) {
+    public void updateExistingEntry(DynamoDbClient client) {
         throw new UnsupportedOperationException("Not implemented yet.Call the appropriate resource service method");
     }
 
@@ -182,13 +182,14 @@ public class ResourceDao extends Dao
         return getData().getOwner();
     }
 
-    public List<TicketDao> fetchAllTickets(AmazonDynamoDB client) {
-        var queryRequest = new QueryRequest()
-                               .withTableName(RESOURCES_TABLE_NAME)
-                               .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                               .withKeyConditions(joinAllRelatedTicketsForResource());
+    public List<TicketDao> fetchAllTickets(DynamoDbClient client) {
+        var queryRequest = QueryRequest.builder()
+                               .tableName(RESOURCES_TABLE_NAME)
+                               .indexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                               .keyConditions(joinAllRelatedTicketsForResource())
+                               .build();
         return client.query(queryRequest)
-                   .getItems()
+                   .items()
                    .stream()
                    .map(item -> parseAttributeValuesMap(item, TicketDao.class))
                    .collect(Collectors.toList());
@@ -219,17 +220,19 @@ public class ResourceDao extends Dao
     }
 
     public QueryRequest createQueryFindByCristinIdentifier() {
-        return new QueryRequest()
-                   .withTableName(RESOURCES_TABLE_NAME)
-                   .withIndexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME)
-                   .withKeyConditions(createConditionsWithCristinIdentifier());
+        return QueryRequest.builder()
+                   .tableName(RESOURCES_TABLE_NAME)
+                   .indexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME)
+                   .keyConditions(createConditionsWithCristinIdentifier())
+                   .build();
     }
 
     public Map<String, Condition> createConditionsWithCristinIdentifier() {
-        Condition condition = new Condition()
-                                  .withComparisonOperator(ComparisonOperator.EQ)
-                                  .withAttributeValueList(
-                                      new AttributeValue(getResourceByCristinIdentifierPartitionKey()));
+        var condition = Condition.builder()
+                                  .comparisonOperator(ComparisonOperator.EQ)
+                                  .attributeValueList(
+                                      AttributeValue.builder().s(getResourceByCristinIdentifierPartitionKey()).build())
+                                  .build();
         return Map.of(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME, condition);
     }
 

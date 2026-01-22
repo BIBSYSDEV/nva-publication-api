@@ -5,7 +5,7 @@ import static no.unit.nva.publication.events.handlers.ConfigurationForPushingDir
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.collect.Lists;
 import java.util.Collection;
@@ -156,8 +156,8 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     private static List<BatchWorkItem> createWorkItems(String jobType,
                                                        Collection<Map<String, AttributeValue>> items) {
         return items.stream().map(item -> {
-            var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(item.get(PRIMARY_KEY_PARTITION_KEY_NAME).getS(),
-                                                                   item.get(PRIMARY_KEY_SORT_KEY_NAME).getS());
+            var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(item.get(PRIMARY_KEY_PARTITION_KEY_NAME).s(),
+                                                                   item.get(PRIMARY_KEY_SORT_KEY_NAME).s());
             return new BatchWorkItem(dynamoDbKey, jobType);
         }).toList();
     }

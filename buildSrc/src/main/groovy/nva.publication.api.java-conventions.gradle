@@ -23,6 +23,7 @@ dependencies {
 }
 
 repositories {
+    mavenLocal() // FIXME: For local testing, do not merge this
     mavenCentral()
     maven { url = 'https://jitpack.io' }
     maven { url = "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }

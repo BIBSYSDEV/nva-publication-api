@@ -3,9 +3,9 @@ package no.unit.nva.publication.events.handlers.batch.dynamodb;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import java.util.Map;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public record DynamodbResourceBatchDynamoDbKey(String partitionKey, String sortKey, String indexName) {
     public DynamodbResourceBatchDynamoDbKey(String partitionKey, String sortKey) {
@@ -21,8 +21,8 @@ public record DynamodbResourceBatchDynamoDbKey(String partitionKey, String sortK
             throw new IllegalStateException("Cannot convert GSI key to primary key");
         }
         return Map.of(
-            PRIMARY_KEY_PARTITION_KEY_NAME, new AttributeValue(partitionKey),
-            PRIMARY_KEY_SORT_KEY_NAME, new AttributeValue(sortKey));
+            PRIMARY_KEY_PARTITION_KEY_NAME, AttributeValue.builder().s(partitionKey).build(),
+            PRIMARY_KEY_SORT_KEY_NAME, AttributeValue.builder().s(sortKey).build());
     }
 
     @JacocoGenerated

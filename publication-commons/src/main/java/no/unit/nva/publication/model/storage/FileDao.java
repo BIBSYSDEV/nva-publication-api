@@ -11,15 +11,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -30,12 +21,19 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.enhanced.dynamodb.document.EnhancedDocument;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.Delete;
+import software.amazon.awssdk.services.dynamodb.model.Put;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(FileDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -73,8 +71,8 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier, JoinW
     }
 
     public static FileDao fromDynamoFormat(Map<String, AttributeValue> attributeValueMap) {
-        return attempt(() -> ItemUtils.toItem(attributeValueMap)).map(Item::toJSON)
-                   .map(json -> dynamoDbObjectMapper.readValue(json, FileDao.class))
+        var document = EnhancedDocument.fromAttributeValueMap(attributeValueMap);
+        return attempt(() -> dynamoDbObjectMapper.readValue(document.toJson(), FileDao.class))
                    .orElseThrow();
     }
 
@@ -127,19 +125,18 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier, JoinW
 
     @Override
     public Map<String, AttributeValue> toDynamoFormat() {
-        return attempt(() -> JsonUtils.dynamoObjectMapper.writeValueAsString(this)).map(Item::fromJSON)
-                   .map(ItemUtils::toAttributeValues)
-                   .orElseThrow();
+        var json = attempt(() -> dynamoDbObjectMapper.writeValueAsString(this)).orElseThrow();
+        return EnhancedDocument.fromJson(json).toMap();
     }
 
     @Override
     public TransactWriteItemsRequest createInsertionTransactionRequest() {
-        return new TransactWriteItemsRequest().withTransactItems(newPutTransactionItem(this));
+        return TransactWriteItemsRequest.builder().transactItems(newPutTransactionItem(this)).build();
     }
 
     @Override
-    public void updateExistingEntry(AmazonDynamoDB client) {
-        var request = new PutItemRequest().withTableName(RESOURCES_TABLE_NAME).withItem(toDynamoFormat());
+    public void updateExistingEntry(DynamoDbClient client) {
+        var request = PutItemRequest.builder().tableName(RESOURCES_TABLE_NAME).item(toDynamoFormat()).build();
         client.putItem(request);
     }
 
@@ -164,29 +161,31 @@ public final class FileDao extends Dao implements DynamoEntryByIdentifier, JoinW
     }
 
     public TransactWriteItem toPutNewTransactionItem(String tableName) {
-        var put = new Put()
-                      .withItem(this.toDynamoFormat())
-                      .withTableName(tableName)
-                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
-        return new TransactWriteItem().withPut(put);
+        var put = Put.builder()
+                      .item(this.toDynamoFormat())
+                      .tableName(tableName)
+                      .conditionExpression(KEY_NOT_EXISTS_CONDITION)
+                      .expressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
+                      .build();
+        return TransactWriteItem.builder().put(put).build();
     }
 
     public TransactWriteItem toPutTransactionItem(String tableName) {
-        var put = new Put().withItem(this.toDynamoFormat()).withTableName(tableName);
-        return new TransactWriteItem().withPut(put);
+        var put = Put.builder().item(this.toDynamoFormat()).tableName(tableName).build();
+        return TransactWriteItem.builder().put(put).build();
     }
 
     public TransactWriteItem toDeleteTransactionItem(String tableName) {
         var map = new ConcurrentHashMap<String, AttributeValue>();
-        var partKeyValue = new AttributeValue(getPrimaryKeyPartitionKey());
-        var sortKeyValue = new AttributeValue(getPrimaryKeySortKey());
+        var partKeyValue = AttributeValue.builder().s(getPrimaryKeyPartitionKey()).build();
+        var sortKeyValue = AttributeValue.builder().s(getPrimaryKeySortKey()).build();
         map.put(PRIMARY_KEY_PARTITION_KEY_NAME, partKeyValue);
         map.put(PRIMARY_KEY_SORT_KEY_NAME, sortKeyValue);
-        var delete = new Delete()
-                         .withTableName(tableName)
-                         .withKey(map);
-        return new TransactWriteItem().withDelete(delete);
+        var delete = Delete.builder()
+                         .tableName(tableName)
+                         .key(map)
+                         .build();
+        return TransactWriteItem.builder().delete(delete).build();
     }
 
     @Override

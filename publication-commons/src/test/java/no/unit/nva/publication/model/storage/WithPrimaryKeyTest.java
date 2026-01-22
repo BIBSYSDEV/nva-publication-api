@@ -9,8 +9,9 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -125,23 +126,25 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
     
     private List<? extends WithPrimaryKey> sendQueryAndParseResponse(QueryRequest query) {
         return client.query(query)
-                   .getItems()
+                   .items()
                    .stream()
                    .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
                    .toList();
     }
-    
+
     private QueryRequest createQuery(WithPrimaryKey queryObject) {
-        return new QueryRequest()
-                   .withTableName(RESOURCES_TABLE_NAME)
-                   .withKeyConditions(queryObject.primaryKeyPartitionKeyCondition());
+        return QueryRequest.builder()
+                   .tableName(RESOURCES_TABLE_NAME)
+                   .keyConditions(queryObject.primaryKeyPartitionKeyCondition())
+                   .build();
     }
-    
+
     private void insertToDb(Object dao) {
-        DynamoEntry dynamoEntry = (DynamoEntry) dao;
-        PutItemRequest putItemRequest = new PutItemRequest()
-                                            .withTableName(RESOURCES_TABLE_NAME)
-                                            .withItem(dynamoEntry.toDynamoFormat());
+        var dynamoEntry = (DynamoEntry) dao;
+        var putItemRequest = PutItemRequest.builder()
+                                 .tableName(RESOURCES_TABLE_NAME)
+                                 .item(dynamoEntry.toDynamoFormat())
+                                 .build();
         client.putItem(putItemRequest);
     }
 }

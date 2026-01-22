@@ -11,8 +11,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -25,6 +23,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.zalando.problem.Problem;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 public class AbortMultipartUploadHandlerTest {
 
@@ -33,11 +34,11 @@ public class AbortMultipartUploadHandlerTest {
     private AbortMultipartUploadHandler abortMultipartUploadHandler;
     private ByteArrayOutputStream outputStream;
     private Context context;
-    private AmazonS3Client s3client;
+    private S3Client s3client;
 
     @BeforeEach
     void setUp() {
-        s3client = mock(AmazonS3Client.class);
+        s3client = mock(S3Client.class);
         abortMultipartUploadHandler = new AbortMultipartUploadHandler(s3client, new Environment());
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
@@ -63,7 +64,7 @@ public class AbortMultipartUploadHandlerTest {
 
     @Test
     void abortMultipartUploadWithS3ErrorReturnsInternalServerError() throws IOException {
-        doThrow(AmazonS3Exception.class).when(s3client).abortMultipartUpload(Mockito.any());
+        doThrow(S3Exception.class).when(s3client).abortMultipartUpload(Mockito.any(AbortMultipartUploadRequest.class));
         abortMultipartUploadHandler.handleRequest(abortMultipartUploadRequestWithBody(), outputStream, context);
 
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);

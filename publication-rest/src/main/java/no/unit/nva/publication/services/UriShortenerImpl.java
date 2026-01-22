@@ -1,12 +1,12 @@
 package no.unit.nva.publication.services;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import java.net.URI;
 import java.time.Instant;
 import no.unit.nva.publication.services.model.UriMap;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 public class UriShortenerImpl implements UriShortener {
 
@@ -23,7 +23,7 @@ public class UriShortenerImpl implements UriShortener {
     public static UriShortenerImpl createDefault(String host) {
         return new UriShortenerImpl(UriWrapper.fromHost(host),
                                    new UriShortenerWriteClient(
-                                       AmazonDynamoDBClientBuilder.defaultClient(), new Environment().readEnv(TABLE_NAME_ENVIRONMENT_VARIABLE)));
+                                       DynamoDbClient.create(), new Environment().readEnv(TABLE_NAME_ENVIRONMENT_VARIABLE)));
     }
 
     @Override

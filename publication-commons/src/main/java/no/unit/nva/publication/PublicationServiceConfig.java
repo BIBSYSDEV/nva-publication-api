@@ -1,8 +1,5 @@
 package no.unit.nva.publication;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import no.unit.nva.commons.json.JsonUtils;
@@ -11,6 +8,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public final class PublicationServiceConfig {
@@ -25,7 +23,7 @@ public final class PublicationServiceConfig {
 
     public static final String PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME = "publicationIdentifier";
     public static final String AWS_REGION = ENVIRONMENT.readEnv("AWS_REGION");
-        public static final AmazonDynamoDB DEFAULT_DYNAMODB_CLIENT = defaultDynamoDbClient();
+    public static final DynamoDbClient DEFAULT_DYNAMODB_CLIENT = defaultDynamoDbClient();
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;
     public static final String TICKET_PATH = "ticket";
 
@@ -39,11 +37,10 @@ public final class PublicationServiceConfig {
     }
 
     @JacocoGenerated
-    public static AmazonDynamoDB defaultDynamoDbClient() {
-        return AmazonDynamoDBClientBuilder
-                   .standard()
-                   .withRegion(AWS_REGION)
-                   .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+    public static DynamoDbClient defaultDynamoDbClient() {
+        return DynamoDbClient.builder()
+                   .region(Region.of(AWS_REGION))
+                   .httpClient(UrlConnectionHttpClient.create())
                    .build();
     }
 

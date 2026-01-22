@@ -28,7 +28,6 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -80,7 +79,7 @@ public class FetchImportCandidateHandlerTest extends ResourcesLocalTest {
 
     private InputStream createRequest(SortableIdentifier identifier) throws JsonProcessingException {
         var pathParameters = Map.of(IDENTIFIER, identifier.toString());
-        var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+        var headers = Map.of(ACCEPT, "application/json");
         return new HandlerRequestBuilder<InputStream>(restApiMapper)
                    .withHeaders(headers)
                    .withPathParameters(pathParameters)

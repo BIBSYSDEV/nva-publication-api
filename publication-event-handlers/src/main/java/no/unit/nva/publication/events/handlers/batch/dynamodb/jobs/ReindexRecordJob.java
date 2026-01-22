@@ -1,14 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb.jobs;
 
 import static java.util.Objects.nonNull;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.Update;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,6 +10,15 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
+import software.amazon.awssdk.services.dynamodb.model.ReturnConsumedCapacity;
+import software.amazon.awssdk.services.dynamodb.model.ReturnItemCollectionMetrics;
+import software.amazon.awssdk.services.dynamodb.model.ReturnValuesOnConditionCheckFailure;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.model.Update;
 
 public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
     private static final String REINDEX_RECORD = "REINDEX_RECORD";
@@ -25,20 +26,20 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
     private static final String TABLE_NAME_ENV = "TABLE_NAME";
     private static final String VERSION_FIELD = "version";
 
-    private final AmazonDynamoDB dynamoDbClient;
+    private final DynamoDbClient dynamoDbClient;
     private final String tableName;
 
     @JacocoGenerated
     public ReindexRecordJob() {
-        this(AmazonDynamoDBClientBuilder.defaultClient(),
+        this(DynamoDbClient.create(),
              new Environment().readEnv(TABLE_NAME_ENV));
     }
-    
-    public ReindexRecordJob(AmazonDynamoDB dynamoDbClient, String tableName) {
+
+    public ReindexRecordJob(DynamoDbClient dynamoDbClient, String tableName) {
         this.dynamoDbClient = dynamoDbClient;
         this.tableName = tableName;
     }
-    
+
     @Override
     public void executeBatch(List<BatchWorkItem> workItems) {
         if (workItems.isEmpty()) {
@@ -57,56 +58,58 @@ public class ReindexRecordJob implements DynamodbResourceBatchJobExecutor {
         var transactItems = workItems.stream()
             .map(this::createUpdateTransactItem)
             .toList();
-        
-        var transactRequest = new TransactWriteItemsRequest()
-            .withTransactItems(transactItems)
-            .withReturnConsumedCapacity("TOTAL")
-            .withReturnItemCollectionMetrics("SIZE");
-        
+
+        var transactRequest = TransactWriteItemsRequest.builder()
+            .transactItems(transactItems)
+            .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+            .returnItemCollectionMetrics(ReturnItemCollectionMetrics.SIZE)
+            .build();
+
         try {
             dynamoDbClient.transactWriteItems(transactRequest);
-            
+
             // Transaction succeeded - ALL items were updated (atomic transaction)
             logger.info("Successfully updated {} records in transaction", workItems.size());
         } catch (Exception e) {
             logger.error("Failed to update batch of {} records in transaction", workItems.size(), e);
-            
+
             if (isConditionalCheckFailure(e)) {
                 logger.error("Transaction failed due to conditional check - likely non-existent records");
                 throw new RuntimeException(String.format(
-                    "Failed to update %d records - records do not exist in database", 
+                    "Failed to update %d records - records do not exist in database",
                     workItems.size()), e);
             }
-            
+
             throw new RuntimeException("Failed to update batch for reindexing", e);
         }
     }
-    
+
     private TransactWriteItem createUpdateTransactItem(BatchWorkItem workItem) {
         var key = workItem.dynamoDbKey();
         var newVersion = UUID.randomUUID().toString();
-        
-        var dynamoKey = new HashMap<String, AttributeValue>();
-        dynamoKey.put("PK0", new AttributeValue().withS(key.partitionKey()));
-        dynamoKey.put("SK0", new AttributeValue().withS(key.sortKey()));
-        
-        var expressionAttributeValues = new HashMap<String, AttributeValue>();
-        expressionAttributeValues.put(":newVersion", new AttributeValue().withS(newVersion));
 
-        var update = new Update()
-            .withTableName(tableName)
-            .withKey(dynamoKey)
-            .withUpdateExpression("SET #version = :newVersion")
-            .withConditionExpression("attribute_exists(PK0) AND attribute_exists(SK0)")
-            .withExpressionAttributeNames(Map.of(
-                "#version", VERSION_FIELD
-            ))
-            .withExpressionAttributeValues(expressionAttributeValues)
-            .withReturnValuesOnConditionCheckFailure("ALL_OLD");
-        
-        return new TransactWriteItem().withUpdate(update);
+        var dynamoKey = Map.of(
+            "PK0", AttributeValue.builder().s(key.partitionKey()).build(),
+            "SK0", AttributeValue.builder().s(key.sortKey()).build()
+        );
+
+        var expressionAttributeValues = Map.of(
+            ":newVersion", AttributeValue.builder().s(newVersion).build()
+        );
+
+        var update = Update.builder()
+            .tableName(tableName)
+            .key(dynamoKey)
+            .updateExpression("SET #version = :newVersion")
+            .conditionExpression("attribute_exists(PK0) AND attribute_exists(SK0)")
+            .expressionAttributeNames(Map.of("#version", VERSION_FIELD))
+            .expressionAttributeValues(expressionAttributeValues)
+            .returnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)
+            .build();
+
+        return TransactWriteItem.builder().update(update).build();
     }
-    
+
     private boolean isConditionalCheckFailure(Exception e) {
         return e instanceof ConditionalCheckFailedException ||
                nonNull(e.getCause()) && e.getCause() instanceof ConditionalCheckFailedException;

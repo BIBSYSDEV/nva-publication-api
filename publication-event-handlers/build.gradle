@@ -18,10 +18,10 @@ dependencies {
     implementation nvaLibs.clients
     implementation nvaCatalog.aws.lambda.core
     implementation nvaCatalog.aws.lambda.events
-    implementation nvaCatalog.aws.java.sdk.core
+    implementation nvaCatalog.aws.sdk2.core
     implementation nvaCatalog.guava
 
-    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamo
     implementation nvaCatalog.aws.sdk2.s3
     implementation nvaCatalog.aws.sdk2.urlconnection
     implementation nvaCatalog.aws.sdk2.eventbridge

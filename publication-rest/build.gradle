@@ -26,7 +26,8 @@ dependencies {
     implementation nvaCatalog.bundles.logging
     implementation libs.bundles.jaxb
 
-    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamodbenhanced
     implementation nvaCatalog.aws.lambda.core
     implementation nvaCatalog.guava
     implementation nvaCatalog.aws.sdk2.secrets
@@ -56,8 +57,8 @@ dependencies {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
 
-    compileOnly(nvaCatalog.aws.sdk.apigateway) {
-        because "PMD complains for the com/amazonaws/regions/Regions class"
+    compileOnly(nvaCatalog.aws.sdk2.regions) {
+        because "PMD complains for the software/amazon/awssdk/regions/Region class"
     }
 }
 

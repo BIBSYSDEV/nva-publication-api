@@ -3,7 +3,6 @@ package no.unit.nva.publication.utils;
 import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
-import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
@@ -28,7 +27,7 @@ public class RdfUtils {
     public static final Logger logger = LoggerFactory.getLogger(RdfUtils.class);
 
     public static List<URI> getAllNestedPartOfs(RawContentRetriever uriRetriever, URI organizationId) {
-        return attempt(() -> uriRetriever.getRawContent(organizationId, APPLICATION_JSON.getMimeType())).map(
+        return attempt(() -> uriRetriever.getRawContent(organizationId, "application/json")).map(
                 Optional::orElseThrow)
                    .map(str -> createModel(stringToStream(str)))
                    .map(model -> model.listObjectsOfProperty(model.createProperty(PART_OF_PROPERTY)))
@@ -39,7 +38,7 @@ public class RdfUtils {
     }
 
     public static URI getTopLevelOrgUri(RawContentRetriever uriRetriever, URI id) {
-        var data = attempt(() -> uriRetriever.getRawContent(id, APPLICATION_JSON.getMimeType())).orElseThrow();
+        var data = attempt(() -> uriRetriever.getRawContent(id, "application/json")).orElseThrow();
 
         if (data.isEmpty()) {
             return null;

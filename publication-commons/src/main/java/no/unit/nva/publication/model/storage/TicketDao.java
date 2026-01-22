@@ -13,14 +13,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOME
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import java.net.URI;
@@ -35,6 +27,14 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.Put;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
 
 @JsonSubTypes({
     @JsonSubTypes.Type(name = DoiRequestDao.TYPE, value = DoiRequestDao.class),
@@ -87,57 +87,61 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         this.owner = ticketEntry.getOwner();
     }
     
-    public final Optional<TicketDao> fetchTicket(AmazonDynamoDB client) {
-        var request = new GetItemRequest()
-                          .withTableName(RESOURCES_TABLE_NAME)
-                          .withKey(primaryKey());
-    
+    public final Optional<TicketDao> fetchTicket(DynamoDbClient client) {
+        var request = GetItemRequest.builder()
+                          .tableName(RESOURCES_TABLE_NAME)
+                          .key(primaryKey())
+                          .build();
+
         return attempt(() -> client.getItem(request))
-                   .map(GetItemResult::getItem).map(item -> DynamoEntry.parseAttributeValuesMap(item, TicketDao.class))
+                   .map(GetItemResponse::item).map(item -> DynamoEntry.parseAttributeValuesMap(item, TicketDao.class))
                    .toOptional();
     }
-    
+
     public PutItemRequest createPutItemRequest() {
         var condition = new UpdateCaseButNotOwnerCondition(this);
-        
-        return new PutItemRequest()
-                   .withTableName(RESOURCES_TABLE_NAME)
-                   .withItem(toDynamoFormat())
-                   .withConditionExpression(condition.getConditionExpression())
-                   .withExpressionAttributeNames(condition.getExpressionAttributeNames())
-                   .withExpressionAttributeValues(condition.getExpressionAttributeValues());
+
+        return PutItemRequest.builder()
+                   .tableName(RESOURCES_TABLE_NAME)
+                   .item(toDynamoFormat())
+                   .conditionExpression(condition.getConditionExpression())
+                   .expressionAttributeNames(condition.getExpressionAttributeNames())
+                   .expressionAttributeValues(condition.getExpressionAttributeValues())
+                   .build();
     }
 
     public TransactWriteItem toPutTransactionItem(String tableName) {
-        var put = new Put().withItem(this.toDynamoFormat()).withTableName(tableName);
-        return new TransactWriteItem().withPut(put);
+        var put = Put.builder().item(this.toDynamoFormat()).tableName(tableName).build();
+        return TransactWriteItem.builder().put(put).build();
     }
-    
-    public Optional<TicketDao> fetchByResourceIdentifier(AmazonDynamoDB client) {
-        QueryRequest queryRequest = new QueryRequest()
-                                        .withTableName(RESOURCES_TABLE_NAME)
-                                        .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                                        .withKeyConditions(byResource(joinByResourceOrderedType()));
-    
+
+    public Optional<TicketDao> fetchByResourceIdentifier(DynamoDbClient client) {
+        var queryRequest = QueryRequest.builder()
+                               .tableName(RESOURCES_TABLE_NAME)
+                               .indexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                               .keyConditions(byResource(joinByResourceOrderedType()))
+                               .build();
+
         var dynamoFormat = client.query(queryRequest)
-                               .getItems()
+                               .items()
                                .stream()
                                .collect(SingletonCollector.collectOrElse(null));
         return Optional.ofNullable(dynamoFormat)
                    .map(item -> DynamoEntry.parseAttributeValuesMap(item, this.getClass()));
     }
-    
-    public Stream<MessageDao> fetchTicketMessages(AmazonDynamoDB client) {
+
+    public Stream<MessageDao> fetchTicketMessages(DynamoDbClient client) {
         var query = new FetchMessagesQuery(this);
-        var request = new QueryRequest()
-                          .withTableName(RESOURCES_TABLE_NAME)
-                          .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                          .withKeyConditionExpression(query.getKeyConditionExpression())
-                          .withFilterExpression(query.getFilterExpression())
-                          .withExpressionAttributeNames(query.getExpressionAttributeNames())
-                          .withExpressionAttributeValues(query.getExpressionAttributeValues());
+        var request = QueryRequest.builder()
+                          .tableName(RESOURCES_TABLE_NAME)
+                          .indexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                          .keyConditionExpression(query.getKeyConditionExpression())
+                          .filterExpression(query.getFilterExpression())
+                          .expressionAttributeNames(query.getExpressionAttributeNames())
+                          .expressionAttributeValues(query.getExpressionAttributeValues())
+                          .build();
         var result = client.query(request)
-                         .getItems()
+                         .items()
                          .stream()
                          .map(item -> DynamoEntry.parseAttributeValuesMap(item, MessageDao.class))
                          .collect(Collectors.toList());
@@ -150,7 +154,7 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
     }
     
     @Override
-    public void updateExistingEntry(AmazonDynamoDB client) {
+    public void updateExistingEntry(DynamoDbClient client) {
         this.getData().setModifiedDate(Instant.now());
         var putItem = this.createPutItemRequest();
         try {
@@ -213,12 +217,13 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
     }
 
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data) {
-        Put put = new Put()
-                      .withItem(data.toDynamoFormat())
-                      .withTableName(RESOURCES_TABLE_NAME)
-                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
-        return new TransactWriteItem().withPut(put);
+        var put = Put.builder()
+                      .item(data.toDynamoFormat())
+                      .tableName(RESOURCES_TABLE_NAME)
+                      .conditionExpression(KEY_NOT_EXISTS_CONDITION)
+                      .expressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
+                      .build();
+        return TransactWriteItem.builder().put(put).build();
     }
     
     protected TicketEntry getTicketEntry() {
@@ -255,9 +260,9 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         
         public Map<String, AttributeValue> getExpressionAttributeValues() {
             return Map.of(
-                ":ticketIdentifier", new AttributeValue(ticketDao.getIdentifier().toString()),
-                ":PartitionKeyValue", new AttributeValue(ticketDao.getByCustomerAndResourcePartitionKey()),
-                ":SortKeyValuePrefix", new AttributeValue(MessageDao.joinByResourceOrderedContainedType())
+                ":ticketIdentifier", AttributeValue.builder().s(ticketDao.getIdentifier().toString()).build(),
+                ":PartitionKeyValue", AttributeValue.builder().s(ticketDao.getByCustomerAndResourcePartitionKey()).build(),
+                ":SortKeyValuePrefix", AttributeValue.builder().s(MessageDao.joinByResourceOrderedContainedType()).build()
             );
         }
     }
@@ -298,13 +303,13 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
             
             this.expressionAttributeValues =
                 Map.of(
-                    ":createdDate", new AttributeValue(dateAsString(entryUpdate.getCreatedDate())),
-                    ":customerId", new AttributeValue(entryUpdate.getCustomerId().toString()),
-                    ":identifier", new AttributeValue(entryUpdate.getIdentifier().toString()),
-                    ":modifiedDate", new AttributeValue(dateAsString(entryUpdate.getModifiedDate())),
-                    ":owner", new AttributeValue(entryUpdate.getOwner().toString()),
-                    ":resourceIdentifier", new AttributeValue(entryUpdate.getResourceIdentifier().toString()),
-                    ":version", new AttributeValue(dao.getVersion().toString())
+                    ":createdDate", AttributeValue.builder().s(dateAsString(entryUpdate.getCreatedDate())).build(),
+                    ":customerId", AttributeValue.builder().s(entryUpdate.getCustomerId().toString()).build(),
+                    ":identifier", AttributeValue.builder().s(entryUpdate.getIdentifier().toString()).build(),
+                    ":modifiedDate", AttributeValue.builder().s(dateAsString(entryUpdate.getModifiedDate())).build(),
+                    ":owner", AttributeValue.builder().s(entryUpdate.getOwner().toString()).build(),
+                    ":resourceIdentifier", AttributeValue.builder().s(entryUpdate.getResourceIdentifier().toString()).build(),
+                    ":version", AttributeValue.builder().s(dao.getVersion().toString()).build()
                 );
             
             this.conditionExpression =
