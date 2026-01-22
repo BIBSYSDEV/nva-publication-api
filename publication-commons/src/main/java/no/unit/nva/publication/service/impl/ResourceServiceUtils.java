@@ -1,41 +1,39 @@
 package no.unit.nva.publication.service.impl;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import no.unit.nva.publication.model.storage.WithPrimaryKey;
-
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
+import no.unit.nva.publication.model.storage.WithPrimaryKey;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public final class ResourceServiceUtils {
-    
+
     public static final String PARTITION_KEY_NAME_PLACEHOLDER = "#partitionKey";
     public static final String SORT_KEY_NAME_PLACEHOLDER = "#sortKey";
     public static final String PARTITION_KEY_VALUE_PLACEHOLDER = ":partitionKey";
     public static final String SORT_KEY_VALUE_PLACEHOLDER = ":sortKey";
-    
+
     // #partitionKey = :partitionKey AND #sortKey = :sortKey
     public static final String PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION =
         PARTITION_KEY_NAME_PLACEHOLDER + " = " + PARTITION_KEY_VALUE_PLACEHOLDER
         + " AND "
         + SORT_KEY_NAME_PLACEHOLDER + " = " + SORT_KEY_VALUE_PLACEHOLDER;
-    
+
     public static final Map<String, String> PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES =
         primaryKeyEqualityConditionAttributeNames();
-    
+
     public static final String KEY_NOT_EXISTS_CONDITION = keyNotExistsCondition();
     public static final String UNSUPPORTED_KEY_TYPE_EXCEPTION = "Currently only String values are supported";
-    
+
     private ResourceServiceUtils() {
     }
-    
+
     static Map<String, AttributeValue> primaryKeyEqualityConditionAttributeValues(WithPrimaryKey resourceDao) {
         return Map.of(PARTITION_KEY_VALUE_PLACEHOLDER,
-            new AttributeValue(resourceDao.getPrimaryKeyPartitionKey()),
-            SORT_KEY_VALUE_PLACEHOLDER, new AttributeValue(resourceDao.getPrimaryKeySortKey()));
+            AttributeValue.builder().s(resourceDao.getPrimaryKeyPartitionKey()).build(),
+            SORT_KEY_VALUE_PLACEHOLDER, AttributeValue.builder().s(resourceDao.getPrimaryKeySortKey()).build());
     }
 
     static <T> Map<String, AttributeValue> conditionValueMapToAttributeValueMap(Map<String, Object> valuesMap,
@@ -47,7 +45,7 @@ public final class ResourceServiceUtils {
                        .collect(
                            Collectors.toMap(
                                Entry::getKey,
-                               mapEntry -> new AttributeValue((String) mapEntry.getValue())
+                               mapEntry -> AttributeValue.builder().s((String) mapEntry.getValue()).build()
                            )
                        );
         } else {

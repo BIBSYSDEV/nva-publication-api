@@ -15,11 +15,11 @@ import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 //TODO: rename class to DynamoJsonToInternalModelEventHandler
 @SuppressWarnings({"PMD.ReturnEmptyCollectionRatherThanNull"})
 public final class DynamodbStreamRecordDaoMapper {
-    
+
     private DynamodbStreamRecordDaoMapper() {
-    
+
     }
-    
+
     /**
      * Map a DynamodbStreamRecordImage to Publication.
      *
@@ -48,19 +48,19 @@ public final class DynamodbStreamRecordDaoMapper {
     private static boolean isDao(DynamoEntry dynamoEntry) {
         return dynamoEntry instanceof Dao;
     }
-    
+
     private static boolean isResourceUpdate(Object data) {
         return data instanceof Entity;
     }
 
-    private static Map<String, com.amazonaws.services.dynamodbv2.model.AttributeValue> fromEventMapToDynamodbMap(
+    private static Map<String, software.amazon.awssdk.services.dynamodb.model.AttributeValue> fromEventMapToDynamodbMap(
         Map<String, AttributeValue> recordImage) throws JsonProcessingException {
         var jsonString = objectMapper.writeValueAsString(recordImage);
         var javaType =
             objectMapper.getTypeFactory()
                 .constructParametricType(Map.class,
                     String.class,
-                    com.amazonaws.services.dynamodbv2.model.AttributeValue.class
+                    software.amazon.awssdk.services.dynamodb.model.AttributeValue.class
                 );
         return objectMapper.readValue(jsonString, javaType);
     }

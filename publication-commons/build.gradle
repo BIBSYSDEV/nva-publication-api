@@ -14,8 +14,9 @@ dependencies {
     implementation nvaLibs.secrets
     implementation nvaLibs.clients
 
-    implementation nvaCatalog.aws.java.sdk.core
-    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.core
+    implementation nvaCatalog.aws.sdk2.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamodbenhanced
     implementation nvaCatalog.aws.sdk2.secrets
     implementation nvaCatalog.aws.sdk2.urlconnection
     implementation nvaCatalog.aws.apache.client
@@ -46,6 +47,11 @@ dependencies {
     testImplementation libs.hamcrest.optional
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
+
+    // SDK v1 dependency for test compatibility during migration
+    testImplementation(libs.aws.java.sdk.dynamodb) {
+        exclude group: 'software.amazon.awssdk'
+    }
 
 
     testFixturesImplementation project(":publication-model")

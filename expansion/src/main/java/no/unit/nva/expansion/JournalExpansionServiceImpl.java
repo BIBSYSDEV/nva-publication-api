@@ -1,15 +1,15 @@
 package no.unit.nva.expansion;
 
+import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
-import static org.apache.http.entity.ContentType.APPLICATION_JSON;
+import com.google.common.net.MediaType;
 import java.net.http.HttpResponse;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.model.ExpandedJournal;
 import no.unit.nva.model.contexttypes.Journal;
 import nva.commons.core.attempt.Failure;
-import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,13 +31,13 @@ public class JournalExpansionServiceImpl implements JournalExpansionService {
     }
 
     private String expandJournalName(Journal journal) {
-        return rawContentRetriever.fetchResponse(journal.getId(), APPLICATION_JSON.getMimeType())
+        return rawContentRetriever.fetchResponse(journal.getId(), MediaType.JSON_UTF_8.toString())
                    .map(this::extractNameFromResponse)
                    .orElse(null);
     }
 
     private String extractNameFromResponse(HttpResponse<String> response) {
-        return response.statusCode() == HttpStatus.SC_OK
+        return response.statusCode() == HTTP_OK
                    ? extractNameFromResponseBody(response.body())
                    : logFailedResponse(response);
     }

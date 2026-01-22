@@ -1,12 +1,12 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(GeneralSupportRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -34,7 +34,7 @@ public class GeneralSupportRequestDao extends TicketDao implements JsonSerializa
     public TransactWriteItemsRequest createInsertionTransactionRequest() {
         var dataEntry = newPutTransactionItem(this);
         var uniquenessEntry = newPutTransactionItem(new IdentifierEntry(this));
-        return new TransactWriteItemsRequest().withTransactItems(dataEntry, uniquenessEntry);
+        return TransactWriteItemsRequest.builder().transactItems(dataEntry, uniquenessEntry).build();
     }
 
     @Override

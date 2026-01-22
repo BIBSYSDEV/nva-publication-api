@@ -42,9 +42,9 @@ public class CreateUploadHandler extends ApiGatewayHandler<CreateUploadRequestBo
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var resourceIdentifier = RequestUtil.getIdentifier(requestInfo);
 
-        var createUploadResponseBody =  fileService.initiateMultipartUpload(resourceIdentifier, userInstance, input);
+        var createUploadResponse =  fileService.initiateMultipartUpload(resourceIdentifier, userInstance, input);
 
-        return CreateUploadResponseBody.fromInitiateMultipartUploadResult(createUploadResponseBody);
+        return CreateUploadResponseBody.fromCreateMultipartUploadResponse(createUploadResponse);
     }
 
     @Override

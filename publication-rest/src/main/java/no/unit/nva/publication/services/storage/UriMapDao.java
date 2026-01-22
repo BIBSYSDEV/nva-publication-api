@@ -1,13 +1,12 @@
 package no.unit.nva.publication.services.storage;
 
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import java.net.URI;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.services.model.UriMap;
+import software.amazon.awssdk.enhanced.dynamodb.document.EnhancedDocument;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class UriMapDao {
 
@@ -28,19 +27,19 @@ public class UriMapDao {
     }
 
     public static Map<String, AttributeValue> createKey(URI shortenedUri) {
-        return Map.of(URI_MAP_PRIMARY_PARTITION_KEY, new AttributeValue().withS(shortenedUri.toString()));
+        return Map.of(URI_MAP_PRIMARY_PARTITION_KEY, AttributeValue.builder().s(shortenedUri.toString()).build());
     }
 
     public Map<String, AttributeValue> toDynamoFormat() {
-        var item = attempt(() -> Item.fromJSON(
-            JsonUtils.dynamoObjectMapper.writeValueAsString(this.getUriMap()))).orElseThrow();
-        return ItemUtils.toAttributeValues(item);
+        var json = attempt(() -> JsonUtils.dynamoObjectMapper.writeValueAsString(this.getUriMap())).orElseThrow();
+        var enhancedDocument = EnhancedDocument.fromJson(json);
+        return enhancedDocument.toMap();
     }
 
     private static UriMap fromDynamoFormat(Map<String, AttributeValue> valuesMap) {
-        var item = ItemUtils.toItem(valuesMap);
+        var enhancedDocument = EnhancedDocument.fromAttributeValueMap(valuesMap);
         return attempt(() -> JsonUtils.dynamoObjectMapper
-                                 .readValue(item.toJSON(), UriMap.class))
+                                 .readValue(enhancedDocument.toJson(), UriMap.class))
                    .orElseThrow();
     }
 }

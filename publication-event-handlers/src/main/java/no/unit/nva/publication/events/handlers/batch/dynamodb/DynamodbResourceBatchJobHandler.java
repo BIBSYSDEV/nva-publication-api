@@ -6,11 +6,6 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_KEY_PAIRS;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
@@ -37,6 +32,10 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent, SQSBatchResponse> {
 
@@ -58,19 +57,19 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
     private static final String APPROXIMATE_RECEIVE_COUNT = "ApproximateReceiveCount";
 
     private final Map<String, DynamodbResourceBatchJobExecutor> jobHandlers;
-    private final AmazonDynamoDB client;
+    private final DynamoDbClient client;
     private final String tableName;
 
     @JacocoGenerated
     public DynamodbResourceBatchJobHandler() {
-        this(initializeDefaultJobHandlers(), AmazonDynamoDBClientBuilder.defaultClient(),
+        this(initializeDefaultJobHandlers(), DynamoDbClient.create(),
              new Environment().readEnv(TABLE_NAME_ENV));
     }
 
     public DynamodbResourceBatchJobHandler(Map<String, DynamodbResourceBatchJobExecutor> jobHandlers,
-                                           AmazonDynamoDB amazonDynamoDB, String tableName) {
+                                           DynamoDbClient dynamoDbClient, String tableName) {
         this.jobHandlers = jobHandlers;
-        this.client = amazonDynamoDB;
+        this.client = dynamoDbClient;
         this.tableName = tableName;
     }
 
@@ -201,8 +200,8 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
 
             var resolvedItems = new ArrayList<>(createWorkItems(gsiItem, result));
 
-            while (nonNull(result.getLastEvaluatedKey()) && !result.getLastEvaluatedKey().isEmpty()) {
-                queryRequest.setExclusiveStartKey(result.getLastEvaluatedKey());
+            while (nonNull(result.lastEvaluatedKey()) && !result.lastEvaluatedKey().isEmpty()) {
+                queryRequest = queryRequest.toBuilder().exclusiveStartKey(result.lastEvaluatedKey()).build();
                 result = client.query(queryRequest);
 
                 resolvedItems.addAll(createWorkItems(gsiItem, result));
@@ -217,31 +216,32 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
     private QueryRequest createGsiQueryRequest(DynamodbResourceBatchDynamoDbKey key) {
         var gsiKey = GSI_KEY_PAIRS.get(key.indexName());
 
-        return new QueryRequest()
-                   .withTableName(tableName)
-                   .withIndexName(key.indexName())
-                   .withKeyConditionExpression("#pk = :pkval AND #sk = :skval")
-                   .withExpressionAttributeNames(Map.of(
+        return QueryRequest.builder()
+                   .tableName(tableName)
+                   .indexName(key.indexName())
+                   .keyConditionExpression("#pk = :pkval AND #sk = :skval")
+                   .expressionAttributeNames(Map.of(
                        "#pk", gsiKey.partitionKey(),
                        "#sk", gsiKey.sortKey()
                    ))
-                   .withExpressionAttributeValues(Map.of(
-                       ":pkval", new AttributeValue().withS(key.partitionKey()),
-                       ":skval", new AttributeValue().withS(key.sortKey())
+                   .expressionAttributeValues(Map.of(
+                       ":pkval", AttributeValue.builder().s(key.partitionKey()).build(),
+                       ":skval", AttributeValue.builder().s(key.sortKey()).build()
                    ))
-                   .withProjectionExpression("PK0, SK0")
-                   .withLimit(100);
+                   .projectionExpression("PK0, SK0")
+                   .limit(100)
+                   .build();
     }
 
-    private static List<BatchWorkItem> createWorkItems(BatchWorkItem gsiItem, QueryResult result) {
-        return result.getItems().stream()
+    private static List<BatchWorkItem> createWorkItems(BatchWorkItem gsiItem, QueryResponse result) {
+        return result.items().stream()
                    .map(item -> createPrimaryKeyWorkFromGsi(gsiItem, item))
                    .toList();
     }
 
     private static BatchWorkItem createPrimaryKeyWorkFromGsi(BatchWorkItem gsiItem, Map<String, AttributeValue> item) {
-        var primaryPk = item.get(PRIMARY_KEY_PARTITION_KEY_NAME).getS();
-        var primarySk = item.get(PRIMARY_KEY_SORT_KEY_NAME).getS();
+        var primaryPk = item.get(PRIMARY_KEY_PARTITION_KEY_NAME).s();
+        var primarySk = item.get(PRIMARY_KEY_SORT_KEY_NAME).s();
         var primaryKey = new DynamodbResourceBatchDynamoDbKey(primaryPk, primarySk);
         return new BatchWorkItem(primaryKey, gsiItem.jobType(), gsiItem.parameters());
     }

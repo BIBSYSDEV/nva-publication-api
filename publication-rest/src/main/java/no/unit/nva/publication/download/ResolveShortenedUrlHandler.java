@@ -1,6 +1,6 @@
 package no.unit.nva.publication.download;
 
-import static org.apache.http.HttpHeaders.LOCATION;
+import static com.google.common.net.HttpHeaders.LOCATION;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;

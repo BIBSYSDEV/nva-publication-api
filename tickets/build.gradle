@@ -10,7 +10,7 @@ dependencies {
     implementation nvaLibs.json
     implementation nvaLibs.auth
     implementation project(":publication-model")
-    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamo
     implementation nvaCatalog.aws.sdk2.secrets
 
     implementation nvaCatalog.jackson.annotations

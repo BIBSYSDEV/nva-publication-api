@@ -14,7 +14,8 @@ dependencies {
     implementation nvaCatalog.jackson.databind
     implementation nvaCatalog.jackson.core
 
-    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamo
+    implementation nvaCatalog.aws.sdk2.s3
     implementation nvaCatalog.guava
     implementation nvaCatalog.zalando
 

@@ -38,6 +38,7 @@ xsd2java-api = { group = 'javax.xml.bind', name = 'jaxb-api', version = '2.4.0-b
 xsd2java-activation = { group = 'javax.activation', name = 'javax.activation-api', version = '1.2.0' }
 xsd2java-jakarta = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version = '3.0.1' }
 dynamodDbLocal = { group = 'com.amazonaws', name = 'DynamoDBLocal', version.ref = 'dynamoDbLocal' }
+aws-java-sdk-dynamodb = { group = 'com.amazonaws', name = 'aws-java-sdk-dynamodb', version = '1.12.780' }
 typesafe-config = { group = 'com.typesafe', name = 'config', version.ref = 'configTypesafe' }
 hamcrest-optional = { group = 'com.spotify', name = 'hamcrest-optional', version.ref = 'hamcrestSpotify' }
 hamcrest-json = {  group = 'uk.co.datumedge', name = 'hamcrest-json', version = '0.3' }

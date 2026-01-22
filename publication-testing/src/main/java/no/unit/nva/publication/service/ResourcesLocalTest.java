@@ -17,20 +17,8 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 import static org.mockito.Mockito.mock;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.Projection;
-import com.amazonaws.services.dynamodbv2.model.ProjectionType;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import java.net.URI;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,17 +33,35 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.core.JacocoGenerated;
 import org.junit.jupiter.api.AfterEach;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.BillingMode;
+import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.GlobalSecondaryIndex;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.Projection;
+import software.amazon.awssdk.services.dynamodb.model.ProjectionType;
+import software.amazon.awssdk.services.dynamodb.model.Put;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @SuppressWarnings({"PMD.TestClassWithoutTestCases", "PMD.CouplingBetweenObjects"})
 @JacocoGenerated
 public class ResourcesLocalTest extends TestDataSource {
 
     public static final ScalarAttributeType STRING_TYPE = ScalarAttributeType.S;
-    protected AmazonDynamoDB client;
+    protected DynamoDbClient client;
     protected UriRetriever uriRetriever;
     protected ChannelClaimClient channelClaimClient;
     protected CustomerService customerService;
     protected FakeCristinUnitsUtil cristinUnitsUtil;
+
+    private com.amazonaws.services.dynamodbv2.AmazonDynamoDB embeddedDynamoDb;
 
     public ResourcesLocalTest() {
         super();
@@ -69,9 +75,11 @@ public class ResourcesLocalTest extends TestDataSource {
         uriRetriever = mock(UriRetriever.class);
         customerService = mock(CustomerService.class);
         channelClaimClient = mock(ChannelClaimClient.class);
-        client = DynamoDBEmbedded.create().amazonDynamoDB();
         cristinUnitsUtil = new FakeCristinUnitsUtil();
-        CreateTableRequest request = createTableRequest(tableName);
+
+        embeddedDynamoDb = DynamoDBEmbedded.create().amazonDynamoDB();
+        client = createSdk2Client();
+        var request = createTableRequest(tableName);
         client.createTable(request);
     }
 
@@ -79,19 +87,35 @@ public class ResourcesLocalTest extends TestDataSource {
         uriRetriever = mock(UriRetriever.class);
         customerService = mock(CustomerService.class);
         channelClaimClient = mock(ChannelClaimClient.class);
-        client = DynamoDBEmbedded.create().amazonDynamoDB();
+        cristinUnitsUtil = new FakeCristinUnitsUtil();
+
+        embeddedDynamoDb = DynamoDBEmbedded.create().amazonDynamoDB();
+        client = createSdk2Client();
         var firstTableRequest = createTableRequest(firstTable);
         var secondTableRequest = createTableRequest(secondTable);
         client.createTable(firstTableRequest);
         client.createTable(secondTableRequest);
     }
 
+    private DynamoDbClient createSdk2Client() {
+        var endpoint = URI.create("http://localhost:8000");
+        return DynamoDbClient.builder()
+                   .endpointOverride(endpoint)
+                   .region(Region.EU_WEST_1)
+                   .credentialsProvider(StaticCredentialsProvider.create(
+                       AwsBasicCredentials.create("dummy", "dummy")))
+                   .build();
+    }
+
     protected Resource persistResource(Resource resource) {
-        client.transactWriteItems(new TransactWriteItemsRequest()
-                                      .withTransactItems(new TransactWriteItem()
-                                                             .withPut(new Put()
-                                                                          .withItem(resource.toDao().toDynamoFormat())
-                                                                          .withTableName(RESOURCES_TABLE_NAME))));
+        var putItem = Put.builder()
+                          .item(resource.toDao().toDynamoFormat())
+                          .tableName(RESOURCES_TABLE_NAME)
+                          .build();
+        var transactItem = TransactWriteItem.builder().put(putItem).build();
+        client.transactWriteItems(TransactWriteItemsRequest.builder()
+                                      .transactItems(transactItem)
+                                      .build());
         resource.getPublicationChannels()
             .forEach(channel -> client.transactWriteItems(channel.toDao().createInsertionTransactionRequest()));
         resource.getFileEntries()
@@ -101,18 +125,19 @@ public class ResourcesLocalTest extends TestDataSource {
 
     @AfterEach
     public void shutdown() {
-        if (nonNull(client)) {
-            client.shutdown();
+        if (nonNull(embeddedDynamoDb)) {
+            embeddedDynamoDb.shutdown();
         }
     }
 
     private CreateTableRequest createTableRequest(String tableName) {
-        return new CreateTableRequest()
-                   .withTableName(tableName)
-                   .withAttributeDefinitions(attributeDefinitions())
-                   .withKeySchema(primaryKeySchema())
-                   .withGlobalSecondaryIndexes(globalSecondaryIndexes())
-                   .withBillingMode(BillingMode.PAY_PER_REQUEST);
+        return CreateTableRequest.builder()
+                   .tableName(tableName)
+                   .attributeDefinitions(attributeDefinitions())
+                   .keySchema(primaryKeySchema())
+                   .globalSecondaryIndexes(globalSecondaryIndexes())
+                   .billingMode(BillingMode.PAY_PER_REQUEST)
+                   .build();
     }
 
     private Collection<GlobalSecondaryIndex> globalSecondaryIndexes() {
@@ -141,10 +166,11 @@ public class ResourcesLocalTest extends TestDataSource {
     }
 
     private GlobalSecondaryIndex newGsi(String indexName, String partitionKeyName, String sortKeyName) {
-        return new GlobalSecondaryIndex()
-                   .withIndexName(indexName)
-                   .withKeySchema(keySchema(partitionKeyName, sortKeyName))
-                   .withProjection(new Projection().withProjectionType(ProjectionType.ALL));
+        return GlobalSecondaryIndex.builder()
+                   .indexName(indexName)
+                   .keySchema(keySchema(partitionKeyName, sortKeyName))
+                   .projection(Projection.builder().projectionType(ProjectionType.ALL).build())
+                   .build();
     }
 
     private Collection<KeySchemaElement> primaryKeySchema() {
@@ -159,7 +185,10 @@ public class ResourcesLocalTest extends TestDataSource {
     }
 
     private KeySchemaElement newKeyElement(String primaryKeySortKeyName, KeyType range) {
-        return new KeySchemaElement().withAttributeName(primaryKeySortKeyName).withKeyType(range);
+        return KeySchemaElement.builder()
+                   .attributeName(primaryKeySortKeyName)
+                   .keyType(range)
+                   .build();
     }
 
     private AttributeDefinition[] attributeDefinitions() {
@@ -174,26 +203,25 @@ public class ResourcesLocalTest extends TestDataSource {
         attributesList.add(newAttribute(BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME));
         attributesList.add(newAttribute(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME));
         attributesList.add(newAttribute(RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME));
-        AttributeDefinition[] attributesArray = new AttributeDefinition[attributesList.size()];
-        attributesList.toArray(attributesArray);
-        return attributesArray;
+        return attributesList.toArray(new AttributeDefinition[0]);
     }
 
     private AttributeDefinition newAttribute(String keyName) {
-        return new AttributeDefinition()
-                   .withAttributeName(keyName)
-                   .withAttributeType(STRING_TYPE);
+        return AttributeDefinition.builder()
+                   .attributeName(keyName)
+                   .attributeType(STRING_TYPE)
+                   .build();
     }
 
     public TicketService getTicketService() {
         return new TicketService(client, uriRetriever, cristinUnitsUtil);
     }
 
-    public ResourceService getResourceService(AmazonDynamoDB dynamoDbClient) {
+    public ResourceService getResourceService(DynamoDbClient dynamoDbClient) {
         return getResourceService(dynamoDbClient, RESOURCES_TABLE_NAME);
     }
 
-    public ResourceService getResourceService(AmazonDynamoDB dynamoDbClient, String tableName) {
+    public ResourceService getResourceService(DynamoDbClient dynamoDbClient, String tableName) {
         return new ResourceService(dynamoDbClient, tableName, Clock.systemDefaultZone(), uriRetriever,
                                    channelClaimClient, customerService, new FakeCristinUnitsUtil());
     }

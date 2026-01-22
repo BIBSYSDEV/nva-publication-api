@@ -45,7 +45,7 @@ import no.unit.nva.model.pages.Pages;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
-import org.joda.time.DateTime;
+import java.time.Year;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -463,7 +463,7 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
         return Optional.ofNullable(importCandidate.getEntityDescription())
                    .map(ImportEntityDescription::publicationDate)
                    .map(PublicationDate::getYear)
-                   .orElse(String.valueOf(new DateTime().getYear()));
+                   .orElse(String.valueOf(Year.now().getValue()));
     }
 
     private static Set<ExpandedImportCandidateOrganization> extractOrganizations(ImportCandidate importCandidate,

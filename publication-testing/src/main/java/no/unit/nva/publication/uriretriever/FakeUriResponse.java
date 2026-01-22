@@ -7,8 +7,8 @@ import static no.unit.nva.publication.service.CristinOrganizationFixtures.random
 import static no.unit.nva.publication.service.FakeCristinOrganization.asLeafNode;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
-import static org.apache.http.HttpStatus.SC_MOVED_PERMANENTLY;
-import static org.apache.http.HttpStatus.SC_OK;
+import static java.net.HttpURLConnection.HTTP_MOVED_PERM;
+import static java.net.HttpURLConnection.HTTP_OK;
 import com.google.common.net.MediaType;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -104,9 +104,9 @@ public final class FakeUriResponse {
 
     public static void setupFakeForType(TicketEntry ticket, FakeUriRetriever fakeUriRetriever) {
         var responsibilityArea = ticket.getReceivingOrganizationDetails().subOrganizationId();
-        fakeUriRetriever.registerResponse(responsibilityArea, SC_OK, APPLICATION_JSON_LD,
+        fakeUriRetriever.registerResponse(responsibilityArea, HTTP_OK, APPLICATION_JSON_LD,
           createCristinOrganizationResponseForLowLevelOrg(responsibilityArea));
-        fakeUriRetriever.registerResponse(ticket.getCustomerId(), SC_OK, APPLICATION_JSON_LD,
+        fakeUriRetriever.registerResponse(ticket.getCustomerId(), HTTP_OK, APPLICATION_JSON_LD,
           createCristinOrganizationResponseForLowLevelOrg(ticket.getCustomerId()));
         setUpPersonResponse(fakeUriRetriever, ticket.getOwner());
         setUpPersonResponse(fakeUriRetriever, ticket.getAssignee());
@@ -138,7 +138,7 @@ public final class FakeUriResponse {
     }
 
     private static void createFakeCustomerApiResponse(FakeUriRetriever fakeUriRetriever) {
-        fakeUriRetriever.registerResponse(toFetchCustomerByCristinIdUri(HARD_CODED_TOP_LEVEL_ORG_URI), SC_OK,
+        fakeUriRetriever.registerResponse(toFetchCustomerByCristinIdUri(HARD_CODED_TOP_LEVEL_ORG_URI), HTTP_OK,
                                           MediaType.JSON_UTF_8,
                                           createCustomerApiResponse());
     }
@@ -172,21 +172,21 @@ public final class FakeUriResponse {
             case GeographicalContent geographicalContent when
                 geographicalContent.getPublisher() instanceof Publisher publisher -> {
                 var uri = publisher.getId();
-                fakeUriRetriever.registerResponse(uri, SC_OK, APPLICATION_JSON_LD, createPublisher(uri));
+                fakeUriRetriever.registerResponse(uri, HTTP_OK, APPLICATION_JSON_LD, createPublisher(uri));
             }
             case Journal journal -> {
                 var id = journal.getId();
                 if (publicationContextRedirects) {
-                    fakeUriRetriever.registerResponse(id, SC_MOVED_PERMANENTLY, APPLICATION_JSON_LD, null);
+                    fakeUriRetriever.registerResponse(id, HTTP_MOVED_PERM, APPLICATION_JSON_LD, null);
                 } else {
-                    fakeUriRetriever.registerResponse(id, SC_OK, APPLICATION_JSON_LD, createJournal(id));
+                    fakeUriRetriever.registerResponse(id, HTTP_OK, APPLICATION_JSON_LD, createJournal(id));
                 }
             }
             case Report report when report.getPublisher() instanceof Publisher publisher ->
                 setupFakeResponsesForBookTypes(fakeUriRetriever, report, publisher);
             case ResearchData researchData when researchData.getPublisher() instanceof Publisher publisher -> {
                 var uri = publisher.getId();
-                fakeUriRetriever.registerResponse(uri, SC_OK, APPLICATION_JSON_LD, createPublisher(uri));
+                fakeUriRetriever.registerResponse(uri, HTTP_OK, APPLICATION_JSON_LD, createPublisher(uri));
             }
             case Artistic ignored -> { /* No faking expected */ }
             case Event ignored -> { /* No faking expected */ }
@@ -201,7 +201,7 @@ public final class FakeUriResponse {
     private static void setupFakeResponsesForBookTypes(FakeUriRetriever fakeUriRetriever, Book book,
                                                        Publisher publisher) {
         URI id = publisher.getId();
-        fakeUriRetriever.registerResponse(id, SC_OK, APPLICATION_JSON_LD, createPublisher(id));
+        fakeUriRetriever.registerResponse(id, HTTP_OK, APPLICATION_JSON_LD, createPublisher(id));
         fakeSeriesResponse(fakeUriRetriever, book);
     }
 
@@ -232,7 +232,7 @@ public final class FakeUriResponse {
         for (var organizationId : extractAffiliations(publication)) {
             var fakeResponse = createFakeOrganizationStructure(organizationId);
             fakeUriRetriever.registerResponse(
-                    organizationId, SC_OK, MediaType.JSON_UTF_8, fakeResponse);
+                    organizationId, HTTP_OK, MediaType.JSON_UTF_8, fakeResponse);
         }
     }
 
@@ -262,7 +262,7 @@ public final class FakeUriResponse {
     private static void setUpPersonResponse(FakeUriRetriever fakeUriRetriever, Object person) {
         if (nonNull(person)) {
             var assigneeUri = createOwnerUri(person.toString());
-            fakeUriRetriever.registerResponse(assigneeUri, SC_OK, APPLICATION_JSON_LD,
+            fakeUriRetriever.registerResponse(assigneeUri, HTTP_OK, APPLICATION_JSON_LD,
                                               createPersonResponse(person.toString(), null));
         }
     }
@@ -326,7 +326,7 @@ public final class FakeUriResponse {
     }
 
     private static void fakeOwnerResponse(FakeUriRetriever fakeUriRetriever, URI ownerAffiliation) {
-        fakeUriRetriever.registerResponse(ownerAffiliation, SC_OK, APPLICATION_JSON_LD,
+        fakeUriRetriever.registerResponse(ownerAffiliation, HTTP_OK, APPLICATION_JSON_LD,
           createCristinOrganizationResponseForLowLevelOrg(ownerAffiliation));
     }
 
@@ -344,13 +344,13 @@ public final class FakeUriResponse {
         if (funding instanceof ConfirmedFunding confirmedFunding) {
             var id = confirmedFunding.getId();
             fakeUriRetriever.registerResponse(id,
-                                              SC_OK,
+                                              HTTP_OK,
                                               APPLICATION_JSON_LD,
                                               confirmedFundingResponse(id, source));
         }
 
         fakeUriRetriever.registerResponse(source,
-                                          SC_OK,
+                                          HTTP_OK,
                                           APPLICATION_JSON_LD,
                                           fundingSourceResponse(source));
     }
@@ -395,7 +395,7 @@ public final class FakeUriResponse {
 
     private static void fakeProjectResponse(FakeUriRetriever fakeUriRetriever, ResearchProject project,
                                             Set<Funding> fundings) {
-        fakeUriRetriever.registerResponse(project.getId(), SC_OK, APPLICATION_JSON_LD,
+        fakeUriRetriever.registerResponse(project.getId(), HTTP_OK, APPLICATION_JSON_LD,
                                           projectResponse(project.getId(), getFundingsArray(fundings)));
     }
 
@@ -1442,19 +1442,19 @@ public final class FakeUriResponse {
     private static void fakePublisherResponse(FakeUriRetriever fakeUriRetriever, Book book) {
         if (nonNull(book.getPublisher()) && book.getPublisher() instanceof Publisher publisher) {
             var id = publisher.getId();
-            fakeUriRetriever.registerResponse(id, SC_OK, APPLICATION_JSON_LD, createPublisher(id));
+            fakeUriRetriever.registerResponse(id, HTTP_OK, APPLICATION_JSON_LD, createPublisher(id));
         }
     }
 
     private static void fakeSeriesResponse(FakeUriRetriever fakeUriRetriever, Book book) {
         if (book.getSeries() instanceof Series series) {
             var seriesId = series.getId();
-            fakeUriRetriever.registerResponse(seriesId, SC_OK, APPLICATION_JSON_LD, createSeries(seriesId));
+            fakeUriRetriever.registerResponse(seriesId, HTTP_OK, APPLICATION_JSON_LD, createSeries(seriesId));
         }
     }
 
     private static void fakePendingNviResponse(FakeUriRetriever fakeUriRetriever, Publication publication) {
-        setUpNviResponse(fakeUriRetriever, SC_OK, publication, getPendingNviResponseString());
+        setUpNviResponse(fakeUriRetriever, HTTP_OK, publication, getPendingNviResponseString());
     }
 
     private static String createCustomerApiResponse() {

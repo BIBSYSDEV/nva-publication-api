@@ -1,20 +1,18 @@
 package no.unit.nva.publication.file.upload.restmodel;
 
 import static java.util.Objects.requireNonNull;
-import com.amazonaws.HttpMethod;
-import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 
 public record PrepareUploadPartRequestBody(String uploadId, String key, String body, String number) {
 
-    public static final String PARAMETER_UPLOAD_ID_KEY = "uploadId";
-    public static final String PARAMETER_PART_NUMBER_KEY = "partNumber";
-
-    public GeneratePresignedUrlRequest toGeneratePresignedUrlRequest(String bucketName) {
-        var presignedUrlUploadRequest = new GeneratePresignedUrlRequest(bucketName, key()).withMethod(HttpMethod.PUT);
-        presignedUrlUploadRequest.addRequestParameter(PARAMETER_UPLOAD_ID_KEY, uploadId());
-        presignedUrlUploadRequest.addRequestParameter(PARAMETER_PART_NUMBER_KEY, number());
-        return presignedUrlUploadRequest;
+    public UploadPartRequest toUploadPartRequest(String bucketName) {
+        return UploadPartRequest.builder()
+                   .bucket(bucketName)
+                   .key(key())
+                   .uploadId(uploadId())
+                   .partNumber(Integer.parseInt(number()))
+                   .build();
     }
 
     public void validate() throws BadRequestException {

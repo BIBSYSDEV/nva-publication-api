@@ -3,7 +3,7 @@ package no.unit.nva.publication.events.bodies;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;

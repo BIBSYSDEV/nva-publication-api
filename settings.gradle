@@ -24,6 +24,7 @@ include 'publication-file'
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
+        mavenLocal() // FIXME: For local testing, do not merget this
     }
     versionCatalogs {
         // Version catalog imported from nva-commons

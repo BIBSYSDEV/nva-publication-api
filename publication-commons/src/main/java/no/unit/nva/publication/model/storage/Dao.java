@@ -7,9 +7,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_FORMAT;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -27,6 +24,9 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -158,7 +158,7 @@ public abstract class Dao
 
     public abstract TransactWriteItemsRequest createInsertionTransactionRequest();
 
-    public abstract void updateExistingEntry(AmazonDynamoDB client);
+    public abstract void updateExistingEntry(DynamoDbClient client);
 
     public final String dataType() {
         return getData().getType();
@@ -205,15 +205,15 @@ public abstract class Dao
     private static Entry<String, AttributeValue> createFilterExpression(KeyField keyField) {
         return switch (keyField) {
             case RESOURCE ->
-                Map.entry(keyField.getKeyField(), new AttributeValue(ResourceDao.TYPE + KEY_FIELDS_DELIMITER));
+                Map.entry(keyField.getKeyField(), AttributeValue.builder().s(ResourceDao.TYPE + KEY_FIELDS_DELIMITER).build());
             case MESSAGE ->
-                Map.entry(keyField.getKeyField(), new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER));
+                Map.entry(keyField.getKeyField(), AttributeValue.builder().s(MessageDao.TYPE + KEY_FIELDS_DELIMITER).build());
             case TICKET -> Map.entry(keyField.getKeyField(),
-                                     new AttributeValue(TicketDao.TICKETS_INDEXING_TYPE + KEY_FIELDS_DELIMITER));
+                                     AttributeValue.builder().s(TicketDao.TICKETS_INDEXING_TYPE + KEY_FIELDS_DELIMITER).build());
             case DOI_REQUEST ->
-                Map.entry(keyField.getKeyField(), new AttributeValue("DoiRequest" + KEY_FIELDS_DELIMITER));
+                Map.entry(keyField.getKeyField(), AttributeValue.builder().s("DoiRequest" + KEY_FIELDS_DELIMITER).build());
             case FILE_ENTRY ->
-                Map.entry(keyField.getKeyField(), new AttributeValue("File" + KEY_FIELDS_DELIMITER));
+                Map.entry(keyField.getKeyField(), AttributeValue.builder().s("File" + KEY_FIELDS_DELIMITER).build());
         };
     }
 }

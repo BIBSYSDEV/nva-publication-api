@@ -10,7 +10,7 @@ dependencies {
     implementation libs.xsd2java.jakarta
     implementation nvaCatalog.aws.sdk2.s3
     implementation nvaCatalog.aws.lambda.events
-    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamo
     implementation nvaCatalog.aws.sdk2.secrets
 
     implementation nvaLibs.s3

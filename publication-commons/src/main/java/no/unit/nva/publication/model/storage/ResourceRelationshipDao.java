@@ -4,7 +4,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AN
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -14,6 +13,7 @@ import java.time.Instant;
 import java.util.Map;
 import no.unit.nva.publication.model.business.ResourceRelationship;
 import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 @JsonTypeName(ResourceRelationshipDao.TYPE)
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -55,8 +55,8 @@ public record ResourceRelationshipDao(@JsonProperty("data") ResourceRelationship
     @JsonIgnore
     public Map<String, AttributeValue> getPrimaryKey() {
         return Map.of(
-            PRIMARY_KEY_PARTITION_KEY_NAME, new AttributeValue(getChildKey()),
-            PRIMARY_KEY_SORT_KEY_NAME, new AttributeValue(getParentKey())
+            PRIMARY_KEY_PARTITION_KEY_NAME, AttributeValue.builder().s(getChildKey()).build(),
+            PRIMARY_KEY_SORT_KEY_NAME, AttributeValue.builder().s(getParentKey()).build()
         );
     }
 }

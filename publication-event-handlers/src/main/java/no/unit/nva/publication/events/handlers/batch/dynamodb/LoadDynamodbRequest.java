@@ -1,7 +1,7 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb;
 
 import static java.util.Objects.nonNull;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
