@@ -9,7 +9,8 @@ import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static org.apache.http.HttpStatus.SC_OK;
+import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,7 +21,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.stream.Stream;
 import no.unit.nva.clients.GetExternalClientResponse;
@@ -87,7 +87,7 @@ class PublicationsByOwnerHandlerTest {
         publicationsByOwnerHandler.handleRequest(input, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationsByOwnerResponse.class);
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
@@ -97,7 +97,7 @@ class PublicationsByOwnerHandlerTest {
         InputStream input = new HandlerRequestBuilder<Void>(restApiMapper).build();
         publicationsByOwnerHandler.handleRequest(input, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Void.class);
-        assertEquals(HttpURLConnection.HTTP_UNAUTHORIZED, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_UNAUTHORIZED, gatewayResponse.getStatusCode());
     }
 
     @Test
@@ -113,7 +113,7 @@ class PublicationsByOwnerHandlerTest {
         publicationsByOwnerHandler.handleRequest(input, output, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationsByOwnerResponse.class);
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
