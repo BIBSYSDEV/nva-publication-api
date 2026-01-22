@@ -832,19 +832,18 @@ public class ResourceService extends ServiceWithTransactions {
         ResourceDao resourceDao = extractResourceDao(daos);
 
         TransactWriteItem deleteResourceItem = newDeleteTransactionItem(resourceDao);
-        applyDeleteResourceConditions(deleteResourceItem);
+        TransactWriteItem deleteResourceItemWithConditions = applyDeleteResourceConditions(deleteResourceItem);
 
         TransactWriteItem deleteResourceIdentifierItem = newDeleteTransactionItem(IdentifierEntry.create(resourceDao));
 
-        return List.of(deleteResourceItem, deleteResourceIdentifierItem);
+        return List.of(deleteResourceItemWithConditions, deleteResourceIdentifierItem);
     }
 
-    private void applyDeleteResourceConditions(TransactWriteItem deleteResource) {
+    private TransactWriteItem applyDeleteResourceConditions(TransactWriteItem deleteResource) {
         Map<String, String> expressionAttributeNames = Map.of("#status", STATUS_FIELD_IN_RESOURCE);
         Map<String, AttributeValue> expressionAttributeValues = Map.of(":publishedStatus",
                                                                        AttributeValue.builder().s(DRAFT.getValue()).build());
 
-        // SDK v2 TransactWriteItem is immutable, need to create a new one
         var existingDelete = deleteResource.delete();
         var newDelete = Delete.builder()
                             .tableName(existingDelete.tableName())
@@ -853,8 +852,7 @@ public class ResourceService extends ServiceWithTransactions {
                             .expressionAttributeNames(expressionAttributeNames)
                             .expressionAttributeValues(expressionAttributeValues)
                             .build();
-        // Note: This method modifies the TransactWriteItem, but SDK v2 uses immutable objects
-        // We need to handle this differently - the caller should use the returned value
+        return TransactWriteItem.builder().delete(newDelete).build();
     }
 
     private Resource markResourceForDeletion(Resource resource) throws ApiGatewayException {

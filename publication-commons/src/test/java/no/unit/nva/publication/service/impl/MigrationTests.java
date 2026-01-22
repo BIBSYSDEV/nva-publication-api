@@ -126,7 +126,7 @@ class MigrationTests extends ResourcesLocalTest {
         var dbScan = client.scan(ScanRequest.builder().tableName(RESOURCES_TABLE_NAME).build()).items();
         var doiAttributeValue = dbScan.getFirst();
         assertThat(doiAttributeValue.get("data").b(), not(nullValue()));
-        assertThat(doiAttributeValue.get("data").m(), is(nullValue()));
+        assertThat(doiAttributeValue.get("data").hasM(), is(false));
 
         var compressedData = doiAttributeValue.get("data").b().asByteArray();
         var decompressedData = new String(DataCompressor.decompress(compressedData), UTF_8);

@@ -21,11 +21,12 @@ import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStream
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord;
-import com.fasterxml.jackson.databind.JavaType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -193,19 +194,34 @@ class DynamodbStreamToEventBridgeHandlerTest {
         return event;
     }
 
-    private static Map<String, AttributeValue> toDynamoDbFormat(Entity publication) {
-        return nonNull(publication) ? publicationDynamoDbFormat(publication) : null;
+    private static Map<String, AttributeValue> toDynamoDbFormat(Entity entity) {
+        return nonNull(entity) ? toLambdaAttributeValueMap(entity.toDao().toDynamoFormat()) : null;
     }
 
-    private static Map<String, AttributeValue> publicationDynamoDbFormat(Entity publication) {
-        var dao = publication.toDao().toDynamoFormat();
-        var string = attempt(() -> dtoObjectMapper.writeValueAsString(dao)).orElseThrow();
-        return (Map<String, AttributeValue>) attempt(() -> dtoObjectMapper.readValue(string,
-                                                                                     dynamoMapStructureAsJacksonType())).orElseThrow();
+    private static Map<String, AttributeValue> toLambdaAttributeValueMap(
+            Map<String, software.amazon.awssdk.services.dynamodb.model.AttributeValue> sdkMap) {
+        return sdkMap.entrySet().stream()
+                   .collect(Collectors.toMap(Entry::getKey, e -> toLambdaAttributeValue(e.getValue())));
     }
 
-    private static JavaType dynamoMapStructureAsJacksonType() {
-        return dtoObjectMapper.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
+    private static AttributeValue toLambdaAttributeValue(
+            software.amazon.awssdk.services.dynamodb.model.AttributeValue value) {
+        return switch (value.type()) {
+            case S -> new AttributeValue().withS(value.s());
+            case SS -> new AttributeValue().withSS(value.ss());
+            case N -> new AttributeValue().withN(value.n());
+            case NS -> new AttributeValue().withNS(value.ns());
+            case B -> new AttributeValue().withB(value.b().asByteBuffer());
+            case BS -> new AttributeValue().withBS(value.bs().stream()
+                           .map(b -> b.asByteBuffer()).collect(Collectors.toList()));
+            case M -> new AttributeValue().withM(toLambdaAttributeValueMap(value.m()));
+            case L -> new AttributeValue().withL(value.l().stream()
+                          .map(DynamodbStreamToEventBridgeHandlerTest::toLambdaAttributeValue)
+                          .collect(Collectors.toList()));
+            case NUL -> new AttributeValue().withNULL(value.nul());
+            case BOOL -> new AttributeValue().withBOOL(value.bool());
+            default -> throw new IllegalArgumentException("Unknown AttributeValue type: " + value.type());
+        };
     }
 
     private DataEntryUpdateEvent extractPersistedDataEntryUpdateEvent() {
