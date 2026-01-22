@@ -1,6 +1,5 @@
 package no.unit.nva.publication.service;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME;
@@ -17,8 +16,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 import static org.mockito.Mockito.mock;
-import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
-import java.net.URI;
+import software.amazon.dynamodb.services.local.embedded.DynamoDBEmbedded;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,9 +31,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.core.JacocoGenerated;
 import org.junit.jupiter.api.AfterEach;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.BillingMode;
@@ -61,8 +56,6 @@ public class ResourcesLocalTest extends TestDataSource {
     protected CustomerService customerService;
     protected FakeCristinUnitsUtil cristinUnitsUtil;
 
-    private com.amazonaws.services.dynamodbv2.AmazonDynamoDB embeddedDynamoDb;
-
     public ResourcesLocalTest() {
         super();
     }
@@ -77,8 +70,7 @@ public class ResourcesLocalTest extends TestDataSource {
         channelClaimClient = mock(ChannelClaimClient.class);
         cristinUnitsUtil = new FakeCristinUnitsUtil();
 
-        embeddedDynamoDb = DynamoDBEmbedded.create().amazonDynamoDB();
-        client = createSdk2Client();
+        client = DynamoDBEmbedded.create(null, true).dynamoDbClient();
         var request = createTableRequest(tableName);
         client.createTable(request);
     }
@@ -89,22 +81,11 @@ public class ResourcesLocalTest extends TestDataSource {
         channelClaimClient = mock(ChannelClaimClient.class);
         cristinUnitsUtil = new FakeCristinUnitsUtil();
 
-        embeddedDynamoDb = DynamoDBEmbedded.create().amazonDynamoDB();
-        client = createSdk2Client();
+        client = DynamoDBEmbedded.create(null, true).dynamoDbClient();
         var firstTableRequest = createTableRequest(firstTable);
         var secondTableRequest = createTableRequest(secondTable);
         client.createTable(firstTableRequest);
         client.createTable(secondTableRequest);
-    }
-
-    private DynamoDbClient createSdk2Client() {
-        var endpoint = URI.create("http://localhost:8000");
-        return DynamoDbClient.builder()
-                   .endpointOverride(endpoint)
-                   .region(Region.EU_WEST_1)
-                   .credentialsProvider(StaticCredentialsProvider.create(
-                       AwsBasicCredentials.create("dummy", "dummy")))
-                   .build();
     }
 
     protected Resource persistResource(Resource resource) {
@@ -125,8 +106,8 @@ public class ResourcesLocalTest extends TestDataSource {
 
     @AfterEach
     public void shutdown() {
-        if (nonNull(embeddedDynamoDb)) {
-            embeddedDynamoDb.shutdown();
+        if (client != null) {
+            client.close();
         }
     }
 

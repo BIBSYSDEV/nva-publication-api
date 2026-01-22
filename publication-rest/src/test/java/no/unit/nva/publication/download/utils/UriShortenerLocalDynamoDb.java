@@ -1,13 +1,9 @@
 package no.unit.nva.publication.download.utils;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.BillingMode;
@@ -17,6 +13,7 @@ import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.TimeToLiveSpecification;
 import software.amazon.awssdk.services.dynamodb.model.UpdateTimeToLiveRequest;
+import software.amazon.dynamodb.services.local.embedded.DynamoDBEmbedded;
 
 
 public class UriShortenerLocalDynamoDb {
@@ -26,7 +23,6 @@ public class UriShortenerLocalDynamoDb {
     public static final ScalarAttributeType STRING_TYPE = ScalarAttributeType.S;
     protected DynamoDbClient client;
     private String uriMapTableName;
-    private Object embeddedDynamoDb;
 
     public void setUriMapTableName(String uriMapTableName) {
         this.uriMapTableName = uriMapTableName;
@@ -34,21 +30,10 @@ public class UriShortenerLocalDynamoDb {
 
     public void init(String uriMapTableName) {
         setUriMapTableName(uriMapTableName);
-        embeddedDynamoDb = createEmbeddedDynamoDb();
-        client = createSdk2Client();
+        client = DynamoDBEmbedded.create(null, true).dynamoDbClient();
         var request = createTableRequest();
         client.createTable(request);
         updateWithTimeToLive();
-    }
-
-    private DynamoDbClient createSdk2Client() {
-        var endpoint = URI.create("http://localhost:8000");
-        return DynamoDbClient.builder()
-                   .endpointOverride(endpoint)
-                   .region(Region.EU_WEST_1)
-                   .credentialsProvider(StaticCredentialsProvider.create(
-                       AwsBasicCredentials.create("dummy", "dummy")))
-                   .build();
     }
 
     private void updateWithTimeToLive() {
@@ -67,28 +52,8 @@ public class UriShortenerLocalDynamoDb {
 
     @AfterEach
     public void shutdown() {
-        client.close();
-        shutdownEmbeddedDynamoDb();
-    }
-
-    private Object createEmbeddedDynamoDb() {
-        try {
-            var dynamoDBEmbeddedClass = Class.forName("com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded");
-            var createMethod = dynamoDBEmbeddedClass.getMethod("create");
-            var embeddedInstance = createMethod.invoke(null);
-            var amazonDynamoDBMethod = embeddedInstance.getClass().getMethod("amazonDynamoDB");
-            return amazonDynamoDBMethod.invoke(embeddedInstance);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create embedded DynamoDB", e);
-        }
-    }
-
-    private void shutdownEmbeddedDynamoDb() {
-        try {
-            var shutdownMethod = embeddedDynamoDb.getClass().getMethod("shutdown");
-            shutdownMethod.invoke(embeddedDynamoDb);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to shutdown embedded DynamoDB", e);
+        if (client != null) {
+            client.close();
         }
     }
 
