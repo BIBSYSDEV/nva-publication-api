@@ -1,4 +1,4 @@
-package no.unit.nva.publication.s3imports.utils;
+package no.unit.nva.publication.service;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,12 +8,12 @@ import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResultEntry;
 
-public class FakeSqsClient implements SqsClient {
+public class StubSqsClient implements SqsClient {
 
     private final List<String> messageBodies;
     private final List<String> queueUrls;
 
-    public FakeSqsClient() {
+    public StubSqsClient() {
         messageBodies = new ArrayList<>();
         queueUrls = new ArrayList<>();
     }
@@ -50,7 +50,7 @@ public class FakeSqsClient implements SqsClient {
 
     @Override
     public void close() {
-        // No-op for fake client
+        // No-op for stub client
     }
 
     private SendMessageBatchResultEntry convertToResult(SendMessageBatchRequestEntry sendMessageBatchRequestEntry) {

@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.publication.s3imports.utils.FakeSqsClient;
+import no.unit.nva.publication.service.StubSqsClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
@@ -73,12 +73,12 @@ class FileEntriesEventEmitterTest {
     private ByteArrayOutputStream outputStream;
     private S3Driver s3Driver;
 
-    private FakeSqsClient sqsClient;
+    private StubSqsClient sqsClient;
 
     @BeforeEach
     public void init() {
         s3Client = new FakeS3Client();
-        sqsClient = new FakeSqsClient();
+        sqsClient = new StubSqsClient();
         s3Driver = new S3Driver(s3Client, "notimportant");
 
         handler = newHandler();
@@ -492,8 +492,8 @@ class FileEntriesEventEmitterTest {
                    .collect(Collectors.toList());
     }
 
-    private FakeSqsClient sqsClientThatThrowsException() {
-        return new FakeSqsClient() {
+    private StubSqsClient sqsClientThatThrowsException() {
+        return new StubSqsClient() {
             @Override
             public SendMessageBatchResponse sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {
                 throw new UnsupportedOperationException("Total failure");
@@ -501,8 +501,8 @@ class FileEntriesEventEmitterTest {
         };
     }
 
-    private FakeSqsClient sqsClientThatFailsToSendMessages() {
-        return new FakeSqsClient() {
+    private StubSqsClient sqsClientThatFailsToSendMessages() {
+        return new StubSqsClient() {
             @Override
             public SendMessageBatchResponse sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {
                 return SendMessageBatchResponse.builder()
@@ -537,7 +537,7 @@ class FileEntriesEventEmitterTest {
         return request;
     }
 
-    private Stream<EventReference> emittedEvents(FakeSqsClient fakeSqsClient) {
+    private Stream<EventReference> emittedEvents(StubSqsClient fakeSqsClient) {
         return fakeSqsClient.getMessageBodies().stream()
                    .map(EventReference::fromJson);
     }
