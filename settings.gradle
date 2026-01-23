@@ -24,6 +24,7 @@ include 'publication-file'
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
+        maven { url = 'https://jitpack.io' }
     }
     versionCatalogs {
         // Version catalog imported from nva-commons
