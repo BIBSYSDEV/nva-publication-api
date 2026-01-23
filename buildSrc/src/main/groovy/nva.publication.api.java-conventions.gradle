@@ -22,12 +22,6 @@ dependencies {
     }
 }
 
-repositories {
-    mavenCentral()
-    maven { url = 'https://jitpack.io' }
-    maven { url = "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
-}
-
 tasks.named('test') {
     environment("API_HOST", "localhost")
     useJUnitPlatform {
