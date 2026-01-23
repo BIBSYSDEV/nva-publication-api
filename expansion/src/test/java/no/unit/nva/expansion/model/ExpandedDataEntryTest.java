@@ -9,9 +9,9 @@ import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRA
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
-import static org.apache.http.HttpStatus.SC_FORBIDDEN;
-import static org.apache.http.HttpStatus.SC_NOT_FOUND;
-import static org.apache.http.HttpStatus.SC_OK;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.notNullValue;
@@ -177,10 +177,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     }
 
     private void addResponsesForCristinCustomer(URI uri) {
-        uriRetriever.registerResponse(toCristinOrgUri(UriWrapper.fromUri(uri).getLastPathElement()), SC_OK,
+        uriRetriever.registerResponse(toCristinOrgUri(UriWrapper.fromUri(uri).getLastPathElement()), HTTP_OK,
                                       MediaType.ANY_APPLICATION_TYPE,
                                       FakeUriResponse.createCristinOrganizationResponseForTopLevelOrg(uri));
-        uriRetriever.registerResponse(toFetchCustomerByCristinIdUri(uri), SC_OK,
+        uriRetriever.registerResponse(toFetchCustomerByCristinIdUri(uri), HTTP_OK,
                                       MediaType.ANY_APPLICATION_TYPE, "{}");
     }
 
@@ -206,7 +206,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var channelUri =
             ((Publisher)((Book) importCandidate.getEntityDescription().reference().getPublicationContext())
                             .getPublisher()).getId();
-        uriRetriever.registerResponse(channelUri, SC_FORBIDDEN, MediaType.ANY_APPLICATION_TYPE, randomString());
+        uriRetriever.registerResponse(channelUri, HTTP_FORBIDDEN, MediaType.ANY_APPLICATION_TYPE, randomString());
         ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(logger.getMessages(), containsString("Not Ok response from channel registry"));
     }
@@ -219,7 +219,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         var channelUri =
             ((Publisher)((Book) importCandidate.getEntityDescription().reference().getPublicationContext())
                             .getPublisher()).getId();
-        uriRetriever.registerResponse(channelUri, SC_OK, MediaType.ANY_APPLICATION_TYPE, randomString());
+        uriRetriever.registerResponse(channelUri, HTTP_OK, MediaType.ANY_APPLICATION_TYPE, randomString());
         ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
         assertThat(logger.getMessages(), containsString("Failed to parse channel registry response"));
     }
@@ -240,7 +240,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     private void overrideStandardResponseWithNotFoundFromChannelRegistry(ImportCandidate importCandidate,
                                                                          URI journalId) {
         FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
-        uriRetriever.registerResponse(journalId, SC_NOT_FOUND, MediaType.ANY_APPLICATION_TYPE, "");
+        uriRetriever.registerResponse(journalId, HTTP_NOT_FOUND, MediaType.ANY_APPLICATION_TYPE, "");
     }
 
     @Test
@@ -318,7 +318,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     private void overrideDefaultFakeResponseToReturnNonsensicalResponse(ImportCandidate importCandidate) {
         var journalUri =
             ((Journal) importCandidate.getEntityDescription().reference().getPublicationContext()).getId();
-        uriRetriever.registerResponse(journalUri, SC_OK, MediaType.ANY_APPLICATION_TYPE, randomString());
+        uriRetriever.registerResponse(journalUri, HTTP_OK, MediaType.ANY_APPLICATION_TYPE, randomString());
     }
 
     @ParameterizedTest(name = "Expanded resource should inherit type from publication for instance type {0}")

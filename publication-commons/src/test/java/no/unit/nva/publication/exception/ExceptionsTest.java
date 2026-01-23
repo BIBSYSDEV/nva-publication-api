@@ -3,7 +3,7 @@ package no.unit.nva.publication.exception;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import org.apache.http.HttpStatus;
+import java.net.HttpURLConnection;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -15,13 +15,13 @@ class ExceptionsTest {
     @Test
     void inputExceptionHasStatusCode() {
         ApiGatewayException exception = new BadRequestException(MESSAGE, new RuntimeException());
-        Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getStatusCode());
+        Assertions.assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, exception.getStatusCode());
     }
     
     @Test
     void notFoundExceptionHasStatusCode() {
         ApiGatewayException exception = new NotFoundException(MESSAGE);
-        Assertions.assertEquals(HttpStatus.SC_NOT_FOUND, exception.getStatusCode());
+        Assertions.assertEquals(HttpURLConnection.HTTP_NOT_FOUND, exception.getStatusCode());
     }
 
 }

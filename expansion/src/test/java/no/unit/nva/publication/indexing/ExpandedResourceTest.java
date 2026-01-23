@@ -21,7 +21,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
-import static org.apache.http.HttpStatus.SC_OK;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -685,7 +685,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
 
         uriRetriever.registerResponse(source,
-                                      SC_OK,
+                                      HTTP_OK,
                                       APPLICATION_JSON_LD,
                                       """
                                         {

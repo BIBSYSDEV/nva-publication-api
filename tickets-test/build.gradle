@@ -9,7 +9,7 @@ dependencies {
     implementation project(":publication-model")
     implementation project(":publication-model-testing")
     implementation nvaCatalog.guava
-    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamo
     implementation nvaCatalog.junit.jupiter.params
     implementation nvaLibs.testutils
     testImplementation(project(':publication-testing'))

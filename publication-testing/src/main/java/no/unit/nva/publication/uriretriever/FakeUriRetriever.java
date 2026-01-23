@@ -1,7 +1,7 @@
 package no.unit.nva.publication.uriretriever;
 
 import static java.util.Objects.nonNull;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import com.google.common.net.MediaType;
 import java.net.URI;
 import java.net.http.HttpClient.Version;

@@ -16,13 +16,13 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord;
-import com.fasterxml.jackson.databind.JavaType;
+import static no.unit.nva.publication.testing.AttributeValueConvert.toLambdaAttributeValueMap;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -194,19 +194,8 @@ class DynamodbStreamToEventBridgeHandlerTest {
         return event;
     }
 
-    private static Map<String, AttributeValue> toDynamoDbFormat(Entity publication) {
-        return nonNull(publication) ? publicationDynamoDbFormat(publication) : null;
-    }
-
-    private static Map<String, AttributeValue> publicationDynamoDbFormat(Entity publication) {
-        var dao = publication.toDao().toDynamoFormat();
-        var string = attempt(() -> dtoObjectMapper.writeValueAsString(dao)).orElseThrow();
-        return (Map<String, AttributeValue>) attempt(() -> dtoObjectMapper.readValue(string,
-                                                                                     dynamoMapStructureAsJacksonType())).orElseThrow();
-    }
-
-    private static JavaType dynamoMapStructureAsJacksonType() {
-        return dtoObjectMapper.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
+    private static Map<String, AttributeValue> toDynamoDbFormat(Entity entity) {
+        return nonNull(entity) ? toLambdaAttributeValueMap(entity.toDao().toDynamoFormat()) : null;
     }
 
     private DataEntryUpdateEvent extractPersistedDataEntryUpdateEvent() {

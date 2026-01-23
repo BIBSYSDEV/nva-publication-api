@@ -27,10 +27,6 @@ import com.amazon.ion.IonWriter;
 import com.amazon.ion.system.IonReaderBuilder;
 import com.amazon.ion.system.IonTextWriterBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.sqs.model.BatchResultErrorEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -47,7 +43,7 @@ import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.publication.s3imports.utils.FakeAmazonSQS;
+import no.unit.nva.publication.service.StubSqsClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
@@ -59,6 +55,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.model.BatchResultErrorEntry;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
 
 class FileEntriesEventEmitterTest {
 
@@ -73,23 +73,23 @@ class FileEntriesEventEmitterTest {
     private ByteArrayOutputStream outputStream;
     private S3Driver s3Driver;
 
-    private FakeAmazonSQS amazonSQS;
+    private StubSqsClient sqsClient;
 
     @BeforeEach
     public void init() {
         s3Client = new FakeS3Client();
-        amazonSQS = new FakeAmazonSQS();
+        sqsClient = new StubSqsClient();
         s3Driver = new S3Driver(s3Client, "notimportant");
 
         handler = newHandler();
         outputStream = new ByteArrayOutputStream();
     }
-    
+
     @Test
     void handlerSavesErrorReportOutsideInputFolderSoThatErrorReportWillNotBecomeInputInSubsequentImport()
         throws IOException {
-        var amazonSqsThrowingException = amazonSqsThatThrowsException();
-        handler = new FileEntriesEventEmitter(s3Client, amazonSqsThrowingException);
+        var sqsClientThrowingException = sqsClientThatThrowsException();
+        handler = new FileEntriesEventEmitter(s3Client, sqsClientThrowingException);
         var fileUri = s3Driver.insertFile(randomPath(), SampleObject.random().toJsonString());
         var inputEvent = toInputStream(createInputEventForFile(fileUri));
         handler.handleRequest(inputEvent, outputStream, CONTEXT);
@@ -120,7 +120,7 @@ class FileEntriesEventEmitterTest {
         var input = toInputStream(createInputEventForFile(fileToBeRead));
         var handler = newHandler();
         handler.handleRequest(input, outputStream, CONTEXT);
-        var bodyOfEmittedEvent = amazonSQS.getMessageBodies().stream()
+        var bodyOfEmittedEvent = sqsClient.getMessageBodies().stream()
                                      .map(EventReference::fromJson)
                                      .map(EventReference::getUri)
                                      .map(eventBodyUri -> s3Driver.readEvent(eventBodyUri))
@@ -197,14 +197,14 @@ class FileEntriesEventEmitterTest {
         var handler = newHandler();
 
         handler.handleRequest(input, outputStream, CONTEXT);
-        var emitedEventTopics = emittedEvents(amazonSQS)
+        var emitedEventTopics = emittedEvents(sqsClient)
                                     .map(EventReference::getTopic)
                                     .collect(Collectors.toSet());
         assertThat(emitedEventTopics, hasSize(1));
         var actualEmittedTopic = emitedEventTopics.stream().collect(SingletonCollector.collect());
         assertThat(actualEmittedTopic, is(equalTo(FILE_CONTENTS_EMISSION_EVENT_TOPIC)));
     }
-    
+
     @Test
     void shouldAcceptEventsWithTopicEqualToFilenameEmissionTopic() throws IOException {
         var sampleObject = SampleObject.random();
@@ -213,7 +213,7 @@ class FileEntriesEventEmitterTest {
         assertThat(inputEvent.getDetail().getTopic(), is(equalTo(FILENAME_EMISSION_EVENT_TOPIC)));
         assertDoesNotThrow(() -> handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT));
     }
-    
+
     @Test
     void handlerThrowsExceptionWhenInputDoesNotHaveTheExpectedTopic() throws IOException {
         var sampleObject = SampleObject.random();
@@ -223,7 +223,7 @@ class FileEntriesEventEmitterTest {
                                                        fileUri);
         var invalidInputEvent = new AwsEventBridgeEvent<EventReference>();
         invalidInputEvent.setDetail(invalidEventReference);
-        
+
         assertThat(invalidEventReference.getTopic(), is(not(equalTo(FILENAME_EMISSION_EVENT_TOPIC))));
         Executable action = () -> handler.handleRequest(toInputStream(invalidInputEvent), outputStream, CONTEXT);
         assertThrows(IllegalArgumentException.class, action);
@@ -256,11 +256,11 @@ class FileEntriesEventEmitterTest {
         var actualTimeStamp = collectTimestampFromEmittedObjects();
         assertThat(actualTimeStamp, is(equalTo(eventReference.getTimestamp())));
     }
-    
+
     @Test
     void handlerSavesErrorReportInS3WithPathImitatingTheInputPath() throws IOException {
-        var amazonSqsThrowingException = amazonSqsThatThrowsException();
-        handler = new FileEntriesEventEmitter(s3Client, amazonSqsThrowingException);
+        var sqsClientThrowingException = sqsClientThatThrowsException();
+        handler = new FileEntriesEventEmitter(s3Client, sqsClientThrowingException);
         var filePath = randomPath();
         var fileUri = s3Driver.insertFile(filePath, SampleObject.random().toJsonString());
         var inputEvent = createInputEventForFile(fileUri);
@@ -277,7 +277,7 @@ class FileEntriesEventEmitterTest {
         var s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
         assertDoesNotThrow(() -> s3Driver.getFile(UnixPath.of(expectedErrorFileLocation)));
     }
-    
+
     @Test
     void handlerThrowsExceptionWhenInputUriIsNotAnExistingFile() {
         var nonExistingFile = randomUri();
@@ -286,7 +286,7 @@ class FileEntriesEventEmitterTest {
         RuntimeException exception = assertThrows(RuntimeException.class, action);
         assertThat(exception.getMessage(), containsString(nonExistingFile.toString()));
     }
-    
+
     @Test
     void shouldSaveErrorReportForNonExistingFileInPathImitatingTheInputFileUri() {
         var nonExistingFile = UriWrapper.fromUri(randomUri()).addChild(randomString()).getUri();
@@ -304,12 +304,12 @@ class FileEntriesEventEmitterTest {
         var actualErrorFile = s3Driver.getFile(UnixPath.of(expectedErrorFileLocation));
         assertThat(actualErrorFile, is(containsString(exception.getMessage())));
     }
-    
+
     @Test
     void shouldSaveErrorReportContainingTheEventReferenceThatFailedToBeEmitted()
         throws IOException {
-        var amazonSqsThrowingException =  amazonSqsThatFailsToSendMessages();
-        handler = new FileEntriesEventEmitter(s3Client, amazonSqsThrowingException);
+        var sqsClientFailingToSendMessages = sqsClientThatFailsToSendMessages();
+        handler = new FileEntriesEventEmitter(s3Client, sqsClientFailingToSendMessages);
         var contents = SampleObject.random();
         var filePath = randomPath();
         var fileUri = s3Driver.insertFile(filePath, contents.toJsonString());
@@ -326,11 +326,11 @@ class FileEntriesEventEmitterTest {
         var putResult = parseOutPut(outputStream);
         assertThat(actualErrorFile, containsString(putResult.getFailures().get(0).toJsonString()));
     }
-    
+
     @Test
     void shouldSaveErrorReportImitatingInputFilePathWhenFailsToEmitTheWholeFileContents() throws IOException {
-        amazonSQS = amazonSqsThatThrowsException();
-        handler = new FileEntriesEventEmitter(s3Client, amazonSQS);
+        sqsClient = sqsClientThatThrowsException();
+        handler = new FileEntriesEventEmitter(s3Client, sqsClient);
         var filPath = randomPath();
         var fileUri = s3Driver.insertFile(filPath, SampleObject.random().toJsonString());
 
@@ -345,11 +345,11 @@ class FileEntriesEventEmitterTest {
         var s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
         assertDoesNotThrow(() -> s3Driver.getFile(UnixPath.of(expectedErrorFileLocation)));
     }
-    
+
     @Test
     void shouldOrganizeErrorReportsByTheTimeImportStarted() throws IOException {
-        amazonSQS = amazonSqsThatThrowsException();
-        handler = new FileEntriesEventEmitter(s3Client, amazonSQS);
+        sqsClient = sqsClientThatThrowsException();
+        handler = new FileEntriesEventEmitter(s3Client, sqsClient);
         var contents = SampleObject.random();
         var filePath = randomPath();
         var fileUri = s3Driver.insertFile(filePath, contents.toJsonString());
@@ -361,14 +361,14 @@ class FileEntriesEventEmitterTest {
         var errorReports = s3Driver.listAllFiles(expectedFolderStructure);
         assertThat(errorReports, is(not(empty())));
     }
-    
+
     @Test
     void shouldNotCreateErrorReportWhenNoErrorsOccur() throws IOException {
         var sampleContent = SampleObject.random().toJsonString();
         var fileUri = s3Driver.insertEvent(randomPath(), sampleContent);
         var event = toInputStream(createInputEventForFile(fileUri));
         handler.handleRequest(event, outputStream, CONTEXT);
-        
+
         var errorFiles = s3Driver.listAllFiles(ERRORS_FOLDER);
         assertThat(errorFiles, is(empty()));
     }
@@ -379,7 +379,7 @@ class FileEntriesEventEmitterTest {
         var fileUri = s3Driver.insertFile(randomPath(), sampleEntry);
         var inputEvent = createInputEventForFile(fileUri);
         handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
-        var actualSubtopic = amazonSQS.getMessageBodies().stream()
+        var actualSubtopic = sqsClient.getMessageBodies().stream()
                                  .map(EventReference::fromJson)
                                  .map(EventReference::getSubtopic)
                                  .collect(SingletonCollector.collect());
@@ -394,7 +394,7 @@ class FileEntriesEventEmitterTest {
         var inputEvent = createInputEventForFileWithSubtopic(fileUri, SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER);
         handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
 
-        var eventReferences = amazonSQS.getMessageBodies().stream()
+        var eventReferences = sqsClient.getMessageBodies().stream()
                        .map(EventReference::fromJson).collect(Collectors.toSet());
 
         assertThat(eventReferences.iterator().next().getUri(), is(equalTo(fileUri)));
@@ -409,7 +409,7 @@ class FileEntriesEventEmitterTest {
                                                              SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER);
         handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
 
-        var eventReferences = amazonSQS.getMessageBodies().stream()
+        var eventReferences = sqsClient.getMessageBodies().stream()
                                   .map(EventReference::fromJson).collect(Collectors.toSet());
 
         assertThat(eventReferences.iterator().next().getUri(), is(equalTo(fileUri)));
@@ -432,7 +432,7 @@ class FileEntriesEventEmitterTest {
         var fileUri = s3Driver.insertFile(randomPath(), input);
         var inputEvent = createInputEventForFile(fileUri);
         handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
-        var contentBodyOfEmittedEvent = amazonSQS.getMessageBodies().stream()
+        var contentBodyOfEmittedEvent = sqsClient.getMessageBodies().stream()
                                             .map(EventReference::fromJson)
                                             .map(EventReference::getUri)
                                             .map(eventBodyUri -> s3Driver.readEvent(eventBodyUri))
@@ -459,7 +459,7 @@ class FileEntriesEventEmitterTest {
         String jsonString = s3ImportsMapper.writeValueAsString(sampleObjects);
         return jsonToIon(jsonString);
     }
-    
+
     private static String jsonToIon(String jsonString) throws IOException {
         IonReader reader = IonReaderBuilder.standard().build(jsonString);
         StringBuilder stringAppender = new StringBuilder();
@@ -483,7 +483,7 @@ class FileEntriesEventEmitterTest {
 
     private List<SampleObject> collectBodiesOfEmittedEventReferences() {
         var s3Driver = new S3Driver(s3Client, "ignored");
-        return amazonSQS.getMessageBodies().stream()
+        return sqsClient.getMessageBodies().stream()
                    .map(EventReference::fromJson)
                    .map(EventReference::getUri)
                    .map(s3Driver::readEvent)
@@ -492,39 +492,38 @@ class FileEntriesEventEmitterTest {
                    .collect(Collectors.toList());
     }
 
-    private FakeAmazonSQS amazonSqsThatThrowsException() {
-        return new FakeAmazonSQS() {
+    private StubSqsClient sqsClientThatThrowsException() {
+        return new StubSqsClient() {
             @Override
-            public SendMessageBatchResult sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {
-
+            public SendMessageBatchResponse sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {
                 throw new UnsupportedOperationException("Total failure");
             }
         };
     }
 
-    private FakeAmazonSQS amazonSqsThatFailsToSendMessages() {
-        return new FakeAmazonSQS() {
+    private StubSqsClient sqsClientThatFailsToSendMessages() {
+        return new StubSqsClient() {
             @Override
-            public SendMessageBatchResult sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {
-                var result = new SendMessageBatchResult();
-                result.setFailed(
-                    sendMessageBatchRequest.getEntries().stream().map(entry -> createFailedResult(entry)).collect(
-                        Collectors.toList()));
-                result.setSuccessful(List.of());
-                return result;
+            public SendMessageBatchResponse sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {
+                return SendMessageBatchResponse.builder()
+                           .failed(sendMessageBatchRequest.entries().stream()
+                                       .map(this::createFailedResult)
+                                       .toList())
+                           .successful(List.of())
+                           .build();
+            }
+
+            private BatchResultErrorEntry createFailedResult(SendMessageBatchRequestEntry entry) {
+                return BatchResultErrorEntry.builder()
+                           .id(entry.id())
+                           .message("Failed miserably")
+                           .build();
             }
         };
     }
 
-    private BatchResultErrorEntry createFailedResult(SendMessageBatchRequestEntry entry) {
-        var resultEntry = new BatchResultErrorEntry();
-        resultEntry.setId(entry.getId());
-        resultEntry.setMessage("Failed miserably");
-        return resultEntry;
-    }
-
     private FileEntriesEventEmitter newHandler() {
-        return new FileEntriesEventEmitter(s3Client, amazonSQS);
+        return new FileEntriesEventEmitter(s3Client, sqsClient);
     }
 
     private AwsEventBridgeEvent<EventReference> createInputEventForFile(URI fileUri) {
@@ -538,15 +537,13 @@ class FileEntriesEventEmitterTest {
         return request;
     }
 
-    //
-    private Stream<EventReference> emittedEvents(
-        FakeAmazonSQS fakeAmazonSQS) {
-        return fakeAmazonSQS.getMessageBodies().stream()
+    private Stream<EventReference> emittedEvents(StubSqsClient fakeSqsClient) {
+        return fakeSqsClient.getMessageBodies().stream()
                    .map(EventReference::fromJson);
     }
 
     private Instant collectTimestampFromEmittedObjects() {
-        return emittedEvents(amazonSQS)
+        return emittedEvents(sqsClient)
                    .map(EventReference::getTimestamp)
                    .collect(SingletonCollector.collect());
     }

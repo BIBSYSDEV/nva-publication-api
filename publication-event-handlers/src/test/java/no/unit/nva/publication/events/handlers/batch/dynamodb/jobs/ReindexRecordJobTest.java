@@ -10,10 +10,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsResponse;
 import java.util.List;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.BatchWorkItem;
 import no.unit.nva.publication.events.handlers.batch.dynamodb.DynamodbResourceBatchDynamoDbKey;
@@ -32,7 +32,7 @@ class ReindexRecordJobTest {
     private static final String TEST_SORT_KEY = "Resource";
     
     @Mock
-    private AmazonDynamoDB mockDynamoDbClient;
+    private DynamoDbClient mockDynamoDbClient;
     
     private ReindexRecordJob reindexRecordJob;
     
@@ -52,7 +52,7 @@ class ReindexRecordJobTest {
     
     private void mockSuccessfulTransaction() {
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
-            .thenReturn(new TransactWriteItemsResult());
+            .thenReturn(TransactWriteItemsResponse.builder().build());
     }
     
     private TransactWriteItemsRequest captureTransactionRequest() {
@@ -74,16 +74,16 @@ class ReindexRecordJobTest {
         assertDoesNotThrow(() -> reindexRecordJob.executeBatch(List.of(workItem)));
         
         var capturedRequest = captureTransactionRequest();
-        assertThat(capturedRequest.getTransactItems(), notNullValue());
-        assertThat(capturedRequest.getTransactItems().size(), equalTo(1));
+        assertThat(capturedRequest.transactItems(), notNullValue());
+        assertThat(capturedRequest.transactItems().size(), equalTo(1));
         
-        var update = capturedRequest.getTransactItems().getFirst().getUpdate();
-        assertThat(update.getTableName(), equalTo(TEST_TABLE_NAME));
-        assertThat(update.getKey().get("PK0").getS(), equalTo(TEST_PARTITION_KEY));
-        assertThat(update.getKey().get("SK0").getS(), equalTo(TEST_SORT_KEY));
-        assertThat(update.getUpdateExpression(), equalTo("SET #version = :newVersion"));
-        assertThat(update.getExpressionAttributeNames().get("#version"), equalTo("version"));
-        assertThat(update.getExpressionAttributeValues().get(":newVersion"), notNullValue());
+        var update = capturedRequest.transactItems().getFirst().update();
+        assertThat(update.tableName(), equalTo(TEST_TABLE_NAME));
+        assertThat(update.key().get("PK0").s(), equalTo(TEST_PARTITION_KEY));
+        assertThat(update.key().get("SK0").s(), equalTo(TEST_SORT_KEY));
+        assertThat(update.updateExpression(), equalTo("SET #version = :newVersion"));
+        assertThat(update.expressionAttributeNames().get("#version"), equalTo("version"));
+        assertThat(update.expressionAttributeValues().get(":newVersion"), notNullValue());
     }
     
     @Test
@@ -113,8 +113,8 @@ class ReindexRecordJobTest {
         assertDoesNotThrow(() -> reindexRecordJob.executeBatch(List.of(workItem1, workItem2)));
         
         var capturedRequest = captureTransactionRequest();
-        assertThat(capturedRequest.getTransactItems(), notNullValue());
-        assertThat(capturedRequest.getTransactItems().size(), equalTo(2));
+        assertThat(capturedRequest.transactItems(), notNullValue());
+        assertThat(capturedRequest.transactItems().size(), equalTo(2));
     }
     
     @Test
@@ -137,7 +137,7 @@ class ReindexRecordJobTest {
         }
         
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
-            .thenReturn(new TransactWriteItemsResult());
+            .thenReturn(TransactWriteItemsResponse.builder().build());
         
         assertDoesNotThrow(() -> reindexRecordJob.executeBatch(workItems));
         
@@ -145,7 +145,7 @@ class ReindexRecordJobTest {
             ArgumentCaptor.forClass(TransactWriteItemsRequest.class);
         verify(mockDynamoDbClient).transactWriteItems(requestCaptor.capture());
         
-        assertThat(requestCaptor.getValue().getTransactItems().size(), equalTo(25));
+        assertThat(requestCaptor.getValue().transactItems().size(), equalTo(25));
     }
     
     @Test
@@ -154,7 +154,7 @@ class ReindexRecordJobTest {
         var workItem = new BatchWorkItem(dynamoDbKey, "REINDEX_RECORD");
         
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
-            .thenReturn(new TransactWriteItemsResult());
+            .thenReturn(TransactWriteItemsResponse.builder().build());
         
         reindexRecordJob.executeBatch(List.of(workItem));
         
@@ -162,19 +162,19 @@ class ReindexRecordJobTest {
             ArgumentCaptor.forClass(TransactWriteItemsRequest.class);
         verify(mockDynamoDbClient).transactWriteItems(requestCaptor.capture());
         
-        var update = requestCaptor.getValue().getTransactItems().getFirst().getUpdate();
+        var update = requestCaptor.getValue().transactItems().getFirst().update();
         
-        assertThat(update.getTableName(), equalTo(TEST_TABLE_NAME));
-        assertThat(update.getKey().size(), equalTo(2));
-        assertThat(update.getKey().containsKey("PK0"), equalTo(true));
-        assertThat(update.getKey().containsKey("SK0"), equalTo(true));
-        assertThat(update.getUpdateExpression(), notNullValue());
-        assertThat(update.getExpressionAttributeNames(), notNullValue());
-        assertThat(update.getExpressionAttributeValues(), notNullValue());
-        assertThat(update.getConditionExpression(), equalTo("attribute_exists(PK0) AND attribute_exists(SK0)"));
-        assertThat(update.getReturnValuesOnConditionCheckFailure(), equalTo("ALL_OLD"));
+        assertThat(update.tableName(), equalTo(TEST_TABLE_NAME));
+        assertThat(update.key().size(), equalTo(2));
+        assertThat(update.key().containsKey("PK0"), equalTo(true));
+        assertThat(update.key().containsKey("SK0"), equalTo(true));
+        assertThat(update.updateExpression(), notNullValue());
+        assertThat(update.expressionAttributeNames(), notNullValue());
+        assertThat(update.expressionAttributeValues(), notNullValue());
+        assertThat(update.conditionExpression(), equalTo("attribute_exists(PK0) AND attribute_exists(SK0)"));
+        assertThat(update.returnValuesOnConditionCheckFailureAsString(), equalTo("ALL_OLD"));
         
-        var newVersion = update.getExpressionAttributeValues().get(":newVersion").getS();
+        var newVersion = update.expressionAttributeValues().get(":newVersion").s();
         assertThat(newVersion, notNullValue());
         assertThat(newVersion.length(), equalTo(36));
     }
@@ -185,7 +185,7 @@ class ReindexRecordJobTest {
         var workItem2 = createWorkItem("Resource:non-existent-2", "Resource");
 
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
-            .thenThrow(new ConditionalCheckFailedException("ConditionalCheckFailed"));
+            .thenThrow(ConditionalCheckFailedException.builder().message("ConditionalCheckFailed").build());
 
         var exception = assertThrows(
             RuntimeException.class,
@@ -219,7 +219,7 @@ class ReindexRecordJobTest {
         var workItem = new BatchWorkItem(dynamoDbKey, "REINDEX_RECORD");
 
         when(mockDynamoDbClient.transactWriteItems(any(TransactWriteItemsRequest.class)))
-            .thenReturn(new TransactWriteItemsResult());
+            .thenReturn(TransactWriteItemsResponse.builder().build());
 
         reindexRecordJob.executeBatch(List.of(workItem));
 
@@ -227,8 +227,8 @@ class ReindexRecordJobTest {
             ArgumentCaptor.forClass(TransactWriteItemsRequest.class);
         verify(mockDynamoDbClient).transactWriteItems(requestCaptor.capture());
 
-        var update = requestCaptor.getValue().getTransactItems().getFirst().getUpdate();
+        var update = requestCaptor.getValue().transactItems().getFirst().update();
 
-        assertThat(update.getReturnValuesOnConditionCheckFailure(), equalTo("ALL_OLD"));
+        assertThat(update.returnValuesOnConditionCheckFailureAsString(), equalTo("ALL_OLD"));
     }
 }

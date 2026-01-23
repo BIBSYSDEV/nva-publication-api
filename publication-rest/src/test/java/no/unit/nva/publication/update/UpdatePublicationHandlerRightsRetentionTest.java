@@ -5,7 +5,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescrip
 import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs;
 import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulTokenResponse;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static org.apache.http.HttpStatus.SC_OK;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -78,7 +78,7 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
 
         updatePublicationHandler.handleRequest(input, output, context);
         var response = GatewayResponse.fromOutputStream(output, Publication.class);
-        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         var insertedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
@@ -116,7 +116,7 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
 
         updatePublicationHandler.handleRequest(input, output, context);
         var response = GatewayResponse.fromOutputStream(output, Publication.class);
-        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         var insertedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();
@@ -154,7 +154,7 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
 
         updatePublicationHandler.handleRequest(input, output, context);
         var response = GatewayResponse.fromOutputStream(output, Publication.class);
-        assertThat(response.getStatusCode(), is(equalTo(SC_OK)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
 
         var updatedPublication = resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
         var insertedFile = (File) updatedPublication.getAssociatedArtifacts().getFirst();

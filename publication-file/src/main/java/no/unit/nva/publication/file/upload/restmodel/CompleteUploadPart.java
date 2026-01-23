@@ -1,13 +1,13 @@
 package no.unit.nva.publication.file.upload.restmodel;
 
 import static java.util.Objects.requireNonNull;
-import com.amazonaws.services.s3.model.PartETag;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
 
 @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
 public class CompleteUploadPart implements JsonSerializable {
@@ -24,8 +24,11 @@ public class CompleteUploadPart implements JsonSerializable {
         this.etag = etag;
     }
 
-    public static PartETag toPartETag(CompleteUploadPart completeUploadPart) {
-        return new PartETag(completeUploadPart.partNumber(), completeUploadPart.etag());
+    public static CompletedPart toCompletedPart(CompleteUploadPart completeUploadPart) {
+        return CompletedPart.builder()
+                   .partNumber(completeUploadPart.partNumber())
+                   .eTag(completeUploadPart.etag())
+                   .build();
     }
 
     @JacocoGenerated

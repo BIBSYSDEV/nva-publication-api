@@ -11,8 +11,8 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -36,13 +36,15 @@ class JoinWithResourceTest extends ResourcesLocalTest {
         client.putItem(toPutItemRequest(resourceDao));
         client.putItem(toPutItemRequest(doiRequestDao));
 
-        QueryResult result = client.query(new QueryRequest().withTableName(RESOURCES_TABLE_NAME)
-                                              .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                                              .withKeyConditions(resourceDao.byResource(
-                                                  resourceDao.joinByResourceContainedOrderedType(),
-                                                  doiRequestDao.joinByResourceContainedOrderedType())));
+        var result = client.query(QueryRequest.builder()
+                                       .tableName(RESOURCES_TABLE_NAME)
+                                       .indexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                                       .keyConditions(resourceDao.byResource(
+                                           resourceDao.joinByResourceContainedOrderedType(),
+                                           doiRequestDao.joinByResourceContainedOrderedType()))
+                                       .build());
 
-        List<JoinWithResource> retrievedData = parseResult(result);
+        var retrievedData = parseResult(result);
 
         var retrievedDoiRequestDao = (DoiRequestDao) retrievedData.get(DOI_REQUEST_INDEX_IN_QUERY_RESULT);
         var retrievedResourceDao = (ResourceDao) retrievedData.get(RESOURCE_INDEX_IN_QUERY_RESULT);
@@ -61,27 +63,27 @@ class JoinWithResourceTest extends ResourcesLocalTest {
         client.putItem(toPutItemRequest(resourceDao));
         client.putItem(toPutItemRequest(doiRequestDao));
 
-        QueryRequest query = fetchResourceAndDoiRequest(resourceDao,
-                                                        doiRequestDao.joinByResourceContainedOrderedType());
-        QueryResult result = client.query(query);
+        var query = fetchResourceAndDoiRequest(resourceDao,
+                                              doiRequestDao.joinByResourceContainedOrderedType());
+        var result = client.query(query);
 
-        List<JoinWithResource> retrievedData = parseResult(result);
+        var retrievedData = parseResult(result);
 
         DoiRequestDao retrievedDoiRequestDao = (DoiRequestDao) retrievedData.get(0);
 
         assertThat(retrievedDoiRequestDao, is(equalTo(doiRequestDao)));
     }
 
-    private QueryRequest fetchResourceAndDoiRequest(ResourceDao resourceDao, String selectedType
-
-    ) {
-        return new QueryRequest().withTableName(RESOURCES_TABLE_NAME)
-                   .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                   .withKeyConditions(resourceDao.byResource(selectedType));
+    private QueryRequest fetchResourceAndDoiRequest(ResourceDao resourceDao, String selectedType) {
+        return QueryRequest.builder()
+                   .tableName(RESOURCES_TABLE_NAME)
+                   .indexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                   .keyConditions(resourceDao.byResource(selectedType))
+                   .build();
     }
 
-    private List<JoinWithResource> parseResult(QueryResult result) {
-        return result.getItems()
+    private List<JoinWithResource> parseResult(QueryResponse result) {
+        return result.items()
                    .stream()
                    .map(item -> parseAttributeValuesMap(item, JoinWithResource.class))
                    .collect(Collectors.toList());

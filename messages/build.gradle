@@ -8,7 +8,7 @@ dependencies {
     implementation nvaLibs.identifiers
     implementation project(":publication-model")
 
-    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamo
     implementation nvaCatalog.aws.lambda.core
     implementation nvaCatalog.guava
     testImplementation project(path: ':tickets-test')

@@ -11,7 +11,7 @@ import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
-import static org.apache.http.HttpStatus.SC_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.InputStream;
@@ -123,7 +123,7 @@ public class IndexDocumentWrapperLinkedData {
         if (response.statusCode() / ONE_HUNDRED == SUCCESS_FAMILY) {
             var nviStatus = toNviCandidateResponse(response.body()).toNviStatus();
             return nviStatus.isReported() ? nviStatus.toJsonNode() : new ObjectNode(null);
-        } else if (response.statusCode() == SC_NOT_FOUND) {
+        } else if (response.statusCode() == HTTP_NOT_FOUND) {
             return new ObjectNode(null);
         } else {
             throw ExpansionException.withMessage("Unexpected response " + response);

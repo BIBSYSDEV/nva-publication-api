@@ -3,29 +3,30 @@ package no.unit.nva.publication.service.impl;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import java.util.HashMap;
 import java.util.Map;
 import no.unit.nva.publication.model.storage.CounterDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.Put;
+import software.amazon.awssdk.services.dynamodb.model.ReturnValue;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
 public class CristinIdentifierCounterService implements CounterService {
 
     public static final String UPDATING_COUNTER_EXCEPTION_MESSAGE = "Failed to update counter: {}";
     private static final String COLUMN_NAME = "value";
     private static final String ONE = "1";
-    private final AmazonDynamoDB client;
+    private final DynamoDbClient client;
     private final Logger logger = LoggerFactory.getLogger(CristinIdentifierCounterService.class);
     private final String tableName;
 
-    protected CristinIdentifierCounterService(AmazonDynamoDB client, String tableName) {
+    protected CristinIdentifierCounterService(DynamoDbClient client, String tableName) {
         this.client = client;
         this.tableName = tableName;
     }
@@ -33,7 +34,7 @@ public class CristinIdentifierCounterService implements CounterService {
     @Override
     public CounterDao fetch() {
         return attempt(() -> CounterDao.toGetItemRequest(tableName)).map(client::getItem)
-                   .map(CounterDao::fromGetItemResult)
+                   .map(CounterDao::fromGetItemResponse)
                    .map(a -> a.orElse(new CounterDao(10_000_000)))
                    .orElseThrow();
     }
@@ -43,30 +44,33 @@ public class CristinIdentifierCounterService implements CounterService {
         expressionAttributeNames.put("#ctr", COLUMN_NAME);
 
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
-        expressionAttributeValues.put(":inc", new AttributeValue().withN(ONE));
+        expressionAttributeValues.put(":inc", AttributeValue.builder().n(ONE).build());
 
-        UpdateItemRequest updateItemRequest = new UpdateItemRequest()
-                                                  .withTableName(tableName)
-                                                  .withKey(CounterDao.primaryKey())
-                                                  .withUpdateExpression("ADD #ctr :inc")
-                                                  .withExpressionAttributeNames(expressionAttributeNames)
-                                                  .withExpressionAttributeValues(expressionAttributeValues)
-                                                  .withConditionExpression(keyExistsCondition())
-                                                  .withReturnValues("UPDATED_NEW");
+        var updateItemRequest = UpdateItemRequest.builder()
+                                    .tableName(tableName)
+                                    .key(CounterDao.primaryKey())
+                                    .updateExpression("ADD #ctr :inc")
+                                    .expressionAttributeNames(expressionAttributeNames)
+                                    .expressionAttributeValues(expressionAttributeValues)
+                                    .conditionExpression(keyExistsCondition())
+                                    .returnValues(ReturnValue.UPDATED_NEW)
+                                    .build();
 
-        var updateItemResult = client.updateItem(updateItemRequest);
-        AttributeValue updatedCount = updateItemResult.getAttributes().get(COLUMN_NAME);
-        return CounterDao.fromValue(Integer.parseInt(updatedCount.getN()));
+        var updateItemResponse = client.updateItem(updateItemRequest);
+        var updatedCount = updateItemResponse.attributes().get(COLUMN_NAME);
+        return CounterDao.fromValue(Integer.parseInt(updatedCount.n()));
     }
 
-    public CounterDao fetchCount(AmazonDynamoDB client) {
-        GetItemRequest getItemRequest = new GetItemRequest().withTableName(tableName)
-                                            .withKey(CounterDao.primaryKey())
-                                            .withProjectionExpression("#ctr")
-                                            .withExpressionAttributeNames(Map.of("#ctr", COLUMN_NAME));
+    public CounterDao fetchCount(DynamoDbClient client) {
+        var getItemRequest = GetItemRequest.builder()
+                                 .tableName(tableName)
+                                 .key(CounterDao.primaryKey())
+                                 .projectionExpression("#ctr")
+                                 .expressionAttributeNames(Map.of("#ctr", COLUMN_NAME))
+                                 .build();
 
         var counter = client.getItem(getItemRequest);
-        return CounterDao.fromGetItemResult(counter).orElseThrow();
+        return CounterDao.fromGetItemResponse(counter).orElseThrow();
     }
 
     @Override
@@ -79,16 +83,20 @@ public class CristinIdentifierCounterService implements CounterService {
         });
     }
 
-    private void createCounterStartingAt(AmazonDynamoDB client) {
+    private void createCounterStartingAt(DynamoDbClient client) {
         Map<String, AttributeValue> item = new HashMap<>(CounterDao.primaryKey());
-        item.put(COLUMN_NAME, new AttributeValue().withN(String.valueOf(10_000_000)));
+        item.put(COLUMN_NAME, AttributeValue.builder().n(String.valueOf(10_000_000)).build());
 
-        Put putItemRequest = new Put().withTableName(tableName)
-                                 .withItem(item)
-                                 .withConditionExpression(keyNotExistsCondition());
+        var putItemRequest = Put.builder()
+                                 .tableName(tableName)
+                                 .item(item)
+                                 .conditionExpression(keyNotExistsCondition())
+                                 .build();
 
         client.transactWriteItems(
-            new TransactWriteItemsRequest().withTransactItems(new TransactWriteItem().withPut(putItemRequest)));
+            TransactWriteItemsRequest.builder()
+                .transactItems(TransactWriteItem.builder().put(putItemRequest).build())
+                .build());
     }
 
     private static String keyNotExistsCondition() {

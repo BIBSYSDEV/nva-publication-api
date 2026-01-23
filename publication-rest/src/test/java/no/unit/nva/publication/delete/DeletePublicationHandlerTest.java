@@ -1,5 +1,7 @@
 package no.unit.nva.publication.delete;
 
+import static java.net.HttpURLConnection.HTTP_ACCEPTED;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
@@ -8,8 +10,6 @@ import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.r
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
-import static org.apache.http.HttpStatus.SC_ACCEPTED;
-import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -36,7 +36,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import org.apache.http.HttpStatus;
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
@@ -84,7 +84,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Void.class);
-        assertEquals(SC_ACCEPTED, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_ACCEPTED, gatewayResponse.getStatusCode());
     }
 
     @Test
@@ -104,7 +104,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Void.class);
-        assertEquals(SC_ACCEPTED, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_ACCEPTED, gatewayResponse.getStatusCode());
     }
 
     @Test
@@ -124,7 +124,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         // Return BadRequest because Dynamo cannot distinguish between the primary key (containing the user info)
         // being wrong or the status of the resource not being "DRAFT"
-        assertEquals(SC_UNAUTHORIZED, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_UNAUTHORIZED, gatewayResponse.getStatusCode());
     }
 
     @Test
@@ -143,7 +143,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertEquals(SC_UNAUTHORIZED, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_UNAUTHORIZED, gatewayResponse.getStatusCode());
     }
 
     @Test
@@ -162,7 +162,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertEquals(SC_UNAUTHORIZED, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_UNAUTHORIZED, gatewayResponse.getStatusCode());
     }
 
     @Test
@@ -182,7 +182,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertEquals(HttpStatus.SC_BAD_REQUEST, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
     }
 
     private void prepareIdentityServiceClient() throws NotFoundException {

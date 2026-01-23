@@ -15,11 +15,10 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import software.amazon.awssdk.enhanced.dynamodb.document.EnhancedDocument;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
@@ -77,7 +76,7 @@ class MigrationTests extends ResourcesLocalTest {
         createPublicationForOldDoiRequestFormatInResources(hardCodedIdentifier);
         saveFileDirectlyToDatabase("old_doi_request.json");
         migrateResources();
-        var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
+        var allMigratedItems = client.scan(ScanRequest.builder().tableName(RESOURCES_TABLE_NAME).build()).items();
         var doiRequest = allMigratedItems.stream()
                              .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
                              .filter(dao -> dao instanceof DoiRequestDao)
@@ -93,7 +92,7 @@ class MigrationTests extends ResourcesLocalTest {
         createPublicationForOldDoiRequestFormatInResources(hardCodedIdentifier);
         saveFileDirectlyToDatabase("ticketentry_doirequest_with_publication_details.json");
         migrateResources();
-        var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
+        var allMigratedItems = client.scan(ScanRequest.builder().tableName(RESOURCES_TABLE_NAME).build()).items();
         var doiRequest = allMigratedItems.stream()
                              .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
                              .filter(dao -> dao instanceof DoiRequestDao)
@@ -108,7 +107,7 @@ class MigrationTests extends ResourcesLocalTest {
     void shouldMigrateUncompressedDoiRequestToCompressedAndAddNewFields() throws IOException {
         saveFileDirectlyToDatabase("ticketentry_doirequest_with_publication_details.json");
         migrateResources();
-        var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
+        var allMigratedItems = client.scan(ScanRequest.builder().tableName(RESOURCES_TABLE_NAME).build()).items();
         var doiRequest = allMigratedItems.stream()
                              .map(item -> DynamoEntry.parseAttributeValuesMap(item, Dao.class))
                              .filter(dao -> dao instanceof DoiRequestDao)
@@ -124,12 +123,12 @@ class MigrationTests extends ResourcesLocalTest {
         assertThat(doiRequest.getFirst().getCustomerId(), not(nullValue()));
         assertThat(doiRequest.getFirst().getTicketIdentifier(), not(nullValue()));
 
-        var dbScan = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
+        var dbScan = client.scan(ScanRequest.builder().tableName(RESOURCES_TABLE_NAME).build()).items();
         var doiAttributeValue = dbScan.getFirst();
-        assertThat(doiAttributeValue.get("data").getB(), not(nullValue()));
-        assertThat(doiAttributeValue.get("data").getM(), is(nullValue()));
+        assertThat(doiAttributeValue.get("data").b(), not(nullValue()));
+        assertThat(doiAttributeValue.get("data").hasM(), is(false));
 
-        var compressedData = doiAttributeValue.get("data").getB().array();
+        var compressedData = doiAttributeValue.get("data").b().asByteArray();
         var decompressedData = new String(DataCompressor.decompress(compressedData), UTF_8);
         var doi = JsonUtils.dtoObjectMapper.readValue(decompressedData, DoiRequest.class);
         assertThat(doi.getIdentifier(), is(equalTo(doiRequest.getFirst().getIdentifier())));
@@ -142,7 +141,7 @@ class MigrationTests extends ResourcesLocalTest {
         publication.getEntityDescription().setContributors(Collections.emptyList());
         updatePublication(publication);
         migrateResources();
-        var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
+        var allMigratedItems = client.scan(ScanRequest.builder().tableName(RESOURCES_TABLE_NAME).build()).items();
         var resource = getResourceStream(allMigratedItems)
                            .findFirst()
                            .orElseThrow();
@@ -157,7 +156,7 @@ class MigrationTests extends ResourcesLocalTest {
         publication.setEntityDescription(null);
         updatePublication(publication);
         migrateResources();
-        var allMigratedItems = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getItems();
+        var allMigratedItems = client.scan(ScanRequest.builder().tableName(RESOURCES_TABLE_NAME).build()).items();
         var resource = getResourceStream(allMigratedItems)
                            .findFirst()
                            .orElseThrow();
@@ -225,9 +224,9 @@ class MigrationTests extends ResourcesLocalTest {
     }
 
     private void saveJsonDirectlyToDatabase(String json) {
-        var item = Item.fromJSON(json);
-        var itemMap = ItemUtils.toAttributeValues(item);
-        client.putItem(new PutItemRequest().withTableName(RESOURCES_TABLE_NAME).withItem(itemMap));
+        var enhancedDocument = EnhancedDocument.fromJson(json);
+        var itemMap = enhancedDocument.toMap();
+        client.putItem(PutItemRequest.builder().tableName(RESOURCES_TABLE_NAME).item(itemMap).build());
     }
 
     private Publication createPublicationForOldDoiRequestFormatInResources(SortableIdentifier hardCodedIdentifier) {
@@ -249,7 +248,7 @@ class MigrationTests extends ResourcesLocalTest {
     private void updatePublication(Publication publication) {
         var resource = Resource.fromPublication(publication);
         var dao = resource.toDao();
-        client.putItem(new PutItemRequest().withTableName(RESOURCES_TABLE_NAME).withItem(dao.toDynamoFormat()));
+        client.putItem(PutItemRequest.builder().tableName(RESOURCES_TABLE_NAME).item(dao.toDynamoFormat()).build());
     }
 
     private void migrateResources() {

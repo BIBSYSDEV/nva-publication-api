@@ -5,10 +5,6 @@ import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +27,9 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 
 public class MessageService extends ServiceWithTransactions {
 
@@ -42,37 +41,37 @@ public class MessageService extends ServiceWithTransactions {
         "Message {} for ticket {} for publication {} has been refreshed successfully";
     public static final String MESSAGE_TO_REFRESH_NOT_FOUND_MESSAGE = "Could not refresh message: {}";
     private final String tableName;
-    
+
     private final TicketService ticketService;
-    
-    public MessageService(AmazonDynamoDB client, UriRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
+
+    public MessageService(DynamoDbClient client, UriRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
         super(client);
         this.ticketService = new TicketService(client, uriRetriever, cristinUnitsUtil);
         tableName = RESOURCES_TABLE_NAME;
     }
-    
+
     @JacocoGenerated
     public static MessageService defaultService() {
         return new MessageService(DEFAULT_DYNAMODB_CLIENT, new UriRetriever(), CristinUnitsUtil.defaultInstance());
     }
-    
+
     public Message createMessage(TicketEntry ticketEntry, UserInstance sender, String messageText) {
         var newMessage = Message.create(ticketEntry, sender, messageText);
         var dao = newMessage.toDao();
         var transactionRequest = dao.createInsertionTransactionRequest();
         getClient().transactWriteItems(transactionRequest);
-        
+
         markTicketUnreadForEveryone(ticketEntry);
         return fetchEventualConsistentDataEntry(newMessage, this::extractMessageByIdentifier).orElseThrow();
     }
-    
+
     public Message getMessage(UserInstance owner, SortableIdentifier identifier) throws NotFoundException {
-        MessageDao queryObject = MessageDao.queryObject(owner, identifier);
-        Map<String, AttributeValue> item = fetchMessage(queryObject);
-        MessageDao result = parseAttributeValuesMap(item, MessageDao.class);
+        var queryObject = MessageDao.queryObject(owner, identifier);
+        var item = fetchMessage(queryObject);
+        var result = parseAttributeValuesMap(item, MessageDao.class);
         return (Message) result.getData();
     }
-    
+
     public Optional<Message> getMessageByIdentifier(SortableIdentifier identifier) {
         var queryObject = new MessageDao(Message.builder().withIdentifier(identifier).build());
         return attempt(() -> queryObject.fetchByIdentifier(getClient(), tableName))
@@ -134,26 +133,27 @@ public class MessageService extends ServiceWithTransactions {
     private Message extractMessageByIdentifier(Message message) {
         return getMessageByIdentifier(message.getIdentifier()).orElseThrow();
     }
-    
+
     private void markTicketUnreadForEveryone(TicketEntry ticketEntry) {
         ticketEntry.markUnreadForEveryone().persistUpdate(ticketService);
     }
-    
+
     private Map<String, AttributeValue> fetchMessage(MessageDao queryObject) throws NotFoundException {
-    
-        GetItemRequest getMessageRequest = getMessageByPrimaryKey(queryObject);
-        GetItemResult queryResult = getClient().getItem(getMessageRequest);
-        Map<String, AttributeValue> item = queryResult.getItem();
-        
+
+        var getMessageRequest = getMessageByPrimaryKey(queryObject);
+        var queryResult = getClient().getItem(getMessageRequest);
+        var item = queryResult.item();
+
         if (isNull(item) || item.isEmpty()) {
             throw new NotFoundException(MESSAGE_NOT_FOUND_ERROR + queryObject.getIdentifier().toString());
         }
         return item;
     }
-    
+
     private GetItemRequest getMessageByPrimaryKey(MessageDao queryObject) {
-        return new GetItemRequest()
-                   .withTableName(tableName)
-                   .withKey(queryObject.primaryKey());
+        return GetItemRequest.builder()
+                   .tableName(tableName)
+                   .key(queryObject.primaryKey())
+                   .build();
     }
 }

@@ -1,11 +1,9 @@
 package no.unit.nva.publication.service.impl;
 
-import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.Resource.resourceQueryObject;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_INDEX_NAME;
@@ -15,14 +13,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.Condition;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
-import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,6 +48,12 @@ import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.Condition;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 @SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class ReadResourceService {
@@ -67,34 +63,34 @@ public class ReadResourceService {
     public static final int DEFAULT_LIMIT = 100;
     private static final String ADDITIONAL_IDENTIFIER_CRISTIN = "Cristin";
     private static final String TYPE = "type";
-    private final AmazonDynamoDB client;
+    private final DynamoDbClient client;
     private final String tableName;
 
-    protected ReadResourceService(AmazonDynamoDB client, String tableName) {
+    protected ReadResourceService(DynamoDbClient client, String tableName) {
         this.client = client;
         this.tableName = tableName;
     }
 
     public List<PublicationSummary> getResourcesByOwner(UserInstance userInstance) {
         var partitionKey = constructPrimaryPartitionKey(userInstance);
-        var querySpec = partitionKeyToQuerySpec(partitionKey);
-        var valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(), String.class);
-        var namesMap = querySpec.getNameMap();
-        var result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap, DEFAULT_LIMIT);
+        var valuesMap = Map.of(":pk", AttributeValue.builder().s(partitionKey).build());
+        var namesMap = Map.of("#pk", PRIMARY_KEY_PARTITION_KEY_NAME);
+        var result = performQuery("#pk = :pk", valuesMap, namesMap, DEFAULT_LIMIT);
 
         return queryResultToListOfPublicationSummaries(result);
     }
 
     public Optional<Resource> getResourceByIdentifier(SortableIdentifier identifier) {
         var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
-        var queryRequest = new QueryRequest()
-                               .withTableName(tableName)
-                               .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
-                               .withKeyConditionExpression("#PK3 = :value")
-                               .withExpressionAttributeNames(Map.of("#PK3", "PK3"))
-                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue(partitionKey)));
+        var queryRequest = QueryRequest.builder()
+                               .tableName(tableName)
+                               .indexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+                               .keyConditionExpression("#PK3 = :value")
+                               .expressionAttributeNames(Map.of("#PK3", "PK3"))
+                               .expressionAttributeValues(Map.of(":value", AttributeValue.builder().s(partitionKey).build()))
+                               .build();
 
-        var entries = client.query(queryRequest).getItems().stream().toList();
+        var entries = client.query(queryRequest).items().stream().toList();
 
         var resource = extractResource(entries);
         var fileEntries = extractFileEntries(entries);
@@ -132,17 +128,19 @@ public class ReadResourceService {
     public Optional<ImportCandidate> getImportCandidateByIdentifier(SortableIdentifier identifier) {
         var getItemRequest = getGetItemRequest(identifier);
         var result = client.getItem(getItemRequest);
-        if (isNull(result.getItem()) || result.getItem().isEmpty()) {
+        if (isNull(result.item()) || result.item().isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(DatabaseEntryWithData.fromAttributeValuesMap(result.getItem(), ImportCandidateDao.class))
+        return Optional.of(DatabaseEntryWithData.fromAttributeValuesMap(result.item(), ImportCandidateDao.class))
                    .map(ImportCandidateDao::getData);
     }
 
     private GetItemRequest getGetItemRequest(SortableIdentifier identifier) {
-        var primaryKey = new AttributeValue(IMPORT_CANDIDATE_KEY_PATTERN.formatted(identifier));
-        return new GetItemRequest(tableName, Map.of(PRIMARY_KEY_PARTITION_KEY_NAME, primaryKey,
-                                                    PRIMARY_KEY_SORT_KEY_NAME, primaryKey));
+        var primaryKey = AttributeValue.builder().s(IMPORT_CANDIDATE_KEY_PATTERN.formatted(identifier)).build();
+        return GetItemRequest.builder()
+                   .tableName(tableName)
+                   .key(Map.of(PRIMARY_KEY_PARTITION_KEY_NAME, primaryKey, PRIMARY_KEY_SORT_KEY_NAME, primaryKey))
+                   .build();
     }
 
     public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
@@ -157,28 +155,28 @@ public class ReadResourceService {
     public List<Dao> fetchAllResourceAssociatedEntries(URI customerId, SortableIdentifier resourceIdentifier) {
         var value = "Customer:%s:Resource:%s".formatted(Dao.orgUriToOrgIdentifier(customerId), resourceIdentifier);
 
-        var queryRequest = new QueryRequest()
-                               .withTableName(RESOURCES_TABLE_NAME)
-                               .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                               .withKeyConditionExpression("PK2 = :value")
-                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue().withS(value)));
+        var queryRequestBuilder = QueryRequest.builder()
+                               .tableName(RESOURCES_TABLE_NAME)
+                               .indexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                               .keyConditionExpression("PK2 = :value")
+                               .expressionAttributeValues(Map.of(":value", AttributeValue.builder().s(value).build()));
 
         var daoList = new ArrayList<Dao>();
         Map<String, AttributeValue> lastEvaluatedKey = null;
 
         do {
             if (nonNull(lastEvaluatedKey)) {
-                queryRequest = queryRequest.withExclusiveStartKey(lastEvaluatedKey);
+                queryRequestBuilder = queryRequestBuilder.exclusiveStartKey(lastEvaluatedKey);
             }
-            var queryResult = client.query(queryRequest);
-            var currentPageItems = queryResult.getItems().stream()
+            var queryResult = client.query(queryRequestBuilder.build());
+            var currentPageItems = queryResult.items().stream()
                                              .map(item -> parseAttributeValuesMap(item, Dao.class))
                                              .toList();
             daoList.addAll(currentPageItems);
 
-            lastEvaluatedKey = queryResult.getLastEvaluatedKey();
+            lastEvaluatedKey = queryResult.lastEvaluatedKey();
 
-        } while (nonNull(lastEvaluatedKey));
+        } while (nonNull(lastEvaluatedKey) && !lastEvaluatedKey.isEmpty());
 
         return daoList;
     }
@@ -198,7 +196,8 @@ public class ReadResourceService {
     }
 
     private static boolean hasTypeProperty(Map<String, AttributeValue> map, String type) {
-        return type.equals(map.getOrDefault(TYPE, new AttributeValue()).getS());
+        var typeAttr = map.get(TYPE);
+        return nonNull(typeAttr) && type.equals(typeAttr.s());
     }
 
     private static List<FileEntry> extractFileEntries(Collection<Map<String, AttributeValue>> entries) {
@@ -235,26 +234,27 @@ public class ReadResourceService {
     }
 
     public List<Publication> getPublicationsByScopusIdentifier(String scopusIdentifier) {
-        var queryRequest = new QueryRequest().withTableName(tableName)
-                               .withIndexName(GSI_1_INDEX_NAME)
-                               .withKeyConditionExpression("#PK1 = :value")
-                               .withExpressionAttributeNames(Map.of("#PK1", "PK1"))
-                               .withExpressionAttributeValues(Map.of(":value",
-                                                                     new AttributeValue(String.format("%s:%s", SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX, scopusIdentifier))));
+        var queryRequest = QueryRequest.builder().tableName(tableName)
+                               .indexName(GSI_1_INDEX_NAME)
+                               .keyConditionExpression("#PK1 = :value")
+                               .expressionAttributeNames(Map.of("#PK1", "PK1"))
+                               .expressionAttributeValues(Map.of(":value",
+                                                                     AttributeValue.builder().s(String.format("%s:%s", SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX, scopusIdentifier)).build()))
+                               .build();
         var queryResult = client.query(queryRequest);
         return queryResultToListOfPublications(queryResult);
     }
 
     protected List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
                                                                          SortableIdentifier resourceIdentifier) {
-        ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
-        QueryRequest queryRequest = attempt(() -> queryByResourceIndex(queryObject)).orElseThrow();
-        QueryResult queryResult = client.query(queryRequest);
+        var queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
+        var queryRequest = attempt(() -> queryByResourceIndex(queryObject)).orElseThrow();
+        var queryResult = client.query(queryRequest);
         return parseResultSetToDaos(queryResult);
     }
 
-    private static List<Resource> queryResultToResourceList(QueryResult result) {
-        return result.getItems()
+    private static List<Resource> queryResultToResourceList(QueryResponse result) {
+        return result.items()
                    .stream()
                    .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
                    .map(ResourceDao::getData)
@@ -274,34 +274,30 @@ public class ReadResourceService {
                                                         userInstance.getUsername());
     }
 
-    private List<Publication> queryResultToListOfPublications(QueryResult result) {
+    private List<Publication> queryResultToListOfPublications(QueryResponse result) {
         return queryResultToResourceList(result)
                    .stream()
                    .map(Resource::toPublication)
                    .toList();
     }
 
-    private List<PublicationSummary> queryResultToListOfPublicationSummaries(QueryResult result) {
+    private List<PublicationSummary> queryResultToListOfPublicationSummaries(QueryResponse result) {
         return queryResultToResourceList(result)
                    .stream()
                    .map(Resource::toSummary)
                    .toList();
     }
 
-    private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,
+    private QueryResponse performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,
                                      Map<String, String> namesMap, int limit) {
         return client.query(
-            new QueryRequest().withKeyConditionExpression(conditionExpression)
-                .withExpressionAttributeNames(namesMap)
-                .withExpressionAttributeValues(valuesMap)
-                .withTableName(tableName)
-                .withLimit(limit)
+            QueryRequest.builder().keyConditionExpression(conditionExpression)
+                .expressionAttributeNames(namesMap)
+                .expressionAttributeValues(valuesMap)
+                .tableName(tableName)
+                .limit(limit)
+                .build()
         );
-    }
-
-    private QueryExpressionSpec partitionKeyToQuerySpec(String partitionKey) {
-        return new ExpressionSpecBuilder()
-                   .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey)).buildForQuery();
     }
 
     private QueryRequest queryByResourceIndex(ResourceDao queryObject) {
@@ -311,14 +307,15 @@ public class ReadResourceService {
                                                        queryObject.joinByResourceContainedOrderedType(),
                                                        doiRequestQueryObject.joinByResourceContainedOrderedType()
                                                    );
-        return new QueryRequest()
-                   .withTableName(tableName)
-                   .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                   .withKeyConditions(keyConditions);
+        return QueryRequest.builder()
+                   .tableName(tableName)
+                   .indexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                   .keyConditions(keyConditions)
+                   .build();
     }
 
-    private List<Dao> parseResultSetToDaos(QueryResult queryResult) {
-        return queryResult.getItems()
+    private List<Dao> parseResultSetToDaos(QueryResponse queryResult) {
+        return queryResult.items()
                    .stream()
                    .map(values -> parseAttributeValuesMap(values, Dao.class))
                    .collect(Collectors.toList());

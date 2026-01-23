@@ -2,7 +2,7 @@ package no.unit.nva.expansion.utils;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.expansion.utils.JsonLdDefaults.frameJsonLd;
-import static org.apache.http.HttpStatus.SC_OK;
+import static java.net.HttpURLConnection.HTTP_OK;
 import com.apicatalog.jsonld.document.Document;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -103,7 +103,7 @@ public class FramedJsonGenerator {
                    .map(a -> uriRetriever.fetchResponse(a, MediaTypes.APPLICATION_JSON_LD.toString()))
                    .filter(Optional::isPresent)
                    .map(Optional::get)
-                   .filter(a -> a.statusCode() == SC_OK)
+                   .filter(a -> a.statusCode() == HTTP_OK)
                    .map(HttpResponse::body)
                    .map(body -> new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
     }

@@ -3,9 +3,6 @@ package no.unit.nva.publication.file.upload;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.publication.file.upload.config.MultipartUploadConfig.BUCKET_NAME;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ListPartsRequest;
 import java.util.ArrayList;
 import java.util.List;
 import no.unit.nva.publication.file.upload.restmodel.ListPartsElement;
@@ -16,19 +13,21 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ListPartsRequest;
 
 public class ListPartsHandler extends ApiGatewayHandler<ListPartsRequestBody, ListPartsResponseBody> {
 
-    private final AmazonS3 amazonS3;
+    private final S3Client s3Client;
 
     @JacocoGenerated
     public ListPartsHandler() {
-        this(AmazonS3ClientBuilder.defaultClient(), new Environment());
+        this(S3Client.create(), new Environment());
     }
 
-    public ListPartsHandler(AmazonS3 amazonS3, Environment environment) {
+    public ListPartsHandler(S3Client s3Client, Environment environment) {
         super(ListPartsRequestBody.class, environment);
-        this.amazonS3 = amazonS3;
+        this.s3Client = s3Client;
     }
 
     @Override
@@ -50,17 +49,18 @@ public class ListPartsHandler extends ApiGatewayHandler<ListPartsRequestBody, Li
         return HTTP_OK;
     }
 
-    private List<ListPartsElement> listParts(ListPartsRequest listPartsRequest) {
+    private List<ListPartsElement> listParts(ListPartsRequest initialRequest) {
         var listPartsElements = new ArrayList<ListPartsElement>();
+        var currentRequest = initialRequest;
 
-        var partListing = amazonS3.listParts(listPartsRequest);
+        var partListing = s3Client.listParts(currentRequest);
         boolean moreParts = true;
         while (moreParts) {
-            partListing.getParts().stream().map(ListPartsElement::create).forEach(listPartsElements::add);
+            partListing.parts().stream().map(ListPartsElement::create).forEach(listPartsElements::add);
             if (partListing.isTruncated()) {
-                var partNumberMarker = partListing.getNextPartNumberMarker();
-                listPartsRequest.setPartNumberMarker(partNumberMarker);
-                partListing = amazonS3.listParts(listPartsRequest);
+                var partNumberMarker = partListing.nextPartNumberMarker();
+                currentRequest = currentRequest.toBuilder().partNumberMarker(partNumberMarker).build();
+                partListing = s3Client.listParts(currentRequest);
             } else {
                 moreParts = false;
             }
