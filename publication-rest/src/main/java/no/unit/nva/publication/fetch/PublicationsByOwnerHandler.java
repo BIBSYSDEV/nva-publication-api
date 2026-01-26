@@ -9,7 +9,7 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import org.apache.http.HttpStatus;
+import static java.net.HttpURLConnection.HTTP_OK;
 
 public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, PublicationsByOwnerResponse> {
     
@@ -52,6 +52,6 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
     
     @Override
     protected Integer getSuccessStatusCode(Void input, PublicationsByOwnerResponse output) {
-        return HttpStatus.SC_OK;
+        return HTTP_OK;
     }
 }

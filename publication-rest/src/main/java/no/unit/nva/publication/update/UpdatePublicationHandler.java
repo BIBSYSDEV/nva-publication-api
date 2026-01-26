@@ -56,7 +56,9 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.secrets.SecretsReader;
-import org.apache.http.HttpStatus;
+import static java.net.HttpURLConnection.HTTP_ACCEPTED;
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+import static java.net.HttpURLConnection.HTTP_OK;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
@@ -368,12 +370,12 @@ public class UpdatePublicationHandler
     @Override
     protected Integer getSuccessStatusCode(PublicationRequest input, PublicationResponse output) {
         return switch (input) {
-            case UpdatePublicationRequest ignored -> HttpStatus.SC_OK;
-            case PartialUpdatePublicationRequest ignored -> HttpStatus.SC_OK;
-            case UnpublishPublicationRequest ignored -> HttpStatus.SC_ACCEPTED;
-            case DeletePublicationRequest ignored -> HttpStatus.SC_ACCEPTED;
-            case RepublishPublicationRequest ignored -> HttpStatus.SC_OK;
-            default -> HttpStatus.SC_BAD_REQUEST;
+            case UpdatePublicationRequest ignored -> HTTP_OK;
+            case PartialUpdatePublicationRequest ignored -> HTTP_OK;
+            case UnpublishPublicationRequest ignored -> HTTP_ACCEPTED;
+            case DeletePublicationRequest ignored -> HTTP_ACCEPTED;
+            case RepublishPublicationRequest ignored -> HTTP_OK;
+            default -> HTTP_BAD_REQUEST;
         };
     }
 
