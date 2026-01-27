@@ -43,8 +43,8 @@ import no.unit.nva.publication.rightsretention.FileRightsRetentionService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.validation.ETag;
+import no.unit.nva.publication.ValidatingApiGatewayHandler;
 import nva.commons.apigateway.AccessRight;
-import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
@@ -66,7 +66,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class UpdatePublicationHandler
-    extends ApiGatewayHandler<PublicationRequest, PublicationResponse> {
+    extends ValidatingApiGatewayHandler<PublicationRequest, PublicationResponse> {
 
     private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
@@ -134,9 +134,9 @@ public class UpdatePublicationHandler
     }
 
     @Override
-    protected PublicationResponse processInput(PublicationRequest input,
-                                               RequestInfo requestInfo,
-                                               Context context)
+    protected PublicationResponse processValidatedInput(PublicationRequest input,
+                                                        RequestInfo requestInfo,
+                                                        Context context)
         throws ApiGatewayException {
         var identifierInPath = RequestUtil.getIdentifier(requestInfo);
         var clientETag = RequestUtil.getETagValueFromIfMatchHeader(requestInfo).map(ETag::fromString);
