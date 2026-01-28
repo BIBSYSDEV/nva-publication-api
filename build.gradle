@@ -5,7 +5,6 @@ plugins{
 //workaround for jacoco-merge to work
 allprojects{
     apply plugin: 'nva.publication.api.java-conventions'
-    apply plugin: 'nva.publication.api.dynamo-db'
 }
 
 def javaVersion = 21
