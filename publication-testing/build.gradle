@@ -27,13 +27,11 @@ dependencies {
     implementation nvaCatalog.datafaker
     implementation nvaLibs.testutils
     implementation nvaCatalog.bundles.jackson
-    implementation(libs.dynamodDbLocal) {
+    implementation(nvaCatalog.aws.dynamodb.local) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
         exclude group: 'com.google.guava', module: 'guava'
     }
 
-    implementation(libs.httpcore) {
-        because "aws-java-sdk-dynamodb needs and we are using it indirectly"
-    }
+    implementation(nvaCatalog.httpcore5)
 }
