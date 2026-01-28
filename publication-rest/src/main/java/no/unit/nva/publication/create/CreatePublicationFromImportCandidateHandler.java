@@ -16,8 +16,10 @@ import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.publication.create.pia.ContributorUpdateService;
 import no.unit.nva.publication.create.pia.PiaClient;
 import no.unit.nva.publication.exception.NotAuthorizedException;
@@ -174,9 +176,17 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
     private AssociatedArtifactList convertFilesToPending(Resource resource) {
         var associatedArtifacts = resource.getAssociatedArtifacts().stream()
-                                      .map(associatedArtifact -> associatedArtifact instanceof File file ? file.toPendingOpenFile() : associatedArtifact)
+                                      .map(CreatePublicationFromImportCandidateHandler::toPendingFile)
                                       .toList();
         return new AssociatedArtifactList(associatedArtifacts);
+    }
+
+    private static AssociatedArtifact toPendingFile(AssociatedArtifact associatedArtifact) {
+        return switch (associatedArtifact) {
+            case InternalFile file -> file.toPendingInternalFile();
+            case OpenFile file -> file.toPendingOpenFile();
+            default -> associatedArtifact;
+        };
     }
 
     private ApiGatewayException rollbackAndThrowException(Failure<PublicationResponse> failure, SortableIdentifier identifier) {

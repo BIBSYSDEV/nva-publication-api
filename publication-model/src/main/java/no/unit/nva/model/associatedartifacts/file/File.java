@@ -193,6 +193,12 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                                    getLegalNote(), getUploadDetails());
     }
 
+    public PendingInternalFile toPendingInternalFile() {
+        return new PendingInternalFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
+                                   getPublisherVersion(), getEmbargoDate().orElse(null), getRightsRetentionStrategy(),
+                                   getLegalNote(), getUploadDetails());
+    }
+
     public OpenFile toOpenFile() {
         return new OpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(), getPublisherVersion(),
                             getEmbargoDate().orElse(null), getRightsRetentionStrategy(), getLegalNote(), Instant.now(),
