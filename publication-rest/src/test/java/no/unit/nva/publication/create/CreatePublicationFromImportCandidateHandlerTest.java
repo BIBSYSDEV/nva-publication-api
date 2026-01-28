@@ -14,6 +14,7 @@ import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomReference
 import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
 import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportContributor;
 import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.publication.ImportCandidateToResourceConverter.toContributor;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
@@ -80,6 +81,7 @@ import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
+import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
@@ -643,6 +645,36 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         resource.getFileEntries().forEach(fileEntry -> {
             assertEquals(customerDto.cristinId(), fileEntry.getOwnerAffiliation());
         });
+    }
+
+    @Test
+    void shouldImportFileAsPendingInternalFileWhenImportingImportCandidateWithInternalFileAndCustomerRequiresApproval()
+        throws IOException, ApprovalAssignmentException {
+        var file = randomInternalFile();
+        var request = createImportCandidateRequestWithFile(file);
+
+        handler.handleRequest(request, output, context);
+        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+
+        var resource = Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
+                           .fetch(publicationService)
+                           .orElseThrow();
+
+        assertInstanceOf(PendingInternalFile.class, resource.getFileByIdentifier(file.getIdentifier()).orElseThrow());
+    }
+
+    private InputStream createImportCandidateRequestWithFile(File file) throws JsonProcessingException, ApprovalAssignmentException {
+        var candidate = randomImportCandidate();
+        candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
+        var customerRequiringApproval = randomUri();
+        candidate.setAssociatedCustomers(List.of(customerRequiringApproval));
+        var importCandidate = importCandidateService.persistImportCandidate(candidate);
+        var request = createRequest(importCandidate);
+
+        var customerDto = randomCustomer(customerRequiringApproval, false);
+        when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
+            .thenReturn(AssignmentServiceResult.customerFound(new CustomerContributorPair(customerDto, randomContributorWithId(randomUri()))));
+        return request;
     }
 
     private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
