@@ -49,7 +49,7 @@ dependencies {
     testImplementation nvaCatalog.bundles.wiremock
     testImplementation(nvaCatalog.httpcore5)
 
-    testImplementation(libs.dynamodDbLocal) {
+    testImplementation(nvaCatalog.aws.dynamodb.local) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }

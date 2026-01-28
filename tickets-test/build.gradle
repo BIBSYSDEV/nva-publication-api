@@ -16,7 +16,7 @@ dependencies {
     testImplementation nvaLibs.testutils
     testImplementation libs.jsonassert
 
-    testImplementation(libs.dynamodDbLocal) {
+    testImplementation(nvaCatalog.aws.dynamodb.local) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
         exclude group: 'org.apache.commons', module: 'commons-lang3'
