@@ -80,6 +80,7 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
@@ -399,9 +400,9 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
     @Test
     void shouldOnlyCopyFilesThatWhereKeptByImporter() throws NotFoundException, IOException {
-        var fileKeptByImporter = randomFile();
-        var fileNotKeptByImporter = randomFile();
-        var fileAddedByImporter = randomFile();
+        var fileKeptByImporter = randomInternalFile();
+        var fileNotKeptByImporter = randomInternalFile();
+        var fileAddedByImporter = randomInternalFile();
         var importCandidateAssociatedArtifactList = new AssociatedArtifactList(fileKeptByImporter,
                                                                                fileNotKeptByImporter);
         var importCandidate = createPersistedImportCandidate(importCandidateAssociatedArtifactList);
@@ -413,10 +414,10 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
         var request = createRequest(userInput);
         handler.handleRequest(request, output, context);
         var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
-        assertThat(publication.getAssociatedArtifacts(), hasItem(fileKeptByImporter));
-        assertThat(publication.getAssociatedArtifacts(), hasItem(fileAddedByImporter));
-        assertThat(publication.getAssociatedArtifacts(), not(hasItem(fileNotKeptByImporter)));
+        var resource = publicationService.getResourceByIdentifier(getBodyObject(response).getIdentifier());
+        assertTrue(resource.getFileByIdentifier(fileKeptByImporter.getIdentifier()).isPresent());
+        assertTrue(resource.getFileByIdentifier(fileAddedByImporter.getIdentifier()).isPresent());
+        assertTrue(resource.getFileByIdentifier(fileNotKeptByImporter.getIdentifier()).isEmpty());
         verify(s3Client, atLeastOnce()).copyObject(
             CopyObjectRequest.builder()
                 .sourceBucket(SOME_CANDIDATE_BUCKET)
@@ -598,7 +599,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
-    void shouldPublishFileWhenImportingCandidateWithFilesAndNoneOfCustomerRequiresApproval()
+    void shouldImportFileAsInternalFileWhenImportingCandidateWithFilesAndNoneOfCustomerRequiresApproval()
         throws IOException, ApprovalAssignmentException {
         var candidate = randomImportCandidate();
         var file = randomOpenFile();
@@ -618,7 +619,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                            .orElseThrow();
 
         assertTrue(publicationService.fetchAllTicketsForResource(resource).toList().isEmpty());
-        assertInstanceOf(OpenFile.class, resource.getFileByIdentifier(file.getIdentifier()).orElseThrow());
+        assertInstanceOf(InternalFile.class, resource.getFileByIdentifier(file.getIdentifier()).orElseThrow());
     }
 
     @Test

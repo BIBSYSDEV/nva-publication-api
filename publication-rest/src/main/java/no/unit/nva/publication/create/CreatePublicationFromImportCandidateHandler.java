@@ -18,6 +18,7 @@ import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.publication.create.pia.ContributorUpdateService;
@@ -136,10 +137,29 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
 
         return switch (serviceResult.getStatus()) {
             case APPROVAL_NEEDED -> createPublicationWithFilesApprovalTicket(resourceToImport, serviceResult, requestInfo);
-            case NO_APPROVAL_NEEDED -> resourceToImport.importResource(publicationService,
-                                                                       ImportSource.fromSource(Source.SCOPUS),
-                                                                       createUserInstanceFromCustomer(requestInfo, serviceResult.getCustomer()));
+            case NO_APPROVAL_NEEDED -> importResourceWithInternalFiles(resourceToImport, requestInfo, serviceResult);
         };
+    }
+
+    private Resource importResourceWithInternalFiles(Resource resourceToImport, RequestInfo requestInfo,
+                                                     AssignmentServiceResult serviceResult) throws UnauthorizedException {
+        resourceToImport.setAssociatedArtifacts(convertFilesToInternalFiles(resourceToImport));
+        return resourceToImport.importResource(publicationService,
+                                               ImportSource.fromSource(Source.SCOPUS),
+                                               createUserInstanceFromCustomer(requestInfo,
+                                                                              serviceResult.getCustomer()));
+    }
+
+    private static AssociatedArtifactList convertFilesToInternalFiles(Resource resourceToImport) {
+        var associatedArtifacts = resourceToImport.getAssociatedArtifacts()
+                   .stream()
+                   .map(CreatePublicationFromImportCandidateHandler::toInternalFfile)
+                   .toList();
+        return new AssociatedArtifactList(associatedArtifacts);
+    }
+
+    private static AssociatedArtifact toInternalFfile(AssociatedArtifact associatedArtifact) {
+        return associatedArtifact instanceof File file ? file.toInternalFile() : associatedArtifact;
     }
 
     private Resource createPublicationWithFilesApprovalTicket(Resource resourceToImport,

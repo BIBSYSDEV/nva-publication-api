@@ -94,15 +94,55 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
     }
 
     @Test
-    void shouldReturnNoApprovalNeededWhenCustomerAllowsAutoPublishing() throws Exception {
-        var customerId = randomUri();
-        mockCustomer(customerId, randomUri(), true);
-        var resource = createResource();
+    void shouldReturnNoApprovalNeededWhenAllCustomersAllowAutoPublishing() throws Exception {
+        var firstCustomer = new CustomerSetup();
+        var secondCustomer = new CustomerSetup();
 
-        var result = service.determineCustomerResponsibleForApproval(resource, List.of(customerId));
+        mockCustomer(firstCustomer.customerId, firstCustomer.cristinId, true);
+        mockCustomer(secondCustomer.customerId, secondCustomer.cristinId, true);
+
+        var result = service.determineCustomerResponsibleForApproval(createResource(), List.of(firstCustomer.customerId,
+                                                                                                    secondCustomer.customerId));
+
 
         assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
         assertTrue(result.getReason().contains("allows auto publishing"));
+    }
+
+    @Test
+    void shouldReturnApprovalNeededWhenAtLeastOneCustomersRequiresApproval() throws Exception {
+        var firstCustomer = new CustomerSetup();
+        var secondCustomer = new CustomerSetup();
+
+        mockCustomer(firstCustomer.customerId, firstCustomer.cristinId, true);
+        mockCustomer(secondCustomer.customerId, secondCustomer.cristinId, false);
+
+        var resource = createResource(
+            createContributorContributor(firstCustomer.cristinId, false, 1),
+            createContributorContributor(secondCustomer.cristinId, true, 2));
+
+        var result = service.determineCustomerResponsibleForApproval(resource, List.of(firstCustomer.customerId,
+                                                                                               secondCustomer.customerId));
+
+        assertEquals(APPROVAL_NEEDED, result.getStatus());
+    }
+
+    @Test
+    void shouldReturnApprovalNeededWithCustomerThatRequiresApproval() throws Exception {
+        var firstCustomer = new CustomerSetup();
+        var secondCustomer = new CustomerSetup();
+
+        mockCustomer(firstCustomer.customerId, firstCustomer.cristinId, true);
+        mockCustomer(secondCustomer.customerId, secondCustomer.cristinId, false);
+
+        var resource = createResource(
+            createContributorContributor(firstCustomer.cristinId, true, 1),
+            createContributorContributor(secondCustomer.cristinId, false, 2));
+
+        var result = service.determineCustomerResponsibleForApproval(resource, List.of(firstCustomer.customerId,
+                                                                                       secondCustomer.customerId));
+
+        assertEquals(secondCustomer.customerId, result.getCustomer().id());
     }
 
     @Test
