@@ -1,6 +1,5 @@
 package no.sikt.nva.brage.migration.testutils;
 
-import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumerTest.RESOURCE_EXCEPTION_MESSAGE;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.time.Clock;
@@ -27,7 +26,7 @@ public class FakeResourceServiceThrowingException extends ResourceService {
     @Override
     public Resource importResource(Resource resource, ImportSource importSource, UserInstance fileOwner) {
         numberOfAttempts++;
-        throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
+        throw new RuntimeException("resourceExceptionMessage");
     }
 
     public int getNumberOfAttempts() {
