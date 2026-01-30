@@ -124,82 +124,81 @@ import static org.mockito.Mockito.when;
 
 public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
-    public static final UUID UUID = randomUUID();
-    public static final Context CONTEXT = mock(Context.class);
-    public static final long SOME_FILE_SIZE = 100L;
-    public static final Type TYPE_BOOK = new Type(List.of(NvaType.BOOK.getValue()), NvaType.BOOK.getValue());
-    public static final Type TYPE_CONFERENCE_REPORT = new Type(List.of(NvaType.CONFERENCE_REPORT.getValue()),
+    private static final UUID UUID = randomUUID();
+    private static final Context CONTEXT = mock(Context.class);
+    private static final long SOME_FILE_SIZE = 100L;
+    private static final Type TYPE_BOOK = new Type(List.of(NvaType.BOOK.getValue()), NvaType.BOOK.getValue());
+    private static final Type TYPE_CONFERENCE_REPORT = new Type(List.of(NvaType.CONFERENCE_REPORT.getValue()),
                                                                NvaType.CONFERENCE_REPORT.getValue());
-    public static final Type TYPE_PROFESSIONAL_ARTICLE = new Type(List.of(PROFESSIONAL_ARTICLE.getValue()),
+    private static final Type TYPE_PROFESSIONAL_ARTICLE = new Type(List.of(PROFESSIONAL_ARTICLE.getValue()),
                                                                   PROFESSIONAL_ARTICLE.getValue());
-    public static final Type TYPE_PERFORMING_ARTS = new Type(List.of(PERFORMING_ARTS.getValue()),
+    private static final Type TYPE_PERFORMING_ARTS = new Type(List.of(PERFORMING_ARTS.getValue()),
                                                              PERFORMING_ARTS.getValue());
-    public static final Type TYPE_VISUAL_ARTS = new Type(List.of(VISUAL_ARTS.getValue()), VISUAL_ARTS.getValue());
-    public static final Type TYPE_READER_OPINION = new Type(List.of(READER_OPINION.getValue()),
+    private static final Type TYPE_VISUAL_ARTS = new Type(List.of(VISUAL_ARTS.getValue()), VISUAL_ARTS.getValue());
+    private static final Type TYPE_READER_OPINION = new Type(List.of(READER_OPINION.getValue()),
                                                             READER_OPINION.getValue());
-    public static final Type TYPE_ANTHOLOGY = new Type(List.of(ANTHOLOGY.getValue()), ANTHOLOGY.getValue());
-    public static final Type TYPE_CRISTIN_RECORD = new Type(List.of(CRISTIN_RECORD.getValue()),
+    private static final Type TYPE_ANTHOLOGY = new Type(List.of(ANTHOLOGY.getValue()), ANTHOLOGY.getValue());
+    private static final Type TYPE_CRISTIN_RECORD = new Type(List.of(CRISTIN_RECORD.getValue()),
                                                             CRISTIN_RECORD.getValue());
-    public static final Type TYPE_TEXTBOOK = new Type(List.of(TEXTBOOK.getValue()), TEXTBOOK.getValue());
-    public static final Type TYPE_FILM = new Type(List.of(FILM.getValue()), FILM.getValue());
-    public static final Type TYPE_LITERARY_ARTS = new Type(List.of(LITERARY_ARTS.getValue()), LITERARY_ARTS.getValue());
-    public static final Type TYPE_EXHIBITION_CATALOGUE = new Type(List.of(EXHIBITION_CATALOGUE.getValue()),
+    private static final Type TYPE_TEXTBOOK = new Type(List.of(TEXTBOOK.getValue()), TEXTBOOK.getValue());
+    private static final Type TYPE_FILM = new Type(List.of(FILM.getValue()), FILM.getValue());
+    private static final Type TYPE_LITERARY_ARTS = new Type(List.of(LITERARY_ARTS.getValue()), LITERARY_ARTS.getValue());
+    private static final Type TYPE_EXHIBITION_CATALOGUE = new Type(List.of(EXHIBITION_CATALOGUE.getValue()),
                                                                   EXHIBITION_CATALOGUE.getValue());
-    public static final Type TYPE_POPULAR_SCIENCE_MONOGRAPH = new Type(List.of(POPULAR_SCIENCE_MONOGRAPH.getValue()),
+    private static final Type TYPE_POPULAR_SCIENCE_MONOGRAPH = new Type(List.of(POPULAR_SCIENCE_MONOGRAPH.getValue()),
                                                                        POPULAR_SCIENCE_MONOGRAPH.getValue());
-    public static final Type TYPE_EDITORIAL = new Type(List.of(EDITORIAL.getValue()), EDITORIAL.getValue());
-    public static final Type TYPE_POPULAR_SCIENCE_ARTICLE = new Type(List.of(POPULAR_SCIENCE_ARTICLE.getValue()),
+    private static final Type TYPE_EDITORIAL = new Type(List.of(EDITORIAL.getValue()), EDITORIAL.getValue());
+    private static final Type TYPE_POPULAR_SCIENCE_ARTICLE = new Type(List.of(POPULAR_SCIENCE_ARTICLE.getValue()),
                                                                      POPULAR_SCIENCE_ARTICLE.getValue());
-    public static final Type TYPE_MUSIC = new Type(List.of(NvaType.RECORDING_MUSICAL.getValue()),
+    private static final Type TYPE_MUSIC = new Type(List.of(NvaType.RECORDING_MUSICAL.getValue()),
                                                    NvaType.RECORDING_MUSICAL.getValue());
-    public static final Type TYPE_DESIGN_PRODUCT = new Type(List.of(NvaType.DESIGN_PRODUCT.getValue()),
+    private static final Type TYPE_DESIGN_PRODUCT = new Type(List.of(NvaType.DESIGN_PRODUCT.getValue()),
                                                             NvaType.DESIGN_PRODUCT.getValue());
-    public static final Type TYPE_PLAN_OR_BLUEPRINT = new Type(List.of(NvaType.PLAN_OR_BLUEPRINT.getValue()),
+    private static final Type TYPE_PLAN_OR_BLUEPRINT = new Type(List.of(NvaType.PLAN_OR_BLUEPRINT.getValue()),
                                                                NvaType.PLAN_OR_BLUEPRINT.getValue());
-    public static final Type TYPE_MAP = new Type(List.of(NvaType.MAP.getValue()), NvaType.MAP.getValue());
-    public static final Type TYPE_BOOK_OF_ABSTRACTS = new Type(List.of(NvaType.BOOK_OF_ABSTRACTS.getValue()),
+    private static final Type TYPE_MAP = new Type(List.of(NvaType.MAP.getValue()), NvaType.MAP.getValue());
+    private static final Type TYPE_BOOK_OF_ABSTRACTS = new Type(List.of(NvaType.BOOK_OF_ABSTRACTS.getValue()),
                                                                NvaType.BOOK_OF_ABSTRACTS.getValue());
-    public static final Type TYPE_JOURNAL_ISSUE = new Type(List.of(NvaType.JOURNAL_ISSUE.getValue()),
+    private static final Type TYPE_JOURNAL_ISSUE = new Type(List.of(NvaType.JOURNAL_ISSUE.getValue()),
                                                            NvaType.JOURNAL_ISSUE.getValue());
-    public static final Type TYPE_CONFERENCE_LECTURE = new Type(List.of(NvaType.CONFERENCE_LECTURE.getValue()),
+    private static final Type TYPE_CONFERENCE_LECTURE = new Type(List.of(NvaType.CONFERENCE_LECTURE.getValue()),
                                                                 NvaType.CONFERENCE_LECTURE.getValue());
-    public static final Type TYPE_REPORT = new Type(List.of(NvaType.REPORT.getValue()), NvaType.REPORT.getValue());
-    public static final Type TYPE_RESEARCH_REPORT = new Type(List.of(NvaType.RESEARCH_REPORT.getValue()),
+    private static final Type TYPE_REPORT = new Type(List.of(NvaType.REPORT.getValue()), NvaType.REPORT.getValue());
+    private static final Type TYPE_RESEARCH_REPORT = new Type(List.of(NvaType.RESEARCH_REPORT.getValue()),
                                                              NvaType.RESEARCH_REPORT.getValue());
 
-    public static final Type TYPE_BACHELOR = new Type(List.of(NvaType.BACHELOR_THESIS.getValue()),
+    private static final Type TYPE_BACHELOR = new Type(List.of(NvaType.BACHELOR_THESIS.getValue()),
                                                       NvaType.BACHELOR_THESIS.getValue());
-    public static final Type TYPE_MASTER = new Type(List.of(NvaType.MASTER_THESIS.getValue()),
+    private static final Type TYPE_MASTER = new Type(List.of(NvaType.MASTER_THESIS.getValue()),
                                                     NvaType.MASTER_THESIS.getValue());
-    public static final Type TYPE_PHD = new Type(List.of(NvaType.DOCTORAL_THESIS.getValue()),
+    private static final Type TYPE_PHD = new Type(List.of(NvaType.DOCTORAL_THESIS.getValue()),
                                                  NvaType.DOCTORAL_THESIS.getValue());
-    public static final Type TYPE_STUDENT_PAPER_OTHERS = new Type(List.of(NvaType.STUDENT_PAPER_OTHERS.getValue()),
+    private static final Type TYPE_STUDENT_PAPER_OTHERS = new Type(List.of(NvaType.STUDENT_PAPER_OTHERS.getValue()),
                                                                   NvaType.STUDENT_PAPER_OTHERS.getValue());
-    public static final Type TYPE_OTHER_STUDENT_WORK = new Type(List.of(NvaType.STUDENT_PAPER.getValue()),
+    private static final Type TYPE_OTHER_STUDENT_WORK = new Type(List.of(NvaType.STUDENT_PAPER.getValue()),
                                                                 NvaType.STUDENT_PAPER.getValue());
-    public static final Type TYPE_CONFERENCE_POSTER = new Type(List.of(NvaType.CONFERENCE_POSTER.getValue()),
+    private static final Type TYPE_CONFERENCE_POSTER = new Type(List.of(NvaType.CONFERENCE_POSTER.getValue()),
                                                                NvaType.CONFERENCE_POSTER.getValue());
-    public static final Type TYPE_SCIENTIFIC_MONOGRAPH = new Type(List.of(NvaType.SCIENTIFIC_MONOGRAPH.getValue()),
+    private static final Type TYPE_SCIENTIFIC_MONOGRAPH = new Type(List.of(NvaType.SCIENTIFIC_MONOGRAPH.getValue()),
                                                                   NvaType.SCIENTIFIC_MONOGRAPH.getValue());
-    public static final Type TYPE_INTERVIEW = new Type(List.of(NvaType.INTERVIEW.getValue()),
+    private static final Type TYPE_INTERVIEW = new Type(List.of(NvaType.INTERVIEW.getValue()),
                                                        NvaType.INTERVIEW.getValue());
-    public static final Type TYPE_PRESENTATION_OTHER = new Type(List.of(NvaType.PRESENTATION_OTHER.getValue()),
+    private static final Type TYPE_PRESENTATION_OTHER = new Type(List.of(NvaType.PRESENTATION_OTHER.getValue()),
                                                                 NvaType.PRESENTATION_OTHER.getValue());
-    public static final Type TYPE_DATASET = new Type(List.of(NvaType.DATASET.getValue()), NvaType.DATASET.getValue());
-    public static final Type TYPE_JOURNAL_ARTICLE = new Type(List.of(NvaType.JOURNAL_ARTICLE.getValue()),
+    private static final Type TYPE_DATASET = new Type(List.of(NvaType.DATASET.getValue()), NvaType.DATASET.getValue());
+    private static final Type TYPE_JOURNAL_ARTICLE = new Type(List.of(NvaType.JOURNAL_ARTICLE.getValue()),
                                                              NvaType.JOURNAL_ARTICLE.getValue());
 
-    public static final Type TYPE_SCIENTIFIC_ARTICLE = new Type(List.of(NvaType.SCIENTIFIC_ARTICLE.getValue()),
+    private static final Type TYPE_SCIENTIFIC_ARTICLE = new Type(List.of(NvaType.SCIENTIFIC_ARTICLE.getValue()),
                                                                 NvaType.SCIENTIFIC_ARTICLE.getValue());
-    public static final Instant EMBARGO_DATE = Instant.now();
-    public static final PublicationDate PUBLICATION_DATE =
+    private static final Instant EMBARGO_DATE = Instant.now();
+    private static final PublicationDate PUBLICATION_DATE =
         new PublicationDate("2020", new PublicationDateNva.Builder().withYear("2020").build());
-    public static final Organization TEST_ORGANIZATION = new Organization.Builder().withId(
+    private static final Organization TEST_ORGANIZATION = new Organization.Builder().withId(
         URI.create("https://api.nva.unit.no/customer/test")).build();
-    public static final String FILENAME = "filename";
-    public static final String HARD_CODED_CRISTIN_IDENTIFIER = "12345";
-    public static final String RESOURCE_EXCEPTION_MESSAGE = "resourceExceptionMessage";
-    public static final URI LICENSE_URI = URI.create("http://creativecommons.org/licenses/by-nc/4.0/");
+    private static final String FILENAME = "filename";
+    private static final String HARD_CODED_CRISTIN_IDENTIFIER = "12345";
+    private static final URI LICENSE_URI = URI.create("http://creativecommons.org/licenses/by-nc/4.0/");
     private static final Type TYPE_REPORT_WORKING_PAPER = new Type(List.of(NvaType.WORKING_PAPER.getValue()),
                                                                    NvaType.WORKING_PAPER.getValue());
     private static final Type TYPE_LECTURE = new Type(List.of(NvaType.LECTURE.getValue()), NvaType.LECTURE.getValue());
@@ -214,18 +213,19 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     private static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
-    public static final int ALMOST_HUNDRED_YEARS = 36487;
-    public static final ResourceOwner RESOURCE_OWNER = new ResourceOwner("someOwner", randomUri());
+    private static final int ALMOST_HUNDRED_YEARS = 36487;
+    private static final ResourceOwner RESOURCE_OWNER = new ResourceOwner("someOwner", randomUri());
     private static final String NTNU_CUSTOMER_NAME = "ntnu";
-    public static final String NTNU_SHORT_NAME = "NTNU";
-    public static final String LEGAL_NOTE_REQUIRING_EMBARGO = "Klausulert: Kan bare siteres etter nærmere avtale med forfatter";
+    private static final String NTNU_SHORT_NAME = "NTNU";
+    private static final String LEGAL_NOTE_REQUIRING_EMBARGO = "Klausulert: Kan bare siteres etter nærmere avtale med " 
+                                                         + "forfatter";
     private final String persistedStorageBucket = new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
     private BrageEntryEventConsumer handler;
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
     private ResourceService resourceService;
 
-    public static Stream<Arguments> emptyPublicationInstanceSupplier() {
+    private static Stream<Arguments> emptyPublicationInstanceSupplier() {
         return Stream.of(Arguments.of(new DegreePhd(null, null, Set.of()), TYPE_PHD),
                          Arguments.of(new DegreeBachelor(null, null), TYPE_BACHELOR),
                          Arguments.of(new DegreeMaster(null, null), TYPE_MASTER),
