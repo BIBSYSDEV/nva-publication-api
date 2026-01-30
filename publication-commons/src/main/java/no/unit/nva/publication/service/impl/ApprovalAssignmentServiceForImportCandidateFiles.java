@@ -1,12 +1,12 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.util.function.Predicate.not;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -54,12 +54,11 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
         validateImportCandidateForCustomersPresence(resource, associatedCustomers);
         var customers = fetchAllAssociatedCustomers(associatedCustomers);
 
-        var customerDto = findAnyCustomerAllowingAutoApproval(customers);
+        var customerDto = findAnyCustomerNotAllowingAutoApproval(customers);
         if (customerDto.isPresent()) {
-            return AssignmentServiceResult.noApprovalNeeded(customerDto.get());
+            return AssignmentServiceResult.customerFound(getResponsibleCustomerContributorPair(resource, customers));
         }
-
-        return AssignmentServiceResult.customerFound(getResponsibleCustomerContributorPair(resource, customers));
+        return AssignmentServiceResult.noApprovalNeeded(getCustomerAllowingApproval(customers));
     }
 
     private static Map<String, CustomerDto> customerByTopLevelInstitutionIdentifierMap(Collection<CustomerDto> customers) {
@@ -109,22 +108,30 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
                    .thenComparing(Contributor::getSequence, Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
-    private Optional<CustomerDto> findAnyCustomerAllowingAutoApproval(Collection<CustomerDto> customers) {
-        return customers.stream().filter(CustomerDto::autoPublishScopusImportFiles).findFirst();
+    private CustomerDto getCustomerAllowingApproval(Collection<CustomerDto> customers) {
+        return customers.stream().filter(CustomerDto::autoPublishScopusImportFiles).findFirst().orElseThrow();
+    }
+
+    private Optional<CustomerDto> findAnyCustomerNotAllowingAutoApproval(Collection<CustomerDto> customers) {
+        return customers.stream().filter(not(CustomerDto::autoPublishScopusImportFiles)).findFirst();
     }
 
     private CustomerContributorPair getResponsibleCustomerContributorPair(Resource resource,
                                                                           Collection<CustomerDto> customers)
         throws ApprovalAssignmentException {
         var customerMap = customerByTopLevelInstitutionIdentifierMap(customers);
-
         return getContributors(resource)
                    .stream()
                    .sorted(compareByCorrespondingAuthorAndSequence())
                    .map(contributor -> findMatchingCustomer(contributor, customerMap))
                    .flatMap(Optional::stream)
+                   .filter(ApprovalAssignmentServiceForImportCandidateFiles::customerRequiresApproval)
                    .findFirst()
                    .orElseThrow(() -> new ApprovalAssignmentException(NO_CONTRIBUTOR_MESSAGE));
+    }
+
+    private static boolean customerRequiresApproval(CustomerContributorPair customerContributorPair) {
+        return !customerContributorPair.customerDto().autoPublishScopusImportFiles();
     }
 
     private Optional<CustomerContributorPair> findMatchingCustomer(Contributor contributor,
@@ -146,9 +153,6 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
         var customers = new ArrayList<CustomerDto>();
         for (URI customerUri : associatedCustomers) {
             var customer = getCustomerById(customerUri);
-            if (customer.autoPublishScopusImportFiles()) {
-                return List.of(customer);
-            }
             customers.add(customer);
         }
         return customers;
