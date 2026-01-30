@@ -218,6 +218,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     public static final ResourceOwner RESOURCE_OWNER = new ResourceOwner("someOwner", randomUri());
     private static final String NTNU_CUSTOMER_NAME = "ntnu";
     public static final String NTNU_SHORT_NAME = "NTNU";
+    public static final String LEGAL_NOTE_REQUIRING_EMBARGO = "Klausulert: Kan bare siteres etter nærmere avtale med forfatter";
     private final String persistedStorageBucket = new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
     private BrageEntryEventConsumer handler;
     private S3Driver s3Driver;
@@ -309,7 +310,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                                  .withCristinIdentifier("123456")
                                  .withDescription(List.of("My description"))
                                  .withAbstracts(List.of("My abstract"))
-                                 .withResourceContent(createResourceContent())
+                                 .withResourceContent(createResourceContent(EMBARGO_DATE))
                                  .build();
         var s3Driver = new S3Driver(s3Client, persistedStorageBucket);
         var file = new java.io.File("src/test/resources/testFile.txt");
@@ -367,9 +368,10 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder()
                                  .withType(TYPE_REPORT_WORKING_PAPER)
                                  .withCristinIdentifier("123456")
-                                 .withResourceContent(createResourceContent())
+                                 .withResourceContent(createResourceContent(EMBARGO_DATE))
                                  .withResourceOwner(RESOURCE_OWNER)
-                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null))
+                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null,
+                                                                                                             EMBARGO_DATE))
                                  .build();
         var expectedPublication = brageGenerator.getNvaPublication();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
@@ -884,11 +886,11 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
     @Test
     void shouldAdd100YearEmbargoToPublicationWhenLegalNoteRequiresEmbargo() throws IOException {
-        var accessCode = "Klausulert: Kan bare siteres etter nærmere avtale med forfatter";
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_TEXTBOOK)
-                                 .withAccessCode(accessCode)
-                                 .withResourceContent(createResourceContent())
-                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null))
+                                 .withAccessCode(LEGAL_NOTE_REQUIRING_EMBARGO)
+                                 .withResourceContent(createResourceContent(null))
+                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null,
+                                                                                                             null))
                                  .build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var actualPublication = handler.handleRequest(s3Event, CONTEXT);
@@ -897,8 +899,26 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
         var embargoToBeAfterThisDate = Instant.now().plus(Duration.ofDays(ALMOST_HUNDRED_YEARS));
 
-        assertThat(file.getLegalNote(), is(equalTo(accessCode)));
+        assertThat(file.getLegalNote(), is(equalTo(LEGAL_NOTE_REQUIRING_EMBARGO)));
         assertThat(file.getEmbargoDate().orElseThrow().isAfter(embargoToBeAfterThisDate), is(true));
+    }
+
+    @Test
+    void shouldKeepOriginalEmbargoWhenLegalNoteRequiresEmbargoButFileToImportAlreadyHasEmbargo() throws IOException {
+        var resourceContent = createResourceContent(EMBARGO_DATE);
+        var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_TEXTBOOK)
+                                 .withAccessCode(LEGAL_NOTE_REQUIRING_EMBARGO)
+                                 .withResourceContent(resourceContent)
+                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null,
+                                                                                                             EMBARGO_DATE))
+                                 .build();
+
+        var actualPublication = handler.handleRequest(createNewBrageRecordEvent(brageGenerator.getBrageRecord()), CONTEXT);
+
+        var importedFile = (File) actualPublication.publication().getAssociatedArtifacts().getFirst();
+        var originalEmbargoDate = resourceContent.getContentFiles().getFirst().getEmbargoDate();
+
+        assertThat(importedFile.getEmbargoDate().orElseThrow(), is(equalTo(originalEmbargoDate)));
     }
 
     @Test
@@ -1388,8 +1408,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         this.handler = new BrageEntryEventConsumer(s3Client, resourceService, uriRetriever);
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
                                  .withType(TYPE_BOOK)
-                                 .withResourceContent(createResourceContent())
-                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null))
+                                 .withResourceContent(createResourceContent(EMBARGO_DATE))
+                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null,
+                                                                                                             EMBARGO_DATE))
                                  .build();
         var record = brageGenerator.getBrageRecord();
         var s3Event = createNewBrageRecordEvent(record);
@@ -1405,7 +1426,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @Test
     void shouldCopyAssociatedArtifactsToResourceStorage() throws IOException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withPublishedDate(null)
-                                 .withResourceContent(createResourceContent())
+                                 .withResourceContent(createResourceContent(EMBARGO_DATE))
                                  .withType(TYPE_BOOK)
                                  .build();
         var s3Event = createNewBrageRecordEventWithSpecifiedObjectKey(brageGenerator.getBrageRecord());
@@ -2332,8 +2353,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     @Test
     void importedFileShouldHaveFileImportedEvent() throws IOException {
         var brageGenerator = new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_TEXTBOOK)
-                                 .withResourceContent(createResourceContent())
-                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null))
+                                 .withResourceContent(createResourceContent(EMBARGO_DATE))
+                                 .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null,
+                                                                                                             EMBARGO_DATE))
                                  .build();
         var s3Event = createNewBrageRecordEvent(brageGenerator.getBrageRecord());
         var publicationRepresentation = handler.handleRequest(s3Event, CONTEXT);
@@ -2697,8 +2719,8 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     private NvaBrageMigrationDataGenerator buildGeneratorForRecord() {
         return new NvaBrageMigrationDataGenerator.Builder().withType(TYPE_BOOK)
                    .withIsbn(randomIsbn10())
-                   .withResourceContent(createResourceContent())
-                   .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null))
+                   .withResourceContent(createResourceContent(EMBARGO_DATE))
+                   .withAssociatedArtifacts(createCorrespondingAssociatedArtifactWithLegalNote(null, EMBARGO_DATE))
                    .withOrganization(TEST_ORGANIZATION)
                    .build();
     }
@@ -2779,19 +2801,20 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         return event.getRecords().getFirst().getS3().getObject().getKey();
     }
 
-    private ResourceContent createResourceContent() {
+    private ResourceContent createResourceContent(Instant embargoDate) {
         var file = new ContentFile(FILENAME,
                                    BundleType.ORIGINAL,
                                    "description",
                                    UUID,
                                    new License("someLicense", new NvaLicense(
                                        URI.create("https://creativecommons.org/licenses/by-nc/4.0"))),
-                                   EMBARGO_DATE);
+                                   embargoDate);
 
         return new ResourceContent(Collections.singletonList(file));
     }
 
-    private List<AssociatedArtifact> createCorrespondingAssociatedArtifactWithLegalNote(String legalNote) {
+    private List<AssociatedArtifact> createCorrespondingAssociatedArtifactWithLegalNote(String legalNote,
+                                                                                        Instant embargoDate) {
         return List.of(File.builder()
                            .withIdentifier(UUID)
                            .withLicense(LICENSE_URI)
@@ -2799,7 +2822,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
                            .withPublisherVersion(null)
                            .withSize(ExtendedFakeS3Client.SOME_CONTENT_LENGTH)
                            .withMimeType(ExtendedFakeS3Client.APPLICATION_PDF_MIMETYPE)
-                           .withEmbargoDate(EMBARGO_DATE)
+                           .withEmbargoDate(embargoDate)
                            .withLegalNote(legalNote)
                            .withUploadDetails(new ImportUploadDetails(ImportUploadDetails.Source.BRAGE, "ntnu", null))
                            .buildOpenFile());

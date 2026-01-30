@@ -272,11 +272,13 @@ public final class BrageNvaMapper {
     }
 
     private static Instant defineEmbargoDate(String legalNote, ContentFile file) {
-        if (nonNull(legalNote) && LEGAL_NOTES_WITH_EMBARGO.contains(legalNote)) {
-            return Instant.now().plus(Duration.ofDays(HUNDRED_YEARS));
-        } else {
-            return extractEmbargoDate(file);
-        }
+        return extractEmbargoDate(file).orElse(applyHundredYearsEmbargoIfNeeded(legalNote));
+    }
+
+    private static Instant applyHundredYearsEmbargoIfNeeded(String legalNote) {
+        return nonNull(legalNote) && LEGAL_NOTES_WITH_EMBARGO.contains(legalNote)
+            ? Instant.now().plus(Duration.ofDays(HUNDRED_YEARS))
+            : null;
     }
 
     private static String extractLegalNote(Record brageRecord) {
@@ -285,8 +287,8 @@ public final class BrageNvaMapper {
                    .orElse(brageRecord.getRightsholder());
     }
 
-    private static Instant extractEmbargoDate(ContentFile file) {
-        return Optional.ofNullable(file).map(ContentFile::getEmbargoDate).orElse(null);
+    private static Optional<Instant> extractEmbargoDate(ContentFile file) {
+        return Optional.ofNullable(file).map(ContentFile::getEmbargoDate);
     }
 
     private static PublisherVersion extractPublisherAuthority(Record brageRecord) {
