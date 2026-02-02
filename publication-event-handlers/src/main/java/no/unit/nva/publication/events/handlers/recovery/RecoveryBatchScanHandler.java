@@ -1,9 +1,11 @@
 package no.unit.nva.publication.events.handlers.recovery;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
-import no.unit.nva.events.handlers.EventHandler;
-import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.queue.RecoveryEntry;
@@ -17,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.model.Message;
 
-public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest, Void> {
+public class RecoveryBatchScanHandler implements RequestStreamHandler {
 
     public static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
     public static final String ID = "id";
@@ -37,7 +39,6 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
 
     public RecoveryBatchScanHandler(ResourceService resourceService, TicketService ticketService,
                                     MessageService messageService, QueueClient queueClient) {
-        super(RecoveryEventRequest.class);
         this.resourceService = resourceService;
         this.ticketService = ticketService;
         this.messageService = messageService;
@@ -45,14 +46,10 @@ public class RecoveryBatchScanHandler extends EventHandler<RecoveryEventRequest,
     }
 
     @Override
-    protected Void processInput(RecoveryEventRequest recoveryRequest,
-                                AwsEventBridgeEvent<RecoveryEventRequest> awsEventBridgeEvent, Context context) {
-
-        var messages = queueClient.readMessages(recoveryRequest.maximumNumberOfMessages());
+    public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
+        var messages = queueClient.readMessages(RecoveryRequest.fromInputStream(inputStream));
 
         processMessages(messages);
-
-        return null;
     }
 
     private static SortableIdentifier extractResourceIdentifier(Message message) {
