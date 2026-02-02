@@ -14,15 +14,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.stream.IntStream;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.handlers.recovery.RecoveryBatchScanHandler;
-import no.unit.nva.publication.events.handlers.recovery.RecoveryEventRequest;
+import no.unit.nva.publication.events.handlers.recovery.RecoveryRequest;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Resource;
@@ -66,7 +66,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldUpdateResourceVersionByReadingQueueMessageContainingResourceIdentifierWhenResourceIsPublication()
-        throws JsonProcessingException, NotFoundException {
+        throws IOException, NotFoundException {
         var publication = persistedPublication();
         var resourceVersion = Resource.fromPublication(publication).toDao().getVersion();
         putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource");
@@ -80,7 +80,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldUpdateResourceVersionByReadingQueueMessageContainingResourceIdentifierWhenResourceIsTicket()
-        throws JsonProcessingException, ApiGatewayException {
+        throws IOException, ApiGatewayException {
         var publication = persistedPublication();
         var ticket =
             GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
@@ -98,7 +98,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldUpdateResourceVersionByReadingQueueMessageContainingResourceIdentifierWhenResourceIsMessage()
-        throws JsonProcessingException, ApiGatewayException {
+        throws IOException, ApiGatewayException {
         var publication = persistedPublication();
         var ticket =
             GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
@@ -117,7 +117,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldUpdateResourceVersionByReadingQueueMessageContainingFileEntryIdentifier()
-        throws JsonProcessingException {
+        throws IOException {
         var publication = persistedPublication();
         var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(),
                                          UserInstance.fromPublication(publication));
@@ -132,7 +132,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldRemoveMessageFromQueueAfterItHasBeenRefreshed() throws JsonProcessingException {
+    void shouldRemoveMessageFromQueueAfterItHasBeenRefreshed() throws IOException {
         var publication = persistedPublication();
         putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource");
         recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
@@ -141,7 +141,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReadNumberOfMessagesRequested() throws JsonProcessingException {
+    void shouldReadNumberOfMessagesRequested() throws IOException {
         var numberOfMessages = 5;
         var publications = IntStream.range(0, numberOfMessages)
                                .mapToObj(i -> persistedPublication())
@@ -153,10 +153,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     }
 
     private static InputStream createEvent(Integer messagesCount) throws JsonProcessingException {
-        var event = new AwsEventBridgeEvent<RecoveryEventRequest>();
-        event.setId(randomString());
-        event.setDetail(new RecoveryEventRequest(messagesCount));
-        var jsonString = JsonUtils.dtoObjectMapper.writeValueAsString(event);
+        var jsonString = JsonUtils.dtoObjectMapper.writeValueAsString(new RecoveryRequest(messagesCount));
         return IoUtils.stringToStream(jsonString);
     }
 
