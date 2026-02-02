@@ -47,7 +47,7 @@ public class RecoveryBatchScanHandler implements RequestStreamHandler {
 
     @Override
     public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
-        var messages = queueClient.readMessages(RecoveryRequest.fromInputStream(inputStream));
+        var messages = queueClient.readMessages(RecoveryRequest.fromInputStream(inputStream).count());
 
         processMessages(messages);
     }

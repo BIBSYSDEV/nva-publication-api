@@ -11,12 +11,14 @@ public record RecoveryRequest(Integer count) implements JsonSerializable {
 
     private static final int DEFAULT_MESSAGES_COUNT = 10;
 
+    @SuppressWarnings("PMD.DataflowAnomalyAnalysis")
     public RecoveryRequest {
         count = isNull(count) ? DEFAULT_MESSAGES_COUNT : count;
     }
 
-    public static Integer fromInputStream(InputStream inputStream) {
-        return attempt(() -> IoUtils.streamToString(inputStream)).map(
-            value -> dtoObjectMapper.readValue(value, RecoveryRequest.class)).map(RecoveryRequest::count).orElseThrow();
+    public static RecoveryRequest fromInputStream(InputStream inputStream) {
+        return attempt(() -> IoUtils.streamToString(inputStream))
+                   .map(value -> dtoObjectMapper.readValue(value, RecoveryRequest.class))
+                   .orElseThrow();
     }
 }
