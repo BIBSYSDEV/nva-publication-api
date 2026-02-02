@@ -11,7 +11,7 @@ public record RecoveryRequest(Integer count) implements JsonSerializable {
 
     private static final int DEFAULT_MESSAGES_COUNT = 10;
 
-    @SuppressWarnings("PMD.DataflowAnomalyAnalysis")
+    @SuppressWarnings("PMD.UnusedAssignment")
     public RecoveryRequest {
         count = isNull(count) ? DEFAULT_MESSAGES_COUNT : count;
     }
