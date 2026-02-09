@@ -333,12 +333,12 @@ public class UpdatePublicationHandler
     }
 
     private static boolean isUpdatedFile(File existingFile, File updatedFile) {
-        return !existingFile.equals(updatedFile);
+        return !existingFile.equalsExcludingRrsConfiguredType(updatedFile);
     }
 
     private void setRrsOnFiles(Resource updatedResource, Resource existingResource, Customer customer,
                                UserInstance userInstance) {
-        new FileRightsRetentionService(customer.getRightsRetentionStrategy(), userInstance)
+        new FileRightsRetentionService(customerApiClient, customer.getRightsRetentionStrategy(), userInstance)
             .applyRightsRetention(updatedResource, existingResource);
     }
 

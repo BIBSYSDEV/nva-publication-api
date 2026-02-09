@@ -3,13 +3,15 @@ package no.unit.nva.model.file;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -28,6 +30,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.MissingLicenseException;
@@ -176,6 +179,35 @@ public class FileModelTest {
         var file = JsonUtils.dtoObjectMapper.readValue(json, File.class);
 
         assertEquals(URI.create("https://nva.sikt.no/license/copyright-act/1.0"), file.getLicense());
+    }
+
+    @Test
+    void shouldConsiderFilesEqualWhenOnlyRrsConfiguredTypeDiffers() {
+        var fileId = UUID.randomUUID();
+        var fileFromInstitutionA = createFileWithRrs(fileId,
+            CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
+        var fileFromInstitutionB = createFileWithRrs(fileId,
+            CustomerRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY));
+
+        assertThat(fileFromInstitutionA, is(not(equalTo(fileFromInstitutionB))));
+        assertTrue(fileFromInstitutionA.equalsExcludingRrsConfiguredType(fileFromInstitutionB));
+    }
+
+    @Test
+    void shouldDetectFileChangeWhenRrsTypeChanges() {
+        var fileId = UUID.randomUUID();
+        var originalFile = createFileWithRrs(fileId,
+            CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
+        var updatedFile = createFileWithRrs(fileId,
+            OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, randomString()));
+
+        assertFalse(originalFile.equalsExcludingRrsConfiguredType(updatedFile));
+    }
+
+    private static PendingOpenFile createFileWithRrs(UUID identifier,
+                                                     no.unit.nva.model.associatedartifacts.RightsRetentionStrategy rrs) {
+        return new PendingOpenFile(identifier, "test.pdf", "application/pdf", 1024L, LICENSE_URI,
+                                   PublisherVersion.ACCEPTED_VERSION, null, rrs, null, randomInserted());
     }
 
     private static Username randomUsername() {
