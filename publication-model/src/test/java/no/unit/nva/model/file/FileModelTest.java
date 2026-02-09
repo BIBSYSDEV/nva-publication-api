@@ -184,10 +184,11 @@ public class FileModelTest {
     @Test
     void shouldConsiderFilesEqualWhenOnlyRrsConfiguredTypeDiffers() {
         var fileId = UUID.randomUUID();
+        var uploadDetails = randomInserted();
         var fileFromInstitutionA = createFileWithRrs(fileId,
-            CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
+            CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), uploadDetails);
         var fileFromInstitutionB = createFileWithRrs(fileId,
-            CustomerRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY));
+            CustomerRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY), uploadDetails);
 
         assertThat(fileFromInstitutionA, is(not(equalTo(fileFromInstitutionB))));
         assertTrue(fileFromInstitutionA.equalsExcludingRrsConfiguredType(fileFromInstitutionB));
@@ -196,18 +197,21 @@ public class FileModelTest {
     @Test
     void shouldDetectFileChangeWhenRrsTypeChanges() {
         var fileId = UUID.randomUUID();
+        var uploadDetails = randomInserted();
         var originalFile = createFileWithRrs(fileId,
-            CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
+            CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), uploadDetails);
         var updatedFile = createFileWithRrs(fileId,
-            OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, randomString()));
+            OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, randomString()),
+            uploadDetails);
 
         assertFalse(originalFile.equalsExcludingRrsConfiguredType(updatedFile));
     }
 
     private static PendingOpenFile createFileWithRrs(UUID identifier,
-                                                     no.unit.nva.model.associatedartifacts.RightsRetentionStrategy rrs) {
+                                                     no.unit.nva.model.associatedartifacts.RightsRetentionStrategy rrs,
+                                                     UploadDetails uploadDetails) {
         return new PendingOpenFile(identifier, "test.pdf", "application/pdf", 1024L, LICENSE_URI,
-                                   PublisherVersion.ACCEPTED_VERSION, null, rrs, null, randomInserted());
+                                   PublisherVersion.ACCEPTED_VERSION, null, rrs, null, uploadDetails);
     }
 
     private static Username randomUsername() {
