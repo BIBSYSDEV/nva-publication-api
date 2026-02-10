@@ -1,13 +1,19 @@
 package no.unit.nva.model;
 
+import static java.util.Objects.isNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
+@SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Organization extends Corporation {
+
+    private static final String UIO_LEGACY_IDENTIFIER = "185.0.0.0";
+    private static final String UIO_IDENTIFIER = "185.90.0.0";
 
     @JsonProperty("id")
     private URI id;
@@ -30,7 +36,17 @@ public class Organization extends Corporation {
     }
 
     public void setId(URI id) {
-        this.id = id;
+        this.id = replaceLegacyIdentifierIfNeeded(id);
+    }
+
+    private static URI replaceLegacyIdentifierIfNeeded(URI id) {
+        if (isNull(id)) {
+            return null;
+        }
+        var uriWrapper = UriWrapper.fromUri(id);
+        return UIO_LEGACY_IDENTIFIER.equals(uriWrapper.getLastPathElement())
+                   ? uriWrapper.replacePathElementByIndexFromEnd(0, UIO_IDENTIFIER).getUri()
+                   : id;
     }
 
     @JacocoGenerated

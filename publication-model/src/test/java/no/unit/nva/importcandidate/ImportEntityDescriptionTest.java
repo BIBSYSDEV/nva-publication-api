@@ -120,7 +120,7 @@ class ImportEntityDescriptionTest {
 
     @Test
     void shouldStoreLegacyUioIdentifierAsUioIdentifier() {
-        var organization = Organization.fromUri(UriWrapper.fromUri(randomUri()).addChild("185.90.0.0").getUri());
+        var organization = Organization.fromUri(UriWrapper.fromUri(randomUri()).addChild("185.0.0.0").getUri());
         var contributor = createContributor(organization);
 
         var replacedOrganization = getReplacedOrganization(contributor);
