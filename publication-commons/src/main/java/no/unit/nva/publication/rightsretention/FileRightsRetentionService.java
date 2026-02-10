@@ -98,7 +98,7 @@ public class FileRightsRetentionService {
 
         if (strategyTypeChanged(requestedStrategy, existingStrategy)) {
             // Validate and create the requested strategy
-            var config = resolveConfig(existingFile);
+            var config = resolveConfigWithCustomerOverride(existingFile);
             var validatedStrategy = createValidatedStrategy(requestedStrategy, config);
             file.setRightsRetentionStrategy(validatedStrategy);
         } else {
@@ -182,9 +182,10 @@ public class FileRightsRetentionService {
 //            default -> throw new IllegalArgumentException("Unknown rrs type " + rrs);
 //        };
 //    }
-    private RightsRetentionStrategyConfiguration resolveConfig(FileEntry fileEntry) {
+    private RightsRetentionStrategyConfiguration resolveConfigWithCustomerOverride(FileEntry fileEntry) {
         if (nonNull(fileEntry) && nonNull(fileEntry.getCustomerId()) && nonNull(customerApiClient)) {
             var customer = customerApiClient.fetch(fileEntry.getCustomerId());
+
             if (nonNull(customer) && nonNull(customer.getRightsRetentionStrategy())) {
                 return RightsRetentionStrategyConfiguration.fromValue(
                     customer.getRightsRetentionStrategy().getType());
