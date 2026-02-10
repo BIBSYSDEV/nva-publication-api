@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 
 class OrganizationTest {
 
-    public static final String UIO_LEGACY_IDENTIFIER = "185.0.0.0";
-    public static final String UIO_IDENTIFIER = "185.90.0.0";
+    private static final String UIO_LEGACY_IDENTIFIER = "185.0.0.0";
+    private static final String UIO_IDENTIFIER = "185.90.0.0";
 
     @Test
     void shouldStoreLegacyUioIdentifierAsUioIdentifier() {
