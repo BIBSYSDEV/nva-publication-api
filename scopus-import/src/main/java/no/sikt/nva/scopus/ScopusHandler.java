@@ -343,8 +343,9 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
 
     private RuntimeException logErrorAndThrowException(Exception exception) {
         logger.error(exception.getMessage());
-        return exception instanceof RuntimeException ? (RuntimeException) exception : new RuntimeException(exception);
-    }
+        return exception instanceof RuntimeException runtimeException
+                   ? runtimeException
+                   : new RuntimeException(exception);    }
 
     private DocTp parseXmlFile(String file) {
         return JAXB.unmarshal(new StringReader(file), DocTp.class);
