@@ -106,7 +106,7 @@ public class CreatePublicationHandler
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, userInstance.getCustomerId());
 
-        new FileRightsRetentionService(customer.getRightsRetentionStrategy(), userInstance)
+        new FileRightsRetentionService(customerApiClient, customer.getRightsRetentionStrategy(), userInstance)
             .applyRightsRetention(newResource);
 
         var createdPublication = newResource

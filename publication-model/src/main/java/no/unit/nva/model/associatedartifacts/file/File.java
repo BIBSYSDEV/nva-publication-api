@@ -227,6 +227,19 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                             getUploadDetails());
     }
 
+    public boolean equalsExcludingRrsConfiguredType(File other) {
+        if (this.equals(other)) {
+            return true;
+        }
+        if (isNull(other) || !sameRightsRetentionStrategyType(other)) {
+            return false;
+        }
+        var otherWithSameRrs = other.copy()
+                                   .withRightsRetentionStrategy(this.getRightsRetentionStrategy())
+                                   .build(other.getClass());
+        return this.equals(otherWithSameRrs);
+    }
+
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {
@@ -286,6 +299,14 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         return nonNull(strategy) ? strategy
                    : NullRightsRetentionStrategy.create(RightsRetentionStrategyConfiguration.UNKNOWN);
     }
+
+    private boolean sameRightsRetentionStrategyType(File other) {
+        return nonNull(other)
+               && Objects.equals(getRightsRetentionStrategy().getClass(),
+                                  other.getRightsRetentionStrategy().getClass());
+    }
+
+
 
     public static final class Builder {
 

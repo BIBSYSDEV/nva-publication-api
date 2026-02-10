@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.util.UUID;
 import java.util.stream.Stream;
+import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
@@ -51,6 +52,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class FileRightsRetentionServiceTest {
 
     private static final String ILLEGAL_RIGHTS_RETENTION_STRATEGY_MESSAGE = "Invalid rights retention strategy";
+    private final CustomerApiClient customerApiClient = mock(CustomerApiClient.class);
 
     public static Stream<Arguments> publicationTypeAndForceNull() {
         return Stream.of(Arguments.of(AcademicArticle.class, false), Arguments.of(BookAbstracts.class, true),
@@ -86,7 +88,7 @@ class FileRightsRetentionServiceTest {
             CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
         addFilesToPublication(publication, file);
 
-        var service = new FileRightsRetentionService(getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY),
+        var service = new FileRightsRetentionService(customerApiClient, getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY),
                                                      UserInstance.fromPublication(publication));
 
         service.applyRightsRetention(Resource.fromPublication(publication));
@@ -101,7 +103,7 @@ class FileRightsRetentionServiceTest {
         var file = createPendingOpenFileWithAcceptedVersionAndRrs(rrs);
         addFilesToPublication(publication, file);
 
-        var service = new FileRightsRetentionService(getServerConfiguredRrs(rrs.getConfiguredType()),
+        var service = new FileRightsRetentionService(customerApiClient, getServerConfiguredRrs(rrs.getConfiguredType()),
                                                      randomUserInstance());
 
         if (isValid) {
@@ -122,7 +124,7 @@ class FileRightsRetentionServiceTest {
             CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
         addFilesToPublication(publication, file1, file2);
 
-        var service = new FileRightsRetentionService(getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY),
+        var service = new FileRightsRetentionService(customerApiClient, getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY),
                                                      UserInstance.fromPublication(publication));
 
         service.applyRightsRetention(Resource.fromPublication(publication));
@@ -147,7 +149,7 @@ class FileRightsRetentionServiceTest {
 
         addFilesToPublication(originalPublication, originalFile);
 
-        var service = new FileRightsRetentionService(getServerConfiguredRrs(NULL_RIGHTS_RETENTION_STRATEGY),
+        var service = new FileRightsRetentionService(customerApiClient, getServerConfiguredRrs(NULL_RIGHTS_RETENTION_STRATEGY),
                                                      UserInstance.fromPublication(originalPublication));
 
         service.applyRightsRetention(Resource.fromPublication(updatedPublication),
@@ -172,7 +174,7 @@ class FileRightsRetentionServiceTest {
 
         addFilesToPublication(originalPublication, originalFile);
 
-        var service = new FileRightsRetentionService(getServerConfiguredRrs(NULL_RIGHTS_RETENTION_STRATEGY),
+        var service = new FileRightsRetentionService(customerApiClient, getServerConfiguredRrs(NULL_RIGHTS_RETENTION_STRATEGY),
                                                      UserInstance.fromPublication(originalPublication));
 
         service.applyRightsRetention(Resource.fromPublication(updatedPublication),
@@ -195,7 +197,7 @@ class FileRightsRetentionServiceTest {
                                      .withAssociatedArtifacts(new AssociatedArtifactList(existingFile, newFile))
                                      .build();
 
-        var service = new FileRightsRetentionService(getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY),
+        var service = new FileRightsRetentionService(customerApiClient, getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY),
                                                      UserInstance.fromPublication(originalPublication));
 
         service.applyRightsRetention(Resource.fromPublication(updatedPublication),
@@ -216,7 +218,7 @@ class FileRightsRetentionServiceTest {
                                      .withAssociatedArtifacts(new AssociatedArtifactList(publishedFile))
                                      .build();
 
-        var service = new FileRightsRetentionService(getServerConfiguredRrs(configuredType),
+        var service = new FileRightsRetentionService(customerApiClient, getServerConfiguredRrs(configuredType),
                                                      UserInstance.fromPublication(originalPublication));
 
         assertDoesNotThrow(() -> service.applyRightsRetention(Resource.fromPublication(updatedPublication),
@@ -235,7 +237,7 @@ class FileRightsRetentionServiceTest {
                                      .withAssociatedArtifacts(new AssociatedArtifactList(fileWithoutVersion))
                                      .build();
 
-        var service = new FileRightsRetentionService(getServerConfiguredRrs(configuredType),
+        var service = new FileRightsRetentionService(customerApiClient, getServerConfiguredRrs(configuredType),
                                                      UserInstance.fromPublication(originalPublication));
 
         assertDoesNotThrow(() -> service.applyRightsRetention(Resource.fromPublication(updatedPublication),
@@ -259,7 +261,7 @@ class FileRightsRetentionServiceTest {
                                      .withAssociatedArtifacts(new AssociatedArtifactList(overriddenFile))
                                      .build();
 
-        var service = new FileRightsRetentionService(getServerConfiguredRrs(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY),
+        var service = new FileRightsRetentionService(customerApiClient, getServerConfiguredRrs(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY),
                                                      UserInstance.fromPublication(originalPublication));
 
         assertDoesNotThrow(() -> service.applyRightsRetention(Resource.fromPublication(updatedPublication),
@@ -276,7 +278,7 @@ class FileRightsRetentionServiceTest {
 
         addFilesToPublication(publication, internalFile);
 
-        var service = new FileRightsRetentionService(getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY),
+        var service = new FileRightsRetentionService(customerApiClient, getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY),
                                                      UserInstance.fromPublication(publication));
 
         assertDoesNotThrow(() -> service.applyRightsRetention(Resource.fromPublication(publication)));

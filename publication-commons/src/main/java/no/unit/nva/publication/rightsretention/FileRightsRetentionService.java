@@ -1,6 +1,7 @@
 package no.unit.nva.publication.rightsretention;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,6 +20,7 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
+import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
@@ -26,11 +28,14 @@ import no.unit.nva.publication.model.business.UserInstance;
 
 public class FileRightsRetentionService {
 
+    private final CustomerApiClient customerApiClient;
     private final CustomerApiRightsRetention customerApiRightsRetention;
     private final UserInstance userInstance;
 
-    public FileRightsRetentionService(CustomerApiRightsRetention customerApiRightsRetention,
+    public FileRightsRetentionService(CustomerApiClient customerApiClient,
+                                      CustomerApiRightsRetention customerApiRightsRetention,
                                       UserInstance userInstance) {
+        this.customerApiClient = customerApiClient;
         this.customerApiRightsRetention = customerApiRightsRetention;
         this.userInstance = userInstance;
     }
@@ -93,7 +98,8 @@ public class FileRightsRetentionService {
 
         if (strategyTypeChanged(requestedStrategy, existingStrategy)) {
             // Validate and create the requested strategy
-            var validatedStrategy = createValidatedStrategy(requestedStrategy);
+            var config = resolveConfigWithCustomerOverride(existingFile);
+            var validatedStrategy = createValidatedStrategy(requestedStrategy, config);
             file.setRightsRetentionStrategy(validatedStrategy);
         } else {
             // Keep existing strategy
@@ -128,8 +134,11 @@ public class FileRightsRetentionService {
     }
 
     private RightsRetentionStrategy createValidatedStrategy(RightsRetentionStrategy requestedStrategy) {
+        return createValidatedStrategy(requestedStrategy, getConfig());
+    }
 
-
+    private RightsRetentionStrategy createValidatedStrategy(RightsRetentionStrategy requestedStrategy,
+                                                               RightsRetentionStrategyConfiguration config) {
         // Validate if matches customer config OR user can override
         // Commenting out the validation to allow any strategy for now
 //        if (!isValidStrategy(rrs, existingFile, resource)) {
@@ -139,10 +148,10 @@ public class FileRightsRetentionService {
         // Create the strategy based on what the file is requesting
         return switch (requestedStrategy) {
             case OverriddenRightsRetentionStrategy ignored ->
-                OverriddenRightsRetentionStrategy.create(getConfig(), userInstance.getUsername());
-            case NullRightsRetentionStrategy ignored -> createNullStrategy();
-            case CustomerRightsRetentionStrategy ignored -> createCustomerStrategy();
-            case FunderRightsRetentionStrategy ignored -> createFunderStrategy();
+                OverriddenRightsRetentionStrategy.create(config, userInstance.getUsername());
+            case NullRightsRetentionStrategy ignored -> NullRightsRetentionStrategy.create(config);
+            case CustomerRightsRetentionStrategy ignored -> CustomerRightsRetentionStrategy.create(config);
+            case FunderRightsRetentionStrategy ignored -> FunderRightsRetentionStrategy.create(config);
             default -> throw new IllegalArgumentException("Unknown RightsRetentionStrategy type " + requestedStrategy);
         };
     }
@@ -173,19 +182,23 @@ public class FileRightsRetentionService {
 //            default -> throw new IllegalArgumentException("Unknown rrs type " + rrs);
 //        };
 //    }
+    private RightsRetentionStrategyConfiguration resolveConfigWithCustomerOverride(FileEntry fileEntry) {
+        if (nonNull(fileEntry) && nonNull(fileEntry.getCustomerId()) && nonNull(customerApiClient)) {
+            var customer = customerApiClient.fetch(fileEntry.getCustomerId());
+
+            if (nonNull(customer) && nonNull(customer.getRightsRetentionStrategy())) {
+                return RightsRetentionStrategyConfiguration.fromValue(
+                    customer.getRightsRetentionStrategy().getType());
+            }
+        }
+        return getConfig();
+    }
 
     // Helper methods for strategy creation
     private NullRightsRetentionStrategy createNullStrategy() {
         return NullRightsRetentionStrategy.create(getConfig());
     }
 
-    private CustomerRightsRetentionStrategy createCustomerStrategy() {
-        return CustomerRightsRetentionStrategy.create(getConfig());
-    }
-
-    private FunderRightsRetentionStrategy createFunderStrategy() {
-        return FunderRightsRetentionStrategy.create(getConfig());
-    }
 
     private RightsRetentionStrategyConfiguration getConfig() {
         return RightsRetentionStrategyConfiguration.fromValue(customerApiRightsRetention.getType());
