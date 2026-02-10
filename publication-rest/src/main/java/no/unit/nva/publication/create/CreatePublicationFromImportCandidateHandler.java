@@ -52,6 +52,9 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
                                                                                       PublicationResponse> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CreatePublicationFromImportCandidateHandler.class);
+    private static final String LOG_PROCESSING_IMPORT_CANDIDATE = "Starting import of import candidate {}";
+    private static final String LOG_PUBLICATION_CREATED = "Publication {} created from import candidate {}";
+    private static final String LOG_IMPORT_STATUS_UPDATED = "Import candidate {} set to IMPORTED, publication {}";
     public static final String ROLLBACK_WENT_WRONG_MESSAGE = "Rollback went wrong";
     public static final String IMPORT_PROCESS_WENT_WRONG = "Import process went wrong";
     public static final String RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE = "Resource has already been imported";
@@ -95,6 +98,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         var identifier = getImportCandidateIdentifier(requestInfo);
+        LOGGER.info(LOG_PROCESSING_IMPORT_CANDIDATE, identifier);
         var importCandidate = candidateService.getImportCandidateByIdentifier(identifier);
         validate(importCandidate, input);
         return attempt(() -> importCandidate(input, requestInfo, importCandidate))
@@ -110,8 +114,12 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     private Publication importCandidate(CreatePublicationRequest request, RequestInfo requestInfo, ImportCandidate databaseVersion)
         throws ApiGatewayException, ApprovalAssignmentException {
         var nvaPublication = createNvaPublicationFromImportCandidateAndUserInput(request, requestInfo, databaseVersion);
-        candidateService.updateImportStatus(getImportCandidateIdentifier(requestInfo),
-                                            ImportStatusFactory.createImported(requestInfo.getUserName(), nvaPublication.getIdentifier()));
+        var publicationIdentifier = nvaPublication.getIdentifier();
+        var candidateIdentifier = databaseVersion.getIdentifier();
+        LOGGER.info(LOG_PUBLICATION_CREATED, publicationIdentifier, candidateIdentifier);
+        candidateService.updateImportStatus(candidateIdentifier,
+                                            ImportStatusFactory.createImported(requestInfo.getUserName(), publicationIdentifier));
+        LOGGER.info(LOG_IMPORT_STATUS_UPDATED, candidateIdentifier, publicationIdentifier);
         return nvaPublication;
     }
 
@@ -210,7 +218,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     }
 
     private ApiGatewayException rollbackAndThrowException(Failure<PublicationResponse> failure, SortableIdentifier identifier) {
-        LOGGER.error("Import failed with exception", failure.getException());
+        LOGGER.error("Import failed for import candidate {}", identifier, failure.getException());
         return attempt(() -> rollbackImportStatusUpdate(identifier))
                    .orElse(fail -> throwException(fail.getException()));
     }
