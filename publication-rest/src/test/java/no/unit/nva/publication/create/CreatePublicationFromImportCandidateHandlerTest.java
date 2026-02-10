@@ -31,9 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -481,6 +479,38 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     @Test
+    void shouldWriteToPiaWhenPiaHostHasNoScheme(WireMockRuntimeInfo wireMockRuntimeInfo)
+        throws NotFoundException, IOException {
+        var piaHostWithoutScheme = wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", "");
+        var configWithHostOnly = new PiaClientConfig(piaHostWithoutScheme,
+                                                      SOME_USERNAME_KEY,
+                                                      SOME_PIA_PASSWORD_KEY,
+                                                      SOME_SECRETS_KEY_NAME,
+                                                      WiremockHttpClient.create(),
+                                                      setupPiaSecrets());
+        var handlerWithHostOnly = new CreatePublicationFromImportCandidateHandler(
+            new ImportCandidateHandlerConfigs(SOME_PERSISTED_BUCKET, SOME_CANDIDATE_BUCKET,
+                                              importCandidateService, publicationService,
+                                              ticketService, s3Client, configWithHostOnly),
+            new Environment(), ticketService, approvalService);
+
+        var auid = randomString();
+        var contributorWithAuid = createImportContributorWithAuid(auid, 1);
+        var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
+        var cristinId = randomUri();
+        var contributorUpdatedWithCristinId = updateContributorWithCristinId(
+            toContributor(contributorWithAuid), cristinId);
+        var userInput = importCandidateWithContributors(importCandidate, contributorUpdatedWithCristinId);
+        var request = createRequest(userInput, importCandidate.getIdentifier());
+
+        var testOutput = new ByteArrayOutputStream();
+        handlerWithHostOnly.handleRequest(request, testOutput, context);
+
+        var response = GatewayResponse.fromOutputStream(testOutput, PublicationResponse.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    }
+
+    @Test
     void shouldWriteToPiaWithSeveralContributorsAtOnce() throws NotFoundException, IOException {
         var auid1 = randomString();
         var contributorWithAuid1 = createImportContributorWithAuid(auid1, 1);
@@ -695,7 +725,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     }
 
     private PiaClientConfig createPiaConfig(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        return new PiaClientConfig(wireMockRuntimeInfo.getHttpBaseUrl(),
+        return new PiaClientConfig(wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", ""),
                                    SOME_USERNAME_KEY,
                                    SOME_PIA_PASSWORD_KEY,
                                    SOME_SECRETS_KEY_NAME,
