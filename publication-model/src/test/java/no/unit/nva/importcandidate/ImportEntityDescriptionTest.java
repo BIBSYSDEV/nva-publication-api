@@ -1,12 +1,19 @@
 package no.unit.nva.importcandidate;
 
 import static java.util.Collections.emptyList;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.Arrays;
 import java.util.List;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
+import nva.commons.core.paths.UriWrapper;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 
 class ImportEntityDescriptionTest {
@@ -111,6 +118,29 @@ class ImportEntityDescriptionTest {
         assertThat(contributors.get(1).sequence(), is(2));
     }
 
+    @Test
+    void shouldStoreLegacyUioIdentifierAsUioIdentifier() {
+        var organization = Organization.fromUri(UriWrapper.fromUri(randomUri()).addChild("185.0.0.0").getUri());
+        var contributor = createContributor(organization);
+
+        var replacedOrganization = getReplacedOrganization(contributor);
+
+        var expectedIdentifier = UriWrapper.fromUri(replacedOrganization.getId()).getLastPathElement();
+
+        assertEquals("185.90.0.0", expectedIdentifier);
+    }
+
+    private static Organization getReplacedOrganization(ImportContributor contributor) {
+        return contributor.affiliations()
+                   .stream()
+                   .findFirst()
+                   .map(Affiliation::targetOrganization)
+                   .map(Organization.class::cast)
+                   .stream()
+                   .findFirst()
+                   .orElseThrow();
+    }
+
     private static ImportEntityDescription randomEntityDescription(ImportContributor... contributors) {
         return randomEntityDescription(Arrays.asList(contributors));
     }
@@ -122,5 +152,10 @@ class ImportEntityDescriptionTest {
     private ImportContributor createContributor(String name, Integer sequence) {
         var identity = new Identity.Builder().withName(name).build();
         return new ImportContributor(identity, List.of(), null, sequence, false);
+    }
+
+    private ImportContributor createContributor(Organization organization) {
+        var identity = new Identity.Builder().withName(randomString()).build();
+        return new ImportContributor(identity, List.of(new Affiliation(organization, null)), null, randomInteger(), false);
     }
 }

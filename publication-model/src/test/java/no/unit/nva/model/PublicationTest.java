@@ -15,9 +15,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.json.JsonObject;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.Set;
-
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.config.ResourcesBuildConfig;
