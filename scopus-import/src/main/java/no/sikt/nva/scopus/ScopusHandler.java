@@ -68,12 +68,6 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     public static final String SUCCESS_BUCKET_PATH = "SUCCESS";
     private static final String ERROR_SAVING_IMPORT_CANDIDATE = "Error saving import cadidate "
                                                                 + "key: {} {}";
-    private static final String LOG_RECEIVED_CANDIDATE = "Received import candidate with scopusIdentifier: {}";
-    private static final String LOG_PROCESSING_CANDIDATE = "Processing import candidate: {}, scopusIdentifier: {}";
-    private static final String LOG_CANDIDATE_CREATED = "Created import candidate: {} from scopusIdentifier: {}";
-    private static final String LOG_CANDIDATE_UPDATED = "Updated import candidate: {} from scopusIdentifier: {}";
-    private static final String LOG_STATUS_IMPORTED = "Import candidate: {} set to IMPORTED, "
-                                                      + "matched publication: {}, scopusIdentifier: {}";
     private static final int MAX_SLEEP_TIME = 100;
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private static final String ERROR_BUCKET_PATH = "ERROR";
@@ -128,9 +122,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
         var message = event.getRecords().getFirst();
         var s3Uri = UriWrapper.fromUri(message.getMessageAttributes().get(URI_ATTRIBUTE).getStringValue()).getUri();
         return attempt(() -> createImportCandidate(s3Uri))
-                   .map(this::logReceivedCandidate)
                    .map(this::updateExistingIfNeeded)
-                   .map(this::logAndReturnCandidate)
                    .map(this::injectImportedStatusWhenTheSamePublicationExists)
                    .flatMap(this::persistOrUpdateInDatabase)
                    .map(this::storeSuccessReport)
@@ -146,9 +138,6 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     }
 
     private static void setStatusImported(ImportCandidate importCandidate, Resource resource) {
-        var scopusIdentifier = importCandidate.getScopusIdentifier().orElse(null);
-        logger.info(LOG_STATUS_IMPORTED, importCandidate.getIdentifier(), resource.getIdentifier(),
-                    scopusIdentifier);
         importCandidate.setImportStatus(ImportStatusFactory.createImported(resource.getResourceOwner().getUser().toString(),
                                                                            resource.getIdentifier()));
     }
@@ -223,23 +212,6 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
 
     private static ImportResult<String> generateReportFromContent(Failure<ImportCandidate> fail, String content) {
         return ImportResult.reportFailure(content, fail.getException());
-    }
-
-    private ImportCandidate logReceivedCandidate(ImportCandidate importCandidate) {
-        var scopusIdentifier = getScopusIdentifier(importCandidate);
-        logger.info(LOG_RECEIVED_CANDIDATE, scopusIdentifier);
-        return importCandidate;
-    }
-
-    private ImportCandidate logAndReturnCandidate(ImportCandidate importCandidate) {
-        var scopusIdentifier = getScopusIdentifier(importCandidate);
-        logger.info(LOG_PROCESSING_CANDIDATE, importCandidate.getIdentifier(), scopusIdentifier);
-        return importCandidate;
-    }
-
-    private ImportCandidate logCandidateCreated(ImportCandidate importCandidate, String scopusIdentifier) {
-        logger.info(LOG_CANDIDATE_CREATED, importCandidate.getIdentifier(), scopusIdentifier);
-        return importCandidate;
     }
 
     private ImportCandidate updateExistingIfNeeded(ImportCandidate importCandidate) throws NotFoundException {
@@ -321,14 +293,10 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
 
     private Try<ImportCandidate> persistOrUpdateInDatabase(ImportCandidate importCandidate)
         throws BadRequestException, NotFoundException {
-        var scopusIdentifier = getScopusIdentifier(importCandidate);
         if (nonNull(importCandidate.getIdentifier())) {
-            var updated = importCandidateService.updateImportCandidate(importCandidate);
-            logger.info(LOG_CANDIDATE_UPDATED, updated.getIdentifier(), scopusIdentifier);
-            return Try.of(updated);
+            return Try.of(importCandidateService.updateImportCandidate(importCandidate));
         }
-        return persistInDatabase(importCandidate)
-                   .map(persisted -> logCandidateCreated(persisted, scopusIdentifier));
+        return persistInDatabase(importCandidate);
     }
 
     private Try<ImportCandidate> persistInDatabase(ImportCandidate importCandidate) {
@@ -377,8 +345,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
         logger.error(exception.getMessage());
         return exception instanceof RuntimeException runtimeException
                    ? runtimeException
-                   : new RuntimeException(exception);
-    }
+                   : new RuntimeException(exception);    }
 
     private DocTp parseXmlFile(String file) {
         return JAXB.unmarshal(new StringReader(file), DocTp.class);
