@@ -24,6 +24,7 @@ public class PiaClient {
     private static final String BASIC_AUTHORIZATION = "Basic %s";
 
     private static final String AUTHORIZATION = "Authorization";
+    private static final String HTTPS_SCHEME = "https://";
     private static final String SENTRALIMPORT = "sentralimport";
     private static final String AUTHORS = "authors";
     private final URI piaUri;
@@ -31,7 +32,7 @@ public class PiaClient {
     private final String authorization;
 
     public PiaClient(PiaClientConfig config) {
-        this.piaUri = UriWrapper.fromHost(config.piaHost())
+        this.piaUri = UriWrapper.fromUri(HTTPS_SCHEME + config.piaHost())
                           .addChild(SENTRALIMPORT)
                           .addChild(AUTHORS)
                           .getUri();
