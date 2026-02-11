@@ -29,6 +29,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -185,33 +186,60 @@ public class FileModelTest {
     void shouldConsiderFilesEqualWhenOnlyRrsConfiguredTypeDiffers() {
         var fileId = UUID.randomUUID();
         var uploadDetails = randomInserted();
-        var fileFromInstitutionA = createFileWithRrs(fileId,
-            CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), uploadDetails);
-        var fileFromInstitutionB = createFileWithRrs(fileId,
-            CustomerRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY), uploadDetails);
+        var fileFromInstitutionA = createPendingFileWithRrs(fileId,
+                                                            RIGHTS_RETENTION_STRATEGY, uploadDetails);
+        var fileFromInstitutionB = createPendingFileWithRrs(fileId,
+                                                            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, uploadDetails);
 
         assertThat(fileFromInstitutionA, is(not(equalTo(fileFromInstitutionB))));
         assertTrue(fileFromInstitutionA.equalsExcludingRrsConfiguredType(fileFromInstitutionB));
     }
 
     @Test
+    void shouldConsiderOpenFilesEqualWhenOnlyRrsConfiguredTypeDiffers() {
+        var fileId = UUID.randomUUID();
+        var publishedDate = randomInstant();
+        var uploadDetails = randomInserted();
+        var openFileFromInstitutionA = createOpenFileWithRrs(fileId,
+                                                             RIGHTS_RETENTION_STRATEGY, publishedDate, uploadDetails);
+        var openFileFromInstitutionB = createOpenFileWithRrs(fileId,
+                                                             OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, publishedDate,
+                                                             uploadDetails);
+
+        assertThat(openFileFromInstitutionA, is(not(equalTo(openFileFromInstitutionB))));
+        assertTrue(openFileFromInstitutionA.equalsExcludingRrsConfiguredType(openFileFromInstitutionB));
+    }
+
+    @Test
     void shouldDetectFileChangeWhenRrsTypeChanges() {
         var fileId = UUID.randomUUID();
         var uploadDetails = randomInserted();
-        var originalFile = createFileWithRrs(fileId,
-            CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY), uploadDetails);
-        var updatedFile = createFileWithRrs(fileId,
-            OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, randomString()),
-            uploadDetails);
+        var originalFile = createPendingFileWithRrs(fileId,
+                                                    RIGHTS_RETENTION_STRATEGY, uploadDetails);
+        var updatedFile = createPendingFileWithRrs(fileId,
+                                                    RIGHTS_RETENTION_STRATEGY, uploadDetails);
+        updatedFile.setRightsRetentionStrategy(
+            OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, randomString()));
 
         assertFalse(originalFile.equalsExcludingRrsConfiguredType(updatedFile));
     }
 
-    private static PendingOpenFile createFileWithRrs(UUID identifier,
-                                                     no.unit.nva.model.associatedartifacts.RightsRetentionStrategy rrs,
-                                                     UploadDetails uploadDetails) {
-        return new PendingOpenFile(identifier, "test.pdf", "application/pdf", 1024L, LICENSE_URI,
-                                   PublisherVersion.ACCEPTED_VERSION, null, rrs, null, uploadDetails);
+    private static PendingOpenFile createPendingFileWithRrs(UUID identifier,
+                                                            RightsRetentionStrategyConfiguration configuration,
+                                                            UploadDetails uploadDetails) {
+        return new PendingOpenFile(identifier, "test.pdf", APPLICATION_PDF, SIZE, LICENSE_URI,
+                                   PublisherVersion.ACCEPTED_VERSION, null,
+                                   CustomerRightsRetentionStrategy.create(configuration),
+                                   null, uploadDetails);
+    }
+
+    private static OpenFile createOpenFileWithRrs(UUID identifier,
+                                                  RightsRetentionStrategyConfiguration configuration,
+                                                  Instant publishedDate, UploadDetails uploadDetails) {
+        return new OpenFile(identifier, "test.pdf", APPLICATION_PDF, SIZE, LICENSE_URI,
+                            PublisherVersion.ACCEPTED_VERSION, null,
+                            CustomerRightsRetentionStrategy.create(configuration),
+                            null, publishedDate, uploadDetails);
     }
 
     private static Username randomUsername() {
