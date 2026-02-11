@@ -227,6 +227,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                             getUploadDetails());
     }
 
+    @SuppressWarnings("PMD.CompareObjectsWithEquals")
     public boolean equalsExcludingRrsConfiguredType(File other) {
         if (this == other) {
             return true;
