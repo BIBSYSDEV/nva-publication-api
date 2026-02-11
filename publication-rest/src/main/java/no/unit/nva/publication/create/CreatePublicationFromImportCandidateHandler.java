@@ -218,8 +218,7 @@ public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandl
     }
 
     private ApiGatewayException rollbackAndThrowException(Failure<PublicationResponse> failure, SortableIdentifier identifier) {
-        var errorMessage = failure.getException().getMessage();
-        LOGGER.error("Import failed for import candidate {}: {}", identifier, errorMessage);
+        LOGGER.error("Import failed for import candidate {}", identifier, failure.getException());
         return attempt(() -> rollbackImportStatusUpdate(identifier))
                    .orElse(fail -> throwException(fail.getException()));
     }
