@@ -195,6 +195,24 @@ public class FileModelTest {
     }
 
     @Test
+    void shouldConsiderOpenFilesEqualWhenOnlyRrsConfiguredTypeDiffers() {
+        var fileId = UUID.randomUUID();
+        var publishedDate = randomInstant();
+        var uploadDetails = randomInserted();
+        var openFileFromInstitutionA = new OpenFile(fileId, "test.pdf", APPLICATION_PDF, SIZE, LICENSE_URI,
+            PublisherVersion.ACCEPTED_VERSION, null,
+            CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY),
+            null, publishedDate, uploadDetails);
+        var openFileFromInstitutionB = new OpenFile(fileId, "test.pdf", APPLICATION_PDF, SIZE, LICENSE_URI,
+            PublisherVersion.ACCEPTED_VERSION, null,
+            CustomerRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY),
+            null, publishedDate, uploadDetails);
+
+        assertThat(openFileFromInstitutionA, is(not(equalTo(openFileFromInstitutionB))));
+        assertTrue(openFileFromInstitutionA.equalsExcludingRrsConfiguredType(openFileFromInstitutionB));
+    }
+
+    @Test
     void shouldDetectFileChangeWhenRrsTypeChanges() {
         var fileId = UUID.randomUUID();
         var uploadDetails = randomInserted();

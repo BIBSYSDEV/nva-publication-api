@@ -228,36 +228,33 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     }
 
     public boolean equalsExcludingRrsConfiguredType(File other) {
-        if (this.equals(other)) {
+        if (this == other) {
             return true;
         }
         if (isNull(other) || !sameRightsRetentionStrategyType(other)) {
             return false;
         }
-        var otherWithSameRrs = other.copy()
-                                   .withRightsRetentionStrategy(this.getRightsRetentionStrategy())
-                                   .build(other.getClass());
-        return this.equals(otherWithSameRrs);
+        return Objects.equals(this.getClass(), other.getClass())
+               && Objects.equals(getIdentifier(), other.getIdentifier())
+               && Objects.equals(getName(), other.getName())
+               && Objects.equals(getMimeType(), other.getMimeType())
+               && Objects.equals(getSize(), other.getSize())
+               && Objects.equals(getLicense(), other.getLicense())
+               && getPublisherVersion() == other.getPublisherVersion()
+               && Objects.equals(getEmbargoDate(), other.getEmbargoDate())
+               && Objects.equals(getLegalNote(), other.getLegalNote())
+               && Objects.equals(getPublishedDate(), other.getPublishedDate())
+               && Objects.equals(getUploadDetails(), other.getUploadDetails());
     }
 
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
         if (!(o instanceof File file)) {
             return false;
         }
-        return Objects.equals(this.getClass(), file.getClass()) &&
-               Objects.equals(getIdentifier(), file.getIdentifier()) && Objects.equals(getName(), file.getName()) &&
-               Objects.equals(getMimeType(), file.getMimeType()) && Objects.equals(getSize(), file.getSize()) &&
-               Objects.equals(getLicense(), file.getLicense()) && getPublisherVersion() == file.getPublisherVersion() &&
-               Objects.equals(getEmbargoDate(), file.getEmbargoDate()) &&
-               Objects.equals(getRightsRetentionStrategy(), file.getRightsRetentionStrategy()) &&
-               Objects.equals(getLegalNote(), file.getLegalNote()) &&
-               Objects.equals(getPublishedDate(), file.getPublishedDate()) &&
-               Objects.equals(getUploadDetails(), file.getUploadDetails());
+        return equalsExcludingRrsConfiguredType(file)
+               && Objects.equals(getRightsRetentionStrategy(), file.getRightsRetentionStrategy());
     }
 
     @Override
@@ -305,8 +302,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
                && Objects.equals(getRightsRetentionStrategy().getClass(),
                                   other.getRightsRetentionStrategy().getClass());
     }
-
-
 
     public static final class Builder {
 
