@@ -315,6 +315,7 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
         private Instant embargoDate;
         private RightsRetentionStrategy rightsRetentionStrategy;
         private String legalNote;
+        private Instant publishedDate;
         private UploadDetails uploadDetails;
 
         private Builder() {
@@ -370,14 +371,21 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
             return this;
         }
 
+        public Builder withPublishedDate(Instant publishedDate) {
+            this.publishedDate = publishedDate;
+            return this;
+        }
+
         public File buildOpenFile() {
+            var resolvedPublishedDate = nonNull(publishedDate) ? publishedDate : Instant.now();
             return new OpenFile(identifier, name, mimeType, size, license, publisherVersion, embargoDate,
-                                rightsRetentionStrategy, legalNote, Instant.now(), uploadDetails);
+                                rightsRetentionStrategy, legalNote, resolvedPublishedDate, uploadDetails);
         }
 
         public File buildInternalFile() {
+            var resolvedPublishedDate = nonNull(publishedDate) ? publishedDate : Instant.now();
             return new InternalFile(identifier, name, mimeType, size, license, publisherVersion, embargoDate,
-                                    rightsRetentionStrategy, legalNote, Instant.now(), uploadDetails);
+                                    rightsRetentionStrategy, legalNote, resolvedPublishedDate, uploadDetails);
         }
 
         public File buildPendingOpenFile() {
