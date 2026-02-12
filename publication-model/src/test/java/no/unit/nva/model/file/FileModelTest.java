@@ -233,6 +233,40 @@ public class FileModelTest {
     }
 
     @Test
+    void shouldSetPublishedDateWhenTransitioningPendingFileToOpenFile() {
+        var pendingFile = buildNonAdministrativeAgreement().buildPendingOpenFile();
+        var before = Instant.now();
+        var openFile = pendingFile.toOpenFile();
+        assertThat(openFile.getPublishedDate().isPresent(), is(true));
+        assertFalse(openFile.getPublishedDate().get().isBefore(before));
+    }
+
+    @Test
+    void shouldSetPublishedDateWhenTransitioningPendingFileToInternalFile() {
+        var pendingFile = buildNonAdministrativeAgreement().buildPendingInternalFile();
+        var before = Instant.now();
+        var internalFile = pendingFile.toInternalFile();
+        assertThat(internalFile.getPublishedDate().isPresent(), is(true));
+        assertFalse(internalFile.getPublishedDate().get().isBefore(before));
+    }
+
+    @Test
+    void shouldPreservePublishedDateWhenConvertingAlreadyPublishedFileToOpenFile() {
+        var originalPublishedDate = Instant.parse("2026-01-27T14:51:47.353704642Z");
+        var file = buildNonAdministrativeAgreement().withPublishedDate(originalPublishedDate).buildInternalFile();
+        var openFile = file.toOpenFile();
+        assertThat(Objects.requireNonNull(openFile.getPublishedDate().orElse(null)), is(equalTo(originalPublishedDate)));
+    }
+
+    @Test
+    void shouldPreservePublishedDateWhenConvertingAlreadyPublishedFileToInternalFile() {
+        var originalPublishedDate = Instant.parse("2026-01-27T14:51:47.353704642Z");
+        var file = buildNonAdministrativeAgreement().withPublishedDate(originalPublishedDate).buildOpenFile();
+        var internalFile = file.toInternalFile();
+        assertThat(Objects.requireNonNull(internalFile.getPublishedDate().orElse(null)), is(equalTo(originalPublishedDate)));
+    }
+
+    @Test
     void shouldConsiderOpenFilesEqualWhenOnlyRrsConfiguredTypeDiffers() {
         var fileId = UUID.randomUUID();
         var publishedDate = randomInstant();

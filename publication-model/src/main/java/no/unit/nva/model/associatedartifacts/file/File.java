@@ -201,14 +201,14 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
 
     public OpenFile toOpenFile() {
         return new OpenFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(), getPublisherVersion(),
-                            getEmbargoDate().orElse(null), getRightsRetentionStrategy(), getLegalNote(), Instant.now(),
-                            getUploadDetails());
+                            getEmbargoDate().orElse(null), getRightsRetentionStrategy(), getLegalNote(),
+                            getPublishedDate().orElseGet(Instant::now), getUploadDetails());
     }
 
     public InternalFile toInternalFile() {
         return new InternalFile(getIdentifier(), getName(), getMimeType(), getSize(), getLicense(),
                                 getPublisherVersion(), getEmbargoDate().orElse(null), getRightsRetentionStrategy(),
-                                getLegalNote(), Instant.now(), getUploadDetails());
+                                getLegalNote(), getPublishedDate().orElseGet(Instant::now), getUploadDetails());
     }
 
     @JsonIgnore
