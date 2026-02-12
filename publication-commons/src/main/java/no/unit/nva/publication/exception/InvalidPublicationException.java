@@ -1,7 +1,7 @@
 package no.unit.nva.publication.exception;
 
 import nva.commons.apigateway.exceptions.ConflictException;
-import org.apache.http.HttpStatus;
+import java.net.HttpURLConnection;
 
 public class InvalidPublicationException extends ConflictException {
 
@@ -11,6 +11,6 @@ public class InvalidPublicationException extends ConflictException {
     
     @Override
     protected Integer statusCode() {
-        return HttpStatus.SC_CONFLICT;
+        return HttpURLConnection.HTTP_CONFLICT;
     }
 }
