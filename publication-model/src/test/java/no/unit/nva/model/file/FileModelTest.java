@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -180,6 +181,42 @@ public class FileModelTest {
         var file = JsonUtils.dtoObjectMapper.readValue(json, File.class);
 
         assertEquals(URI.create("https://nva.sikt.no/license/copyright-act/1.0"), file.getLicense());
+    }
+
+    @ParameterizedTest
+    @MethodSource("filesWithPublishedDate")
+    void shouldHavePublishedDateSet(File file) {
+        assertThat(file.getPublishedDate().isPresent(), is(true));
+    }
+
+    @ParameterizedTest
+    @MethodSource("filesWithoutPublishedDate")
+    void shouldNotHavePublishedDateSet(File file) {
+        assertThat(file.getPublishedDate().isPresent(), is(false));
+    }
+
+    @ParameterizedTest
+    @MethodSource("filesWithPublishedDate")
+    void shouldPreservePublishedDateWhenCopyingAndRebuilding(File file) {
+        var originalPublishedDate = file.getPublishedDate().orElseThrow();
+        var rebuilt = file.copy().build(file.getClass());
+        assertThat(Objects.requireNonNull(rebuilt.getPublishedDate().orElse(null)), is(equalTo(originalPublishedDate)));
+    }
+
+    static Stream<File> filesWithPublishedDate() {
+        return Stream.of(
+            buildNonAdministrativeAgreement().buildOpenFile(),
+            buildNonAdministrativeAgreement().buildInternalFile()
+        );
+    }
+
+    static Stream<File> filesWithoutPublishedDate() {
+        return Stream.of(
+            buildNonAdministrativeAgreement().buildPendingOpenFile(),
+            buildNonAdministrativeAgreement().buildPendingInternalFile(),
+            buildNonAdministrativeAgreement().buildHiddenFile(),
+            buildNonAdministrativeAgreement().buildRejectedFile()
+        );
     }
 
     @Test
