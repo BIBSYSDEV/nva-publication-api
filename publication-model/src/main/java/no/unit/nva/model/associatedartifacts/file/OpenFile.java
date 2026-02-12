@@ -68,6 +68,7 @@ public class OpenFile extends File {
                    .withEmbargoDate(this.getEmbargoDate().orElse(null))
                    .withRightsRetentionStrategy(this.getRightsRetentionStrategy())
                    .withLegalNote(this.getLegalNote())
+                   .withPublishedDate(this.getPublishedDate().orElse(null))
                    .withUploadDetails(this.getUploadDetails());
     }
 

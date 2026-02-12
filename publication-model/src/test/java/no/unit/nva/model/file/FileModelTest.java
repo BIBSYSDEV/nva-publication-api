@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -193,6 +194,76 @@ public class FileModelTest {
 
         assertThat(fileFromInstitutionA, is(not(equalTo(fileFromInstitutionB))));
         assertTrue(fileFromInstitutionA.equalsExcludingRrsConfiguredType(fileFromInstitutionB));
+    }
+
+    @ParameterizedTest
+    @MethodSource("filesWithPublishedDate")
+    void shouldHavePublishedDateSet(File file) {
+        assertThat(file.getPublishedDate().isPresent(), is(true));
+    }
+
+    @ParameterizedTest
+    @MethodSource("filesWithoutPublishedDate")
+    void shouldNotHavePublishedDateSet(File file) {
+        assertThat(file.getPublishedDate().isPresent(), is(false));
+    }
+
+    @ParameterizedTest
+    @MethodSource("filesWithPublishedDate")
+    void shouldPreservePublishedDateWhenCopyingAndRebuilding(File file) {
+        var originalPublishedDate = file.getPublishedDate().orElseThrow();
+        var rebuilt = file.copy().build(file.getClass());
+        assertThat(Objects.requireNonNull(rebuilt.getPublishedDate().orElse(null)), is(equalTo(originalPublishedDate)));
+    }
+
+    static Stream<File> filesWithPublishedDate() {
+        return Stream.of(
+            buildNonAdministrativeAgreement().buildOpenFile(),
+            buildNonAdministrativeAgreement().buildInternalFile()
+        );
+    }
+
+    static Stream<File> filesWithoutPublishedDate() {
+        return Stream.of(
+            buildNonAdministrativeAgreement().buildPendingOpenFile(),
+            buildNonAdministrativeAgreement().buildPendingInternalFile(),
+            buildNonAdministrativeAgreement().buildHiddenFile(),
+            buildNonAdministrativeAgreement().buildRejectedFile()
+        );
+    }
+
+    @Test
+    void shouldSetPublishedDateWhenTransitioningPendingFileToOpenFile() {
+        var pendingFile = buildNonAdministrativeAgreement().buildPendingOpenFile();
+        var before = Instant.now();
+        var openFile = pendingFile.toOpenFile();
+        assertThat(openFile.getPublishedDate().isPresent(), is(true));
+        assertFalse(openFile.getPublishedDate().get().isBefore(before));
+    }
+
+    @Test
+    void shouldSetPublishedDateWhenTransitioningPendingFileToInternalFile() {
+        var pendingFile = buildNonAdministrativeAgreement().buildPendingInternalFile();
+        var before = Instant.now();
+        var internalFile = pendingFile.toInternalFile();
+        assertThat(internalFile.getPublishedDate().isPresent(), is(true));
+        assertFalse(internalFile.getPublishedDate().get().isBefore(before));
+    }
+
+    @Test
+    void shouldPreservePublishedDateWhenConvertingAlreadyPublishedFileToOpenFile() {
+        var originalPublishedDate = Instant.parse("2026-01-27T14:51:47.353704642Z");
+        var file = buildNonAdministrativeAgreement().withPublishedDate(originalPublishedDate).buildInternalFile();
+        var openFile = file.toOpenFile();
+        assertThat(Objects.requireNonNull(openFile.getPublishedDate().orElse(null)), is(equalTo(originalPublishedDate)));
+    }
+
+    @Test
+    void shouldPreservePublishedDateWhenConvertingAlreadyPublishedFileToInternalFile() {
+        var originalPublishedDate = Instant.parse("2026-01-27T14:51:47.353704642Z");
+        var file = buildNonAdministrativeAgreement().withPublishedDate(originalPublishedDate).buildOpenFile();
+        var internalFile = file.toInternalFile();
+        assertThat(Objects.requireNonNull(internalFile.getPublishedDate().orElse(null)), is(equalTo(originalPublishedDate)));
     }
 
     @Test
