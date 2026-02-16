@@ -82,7 +82,11 @@ public class FileRightsRetentionService {
 
         // Rule 1: Skip if RRS is not relevant for this file
         if (!isRightsRetentionRelevant(file, resource)) {
-            file.setRightsRetentionStrategy(createNullStrategy());
+            if (hasExistingNullStrategy(existingFile)) {
+                file.setRightsRetentionStrategy(existingFile.getFile().getRightsRetentionStrategy());
+            } else {
+                file.setRightsRetentionStrategy(createNullStrategy());
+            }
             return;
         }
 
@@ -206,6 +210,11 @@ public class FileRightsRetentionService {
 
     private List<File> getFiles(Resource resource) {
         return resource.getAssociatedArtifacts().stream().filter(File.class::isInstance).map(File.class::cast).toList();
+    }
+
+    private boolean hasExistingNullStrategy(FileEntry existingFile) {
+        return nonNull(existingFile)
+               && existingFile.getFile().getRightsRetentionStrategy() instanceof NullRightsRetentionStrategy;
     }
 
     private Map<SortableIdentifier, FileEntry> getFileEntries(Resource resource) {
