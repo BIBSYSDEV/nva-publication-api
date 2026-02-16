@@ -269,6 +269,30 @@ class FileRightsRetentionServiceTest {
     }
 
     @Test
+    void shouldPreserveExistingNullStrategyConfiguredTypeWhenRrsIsNotRelevant() {
+        var originalPublication = PublicationGenerator.randomPublication(BookAbstracts.class);
+        var fileId = UUID.randomUUID();
+        var originalRrs = NullRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
+        var originalFile = createPendingOpenFileWithAcceptedVersionAndRrs(fileId, originalRrs);
+        addFilesToPublication(originalPublication, originalFile);
+
+        var updatedFile = createPendingOpenFileWithAcceptedVersionAndRrs(fileId, originalRrs);
+        var updatedPublication = originalPublication.copy()
+                                     .withAssociatedArtifacts(new AssociatedArtifactList(updatedFile))
+                                     .build();
+
+        var service = new FileRightsRetentionService(customerApiClient,
+                                                     getServerConfiguredRrs(NULL_RIGHTS_RETENTION_STRATEGY),
+                                                     UserInstance.fromPublication(originalPublication));
+
+        service.applyRightsRetention(Resource.fromPublication(updatedPublication),
+                                     Resource.fromPublication(originalPublication));
+
+        assertThat(updatedFile.getRightsRetentionStrategy().getConfiguredType(),
+                   is(equalTo(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY)));
+    }
+
+    @Test
     void shouldIgnoreRightsRetentionForInternalFiles() {
         var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
         var internalFile = mock(InternalFile.class);
