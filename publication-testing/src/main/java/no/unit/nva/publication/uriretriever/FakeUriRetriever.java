@@ -37,10 +37,6 @@ public final class FakeUriRetriever implements RawContentRetriever {
         responses.add(response);
     }
 
-    public void empty() {
-        responses.clear();
-    }
-
     @Override
     public Optional<String> getRawContent(URI uri,
                                           String mediaType) {
