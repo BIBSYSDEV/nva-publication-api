@@ -873,7 +873,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                          .orElseThrow()
                                          .toJsonString();
         var json = JsonUtils.dtoObjectMapper.readTree(expandedResourceAsJson);
-        var institution = json.get("entityDescription").get("contributors").get(0).get("affiliations").get(0).get("institution").get("id").textValue();
+        var institution = json.get("entityDescription").get("contributors").get(0).get("affiliations").get(0).get("institution").textValue();
 
         assertEquals(HARD_CODED_TOP_LEVEL_ORG_URI.toString(), institution);
     }
