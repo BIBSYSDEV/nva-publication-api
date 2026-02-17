@@ -1,0 +1,15 @@
+#This SPARQL query adds an institution field to each contributor's affiliation by finding their top-level organization.
+
+PREFIX nva: <https://nva.sikt.no/ontology/publication#>
+
+CONSTRUCT {
+  ?affiliation nva:institution ?uri
+}
+WHERE {
+  ?pub a nva:Publication .
+  ?pub nva:topLevelOrganization ?org .
+  ?contributor nva:affiliation ?affiliation .
+  ?affiliation nva:partOf* ?org .
+  FILTER NOT EXISTS { ?org nva:partOf ?parent }
+  BIND(STR(?org) AS ?uri)
+}
