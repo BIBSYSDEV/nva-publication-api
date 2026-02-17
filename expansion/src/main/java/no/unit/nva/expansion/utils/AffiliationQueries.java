@@ -15,6 +15,9 @@ public final class AffiliationQueries {
     public static final String CONTRIBUTOR_ORGANIZATION =
         IoUtils.stringFromResources(Path.of("constructContributorOrganization.sparql"));
 
+    public static final String CONTRIBUTOR_INSTITUTION =
+        IoUtils.stringFromResources(Path.of("constructContributorInstitution.sparql"));
+
     private AffiliationQueries() {
     }
 }

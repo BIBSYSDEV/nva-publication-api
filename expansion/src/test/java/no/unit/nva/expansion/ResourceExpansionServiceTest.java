@@ -13,6 +13,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomResourceOwner
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFileWithLicense;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
+import static no.unit.nva.publication.uriretriever.FakeUriResponse.HARD_CODED_TOP_LEVEL_ORG_URI;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
@@ -28,8 +29,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -860,6 +861,21 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
 
         assertEquals(persistedPublication.getIdentifier().toString(), id);
+    }
+
+    @Test
+    void shouldAddInstitutionNodeToContributorAffiliationWhenInstitutionIsPresentInTopLevelOrganizations()
+        throws ApiGatewayException, JsonProcessingException {
+        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
+        var resourceUpdate = Resource.fromPublication(publication);
+        var expandedResourceAsJson = expansionService.expandEntry(resourceUpdate, false)
+                                         .orElseThrow()
+                                         .toJsonString();
+        var json = JsonUtils.dtoObjectMapper.readTree(expandedResourceAsJson);
+        var institution = json.get("entityDescription").get("contributors").get(0).get("affiliations").get(0).get("institution").get("id").textValue();
+
+        assertEquals(HARD_CODED_TOP_LEVEL_ORG_URI.toString(), institution);
     }
 
     private ResourceExpansionServiceImpl expansionServiceReturningNviCandidate(Publication publication,

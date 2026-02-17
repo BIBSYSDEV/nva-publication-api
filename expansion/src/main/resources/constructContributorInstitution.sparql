@@ -1,0 +1,16 @@
+# Constructs an institution field for each contributor by finding the top-level organization
+# from their affiliation's partOf chain.
+# Only includes organizations that are also in the publication's topLevelOrganizations
+# to ensure consistency and avoid incomplete data.
+
+PREFIX  nva: <https://nva.sikt.no/ontology/publication#>
+
+CONSTRUCT {
+  ?affiliation nva:institution ?topLevelOrg .
+} WHERE {
+  ?publication a nva:Publication .
+  ?contributor nva:affiliation ?affiliation .
+  ?affiliation nva:partOf* ?topLevelOrg .
+  ?publication nva:topLevelOrganization ?topLevelOrg
+  FILTER NOT EXISTS { ?topLevelOrg nva:partOf ?parent } .
+}
