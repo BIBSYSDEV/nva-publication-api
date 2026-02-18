@@ -66,6 +66,7 @@ import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
+import static org.apache.http.HttpStatus.SC_UNPROCESSABLE_ENTITY;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -346,6 +347,23 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         final var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
         assertThat(body.getEntityDescription().getMainTitle(),
                    is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
+    }
+
+    @Test
+    void shouldReturnUnprocessableEntityWhenMainTitleContainsInvalidXmlCharacters()
+        throws IOException, ApiGatewayException {
+        publication = publicationWithoutIdentifier(customerId);
+        var savedPublication = createSamplePublication();
+        var invalidTitle = "Title with invalid \uFFFE character";
+        var publicationUpdate = savedPublication.copy()
+                                    .withEntityDescription(savedPublication.getEntityDescription().copy()
+                                                               .withMainTitle(invalidTitle)
+                                                               .build())
+                                    .build();
+        var event = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+        updatePublicationHandler.handleRequest(event, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_UNPROCESSABLE_ENTITY)));
     }
 
     @Test

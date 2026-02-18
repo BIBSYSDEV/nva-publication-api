@@ -13,9 +13,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.IntStream;
-
 import no.unit.nva.model.validation.EntityDescriptionValidationException;
 import no.unit.nva.model.validation.EntityDescriptionValidatorImpl;
+import no.unit.nva.model.validation.ValidTextContent;
+import no.unit.nva.model.validation.ValidTextContentListValues;
+import no.unit.nva.model.validation.ValidTextContentMapValues;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -23,7 +25,9 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
 
     @JsonIgnore
     private final EntityDescriptionValidatorImpl validator;
+    @ValidTextContent
     private String mainTitle;
+    @ValidTextContentMapValues
     private Map<String, String> alternativeTitles;
     private URI language;
 
@@ -31,11 +35,16 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
     private PublicationDate publicationDate;
     private List<Contributor> contributors;
     @JsonSetter("abstract")
+    @ValidTextContent
     private String mainLanguageAbstract;
 
+    @ValidTextContentMapValues
     private Map<String, String> alternativeAbstracts;
+    @ValidTextContent
     private String npiSubjectHeading;
+    @ValidTextContentListValues
     private List<String> tags;
+    @ValidTextContent
     private String description;
     private Reference reference;
     private URI metadataSource;

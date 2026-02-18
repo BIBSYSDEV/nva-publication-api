@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,6 +36,7 @@ public class UpdatePublicationRequest
     public static final String WRONG_PUBLICATION_UPDATE_ERROR = "Trying to update a publication with different "
                                                                 + "identifier:";
     private SortableIdentifier identifier;
+    @Valid
     private EntityDescription entityDescription;
     private AssociatedArtifactList associatedArtifacts;
     @JsonProperty("@context")

@@ -9,6 +9,7 @@ dependencies {
     implementation ( nvaCatalog.commons.validator )
     implementation( nvaCatalog.jackson.databind )
     implementation nvaCatalog.bundles.logging
+    implementation libs.bundles.validation
 
     testImplementation( libs.reflections )
     testImplementation( nvaCatalog.jena.core )
