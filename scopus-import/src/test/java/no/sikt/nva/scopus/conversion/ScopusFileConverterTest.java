@@ -69,17 +69,6 @@ public class ScopusFileConverterTest {
         scopusData.getDocument().getMeta().setDoi(DOI_PATH);
     }
 
-    private TikaUtils mockedTikaUtils() throws IOException, URISyntaxException {
-        var tikaUtils = mock(TikaUtils.class);
-        var tikaInputStream = mock(TikaInputStream.class);
-        when(tikaInputStream.getLength()).thenReturn(Long.parseLong(String.valueOf(randomInteger())));
-        when(tikaInputStream.getPath()).thenReturn(
-            Path.of(getClass().getClassLoader().getResource("2-s2.0-0000469852.xml").toURI()));
-        when(tikaUtils.fetch(any())).thenReturn(tikaInputStream);
-        when(tikaUtils.getMimeType(any())).thenReturn("application/pdf");
-        return tikaUtils;
-    }
-
     @Test
     void shouldCreateAssociatedArtifactWithEmbargoWhenSumOfDelayAndStartDateIsInFuture()
         throws IOException, InterruptedException {
@@ -141,8 +130,6 @@ public class ScopusFileConverterTest {
 
         assertThat(file.getLicense(), is(equalTo(expectedLicense)));
     }
-
-
 
     @Test
     void shouldRemoveFileFromDoiWhenFileIsFromElseveierAndHasPlainTextContentType()
@@ -220,6 +207,16 @@ public class ScopusFileConverterTest {
         assertInstanceOf(OpenFile.class, file);
     }
 
+    private TikaUtils mockedTikaUtils() throws IOException, URISyntaxException {
+        var tikaUtils = mock(TikaUtils.class);
+        var tikaInputStream = mock(TikaInputStream.class);
+        when(tikaInputStream.getLength()).thenReturn(Long.parseLong(String.valueOf(randomInteger())));
+        when(tikaInputStream.getPath()).thenReturn(
+            Path.of(getClass().getClassLoader().getResource("2-s2.0-0000469852.xml").toURI()));
+        when(tikaUtils.getMimeType(any())).thenReturn("application/pdf");
+        return tikaUtils;
+    }
+
     private void mockResponses(String responseBody) throws IOException, InterruptedException {
         var doiResponse = (HttpResponse<String>) mock(HttpResponse.class);
         when(doiResponse.body()).thenReturn(IoUtils.stringFromResources(Path.of(responseBody)));
@@ -262,7 +259,7 @@ public class ScopusFileConverterTest {
         when(fetchDownloadUrlResponse.body()).thenReturn(new ByteArrayInputStream(randomString().getBytes()));
         when(fetchDownloadUrlResponse.headers()).thenReturn(HttpHeaders.of(header, (s, s2) -> true));
         var req = mock(HttpRequest.class);
-        when(req.uri()).thenReturn(randomUri()).thenReturn(null);
+        when(req.uri()).thenReturn(null);
         when(fetchDownloadUrlResponse.request()).thenReturn(req);
         when(fetchDownloadUrlResponse.statusCode()).thenReturn(200);
         when(httpClient.send(any(), eq(BodyHandlers.ofInputStream()))).thenReturn(fetchDownloadUrlResponse);
