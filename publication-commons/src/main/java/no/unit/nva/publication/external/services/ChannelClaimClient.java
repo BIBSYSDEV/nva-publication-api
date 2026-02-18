@@ -11,7 +11,8 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.http.HttpStatusCode;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
 
 public final class ChannelClaimClient {
 
@@ -38,11 +39,11 @@ public final class ChannelClaimClient {
     }
 
     private HttpResponse<String> validateResponse(HttpResponse<String> response) throws NotFoundException {
-        if (response.statusCode() == HttpStatusCode.NOT_FOUND) {
+        if (response.statusCode() == HTTP_NOT_FOUND) {
             throw new NotFoundException("Client not found");
         }
 
-        if (response.statusCode() != HttpStatusCode.OK) {
+        if (response.statusCode() != HTTP_OK) {
             throw new IllegalStateException("Received " + response.statusCode() + " from identity service");
         }
         return response;

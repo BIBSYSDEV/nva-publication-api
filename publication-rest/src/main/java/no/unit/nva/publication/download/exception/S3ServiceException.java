@@ -1,7 +1,8 @@
 package no.unit.nva.publication.download.exception;
 
+import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
+
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import org.apache.http.HttpStatus;
 
 public class S3ServiceException extends ApiGatewayException {
 
@@ -11,6 +12,6 @@ public class S3ServiceException extends ApiGatewayException {
 
     @Override
     protected Integer statusCode() {
-        return HttpStatus.SC_BAD_GATEWAY;
+        return HTTP_BAD_GATEWAY;
     }
 }

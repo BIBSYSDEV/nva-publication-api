@@ -14,8 +14,8 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static software.amazon.awssdk.http.HttpStatusCode.FORBIDDEN;
-import static software.amazon.awssdk.http.HttpStatusCode.NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -65,7 +65,7 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(request, output, CONTEXT);
 
-        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(NOT_FOUND)));
+        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
 
     @Test
@@ -76,7 +76,7 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
 
         handler.handleRequest(request, output, CONTEXT);
 
-        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(FORBIDDEN)));
+        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
     }
 
     @Test
