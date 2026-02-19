@@ -14,6 +14,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.EXCLUDE;
@@ -158,6 +159,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var eventReference = JsonUtils.dtoObjectMapper.readValue(output.toString(), PublicationEventReference.class);
 
         assertInstanceOf(PublicationEventReference.class, eventReference);
+        assertEquals(oldImage.getIdentifier(), eventReference.getIdentifier());
     }
 
     @ParameterizedTest
