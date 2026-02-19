@@ -181,7 +181,7 @@ public class PublicationSummary {
     public int hashCode() {
         return Objects.hash(getPublicationId(), getIdentifier(), getTitle(), getOwner(), getStatus(),
                             getPublicationInstance(), getPublishedDate(), getContributors(), getContributorsCount(),
-                            getAbstract());
+                            getAbstract(), getHandle());
     }
 
     @Override
@@ -202,7 +202,8 @@ public class PublicationSummary {
                && Objects.equals(getPublishedDate(), that.getPublishedDate())
                && Objects.equals(getContributors(), that.getContributors())
                && Objects.equals(getContributorsCount(), that.getContributorsCount())
-               && Objects.equals(getAbstract(), that.getAbstract());
+               && Objects.equals(getAbstract(), that.getAbstract())
+               && Objects.equals(getHandle(), that.getHandle());
     }
 
     private static String extractTitle(EntityDescription entityDescription) {
