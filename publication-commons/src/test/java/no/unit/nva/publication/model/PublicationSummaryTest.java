@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -106,6 +107,23 @@ class PublicationSummaryTest extends ResourcesLocalTest {
         var summary = PublicationSummary.create(publicationId, publicationTitle);
         assertThat(summary.getPublicationId(), is(equalTo(publicationId)));
         assertThat(summary.getTitle(), is(equalTo(publicationTitle)));
+    }
+
+    @Test
+    void shouldReturnPublicationSummaryWithHandleWhenPublicationHasHandle() {
+        var handle = randomUri();
+        var publication = randomPublication().copy().withHandle(handle).build();
+        var summary = PublicationSummary.create(publication);
+
+        assertEquals(handle, summary.getHandle());
+    }
+
+    @Test
+    void shouldReturnPublicationSummaryWithoutHandleWhenPublicationIsMissingHandle() {
+        var publication = randomPublication().copy().withHandle(null).build();
+        var summary = PublicationSummary.create(publication);
+
+        assertNull(summary.getHandle());
     }
 
     private int getRandomNumberOfContributorsLargerThanMaxSize() {

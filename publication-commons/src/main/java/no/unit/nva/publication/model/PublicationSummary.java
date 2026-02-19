@@ -49,6 +49,8 @@ public class PublicationSummary {
     private int contributorsCount;
     @JsonProperty("abstract")
     private String mainLanguageAbstract;
+    @JsonProperty("handle")
+    private URI handle;
 
     public static PublicationSummary create(Publication publication) {
         var publicationSummary = new PublicationSummary();
@@ -61,6 +63,7 @@ public class PublicationSummary {
         publicationSummary.setPublicationInstance(extractPublicationInstance(publication.getEntityDescription()));
         publicationSummary.setContributors(extractContributors(publication.getEntityDescription()));
         publicationSummary.setAbstract(extractAbstract(publication));
+        publicationSummary.setHandle(publication.getHandle());
         return publicationSummary;
     }
 
@@ -154,6 +157,15 @@ public class PublicationSummary {
 
     public void setPublicationInstance(PublicationInstance<? extends Pages> publicationInstance) {
         this.publicationInstance = publicationInstance;
+    }
+
+
+    public URI getHandle() {
+        return handle;
+    }
+
+    public void setHandle(URI handle) {
+        this.handle = handle;
     }
 
     public SortableIdentifier extractPublicationIdentifier() {
