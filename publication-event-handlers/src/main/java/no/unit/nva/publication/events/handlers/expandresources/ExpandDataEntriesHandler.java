@@ -8,6 +8,7 @@ import static no.unit.nva.publication.queue.RecoveryEntry.RESOURCE;
 import static no.unit.nva.publication.queue.RecoveryEntry.TICKET;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.URI;
 import java.util.Optional;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
@@ -20,6 +21,7 @@ import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.events.model.PublicationEventReference;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Message;
@@ -161,7 +163,7 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
         var expandedEntity = expandEntityOrThrow(entityToExpand.get());
 
         return expandedEntity
-                   .map(this::createEnrichedEventReference)
+                   .map(expandedDataEntry -> createEnrichedEventReference(expandedDataEntry, entityToExpand.get()))
                    .orElseGet(() -> logAndProvideEmptyEvent(entityToExpand.get()));
     }
 
@@ -176,10 +178,19 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
                        failure -> new EntityExpansionException("Failed to expand " + entity, failure.getException()));
     }
 
-    private EventReference createEnrichedEventReference(ExpandedDataEntry expandedDataEntry) {
+    private EventReference createEnrichedEventReference(ExpandedDataEntry expandedDataEntry, Entity entity) {
         return Optional.of(persistedResourcesService.persist(expandedDataEntry))
-                   .map(uri -> new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri))
+                   .map(uri -> toTypedEventReference(uri, entity))
                    .orElseThrow();
+    }
+
+    private static EventReference toTypedEventReference(URI uri, Entity entity) {
+        if (entity instanceof Resource resource) {
+            return new PublicationEventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri,
+                                                 resource.getIdentifier(), resource.getInstanceType().orElse(null),
+                                                 resource.getStatus());
+        }
+        return new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri);
     }
 
     private DataEntryUpdateEvent readDataEntryUpdateEventFromS3(EventReference input) {

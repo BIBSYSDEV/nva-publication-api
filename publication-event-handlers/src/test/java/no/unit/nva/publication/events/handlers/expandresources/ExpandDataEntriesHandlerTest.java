@@ -14,6 +14,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.EXCLUDE;
 import static org.junit.jupiter.params.provider.EnumSource.Mode.INCLUDE;
@@ -52,6 +53,7 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.persistence.PersistedDocument;
+import no.unit.nva.publication.events.model.PublicationEventReference;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
@@ -142,6 +144,26 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
             UnixPath.of("resources", publication.getIdentifier().toString() + GZIP_ENDING));
         var persistedDocument = JsonUtils.dtoObjectMapper.readValue(persistedResource, PersistedDocument.class);
         assertThat(persistedDocument.getBody().identifyExpandedEntry(), is(equalTo(publication.getIdentifier())));
+    }
+
+    @Test
+    void shouldEmitPublicationEventReferenceWhenExpandingPublication()
+        throws IOException {
+        var oldImage = createPublicationWithStatus(PUBLISHED);
+        var newImage = createUpdatedVersionOfPublication(oldImage);
+        var publication = super.persistResource(Resource.fromPublication(newImage)).toPublication();
+        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+        var publicationEventReference = JsonUtils.dtoObjectMapper.readValue(output.toString(),
+                                                                                       PublicationEventReference.class);
+
+
+        assertEquals(oldImage.getIdentifier(), publicationEventReference.getIdentifier());
+        assertEquals(oldImage.getEntityDescription().getReference().getPublicationInstance().getInstanceType(),
+                     publicationEventReference.getType());
+        assertEquals(oldImage.getStatus(),
+                     publicationEventReference.getStatus());
     }
 
     @ParameterizedTest
