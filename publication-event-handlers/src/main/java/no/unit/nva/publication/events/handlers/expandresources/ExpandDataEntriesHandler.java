@@ -163,7 +163,7 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
         var expandedEntity = expandEntityOrThrow(entityToExpand.get());
 
         return expandedEntity
-                   .map(expandedDataEntry -> createEnrichedEventReference(expandedDataEntry, entityToExpand.get()))
+                   .map(expandedDataEntry -> createEnrichedEventReference(expandedDataEntry, dataEntryUpdateEvent))
                    .orElseGet(() -> logAndProvideEmptyEvent(entityToExpand.get()));
     }
 
@@ -178,17 +178,15 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
                        failure -> new EntityExpansionException("Failed to expand " + entity, failure.getException()));
     }
 
-    private EventReference createEnrichedEventReference(ExpandedDataEntry expandedDataEntry, Entity entity) {
+    private EventReference createEnrichedEventReference(ExpandedDataEntry expandedDataEntry, DataEntryUpdateEvent dataEntryUpdateEvent) {
         return Optional.of(persistedResourcesService.persist(expandedDataEntry))
-                   .map(uri -> toTypedEventReference(uri, entity))
+                   .map(uri -> toTypedEventReference(uri, dataEntryUpdateEvent))
                    .orElseThrow();
     }
 
-    private static EventReference toTypedEventReference(URI uri, Entity entity) {
-        if (entity instanceof Resource resource) {
-            return new PublicationEventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri,
-                                                 resource.getIdentifier(), resource.getInstanceType().orElse(null),
-                                                 resource.getStatus());
+    private static EventReference toTypedEventReference(URI uri, DataEntryUpdateEvent dataEntryUpdateEvent) {
+        if (dataEntryUpdateEvent.extractDataEntryType() instanceof Resource) {
+            return PublicationEventReference.create(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri, dataEntryUpdateEvent);
         }
         return new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri);
     }
