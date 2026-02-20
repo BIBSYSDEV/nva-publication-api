@@ -127,6 +127,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
                                                                                                secondCustomer.customerId));
 
         assertEquals(APPROVAL_NEEDED, result.getStatus());
+        assertEquals(secondCustomer.customerId, result.getCustomer().id());
     }
 
     @Test
