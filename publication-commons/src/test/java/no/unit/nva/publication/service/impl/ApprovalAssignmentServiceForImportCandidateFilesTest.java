@@ -2,6 +2,8 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomEntityDescription;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.APPROVAL_NEEDED;
 import static no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.AssignmentServiceStatus.NO_APPROVAL_NEEDED;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
@@ -74,7 +76,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         mockCustomer(customer);
 
         var resource = createResource(
-            createContributorContributor(createCristinId(), true, 1));
+            createContributor(createCristinId(), true, 1));
 
         assertThrows(ApprovalAssignmentException.class,
                      () -> service.determineCustomerResponsibleForApproval(resource,
@@ -118,13 +120,14 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         mockCustomer(secondCustomer.customerId, secondCustomer.cristinId, false);
 
         var resource = createResource(
-            createContributorContributor(firstCustomer.cristinId, false, 1),
-            createContributorContributor(secondCustomer.cristinId, true, 2));
+            createContributor(firstCustomer.cristinId, false, 1),
+            createContributor(secondCustomer.cristinId, true, 2));
 
         var result = service.determineCustomerResponsibleForApproval(resource, List.of(firstCustomer.customerId,
                                                                                                secondCustomer.customerId));
 
         assertEquals(APPROVAL_NEEDED, result.getStatus());
+        assertEquals(secondCustomer.customerId, result.getCustomer().id());
     }
 
     @Test
@@ -136,8 +139,8 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         mockCustomer(secondCustomer.customerId, secondCustomer.cristinId, false);
 
         var resource = createResource(
-            createContributorContributor(firstCustomer.cristinId, true, 1),
-            createContributorContributor(secondCustomer.cristinId, false, 2));
+            createContributor(firstCustomer.cristinId, true, 1),
+            createContributor(secondCustomer.cristinId, false, 2));
 
         var result = service.determineCustomerResponsibleForApproval(resource, List.of(firstCustomer.customerId,
                                                                                        secondCustomer.customerId));
@@ -151,7 +154,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         mockCustomer(customer);
 
         var resource = createResource(
-            createContributorContributor(customer.cristinId, true, 1));
+            createContributor(customer.cristinId, true, 1));
 
         var associatedCustomers = List.of(customer.customerId);
         var result = service.determineCustomerResponsibleForApproval(resource, associatedCustomers).getStatus();
@@ -168,8 +171,8 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         mockCustomer(nonCorrespondenceCustomer);
 
         var resource = createResource(
-            createContributorContributor(nonCorrespondenceCustomer.cristinId, false, 1),
-            createContributorContributor(correspondenceCustomer.cristinId, true, 2));
+            createContributor(nonCorrespondenceCustomer.cristinId, false, 1),
+            createContributor(correspondenceCustomer.cristinId, true, 2));
 
         var associatedCustomers = List.of(nonCorrespondenceCustomer.customerId, correspondenceCustomer.customerId);
         var customerDto = service.determineCustomerResponsibleForApproval(resource,
@@ -188,8 +191,8 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
 
         var associatedCustomers = List.of(otherCustomer.customerId, lowestSequenceCustomer.customerId);
         var resource = createResource(
-            createContributorContributor(otherCustomer.cristinId, false, 2),
-            createContributorContributor(lowestSequenceCustomer.cristinId, false, 1));
+            createContributor(otherCustomer.cristinId, false, 2),
+            createContributor(lowestSequenceCustomer.cristinId, false, 1));
 
         var customerDto = service.determineCustomerResponsibleForApproval(resource, associatedCustomers).getCustomer();
 
@@ -223,7 +226,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         mockCustomer(otherCustomer);
 
         var resource = createResource(
-            createContributorContributor(otherCustomer.cristinId, false, 1),
+            createContributor(otherCustomer.cristinId, false, 1),
             createNonCorrespondenceContributorWithoutSequence(correspondenceCustomer.cristinId, true));
 
         var associatedCustomers = List.of(otherCustomer.customerId, correspondenceCustomer.customerId);
@@ -248,14 +251,71 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
                                                       higherSequenceCorrespondenceCustomer, 
                                                       nonCorrespondenceCustomer);
         var resource = createResource(
-            createContributorContributor(nonCorrespondenceCustomer.cristinId, false, 1),
-            createContributorContributor(higherSequenceCorrespondenceCustomer.cristinId, true, 3),
-            createContributorContributor(lowestSequenceCorrespondenceCustomer.cristinId, true, 2)
+            createContributor(nonCorrespondenceCustomer.cristinId, false, 1),
+            createContributor(higherSequenceCorrespondenceCustomer.cristinId, true, 3),
+            createContributor(lowestSequenceCorrespondenceCustomer.cristinId, true, 2)
         );
 
         var customerDto = service.determineCustomerResponsibleForApproval(resource, associatedCustomers).getCustomer();
 
         assertEquals(lowestSequenceCorrespondenceCustomer.customerId, customerDto.id());
+    }
+
+    @Test
+    void shouldReturnApprovalNeededWithCustomerThatRequiresApprovalAndHasRegistratorPublishesMetadataOnlyWorkflow() throws Exception {
+        var firstCustomer = new CustomerSetup();
+        var secondCustomer = new CustomerSetup();
+
+        mockCustomer(firstCustomer.customerId, firstCustomer.cristinId, false, REGISTRATOR_PUBLISHES_METADATA_ONLY);
+        mockCustomer(secondCustomer.customerId, secondCustomer.cristinId, false, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
+
+        var resource = createResource(
+            createContributor(firstCustomer.cristinId, false, 2),
+            createContributor(secondCustomer.cristinId, true, 1));
+
+        var result = service.determineCustomerResponsibleForApproval(resource, List.of(firstCustomer.customerId,
+                                                                                       secondCustomer.customerId));
+
+        assertEquals(firstCustomer.customerId, result.getCustomer().id());
+    }
+
+    @Test
+    void shouldReturnApprovalNotNeededWhenCustomerRequiresScopusFileApprovalButAllowsPublishingFiles() throws Exception {
+        var customer = new CustomerSetup();
+
+        mockCustomer(customer.customerId, customer.cristinId, false, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
+
+        var resource = createResource(createContributor(customer.cristinId, false, 1));
+
+        var result = service.determineCustomerResponsibleForApproval(resource, List.of(customer.customerId));
+
+        assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
+    }
+
+    @Test
+    void shouldReturnApprovalNotNeededWhenCustomerDoesNotRequiresScopusFileApprovalAndAllowsPublishingFiles() throws Exception {
+        var customer = new CustomerSetup();
+
+        mockCustomer(customer.customerId, customer.cristinId, true, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
+
+        var resource = createResource(createContributor(customer.cristinId, false, 1));
+
+        var result = service.determineCustomerResponsibleForApproval(resource, List.of(customer.customerId));
+
+        assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
+    }
+
+    @Test
+    void shouldReturnApprovalNotNeededWhenCustomerDoesNotRequiresScopusFileApprovalAndHasRegistratorPublishesMetadataOnlyWorkflow() throws Exception {
+        var customer = new CustomerSetup();
+
+        mockCustomer(customer.customerId, customer.cristinId, true, REGISTRATOR_PUBLISHES_METADATA_ONLY);
+
+        var resource = createResource(createContributor(customer.cristinId, false, 1));
+
+        var result = service.determineCustomerResponsibleForApproval(resource, List.of(customer.customerId));
+
+        assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
     }
     
     private static List<URI> associatedCustomers(CustomerSetup lowestSequenceCorrespondenceCustomer,
@@ -275,18 +335,19 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
                                      new RoleType(Role.CREATOR), null, correspondingAuthor);
     }
 
-    private static CustomerDto createCustomerDto(URI customerId, URI cristinId, boolean allowsPublishing) {
+    private static CustomerDto createCustomerDto(URI customerId, URI cristinId, boolean allowsPublishing,
+                                                 PublishingWorkflow workflow) {
         return new CustomerDto(customerId, UUID.randomUUID(), randomString(), randomString(), randomString(), cristinId,
-                               PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue(), randomBoolean(),
+                               workflow.getValue(), randomBoolean(),
                                randomBoolean(), randomBoolean(), Collections.emptyList(),
                                new CustomerDto.RightsRetentionStrategy(randomString(), RandomDataGenerator.randomUri()),
                                allowsPublishing);
     }
 
-    private static Contributor createContributorContributor(URI cristinId, boolean isCorrespondence, int sequence) {
+    private static Contributor createContributor(URI affiliation, boolean isCorrespondence, int sequence) {
         return new Contributor.Builder()
                    .withIdentity(new Identity.Builder().build())
-                   .withAffiliations(List.of(Organization.fromUri(cristinId)))
+                   .withAffiliations(List.of(Organization.fromUri(affiliation)))
                    .withRole(new RoleType(Role.CREATOR))
                    .withSequence(sequence)
                    .withCorrespondingAuthor(isCorrespondence)
@@ -306,8 +367,13 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
     }
 
     private void mockCustomer(URI customerId, URI cristinId, boolean allowsPublishing) throws NotFoundException {
+        mockCustomer(customerId, cristinId, allowsPublishing, REGISTRATOR_PUBLISHES_METADATA_ONLY);
+    }
+
+    private void mockCustomer(URI customerId, URI cristinId, boolean allowsPublishing, PublishingWorkflow workflow) throws NotFoundException {
         when(identityServiceClient.getCustomerById(customerId)).thenReturn(
-            createCustomerDto(customerId, cristinId, allowsPublishing));
+            createCustomerDto(customerId, cristinId, allowsPublishing,
+                              workflow));
     }
 
     private Resource createResource() {

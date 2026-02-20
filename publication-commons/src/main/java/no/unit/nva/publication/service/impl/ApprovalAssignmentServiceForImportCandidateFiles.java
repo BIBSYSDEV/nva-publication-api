@@ -1,6 +1,8 @@
 package no.unit.nva.publication.service.impl;
 
 import static java.util.function.Predicate.not;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
+import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.ArrayList;
@@ -36,17 +38,24 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
     }
 
     /**
-     * This method analyzes the data for the ImportCandidate and determines which customer (if any) should approve the
-     * candidate files. The order of preference:
+     * Determines which customer (if any) is responsible for approving ImportCandidates files.
+     * The order of preference:
      * <ol>
-     *     <li>At least one customer has auto-publish enabled: no approval</li>
-     *     <li>The customer that has the corresponding author with the lowest contributor-sequence number</li>
-     *     <li>The customer that has the contributor with the lowest contributor-sequence number</li>
+     *     <li>All customers allow auto-publish of Scopus files: no approval needed.</li>
+     *     <li>A customer whose publication workflow explicitly requires file approval
+     *         ({@code REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES} or
+     *         {@code REGISTRATOR_PUBLISHES_METADATA_ONLY}) and who does not allow auto-publish:
+     *         approval needed, assigned to the matching contributor with the highest priority
+     *         (corresponding author first, then lowest sequence number).</li>
+     *     <li>Any customer that does not allow auto-publish of Scopus files (but whose workflow does not
+     *         require explicit file approval): no approval needed, that customer becomes the file owner.</li>
      * </ol>
      *
-     * @param resource The candidate to analyze.
-     * @return {@code Optional<CustomerDto>} The customer that should approve.
-     * @throws ApprovalAssignmentException if customer uri for import candidate fails to dereference.
+     * @param resource            The import candidate to analyze.
+     * @param associatedCustomers The customer URIs associated with the import candidate.
+     * @return {@link AssignmentServiceResult} indicating whether approval is needed and which customer is responsible.
+     * @throws ApprovalAssignmentException if a customer URI cannot be resolved, no customers are associated,
+     *                                     no contributors are present, or no matching contributor is found.
      */
     public AssignmentServiceResult determineCustomerResponsibleForApproval(Resource resource,
                                                                            Collection<URI> associatedCustomers)
@@ -54,11 +63,32 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
         validateImportCandidateForCustomersPresence(resource, associatedCustomers);
         var customers = fetchAllAssociatedCustomers(associatedCustomers);
 
-        var customerDto = findAnyCustomerNotAllowingAutoApproval(customers);
-        if (customerDto.isPresent()) {
-            return AssignmentServiceResult.customerFound(getResponsibleCustomerContributorPair(resource, customers));
-        }
-        return AssignmentServiceResult.noApprovalNeeded(getCustomerAllowingApproval(customers));
+        return anyCustomerRequiresApproval(customers)
+                   ? resolveApprovalAssignment(resource, customers)
+                   : AssignmentServiceResult.noApprovalNeeded(getCustomerAllowingApproval(customers));
+    }
+
+    private static boolean anyCustomerRequiresApproval(Collection<CustomerDto> customers) {
+        return customers.stream().anyMatch(not(CustomerDto::autoPublishScopusImportFiles));
+    }
+
+    private AssignmentServiceResult resolveApprovalAssignment(Resource resource,
+                                                              Collection<CustomerDto> customers)
+        throws ApprovalAssignmentException {
+        var customerMap = customerByTopLevelInstitutionIdentifierMap(customers);
+        var customer = findCustomerRequiringApprovalByScopusConfigAndPublishingWorkflow(resource, customerMap);
+
+        return customer.isPresent()
+                   ? AssignmentServiceResult.customerFound(customer.get())
+                   : resolveApprovalByCustomerWithScopusConfig(resource, customerMap);
+    }
+
+    private AssignmentServiceResult resolveApprovalByCustomerWithScopusConfig(Resource resource,
+                                                                              Map<String, CustomerDto> customerMap)
+        throws ApprovalAssignmentException {
+        return getCustomerRequiringApprovalOfScopusFile(resource, customerMap)
+                   .map(pair -> AssignmentServiceResult.noApprovalNeeded(pair.customerDto()))
+                   .orElseThrow(() -> new ApprovalAssignmentException(NO_CONTRIBUTOR_MESSAGE));
     }
 
     private static Map<String, CustomerDto> customerByTopLevelInstitutionIdentifierMap(Collection<CustomerDto> customers) {
@@ -112,25 +142,35 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
         return customers.stream().filter(CustomerDto::autoPublishScopusImportFiles).findFirst().orElseThrow();
     }
 
-    private Optional<CustomerDto> findAnyCustomerNotAllowingAutoApproval(Collection<CustomerDto> customers) {
-        return customers.stream().filter(not(CustomerDto::autoPublishScopusImportFiles)).findFirst();
-    }
-
-    private CustomerContributorPair getResponsibleCustomerContributorPair(Resource resource,
-                                                                          Collection<CustomerDto> customers)
-        throws ApprovalAssignmentException {
-        var customerMap = customerByTopLevelInstitutionIdentifierMap(customers);
+    private Optional<CustomerContributorPair> getCustomerRequiringApprovalOfScopusFile(Resource resource,
+                                                                           Map<String, CustomerDto> customerMap) {
         return getContributors(resource)
                    .stream()
                    .sorted(compareByCorrespondingAuthorAndSequence())
                    .map(contributor -> findMatchingCustomer(contributor, customerMap))
                    .flatMap(Optional::stream)
-                   .filter(ApprovalAssignmentServiceForImportCandidateFiles::customerRequiresApproval)
-                   .findFirst()
-                   .orElseThrow(() -> new ApprovalAssignmentException(NO_CONTRIBUTOR_MESSAGE));
+                   .filter(ApprovalAssignmentServiceForImportCandidateFiles::customerRequiresApprovalOfFilesFromScopus)
+                   .findFirst();
     }
 
-    private static boolean customerRequiresApproval(CustomerContributorPair customerContributorPair) {
+    private Optional<CustomerContributorPair> findCustomerRequiringApprovalByScopusConfigAndPublishingWorkflow(Resource resource, Map<String, CustomerDto> customerMap) {
+        return getContributors(resource)
+                   .stream()
+                   .sorted(compareByCorrespondingAuthorAndSequence())
+                   .map(contributor -> findMatchingCustomer(contributor, customerMap))
+                   .flatMap(Optional::stream)
+                   .filter(ApprovalAssignmentServiceForImportCandidateFiles::customerRequiresApprovalOfFilesFromScopus)
+                   .filter(ApprovalAssignmentServiceForImportCandidateFiles::customerWorkflowRequiresApprovalOfFiles)
+                   .findFirst();
+    }
+
+    private static boolean customerWorkflowRequiresApprovalOfFiles(CustomerContributorPair customerContributorPair) {
+        var workflow = customerContributorPair.customerDto().publicationWorkflow();
+        return REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES.getValue().equals(workflow)
+               || REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue().equals(workflow);
+    }
+
+    private static boolean customerRequiresApprovalOfFilesFromScopus(CustomerContributorPair customerContributorPair) {
         return !customerContributorPair.customerDto().autoPublishScopusImportFiles();
     }
 
