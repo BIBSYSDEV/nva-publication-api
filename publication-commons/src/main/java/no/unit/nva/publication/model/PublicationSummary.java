@@ -4,18 +4,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.PublicationServiceConfig;
@@ -49,6 +54,8 @@ public class PublicationSummary {
     private int contributorsCount;
     @JsonProperty("abstract")
     private String mainLanguageAbstract;
+    @JsonProperty("handles")
+    private Set<URI> handles;
 
     public static PublicationSummary create(Publication publication) {
         var publicationSummary = new PublicationSummary();
@@ -61,7 +68,21 @@ public class PublicationSummary {
         publicationSummary.setPublicationInstance(extractPublicationInstance(publication.getEntityDescription()));
         publicationSummary.setContributors(extractContributors(publication.getEntityDescription()));
         publicationSummary.setAbstract(extractAbstract(publication));
+        publicationSummary.setHandles(extractHandles(publication));
         return publicationSummary;
+    }
+
+    private static Collection<URI> extractHandles(Publication publication) {
+        var handlesFromAdditionalIdentifiers = extractHandlesFromAdditionalIdentifiers(publication);
+        return Stream.concat(handlesFromAdditionalIdentifiers, Stream.ofNullable(publication.getHandle()))
+                   .collect(Collectors.toSet());
+    }
+
+    private static Stream<URI> extractHandlesFromAdditionalIdentifiers(Publication publication) {
+        return publication.getAdditionalIdentifiers().stream()
+                   .filter(HandleIdentifier.class::isInstance)
+                   .map(HandleIdentifier.class::cast)
+                   .map(HandleIdentifier::uri);
     }
 
     public static PublicationSummary create(URI publicationId, String publicationTitle) {
@@ -156,6 +177,15 @@ public class PublicationSummary {
         this.publicationInstance = publicationInstance;
     }
 
+
+    public Set<URI> getHandles() {
+        return handles;
+    }
+
+    public void setHandles(Collection<URI> handles) {
+        this.handles = new HashSet<>(handles);
+    }
+
     public SortableIdentifier extractPublicationIdentifier() {
         return extractPublicationIdentifier(publicationId);
     }
@@ -169,7 +199,7 @@ public class PublicationSummary {
     public int hashCode() {
         return Objects.hash(getPublicationId(), getIdentifier(), getTitle(), getOwner(), getStatus(),
                             getPublicationInstance(), getPublishedDate(), getContributors(), getContributorsCount(),
-                            getAbstract());
+                            getAbstract(), getHandles());
     }
 
     @Override
@@ -190,7 +220,8 @@ public class PublicationSummary {
                && Objects.equals(getPublishedDate(), that.getPublishedDate())
                && Objects.equals(getContributors(), that.getContributors())
                && Objects.equals(getContributorsCount(), that.getContributorsCount())
-               && Objects.equals(getAbstract(), that.getAbstract());
+               && Objects.equals(getAbstract(), that.getAbstract())
+               && Objects.equals(getHandles(), that.getHandles());
     }
 
     private static String extractTitle(EntityDescription entityDescription) {
