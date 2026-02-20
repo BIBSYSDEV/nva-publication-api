@@ -279,10 +279,36 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
     }
 
     @Test
-    void shouldReturnApprovalNotNeededWWhenCustomerRequiresScopusFileApprovalButAllowsPublishingFiles() throws Exception {
+    void shouldReturnApprovalNotNeededWhenCustomerRequiresScopusFileApprovalButAllowsPublishingFiles() throws Exception {
         var customer = new CustomerSetup();
 
         mockCustomer(customer.customerId, customer.cristinId, false, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
+
+        var resource = createResource(createContributor(customer.cristinId, false, 1));
+
+        var result = service.determineCustomerResponsibleForApproval(resource, List.of(customer.customerId));
+
+        assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
+    }
+
+    @Test
+    void shouldReturnApprovalNotNeededWhenCustomerDoesNotRequiresScopusFileApprovalAndAllowsPublishingFiles() throws Exception {
+        var customer = new CustomerSetup();
+
+        mockCustomer(customer.customerId, customer.cristinId, true, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
+
+        var resource = createResource(createContributor(customer.cristinId, false, 1));
+
+        var result = service.determineCustomerResponsibleForApproval(resource, List.of(customer.customerId));
+
+        assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
+    }
+
+    @Test
+    void shouldReturnApprovalNotNeededWhenCustomerDoesNotRequiresScopusFileApprovalAndHasRegistratorPublishesMetadataOnlyWorkflow() throws Exception {
+        var customer = new CustomerSetup();
+
+        mockCustomer(customer.customerId, customer.cristinId, true, REGISTRATOR_PUBLISHES_METADATA_ONLY);
 
         var resource = createResource(createContributor(customer.cristinId, false, 1));
 
