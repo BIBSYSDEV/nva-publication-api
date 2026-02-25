@@ -5,13 +5,14 @@ import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStream
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import nva.commons.core.CollectionUtils;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +68,7 @@ public class EventBridgePublisher implements EventPublisher {
     }
     
     private List<PutEventsRequestEntry> putEventsToEventBus(List<PutEventsRequestEntry> requestEntries) {
-        List<List<PutEventsRequestEntry>> groupedRequestEntries = Lists.partition(requestEntries, ENTRIES_PER_REQUEST);
+        var groupedRequestEntries = CollectionUtils.partition(requestEntries, ENTRIES_PER_REQUEST);
         return groupedRequestEntries.stream()
                    .map(this::createPutEventsRequest)
                    .map(eventBridge::putEvents)
