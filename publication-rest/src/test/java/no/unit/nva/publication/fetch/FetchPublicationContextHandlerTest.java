@@ -1,7 +1,6 @@
 package no.unit.nva.publication.fetch;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import static com.google.common.net.HttpHeaders.ACCEPT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
@@ -23,6 +22,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.stream.Stream;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
+import static org.apache.http.HttpHeaders.ACCEPT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;

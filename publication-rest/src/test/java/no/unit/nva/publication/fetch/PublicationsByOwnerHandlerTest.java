@@ -1,7 +1,5 @@
 package no.unit.nva.publication.fetch;
 
-import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
@@ -9,6 +7,8 @@ import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.HandlerRequestBuilder.ISS_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.apache.hc.core5.http.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasKey;

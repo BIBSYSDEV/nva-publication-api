@@ -27,6 +27,7 @@ import static org.apache.http.HttpHeaders.ACCEPT;
 import static org.apache.http.HttpHeaders.CACHE_CONTROL;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpHeaders.ETAG;
+import static org.apache.http.HttpHeaders.IF_NONE_MATCH;
 import static org.apache.http.HttpHeaders.LOCATION;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
@@ -52,7 +53,6 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import com.google.common.net.HttpHeaders;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -213,7 +213,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publication = createPublicationWithPublisher(wireMockRuntimeInfo);
         var publicationIdentifier = publication.getIdentifier().toString();
         Resource.fromPublication(publication).publish(publicationService, UserInstance.fromPublication(publication));
-        var headers = Map.of(HttpHeaders.ACCEPT, MediaTypes.APPLICATION_DATACITE_XML.toString());
+        var headers = Map.of(ACCEPT, MediaTypes.APPLICATION_DATACITE_XML.toString());
         createCustomerMock(publication.getPublisher());
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier, headers, NO_QUERY_PARAMS),
                                               output, context);
@@ -546,7 +546,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var version = Resource.fromPublication(publication).fetch(publicationService).orElseThrow().getVersion();
 
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString(),
-                                                                     Map.of(HttpHeaders.IF_NONE_MATCH,
+                                                                     Map.of(IF_NONE_MATCH,
                                                                             version.toString()), Map.of()),
                                               output,
                                               context);
@@ -562,7 +562,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publication = createPublication();
 
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publication.getIdentifier().toString(),
-                                                                     Map.of(HttpHeaders.IF_NONE_MATCH,
+                                                                     Map.of(IF_NONE_MATCH,
                                                                             randomString(), ACCEPT, "application/json"),
                                                                      Map.of()),
                                               output,
@@ -579,7 +579,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         var publication = createPublication();
         var version = Resource.fromPublication(publication).fetch(publicationService).orElseThrow().getVersion();
 
-        fetchPublicationHandler.handleRequest(generateAuthenticatedRequest(publication, Map.of(HttpHeaders.IF_NONE_MATCH, version.toString(), ACCEPT, "application/json")),
+        fetchPublicationHandler.handleRequest(generateAuthenticatedRequest(publication, Map.of(IF_NONE_MATCH, version.toString(), ACCEPT, "application/json")),
                                               output,
                                               context);
         var gatewayResponse = parseHandlerResponse();
