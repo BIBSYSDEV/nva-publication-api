@@ -3,7 +3,7 @@ package no.unit.nva.publication.file.upload.restmodel;
 import static java.util.Objects.requireNonNull;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.google.common.net.MediaType;
+import nva.commons.apigateway.MediaType;
 import java.util.UUID;
 import no.unit.nva.publication.file.upload.Filename;
 import nva.commons.apigateway.exceptions.BadRequestException;

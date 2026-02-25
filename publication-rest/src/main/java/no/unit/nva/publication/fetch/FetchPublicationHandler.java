@@ -1,13 +1,5 @@
 package no.unit.nva.publication.fetch;
 
-import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
-import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
-import static com.google.common.net.HttpHeaders.ETAG;
-import static com.google.common.net.HttpHeaders.LOCATION;
-import static com.google.common.net.MediaType.ANY_TEXT_TYPE;
-import static com.google.common.net.MediaType.HTML_UTF_8;
-import static com.google.common.net.MediaType.JSON_UTF_8;
-import static com.google.common.net.MediaType.XHTML_UTF_8;
 import static java.net.HttpURLConnection.HTTP_MOVED_PERM;
 import static java.net.HttpURLConnection.HTTP_SEE_OTHER;
 import static java.util.Collections.emptySet;
@@ -17,13 +9,22 @@ import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.RequestUtil.getETagValueFromIfNoneMatchHeader;
 import static no.unit.nva.publication.service.impl.ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE;
+import static nva.commons.apigateway.MediaType.ANY_TEXT_TYPE;
+import static nva.commons.apigateway.MediaType.HTML_UTF_8;
+import static nva.commons.apigateway.MediaType.JSON_UTF_8;
+import static nva.commons.apigateway.MediaType.XHTML_UTF_8;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.apigateway.MediaTypes.SCHEMA_ORG;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.paths.UriWrapper.HTTPS;
+import static org.apache.hc.core5.http.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
+import static org.apache.http.HttpHeaders.CACHE_CONTROL;
+import static org.apache.http.HttpHeaders.ETAG;
+import static org.apache.http.HttpHeaders.LOCATION;
+
 import com.amazonaws.services.lambda.runtime.Context;
-import com.google.common.net.MediaType;
+import nva.commons.apigateway.MediaType;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.List;
@@ -214,7 +215,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
             response = createDataCiteMetadata(resource);
         } else if (SCHEMA_ORG.equals(contentType)) {
             response = createSchemaOrgRepresentation(resource);
-        } else if (contentType.is(ANY_TEXT_TYPE) || XHTML_UTF_8.equals(contentType)) {
+        } else if (contentType.matches(ANY_TEXT_TYPE) || XHTML_UTF_8.equals(contentType)) {
             statusCode = HTTP_SEE_OTHER;
             headers.put(LOCATION, landingPageLocation(resource.getIdentifier()).toString());
         } else {

@@ -2,13 +2,6 @@ package no.unit.nva.publication.fetch;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static com.google.common.net.HttpHeaders.ACCEPT;
-import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
-import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
-import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-import static com.google.common.net.HttpHeaders.ETAG;
-import static com.google.common.net.HttpHeaders.LOCATION;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.UUID.randomUUID;
@@ -28,6 +21,13 @@ import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.r
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.ApiGatewayHandler.RESOURCE;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.apache.hc.core5.http.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static org.apache.hc.core5.http.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
+import static org.apache.http.HttpHeaders.ACCEPT;
+import static org.apache.http.HttpHeaders.CACHE_CONTROL;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.HttpHeaders.ETAG;
+import static org.apache.http.HttpHeaders.LOCATION;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;

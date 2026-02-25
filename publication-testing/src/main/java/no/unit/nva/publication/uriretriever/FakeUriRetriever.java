@@ -2,7 +2,6 @@ package no.unit.nva.publication.uriretriever;
 
 import static java.util.Objects.nonNull;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import com.google.common.net.MediaType;
 import java.net.URI;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
@@ -14,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.net.ssl.SSLSession;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
+import nva.commons.apigateway.MediaType;
 
 public final class FakeUriRetriever implements RawContentRetriever {
 

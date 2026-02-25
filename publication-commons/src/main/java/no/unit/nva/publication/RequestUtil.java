@@ -1,7 +1,9 @@
 package no.unit.nva.publication;
 
 import static nva.commons.core.attempt.Try.attempt;
-import com.google.common.net.HttpHeaders;
+import static org.apache.http.HttpHeaders.IF_MATCH;
+import static org.apache.http.HttpHeaders.IF_NONE_MATCH;
+
 import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -84,11 +86,11 @@ public final class RequestUtil {
     }
 
     public static Optional<String> getETagValueFromIfMatchHeader(RequestInfo requestInfo) {
-        return requestInfo.getHeaderOptional(HttpHeaders.IF_MATCH);
+        return requestInfo.getHeaderOptional(IF_MATCH);
     }
 
     public static Optional<String> getETagValueFromIfNoneMatchHeader(RequestInfo requestInfo) {
-        return requestInfo.getHeaderOptional(HttpHeaders.IF_NONE_MATCH);
+        return requestInfo.getHeaderOptional(IF_NONE_MATCH);
     }
 
     private static UserInstance createClientCredentialUserInstance(RequestInfo requestInfo,

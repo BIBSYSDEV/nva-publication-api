@@ -344,6 +344,7 @@ class PublishingServiceTest extends ResourcesLocalTest {
                                workflow, randomBoolean(),
                                randomBoolean(), randomBoolean(), Collections.emptyList(),
                                new CustomerDto.RightsRetentionStrategy(randomString(),
-                                                                       RandomDataGenerator.randomUri()), randomBoolean());
+                                                                       RandomDataGenerator.randomUri()), randomBoolean(),
+                               randomString());
     }
 }

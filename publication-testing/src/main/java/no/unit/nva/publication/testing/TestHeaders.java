@@ -1,11 +1,12 @@
 package no.unit.nva.publication.testing;
 
-import static com.google.common.net.HttpHeaders.ACCEPT;
-import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-import static com.google.common.net.MediaType.JSON_UTF_8;
 import java.util.Map;
 import nva.commons.core.JacocoGenerated;
+
+import static nva.commons.apigateway.MediaType.JSON_UTF_8;
+import static org.apache.hc.core5.http.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static org.apache.http.HttpHeaders.ACCEPT;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 
 @SuppressWarnings({"PMD.TestClassWithoutTestCases"})
 @JacocoGenerated

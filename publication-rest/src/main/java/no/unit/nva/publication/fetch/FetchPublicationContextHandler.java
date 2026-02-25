@@ -2,7 +2,7 @@ package no.unit.nva.publication.fetch;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.net.MediaType;
+import nva.commons.apigateway.MediaType;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -15,7 +15,8 @@ import nva.commons.core.paths.UriWrapper;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.List;
-import static com.google.common.net.MediaType.JSON_UTF_8;
+
+import static nva.commons.apigateway.MediaType.JSON_UTF_8;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static nva.commons.core.attempt.Try.attempt;

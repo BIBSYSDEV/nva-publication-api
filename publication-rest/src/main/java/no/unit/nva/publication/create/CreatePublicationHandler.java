@@ -2,8 +2,9 @@ package no.unit.nva.publication.create;
 
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.apache.http.HttpHeaders.LOCATION;
+
 import com.amazonaws.services.lambda.runtime.Context;
-import com.google.common.net.HttpHeaders;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.util.List;
@@ -150,7 +151,7 @@ public class CreatePublicationHandler
 
     private void setLocationHeader(SortableIdentifier identifier) {
         addAdditionalHeaders(() -> Map.of(
-            HttpHeaders.LOCATION,
+            LOCATION,
             getLocation(identifier).toString())
         );
     }

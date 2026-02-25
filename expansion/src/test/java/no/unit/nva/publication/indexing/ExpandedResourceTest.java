@@ -44,7 +44,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
-import com.google.common.net.MediaType;
+import nva.commons.apigateway.MediaType;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;

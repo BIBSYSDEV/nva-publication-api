@@ -29,6 +29,7 @@ dependencies {
     implementation nvaCatalog.aws.sdk.dynamo
     implementation nvaCatalog.aws.lambda.core
     implementation nvaCatalog.guava
+    implementation nvaCatalog.httpcore5
     implementation nvaCatalog.aws.sdk2.secrets
     implementation nvaCatalog.aws.sdk2.s3
     implementation nvaCatalog.zalando
