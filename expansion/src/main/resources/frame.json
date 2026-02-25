@@ -20,7 +20,6 @@
           "@embed": "@never"
         },
         "institution": {
-          "@embed": "@never",
           "@default": "@null"
         }
       }

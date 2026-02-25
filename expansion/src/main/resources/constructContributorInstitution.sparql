@@ -3,7 +3,7 @@
 PREFIX nva: <https://nva.sikt.no/ontology/publication#>
 
 CONSTRUCT {
-  ?affiliation nva:institution ?uri
+  ?affiliation nva:affiliationInstitution ?uri
 }
 WHERE {
   ?pub a nva:Publication .
