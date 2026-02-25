@@ -9,7 +9,6 @@ dependencies {
     implementation nvaLibs.identifiers
     implementation nvaLibs.secrets
     implementation project(":publication-model")
-    implementation nvaCatalog.guava
     implementation nvaCatalog.aws.sdk.dynamo
     implementation nvaCatalog.aws.sdk2.sqs
     implementation nvaCatalog.bundles.jena

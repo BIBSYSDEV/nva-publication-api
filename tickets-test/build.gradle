@@ -8,7 +8,6 @@ dependencies {
     implementation nvaLibs.secrets
     implementation project(":publication-model")
     implementation project(":publication-model-testing")
-    implementation nvaCatalog.guava
     implementation nvaCatalog.aws.sdk.dynamo
     implementation nvaCatalog.junit.jupiter.params
     implementation nvaLibs.testutils
@@ -20,6 +19,5 @@ dependencies {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
         exclude group: 'org.apache.commons', module: 'commons-lang3'
-        exclude group: 'com.google.guava', module: 'guava'
     }
 }

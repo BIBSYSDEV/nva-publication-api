@@ -23,14 +23,12 @@ dependencies {
     implementation nvaCatalog.bundles.testing.junit
     implementation nvaCatalog.bundles.testing.mockito
     implementation nvaCatalog.bundles.testing.hamcrest
-    implementation nvaCatalog.guava
     implementation nvaCatalog.datafaker
     implementation nvaLibs.testutils
     implementation nvaCatalog.bundles.jackson
     implementation(nvaCatalog.aws.dynamodb.local) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
-        exclude group: 'com.google.guava', module: 'guava'
     }
 
     implementation(nvaCatalog.httpcore5)
