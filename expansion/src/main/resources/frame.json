@@ -19,7 +19,7 @@
         "partOf": {
           "@embed": "@never"
         },
-        "institution": {
+        "institutionId": {
           "@default": "@null"
         }
       }

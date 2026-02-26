@@ -2104,9 +2104,9 @@ nva:applicationCode a rdf:Property ;
   rdfs:domain nva:Approval ;
   rdfs:range xsd:string .
 
-nva:affiliationInstitution a rdf:Property ;
+nva:affiliationInstitutionId a rdf:Property ;
   rdfs:comment "The top-level organization of a contributor affiliation, as a literal URI" ;
-  rdfs:label "Affiliation institution" ;
+  rdfs:label "Affiliation institution id" ;
   rdfs:isDefinedBy nva: ;
   rdfs:range xsd:string .
 

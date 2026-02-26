@@ -18,8 +18,8 @@
     "@container": "@set",
     "@id": "affiliation",
     "@context": {
-      "institution": {
-        "@id": "affiliationInstitution"
+      "institutionId": {
+        "@id": "affiliationInstitutionId"
       }
     }
   },
