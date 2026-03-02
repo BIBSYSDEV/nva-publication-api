@@ -11,6 +11,8 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -18,11 +20,16 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
+import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
+import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -106,6 +113,38 @@ class PublicationSummaryTest extends ResourcesLocalTest {
         var summary = PublicationSummary.create(publicationId, publicationTitle);
         assertThat(summary.getPublicationId(), is(equalTo(publicationId)));
         assertThat(summary.getTitle(), is(equalTo(publicationTitle)));
+    }
+
+    @Test
+    void shouldReturnPublicationSummaryWithHandleWhenPublicationHasHandle() {
+        var handle = randomUri();
+        var publication = randomPublication().copy().withHandle(handle).build();
+        var summary = PublicationSummary.create(publication);
+
+        assertTrue(summary.getHandles().contains(handle));
+    }
+
+    @Test
+    void shouldReturnPublicationSummaryWithoutHandleWhenPublicationIsMissingHandleAndHandlesInAdditionalIdentifiers() {
+        var publication = randomPublication().copy().withHandle(null).withAdditionalIdentifiers(Collections.emptySet()).build();
+        var summary = PublicationSummary.create(publication);
+
+        assertTrue(summary.getHandles().isEmpty());
+    }
+
+    @Test
+    void shouldReturnPublicationSummaryHandlesFromAdditionalIdentifiers() {
+        var handles = Set.of(randomUri(), randomUri());
+        var publication = randomPublication().copy()
+                              .withAdditionalIdentifiers(toHandleIdentifiers(handles))
+                              .build();
+        var summary = PublicationSummary.create(publication);
+
+        assertTrue(summary.getHandles().containsAll(handles));
+    }
+
+    private static Set<AdditionalIdentifierBase> toHandleIdentifiers(Set<URI> handles) {
+        return handles.stream().map(uri -> new HandleIdentifier(SourceName.nva(), uri)).collect(Collectors.toSet());
     }
 
     private int getRandomNumberOfContributorsLargerThanMaxSize() {
