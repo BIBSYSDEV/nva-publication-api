@@ -189,7 +189,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
         }
     }
 
-    private Entity extractDataEntryType() {
+    public Entity extractDataEntryType() {
         return nonNull(newData) ? newData : oldData;
     }
 
