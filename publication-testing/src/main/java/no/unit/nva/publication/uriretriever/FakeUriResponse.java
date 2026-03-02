@@ -5,11 +5,11 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.service.CristinOrganizationFixtures.randomCristinOrganization;
 import static no.unit.nva.publication.service.FakeCristinOrganization.asLeafNode;
+import static nva.commons.apigateway.MediaType.JSON_UTF_8;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_MOVED_PERMANENTLY;
 import static org.apache.http.HttpStatus.SC_OK;
-import com.google.common.net.MediaType;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -48,6 +48,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.apigateway.MediaType;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 
@@ -232,7 +233,7 @@ public final class FakeUriResponse {
         for (var organizationId : extractAffiliations(publication)) {
             var fakeResponse = createFakeOrganizationStructure(organizationId);
             fakeUriRetriever.registerResponse(
-                    organizationId, SC_OK, MediaType.JSON_UTF_8, fakeResponse);
+                    organizationId, SC_OK, JSON_UTF_8, fakeResponse);
         }
     }
 

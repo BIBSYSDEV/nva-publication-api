@@ -1,9 +1,10 @@
 package no.sikt.nva.scopus.conversion;
 
-import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.net.URI;

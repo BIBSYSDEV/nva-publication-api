@@ -884,7 +884,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
                                emptyList(),
                                new CustomerDto.RightsRetentionStrategy(randomString(),
                                                                        RandomDataGenerator.randomUri()),
-                               autoPublishScopusImportFiles);
+                               autoPublishScopusImportFiles,
+                               randomString());
     }
 
     private ImportEntityDescription randomImportEntityDescriptionWithoutMainTitle(List<ImportContributor> contributors) {

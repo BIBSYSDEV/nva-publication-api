@@ -1,13 +1,14 @@
 package no.unit.nva.publication.update;
 
-import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
-import static com.google.common.net.HttpHeaders.ETAG;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.FileOperation.WRITE_METADATA;
 import static no.unit.nva.model.PublicationOperation.TERMINATE;
 import static no.unit.nva.model.PublicationOperation.UNPUBLISH;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
+import static org.apache.hc.core5.http.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
+import static org.apache.http.HttpHeaders.ETAG;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.net.http.HttpClient;

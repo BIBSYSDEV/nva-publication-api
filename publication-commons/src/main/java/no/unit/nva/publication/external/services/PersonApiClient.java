@@ -1,13 +1,14 @@
 package no.unit.nva.publication.external.services;
 
-import static com.google.common.net.HttpHeaders.ACCEPT;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
+import static org.apache.http.HttpHeaders.ACCEPT;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.net.MediaType;
+import nva.commons.apigateway.MediaType;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;

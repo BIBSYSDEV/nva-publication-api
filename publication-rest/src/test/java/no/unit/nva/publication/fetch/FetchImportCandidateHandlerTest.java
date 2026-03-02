@@ -1,12 +1,12 @@
 package no.unit.nva.publication.fetch;
 
-import static com.google.common.net.HttpHeaders.ACCEPT;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static no.unit.nva.model.testing.ImportCandidateGenerator.randomImportCandidate;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.fetch.FetchImportCandidateHandler.IMPORT_CANDIDATE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ENV_NAME_NVA_FRONTEND_DOMAIN;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
+import static org.apache.http.HttpHeaders.ACCEPT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;

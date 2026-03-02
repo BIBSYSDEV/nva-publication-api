@@ -34,7 +34,6 @@ import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
-import com.google.common.collect.Lists;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
@@ -90,6 +89,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadMethodException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.CollectionUtils;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
@@ -520,7 +520,7 @@ public class ResourceService extends ServiceWithTransactions {
                                 .map(item -> new PutRequest().withItem(item))
                                 .map(WriteRequest::new)
                                 .toList();
-        Lists.partition(writeRequests, 25)
+        CollectionUtils.partition(writeRequests, 25)
             .stream()
             .map(items -> new BatchWriteItemRequest().withRequestItems(Map.of(tableName, items)))
             .forEach(this::writeBatchToDynamo);
@@ -638,7 +638,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private void writeToDynamoInBatches(List<WriteRequest> writeRequests) {
-        Lists.partition(writeRequests, MAX_SIZE_OF_BATCH_REQUEST)
+        CollectionUtils.partition(writeRequests, MAX_SIZE_OF_BATCH_REQUEST)
             .stream()
             .map(items -> new BatchWriteItemRequest().withRequestItems(Map.of(tableName, items)))
             .forEach(this::writeBatchToDynamo);

@@ -22,7 +22,6 @@ dependencies {
     implementation nvaCatalog.aws.sdk2.s3
     implementation nvaCatalog.aws.sdk2.sqs
 
-    implementation nvaCatalog.guava
     implementation nvaCatalog.zalando
     implementation nvaCatalog.bundles.jena
     implementation (nvaCatalog.bundles.jackson) {

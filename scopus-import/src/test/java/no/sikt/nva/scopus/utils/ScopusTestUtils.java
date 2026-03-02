@@ -22,7 +22,7 @@ public class ScopusTestUtils {
                                randomBoolean(), randomBoolean(), Collections.emptyList(),
                                new CustomerDto.RightsRetentionStrategy(randomString(),
                                                                        RandomDataGenerator.randomUri()),
-                               randomBoolean());
+                               randomBoolean(), randomString());
     }
 
     public static CristinOrganization randomCristinOrganization() {

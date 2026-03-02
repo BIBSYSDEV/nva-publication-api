@@ -43,8 +43,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.Lists;
-import com.google.common.net.MediaType;
+import nva.commons.apigateway.MediaType;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
@@ -315,8 +314,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
             , Resource.fromPublication(resource)).asJsonNode();
         var contributorOrganizationsNode = framedResultNode.at(JSON_CONTRIBUTOR_ORGANIZATIONS);
-        var actualOrganizations = Lists.newArrayList(contributorOrganizationsNode.elements())
-                                      .stream()
+        var actualOrganizations = stream(contributorOrganizationsNode.spliterator(), false)
                                       .map(JsonNode::textValue)
                                       .toList();
 

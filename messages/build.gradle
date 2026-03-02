@@ -10,7 +10,6 @@ dependencies {
 
     implementation nvaCatalog.aws.sdk.dynamo
     implementation nvaCatalog.aws.lambda.core
-    implementation nvaCatalog.guava
     testImplementation project(path: ':tickets-test')
 
     runtimeOnly nvaCatalog.jackson.databind

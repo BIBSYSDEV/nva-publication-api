@@ -16,7 +16,6 @@ dependencies {
     implementation nvaCatalog.jackson.annotations
     implementation nvaCatalog.jackson.databind
 
-    implementation nvaCatalog.guava
     implementation nvaCatalog.zalando
     implementation nvaCatalog.bundles.logging
 

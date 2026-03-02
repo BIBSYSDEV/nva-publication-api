@@ -141,6 +141,7 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
                                Collections.emptyList(),
                                new CustomerDto.RightsRetentionStrategy(randomString(),
                                                                        RandomDataGenerator.randomUri()),
-                               randomBoolean());
+                               randomBoolean(),
+                               randomString());
     }
 }

@@ -9,10 +9,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.mock;
-import com.google.common.collect.Sets;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
@@ -76,8 +77,12 @@ class TicketDtoTest extends TicketTestLocal {
 
         var dto = TicketDto.fromTicket(ticket, Collections.emptySet(), Collections.emptySet(),
                                        mock(TicketPermissions.class));
-        assertThat(dto, doesNotHaveEmptyValuesIgnoringFields(Sets.union(GENERAL_DTO_FIELDS_TO_IGNORE,
-                                                                        PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE)));
+        var ignoredFields =
+            Stream.concat(
+                    GENERAL_DTO_FIELDS_TO_IGNORE.stream(),
+                    PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE.stream())
+                .collect(Collectors.toSet());
+        assertThat(dto, doesNotHaveEmptyValuesIgnoringFields(ignoredFields));
     }
 
     @Test
@@ -92,7 +97,11 @@ class TicketDtoTest extends TicketTestLocal {
 
         var dto = TicketDto.fromTicket(ticket, Collections.emptySet(), Collections.emptySet(),
                                        mock(TicketPermissions.class));
-        assertThat(dto, doesNotHaveEmptyValuesIgnoringFields(Sets.union(GENERAL_DTO_FIELDS_TO_IGNORE,
-                                                                        PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE)));
+        var ignoredFields =
+            Stream.concat(
+                    GENERAL_DTO_FIELDS_TO_IGNORE.stream(),
+                    PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE.stream())
+                .collect(Collectors.toSet());
+        assertThat(dto, doesNotHaveEmptyValuesIgnoringFields(ignoredFields));
     }
 }

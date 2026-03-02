@@ -7,7 +7,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.google.common.collect.Lists;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +16,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.core.CollectionUtils;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
@@ -148,7 +148,7 @@ public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamo
     }
 
     private int queueWorkItems(List<BatchWorkItem> workItems) {
-        var batches = Lists.partition(workItems, sqsBatchSize);
+        var batches = CollectionUtils.partition(workItems, sqsBatchSize);
 
         return batches.stream().mapToInt(this::sendBatchToQueue).sum();
     }

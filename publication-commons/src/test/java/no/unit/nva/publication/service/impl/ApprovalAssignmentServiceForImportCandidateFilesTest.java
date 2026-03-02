@@ -341,7 +341,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
                                workflow.getValue(), randomBoolean(),
                                randomBoolean(), randomBoolean(), Collections.emptyList(),
                                new CustomerDto.RightsRetentionStrategy(randomString(), RandomDataGenerator.randomUri()),
-                               allowsPublishing);
+                               allowsPublishing, randomString());
     }
 
     private static Contributor createContributor(URI affiliation, boolean isCorrespondence, int sequence) {
