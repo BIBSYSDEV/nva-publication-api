@@ -15,7 +15,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import org.apache.http.HttpStatus;
+import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 
 public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
@@ -71,7 +71,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
     @Override
     protected Integer getSuccessStatusCode(Void input, Void output) {
-        return HttpStatus.SC_ACCEPTED;
+        return HTTP_ACCEPTED;
     }
 
     private static void unsupportedPublicationForDeletion(Resource resource) throws BadRequestException {
