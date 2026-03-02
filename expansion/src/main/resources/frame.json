@@ -18,6 +18,9 @@
         },
         "partOf": {
           "@embed": "@never"
+        },
+        "institutionId": {
+          "@default": "@null"
         }
       }
     },

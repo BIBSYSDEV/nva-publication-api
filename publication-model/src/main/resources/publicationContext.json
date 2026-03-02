@@ -16,7 +16,12 @@
   },
   "affiliations": {
     "@container": "@set",
-    "@id": "affiliation"
+    "@id": "affiliation",
+    "@context": {
+      "institutionId": {
+        "@id": "affiliationInstitutionId"
+      }
+    }
   },
   "alternativeAbstracts": {
     "@container": "@language",
