@@ -10,6 +10,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.util.Optional;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -105,6 +106,23 @@ class ExpandedParentPublicationTest extends ResourcesLocalTest {
         return """
             {}
             """;
+    }
+
+    @Test
+    void shouldIncludePublicationDateInExpandedParentPublication() throws Exception {
+        var publication = persistedParentPublication();
+        var mockedUriRetriever = mock(UriRetriever.class);
+        when(mockedUriRetriever.fetchResponse(any(), any())).thenReturn(
+            Optional.of(FakeHttpResponse.create(emptyJsonBody(), 404)));
+
+        var expandedParentPublication = new ExpandedParentPublication(mockedUriRetriever, resourceService, queueClient)
+                         .getExpandedParentPublication(toPublicationId(publication.getIdentifier()));
+
+        var actualYear = JsonUtils.dtoObjectMapper.readTree(expandedParentPublication)
+                             .at("/entityDescription/publicationDate/year")
+                             .textValue();
+
+        assertEquals(publication.getEntityDescription().getPublicationDate().getYear(), actualYear);
     }
 
     private Publication persistedParentPublication() throws BadRequestException {
