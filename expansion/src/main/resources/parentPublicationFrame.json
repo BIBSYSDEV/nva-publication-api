@@ -18,6 +18,9 @@
         }
       }
     },
+    "publicationDate": {
+      "@default": "@null"
+    },
     "reference": {
       "@default": "@null",
       "@explicit": true,
