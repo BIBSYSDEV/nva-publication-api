@@ -189,10 +189,8 @@ import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
 import org.apache.tika.io.TikaInputStream;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -242,7 +240,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     private UriRetriever uriRetriever;
     private AuthorizedBackendUriRetriever authorizedBackendUriRetriever;
 
-    private TestAppender appender;
     private ResourceService resourcesService;
 
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
@@ -256,8 +253,6 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var importCandidateTable = environment.readEnv("TABLE_NAME");
         var resourcesTable = environment.readEnv("RESOURCES_TABLE_NAME");
         super.init(importCandidateTable, resourcesTable);
-        appender = LogUtils.getTestingAppenderForRootLogger();
-        appender.start();
         s3Client = new FakeS3cClientWithHeadSupport();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
         var httpClient = WiremockHttpClient.create();
@@ -337,14 +332,12 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         return tikaUtils;
     }
 
-    @AfterEach
-    void tearDown() {
-        appender.stop();
-    }
-
     @Test
     void shouldLogExceptionMessageWhenExceptionOccurs() {
+        final var appender = LogUtils.getTestingAppenderForRootLogger();
+
         createEmptyPiaMock();
+
         var event = createSqsEvent(randomString());
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
@@ -937,6 +930,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldNotCreateImportCandidateWhenMissingPublicationType()
         throws IOException {
+        final var appender = LogUtils.getTestingAppenderForRootLogger();
+
         createEmptyPiaMock();
         scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getCitationInfo()
             .getCitationType().clear();
