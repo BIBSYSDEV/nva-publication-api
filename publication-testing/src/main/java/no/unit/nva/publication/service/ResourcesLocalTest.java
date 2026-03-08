@@ -1,6 +1,5 @@
 package no.unit.nva.publication.service;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME;
@@ -28,6 +27,7 @@ import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ProjectionType;
 import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
@@ -44,18 +44,17 @@ import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.core.JacocoGenerated;
-import org.junit.jupiter.api.AfterEach;
 
 @SuppressWarnings({"PMD.TestClassWithoutTestCases", "PMD.CouplingBetweenObjects"})
 @JacocoGenerated
 public class ResourcesLocalTest extends TestDataSource {
 
     public static final ScalarAttributeType STRING_TYPE = ScalarAttributeType.S;
-    protected AmazonDynamoDB client;
-    protected UriRetriever uriRetriever;
-    protected ChannelClaimClient channelClaimClient;
-    protected CustomerService customerService;
-    protected FakeCristinUnitsUtil cristinUnitsUtil;
+    protected static final AmazonDynamoDB client = DynamoDBEmbedded.create().amazonDynamoDB();
+    protected static final UriRetriever uriRetriever = mock(UriRetriever.class);
+    protected static final ChannelClaimClient channelClaimClient = mock(ChannelClaimClient.class);
+    protected static final CustomerService customerService = mock(CustomerService.class);
+    protected static final FakeCristinUnitsUtil cristinUnitsUtil = new FakeCristinUnitsUtil();
 
     public ResourcesLocalTest() {
         super();
@@ -66,24 +65,16 @@ public class ResourcesLocalTest extends TestDataSource {
     }
 
     public void init(String tableName) {
-        uriRetriever = mock(UriRetriever.class);
-        customerService = mock(CustomerService.class);
-        channelClaimClient = mock(ChannelClaimClient.class);
-        client = DynamoDBEmbedded.create().amazonDynamoDB();
-        cristinUnitsUtil = new FakeCristinUnitsUtil();
-        CreateTableRequest request = createTableRequest(tableName);
+        try {
+            client.deleteTable(tableName);
+        } catch (ResourceNotFoundException ignored) {}
+        var request = createTableRequest(tableName);
         client.createTable(request);
     }
 
     public void init(String firstTable, String secondTable) {
-        uriRetriever = mock(UriRetriever.class);
-        customerService = mock(CustomerService.class);
-        channelClaimClient = mock(ChannelClaimClient.class);
-        client = DynamoDBEmbedded.create().amazonDynamoDB();
-        var firstTableRequest = createTableRequest(firstTable);
-        var secondTableRequest = createTableRequest(secondTable);
-        client.createTable(firstTableRequest);
-        client.createTable(secondTableRequest);
+        init(firstTable);
+        init(secondTable);
     }
 
     protected Resource persistResource(Resource resource) {
@@ -97,13 +88,6 @@ public class ResourcesLocalTest extends TestDataSource {
         resource.getFileEntries()
             .forEach(entry -> client.transactWriteItems(entry.toDao().createInsertionTransactionRequest()));
         return resource;
-    }
-
-    @AfterEach
-    public void shutdown() {
-        if (nonNull(client)) {
-            client.shutdown();
-        }
     }
 
     private CreateTableRequest createTableRequest(String tableName) {

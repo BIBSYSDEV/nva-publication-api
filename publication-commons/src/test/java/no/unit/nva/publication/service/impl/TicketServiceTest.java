@@ -138,7 +138,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
         this.resourceService = getResourceService(client);
         this.ticketService = getTicketService();
         this.messageService = getMessageService();
-        this.cristinUnitsUtil = new FakeCristinUnitsUtil();
     }
 
     @Test

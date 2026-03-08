@@ -1095,7 +1095,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         ticketService = getTicketService();
         fakeUriRetriever = FakeUriRetriever.newInstance();
         sqsClient = new FakeSqsClient();
-        cristinUnitsUtil = new FakeCristinUnitsUtil();
         expansionService = new ResourceExpansionServiceImpl(resourceService,
                                                             ticketService,
                                                             fakeUriRetriever,

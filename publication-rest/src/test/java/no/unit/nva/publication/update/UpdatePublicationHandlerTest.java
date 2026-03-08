@@ -115,7 +115,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
-import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
@@ -251,7 +250,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         super.init();
 
         environment = mock(Environment.class);
-        uriRetriever = mock(UriRetriever.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         when(environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY)).thenReturn(
             NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY);
