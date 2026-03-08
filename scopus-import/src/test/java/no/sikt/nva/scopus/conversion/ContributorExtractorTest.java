@@ -379,7 +379,7 @@ public class ContributorExtractorTest {
 
     @Test
     void shouldHandlePiaConnectionException() {
-        var appender = LogUtils.getTestingAppenderForRootLogger();
+        var appender = LogUtils.getTestingAppender(PiaConnection.class);
         var document = ScopusGenerator.createWithNumberOfContributorsFromAuthorTp(1).getDocument();
         var authorTp = getFirstAuthor(document);
 
