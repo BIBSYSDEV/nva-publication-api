@@ -356,6 +356,19 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldLogExceptionForUnexpectedError() {
+        createEmptyPiaMock();
+        var event = createSqsEvent("invalid URI");
+        var expectedMessage = "Unexpected error:";
+        s3Client = new FakeS3ClientThrowingException(expectedMessage);
+        scopusHandler = new ScopusHandler(s3Client, publicationChannelConnection,
+          identityServiceClient, importCandidateService, scopusUpdater, scopusFileConverter,
+          mockedSearchService(Collections.emptyList()), contributorExtractor);
+        scopusHandler.handleRequest(event, CONTEXT);
+        assertThat(appender.getMessages(), containsString(expectedMessage));
+    }
+
+    @Test
     void shouldExtractOnlyScopusIdentifierIgnoreAllOtherIdentifiersAndStoreItInPublication() throws IOException {
         createEmptyPiaMock();
         var scopusIdentifier = getEid();
