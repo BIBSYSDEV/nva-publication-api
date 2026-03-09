@@ -45,7 +45,7 @@ class CristinConnectionTest {
 
     @Test
     void shouldLogErrorIfCristinProxyRespondsWithErrorCodeForPerson(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        var appender = LogUtils.getTestingAppenderForRootLogger();
+        var appender = LogUtils.getTestingAppender(CristinConnection.class);
         var randomPersonUri = getRandomPersonUri(wireMockRuntimeInfo);
         mockCristinPersonBadRequest();
         var actualPerson = cristinConnection.getCristinPersonByCristinId(randomPersonUri);
@@ -55,7 +55,7 @@ class CristinConnectionTest {
 
     @Test
     void shouldLogErrorIfCristinProxyRespondsWithErrorCodeForOrganization(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        var appender = LogUtils.getTestingAppenderForRootLogger();
+        var appender = LogUtils.getTestingAppender(CristinConnection.class);
         var randomOrganizationUri = getRandomOrganizationUri(wireMockRuntimeInfo);
         mockCristinOrganizationBadRequest();
         var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(randomOrganizationUri);
