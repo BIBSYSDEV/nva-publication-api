@@ -1,13 +1,14 @@
 package no.sikt.nva.scopus;
 
 import java.net.URI;
-import no.unit.nva.model.Username;
-import nva.commons.core.JacocoGenerated;
+import java.time.Duration;
 import nva.commons.core.paths.UriWrapper;
 
-public class ScopusConstants {
-    // Identifier field names:
-    public static final String SCOPUS_IDENTIFIER = "Scopus";
+public final class ScopusConstants {
+
+    // HTTP timeout constants:
+    public static final Duration HTTP_CONNECT_TIMEOUT = Duration.ofSeconds(10);
+    public static final Duration HTTP_REQUEST_TIMEOUT = Duration.ofSeconds(20);
 
     // URI constants:
     public static final String DOI_OPEN_URL_FORMAT = "https://doi.org";
@@ -31,10 +32,5 @@ public class ScopusConstants {
     public static final String UNKNOWN_LANGUAGE_DETECTED = "Uknown language detected, the following language is not "
                                                            + "supported %s %s";
 
-    //UploadDetails username
-    public static final Username UPLOAD_DETAILS_USERNAME = new Username("central-import@20754.0.0.0");
-
-    @JacocoGenerated
-    public ScopusConstants() {
-    }
+    private ScopusConstants() {}
 }

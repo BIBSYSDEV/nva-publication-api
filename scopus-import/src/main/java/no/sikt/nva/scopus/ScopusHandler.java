@@ -2,6 +2,7 @@ package no.sikt.nva.scopus;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static no.sikt.nva.scopus.ScopusConstants.HTTP_CONNECT_TIMEOUT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -187,7 +188,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
 
     @JacocoGenerated
     private static HttpClient defaultHttpClientWithRedirect() {
-        return HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build();
+        return HttpClient.newBuilder().followRedirects(Redirect.NORMAL).connectTimeout(HTTP_CONNECT_TIMEOUT).build();
     }
 
     @JacocoGenerated

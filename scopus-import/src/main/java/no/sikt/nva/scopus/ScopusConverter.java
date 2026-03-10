@@ -57,12 +57,15 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ScopusConverter {
 
-    public static final String RESOURCE_OWNER_SIKT = "sikt@20754";
-    public static final String MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE =
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScopusConverter.class);
+
+    private static final String MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE =
         "None of contributors belongs to NVA customer, all contributors affiliations: ";
     private final DocTp docTp;
     private final IdentityServiceClient identityServiceClient;
@@ -104,14 +107,18 @@ public class ScopusConverter {
     }
 
     public ImportCandidate generateImportCandidate() {
+        LOGGER.info("Building import candidate");
         var contributorsWithCustomers = getContributors();
+        var entityDescription = generateEntityDescription(contributorsWithCustomers.contributors());
+        var associatedArtifacts = scopusFileConverter.fetchAssociatedArtifacts(docTp);
+        var importedAt = Instant.now();
         return new ImportCandidate.Builder()
                    .withAdditionalIdentifiers(generateAdditionalIdentifiers())
-                   .withEntityDescription(generateEntityDescription(contributorsWithCustomers.contributors()))
-                   .withCreatedDate(Instant.now())
-                   .withModifiedDate(Instant.now())
+                   .withEntityDescription(entityDescription)
+                   .withCreatedDate(importedAt)
+                   .withModifiedDate(importedAt)
                    .withImportStatus(ImportStatusFactory.createNotImported())
-                   .withAssociatedArtifacts(scopusFileConverter.fetchAssociatedArtifacts(docTp))
+                   .withAssociatedArtifacts(associatedArtifacts)
                    .withAssociatedCustomers(contributorsWithCustomers.associatedCustomerUris())
                    .build();
     }
@@ -131,6 +138,7 @@ public class ScopusConverter {
     }
 
     private ImportEntityDescription generateEntityDescription(List<ImportContributor> contributors) {
+        LOGGER.info("Generating entity description");
         return new ImportEntityDescription(extractMainTitle(),
                                     new LanguageExtractor(extractCitationLanguages()).extractLanguage(),
                                     extractPublicationDate(),
@@ -143,6 +151,7 @@ public class ScopusConverter {
     }
 
     private ContributorsWithCustomers getContributors() {
+        LOGGER.info("Extracting contributors");
         var contributorsOrganizationsWrapper = contributorExtractor.generateContributors(docTp);
         var cristinTopLevelOrgs = contributorsOrganizationsWrapper.topLevelOrgs();
         var customerList = attempt(identityServiceClient::getAllCustomers).orElseThrow();
@@ -282,7 +291,8 @@ public class ScopusConverter {
     }
 
     private Reference generateReference() {
-        Reference reference = new Reference();
+        var reference = new Reference();
+        LOGGER.info("Resolving publication context");
         reference.setPublicationContext(
             new PublicationContextCreator(docTp, publicationChannelConnection).getPublicationContext());
         reference.setPublicationInstance(
