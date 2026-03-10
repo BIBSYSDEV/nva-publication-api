@@ -58,6 +58,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScopusHandler.class);
     public static final String BACKEND_CLIENT_SECRET_NAME = new Environment().readEnv("BACKEND_CLIENT_SECRET_NAME");
     public static final String BACKEND_CLIENT_AUTH_URL = new Environment().readEnv("BACKEND_CLIENT_AUTH_URL");
     public static final Random RANDOM = new Random(System.currentTimeMillis());
@@ -69,7 +70,6 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     private static final String ERROR_SAVING_IMPORT_CANDIDATE = "Error saving import cadidate "
                                                                 + "key: {} {}";
     private static final int MAX_SLEEP_TIME = 100;
-    private static final Logger LOGGER = LoggerFactory.getLogger(ScopusHandler.class);
     private static final String ERROR_BUCKET_PATH = "ERROR";
     public static final String URI_ATTRIBUTE = "uri";
     public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
