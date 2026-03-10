@@ -59,21 +59,21 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScopusHandler.class);
-    public static final String BACKEND_CLIENT_SECRET_NAME = new Environment().readEnv("BACKEND_CLIENT_SECRET_NAME");
-    public static final String BACKEND_CLIENT_AUTH_URL = new Environment().readEnv("BACKEND_CLIENT_AUTH_URL");
-    public static final Random RANDOM = new Random(System.currentTimeMillis());
-    public static final int MAX_EFFORTS = 10;
-    public static final String PATH_SEPERATOR = "/";
-    public static final String SCOPUS_IMPORT_BUCKET = "SCOPUS_IMPORT_BUCKET";
-    public static final String SCOPUS_XML_BUCKET = new Environment().readEnv("XML_BUCKET_NAME");
-    public static final String SUCCESS_BUCKET_PATH = "SUCCESS";
+    private static final String BACKEND_CLIENT_SECRET_NAME = new Environment().readEnv("BACKEND_CLIENT_SECRET_NAME");
+    private static final String BACKEND_CLIENT_AUTH_URL = new Environment().readEnv("BACKEND_CLIENT_AUTH_URL");
+    private static final Random RANDOM = new Random(System.currentTimeMillis());
+    private static final int MAX_EFFORTS = 10;
+    private static final String PATH_SEPERATOR = "/";
+    private static final String SCOPUS_IMPORT_BUCKET = "SCOPUS_IMPORT_BUCKET";
+    private static final String SCOPUS_XML_BUCKET = new Environment().readEnv("XML_BUCKET_NAME");
+    private static final String SUCCESS_BUCKET_PATH = "SUCCESS";
     private static final String ERROR_SAVING_IMPORT_CANDIDATE = "Error saving import cadidate "
                                                                 + "key: {} {}";
     private static final int MAX_SLEEP_TIME = 100;
     private static final String ERROR_BUCKET_PATH = "ERROR";
-    public static final String URI_ATTRIBUTE = "uri";
-    public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
-    public static final String DOI = "doi";
+    private static final String URI_ATTRIBUTE = "uri";
+    private static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
+    private static final String DOI = "doi";
     private final S3Client s3Client;
     private final ContributorExtractor contributorExtractor;
     private final PublicationChannelConnection publicationChannelConnection;
