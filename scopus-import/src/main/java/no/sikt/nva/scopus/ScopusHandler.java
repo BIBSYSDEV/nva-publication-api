@@ -58,22 +58,22 @@ import software.amazon.awssdk.services.s3.S3Client;
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> {
 
-    public static final String BACKEND_CLIENT_SECRET_NAME = new Environment().readEnv("BACKEND_CLIENT_SECRET_NAME");
-    public static final String BACKEND_CLIENT_AUTH_URL = new Environment().readEnv("BACKEND_CLIENT_AUTH_URL");
-    public static final Random RANDOM = new Random(System.currentTimeMillis());
-    public static final int MAX_EFFORTS = 10;
-    public static final String PATH_SEPERATOR = "/";
-    public static final String SCOPUS_IMPORT_BUCKET = "SCOPUS_IMPORT_BUCKET";
-    public static final String SCOPUS_XML_BUCKET = new Environment().readEnv("XML_BUCKET_NAME");
-    public static final String SUCCESS_BUCKET_PATH = "SUCCESS";
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScopusHandler.class);
+    private static final String BACKEND_CLIENT_SECRET_NAME = new Environment().readEnv("BACKEND_CLIENT_SECRET_NAME");
+    private static final String BACKEND_CLIENT_AUTH_URL = new Environment().readEnv("BACKEND_CLIENT_AUTH_URL");
+    private static final Random RANDOM = new Random(System.currentTimeMillis());
+    private static final int MAX_EFFORTS = 10;
+    private static final String PATH_SEPERATOR = "/";
+    private static final String SCOPUS_IMPORT_BUCKET = "SCOPUS_IMPORT_BUCKET";
+    private static final String SCOPUS_XML_BUCKET = new Environment().readEnv("XML_BUCKET_NAME");
+    private static final String SUCCESS_BUCKET_PATH = "SUCCESS";
     private static final String ERROR_SAVING_IMPORT_CANDIDATE = "Error saving import cadidate "
                                                                 + "key: {} {}";
     private static final int MAX_SLEEP_TIME = 100;
-    private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private static final String ERROR_BUCKET_PATH = "ERROR";
-    public static final String URI_ATTRIBUTE = "uri";
-    public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
-    public static final String DOI = "doi";
+    private static final String URI_ATTRIBUTE = "uri";
+    private static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
+    private static final String DOI = "doi";
     private final S3Client s3Client;
     private final ContributorExtractor contributorExtractor;
     private final PublicationChannelConnection publicationChannelConnection;
@@ -119,14 +119,19 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
 
     @Override
     public ImportCandidate handleRequest(SQSEvent event, Context context) {
+        LOGGER.info("Processing event: {}", event);
+        return attempt(() -> processRequest(event)).orElse(this::handleError);
+    }
+
+    private ImportCandidate processRequest(SQSEvent event) {
         var message = event.getRecords().getFirst();
         var s3Uri = UriWrapper.fromUri(message.getMessageAttributes().get(URI_ATTRIBUTE).getStringValue()).getUri();
         return attempt(() -> createImportCandidate(s3Uri))
-                   .map(this::updateExistingIfNeeded)
-                   .map(this::injectImportedStatusWhenTheSamePublicationExists)
-                   .flatMap(this::persistOrUpdateInDatabase)
-                   .map(this::storeSuccessReport)
-                   .orElse(fail -> handleSavingError(fail, s3Uri));
+          .map(this::updateExistingIfNeeded)
+          .map(this::injectImportedStatusWhenTheSamePublicationExists)
+          .flatMap(this::persistOrUpdateInDatabase)
+          .map(this::storeSuccessReport)
+          .orElse(fail -> handleSavingError(fail, s3Uri));
     }
 
     private ImportCandidate injectImportedStatusWhenTheSamePublicationExists(ImportCandidate importCandidate) {
@@ -219,6 +224,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     }
 
     private ImportCandidate storeSuccessReport(ImportCandidate importCandidate) {
+        LOGGER.info("Persisting success report for candidate {}", importCandidate.getIdentifier());
         return attempt(this::getS3DriverForScopusImportBucket).map(
             s3Driver -> insertSucceededReportFile(importCandidate, s3Driver)).orElseThrow();
     }
@@ -250,14 +256,19 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
                    .orElse(null);
     }
 
+    private ImportCandidate handleError(Failure<?> failure) {
+        LOGGER.error("Unexpected error: ", failure.getException());
+        return null;
+    }
+
     private ImportCandidate handleSavingError(Failure<ImportCandidate> fail, URI s3Uri) {
-        loggError(s3Uri, fail);
+        logError(s3Uri, fail);
         saveReportToS3(fail, s3Uri);
         return null;
     }
 
-    private void loggError(URI s3Uri, Failure<ImportCandidate> fail) {
-        logger.error(ERROR_SAVING_IMPORT_CANDIDATE, s3Uri, fail.getException());
+    private void logError(URI s3Uri, Failure<ImportCandidate> fail) {
+        LOGGER.error(ERROR_SAVING_IMPORT_CANDIDATE, s3Uri, fail.getException());
     }
 
     private void saveReportToS3(Failure<ImportCandidate> fail, URI s3Uri) {
@@ -294,8 +305,10 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     private Try<ImportCandidate> persistOrUpdateInDatabase(ImportCandidate importCandidate)
         throws BadRequestException, NotFoundException {
         if (nonNull(importCandidate.getIdentifier())) {
+            LOGGER.info("Updating existing candidate");
             return Try.of(importCandidateService.updateImportCandidate(importCandidate));
         }
+        LOGGER.info("Persisting new candidate");
         return persistInDatabase(importCandidate);
     }
 
@@ -336,13 +349,14 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
     }
 
     private ImportCandidate createImportCandidate(URI s3Uri) {
+        LOGGER.info("Processing Scopus import from S3: {}", s3Uri);
         return attempt(() -> readFile(s3Uri)).map(this::parseXmlFile)
                    .map(this::generateImportCandidate)
                    .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
     private RuntimeException logErrorAndThrowException(Exception exception) {
-        logger.error(exception.getMessage());
+        LOGGER.error(exception.getMessage());
         return exception instanceof RuntimeException runtimeException
                    ? runtimeException
                    : new RuntimeException(exception);    }
