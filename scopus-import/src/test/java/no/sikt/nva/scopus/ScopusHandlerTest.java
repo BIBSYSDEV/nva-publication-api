@@ -350,6 +350,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldLogExceptionForUnexpectedError() {
+        final var appender = LogUtils.getTestingAppenderForRootLogger();
+
         createEmptyPiaMock();
         var event = createSqsEvent("invalid URI");
         var expectedMessage = "Unexpected error:";
