@@ -3,6 +3,8 @@ package no.sikt.nva.scopus.conversion;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
+import static no.sikt.nva.scopus.ScopusConstants.HTTP_CONNECT_TIMEOUT;
+import static no.sikt.nva.scopus.ScopusConstants.HTTP_REQUEST_TIMEOUT;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -46,7 +48,7 @@ public class CristinConnection {
 
     @JacocoGenerated
     public CristinConnection() {
-        this(HttpClient.newBuilder().build(), new Environment());
+        this(HttpClient.newBuilder().connectTimeout(HTTP_CONNECT_TIMEOUT).build(), new Environment());
     }
 
     public Optional<CristinPerson> getCristinPersonByCristinId(URI cristinPersonId) {
@@ -138,6 +140,11 @@ public class CristinConnection {
     }
 
     private HttpRequest createRequest(URI uri) {
-        return HttpRequest.newBuilder().headers(CONTENT_TYPE, APPLICATION_JSON).uri(uri).GET().build();
+        return HttpRequest.newBuilder()
+                   .headers(CONTENT_TYPE, APPLICATION_JSON)
+                   .uri(uri)
+                   .timeout(HTTP_REQUEST_TIMEOUT)
+                   .GET()
+                   .build();
     }
 }

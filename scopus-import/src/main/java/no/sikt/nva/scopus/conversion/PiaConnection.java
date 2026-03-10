@@ -1,6 +1,8 @@
 package no.sikt.nva.scopus.conversion;
 
 import static java.util.Objects.nonNull;
+import static no.sikt.nva.scopus.ScopusConstants.HTTP_CONNECT_TIMEOUT;
+import static no.sikt.nva.scopus.ScopusConstants.HTTP_REQUEST_TIMEOUT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -92,7 +94,7 @@ public class PiaConnection {
 
     @JacocoGenerated
     private static HttpClient getDefaultHttpClient() {
-        return HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build();
+        return HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).connectTimeout(HTTP_CONNECT_TIMEOUT).build();
     }
 
     private static String createAuthorization(SecretsReader secretsReader, Environment environment) {
@@ -173,6 +175,7 @@ public class PiaConnection {
         return HttpRequest.newBuilder()
                    .uri(uri)
                    .setHeader(AUTHORIZATION, piaAuthorization)
+                   .timeout(HTTP_REQUEST_TIMEOUT)
                    .GET()
                    .build();
     }

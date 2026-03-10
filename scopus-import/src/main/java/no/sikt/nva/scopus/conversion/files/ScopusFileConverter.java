@@ -9,6 +9,7 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toCollection;
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.AM;
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
+import static no.sikt.nva.scopus.ScopusConstants.HTTP_REQUEST_TIMEOUT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.s3.Headers;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -56,6 +57,8 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ScopusFileConverter {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScopusFileConverter.class);
+
     public static final String IMPORT_CANDIDATES_FILES_BUCKET = new Environment().readEnv(
         "IMPORT_CANDIDATES_STORAGE_BUCKET");
     public static final String CONTENT_TYPE_DELIMITER = ";";
@@ -69,11 +72,9 @@ public class ScopusFileConverter {
     public static final String XML_CONTENT_TYPE = "text/xml";
     public static final String FILENAME_CONTENT_TYPE_HEADER_VALUE = "filename=";
     public static final String QUOTE = "\"";
-    public static final int ZERO_LENGTH_CONTENT = 0;
     public static final String ELSEVIER_HOST = "api.elsevier.com";
     public static final String FETCH_FILE_ERROR_MESSAGE = "Could not fetch file: ";
     public static final String COULD_NOT_SAVE_FILE = "Could not save file to s3 {}";
-    private static final Logger logger = LoggerFactory.getLogger(ScopusFileConverter.class);
     private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
     public final String crossRefUri;
     private final HttpClient httpClient;
@@ -96,6 +97,7 @@ public class ScopusFileConverter {
     }
 
     public List<AssociatedArtifact> fetchAssociatedArtifacts(DocTp docTp) {
+        LOGGER.info("Fetching associated artifacts");
         return fetchFilesFromDoi(docTp).orElseGet(List::of);
     }
 
@@ -148,7 +150,7 @@ public class ScopusFileConverter {
     }
 
     private static HttpRequest constructRequest(URI uri) {
-        return HttpRequest.newBuilder().GET().uri(uri).build();
+        return HttpRequest.newBuilder().GET().uri(uri).timeout(HTTP_REQUEST_TIMEOUT).build();
     }
 
     private static LocalDate toEmbargoDate(License license) {
@@ -205,7 +207,7 @@ public class ScopusFileConverter {
             var associatedArtifacts = fetchFilesFromDoi(response);
             return associatedArtifacts.isEmpty() ? Optional.empty() : Optional.of(associatedArtifacts);
         } catch (Exception e) {
-            logger.info(FETCH_FILE_FROM_DOI_ERROR_MESSAGE, e.getMessage());
+            LOGGER.info(FETCH_FILE_FROM_DOI_ERROR_MESSAGE, e.getMessage());
             return Optional.empty();
         }
     }
@@ -350,7 +352,7 @@ public class ScopusFileConverter {
                                    .build(), RequestBody.fromFile(path));
             return scopusFile.copy().withMimeType(mimeType).build();
         } catch (Exception e) {
-            logger.error(COULD_NOT_SAVE_FILE, e.getMessage());
+            LOGGER.error(COULD_NOT_SAVE_FILE, e.getMessage());
             return scopusFile;
         }
     }
