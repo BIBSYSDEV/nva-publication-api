@@ -3,7 +3,7 @@ package no.unit.nva.publication.ticket;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.commons.json.JsonUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TicketRequestTest {
 

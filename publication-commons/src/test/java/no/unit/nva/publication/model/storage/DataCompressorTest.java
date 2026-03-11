@@ -1,8 +1,9 @@
 package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import no.unit.nva.publication.model.business.Resource;
 import org.junit.jupiter.api.Test;
 

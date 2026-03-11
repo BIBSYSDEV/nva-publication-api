@@ -9,7 +9,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -33,7 +32,7 @@ import no.unit.nva.publication.model.business.publicationchannel.ClaimedPublicat
 import no.unit.nva.publication.model.business.publicationchannel.Constraint;
 import no.unit.nva.publication.model.business.publicationchannel.NonClaimedPublicationChannel;
 import nva.commons.core.Environment;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 

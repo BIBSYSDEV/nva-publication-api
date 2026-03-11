@@ -34,9 +34,9 @@ dependencies {
 
     implementation nvaCatalog.bundles.logging
 
-    testImplementation nvaCatalog.cucumber.java
-    testImplementation libs.cucumber.junit
-    testImplementation nvaCatalog.cucumber.picocontainer
+    testImplementation nvaCatalog.bundles.testing.cucumber
+    testImplementation nvaCatalog.bundles.testing.junit
+    testImplementation nvaCatalog.junit.platform.suite
 
     testImplementation project(":tickets-test")
     testImplementation nvaLibs.testutils

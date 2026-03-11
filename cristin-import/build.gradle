@@ -61,10 +61,9 @@ dependencies {
         because "PMD org/apache/commons/validator/routines/ISBNValidator"
     }
 
-    testImplementation nvaCatalog.cucumber.java
-    testImplementation libs.cucumber.junit
-    testImplementation nvaCatalog.cucumber.picocontainer
-
+    testImplementation nvaCatalog.bundles.testing.cucumber
+    testImplementation nvaCatalog.bundles.testing.junit
+    testImplementation nvaCatalog.junit.platform.suite
 }
 
 test {
@@ -81,14 +80,3 @@ test {
     environment "BACKEND_CLIENT_SECRET_NAME", "someSecret"
     environment "BACKEND_CLIENT_AUTH_URL", "https://auth.example.com"
 }
-
-configurations {
-    cucumberRuntime {
-        extendsFrom testImplementation
-    }
-}
-
-
-
-
-

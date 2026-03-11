@@ -3,7 +3,7 @@ package no.unit.nva.model.associatedartifacts.file;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class UploadDetailsTest {
 
