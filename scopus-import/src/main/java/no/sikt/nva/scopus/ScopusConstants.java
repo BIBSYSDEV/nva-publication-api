@@ -1,8 +1,6 @@
 package no.sikt.nva.scopus;
 
-import java.net.URI;
 import java.time.Duration;
-import nva.commons.core.paths.UriWrapper;
 
 public final class ScopusConstants {
 
@@ -17,7 +15,6 @@ public final class ScopusConstants {
     //Journal constants:
     public static final String ISSN_TYPE_ELECTRONIC = "electronic";
     public static final String ISSN_TYPE_PRINT = "print";
-    public static final URI DUMMY_URI = UriWrapper.fromUri("https://loremipsum.io/").getUri();
 
     // Affiliation constants:
     public static final String AFFILIATION_DELIMITER = ", ";

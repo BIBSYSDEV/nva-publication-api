@@ -109,8 +109,7 @@ public class PublicationContextCreator {
     }
 
     public Anthology createAnthology() {
-        // TODO: We do not have access to partOf URI for chapter yet -> set a dummy URI
-        return attempt(() -> new Anthology.Builder().withId(ScopusConstants.DUMMY_URI).build()).orElseThrow();
+        return new Anthology.Builder().build();
     }
 
     private boolean isJournal() {

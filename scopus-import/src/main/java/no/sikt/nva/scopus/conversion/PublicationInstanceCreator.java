@@ -11,7 +11,6 @@ import no.scopus.generated.PagerangeTp;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
-import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -88,7 +87,7 @@ public class PublicationInstanceCreator {
                                                           extractIssue().orElse(null),
                                                           extractArticleNumber().orElse(null),
                                                           extractPages().orElse(null),
-                                                          ScopusConstants.DUMMY_URI));
+                                                          null));
             case LE:
             case NO:
                 return Optional.of(new JournalLetter(extractVolume().orElse(null),
