@@ -3,6 +3,7 @@ package no.unit.nva.publication.create;
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.net.URI;
@@ -27,6 +28,7 @@ import nva.commons.core.JacocoGenerated;
 
 public class CreatePublicationRequest implements WithMetadata, WithContext {
 
+    @Valid
     private EntityDescription entityDescription;
     private AssociatedArtifactList associatedArtifacts;
     @JsonProperty("@context")
