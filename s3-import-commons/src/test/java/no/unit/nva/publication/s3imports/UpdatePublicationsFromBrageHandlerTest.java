@@ -1,5 +1,6 @@
 package no.unit.nva.publication.s3imports;
 
+import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
 import static javax.xml.bind.Marshaller.JAXB_FORMATTED_OUTPUT;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
@@ -132,8 +133,12 @@ class UpdatePublicationsFromBrageHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldUpdatePublicationWhenAbstractsAreChanged() throws BadRequestException, IOException {
         var newAbstract = "New abstract from Dublin Core";
-        var publicationWithRequest = createPublicationWithDublinCore(randomPublication(), List.of(dcAbstract(newAbstract, ENGLISH)),
-                                                       false);
+        var publication = randomPublication();
+        publication.getEntityDescription().setAbstract(null);
+        publication.getEntityDescription().setAlternativeAbstracts(emptyMap());
+        var publicationWithRequest =
+            createPublicationWithDublinCore(
+                publication, List.of(dcAbstract(newAbstract, ENGLISH)), false);
 
         handler.handleRequest(stringToStream(publicationWithRequest.request().toJsonString()), output, new FakeContext());
 
