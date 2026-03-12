@@ -4,11 +4,10 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Named.named;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
-import org.junit.function.ThrowingRunnable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -77,8 +76,7 @@ class JsonLdFrameUtilTest {
     @DisplayName("Should throw when JSON input is invalid")
     @MethodSource("badJsonProvider")
     void shouldThrowWhenInputJsonStringIsInvalid(Pair pair) {
-        ThrowingRunnable throwingRunnable = () -> JsonLdFrameUtil.from(pair.frame(), pair.context());
-        assertThrows(IllegalArgumentException.class, throwingRunnable);
+        assertThrows(IllegalArgumentException.class, () -> JsonLdFrameUtil.from(pair.frame(), pair.context()));
     }
 
     record Pair(String frame, String context) {

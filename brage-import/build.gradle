@@ -35,9 +35,9 @@ dependencies {
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.12.646'
 
     testImplementation nvaLibs.testutils
-    testImplementation nvaCatalog.cucumber.java
-    testImplementation libs.cucumber.junit
-    testImplementation nvaCatalog.cucumber.picocontainer
+    testImplementation nvaCatalog.bundles.testing.cucumber
+    testImplementation nvaCatalog.bundles.testing.junit
+    testImplementation nvaCatalog.junit.platform.suite
     testImplementation project(":publication-model-testing")
     testImplementation project(path: ':publication-testing')
 }
