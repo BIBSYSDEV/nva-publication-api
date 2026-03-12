@@ -44,6 +44,7 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
@@ -584,7 +585,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Anthology.class));
         var actualContextUri = ((Anthology) actualPublicationContext).getId();
-        assertThat(actualContextUri, is(ScopusConstants.DUMMY_URI));
+        assertThat(actualContextUri, is(nullValue()));
     }
 
     @Test
@@ -661,7 +662,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Anthology.class));
         var actualContextUri = ((Anthology) actualPublicationContext).getId();
-        assertThat(actualContextUri, is(ScopusConstants.DUMMY_URI));
+        assertThat(actualContextUri, is(nullValue()));
     }
 
     @Test
@@ -869,7 +870,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         var publication = scopusHandler.handleRequest(event, CONTEXT);
         var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalCorrigendum.class));
-        assertThat(ScopusConstants.DUMMY_URI, is(((JournalCorrigendum) actualPublicationInstance).getCorrigendumFor()));
+        assertThat(((JournalCorrigendum) actualPublicationInstance).getCorrigendumFor(), is(nullValue()));
     }
 
     @Test
