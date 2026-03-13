@@ -18,8 +18,3 @@ java {
 tasks.withType(JavaCompile).configureEach {
     options.release = javaVersion
 }
-
-wrapper {
-    gradleVersion = '8.12.1'
-    distributionType = Wrapper.DistributionType.ALL
-}
