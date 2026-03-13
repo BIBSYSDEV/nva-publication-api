@@ -9,48 +9,47 @@ import no.unit.nva.model.ResourceOwner;
 
 public interface WithInternal extends PublicationBase {
 
-    Instant getCreatedDate();
+  Instant getCreatedDate();
 
-    void setCreatedDate(Instant createdDate);
+  void setCreatedDate(Instant createdDate);
 
-    PublicationStatus getStatus();
+  PublicationStatus getStatus();
 
-    void setStatus(PublicationStatus status);
+  void setStatus(PublicationStatus status);
 
-    URI getHandle();
+  URI getHandle();
 
-    void setHandle(URI handle);
+  void setHandle(URI handle);
 
-    Instant getPublishedDate();
+  Instant getPublishedDate();
 
-    void setPublishedDate(Instant publishedDate);
+  void setPublishedDate(Instant publishedDate);
 
-    Instant getModifiedDate();
+  Instant getModifiedDate();
 
-    void setModifiedDate(Instant modifiedDate);
+  void setModifiedDate(Instant modifiedDate);
 
-    ResourceOwner getResourceOwner();
+  ResourceOwner getResourceOwner();
 
-    void setResourceOwner(ResourceOwner resourceOwner);
+  void setResourceOwner(ResourceOwner resourceOwner);
 
-    Instant getIndexedDate();
+  Instant getIndexedDate();
 
-    void setIndexedDate(Instant indexedDate);
+  void setIndexedDate(Instant indexedDate);
 
-    SortableIdentifier getIdentifier();
+  SortableIdentifier getIdentifier();
 
-    void setIdentifier(SortableIdentifier identifier);
+  void setIdentifier(SortableIdentifier identifier);
 
-    URI getLink();
+  URI getLink();
 
-    void setLink(URI link);
+  void setLink(URI link);
 
-    Organization getPublisher();
+  Organization getPublisher();
 
-    void setPublisher(Organization publisher);
+  void setPublisher(Organization publisher);
 
-    URI getDoi();
+  URI getDoi();
 
-    void setDoi(URI doi);
-    
+  void setDoi(URI doi);
 }

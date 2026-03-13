@@ -4,17 +4,20 @@ import nva.commons.core.JacocoGenerated;
 
 public enum ContentVersion {
 
-    //Documentation for the enums used: https://www.crossref.org/community/preprints/
-    VOR("vor"), AM("am"), TDM("tdm"), UNSPECIFIED("unspecified");
+  // Documentation for the enums used: https://www.crossref.org/community/preprints/
+  VOR("vor"),
+  AM("am"),
+  TDM("tdm"),
+  UNSPECIFIED("unspecified");
 
-    private final String value;
+  private final String value;
 
-    ContentVersion(String type) {
-        this.value = type;
-    }
+  ContentVersion(String type) {
+    this.value = type;
+  }
 
-    @JacocoGenerated
-    public String getValue() {
-        return value;
-    }
+  @JacocoGenerated
+  public String getValue() {
+    return value;
+  }
 }

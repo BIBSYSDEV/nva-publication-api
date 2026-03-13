@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.lambda;
 
 import static java.util.Objects.nonNull;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.time.Instant;
@@ -17,138 +18,148 @@ import nva.commons.core.JacocoGenerated;
 
 public class PublicationRepresentations {
 
-    private final CristinObject cristinObject;
-    private final FileContentsEvent<JsonNode> eventBody;
-    private Publication incomingPublication;
-    private Publication existingPublication;
+  private final CristinObject cristinObject;
+  private final FileContentsEvent<JsonNode> eventBody;
+  private Publication incomingPublication;
+  private Publication existingPublication;
 
-    public PublicationRepresentations(CristinObject cristinObject, Publication publication,
-                                      FileContentsEvent<JsonNode> eventBody) {
-        this.cristinObject = cristinObject;
-        this.incomingPublication = publication;
-        this.eventBody = eventBody;
-    }
+  public PublicationRepresentations(
+      CristinObject cristinObject, Publication publication, FileContentsEvent<JsonNode> eventBody) {
+    this.cristinObject = cristinObject;
+    this.incomingPublication = publication;
+    this.eventBody = eventBody;
+  }
 
-    @JacocoGenerated
-    public CristinObject getCristinObject() {
-        return cristinObject;
-    }
+  @JacocoGenerated
+  public CristinObject getCristinObject() {
+    return cristinObject;
+  }
 
-    public Publication getIncomingPublication() {
-        return incomingPublication;
-    }
+  public Publication getIncomingPublication() {
+    return incomingPublication;
+  }
 
-    public void setIncomingPublication(Publication incomingPublication) {
-        this.incomingPublication = incomingPublication;
-    }
+  public void setIncomingPublication(Publication incomingPublication) {
+    this.incomingPublication = incomingPublication;
+  }
 
-    public Publication getExistingPublication() {
-        return existingPublication;
-    }
+  public Publication getExistingPublication() {
+    return existingPublication;
+  }
 
-    public PublicationRepresentations withExistingPublication(Publication publication) {
-        this.existingPublication = publication;
-        return this;
-    }
+  public PublicationRepresentations withExistingPublication(Publication publication) {
+    this.existingPublication = publication;
+    return this;
+  }
 
-    @JacocoGenerated
-    public FileContentsEvent<JsonNode> getEventBody() {
-        return eventBody;
-    }
+  @JacocoGenerated
+  public FileContentsEvent<JsonNode> getEventBody() {
+    return eventBody;
+  }
 
-    public String getNvaPublicationIdentifier() {
-        return nonNull(incomingPublication.getIdentifier())
-                   ? incomingPublication.getIdentifier().toString()
-                   : existingPublication.getIdentifier().toString();
-    }
+  public String getNvaPublicationIdentifier() {
+    return nonNull(incomingPublication.getIdentifier())
+        ? incomingPublication.getIdentifier().toString()
+        : existingPublication.getIdentifier().toString();
+  }
 
-    public URI getOriginalEventFileUri() {
-        return eventBody.getFileUri();
-    }
+  public URI getOriginalEventFileUri() {
+    return eventBody.getFileUri();
+  }
 
-    public Instant getOriginalTimeStamp() {
-        return eventBody.getTimestamp();
-    }
+  public Instant getOriginalTimeStamp() {
+    return eventBody.getTimestamp();
+  }
 
-    public String getCristinIdentifier() {
-        return cristinObject.getId().toString();
-    }
+  public String getCristinIdentifier() {
+    return cristinObject.getId().toString();
+  }
 
-    public String getPartOfCristinIdentifier() {
-        return cristinObject.getBookOrReportPartMetadata().getPartOf();
-    }
+  public String getPartOfCristinIdentifier() {
+    return cristinObject.getBookOrReportPartMetadata().getPartOf();
+  }
 
-    public NvaPublicationPartOfCristinPublication getPartOf() {
-        var publicationIdentifier = getNvaPublicationIdentifier();
-        var publicationIsPartOfThisCristinPublication = getPartOfCristinIdentifier();
-        return
-            NvaPublicationPartOfCristinPublication.builder()
-                .withNvaPublicationIdentifier(publicationIdentifier)
-                .withPartOf(
-                    NvaPublicationPartOf.builder()
-                        .withCristinId(publicationIsPartOfThisCristinPublication)
-                        .build())
-                .build();
-    }
+  public NvaPublicationPartOfCristinPublication getPartOf() {
+    var publicationIdentifier = getNvaPublicationIdentifier();
+    var publicationIsPartOfThisCristinPublication = getPartOfCristinIdentifier();
+    return NvaPublicationPartOfCristinPublication.builder()
+        .withNvaPublicationIdentifier(publicationIdentifier)
+        .withPartOf(
+            NvaPublicationPartOf.builder()
+                .withCristinId(publicationIsPartOfThisCristinPublication)
+                .build())
+        .build();
+  }
 
-    public boolean cristinObjectIsPartOfAnotherPublication() {
-        return nonNull(cristinObject.getBookOrReportPartMetadata()) && nonNull(
-            cristinObject.getBookOrReportPartMetadata().getPartOf());
-    }
+  public boolean cristinObjectIsPartOfAnotherPublication() {
+    return nonNull(cristinObject.getBookOrReportPartMetadata())
+        && nonNull(cristinObject.getBookOrReportPartMetadata().getPartOf());
+  }
 
-    public boolean updateHasEffectiveChanges() {
-        var importDetails = getConcatenatedImportDetailsFromExistingAndIncomingPublication();
-        var existingPublication = getExistingPublication().copy()
-                                      .withCreatedDate(null)
-                                      .withModifiedDate(null)
-                                      .withPublishedDate(null)
-                                      .withIdentifier(null)
-                                      .withImportDetails(importDetails)
-                                      .build();
-        var incomingPublication = getIncomingPublication().copy()
-                                      .withCreatedDate(null)
-                                      .withModifiedDate(null)
-                                      .withIdentifier(null)
-                                      .withPublishedDate(null)
-                                      .withImportDetails(importDetails)
-                                      .build();
-        return !existingPublication.equals(incomingPublication);
-    }
+  public boolean updateHasEffectiveChanges() {
+    var importDetails = getConcatenatedImportDetailsFromExistingAndIncomingPublication();
+    var existingPublication =
+        getExistingPublication()
+            .copy()
+            .withCreatedDate(null)
+            .withModifiedDate(null)
+            .withPublishedDate(null)
+            .withIdentifier(null)
+            .withImportDetails(importDetails)
+            .build();
+    var incomingPublication =
+        getIncomingPublication()
+            .copy()
+            .withCreatedDate(null)
+            .withModifiedDate(null)
+            .withIdentifier(null)
+            .withPublishedDate(null)
+            .withImportDetails(importDetails)
+            .build();
+    return !existingPublication.equals(incomingPublication);
+  }
 
-    private List<ImportDetail> getConcatenatedImportDetailsFromExistingAndIncomingPublication() {
-        return Stream.concat(getExistingPublication().getImportDetails().stream(),
-                             getIncomingPublication().getImportDetails().stream()).toList();
-    }
+  private List<ImportDetail> getConcatenatedImportDetailsFromExistingAndIncomingPublication() {
+    return Stream.concat(
+            getExistingPublication().getImportDetails().stream(),
+            getIncomingPublication().getImportDetails().stream())
+        .toList();
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getCristinObject(), getIncomingPublication(), getEventBody(), getIncomingPublication());
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        getCristinObject(), getIncomingPublication(), getEventBody(), getIncomingPublication());
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof PublicationRepresentations)) {
-            return false;
-        }
-        PublicationRepresentations that = (PublicationRepresentations) o;
-        return Objects.equals(getCristinObject(), that.getCristinObject())
-               && Objects.equals(getEventBody(), that.getEventBody())
-               && Objects.equals(getIncomingPublication(), that.getIncomingPublication())
-               && Objects.equals(getExistingPublication(), that.getExistingPublication());
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (!(o instanceof PublicationRepresentations)) {
+      return false;
+    }
+    PublicationRepresentations that = (PublicationRepresentations) o;
+    return Objects.equals(getCristinObject(), that.getCristinObject())
+        && Objects.equals(getEventBody(), that.getEventBody())
+        && Objects.equals(getIncomingPublication(), that.getIncomingPublication())
+        && Objects.equals(getExistingPublication(), that.getExistingPublication());
+  }
 
-    @Override
-    public String toString() {
-        return "PublicationRepresentations{"
-               + "cristinObject=" + cristinObject
-               + ", eventBody=" + eventBody
-               + ", incomingPublication=" + incomingPublication
-               + ", existingPublication=" + existingPublication
-               + '}';
-    }
+  @Override
+  public String toString() {
+    return "PublicationRepresentations{"
+        + "cristinObject="
+        + cristinObject
+        + ", eventBody="
+        + eventBody
+        + ", incomingPublication="
+        + incomingPublication
+        + ", existingPublication="
+        + existingPublication
+        + '}';
+  }
 }

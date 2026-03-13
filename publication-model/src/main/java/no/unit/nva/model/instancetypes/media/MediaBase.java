@@ -2,39 +2,38 @@ package no.unit.nva.model.instancetypes.media;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonGetter;
+import java.util.Objects;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.NullPages;
 import nva.commons.core.JacocoGenerated;
 
-import java.util.Objects;
-
 public class MediaBase implements PublicationInstance<NullPages> {
 
-    public static final String PAGES_FIELD = "pages";
+  public static final String PAGES_FIELD = "pages";
 
-    @JsonCreator
-    public MediaBase() {
-        // Since this class returns a null object for pages, the value is not set.
-    }
+  @JsonCreator
+  public MediaBase() {
+    // Since this class returns a null object for pages, the value is not set.
+  }
 
-    @JsonGetter(PAGES_FIELD)
-    @Override
-    public NullPages getPages() {
-        return NullPages.NULL_PAGES;
-    }
+  @JsonGetter(PAGES_FIELD)
+  @Override
+  public NullPages getPages() {
+    return NullPages.NULL_PAGES;
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode());
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode());
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        return obj instanceof MediaBase;
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
+    return obj instanceof MediaBase;
+  }
 }

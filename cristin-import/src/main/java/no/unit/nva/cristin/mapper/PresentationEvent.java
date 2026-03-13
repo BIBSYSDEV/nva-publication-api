@@ -14,48 +14,56 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"arstall", "hendelsetype", "antall_deltakere",
-    "antall_internasjonale_deltakere", "antall_nasjonale_deltakere",
-    "institusjonsnr_arrangor", "avdnr_arrangor", "undavdnr_arrangor", "gruppenr_arrangor",
-    "utbredelsesomrade", "url", "personlopenr_arrangor"})
+@JsonIgnoreProperties({
+  "arstall",
+  "hendelsetype",
+  "antall_deltakere",
+  "antall_internasjonale_deltakere",
+  "antall_nasjonale_deltakere",
+  "institusjonsnr_arrangor",
+  "avdnr_arrangor",
+  "undavdnr_arrangor",
+  "gruppenr_arrangor",
+  "utbredelsesomrade",
+  "url",
+  "personlopenr_arrangor"
+})
 public class PresentationEvent {
 
-    public static final String TITLE = "titteltekst";
-    public static final String FROM_DATE = "dato_fra";
-    private static final String TO_DATE = "dato_til";
-    private static final String AGENT = "arrangornavn";
-    private static final String COUNTRY_CODE = "landkode";
-    public static final String PLACE = "stedangivelse";
+  public static final String TITLE = "titteltekst";
+  public static final String FROM_DATE = "dato_fra";
+  private static final String TO_DATE = "dato_til";
+  private static final String AGENT = "arrangornavn";
+  private static final String COUNTRY_CODE = "landkode";
+  public static final String PLACE = "stedangivelse";
 
-    @JsonProperty(TITLE)
-    private String title;
+  @JsonProperty(TITLE)
+  private String title;
 
-    @JsonProperty(FROM_DATE)
-    private String from;
+  @JsonProperty(FROM_DATE)
+  private String from;
 
-    @JsonProperty(TO_DATE)
-    private String to;
+  @JsonProperty(TO_DATE)
+  private String to;
 
-    @JsonProperty(AGENT)
-    private String agent;
+  @JsonProperty(AGENT)
+  private String agent;
 
-    @JsonProperty(COUNTRY_CODE)
-    private String countryCode;
+  @JsonProperty(COUNTRY_CODE)
+  private String countryCode;
 
-    @JsonProperty(PLACE)
-    private String place;
+  @JsonProperty(PLACE)
+  private String place;
 
-    @JacocoGenerated
-    public PresentationEvent() {
-    }
+  @JacocoGenerated
+  public PresentationEvent() {}
 
-    @JacocoGenerated
-    public PresentationEvent.EventBuilder copy() {
-        return this.toBuilder();
-    }
+  @JacocoGenerated
+  public PresentationEvent.EventBuilder copy() {
+    return this.toBuilder();
+  }
 }

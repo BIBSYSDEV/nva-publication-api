@@ -17,40 +17,42 @@ import org.slf4j.LoggerFactory;
 
 public class ResolveShortenedUrlHandler extends ApiGatewayHandler<Void, Void> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ResolveShortenedUrlHandler.class);
-    private UriResolver uriResolver;
+  private static final Logger LOGGER = LoggerFactory.getLogger(ResolveShortenedUrlHandler.class);
+  private UriResolver uriResolver;
 
-    @JacocoGenerated
-    public ResolveShortenedUrlHandler() {
-        this(new Environment(), UriResolverImpl.createDefault());
-    }
+  @JacocoGenerated
+  public ResolveShortenedUrlHandler() {
+    this(new Environment(), UriResolverImpl.createDefault());
+  }
 
-    public ResolveShortenedUrlHandler(Environment environment, UriResolver uriResolver) {
-        super(Void.class, environment);
-        this.uriResolver = uriResolver;
-    }
+  public ResolveShortenedUrlHandler(Environment environment, UriResolver uriResolver) {
+    super(Void.class, environment);
+    this.uriResolver = uriResolver;
+  }
 
-    @Override
-    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        //Do nothing
-    }
+  @Override
+  protected void validateRequest(Void unused, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
+    // Do nothing
+  }
 
-    @Override
-    protected Void processInput(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        LOGGER.info(requestInfo.getRequestUri().toString());
-        var shortenedUri = requestInfo.getRequestUri();
-        var longUri = uriResolver.resolve(shortenedUri);
-        addAdditionalHeaders(() -> addLocationHeader(longUri));
-        return null;
-    }
+  @Override
+  protected Void processInput(Void unused, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
+    LOGGER.info(requestInfo.getRequestUri().toString());
+    var shortenedUri = requestInfo.getRequestUri();
+    var longUri = uriResolver.resolve(shortenedUri);
+    addAdditionalHeaders(() -> addLocationHeader(longUri));
+    return null;
+  }
 
-    private Map<String, String> addLocationHeader(URI longUri) {
-        return Map.of(LOCATION,  longUri.toString());
-    }
+  private Map<String, String> addLocationHeader(URI longUri) {
+    return Map.of(LOCATION, longUri.toString());
+  }
 
-    @JacocoGenerated
-    @Override
-    protected Integer getSuccessStatusCode(Void unused, Void o) {
-        return 301;
-    }
+  @JacocoGenerated
+  @Override
+  protected Integer getSuccessStatusCode(Void unused, Void o) {
+    return 301;
+  }
 }

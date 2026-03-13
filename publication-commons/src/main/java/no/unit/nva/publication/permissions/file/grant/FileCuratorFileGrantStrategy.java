@@ -9,19 +9,20 @@ import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
 public class FileCuratorFileGrantStrategy extends FileStrategyBase implements FileGrantStrategy {
 
-    public FileCuratorFileGrantStrategy(FileEntry file, UserInstance userInstance, Resource resource) {
-        super(file, userInstance, resource);
+  public FileCuratorFileGrantStrategy(
+      FileEntry file, UserInstance userInstance, Resource resource) {
+    super(file, userInstance, resource);
+  }
+
+  @Override
+  public boolean allowsAction(FileOperation permission) {
+    if (currentUserIsFileCurator()) {
+      return switch (permission) {
+        case READ_METADATA, DOWNLOAD -> true;
+        case WRITE_METADATA, DELETE -> currentUserIsFileCuratorForGivenFile();
+      };
     }
 
-    @Override
-    public boolean allowsAction(FileOperation permission) {
-        if (currentUserIsFileCurator()) {
-            return switch (permission) {
-                case READ_METADATA, DOWNLOAD -> true;
-                case WRITE_METADATA, DELETE -> currentUserIsFileCuratorForGivenFile();
-            };
-        }
-
-        return false;
-    }
+    return false;
+  }
 }

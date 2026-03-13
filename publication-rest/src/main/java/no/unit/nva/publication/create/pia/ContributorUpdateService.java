@@ -12,42 +12,41 @@ import no.unit.nva.publication.model.business.Resource;
 
 public class ContributorUpdateService {
 
-    private static final String SCOPUS_AUTHOR_ID = "scopus-auid";
-    private final PiaClient piaClient;
+  private static final String SCOPUS_AUTHOR_ID = "scopus-auid";
+  private final PiaClient piaClient;
 
-    public ContributorUpdateService(PiaClient piaClient) {
-        this.piaClient = piaClient;
-    }
+  public ContributorUpdateService(PiaClient piaClient) {
+    this.piaClient = piaClient;
+  }
 
-    public void updatePiaContributors(Resource resource, ImportCandidate rawCandidate) {
-        var rawContributors = rawCandidate.getEntityDescription().contributors();
-        var contributorsWithChanges = resource.getEntityDescription()
-            .getContributors()
-            .stream()
+  public void updatePiaContributors(Resource resource, ImportCandidate rawCandidate) {
+    var rawContributors = rawCandidate.getEntityDescription().contributors();
+    var contributorsWithChanges =
+        resource.getEntityDescription().getContributors().stream()
             .filter(contributor -> hasCristinIdChange(contributor, rawContributors))
             .toList();
-        
-        if (!contributorsWithChanges.isEmpty()) {
-            piaClient.updateContributor(contributorsWithChanges, rawCandidate.getScopusIdentifier().orElse(null));
-        }
-    }
 
-    private boolean hasCristinIdChange(Contributor contributor, Collection<ImportContributor> rawContributors) {
-        return rawContributors.stream()
-            .anyMatch(raw -> hasSameAuidButDifferentCristinId(raw, contributor));
+    if (!contributorsWithChanges.isEmpty()) {
+      piaClient.updateContributor(
+          contributorsWithChanges, rawCandidate.getScopusIdentifier().orElse(null));
     }
+  }
 
-    private boolean hasSameAuidButDifferentCristinId(ImportContributor a, Contributor b) {
-        var cristinIdsDiffer = !Objects.equals(a.identity().getId(), b.getIdentity().getId());
-        var auidsMatch = Objects.equals(extractAuid(a.identity()), extractAuid(b.getIdentity()));
-        return cristinIdsDiffer && auidsMatch;
-    }
+  private boolean hasCristinIdChange(
+      Contributor contributor, Collection<ImportContributor> rawContributors) {
+    return rawContributors.stream()
+        .anyMatch(raw -> hasSameAuidButDifferentCristinId(raw, contributor));
+  }
 
-    private Optional<AdditionalIdentifier> extractAuid(Identity identity) {
-        return identity
-            .getAdditionalIdentifiers()
-            .stream()
-            .filter(id -> SCOPUS_AUTHOR_ID.equals(id.sourceName()))
-            .findFirst();
-    }
+  private boolean hasSameAuidButDifferentCristinId(ImportContributor a, Contributor b) {
+    var cristinIdsDiffer = !Objects.equals(a.identity().getId(), b.getIdentity().getId());
+    var auidsMatch = Objects.equals(extractAuid(a.identity()), extractAuid(b.getIdentity()));
+    return cristinIdsDiffer && auidsMatch;
+  }
+
+  private Optional<AdditionalIdentifier> extractAuid(Identity identity) {
+    return identity.getAdditionalIdentifiers().stream()
+        .filter(id -> SCOPUS_AUTHOR_ID.equals(id.sourceName()))
+        .findFirst();
+  }
 }

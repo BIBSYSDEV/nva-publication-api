@@ -9,42 +9,41 @@ import nva.commons.core.JacocoGenerated;
 @SuppressWarnings("PMD.ShortClassName")
 public class Type {
 
-    private final List<String> brage;
-    private final String nva;
+  private final List<String> brage;
+  private final String nva;
 
-    @JacocoGenerated
-    @JsonCreator
-    public Type(@JsonProperty("brage") List<String> brage,
-                @JsonProperty("nva") String nva) {
-        this.brage = brage;
-        this.nva = nva;
-    }
+  @JacocoGenerated
+  @JsonCreator
+  public Type(@JsonProperty("brage") List<String> brage, @JsonProperty("nva") String nva) {
+    this.brage = brage;
+    this.nva = nva;
+  }
 
-    @JacocoGenerated
-    public String getNva() {
-        return nva;
-    }
+  @JacocoGenerated
+  public String getNva() {
+    return nva;
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(brage, nva);
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(brage, nva);
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Type type = (Type) o;
-        return Objects.equals(getBrage(), type.getBrage()) && Objects.equals(getNva(), type.getNva());
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Type type = (Type) o;
+    return Objects.equals(getBrage(), type.getBrage()) && Objects.equals(getNva(), type.getNva());
+  }
 
-    public List<String> getBrage() {
-        return brage;
-    }
+  public List<String> getBrage() {
+    return brage;
+  }
 }

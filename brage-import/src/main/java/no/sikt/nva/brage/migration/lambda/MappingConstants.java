@@ -8,22 +8,21 @@ import nva.commons.core.ioutils.IoUtils;
 
 public final class MappingConstants {
 
-    public static final Environment ENVIRONMENT = new Environment();
+  public static final Environment ENVIRONMENT = new Environment();
 
-    public static final Set<String>
-        IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS = readAllIngnoredAndPossiblyEmptyFields();
+  public static final Set<String> IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS =
+      readAllIngnoredAndPossiblyEmptyFields();
 
-    private MappingConstants() {
-        
-    }
+  private MappingConstants() {}
 
-    private static Set<String> readAllIngnoredAndPossiblyEmptyFields() {
-        Set<String> result = new HashSet<>(Set.copyOf(IoUtils.linesfromResource(Path.of(ignoredFieldsFile()))));
-        result.addAll(Set.copyOf(IoUtils.linesfromResource(Path.of("possiblyEmptyFields.txt"))));
-        return result;
-    }
+  private static Set<String> readAllIngnoredAndPossiblyEmptyFields() {
+    Set<String> result =
+        new HashSet<>(Set.copyOf(IoUtils.linesfromResource(Path.of(ignoredFieldsFile()))));
+    result.addAll(Set.copyOf(IoUtils.linesfromResource(Path.of("possiblyEmptyFields.txt"))));
+    return result;
+  }
 
-    private static String ignoredFieldsFile() {
-        return ENVIRONMENT.readEnvOpt("IGNORED_FIELDS_FILE").orElse("ignoredFields.txt");
-    }
+  private static String ignoredFieldsFile() {
+    return ENVIRONMENT.readEnvOpt("IGNORED_FIELDS_FILE").orElse("ignoredFields.txt");
+  }
 }

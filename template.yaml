@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
 Description: >
@@ -6,27 +6,24 @@ Description: >
 
   SAM Template for NVA Publication Service
 
-
-
-
 Parameters:
   CognitoAuthorizerArn:
-    Type: 'AWS::SSM::Parameter::Value<String>'
+    Type: "AWS::SSM::Parameter::Value<String>"
     Description: Reference to Cognito UserPool for the stage
     Default: CognitoAuthorizerArn
   CognitoAuthorizationUri:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/CognitoUri'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/CognitoUri"
   ExternalCognitoAuthorizerArn:
-    Type: 'AWS::SSM::Parameter::Value<String>'
+    Type: "AWS::SSM::Parameter::Value<String>"
     Description: Reference to ARN of ExternalUsers UserPool
     Default: ExternalCognitoAuthorizerArn
   ExternalCognitoAuthorizerUrl:
-    Type: 'AWS::SSM::Parameter::Value<String>'
+    Type: "AWS::SSM::Parameter::Value<String>"
     Description: Reference to URL for ExternalUsers UserPool
     Default: ExternalCognitoAuthorizerUrl
   ApiDomain:
-    Type: 'AWS::SSM::Parameter::Value<String>'
+    Type: "AWS::SSM::Parameter::Value<String>"
     Description: The Api domain
     Default: /NVA/ApiDomain
   CustomDomainBasePath:
@@ -34,32 +31,32 @@ Parameters:
     Description: Base path mapping in CustomDomain
     Default: publication
   NewNvaEventBusArn:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/Events/EventsBusArn'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/Events/EventsBusArn"
   NewNvaEventBusName:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/Events/EventsBusName'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/Events/EventsBusName"
   NvaEventsBucketsName:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/Events/EventsBucketName'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/Events/EventsBucketName"
   ExpandedEntriesPersistenceBucketName:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/Events/PersistedEntriesBucketName'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/Events/PersistedEntriesBucketName"
   ExpandedEntriesPersistenceBucketArn:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/Events/PersistedEntriesBucketArn'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/Events/PersistedEntriesBucketArn"
   ResourceStorageBucketName:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/PublicationData'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/PublicationData"
   AthenaQueriesBucketName:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/Athena/QueriesBucketName'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/Athena/QueriesBucketName"
   BrageMigrationInputBucketName:
-    Type: 'String'
+    Type: "String"
     Default: "brage-migration-input-files"
     Description: Name of bucket for input brage migration files
   BrageMigrationErrorBucketName:
-    Type: 'String'
+    Type: "String"
     Default: "brage-migration-reports"
     Description: Name of bucket for output brage migration errors
   MaxConcurrency:
@@ -80,7 +77,7 @@ Parameters:
     Description: Max attempt to put events into AWS EventBridge Event Bus. Default is 1.
   Suffix:
     Type: String
-    Default: ''
+    Default: ""
     Description: Suffix used for naming resources for feature branches to avoid conflicts.
   NvaApplicationDomain:
     Type: AWS::SSM::Parameter::Value<String>
@@ -95,19 +92,19 @@ Parameters:
     Default: "scopus-xml-files-v2"
     Description: Name of bucket for unzipped scopus xml files
   ScopusImportReportBucketName:
-    Type: 'String'
+    Type: "String"
     Default: "scopus-import-reports"
     Description: Name of bucket for output of reports
   ImportCandidateStorageBucketName:
-    Type: 'String'
+    Type: "String"
     Default: "nva-import-candidate-resources"
     Description: Name of bucket for scopus file import
   PiaRestHost:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/PiaRestHost'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/PiaRestHost"
   PiaRestCredentialsTokenName:
     Type: String
-    Default: 'PiaRestCredentials'
+    Default: "PiaRestCredentials"
   PiaRestUsernameKey:
     Type: String
     Default: "PiaRestUser"
@@ -120,27 +117,27 @@ Parameters:
     Default: /NVA/Queues/CristinImportNviQueueUrl
   SlackSnsArn:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: '/NVA/Monitoring/SlackSnsArn'
+    Default: "/NVA/Monitoring/SlackSnsArn"
   CristinUnitsS3ObjectUri:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/S3/CristinIntermediateStorage/Units'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/S3/CristinIntermediateStorage/Units"
   CristinIntermediateS3BucketName:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/S3/CristinIntermediateStorage/BucketName'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/S3/CristinIntermediateStorage/BucketName"
   CognitoAuthorizerUrls:
     Type: AWS::SSM::Parameter::Value<CommaDelimitedList>
-    Default: 'CognitoAuthorizerUrls'
+    Default: "CognitoAuthorizerUrls"
   AllowedOrigins:
     Type: String
     Description: comma separated list of external clients that are allowed to contact the HTTP APIs, "*" indicates that all origins are allowed
-    Default: '*'
+    Default: "*"
   S3NoncurrentVersionExpirationDays:
     Type: Number
     Default: 60
     Description: Number of days to retain non-current object versions in versioned S3 buckets
 
 Conditions:
-  WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
+  WithSuffix: !Not [!Equals [!Ref Suffix, ""]]
 
 Globals:
   Api:
@@ -156,11 +153,11 @@ Globals:
       Variables:
         COGNITO_HOST: !Ref CognitoAuthorizationUri
         API_HOST: !Ref ApiDomain
-        API_SCHEME: 'https'
-        ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+        API_SCHEME: "https"
+        ID_NAMESPACE: !Sub "https://${ApiDomain}/${CustomDomainBasePath}"
         EVENTS_BUCKET: !Ref NvaEventsBucketsName
         BACKEND_CLIENT_AUTH_URL: !Ref CognitoAuthorizationUri
-        BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+        BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
         EXTERNAL_USER_POOL_URI: !Ref ExternalCognitoAuthorizerUrl
         COGNITO_AUTHORIZER_URLS: !Join [",", !Ref CognitoAuthorizerUrls]
         CRISTIN_UNITS_S3_URI: !Ref CristinUnitsS3ObjectUri
@@ -168,7 +165,6 @@ Globals:
       - arm64
 
 Resources:
-
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
 
@@ -250,7 +246,7 @@ Resources:
         PointInTimeRecoveryEnabled: true
       Tags:
         - Key: IncludedInBackup
-          Value: 'true'
+          Value: "true"
 
   # NB! for compatibility reasons NvaImportCandidatesTable should be a copy of NvaResourcesTable
   NvaImportCandidatesTable:
@@ -265,67 +261,67 @@ Resources:
           AttributeType: S
         - AttributeName: SK0
           AttributeType: S
-#        - AttributeName: PK1
-#          AttributeType: S
-#        - AttributeName: SK1
-#          AttributeType: S
-#        - AttributeName: PK2
-#          AttributeType: S
-#        - AttributeName: SK2
-#          AttributeType: S
-#        - AttributeName: PK3
-#          AttributeType: S
-#        - AttributeName: SK3
-#          AttributeType: S
-#        - AttributeName: PK4
-#          AttributeType: S
-#        - AttributeName: SK4
-#          AttributeType: S
+      #        - AttributeName: PK1
+      #          AttributeType: S
+      #        - AttributeName: SK1
+      #          AttributeType: S
+      #        - AttributeName: PK2
+      #          AttributeType: S
+      #        - AttributeName: SK2
+      #          AttributeType: S
+      #        - AttributeName: PK3
+      #          AttributeType: S
+      #        - AttributeName: SK3
+      #          AttributeType: S
+      #        - AttributeName: PK4
+      #          AttributeType: S
+      #        - AttributeName: SK4
+      #          AttributeType: S
       KeySchema:
         - AttributeName: PK0
           KeyType: HASH
         - AttributeName: SK0
           KeyType: RANGE
-#      GlobalSecondaryIndexes:
-#        - IndexName: GSI_1
-#          KeySchema:
-#            - AttributeName: PK1
-#              KeyType: HASH
-#            - AttributeName: SK1
-#              KeyType: RANGE
-#          Projection:
-#            ProjectionType: ALL
-#        - IndexName: ByCustomerResource
-#          KeySchema:
-#            - AttributeName: PK2
-#              KeyType: HASH
-#            - AttributeName: SK2
-#              KeyType: RANGE
-#          Projection:
-#            ProjectionType: ALL
-#        - IndexName: ResourcesByIdentifier
-#          KeySchema:
-#            - AttributeName: PK3
-#              KeyType: HASH
-#            - AttributeName: SK3
-#              KeyType: RANGE
-#          Projection:
-#            ProjectionType: ALL
-#        - IndexName: ResourceByCristinId
-#          KeySchema:
-#            - AttributeName: PK4
-#              KeyType: HASH
-#            - AttributeName: SK4
-#              KeyType: RANGE
-#          Projection:
-#            ProjectionType: ALL
+      #      GlobalSecondaryIndexes:
+      #        - IndexName: GSI_1
+      #          KeySchema:
+      #            - AttributeName: PK1
+      #              KeyType: HASH
+      #            - AttributeName: SK1
+      #              KeyType: RANGE
+      #          Projection:
+      #            ProjectionType: ALL
+      #        - IndexName: ByCustomerResource
+      #          KeySchema:
+      #            - AttributeName: PK2
+      #              KeyType: HASH
+      #            - AttributeName: SK2
+      #              KeyType: RANGE
+      #          Projection:
+      #            ProjectionType: ALL
+      #        - IndexName: ResourcesByIdentifier
+      #          KeySchema:
+      #            - AttributeName: PK3
+      #              KeyType: HASH
+      #            - AttributeName: SK3
+      #              KeyType: RANGE
+      #          Projection:
+      #            ProjectionType: ALL
+      #        - IndexName: ResourceByCristinId
+      #          KeySchema:
+      #            - AttributeName: PK4
+      #              KeyType: HASH
+      #            - AttributeName: SK4
+      #              KeyType: RANGE
+      #          Projection:
+      #            ProjectionType: ALL
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       Tags:
         - Key: IncludedInBackup
-          Value: 'true'
+          Value: "true"
 
   DownloadUrlShorteningTable:
     Type: AWS::DynamoDB::Table
@@ -387,15 +383,13 @@ Resources:
   PublicationChannelBatchUpdateDLQ:
     Type: "AWS::SQS::Queue"
 
-
-
   #==============================ROLES=======================================================================
 
   DeleteDraftPublicationLambdaRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -405,7 +399,7 @@ Resources:
       Policies:
         - PolicyName: Events
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -422,7 +416,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -432,7 +426,7 @@ Resources:
       Policies:
         - PolicyName: Events
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -446,7 +440,7 @@ Resources:
     Properties:
       Path: /
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -463,7 +457,7 @@ Resources:
         - !Ref DeleteDraftPublicationLambdaRole
         - !Ref UpdateDoiStatusLambdaRole
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
@@ -481,7 +475,7 @@ Resources:
         - !Ref DeleteDraftPublicationLambdaRole
         - !Ref UpdateDoiStatusLambdaRole
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
@@ -495,7 +489,7 @@ Resources:
             Action:
               - s3:GetObject
             Resource:
-              - !Sub 'arn:aws:s3:::${CristinIntermediateS3BucketName}/*'
+              - !Sub "arn:aws:s3:::${CristinIntermediateS3BucketName}/*"
 
   S3AccessManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -503,7 +497,7 @@ Resources:
       Roles:
         - !Ref LambdaRole
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
@@ -518,7 +512,7 @@ Resources:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
@@ -528,13 +522,13 @@ Resources:
               - s3:PutObject
               - s3:PutObjectAcl
             Resource:
-              - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
+              - !Sub "arn:aws:s3:::${ResourceStorageBucketName}/*"
 
   MultipartUploadResourceStorageBucketManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
@@ -547,21 +541,21 @@ Resources:
               - s3:ListMultipartUploadParts
               - s3:ListBucketMultipartUploads
             Resource:
-              - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
+              - !Sub "arn:aws:s3:::${ResourceStorageBucketName}/*"
 
   S3DeleteAccessManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
               - s3:DeleteObject
             Resource:
-              - !Sub 'arn:aws:s3:::cristin-import-${AWS::AccountId}/*'
-              - !Sub '${ExpandedEntriesPersistenceBucketArn}/*'
-              - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
+              - !Sub "arn:aws:s3:::cristin-import-${AWS::AccountId}/*"
+              - !Sub "${ExpandedEntriesPersistenceBucketArn}/*"
+              - !Sub "arn:aws:s3:::${ResourceStorageBucketName}/*"
 
   DynamoDbStreamsAccessPolicy:
     Type: AWS::IAM::Policy
@@ -570,7 +564,7 @@ Resources:
       Roles:
         - !Ref LambdaRole
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
@@ -579,9 +573,8 @@ Resources:
               - dynamodb:ListStreams
               - dynamodb:GetRecords
             Resource:
-              - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${NvaResourcesTable}/stream/*'
-              - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${NvaImportCandidatesTable}/stream/*'
-
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${NvaResourcesTable}/stream/*"
+              - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${NvaImportCandidatesTable}/stream/*"
 
   EventsLambdaManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -589,7 +582,7 @@ Resources:
       Roles:
         - !Ref LambdaRole
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
@@ -608,7 +601,7 @@ Resources:
       Roles:
         - !Ref LambdaRole
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
@@ -621,7 +614,7 @@ Resources:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
@@ -639,11 +632,10 @@ Resources:
       StageName: Prod
       EndpointConfiguration: REGIONAL
       DefinitionBody:
-        'Fn::Transform':
+        "Fn::Transform":
           Name: AWS::Include
           Parameters:
             Location: ./docs/openapi.yaml
-
 
   ScopusBucketsAccessPolicy:
     Type: AWS::IAM::Policy
@@ -652,15 +644,15 @@ Resources:
       Roles:
         - !Ref LambdaRole
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
-              - 's3:*'
+              - "s3:*"
             Resource:
-              - !Sub '${ScopusXmlBucket.Arn}/*'
-              - !Sub '${ScopusZipBucket.Arn}/*'
-              - !Sub '${ImportCandidateStorageBucket.Arn}/*'
+              - !Sub "${ScopusXmlBucket.Arn}/*"
+              - !Sub "${ScopusZipBucket.Arn}/*"
+              - !Sub "${ImportCandidateStorageBucket.Arn}/*"
 
   #================================ApiGateway handlers====================================================
   NvaCreatePublicationFunction:
@@ -672,7 +664,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -697,7 +689,7 @@ Resources:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
           NVA_FRONTEND_DOMAIN: !Ref NvaApplicationDomain
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -757,7 +749,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
           NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
       Policies:
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
@@ -781,7 +773,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
       Policies:
         - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
@@ -877,7 +869,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
       Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
@@ -1057,7 +1049,7 @@ Resources:
   DownloadPublicationFileFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${DownloadPublicationFileFunction}'
+      LogGroupName: !Sub "/aws/lambda/${DownloadPublicationFileFunction}"
       RetentionInDays: 90
 
   DownloadPublicationFileFunction:
@@ -1088,7 +1080,7 @@ Resources:
   ResolveShortenedUrlFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${ResolveShortenedUrlFunction}'
+      LogGroupName: !Sub "/aws/lambda/${ResolveShortenedUrlFunction}"
       RetentionInDays: 90
 
   ResolveShortenedUrlFunction:
@@ -1269,7 +1261,6 @@ Resources:
             Method: delete
             RestApiId: !Ref NvaPublicationApi
 
-
   #==========================Event Lambda functions====================================================
 
   BrageMigrationEventConsumer:
@@ -1290,12 +1281,12 @@ Resources:
           Type: S3
           Properties:
             Bucket: !Ref BrageMigrationInputBucket
-            Events: 's3:ObjectCreated:*'
+            Events: "s3:ObjectCreated:*"
             Filter:
               S3Key:
                 Rules:
                   - Name: suffix
-                    Value: '.json'
+                    Value: ".json"
       EventInvokeConfig:
         DestinationConfig:
           OnFailure:
@@ -1326,13 +1317,12 @@ Resources:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail:
-                topic: [ "BrageMerging.Rollback.Request" ]
+                topic: ["BrageMerging.Rollback.Request"]
       EventInvokeConfig:
         DestinationConfig:
           OnFailure:
             Type: SQS
             Destination: !GetAtt BrageMergingRollbackHandlerDLQ.Arn
-
 
   NvaScopusFunction:
     Type: AWS::Serverless::Function
@@ -1354,8 +1344,8 @@ Resources:
           SCOPUS_IMPORT_BUCKET: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
           XML_BUCKET_NAME: !Ref ScopusXmlBucket
           IMPORT_CANDIDATES_STORAGE_BUCKET: !Ref ImportCandidateStorageBucket
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
-          CROSSREF_FETCH_DOI_URI: 'https://api.crossref.org/v1/works/'
+          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
+          CROSSREF_FETCH_DOI_URI: "https://api.crossref.org/v1/works/"
       Events:
         SqsEvent:
           Type: SQS
@@ -1363,7 +1353,7 @@ Resources:
             Queue: !GetAtt ScopusImportQueue.Arn
             BatchSize: 1
             ScalingConfig:
-              MaximumConcurrency: 5  # Limit the number of concurrent invocations from this SQS queue
+              MaximumConcurrency: 5 # Limit the number of concurrent invocations from this SQS queue
 
   ScopusDeletionEventEmitter:
     Type: AWS::Serverless::Function
@@ -1383,12 +1373,12 @@ Resources:
           Type: S3
           Properties:
             Bucket: !Ref ScopusXmlBucket
-            Events: 's3:ObjectCreated:*'
+            Events: "s3:ObjectCreated:*"
             Filter:
               S3Key:
                 Rules:
                   - Name: suffix
-                    Value: '.txt'
+                    Value: ".txt"
 
   DeleteImportCandidateEventConsumer:
     Type: AWS::Serverless::Function
@@ -1411,7 +1401,7 @@ Resources:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail:
-                topic: [ "ImportCandidates.Scopus.Delete" ]
+                topic: ["ImportCandidates.Scopus.Delete"]
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -1420,7 +1410,6 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt DeleteImportCandidateHandlerDLQ.Arn
-
 
   DeletionProcessInitializationHandler:
     DependsOn: EventsLambdaManagedPolicy
@@ -1452,7 +1441,7 @@ Resources:
   LogicallyDeleteEntriesHandler:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
-    Description: 'Listens for Delete event emitted from LogicallyDeleteImportedPublicationsButton. Removes resource from DynamoDB. Parses a DeleteEntryEvent'
+    Description: "Listens for Delete event emitted from LogicallyDeleteImportedPublicationsButton. Removes resource from DynamoDB. Parses a DeleteEntryEvent"
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationHandler::handleRequest
@@ -1470,8 +1459,7 @@ Resources:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail:
-                topic: [ "DeleteEntriesEvent.FileEntry.Delete" ]
-
+                topic: ["DeleteEntriesEvent.FileEntry.Delete"]
 
   DoiRequestEventProducer:
     DependsOn: EventsLambdaManagedPolicy
@@ -1496,7 +1484,7 @@ Resources:
             Pattern:
               detail:
                 responsePayload:
-                  topic: [ "PublicationService.DoiRequest.Update" ]
+                  topic: ["PublicationService.DoiRequest.Update"]
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -1505,7 +1493,6 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt DoiRequestEventProducerDLQ.Arn
-
 
   ResourceExpansionHandler:
     DependsOn: EventsLambdaManagedPolicy
@@ -1632,7 +1619,7 @@ Resources:
             Pattern:
               detail:
                 responsePayload:
-                  topic: [ "PublicationService.ExpandedDataEntry.Update" ]
+                  topic: ["PublicationService.ExpandedDataEntry.Update"]
       EventInvokeConfig:
         DestinationConfig:
           OnFailure:
@@ -1766,7 +1753,7 @@ Resources:
           - Effect: Allow
             Principal:
               Service: "events.amazonaws.com"
-            Action: 'sqs:SendMessage'
+            Action: "sqs:SendMessage"
             Resource: !GetAtt HandleWorkQueue.Arn
             Condition:
               ArnEquals:
@@ -1788,7 +1775,7 @@ Resources:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           TABLE_NAME: !Ref NvaResourcesTable
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1816,7 +1803,7 @@ Resources:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          HANDLER_EVENTS_FOLDER: 'ignored'
+          HANDLER_EVENTS_FOLDER: "ignored"
           TABLE_NAME: !Ref NvaResourcesTable
       Events:
         EventBridgeEvent:
@@ -1825,7 +1812,7 @@ Resources:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail:
-                topic: [ "PublicationService.DataEntry.ScanAndUpdateRowVersion" ]
+                topic: ["PublicationService.DataEntry.ScanAndUpdateRowVersion"]
 
       EventInvokeConfig:
         DestinationConfig:
@@ -1858,7 +1845,7 @@ Resources:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail:
-                topic: [ "PublicationService.Recovery.Refresh" ]
+                topic: ["PublicationService.Recovery.Refresh"]
 
       EventInvokeConfig:
         DestinationConfig:
@@ -1879,7 +1866,7 @@ Resources:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          HANDLER_EVENTS_FOLDER: 'ignored'
+          HANDLER_EVENTS_FOLDER: "ignored"
           TABLE_NAME: !Ref NvaImportCandidatesTable
       Events:
         EventBridgeEvent:
@@ -1888,7 +1875,7 @@ Resources:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail:
-                topic: [ "ImportCandidates.DataEntry.ScanAndUpdateRowVersion" ]
+                topic: ["ImportCandidates.DataEntry.ScanAndUpdateRowVersion"]
 
       EventInvokeConfig:
         DestinationConfig:
@@ -1930,7 +1917,6 @@ Resources:
             Type: SQS
             Destination: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
 
-
   DynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
     DependsOn:
@@ -1949,11 +1935,11 @@ Resources:
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           RECOVERY_QUEUE: !Ref RecoveryQueue
-          SHOULD_IGNORE_BATCH_SCAN: 'false'
+          SHOULD_IGNORE_BATCH_SCAN: "false"
       Events:
         FanoutSource:
           Type: DynamoDB
-#==============================PROPERTIES WE WILL TEST=======================================================================
+          #==============================PROPERTIES WE WILL TEST=======================================================================
           Properties:
             Stream: !GetAtt NvaResourcesTable.StreamArn
             StartingPosition: TRIM_HORIZON
@@ -1966,18 +1952,18 @@ Resources:
               OnFailure:
                 Destination: !GetAtt DynamodbEventFanoutStreamRecordsDLQ.Arn
 
-#==============================NVA PROPERTIES=======================================================================
+  #==============================NVA PROPERTIES=======================================================================
 
-#          Properties:
-#            Stream: !GetAtt NvaResourcesTable.StreamArn
-#            StartingPosition: TRIM_HORIZON
-#            BatchSize: 1
-#            Enabled: true
-#            MaximumRetryAttempts: 3
-#            BisectBatchOnFunctionError: true
-#            DestinationConfig:
-#              OnFailure:
-#                Destination: !GetAtt DynamodbEventFanoutStreamRecordsDLQ.Arn
+  #          Properties:
+  #            Stream: !GetAtt NvaResourcesTable.StreamArn
+  #            StartingPosition: TRIM_HORIZON
+  #            BatchSize: 1
+  #            Enabled: true
+  #            MaximumRetryAttempts: 3
+  #            BisectBatchOnFunctionError: true
+  #            DestinationConfig:
+  #              OnFailure:
+  #                Destination: !GetAtt DynamodbEventFanoutStreamRecordsDLQ.Arn
 
   ImportCandidateDynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
@@ -2006,7 +1992,6 @@ Resources:
             BatchSize: 1
             Enabled: true
 
-
   UpdateDoiStatusHandlerFunction:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
@@ -2034,7 +2019,6 @@ Resources:
             Type: SQS
             Destination: !GetAtt UpdateDoiStatusDLQ.Arn
 
-
   CristinEntriesEventEmitter:
     Type: AWS::Serverless::Function
     Properties:
@@ -2060,8 +2044,14 @@ Resources:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail:
-                topic: [ "PublicationService.DataImport.Filename" ]
-                subtopic: [ "PublicationService.CristinData.DataEntry", "PublicationService.CristinData.PatchEntry", "PublicationService.CristinData.NviPatch", "PublicationService.BrageData.PatchEntry" ]
+                topic: ["PublicationService.DataImport.Filename"]
+                subtopic:
+                  [
+                    "PublicationService.CristinData.DataEntry",
+                    "PublicationService.CristinData.PatchEntry",
+                    "PublicationService.CristinData.NviPatch",
+                    "PublicationService.BrageData.PatchEntry",
+                  ]
 
   DeleteFileEventHandler:
     DependsOn: EventsLambdaManagedPolicy
@@ -2142,13 +2132,13 @@ Resources:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          HANDLER_EVENTS_FOLDER: 'ignored'
-          OUTPUT_EVENT_TOPIC: 'PublicationService.DataEntry.ScanAndUpdateRowVersion'
+          HANDLER_EVENTS_FOLDER: "ignored"
+          OUTPUT_EVENT_TOPIC: "PublicationService.DataEntry.ScanAndUpdateRowVersion"
 
   ManuallyUpdatePublicationsHandler:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
-    Description: 'Lambda function to update publications fetched from search-api'
+    Description: "Lambda function to update publications fetched from search-api"
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.batch.ManuallyUpdatePublicationsHandler::handleRequest
@@ -2162,7 +2152,7 @@ Resources:
   UpdatePublicationsFromBrageHandler:
     Type: AWS::Serverless::Function
     Properties:
-      Description: 'Updates publications from Brage by consuming reference to csv file and archive name'
+      Description: "Updates publications from Brage by consuming reference to csv file and archive name"
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.UpdatePublicationsFromBrageHandler::handleRequest
       Timeout: 900 # 15 min timeout
@@ -2186,8 +2176,8 @@ Resources:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
-          HANDLER_EVENTS_FOLDER: 'ignored'
-          OUTPUT_EVENT_TOPIC: 'ImportCandidates.DataEntry.ScanAndUpdateRowVersion'
+          HANDLER_EVENTS_FOLDER: "ignored"
+          OUTPUT_EVENT_TOPIC: "ImportCandidates.DataEntry.ScanAndUpdateRowVersion"
 
   StartCristinImportButton:
     Type: AWS::Serverless::Function
@@ -2210,7 +2200,7 @@ Resources:
   CristinRerunErrorsEventEmitter:
     Type: AWS::Serverless::Function
     Properties:
-      Description: 'Reruns cristin-import entries that have failed under import. Takes uri with s3 errors location as input'
+      Description: "Reruns cristin-import entries that have failed under import. Takes uri with s3 errors location as input"
       CodeUri: cristin-import
       Handler: no.unit.nva.cristin.lambda.CristinRerunErrorsEventEmitter::handleRequest
       Timeout: 900 # 15 min timeout
@@ -2222,7 +2212,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
-          CRISTIN_IMPORT_BUCKET: !Sub 'cristin-import-${AWS::AccountId}'
+          CRISTIN_IMPORT_BUCKET: !Sub "cristin-import-${AWS::AccountId}"
           CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL: !Ref CristinImportDataEntryQueue
 
   LogicallyDeleteImportedPublicationsButton:
@@ -2261,7 +2251,7 @@ Resources:
       Handler: no.unit.nva.doi.handlers.ReserveDoiHandler::handleRequest
       Environment:
         Variables:
-          BACKEND_CLIENT_SECRET_NAME: 'BackendCognitoClientCredentials'
+          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
@@ -2338,7 +2328,7 @@ Resources:
               S3Key:
                 Rules:
                   - Name: suffix
-                    Value: '.zip'
+                    Value: ".zip"
 
   #============================ SQS QUEUE LAMBDAS =====================================================================#
   # Lambdas triggered by push messages to SQS queues
@@ -2379,7 +2369,7 @@ Resources:
           BATCH_EMISSION_INTERVAL_MILLIS: 0
           DOMAIN_NAME: !Ref ApiDomain
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          CRISTIN_IMPORT_BUCKET: !Sub 'cristin-import-${AWS::AccountId}'
+          CRISTIN_IMPORT_BUCKET: !Sub "cristin-import-${AWS::AccountId}"
       Events:
         SqsEvent:
           Type: SQS
@@ -2390,7 +2380,6 @@ Resources:
               MaximumConcurrency: 50
       EventInvokeConfig:
         MaximumRetryAttempts: 0
-
 
   CristinEntriesPatchSqsConsumer:
     Type: AWS::Serverless::Function
@@ -2486,7 +2475,7 @@ Resources:
   InternalBus:
     Type: AWS::Events::EventBus
     Properties:
-      Name: !Join [ '',[ 'resource-service-internal-bus',!Ref Suffix ] ]
+      Name: !Join ["", ["resource-service-internal-bus", !Ref Suffix]]
 
   #=========================Cristin-Brage-Athena===================================================================
 
@@ -2516,7 +2505,7 @@ Resources:
               "TableLevelConfiguration":2
             }
         }
-      DatabaseName: !Ref    CristinImportDatabase
+      DatabaseName: !Ref CristinImportDatabase
       Description: Crawler that crawls the s3 bucket of the cristin data
       Name: CristinCrawler
       RecrawlPolicy:
@@ -2527,7 +2516,7 @@ Resources:
         UpdateBehavior: UPDATE_IN_DATABASE
       Targets:
         S3Targets:
-          - Path: !Sub 's3://cristin-import-${AWS::AccountId}/2022-10-18'
+          - Path: !Sub "s3://cristin-import-${AWS::AccountId}/2022-10-18"
 
   BrageErrorCrawler:
     Type: AWS::Glue::Crawler
@@ -2539,7 +2528,7 @@ Resources:
               "TableLevelConfiguration":3
             }
         }
-      DatabaseName: !Ref    BrageImportDatabase
+      DatabaseName: !Ref BrageImportDatabase
       Description: Crawler that crawls the s3 bucket of the brage reports data
       Name: BrageErrorCrawler
       RecrawlPolicy:
@@ -2550,10 +2539,8 @@ Resources:
         UpdateBehavior: UPDATE_IN_DATABASE
       Targets:
         S3Targets:
-          - Path: !Sub 's3://brage-migration-reports-884807050265/ERROR/2023-07-25:14/'
-            Exclusions: [ '*.error' ]
-
-
+          - Path: !Sub "s3://brage-migration-reports-884807050265/ERROR/2023-07-25:14/"
+            Exclusions: ["*.error"]
 
   CristinWorkgroup:
     Type: AWS::Athena::WorkGroup
@@ -2577,7 +2564,7 @@ Resources:
               "TableLevelConfiguration":3
             }
         }
-      DatabaseName: !Ref    CristinImportDatabase
+      DatabaseName: !Ref CristinImportDatabase
       Description: Crawler that crawls the s3 bucket of the cristin data
       Name: CristinImportErrorCrawler
       RecrawlPolicy:
@@ -2588,9 +2575,8 @@ Resources:
         UpdateBehavior: UPDATE_IN_DATABASE
       Targets:
         S3Targets:
-          - Path: !Sub 's3://cristin-import-${AWS::AccountId}/errors/2022-10-31T15:04:41.245923Z'
-            Exclusions: [ '*.error' ]
-
+          - Path: !Sub "s3://cristin-import-${AWS::AccountId}/errors/2022-10-31T15:04:41.245923Z"
+            Exclusions: ["*.error"]
 
   CristinPatchErrorsCrawler:
     Type: AWS::Glue::Crawler
@@ -2602,7 +2588,7 @@ Resources:
               "TableLevelConfiguration":6
             }
         }
-      DatabaseName: !Ref    CristinImportDatabase
+      DatabaseName: !Ref CristinImportDatabase
       Description: Crawler that crawls the s3 bucket of the cristin patch errors
       Name: CristinPatchErrorCrawler
       RecrawlPolicy:
@@ -2613,15 +2599,13 @@ Resources:
         UpdateBehavior: UPDATE_IN_DATABASE
       Targets:
         S3Targets:
-          - Path: !Sub 's3://cristin-import-884807050265/PATCH_ERRORS/2023-02-17T15:06:19.291467Z'
-            Exclusions: [ '*.error' ]
-
-
+          - Path: !Sub "s3://cristin-import-884807050265/PATCH_ERRORS/2023-02-17T15:06:19.291467Z"
+            Exclusions: ["*.error"]
 
   ImportQuery:
     Type: AWS::Athena::NamedQuery
     Properties:
-      Database: !Ref  AnalyticsExportDatabase
+      Database: !Ref AnalyticsExportDatabase
       Description: >
         Lowercase all field names so that the CristinEntryEventConsumer importer will work.
         Athena lowercases all field names and we cannot change this for now. So if we want
@@ -2644,7 +2628,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -2652,7 +2636,7 @@ Resources:
                 - glue.amazonaws.com
             Action: sts:AssumeRole
       Path: "/"
-      ManagedPolicyArns: [ 'arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole' ]
+      ManagedPolicyArns: ["arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"]
       Policies:
         - PolicyName: CrawlerReadsPersistedMetadataPolicy
           PolicyDocument:
@@ -2668,7 +2652,6 @@ Resources:
                   - !Sub "arn:aws:s3:::brage-migration-reports-${AWS::AccountId}/*"
                   - !Sub "arn:aws:s3:::brage-migration-input-files-${AWS::AccountId}/*"
 
-
   #==========================BI=============================================================================
   AnalyticsExportDatabase:
     Type: AWS::Glue::Database
@@ -2681,7 +2664,7 @@ Resources:
   PublicationsCrawler:
     Type: AWS::Glue::Crawler
     Properties:
-      DatabaseName: !Ref  AnalyticsExportDatabase
+      DatabaseName: !Ref AnalyticsExportDatabase
       # Minimum table level configuration is currently 3 because the crawler looks at the path
       # /bucketName/analytics/publications which is level 3.
       # More info here: https://docs.aws.amazon.com/glue/latest/dg/crawler-configuration.html
@@ -2702,7 +2685,7 @@ Resources:
         UpdateBehavior: UPDATE_IN_DATABASE
       Targets:
         S3Targets:
-          - Path: !Sub 's3://${ExpandedEntriesPersistenceBucketName}/analytics/publications'
+          - Path: !Sub "s3://${ExpandedEntriesPersistenceBucketName}/analytics/publications"
 
   AthenaWorkgroup:
     Type: AWS::Athena::WorkGroup
@@ -2719,7 +2702,7 @@ Resources:
   BiQuery:
     Type: AWS::Athena::NamedQuery
     Properties:
-      Database: !Ref  AnalyticsExportDatabase
+      Database: !Ref AnalyticsExportDatabase
       Description: Currently nothing special. To be the view used by BI
       Name: BI Query
       QueryString: >
@@ -2734,7 +2717,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -2742,7 +2725,7 @@ Resources:
                 - glue.amazonaws.com
             Action: sts:AssumeRole
       Path: "/"
-      ManagedPolicyArns: [ 'arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole' ]
+      ManagedPolicyArns: ["arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"]
       Policies:
         - PolicyName: CrawlerReadsPersistedMetadataPolicy
           PolicyDocument:
@@ -2757,7 +2740,6 @@ Resources:
                   - !Sub "arn:aws:s3:::persisted-resources-${AWS::AccountId}/"
                   - !Sub "arn:aws:s3:::persisted-resources-${AWS::AccountId}/*"
 
-
   #===========================BasePathMappings========================================================
 
   NvaPublicationBasePathMapping:
@@ -2770,7 +2752,6 @@ Resources:
       DomainName: !Ref ApiDomain
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
-
 
   #============================S3 buckets===============================================================
 
@@ -2788,10 +2769,10 @@ Resources:
             NoncurrentVersionExpiration:
               NoncurrentDays: !Ref S3NoncurrentVersionExpirationDays
       Tags:
-          - Key: IncludedInBackup
-            Value: "true"
+        - Key: IncludedInBackup
+          Value: "true"
       VersioningConfiguration:
-          Status: Enabled
+        Status: Enabled
 
   BrageMigrationErrorBucket:
     Type: AWS::S3::Bucket
@@ -2804,10 +2785,10 @@ Resources:
             NoncurrentVersionExpiration:
               NoncurrentDays: !Ref S3NoncurrentVersionExpirationDays
       Tags:
-          - Key: IncludedInBackup
-            Value: "true"
+        - Key: IncludedInBackup
+          Value: "true"
       VersioningConfiguration:
-          Status: Enabled
+        Status: Enabled
 
   ScopusZipBucket:
     Type: AWS::S3::Bucket
@@ -2820,10 +2801,10 @@ Resources:
             NoncurrentVersionExpiration:
               NoncurrentDays: !Ref S3NoncurrentVersionExpirationDays
       Tags:
-          - Key: IncludedInBackup
-            Value: "true"
+        - Key: IncludedInBackup
+          Value: "true"
       VersioningConfiguration:
-          Status: Enabled
+        Status: Enabled
 
   ScopusXmlBucket:
     Type: AWS::S3::Bucket
@@ -2839,10 +2820,10 @@ Resources:
             NoncurrentVersionExpiration:
               NoncurrentDays: !Ref S3NoncurrentVersionExpirationDays
       Tags:
-          - Key: IncludedInBackup
-            Value: "false"
+        - Key: IncludedInBackup
+          Value: "false"
       VersioningConfiguration:
-          Status: Enabled
+        Status: Enabled
 
   ImportCandidateStorageBucket:
     Type: AWS::S3::Bucket
@@ -2855,16 +2836,15 @@ Resources:
             NoncurrentVersionExpiration:
               NoncurrentDays: !Ref S3NoncurrentVersionExpirationDays
       Tags:
-          - Key: IncludedInBackup
-            Value: "true"
+        - Key: IncludedInBackup
+          Value: "true"
       VersioningConfiguration:
-          Status: Enabled
+        Status: Enabled
 
   ScopusImportReportBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
-
 
   #============================Alarms===============================================================
 
@@ -2932,25 +2912,25 @@ Resources:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
               - s3:GetObject
             Resource:
-              - !Sub 'arn:aws:s3:::${NvaEventsBucketsName}/*'
+              - !Sub "arn:aws:s3:::${NvaEventsBucketsName}/*"
 
   DeleteFromResourceStorageS3BucketManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
               - s3:DeleteObject
             Resource:
-              - !Sub 'arn:aws:s3:::${ResourceStorageBucketName}/*'
+              - !Sub "arn:aws:s3:::${ResourceStorageBucketName}/*"
 
   ResourceDeletedEventHandler:
     Type: AWS::Serverless::Function
@@ -3043,7 +3023,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           WORK_QUEUE_URL: !Ref DynamodbResourceBatchJobWorkQueue
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          PROCESSING_ENABLED: 'true'
+          PROCESSING_ENABLED: "true"
           SCAN_PAGE_SIZE: 1000
           TOTAL_SEGMENTS: 10
           SQS_BATCH_SIZE: 10
@@ -3053,7 +3033,7 @@ Resources:
           Properties:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
-              detail-type: 
+              detail-type:
                 - PublicationService.DataEntry.LoadDynamodbResourceBatchJob
 
   LoadDynamodbResourceBatchJobLambdaLogGroup:

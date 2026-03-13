@@ -8,7 +8,7 @@ import java.net.URI;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record ConfirmedDocument(URI identifier, Integer sequence) implements RelatedDocument {
 
-    public static ConfirmedDocument fromUri(URI value) {
-        return new ConfirmedDocument(value, null);
-    }
+  public static ConfirmedDocument fromUri(URI value) {
+    return new ConfirmedDocument(value, null);
+  }
 }

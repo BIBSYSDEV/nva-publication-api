@@ -10,31 +10,32 @@ import lombok.Getter;
 import lombok.Setter;
 import nva.commons.core.JacocoGenerated;
 
-
 @Builder(
     builderClassName = "PerformanceBuilder",
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"framforingstypenavn", "framforingstypenavn_engelsk", "framforingstypenavn_nynorsk"})
+@JsonIgnoreProperties({
+  "framforingstypenavn",
+  "framforingstypenavn_engelsk",
+  "framforingstypenavn_nynorsk"
+})
 public class Performance {
 
-    public static final String CONCERT = "KONSERT";
-    @JsonProperty("framforingstypekode")
-    private String performanceType;
+  public static final String CONCERT = "KONSERT";
 
-    @JacocoGenerated
-    public Performance() {
+  @JsonProperty("framforingstypekode")
+  private String performanceType;
 
-    }
+  @JacocoGenerated
+  public Performance() {}
 
-    @JsonIgnore
-    public boolean isConcert() {
-        return  CONCERT.equals(performanceType);
-    }
+  @JsonIgnore
+  public boolean isConcert() {
+    return CONCERT.equals(performanceType);
+  }
 }

@@ -10,36 +10,34 @@ import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
 public class UploadedFileDenyStrategy extends FileStrategyBase implements FileDenyStrategy {
 
-    public UploadedFileDenyStrategy(FileEntry file,
-                                    UserInstance userInstance,
-                                    Resource resource) {
-        super(file, userInstance, resource);
+  public UploadedFileDenyStrategy(FileEntry file, UserInstance userInstance, Resource resource) {
+    super(file, userInstance, resource);
+  }
+
+  @Override
+  public boolean deniesAction(FileOperation permission) {
+    if (!fileTypeIsUploadedFile()) {
+      return false;
     }
 
-    @Override
-    public boolean deniesAction(FileOperation permission) {
-        if (!fileTypeIsUploadedFile()) {
-            return false;
-        }
-
-        if (currentUserIsFileOwner()) {
-            return false;
-        }
-
-        if (resourceIsDegree() && isWriteOrDelete(permission)) {
-            return !currentUserIsDegreeFileCuratorForGivenFile();
-        }
-
-        return isDeniedUser();
+    if (currentUserIsFileOwner()) {
+      return false;
     }
 
-    private boolean isDeniedUser() {
-        return !(currentUserIsFileCuratorForGivenFile()
-                 || currentUserIsDegreeFileCuratorForGivenFile()
-                 || currentUserIsSupportCuratorForGivenFile());
+    if (resourceIsDegree() && isWriteOrDelete(permission)) {
+      return !currentUserIsDegreeFileCuratorForGivenFile();
     }
 
-    private boolean fileTypeIsUploadedFile() {
-        return file.getFile() instanceof UploadedFile;
-    }
+    return isDeniedUser();
+  }
+
+  private boolean isDeniedUser() {
+    return !(currentUserIsFileCuratorForGivenFile()
+        || currentUserIsDegreeFileCuratorForGivenFile()
+        || currentUserIsSupportCuratorForGivenFile());
+  }
+
+  private boolean fileTypeIsUploadedFile() {
+    return file.getFile() instanceof UploadedFile;
+  }
 }

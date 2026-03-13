@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
@@ -42,97 +43,105 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 class ImportCandidateDynamoDbStreamToEventBridgeHandlerTest {
 
-    public static final String EXPECTED_EXCEPTION_MESSAGE = "expected exception message";
-    private FakeS3Client s3Client;
-    private FakeContext context;
-    private ImportCandidateDynamoDbStreamToEventBridgeHandler handler;
-    private FakeS3Client failingS3Client;
-    private FakeEventBridgeClient eventBridgeClient;
+  public static final String EXPECTED_EXCEPTION_MESSAGE = "expected exception message";
+  private FakeS3Client s3Client;
+  private FakeContext context;
+  private ImportCandidateDynamoDbStreamToEventBridgeHandler handler;
+  private FakeS3Client failingS3Client;
+  private FakeEventBridgeClient eventBridgeClient;
 
-    public static Stream<Arguments> dynamoDbEventProvider() {
-        var importCandidate = randomImportCandidate();
-        return Stream.of(
-            Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(importCandidate, null)),
-            Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(null, importCandidate)),
-            Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(importCandidate,
-                                                                    importCandidate)));
-    }
+  public static Stream<Arguments> dynamoDbEventProvider() {
+    var importCandidate = randomImportCandidate();
+    return Stream.of(
+        Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(importCandidate, null)),
+        Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(null, importCandidate)),
+        Arguments.of(dynamodbEventEventWithSingleDynamoDbRecord(importCandidate, importCandidate)));
+  }
 
-    @BeforeEach
-    public void init() {
-        this.s3Client = new FakeS3Client();
-        failingS3Client = createFailingS3Client();
-        this.context = new FakeContext() {
-            @Override
-            public String getInvokedFunctionArn() {
-                return randomString();
-            }
+  @BeforeEach
+  public void init() {
+    this.s3Client = new FakeS3Client();
+    failingS3Client = createFailingS3Client();
+    this.context =
+        new FakeContext() {
+          @Override
+          public String getInvokedFunctionArn() {
+            return randomString();
+          }
         };
-        eventBridgeClient = new FakeEventBridgeClient();
-        this.handler = new ImportCandidateDynamoDbStreamToEventBridgeHandler(s3Client, eventBridgeClient);
-    }
+    eventBridgeClient = new FakeEventBridgeClient();
+    this.handler =
+        new ImportCandidateDynamoDbStreamToEventBridgeHandler(s3Client, eventBridgeClient);
+  }
 
-    @AfterEach
-    void closeS3Client() {
-        failingS3Client.close();
-    }
+  @AfterEach
+  void closeS3Client() {
+    failingS3Client.close();
+  }
 
-    @ParameterizedTest
-    @MethodSource("dynamoDbEventProvider")
-    void shouldConvertDynamoRecordToDataEntryUpdateEventAndWriteToS3(DynamodbEvent event) {
-        handler.handleRequest(event, context);
-        var expectedDataEntryUpdateEvent = convertToDataEntryUpdateEvent(event.getRecords().getFirst());
-        var actualDataEntryUpdateEvent = extractPersistedDataEntryUpdateEvent();
+  @ParameterizedTest
+  @MethodSource("dynamoDbEventProvider")
+  void shouldConvertDynamoRecordToDataEntryUpdateEventAndWriteToS3(DynamodbEvent event) {
+    handler.handleRequest(event, context);
+    var expectedDataEntryUpdateEvent = convertToDataEntryUpdateEvent(event.getRecords().getFirst());
+    var actualDataEntryUpdateEvent = extractPersistedDataEntryUpdateEvent();
 
-        assertThat(actualDataEntryUpdateEvent, is(equalTo(expectedDataEntryUpdateEvent)));
-    }
+    assertThat(actualDataEntryUpdateEvent, is(equalTo(expectedDataEntryUpdateEvent)));
+  }
 
-    @Test
-    void shouldThrowExceptionWhenWritingEventToS3Fails() {
-        var event = dynamodbEventEventWithSingleDynamoDbRecord(randomImportCandidate(), null);
-        var failingS3Client = mock(S3Client.class);
-        when(failingS3Client.putObject((PutObjectRequest) any(), (RequestBody) any())).thenThrow(new RuntimeException());
-        var failingHandler = new ImportCandidateDynamoDbStreamToEventBridgeHandler(failingS3Client, eventBridgeClient);
+  @Test
+  void shouldThrowExceptionWhenWritingEventToS3Fails() {
+    var event = dynamodbEventEventWithSingleDynamoDbRecord(randomImportCandidate(), null);
+    var failingS3Client = mock(S3Client.class);
+    when(failingS3Client.putObject((PutObjectRequest) any(), (RequestBody) any()))
+        .thenThrow(new RuntimeException());
+    var failingHandler =
+        new ImportCandidateDynamoDbStreamToEventBridgeHandler(failingS3Client, eventBridgeClient);
 
-        assertThrows(RuntimeException.class, () -> failingHandler.handleRequest(event, context));
-    }
+    assertThrows(RuntimeException.class, () -> failingHandler.handleRequest(event, context));
+  }
 
-    @Test
-    void shouldNotEmitEventWhenConsumedBlobIsEmpty() {
-        var event = dynamodbEventEventWithSingleDynamoDbRecord(null, null);
+  @Test
+  void shouldNotEmitEventWhenConsumedBlobIsEmpty() {
+    var event = dynamodbEventEventWithSingleDynamoDbRecord(null, null);
 
-        var eventReference = handler.handleRequest(event, context);
+    var eventReference = handler.handleRequest(event, context);
 
-        assertNull(eventReference);
-    }
+    assertNull(eventReference);
+  }
 
-    private ImportCandidateDataEntryUpdate extractPersistedDataEntryUpdateEvent() {
-        var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
-        return s3Driver.getFiles(UnixPath.ROOT_PATH)
-                   .stream()
-                   .map(attempt(json -> dtoObjectMapper.readValue(json, ImportCandidateDataEntryUpdate.class)))
-                   .map(Try::orElseThrow)
-                   .toList()
-                   .getFirst();
-    }
+  private ImportCandidateDataEntryUpdate extractPersistedDataEntryUpdateEvent() {
+    var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
+    return s3Driver.getFiles(UnixPath.ROOT_PATH).stream()
+        .map(attempt(json -> dtoObjectMapper.readValue(json, ImportCandidateDataEntryUpdate.class)))
+        .map(Try::orElseThrow)
+        .toList()
+        .getFirst();
+  }
 
-    private FakeS3Client createFailingS3Client() {
-        return new FakeS3Client() {
-            @SuppressWarnings("PMD.CloseResource")
-            @Override
-            public PutObjectResponse putObject(PutObjectRequest putObjectRequest, RequestBody requestBody) {
-                throw new RuntimeException(EXPECTED_EXCEPTION_MESSAGE);
-            }
-        };
-    }
+  private FakeS3Client createFailingS3Client() {
+    return new FakeS3Client() {
+      @SuppressWarnings("PMD.CloseResource")
+      @Override
+      public PutObjectResponse putObject(
+          PutObjectRequest putObjectRequest, RequestBody requestBody) {
+        throw new RuntimeException(EXPECTED_EXCEPTION_MESSAGE);
+      }
+    };
+  }
 
-    private ImportCandidateDataEntryUpdate convertToDataEntryUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {
-        return new ImportCandidateDataEntryUpdate(dynamoDbRecord.getEventName(),
-                                                  getEntity(dynamoDbRecord.getDynamodb().getOldImage()),
-                                                  getEntity(dynamoDbRecord.getDynamodb().getNewImage()));
-    }
+  private ImportCandidateDataEntryUpdate convertToDataEntryUpdateEvent(
+      DynamodbStreamRecord dynamoDbRecord) {
+    return new ImportCandidateDataEntryUpdate(
+        dynamoDbRecord.getEventName(),
+        getEntity(dynamoDbRecord.getDynamodb().getOldImage()),
+        getEntity(dynamoDbRecord.getDynamodb().getNewImage()));
+  }
 
-    private ImportCandidate getEntity(Map<String, AttributeValue> image) {
-        return attempt(() -> toImportCandidate(image)).toOptional().flatMap(Function.identity()).orElse(null);
-    }
+  private ImportCandidate getEntity(Map<String, AttributeValue> image) {
+    return attempt(() -> toImportCandidate(image))
+        .toOptional()
+        .flatMap(Function.identity())
+        .orElse(null);
+  }
 }

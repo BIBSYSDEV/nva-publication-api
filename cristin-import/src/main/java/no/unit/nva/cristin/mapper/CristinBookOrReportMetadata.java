@@ -16,78 +16,95 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"utgave", "utgave_fra", "status_elektronisk_publisert",
-    "status_utgitt_av_forlag", "stedangivelse_utgiver", "landkode_utgiver", "institusjonsnr_utgiver",
-    "avdnr_utgiver", "undavdnr_utgiver", "gruppenr_utgiver", "tidsskriftnr_serie",
-    "sprakkode_oversatt_fra", "sprakkode_oversatt_til", "originalforfatter", "originaltittel",
-    "arkivpost"})
+@JsonIgnoreProperties({
+  "utgave",
+  "utgave_fra",
+  "status_elektronisk_publisert",
+  "status_utgitt_av_forlag",
+  "stedangivelse_utgiver",
+  "landkode_utgiver",
+  "institusjonsnr_utgiver",
+  "avdnr_utgiver",
+  "undavdnr_utgiver",
+  "gruppenr_utgiver",
+  "tidsskriftnr_serie",
+  "sprakkode_oversatt_fra",
+  "sprakkode_oversatt_til",
+  "originalforfatter",
+  "originaltittel",
+  "arkivpost"
+})
 public class CristinBookOrReportMetadata {
 
-    public static final String ISBN_LIST = "isbn";
-    public static final String PUBLISHER_NAME = "utgivernavn";
-    public static final String NUMBER_OF_PAGES = "antall_sider_totalt";
-    public static final String SUBJECT_FIELD = "fagfelt";
-    public static final String SUBJECT_FIELD_IS_A_REQUIRED_FIELD =
-        "The subjectField value must be present for all instances of Monography.";
-    public static final String BOOK_SERIES = "tidsskrift_serie";
-    public static final String ISSUE = "hefte";
-    public static final String VOLUME = "volum_serie";
-    public static final String PUBLISHER = "forlag";
-    private static final String DOI = "doi";
+  public static final String ISBN_LIST = "isbn";
+  public static final String PUBLISHER_NAME = "utgivernavn";
+  public static final String NUMBER_OF_PAGES = "antall_sider_totalt";
+  public static final String SUBJECT_FIELD = "fagfelt";
+  public static final String SUBJECT_FIELD_IS_A_REQUIRED_FIELD =
+      "The subjectField value must be present for all instances of Monography.";
+  public static final String BOOK_SERIES = "tidsskrift_serie";
+  public static final String ISSUE = "hefte";
+  public static final String VOLUME = "volum_serie";
+  public static final String PUBLISHER = "forlag";
+  private static final String DOI = "doi";
 
-    @JsonProperty(ISBN_LIST)
-    private String isbn;
-    @JsonProperty(PUBLISHER_NAME)
-    private String publisherName;
-    @JsonProperty(NUMBER_OF_PAGES)
-    private String numberOfPages;
-    @JsonProperty(SUBJECT_FIELD)
-    private CristinSubjectField subjectField;
-    @JsonProperty(BOOK_SERIES)
-    //TODO rename class to something more appropriate.
-    private CristinJournalPublicationJournal bookSeries;
-    @JsonProperty(ISSUE)
-    private String issue;
-    @JsonProperty(VOLUME)
-    private String volume;
-    @JsonProperty(PUBLISHER)
-    private CristinPublisher cristinPublisher;
-    @JsonProperty(DOI)
-    private String doi;
-    @JsonProperty("status_revidert")
-    private String statusRevision;
+  @JsonProperty(ISBN_LIST)
+  private String isbn;
 
-    public CristinBookOrReportMetadata() {
+  @JsonProperty(PUBLISHER_NAME)
+  private String publisherName;
 
-    }
+  @JsonProperty(NUMBER_OF_PAGES)
+  private String numberOfPages;
 
-    public String getNumberOfPages() {
-        return numberOfPages;
-    }
+  @JsonProperty(SUBJECT_FIELD)
+  private CristinSubjectField subjectField;
 
-    public String getPublisherName() {
-        return publisherName;
-    }
+  @JsonProperty(BOOK_SERIES)
+  // TODO rename class to something more appropriate.
+  private CristinJournalPublicationJournal bookSeries;
 
-    @JacocoGenerated
-    public CristinBookOrReportMetadata.CristinBookReportBuilder copy() {
-        return this.toBuilder();
-    }
+  @JsonProperty(ISSUE)
+  private String issue;
 
-    @JsonIgnore
-    public Revision convertRevisionStatusToNvaRevision() {
-        return isRevised()
-                   ? Revision.REVISED
-                   : Revision.UNREVISED;
-    }
+  @JsonProperty(VOLUME)
+  private String volume;
 
-    @JsonIgnore
-    private boolean isRevised() {
-        return "J".equalsIgnoreCase(statusRevision);
-    }
+  @JsonProperty(PUBLISHER)
+  private CristinPublisher cristinPublisher;
+
+  @JsonProperty(DOI)
+  private String doi;
+
+  @JsonProperty("status_revidert")
+  private String statusRevision;
+
+  public CristinBookOrReportMetadata() {}
+
+  public String getNumberOfPages() {
+    return numberOfPages;
+  }
+
+  public String getPublisherName() {
+    return publisherName;
+  }
+
+  @JacocoGenerated
+  public CristinBookOrReportMetadata.CristinBookReportBuilder copy() {
+    return this.toBuilder();
+  }
+
+  @JsonIgnore
+  public Revision convertRevisionStatusToNvaRevision() {
+    return isRevised() ? Revision.REVISED : Revision.UNREVISED;
+  }
+
+  @JsonIgnore
+  private boolean isRevised() {
+    return "J".equalsIgnoreCase(statusRevision);
+  }
 }

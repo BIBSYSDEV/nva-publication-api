@@ -7,20 +7,22 @@ import no.unit.nva.model.contexttypes.media.MediaFormat;
 
 public class MediaFormatBuilder {
 
-    private static final  Map<CristinMediumTypeCode, MediaFormat> cristinMediumTypeToNVaFormat =
-        Map.of(CristinMediumTypeCode.JOURNAL, MediaFormat.TEXT,
-               CristinMediumTypeCode.PROFESSIONAL_JOURNAL, MediaFormat.TEXT,
-               CristinMediumTypeCode.NEWSPAPER, MediaFormat.TEXT,
-               CristinMediumTypeCode.TV, MediaFormat.VIDEO,
-               CristinMediumTypeCode.RADIO, MediaFormat.SOUND);
-    private final CristinObject cristinObject;
+  private static final Map<CristinMediumTypeCode, MediaFormat> cristinMediumTypeToNVaFormat =
+      Map.of(
+          CristinMediumTypeCode.JOURNAL, MediaFormat.TEXT,
+          CristinMediumTypeCode.PROFESSIONAL_JOURNAL, MediaFormat.TEXT,
+          CristinMediumTypeCode.NEWSPAPER, MediaFormat.TEXT,
+          CristinMediumTypeCode.TV, MediaFormat.VIDEO,
+          CristinMediumTypeCode.RADIO, MediaFormat.SOUND);
+  private final CristinObject cristinObject;
 
-    public MediaFormatBuilder(CristinObject cristinObject) {
-        this.cristinObject = cristinObject;
-    }
+  public MediaFormatBuilder(CristinObject cristinObject) {
+    this.cristinObject = cristinObject;
+  }
 
-    public MediaFormat build() {
-        var mediumTypeCode = cristinObject.getMediaContribution().getCristinMediumType().getMediumTypeCode();
-        return cristinMediumTypeToNVaFormat.getOrDefault(mediumTypeCode, null);
-    }
+  public MediaFormat build() {
+    var mediumTypeCode =
+        cristinObject.getMediaContribution().getCristinMediumType().getMediumTypeCode();
+    return cristinMediumTypeToNVaFormat.getOrDefault(mediumTypeCode, null);
+  }
 }

@@ -9,55 +9,55 @@ import nva.commons.core.JacocoGenerated;
 
 public class PublisherAuthority {
 
-    private List<String> brage;
-    private PublisherVersion nva;
+  private List<String> brage;
+  private PublisherVersion nva;
 
-    @JacocoGenerated
-    @JsonCreator
-    public PublisherAuthority(@JsonProperty("brage") List<String> brage,
-                              @JsonProperty("nva") PublisherVersion nva) {
-        this.nva = nva;
-        this.brage = brage;
-    }
+  @JacocoGenerated
+  @JsonCreator
+  public PublisherAuthority(
+      @JsonProperty("brage") List<String> brage, @JsonProperty("nva") PublisherVersion nva) {
+    this.nva = nva;
+    this.brage = brage;
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(brage, nva);
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(brage, nva);
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        PublisherAuthority that = (PublisherAuthority) o;
-        return Objects.equals(brage, that.brage) && Objects.equals(nva, that.nva);
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    PublisherAuthority that = (PublisherAuthority) o;
+    return Objects.equals(brage, that.brage) && Objects.equals(nva, that.nva);
+  }
 
-    @JacocoGenerated
-    @JsonProperty("brage")
-    public List<String> getBrage() {
-        return brage;
-    }
+  @JacocoGenerated
+  @JsonProperty("brage")
+  public List<String> getBrage() {
+    return brage;
+  }
 
-    @JacocoGenerated
-    public void setBrage(List<String> brage) {
-        this.brage = brage;
-    }
+  @JacocoGenerated
+  public void setBrage(List<String> brage) {
+    this.brage = brage;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("nva")
-    public PublisherVersion getNva() {
-        return nva;
-    }
+  @JacocoGenerated
+  @JsonProperty("nva")
+  public PublisherVersion getNva() {
+    return nva;
+  }
 
-    @JacocoGenerated
-    public void setNva(PublisherVersion nva) {
-        this.nva = nva;
-    }
+  @JacocoGenerated
+  public void setNva(PublisherVersion nva) {
+    this.nva = nva;
+  }
 }

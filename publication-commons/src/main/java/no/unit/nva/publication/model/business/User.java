@@ -7,35 +7,35 @@ import nva.commons.core.JacocoGenerated;
 
 public class User {
 
-    private final String userName;
+  private final String userName;
 
-    @JsonCreator
-    public User(String userName) {
-        this.userName = userName;
-    }
+  @JsonCreator
+  public User(String userName) {
+    this.userName = userName;
+  }
 
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(userName);
-    }
+  @Override
+  @JacocoGenerated
+  public int hashCode() {
+    return Objects.hash(userName);
+  }
 
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof User)) {
-            return false;
-        }
-        User user = (User) o;
-        return Objects.equals(userName, user.userName);
+  @Override
+  @JacocoGenerated
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (!(o instanceof User)) {
+      return false;
+    }
+    User user = (User) o;
+    return Objects.equals(userName, user.userName);
+  }
 
-    @JsonValue
-    @Override
-    public String toString() {
-        return userName;
-    }
+  @JsonValue
+  @Override
+  public String toString() {
+    return userName;
+  }
 }

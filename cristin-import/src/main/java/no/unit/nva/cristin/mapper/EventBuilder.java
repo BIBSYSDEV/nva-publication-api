@@ -4,6 +4,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isConferenceLe
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isConferencePoster;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isLecture;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isOtherPresentation;
+
 import java.util.Set;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.event.ConferenceLecture;
@@ -14,46 +15,46 @@ import no.unit.nva.model.pages.Pages;
 
 public class EventBuilder extends AbstractPublicationInstanceBuilder {
 
-    public EventBuilder(CristinObject cristinObject) {
-        super(cristinObject);
-    }
+  public EventBuilder(CristinObject cristinObject) {
+    super(cristinObject);
+  }
 
-    @Override
-    public PublicationInstance<? extends Pages> build() {
-        if (isConferenceLecture(getCristinObject())) {
-            return createConferenceLecture();
-        }
-        if (isConferencePoster(getCristinObject())) {
-            return createConferencePoster();
-        }
-        if (isLecture(getCristinObject())) {
-            return createLecture();
-        }
-        if (isOtherPresentation(getCristinObject())) {
-            return createOtherPresentation();
-        } else {
-            throw unknownSecondaryCategory();
-        }
+  @Override
+  public PublicationInstance<? extends Pages> build() {
+    if (isConferenceLecture(getCristinObject())) {
+      return createConferenceLecture();
     }
+    if (isConferencePoster(getCristinObject())) {
+      return createConferencePoster();
+    }
+    if (isLecture(getCristinObject())) {
+      return createLecture();
+    }
+    if (isOtherPresentation(getCristinObject())) {
+      return createOtherPresentation();
+    } else {
+      throw unknownSecondaryCategory();
+    }
+  }
 
-    @Override
-    protected Set<CristinMainCategory> getExpectedType() {
-        return Set.of(CristinMainCategory.EVENT);
-    }
+  @Override
+  protected Set<CristinMainCategory> getExpectedType() {
+    return Set.of(CristinMainCategory.EVENT);
+  }
 
-    private PublicationInstance<? extends Pages> createConferenceLecture() {
-        return new ConferenceLecture();
-    }
+  private PublicationInstance<? extends Pages> createConferenceLecture() {
+    return new ConferenceLecture();
+  }
 
-    private PublicationInstance<? extends Pages> createConferencePoster() {
-        return new ConferencePoster();
-    }
+  private PublicationInstance<? extends Pages> createConferencePoster() {
+    return new ConferencePoster();
+  }
 
-    private PublicationInstance<? extends Pages> createLecture() {
-        return new Lecture();
-    }
+  private PublicationInstance<? extends Pages> createLecture() {
+    return new Lecture();
+  }
 
-    private PublicationInstance<? extends Pages> createOtherPresentation() {
-        return new OtherPresentation();
-    }
+  private PublicationInstance<? extends Pages> createOtherPresentation() {
+    return new OtherPresentation();
+  }
 }

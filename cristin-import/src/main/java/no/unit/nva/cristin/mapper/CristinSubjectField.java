@@ -14,27 +14,24 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"fagomradekode", "navn", "navn_engelsk"})
 public class CristinSubjectField {
-    
-    public static final String SUBJECT_FIELD_CODE = "fagfeltkode";
-    public static final String MISSING_SUBJECT_FIELD_CODE =
-        "The value of the field \"fagfeltkode\" in the Cristin entry cant be null.";
 
-    @JsonProperty(SUBJECT_FIELD_CODE)
-    private Integer subjectFieldCode;
+  public static final String SUBJECT_FIELD_CODE = "fagfeltkode";
+  public static final String MISSING_SUBJECT_FIELD_CODE =
+      "The value of the field \"fagfeltkode\" in the Cristin entry cant be null.";
 
-    public CristinSubjectField() {
+  @JsonProperty(SUBJECT_FIELD_CODE)
+  private Integer subjectFieldCode;
 
-    }
+  public CristinSubjectField() {}
 
-    @JacocoGenerated
-    public CristinSubjectFieldBuilder copy() {
-        return this.toBuilder();
-    }
+  @JacocoGenerated
+  public CristinSubjectFieldBuilder copy() {
+    return this.toBuilder();
+  }
 }

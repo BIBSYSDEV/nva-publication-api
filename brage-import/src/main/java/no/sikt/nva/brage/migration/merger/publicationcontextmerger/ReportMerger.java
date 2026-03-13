@@ -9,22 +9,22 @@ import nva.commons.core.JacocoGenerated;
 
 public class ReportMerger extends PublicationContextMerger {
 
-    @JacocoGenerated
-    public ReportMerger(Record record) {
-        super(record);
-    }
+  @JacocoGenerated
+  public ReportMerger(Record record) {
+    super(record);
+  }
 
-    public Report merge(Report report, PublicationContext publicationContext)
-        throws InvalidIssnException, InvalidUnconfirmedSeriesException {
-        if (publicationContext instanceof Report newReport) {
-            return new Report.Builder().withSeriesNumber(
-                    getNonNullValue(report.getSeriesNumber(), newReport.getSeriesNumber()))
-                       .withIsbnList(getIsbnList(report.getIsbnList(), newReport.getIsbnList()))
-                       .withPublisher(getPublisher(report.getPublisher(), newReport.getPublisher()))
-                       .withSeries(getSeries(report.getSeries(), newReport.getSeries()))
-                       .build();
-        } else {
-            return report;
-        }
+  public Report merge(Report report, PublicationContext publicationContext)
+      throws InvalidIssnException, InvalidUnconfirmedSeriesException {
+    if (publicationContext instanceof Report newReport) {
+      return new Report.Builder()
+          .withSeriesNumber(getNonNullValue(report.getSeriesNumber(), newReport.getSeriesNumber()))
+          .withIsbnList(getIsbnList(report.getIsbnList(), newReport.getIsbnList()))
+          .withPublisher(getPublisher(report.getPublisher(), newReport.getPublisher()))
+          .withSeries(getSeries(report.getSeries(), newReport.getSeries()))
+          .build();
+    } else {
+      return report;
     }
+  }
 }

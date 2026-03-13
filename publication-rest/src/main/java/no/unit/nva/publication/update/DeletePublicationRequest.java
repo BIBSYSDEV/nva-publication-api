@@ -1,5 +1,3 @@
 package no.unit.nva.publication.update;
 
-public class DeletePublicationRequest implements PublicationRequest {
-
-}
+public class DeletePublicationRequest implements PublicationRequest {}

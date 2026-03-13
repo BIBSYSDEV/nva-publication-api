@@ -9,12 +9,16 @@ import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
 public class EmbargoCuratorFileGrantStrategy extends FileStrategyBase implements FileGrantStrategy {
 
-    public EmbargoCuratorFileGrantStrategy(FileEntry file, UserInstance userInstance, Resource resource) {
-        super(file, userInstance, resource);
-    }
+  public EmbargoCuratorFileGrantStrategy(
+      FileEntry file, UserInstance userInstance, Resource resource) {
+    super(file, userInstance, resource);
+  }
 
-    @Override
-    public boolean allowsAction(FileOperation permission) {
-        return fileIsFinalized() && fileHasEmbargo() && !resourceIsDegree() && currentUserIsFileCurator();
-    }
+  @Override
+  public boolean allowsAction(FileOperation permission) {
+    return fileIsFinalized()
+        && fileHasEmbargo()
+        && !resourceIsDegree()
+        && currentUserIsFileCurator();
+  }
 }

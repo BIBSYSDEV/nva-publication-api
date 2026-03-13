@@ -11,6 +11,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+
 import java.net.URI;
 import java.time.Instant;
 import java.util.Arrays;
@@ -60,285 +61,291 @@ import nva.commons.core.paths.UriWrapper;
 @SuppressWarnings("PMD.CouplingBetweenObjects")
 public final class PublicationGenerator {
 
-    private static final BaseFaker FAKER = new BaseFaker();
+  private static final BaseFaker FAKER = new BaseFaker();
 
-    @JacocoGenerated
-    private PublicationGenerator() {
+  @JacocoGenerated
+  private PublicationGenerator() {}
 
-    }
+  // This method is in use in api-tests
+  @JacocoGenerated
+  public static Publication publicationWithIdentifier() {
+    return randomPublication();
+  }
 
-    // This method is in use in api-tests
-    @JacocoGenerated
-    public static Publication publicationWithIdentifier() {
-        return randomPublication();
-    }
+  // This method is in use in api-tests
+  @JacocoGenerated
+  public static Publication publicationWithoutIdentifier() {
+    var publication = randomPublication();
+    publication.setIdentifier(null);
+    return publication;
+  }
 
-    // This method is in use in api-tests
-    @JacocoGenerated
-    public static Publication publicationWithoutIdentifier() {
-        var publication = randomPublication();
-        publication.setIdentifier(null);
-        return publication;
-    }
+  public static URI randomUri() {
+    return randomUri("https://www.example.org/");
+  }
 
-    public static URI randomUri() {
-        return randomUri("https://www.example.org/");
-    }
+  public static URI randomUri(String namespace) {
+    return URI.create(namespace + UUID.randomUUID());
+  }
 
-    public static URI randomUri(String namespace) {
-        return URI.create(namespace + UUID.randomUUID());
-    }
+  public static Publication randomPublication() {
+    return randomPublication(randomPublicationInstanceType());
+  }
 
-    public static Publication randomPublication() {
-        return randomPublication(randomPublicationInstanceType());
-    }
+  public static Publication randomPublication(Class<?> publicationInstanceClass) {
+    return buildRandomPublicationFromInstance(publicationInstanceClass);
+  }
 
-    public static Publication randomPublication(Class<?> publicationInstanceClass) {
-        return buildRandomPublicationFromInstance(publicationInstanceClass);
-    }
+  public static Publication randomPublicationWithStatus(PublicationStatus status) {
+    return randomPublication().copy().withStatus(status).build();
+  }
 
-    public static Publication randomPublicationWithStatus(PublicationStatus status) {
-        return randomPublication().copy().withStatus(status).build();
-    }
+  public static Publication randomNonDegreePublication() {
+    return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
+  }
 
-    public static Publication randomNonDegreePublication() {
-        return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES);
-    }
+  public static Publication randomDegreePublication() {
+    return fromInstanceClasses(PROTECTED_DEGREE_INSTANCE_TYPES);
+  }
 
-    public static Publication randomDegreePublication() {
-        return fromInstanceClasses(PROTECTED_DEGREE_INSTANCE_TYPES);
-    }
+  public static Publication fromInstanceClasses(Class<?>... targetClasses) {
+    var listOfTargetClasses = Arrays.asList(targetClasses);
+    var otherTargetClasses =
+        PublicationInstanceBuilder.listPublicationInstanceTypes().stream()
+            .filter(listOfTargetClasses::contains)
+            .toList();
+    return randomPublication(randomElement(otherTargetClasses));
+  }
 
-    public static Publication fromInstanceClasses(Class<?>... targetClasses) {
-        var listOfTargetClasses = Arrays.asList(targetClasses);
-        var otherTargetClasses = PublicationInstanceBuilder.listPublicationInstanceTypes()
-                                     .stream()
-                                     .filter(listOfTargetClasses::contains)
-                                     .toList();
-        return randomPublication(randomElement(otherTargetClasses));
-    }
+  public static Publication fromInstanceClassesExcluding(Class<?>... excludedClasses) {
+    var listOfExcludedClasses = Arrays.asList(excludedClasses);
+    var targetClasses =
+        PublicationInstanceBuilder.listPublicationInstanceTypes().stream()
+            .filter(not(listOfExcludedClasses::contains))
+            .toList();
+    return randomPublication(randomElement(targetClasses));
+  }
 
-    public static Publication fromInstanceClassesExcluding(Class<?>... excludedClasses) {
-        var listOfExcludedClasses = Arrays.asList(excludedClasses);
-        var targetClasses = PublicationInstanceBuilder.listPublicationInstanceTypes()
-                                .stream()
-                                .filter(not(listOfExcludedClasses::contains))
-                                .toList();
-        return randomPublication(randomElement(targetClasses));
-    }
+  public static Publication createImportedPublication(ImportSource.Source source) {
+    return createImportedPublication(ImportDetail.fromSource(source, Instant.now()));
+  }
 
-    public static Publication createImportedPublication(ImportSource.Source source) {
-        return createImportedPublication(ImportDetail.fromSource(source, Instant.now()));
-    }
+  public static Publication createImportedPublication(ImportDetail importDetail) {
+    return randomPublication().copy().withImportDetails(List.of(importDetail)).build();
+  }
 
-    public static Publication createImportedPublication(ImportDetail importDetail) {
-        return randomPublication().copy()
-                   .withImportDetails(List.of(importDetail))
-                   .build();
-    }
+  public static Publication randomPublicationWithEmptyValues(Class<?> publicationInstanceClass) {
+    return buildRandomPublicationFromInstance(publicationInstanceClass);
+  }
 
-    public static Publication randomPublicationWithEmptyValues(Class<?> publicationInstanceClass) {
-        return buildRandomPublicationFromInstance(publicationInstanceClass);
-    }
+  public static EntityDescription randomEntityDescription(Class<?> publicationInstanceClass) {
+    return EntityDescriptionBuilder.randomEntityDescription(publicationInstanceClass);
+  }
 
-    public static EntityDescription randomEntityDescription(Class<?> publicationInstanceClass) {
-        return EntityDescriptionBuilder.randomEntityDescription(publicationInstanceClass);
-    }
+  public static URI randomDoi() {
+    return URI.create("https://doi.org/10.1234/" + randomWord());
+  }
 
-    public static URI randomDoi() {
-        return URI.create("https://doi.org/10.1234/" + randomWord());
-    }
+  public static List<ResearchProject> randomProjects() {
+    return List.of(randomResearchProject());
+  }
 
-    public static List<ResearchProject> randomProjects() {
-        return List.of(randomResearchProject());
-    }
+  public static Set<Funding> randomFundings() {
+    return Set.of(randomUnconfirmedFunding(), randomConfirmedFunding());
+  }
 
-    public static Set<Funding> randomFundings() {
-        return Set.of(randomUnconfirmedFunding(), randomConfirmedFunding());
-    }
+  public static Funding randomConfirmedFunding() {
+    var activeFrom = randomInstant();
+    return new FundingBuilder()
+        .withId(randomUriWithPath("verified-funding"))
+        .withSource(randomUriWithPath("funding-sources"))
+        .withIdentifier(randomString())
+        .withLabels(randomLabels())
+        .withFundingAmount(randomMonetaryAmount())
+        .withActiveFrom(activeFrom)
+        .withActiveTo(randomInstant(activeFrom))
+        .build();
+  }
 
-    public static Funding randomConfirmedFunding() {
-        var activeFrom = randomInstant();
-        return new FundingBuilder()
-                   .withId(randomUriWithPath("verified-funding"))
-                   .withSource(randomUriWithPath("funding-sources"))
-                   .withIdentifier(randomString())
-                   .withLabels(randomLabels())
-                   .withFundingAmount(randomMonetaryAmount())
-                   .withActiveFrom(activeFrom)
-                   .withActiveTo(randomInstant(activeFrom))
-                   .build();
-    }
+  private static URI randomUriWithPath(String path) {
+    return UriWrapper.fromHost("example.org")
+        .addChild(path)
+        .addChild(UUID.randomUUID().toString())
+        .getUri();
+  }
 
-    private static URI randomUriWithPath(String path) {
-        return UriWrapper.fromHost("example.org")
-                   .addChild(path)
-                   .addChild(UUID.randomUUID().toString())
-                   .getUri();
-    }
+  public static Funding randomUnconfirmedFunding() {
+    var activeFrom = randomInstant();
 
-    public static Funding randomUnconfirmedFunding() {
-        var activeFrom = randomInstant();
+    return new FundingBuilder()
+        .withSource(randomUriWithPath("funding-sources"))
+        .withIdentifier(randomString())
+        .withLabels(randomLabels())
+        .withFundingAmount(randomMonetaryAmount())
+        .withActiveFrom(activeFrom)
+        .withActiveTo(randomInstant(activeFrom))
+        .build();
+  }
 
-        return new FundingBuilder()
-                   .withSource(randomUriWithPath("funding-sources"))
-                   .withIdentifier(randomString())
-                   .withLabels(randomLabels())
-                   .withFundingAmount(randomMonetaryAmount())
-                   .withActiveFrom(activeFrom)
-                   .withActiveTo(randomInstant(activeFrom))
-                   .build();
-    }
+  public static MonetaryAmount randomMonetaryAmount() {
+    var monetaryAmount = new MonetaryAmount();
 
-    public static MonetaryAmount randomMonetaryAmount() {
-        var monetaryAmount = new MonetaryAmount();
+    monetaryAmount.setCurrency(randomCurrency());
+    monetaryAmount.setAmount(randomInteger());
 
-        monetaryAmount.setCurrency(randomCurrency());
-        monetaryAmount.setAmount(randomInteger());
+    return monetaryAmount;
+  }
 
-        return monetaryAmount;
-    }
+  public static ResearchProject randomResearchProject() {
+    return new ResearchProject.Builder()
+        .withId(randomUriWithPath("project"))
+        .withName(randomString())
+        .withApprovals(randomApprovals())
+        .build();
+  }
 
-    public static ResearchProject randomResearchProject() {
-        return new ResearchProject.Builder()
-                   .withId(randomUriWithPath("project"))
-                   .withName(randomString())
-                   .withApprovals(randomApprovals())
-                   .build();
-    }
+  public static List<Approval> randomApprovals() {
+    return List.of(randomApproval());
+  }
 
-    public static List<Approval> randomApprovals() {
-        return List.of(randomApproval());
-    }
+  public static Approval randomApproval() {
 
-    public static Approval randomApproval() {
+    return new Approval.Builder()
+        .withApprovalStatus(randomElement(ApprovalStatus.values()))
+        .withApprovalDate(randomInstant())
+        .withApplicationCode(randomString())
+        .withApprovedBy(randomElement(ApprovalsBody.values()))
+        .build();
+  }
 
-        return new Approval.Builder()
-                   .withApprovalStatus(randomElement(ApprovalStatus.values()))
-                   .withApprovalDate(randomInstant())
-                   .withApplicationCode(randomString())
-                   .withApprovedBy(randomElement(ApprovalsBody.values()))
-                   .build();
-    }
+  public static AdditionalIdentifier randomAdditionalIdentifier() {
+    return new AdditionalIdentifier(randomString(), randomString());
+  }
 
-    public static AdditionalIdentifier randomAdditionalIdentifier() {
-        return new AdditionalIdentifier(randomString(), randomString());
-    }
+  public static AdditionalIdentifierBase randomHandleIdentifier() {
+    return new HandleIdentifier(
+        new SourceName(randomLowerCaseString(), randomLowerCaseString()), randomUri());
+  }
 
-    public static AdditionalIdentifierBase randomHandleIdentifier() {
-        return new HandleIdentifier(new SourceName(randomLowerCaseString(), randomLowerCaseString()),
-                                    randomUri());
-    }
+  private static String randomLowerCaseString() {
+    return randomString().toLowerCase(Locale.ROOT);
+  }
 
-    private static String randomLowerCaseString() {
-        return randomString().toLowerCase(Locale.ROOT);
-    }
+  public static AdditionalIdentifierBase randomScopusIdentifier() {
+    return new ScopusIdentifier(
+        new SourceName(randomLowerCaseString(), randomLowerCaseString()), randomString());
+  }
 
-    public static AdditionalIdentifierBase randomScopusIdentifier() {
-        return new ScopusIdentifier(new SourceName(randomLowerCaseString(), randomLowerCaseString()), randomString());
-    }
+  public static AdditionalIdentifierBase randomCristinIdentifier() {
+    return new CristinIdentifier(
+        new SourceName(SourceName.CRISTIN_SYSTEM, randomLowerCaseString()),
+        randomInteger().toString());
+  }
 
-    public static AdditionalIdentifierBase randomCristinIdentifier() {
-        return new CristinIdentifier(new SourceName(SourceName.CRISTIN_SYSTEM, randomLowerCaseString()),
-                                     randomInteger().toString());
-    }
+  public static Organization randomOrganization() {
+    return new Organization.Builder().withId(randomBackendUri("customer")).build();
+  }
 
-    public static Organization randomOrganization() {
-        return new Organization.Builder()
-                   .withId(randomBackendUri("customer"))
-                   .build();
-    }
+  public static Contributor randomContributorWithId(URI id) {
+    return new Contributor.Builder()
+        .withRole(new RoleType(Role.OTHER))
+        .withIdentity(new Identity.Builder().withId(id).build())
+        .build();
+  }
 
-    public static Contributor randomContributorWithId(URI id) {
-        return new Contributor.Builder()
-                   .withRole(new RoleType(Role.OTHER))
-                   .withIdentity(new Identity.Builder().withId(id).build())
-                   .build();
-    }
+  public static Contributor randomContributorWithIdAndAffiliation(
+      URI contributorId, URI affiliationId) {
+    return new Contributor.Builder()
+        .withRole(new RoleType(Role.OTHER))
+        .withIdentity(new Identity.Builder().withId(contributorId).build())
+        .withAffiliations(List.of(new Organization.Builder().withId(affiliationId).build()))
+        .build();
+  }
 
-    public static Contributor randomContributorWithIdAndAffiliation(URI contributorId, URI affiliationId) {
-        return new Contributor.Builder()
-                   .withRole(new RoleType(Role.OTHER))
-                   .withIdentity(new Identity.Builder().withId(contributorId).build())
-                   .withAffiliations(List.of(new Organization.Builder().withId(affiliationId).build()))
-                   .build();
-    }
+  public static Contributor randomContributorWithAffiliation(URI affiliationId) {
+    return new Contributor.Builder()
+        .withRole(new RoleType(Role.OTHER))
+        .withIdentity(new Identity.Builder().withId(randomUri()).build())
+        .withAffiliations(
+            List.of(
+                Organization.fromUri(affiliationId),
+                Organization.fromUri(randomUri()),
+                new UnconfirmedOrganization(randomString())))
+        .build();
+  }
 
-    public static Contributor randomContributorWithAffiliation(URI affiliationId) {
-        return new Contributor.Builder()
-                   .withRole(new RoleType(Role.OTHER))
-                   .withIdentity(new Identity.Builder().withId(randomUri()).build())
-                   .withAffiliations(List.of(Organization.fromUri(affiliationId),
-                                             Organization.fromUri(randomUri()),
-                                             new UnconfirmedOrganization(randomString())))
-                   .build();
-    }
+  public static Publication buildRandomPublicationFromInstance(Class<?> publicationInstanceClass) {
+    var entityDescription = randomEntityDescription(publicationInstanceClass);
 
-    public static Publication buildRandomPublicationFromInstance(Class<?> publicationInstanceClass) {
-        var entityDescription = randomEntityDescription(publicationInstanceClass);
+    var curatingInstitutions = extractCuratingInstitutions(entityDescription);
 
-        var curatingInstitutions = extractCuratingInstitutions(entityDescription);
+    return new Builder()
+        .withIdentifier(SortableIdentifier.next())
+        .withRightsHolder(randomString())
+        .withPublisher(randomOrganization())
+        .withSubjects(List.of(randomUri()))
+        .withStatus(randomElement(PublicationStatus.values()))
+        .withPublishedDate(randomInstant())
+        .withModifiedDate(randomInstant())
+        .withAdditionalIdentifiers(randomAdditionalIdentifiers())
+        .withProjects(randomProjects())
+        .withFundings(randomFundings())
+        .withResourceOwner(randomResourceOwner())
+        .withLink(randomUri())
+        .withIndexedDate(randomInstant())
+        .withHandle(randomUri())
+        .withDoi(randomDoi())
+        .withCreatedDate(randomInstant())
+        .withEntityDescription(entityDescription)
+        .withAssociatedArtifacts(randomAssociatedArtifacts())
+        .withPublicationNotes(List.of(randomPublicationNote(), randomUnpublishingNote()))
+        .withDuplicateOf(randomUri())
+        .withCuratingInstitutions(curatingInstitutions)
+        .build();
+  }
 
-        return new Builder()
-                   .withIdentifier(SortableIdentifier.next())
-                   .withRightsHolder(randomString())
-                   .withPublisher(randomOrganization())
-                   .withSubjects(List.of(randomUri()))
-                   .withStatus(randomElement(PublicationStatus.values()))
-                   .withPublishedDate(randomInstant())
-                   .withModifiedDate(randomInstant())
-                   .withAdditionalIdentifiers(randomAdditionalIdentifiers())
-                   .withProjects(randomProjects())
-                   .withFundings(randomFundings())
-                   .withResourceOwner(randomResourceOwner())
-                   .withLink(randomUri())
-                   .withIndexedDate(randomInstant())
-                   .withHandle(randomUri())
-                   .withDoi(randomDoi())
-                   .withCreatedDate(randomInstant())
-                   .withEntityDescription(entityDescription)
-                   .withAssociatedArtifacts(randomAssociatedArtifacts())
-                   .withPublicationNotes(List.of(randomPublicationNote(), randomUnpublishingNote()))
-                   .withDuplicateOf(randomUri())
-                   .withCuratingInstitutions(curatingInstitutions)
-                   .build();
-    }
+  private static Set<CuratingInstitution> extractCuratingInstitutions(
+      EntityDescription entityDescription) {
+    return entityDescription.getContributors().stream()
+        .flatMap(PublicationGenerator::createCuratingInstitutionsFromContributor)
+        .collect(Collectors.toSet());
+  }
 
-    private static Set<CuratingInstitution> extractCuratingInstitutions(EntityDescription entityDescription) {
-        return entityDescription.getContributors().stream()
-                   .flatMap(PublicationGenerator::createCuratingInstitutionsFromContributor)
-                   .collect(Collectors.toSet());
-    }
+  public static Stream<CuratingInstitution> createCuratingInstitutionsFromContributor(
+      Contributor contributor) {
+    return contributor.getAffiliations().stream()
+        .map(Organization.class::cast)
+        .map(
+            affiliation ->
+                new CuratingInstitution(
+                    affiliation.getId(), Set.of(contributor.getIdentity().getId())));
+  }
 
-    public static Stream<CuratingInstitution> createCuratingInstitutionsFromContributor(Contributor contributor) {
-        return contributor.getAffiliations().stream()
-                   .map(Organization.class::cast)
-                   .map(affiliation ->
-                            new CuratingInstitution(affiliation.getId(), Set.of(contributor.getIdentity().getId())));
-    }
+  private static Set<AdditionalIdentifierBase> randomAdditionalIdentifiers() {
+    return Set.of(
+        randomAdditionalIdentifier(),
+        randomScopusIdentifier(),
+        randomCristinIdentifier(),
+        randomHandleIdentifier());
+  }
 
-    private static Set<AdditionalIdentifierBase> randomAdditionalIdentifiers() {
-        return Set.of(randomAdditionalIdentifier(), randomScopusIdentifier(), randomCristinIdentifier(),
-                      randomHandleIdentifier());
-    }
+  private static PublicationNoteBase randomPublicationNote() {
+    return new PublicationNote(randomString());
+  }
 
-    private static PublicationNoteBase randomPublicationNote() {
-        return new PublicationNote(randomString());
-    }
+  private static PublicationNoteBase randomUnpublishingNote() {
+    return new UnpublishingNote(randomString(), randomUsername(), randomInstant());
+  }
 
-    private static PublicationNoteBase randomUnpublishingNote() {
-        return new UnpublishingNote(randomString(), randomUsername(), randomInstant());
-    }
+  private static Username randomUsername() {
+    return new Username(randomString());
+  }
 
-    private static Username randomUsername() {
-        return new Username(randomString());
-    }
+  public static ResourceOwner randomResourceOwner() {
+    return new ResourceOwner(randomUsername(), randomUri());
+  }
 
-    public static ResourceOwner randomResourceOwner() {
-        return new ResourceOwner(randomUsername(), randomUri());
-    }
-
-    private static String randomWord() {
-        return FAKER.lorem().word();
-    }
+  private static String randomWord() {
+    return FAKER.lorem().word();
+  }
 }

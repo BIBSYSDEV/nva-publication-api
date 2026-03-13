@@ -7,9 +7,9 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 
 public class AbstractCristinImportTest extends ResourcesLocalTest {
 
-    public Stream<CristinObject> cristinObjects(int numberOfObjects) {
-        return IntStream.range(0, numberOfObjects)
-                   .boxed()
-                   .map(ignored -> CristinDataGenerator.randomObject());
-    }
+  public Stream<CristinObject> cristinObjects(int numberOfObjects) {
+    return IntStream.range(0, numberOfObjects)
+        .boxed()
+        .map(ignored -> CristinDataGenerator.randomObject());
+  }
 }

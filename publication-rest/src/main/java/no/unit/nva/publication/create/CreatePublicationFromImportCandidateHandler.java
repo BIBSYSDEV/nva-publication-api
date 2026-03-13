@@ -4,6 +4,7 @@ import static java.net.HttpURLConnection.HTTP_CREATED;
 import static no.unit.nva.publication.RequestUtil.getImportCandidateIdentifier;
 import static no.unit.nva.publication.create.ImportCandidateValidator.validate;
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.util.List;
@@ -48,197 +49,232 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.CouplingBetweenObjects")
-public class CreatePublicationFromImportCandidateHandler extends ApiGatewayHandler<CreatePublicationRequest,
-                                                                                      PublicationResponse> {
+public class CreatePublicationFromImportCandidateHandler
+    extends ApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreatePublicationFromImportCandidateHandler.class);
-    private static final String LOG_PROCESSING_IMPORT_CANDIDATE = "Starting import of import candidate {}";
-    private static final String LOG_PUBLICATION_CREATED = "Publication {} created from import candidate {}";
-    private static final String LOG_IMPORT_STATUS_UPDATED = "Import candidate {} set to IMPORTED, publication {}";
-    public static final String ROLLBACK_WENT_WRONG_MESSAGE = "Rollback went wrong";
-    public static final String IMPORT_PROCESS_WENT_WRONG = "Import process went wrong";
-    public static final String RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE = "Resource has already been imported";
-    public static final String RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE =
-        "Resource is missing scopus identifier";
-    public static final String RESOURCE_IS_NOT_PUBLISHABLE = "Resource is not publishable";
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(CreatePublicationFromImportCandidateHandler.class);
+  private static final String LOG_PROCESSING_IMPORT_CANDIDATE =
+      "Starting import of import candidate {}";
+  private static final String LOG_PUBLICATION_CREATED =
+      "Publication {} created from import candidate {}";
+  private static final String LOG_IMPORT_STATUS_UPDATED =
+      "Import candidate {} set to IMPORTED, publication {}";
+  public static final String ROLLBACK_WENT_WRONG_MESSAGE = "Rollback went wrong";
+  public static final String IMPORT_PROCESS_WENT_WRONG = "Import process went wrong";
+  public static final String RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE =
+      "Resource has already been imported";
+  public static final String RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE =
+      "Resource is missing scopus identifier";
+  public static final String RESOURCE_IS_NOT_PUBLISHABLE = "Resource is not publishable";
 
-    private final ResourceService candidateService;
-    private final ResourceService publicationService;
-    private final TicketService ticketService;
-    private final ApprovalAssignmentServiceForImportCandidateFiles approvalService;
-    private final PiaClient piaClient;
-    private final AssociatedArtifactsMover associatedArtifactsMover;
+  private final ResourceService candidateService;
+  private final ResourceService publicationService;
+  private final TicketService ticketService;
+  private final ApprovalAssignmentServiceForImportCandidateFiles approvalService;
+  private final PiaClient piaClient;
+  private final AssociatedArtifactsMover associatedArtifactsMover;
 
-    @JacocoGenerated
-    public CreatePublicationFromImportCandidateHandler() {
-        this(ImportCandidateHandlerConfigs.getDefaultsConfigs(), new Environment(), TicketService.defaultService(),
-             new ApprovalAssignmentServiceForImportCandidateFiles(IdentityServiceClient.prepare()));
-    }
+  @JacocoGenerated
+  public CreatePublicationFromImportCandidateHandler() {
+    this(
+        ImportCandidateHandlerConfigs.getDefaultsConfigs(),
+        new Environment(),
+        TicketService.defaultService(),
+        new ApprovalAssignmentServiceForImportCandidateFiles(IdentityServiceClient.prepare()));
+  }
 
-    public CreatePublicationFromImportCandidateHandler(
-        ImportCandidateHandlerConfigs configs, Environment environment, TicketService ticketService,
-        ApprovalAssignmentServiceForImportCandidateFiles approvalService) {
-        super(CreatePublicationRequest.class, environment);
-        this.candidateService = configs.importCandidateService();
-        this.publicationService = configs.publicationService();
-        this.associatedArtifactsMover = new AssociatedArtifactsMover(configs.s3Client(),
-                                                                     configs.importCandidateStorageBucket(), configs.persistedStorageBucket());
-        this.piaClient = new PiaClient(configs.piaClientConfig());
-        this.ticketService = ticketService;
-        this.approvalService = approvalService;
-    }
+  public CreatePublicationFromImportCandidateHandler(
+      ImportCandidateHandlerConfigs configs,
+      Environment environment,
+      TicketService ticketService,
+      ApprovalAssignmentServiceForImportCandidateFiles approvalService) {
+    super(CreatePublicationRequest.class, environment);
+    this.candidateService = configs.importCandidateService();
+    this.publicationService = configs.publicationService();
+    this.associatedArtifactsMover =
+        new AssociatedArtifactsMover(
+            configs.s3Client(),
+            configs.importCandidateStorageBucket(),
+            configs.persistedStorageBucket());
+    this.piaClient = new PiaClient(configs.piaClientConfig());
+    this.ticketService = ticketService;
+    this.approvalService = approvalService;
+  }
 
-    @Override
-    protected void validateRequest(CreatePublicationRequest importCandidate, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
-        validateAccessRight(requestInfo);
-    }
+  @Override
+  protected void validateRequest(
+      CreatePublicationRequest importCandidate, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
+    validateAccessRight(requestInfo);
+  }
 
-    @Override
-    protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
-        var identifier = getImportCandidateIdentifier(requestInfo);
-        LOGGER.info(LOG_PROCESSING_IMPORT_CANDIDATE, identifier);
-        var importCandidate = candidateService.getImportCandidateByIdentifier(identifier);
-        validate(importCandidate, input);
-        return attempt(() -> importCandidate(input, requestInfo, importCandidate))
-                   .map(PublicationResponse::fromPublication)
-                   .orElseThrow(fail -> rollbackAndThrowException(fail, identifier));
-    }
+  @Override
+  protected PublicationResponse processInput(
+      CreatePublicationRequest input, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
+    var identifier = getImportCandidateIdentifier(requestInfo);
+    LOGGER.info(LOG_PROCESSING_IMPORT_CANDIDATE, identifier);
+    var importCandidate = candidateService.getImportCandidateByIdentifier(identifier);
+    validate(importCandidate, input);
+    return attempt(() -> importCandidate(input, requestInfo, importCandidate))
+        .map(PublicationResponse::fromPublication)
+        .orElseThrow(fail -> rollbackAndThrowException(fail, identifier));
+  }
 
-    @Override
-    protected Integer getSuccessStatusCode(CreatePublicationRequest input, PublicationResponse output) {
-        return HTTP_CREATED;
-    }
+  @Override
+  protected Integer getSuccessStatusCode(
+      CreatePublicationRequest input, PublicationResponse output) {
+    return HTTP_CREATED;
+  }
 
-    private Publication importCandidate(CreatePublicationRequest request, RequestInfo requestInfo, ImportCandidate databaseVersion)
-        throws ApiGatewayException, ApprovalAssignmentException {
-        var nvaPublication = createNvaPublicationFromImportCandidateAndUserInput(request, requestInfo, databaseVersion);
-        var publicationIdentifier = nvaPublication.getIdentifier();
-        var candidateIdentifier = databaseVersion.getIdentifier();
-        LOGGER.info(LOG_PUBLICATION_CREATED, publicationIdentifier, candidateIdentifier);
-        candidateService.updateImportStatus(candidateIdentifier,
-                                            ImportStatusFactory.createImported(requestInfo.getUserName(), publicationIdentifier));
-        LOGGER.info(LOG_IMPORT_STATUS_UPDATED, candidateIdentifier, publicationIdentifier);
-        return nvaPublication;
-    }
+  private Publication importCandidate(
+      CreatePublicationRequest request, RequestInfo requestInfo, ImportCandidate databaseVersion)
+      throws ApiGatewayException, ApprovalAssignmentException {
+    var nvaPublication =
+        createNvaPublicationFromImportCandidateAndUserInput(request, requestInfo, databaseVersion);
+    var publicationIdentifier = nvaPublication.getIdentifier();
+    var candidateIdentifier = databaseVersion.getIdentifier();
+    LOGGER.info(LOG_PUBLICATION_CREATED, publicationIdentifier, candidateIdentifier);
+    candidateService.updateImportStatus(
+        candidateIdentifier,
+        ImportStatusFactory.createImported(requestInfo.getUserName(), publicationIdentifier));
+    LOGGER.info(LOG_IMPORT_STATUS_UPDATED, candidateIdentifier, publicationIdentifier);
+    return nvaPublication;
+  }
 
-    private Publication createNvaPublicationFromImportCandidateAndUserInput(CreatePublicationRequest request,
-                                                                            RequestInfo requestInfo,
-                                                                            ImportCandidate databaseVersion)
-        throws ApiGatewayException, ApprovalAssignmentException {
-        var resourceToImport = ImportCandidateEnricher.createResourceToImport(requestInfo, request, databaseVersion);
+  private Publication createNvaPublicationFromImportCandidateAndUserInput(
+      CreatePublicationRequest request, RequestInfo requestInfo, ImportCandidate databaseVersion)
+      throws ApiGatewayException, ApprovalAssignmentException {
+    var resourceToImport =
+        ImportCandidateEnricher.createResourceToImport(requestInfo, request, databaseVersion);
 
-        var importedResource = !resourceToImport.getFiles().isEmpty()
-                                   ? handleResourceWithFiles(resourceToImport, requestInfo, databaseVersion.getAssociatedCustomers())
-                                   : resourceToImport.importResource(publicationService, ImportSource.fromSource(Source.SCOPUS),
-                                                                     UserInstance.fromPublication(resourceToImport.toPublication()));
+    var importedResource =
+        !resourceToImport.getFiles().isEmpty()
+            ? handleResourceWithFiles(
+                resourceToImport, requestInfo, databaseVersion.getAssociatedCustomers())
+            : resourceToImport.importResource(
+                publicationService,
+                ImportSource.fromSource(Source.SCOPUS),
+                UserInstance.fromPublication(resourceToImport.toPublication()));
 
-        return finalizeImport(importedResource, databaseVersion);
-    }
+    return finalizeImport(importedResource, databaseVersion);
+  }
 
-    private Resource handleResourceWithFiles(Resource resourceToImport, RequestInfo requestInfo,
-                                             List<URI> associatedCustomers)
-        throws ApiGatewayException, ApprovalAssignmentException {
-        var serviceResult = approvalService.determineCustomerResponsibleForApproval(resourceToImport, associatedCustomers);
-        LOGGER.info(serviceResult.getReason());
+  private Resource handleResourceWithFiles(
+      Resource resourceToImport, RequestInfo requestInfo, List<URI> associatedCustomers)
+      throws ApiGatewayException, ApprovalAssignmentException {
+    var serviceResult =
+        approvalService.determineCustomerResponsibleForApproval(
+            resourceToImport, associatedCustomers);
+    LOGGER.info(serviceResult.getReason());
 
-        return switch (serviceResult.getStatus()) {
-            case APPROVAL_NEEDED -> createPublicationWithFilesApprovalTicket(resourceToImport, serviceResult, requestInfo);
-            case NO_APPROVAL_NEEDED -> importResourceWithInternalFiles(resourceToImport, requestInfo, serviceResult);
-        };
-    }
+    return switch (serviceResult.getStatus()) {
+      case APPROVAL_NEEDED ->
+          createPublicationWithFilesApprovalTicket(resourceToImport, serviceResult, requestInfo);
+      case NO_APPROVAL_NEEDED ->
+          importResourceWithInternalFiles(resourceToImport, requestInfo, serviceResult);
+    };
+  }
 
-    private Resource importResourceWithInternalFiles(Resource resourceToImport, RequestInfo requestInfo,
-                                                     AssignmentServiceResult serviceResult) throws UnauthorizedException {
-        resourceToImport.setAssociatedArtifacts(convertFilesToInternalFiles(resourceToImport));
-        return resourceToImport.importResource(publicationService,
-                                               ImportSource.fromSource(Source.SCOPUS),
-                                               createUserInstanceFromCustomer(requestInfo,
-                                                                              serviceResult.getCustomer()));
-    }
+  private Resource importResourceWithInternalFiles(
+      Resource resourceToImport, RequestInfo requestInfo, AssignmentServiceResult serviceResult)
+      throws UnauthorizedException {
+    resourceToImport.setAssociatedArtifacts(convertFilesToInternalFiles(resourceToImport));
+    return resourceToImport.importResource(
+        publicationService,
+        ImportSource.fromSource(Source.SCOPUS),
+        createUserInstanceFromCustomer(requestInfo, serviceResult.getCustomer()));
+  }
 
-    private static AssociatedArtifactList convertFilesToInternalFiles(Resource resourceToImport) {
-        var associatedArtifacts = resourceToImport.getAssociatedArtifacts()
-                   .stream()
-                   .map(CreatePublicationFromImportCandidateHandler::toInternalFfile)
-                   .toList();
-        return new AssociatedArtifactList(associatedArtifacts);
-    }
+  private static AssociatedArtifactList convertFilesToInternalFiles(Resource resourceToImport) {
+    var associatedArtifacts =
+        resourceToImport.getAssociatedArtifacts().stream()
+            .map(CreatePublicationFromImportCandidateHandler::toInternalFfile)
+            .toList();
+    return new AssociatedArtifactList(associatedArtifacts);
+  }
 
-    private static AssociatedArtifact toInternalFfile(AssociatedArtifact associatedArtifact) {
-        return associatedArtifact instanceof File file ? file.toInternalFile() : associatedArtifact;
-    }
+  private static AssociatedArtifact toInternalFfile(AssociatedArtifact associatedArtifact) {
+    return associatedArtifact instanceof File file ? file.toInternalFile() : associatedArtifact;
+  }
 
-    private Resource createPublicationWithFilesApprovalTicket(Resource resourceToImport,
-                                                              AssignmentServiceResult serviceResult,
-                                                              RequestInfo requestInfo)
-        throws ApiGatewayException {
-        resourceToImport.setAssociatedArtifacts(convertFilesToPending(resourceToImport));
-        var fileOwner = createUserInstanceFromCustomer(requestInfo, serviceResult.getCustomer());
-        var importedResource = resourceToImport.importResource(publicationService,
-                                                               ImportSource.fromSource(Source.SCOPUS),
-                                                               fileOwner);
-        var fileApproval = PublishingRequestCase.createWithFilesForApproval(
+  private Resource createPublicationWithFilesApprovalTicket(
+      Resource resourceToImport, AssignmentServiceResult serviceResult, RequestInfo requestInfo)
+      throws ApiGatewayException {
+    resourceToImport.setAssociatedArtifacts(convertFilesToPending(resourceToImport));
+    var fileOwner = createUserInstanceFromCustomer(requestInfo, serviceResult.getCustomer());
+    var importedResource =
+        resourceToImport.importResource(
+            publicationService, ImportSource.fromSource(Source.SCOPUS), fileOwner);
+    var fileApproval =
+        PublishingRequestCase.createWithFilesForApproval(
             importedResource,
             fileOwner,
             PublishingWorkflow.lookUp(serviceResult.getCustomer().publicationWorkflow()),
-            importedResource.getPendingFiles()
-        );
-        fileApproval.persistNewTicket(ticketService);
-        return importedResource;
-    }
+            importedResource.getPendingFiles());
+    fileApproval.persistNewTicket(ticketService);
+    return importedResource;
+  }
 
-    private Publication finalizeImport(Resource importedResource, ImportCandidate rawImportCandidate) {
-        var publication = importedResource.toPublication();
-        associatedArtifactsMover.moveAssociatedArtifacts(publication, rawImportCandidate);
-        new ContributorUpdateService(piaClient).updatePiaContributors(importedResource, rawImportCandidate);
-        return publication;
-    }
+  private Publication finalizeImport(
+      Resource importedResource, ImportCandidate rawImportCandidate) {
+    var publication = importedResource.toPublication();
+    associatedArtifactsMover.moveAssociatedArtifacts(publication, rawImportCandidate);
+    new ContributorUpdateService(piaClient)
+        .updatePiaContributors(importedResource, rawImportCandidate);
+    return publication;
+  }
 
-    private static UserInstance createUserInstanceFromCustomer(RequestInfo requestInfo, CustomerDto customer)
-        throws UnauthorizedException {
-        return UserInstance.create(requestInfo.getUserName(), customer.id(), requestInfo.getPersonCristinId(),
-                                   requestInfo.getAccessRights(), customer.cristinId());
-    }
+  private static UserInstance createUserInstanceFromCustomer(
+      RequestInfo requestInfo, CustomerDto customer) throws UnauthorizedException {
+    return UserInstance.create(
+        requestInfo.getUserName(),
+        customer.id(),
+        requestInfo.getPersonCristinId(),
+        requestInfo.getAccessRights(),
+        customer.cristinId());
+  }
 
-    private AssociatedArtifactList convertFilesToPending(Resource resource) {
-        var associatedArtifacts = resource.getAssociatedArtifacts().stream()
-                                      .map(CreatePublicationFromImportCandidateHandler::toPendingFile)
-                                      .toList();
-        return new AssociatedArtifactList(associatedArtifacts);
-    }
+  private AssociatedArtifactList convertFilesToPending(Resource resource) {
+    var associatedArtifacts =
+        resource.getAssociatedArtifacts().stream()
+            .map(CreatePublicationFromImportCandidateHandler::toPendingFile)
+            .toList();
+    return new AssociatedArtifactList(associatedArtifacts);
+  }
 
-    private static AssociatedArtifact toPendingFile(AssociatedArtifact associatedArtifact) {
-        return switch (associatedArtifact) {
-            case InternalFile file -> file.toPendingInternalFile();
-            case OpenFile file -> file.toPendingOpenFile();
-            default -> associatedArtifact;
-        };
-    }
+  private static AssociatedArtifact toPendingFile(AssociatedArtifact associatedArtifact) {
+    return switch (associatedArtifact) {
+      case InternalFile file -> file.toPendingInternalFile();
+      case OpenFile file -> file.toPendingOpenFile();
+      default -> associatedArtifact;
+    };
+  }
 
-    private ApiGatewayException rollbackAndThrowException(Failure<PublicationResponse> failure, SortableIdentifier identifier) {
-        LOGGER.error("Import failed for import candidate {}", identifier, failure.getException());
-        return attempt(() -> rollbackImportStatusUpdate(identifier))
-                   .orElse(fail -> throwException(fail.getException()));
-    }
+  private ApiGatewayException rollbackAndThrowException(
+      Failure<PublicationResponse> failure, SortableIdentifier identifier) {
+    LOGGER.error("Import failed for import candidate {}", identifier, failure.getException());
+    return attempt(() -> rollbackImportStatusUpdate(identifier))
+        .orElse(fail -> throwException(fail.getException()));
+  }
 
-    private static ApiGatewayException throwException(Exception exception) {
-        if (exception instanceof ApprovalAssignmentException) {
-            return new BadRequestException(exception.getMessage());
-        }
-        return new BadGatewayException(ROLLBACK_WENT_WRONG_MESSAGE);
+  private static ApiGatewayException throwException(Exception exception) {
+    if (exception instanceof ApprovalAssignmentException) {
+      return new BadRequestException(exception.getMessage());
     }
+    return new BadGatewayException(ROLLBACK_WENT_WRONG_MESSAGE);
+  }
 
-    private void validateAccessRight(RequestInfo requestInfo) throws NotAuthorizedException {
-        if (!requestInfo.userIsAuthorized(AccessRight.MANAGE_IMPORT)) {
-            throw new NotAuthorizedException();
-        }
+  private void validateAccessRight(RequestInfo requestInfo) throws NotAuthorizedException {
+    if (!requestInfo.userIsAuthorized(AccessRight.MANAGE_IMPORT)) {
+      throw new NotAuthorizedException();
     }
+  }
 
-    private ApiGatewayException rollbackImportStatusUpdate(SortableIdentifier identifier)
-        throws NotFoundException {
-        candidateService.updateImportStatus(identifier, ImportStatusFactory.createNotImported());
-        return new BadGatewayException(IMPORT_PROCESS_WENT_WRONG);
-    }
+  private ApiGatewayException rollbackImportStatusUpdate(SortableIdentifier identifier)
+      throws NotFoundException {
+    candidateService.updateImportStatus(identifier, ImportStatusFactory.createNotImported());
+    return new BadGatewayException(IMPORT_PROCESS_WENT_WRONG);
+  }
 }

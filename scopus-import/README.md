@@ -1,4 +1,5 @@
 # scopus-import
+
 Imports data from Scopus (https://scopus.com). Data is downloaded weekly by [https://github.com/BIBSYSDEV/dlr-nva-email-service](https://github.com/BIBSYSDEV/dlr-nva-email-service) to s3.
 From s3 data is processed to become ImportCandidates and persisted in database with files.
 
@@ -30,19 +31,21 @@ Authors in Scopus data may have complex relationships:
 The `AffiliationGenerator` resolves Scopus affiliations to Cristin organizations through a fallback chain:
 
 1. **PIA Service Lookup** (primary)
+
    - Maps Scopus affiliation ID (AFID) to Cristin organization
    - Returns verified Norwegian institutions
 
 2. **Cristin Search by Organization Id** (fallback)
-    - Fetches organization from Cristin API by id fetched from PIA
-    - Used when PIA responded with organization
-   
+   - Fetches organization from Cristin API by id fetched from PIA
+   - Used when PIA responded with organization
 3. **Cristin Search by Organization Name** (fallback)
+
    - Extracts organization name from Scopus XML
    - Searches in Cristin API for matching institution
    - Used when PIA did not respond with organization
 
 4. **Cristin Search by Country** (fallback)
+
    - Uses affiliation country from Scopus data
    - Finds country-level organization in Cristin
    - Used when PIA did not respond with organization
@@ -56,13 +59,14 @@ The `AffiliationGenerator` resolves Scopus affiliations to Cristin organizations
 The `CristinPersonRetriever` matches Scopus authors to Norwegian researchers through multiple strategies:
 
 1. **By Scopus AUID via PIA** (primary)
+
    - PIA service maps Scopus author IDs to Cristin person IDs
 
 2. **By Cristin id via Cristin** (fallback)
-    - Direct Cristin API lookup using contributor Cristin identifier
-    - Used when PIA responded with contributor identifier
-   
+   - Direct Cristin API lookup using contributor Cristin identifier
+   - Used when PIA responded with contributor identifier
 3. **By ORCID via Cristin** (fallback)
+
    - Direct Cristin API lookup using ORCID
    - Used when PIA service responded with contributor with ORCID and look up by Cristin id failed
 
@@ -81,6 +85,7 @@ Process each author group with its associated Cristin organizations, persons, an
 Two creation paths based on Cristin match:
 
 1. **Cristin Person Available**
+
    - Uses verified identity from Cristin person profile
    - Includes active affiliations from Cristin
    - Sets verification status (VERIFIED/NOT_VERIFIED)
@@ -96,6 +101,7 @@ Two creation paths based on Cristin match:
    - Role: CREATOR
 
 **Group Authors (CollaborationTp)**
+
 - Name from indexed name
 - Affiliations from organization enrichment
 - Role: OTHER
@@ -105,11 +111,14 @@ Two creation paths based on Cristin match:
 After all contributors are created, duplicates are identified and merged:
 
 **Deduplication Key (priority order):**
+
 1. Scopus AUID (primary identifier)
 2. ORCID (secondary identifier)
 
 **Merging Rules:**
+
 - **Without Cristin ID**: Merge affiliations from duplicate entries
+
   - Same author appearing in multiple author groups with different affiliations
   - Combines all affiliation data while preserving other fields
 
@@ -117,10 +126,10 @@ After all contributors are created, duplicates are identified and merged:
   - Prevents overwriting verified Cristin affiliation data
   - Cristin person affiliations are authoritative for Norwegian researchers
 
-
 ### Error Handling
 
 The system gracefully handles service failures:
+
 - PIA connection errors are logged but don't fail the import
 - Cristin API failures fall back to Scopus-only contributor creation
 - Organization search failures result in empty affiliations

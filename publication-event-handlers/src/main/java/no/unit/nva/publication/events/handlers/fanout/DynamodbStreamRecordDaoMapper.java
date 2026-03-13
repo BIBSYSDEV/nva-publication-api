@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.fanout;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
+
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Map;
@@ -12,56 +13,59 @@ import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 
-//TODO: rename class to DynamoJsonToInternalModelEventHandler
+// TODO: rename class to DynamoJsonToInternalModelEventHandler
 @SuppressWarnings({"PMD.ReturnEmptyCollectionRatherThanNull"})
 public final class DynamodbStreamRecordDaoMapper {
-    
-    private DynamodbStreamRecordDaoMapper() {
-    
-    }
-    
-    /**
-     * Map a DynamodbStreamRecordImage to Publication.
-     *
-     * @param recordImage the record image (old or new)
-     * @return a Dao instance
-     * @throws JsonProcessingException JsonProcessingException
-     */
-    public static Optional<Entity> toEntity(Map<String, AttributeValue> recordImage)
-        throws JsonProcessingException {
-        var attributeMap = fromEventMapToDynamodbMap(recordImage);
-        var dynamoEntry = DynamoEntry.parseAttributeValuesMap(attributeMap, DynamoEntry.class);
-        return Optional.of(dynamoEntry)
-                   .filter(entry -> isDao(dynamoEntry))
-                   .map(Dao.class::cast)
-                   .map(Dao::getData)
-                   .filter(DynamodbStreamRecordDaoMapper::isResourceUpdate);
-    }
 
-    public static Optional<ImportCandidate> toImportCandidate(Map<String, AttributeValue> recordImage)
-        throws JsonProcessingException {
-        return Optional.ofNullable(fromEventMapToDynamodbMap(recordImage))
-                   .map(attributeMap -> DatabaseEntryWithData.fromAttributeValuesMap(attributeMap, ImportCandidateDao.class))
-                   .map(ImportCandidateDao::getData);
-    }
+  private DynamodbStreamRecordDaoMapper() {}
 
-    private static boolean isDao(DynamoEntry dynamoEntry) {
-        return dynamoEntry instanceof Dao;
-    }
-    
-    private static boolean isResourceUpdate(Object data) {
-        return data instanceof Entity;
-    }
+  /**
+   * Map a DynamodbStreamRecordImage to Publication.
+   *
+   * @param recordImage the record image (old or new)
+   * @return a Dao instance
+   * @throws JsonProcessingException JsonProcessingException
+   */
+  public static Optional<Entity> toEntity(Map<String, AttributeValue> recordImage)
+      throws JsonProcessingException {
+    var attributeMap = fromEventMapToDynamodbMap(recordImage);
+    var dynamoEntry = DynamoEntry.parseAttributeValuesMap(attributeMap, DynamoEntry.class);
+    return Optional.of(dynamoEntry)
+        .filter(entry -> isDao(dynamoEntry))
+        .map(Dao.class::cast)
+        .map(Dao::getData)
+        .filter(DynamodbStreamRecordDaoMapper::isResourceUpdate);
+  }
 
-    private static Map<String, com.amazonaws.services.dynamodbv2.model.AttributeValue> fromEventMapToDynamodbMap(
-        Map<String, AttributeValue> recordImage) throws JsonProcessingException {
-        var jsonString = objectMapper.writeValueAsString(recordImage);
-        var javaType =
-            objectMapper.getTypeFactory()
-                .constructParametricType(Map.class,
-                    String.class,
-                    com.amazonaws.services.dynamodbv2.model.AttributeValue.class
-                );
-        return objectMapper.readValue(jsonString, javaType);
-    }
+  public static Optional<ImportCandidate> toImportCandidate(Map<String, AttributeValue> recordImage)
+      throws JsonProcessingException {
+    return Optional.ofNullable(fromEventMapToDynamodbMap(recordImage))
+        .map(
+            attributeMap ->
+                DatabaseEntryWithData.fromAttributeValuesMap(
+                    attributeMap, ImportCandidateDao.class))
+        .map(ImportCandidateDao::getData);
+  }
+
+  private static boolean isDao(DynamoEntry dynamoEntry) {
+    return dynamoEntry instanceof Dao;
+  }
+
+  private static boolean isResourceUpdate(Object data) {
+    return data instanceof Entity;
+  }
+
+  private static Map<String, com.amazonaws.services.dynamodbv2.model.AttributeValue>
+      fromEventMapToDynamodbMap(Map<String, AttributeValue> recordImage)
+          throws JsonProcessingException {
+    var jsonString = objectMapper.writeValueAsString(recordImage);
+    var javaType =
+        objectMapper
+            .getTypeFactory()
+            .constructParametricType(
+                Map.class,
+                String.class,
+                com.amazonaws.services.dynamodbv2.model.AttributeValue.class);
+    return objectMapper.readValue(jsonString, javaType);
+  }
 }

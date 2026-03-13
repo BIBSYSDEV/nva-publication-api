@@ -1,6 +1,7 @@
 package no.unit.nva.expansion.model;
 
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
@@ -22,10 +23,10 @@ import no.unit.nva.expansion.JournalExpansionServiceImpl;
 import no.unit.nva.expansion.PublisherExpansionServiceImpl;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportEntityDescription;
-import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.importcandidate.ImportStatus;
 import no.unit.nva.model.ContributorVerificationStatus;
 import no.unit.nva.model.Organization;
@@ -49,613 +50,653 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings({
+  "PMD.GodClass",
+  "PMD.ExcessivePublicCount",
+  "PMD.TooManyFields",
+  "PMD.CouplingBetweenObjects"
+})
 @JsonTypeName(ExpandedImportCandidate.TYPE)
 public class ExpandedImportCandidate implements ExpandedDataEntry {
 
-    public static final String TYPE = "ImportCandidateSummary";
-    private static final Logger logger = LoggerFactory.getLogger(ExpandedImportCandidate.class);
-    private static final String API_HOST = new Environment().readEnv("API_HOST");
-    private static final String PUBLICATION = "publication";
-    private static final String ID_FIELD = "id";
-    private static final String ADDITIONAL_IDENTIFIERS_FIELD = "additionalIdentifiers";
-    private static final String DOI_FIELD = "doi";
-    private static final String MAIN_TITLE_FIELD = "mainTitle";
-    private static final String PUBLISHER_FIELD = "publisher";
-    private static final String JOURNAL_FIELD = "journal";
-    private static final String VERIFIED_CONTRIBUTORS_NUMBER_FIELD = "totalVerifiedContributors";
-    private static final String CONTRIBUTORS_NUMBER_FIELD = "totalContributors";
-    private static final String ORGANIZATIONS_FIELD = "organizations";
-    private static final String IMPORT_STATUS_FIELD = "importStatus";
-    private static final String PUBLICATION_YEAR_FIELD = "publicationYear";
-    private static final String PUBLICATION_INSTANCE_FIELD = "publicationInstance";
-    private static final String CREATED_DATE_FIELD = "createdDate";
-    private static final String CONTRIBUTORS_FIELD = "contributors";
-    private static final String IMPORT_CANDIDATE = "import-candidate";
-    private static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
-    private static final String COLLABORATION_TYPE_FIELD = "collaborationType";
-    private static final String PRINT_ISSN_FIELD = "printIssn";
-    private static final String ONLINE_ISSN_FIELD = "onlineIssn";
-    private static final String CONTENT_TYPE = "application/json";
-    private static final String CUSTOMER = "customer";
-    private static final String CRISTIN_ID = "cristinId";
-    private static final String IS_CUSTOMER_MESSAGE = "Cristin organization {} is nva customer: {}";
-    private static final String HAS_FILE_FIELD = "filesStatus";
-    private static final String CRISTIN = "cristin";
-    private static final String ORGANIZATION = "organization";
-    private static final String DEPTH = "depth";
-    private static final String TOP = "top";
-    @JsonProperty(ID_FIELD)
-    private URI identifier;
-    @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
-    private Set<AdditionalIdentifierBase> additionalIdentifiers;
-    @JsonProperty(DOI_FIELD)
-    private URI doi;
-    @JsonProperty(PUBLICATION_INSTANCE_FIELD)
-    private PublicationInstance<? extends Pages> publicationInstance;
-    @JsonProperty(MAIN_TITLE_FIELD)
-    private String mainTitle;
-    @JsonProperty(PUBLISHER_FIELD)
-    private ExpandedPublisher publisher;
-    @JsonProperty(JOURNAL_FIELD)
-    private ExpandedJournal journal;
-    @JsonProperty(VERIFIED_CONTRIBUTORS_NUMBER_FIELD)
-    private int numberOfVerifiedContributors;
-    @JsonProperty(CONTRIBUTORS_NUMBER_FIELD)
-    private int totalNumberOfContributors;
-    @Getter
-    @JsonProperty(CONTRIBUTORS_FIELD)
-    private List<ImportContributor> contributors;
-    @JsonProperty(ORGANIZATIONS_FIELD)
-    private Set<ExpandedImportCandidateOrganization> organizations;
-    @JsonProperty(COLLABORATION_TYPE_FIELD)
-    private CollaborationType collaborationType;
-    @JsonProperty(IMPORT_STATUS_FIELD)
-    private ImportStatus importStatus;
-    @JsonProperty(PUBLICATION_YEAR_FIELD)
-    private String publicationYear;
-    @JsonProperty(CREATED_DATE_FIELD)
-    private Instant createdDate;
-    @JsonProperty(ASSOCIATED_ARTIFACTS_FIELD)
-    private List<AssociatedArtifact> associatedArtifacts;
-    @JsonProperty(PRINT_ISSN_FIELD)
-    private String printIssn;
-    @JsonProperty(ONLINE_ISSN_FIELD)
-    private String onlineIssn;
-    @JsonProperty(HAS_FILE_FIELD)
-    private FilesStatus filesStatus;
-
-    public static ExpandedImportCandidate fromImportCandidate(ImportCandidate importCandidate,
-                                                              RawContentRetriever uriRetriever) {
-        var organizations = extractOrganizations(importCandidate, uriRetriever);
-        return new ExpandedImportCandidate.Builder().withIdentifier(generateIdentifier(importCandidate.getIdentifier()))
-                   .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
-                   .withPublicationInstance(extractPublicationInstance(importCandidate))
-                   .withImportStatus(importCandidate.getImportStatus())
-                   .withPublicationYear(extractPublicationYear(importCandidate))
-                   .withOrganizations(organizations)
-                   .withDoi(extractDoi(importCandidate))
-                   .withMainTitle(extractMainTitle(importCandidate))
-                   .withTotalNumberOfContributors(extractNumberOfContributors(importCandidate))
-                   .withNumberOfVerifiedContributors(extractNumberOfVerifiedContributors(importCandidate))
-                   .withContributors(extractContributors(importCandidate))
-                   .withJournal(extractJournal(importCandidate, uriRetriever))
-                   .withPublisher(extractPublisher(importCandidate, uriRetriever))
-                   .withCreatedDate(importCandidate.getCreatedDate())
-                   .withCooperation(extractCorporation(organizations))
-                   .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
-                   .withPrintIssn(extractPrintIssn(importCandidate))
-                   .withOnlineIssn(extractOnlineIssn(importCandidate))
-                   .withHasFile(FilesStatus.fromAssociatedArtifacts(importCandidate.getAssociatedArtifacts()))
-                   .build();
-    }
-
-    public String getPrintIssn() {
-        return printIssn;
-    }
-
-    public FilesStatus getFilesStatus() {
-        return filesStatus;
-    }
-
-    public void setFilesStatus(FilesStatus hasFile) {
-        this.filesStatus = hasFile;
-    }
-
-    private void setPrintIssn(String printIssn) {
-        this.printIssn = printIssn;
-    }
-
-    public String getOnlineIssn() {
-        return onlineIssn;
-    }
-
-    public void setOnlineIssn(String onlineIssn) {
-        this.onlineIssn = onlineIssn;
-    }
-
-    public void setContributors(List<ImportContributor> contributors) {
-        this.contributors = contributors;
-    }
-
-    @JacocoGenerated
-    public Instant getCreatedDate() {
-        return createdDate;
-    }
-
-    private void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    @JacocoGenerated
-    public List<AssociatedArtifact> getAssociatedArtifacts() {
-        return associatedArtifacts;
-    }
-
-    @JacocoGenerated
-    public void setAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
-        this.associatedArtifacts = associatedArtifacts;
-    }
-
-    @JacocoGenerated
-    public URI getIdentifier() {
-        return identifier;
-    }
-
-    public void setIdentifier(URI identifier) {
-        this.identifier = identifier;
-    }
-
-    @JacocoGenerated
-    public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
-        return additionalIdentifiers;
-    }
-
-    public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
-        this.additionalIdentifiers = additionalIdentifiers;
-    }
-
-    @JacocoGenerated
-    public URI getDoi() {
-        return doi;
-    }
-
-    public void setDoi(URI doi) {
-        this.doi = doi;
-    }
-
-    @JacocoGenerated
-    public PublicationInstance<? extends Pages> getPublicationInstance() {
-        return publicationInstance;
-    }
-
-    public void setPublicationInstance(PublicationInstance<? extends Pages> publicationInstance) {
-        this.publicationInstance = publicationInstance;
-    }
-
-    @JacocoGenerated
-    public String getMainTitle() {
-        return mainTitle;
-    }
-
-    public void setMainTitle(String mainTitle) {
-        this.mainTitle = mainTitle;
-    }
-
-    @JacocoGenerated
-    public ExpandedPublisher getPublisher() {
-        return publisher;
-    }
-
-    public void setPublisher(ExpandedPublisher publisher) {
-        this.publisher = publisher;
-    }
-
-    @JacocoGenerated
-    public CollaborationType getCollaborationType() {
-        return collaborationType;
-    }
-
-    public void setCollaborationType(CollaborationType collaborationType) {
-        this.collaborationType = collaborationType;
-    }
-
-    @JacocoGenerated
-    public ExpandedJournal getJournal() {
-        return journal;
-    }
-
-    public void setJournal(ExpandedJournal journal) {
-        this.journal = journal;
-    }
-
-    @JacocoGenerated
-    public int getNumberOfVerifiedContributors() {
-        return numberOfVerifiedContributors;
-    }
-
-    public void setNumberOfVerifiedContributors(int numberOfVerifiedContributors) {
-        this.numberOfVerifiedContributors = numberOfVerifiedContributors;
-    }
-
-    @JacocoGenerated
-    public int getTotalNumberOfContributors() {
-        return totalNumberOfContributors;
-    }
-
-    public void setTotalNumberOfContributors(int totalNumberOfContributors) {
-        this.totalNumberOfContributors = totalNumberOfContributors;
-    }
-
-    @JacocoGenerated
-    public Set<ExpandedImportCandidateOrganization> getOrganizations() {
-        return organizations;
-    }
-
-    public void setOrganizations(Set<ExpandedImportCandidateOrganization> organizations) {
-        this.organizations = organizations;
-    }
-
-    @JacocoGenerated
-    public ImportStatus getImportStatus() {
-        return importStatus;
-    }
-
-    public void setImportStatus(ImportStatus importStatus) {
-        this.importStatus = importStatus;
-    }
-
-    @JacocoGenerated
-    public String getPublicationYear() {
-        return publicationYear;
-    }
-
-    public void setPublicationYear(String publicationYear) {
-        this.publicationYear = publicationYear;
-    }
-
-    @Override
-    public String toJsonString() {
-        return ExpandedDataEntry.super.toJsonString();
-    }
-
-    @Override
-    public SortableIdentifier identifyExpandedEntry() {
-        return new SortableIdentifier(UriWrapper.fromUri(identifier).getLastPathElement());
-    }
-
-    private static String extractOnlineIssn(ImportCandidate importCandidate) {
-        return Optional.ofNullable(importCandidate.getEntityDescription().reference())
-                   .map(Reference::getPublicationContext)
-                   .filter(UnconfirmedJournal.class::isInstance)
-                   .map(UnconfirmedJournal.class::cast)
-                   .map(UnconfirmedJournal::getOnlineIssn)
-                   .orElse(null);
-    }
-
-    private static String extractPrintIssn(ImportCandidate importCandidate) {
-        return Optional.ofNullable(importCandidate.getEntityDescription().reference())
-                   .map(Reference::getPublicationContext)
-                   .filter(UnconfirmedJournal.class::isInstance)
-                   .map(UnconfirmedJournal.class::cast)
-                   .map(UnconfirmedJournal::getPrintIssn)
-                   .orElse(null);
-    }
-
-    private static CollaborationType extractCorporation(Set<ExpandedImportCandidateOrganization> organizations) {
-        return organizations.size() > 1 ? CollaborationType.COLLABORATIVE : CollaborationType.NON_COLLABORATIVE;
-    }
-
-    private static List<ImportContributor> extractContributors(ImportCandidate importCandidate) {
-        var contributors = importCandidate.getEntityDescription().contributors().stream().toList();
-        return contributors.size() < 5 ? contributors.subList(0, contributors.size()) : contributors.subList(0, 5);
-    }
-
-    private static int extractNumberOfVerifiedContributors(ImportCandidate importCandidate) {
-        return (int) importCandidate.getEntityDescription()
-                         .contributors()
-                         .stream()
-                         .filter(ExpandedImportCandidate::isVerifiedContributor)
-                         .count();
-    }
-
-    private static boolean isVerifiedContributor(ImportContributor contributor) {
-        return ContributorVerificationStatus.VERIFIED.equals(contributor.identity().getVerificationStatus());
-    }
-
-    private static URI generateIdentifier(SortableIdentifier identifier) {
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild(PUBLICATION)
-                   .addChild(IMPORT_CANDIDATE)
-                   .addChild(identifier.toString())
-                   .getUri();
-    }
-
-    private static PublicationInstance<? extends Pages> extractPublicationInstance(ImportCandidate importCandidate) {
-        return Optional.ofNullable(importCandidate.getEntityDescription())
-                   .map(ImportEntityDescription::reference)
-                   .map(Reference::getPublicationInstance)
-                   .orElse(null);
-    }
-
-    private static ExpandedPublisher extractPublisher(ImportCandidate importCandidate,
-                                                      RawContentRetriever uriRetriever) {
-        return Optional.ofNullable(importCandidate.getEntityDescription())
-                   .map(ImportEntityDescription::reference)
-                   .map(Reference::getPublicationContext)
-                   .filter(ExpandedImportCandidate::hasPublisher)
-                   .map(publicationContext -> extractPublishingHouse(publicationContext, uriRetriever))
-                   .orElse(null);
-    }
-
-    /**
-     * For now, importCandidate is an object constructed only by scopusConverter, which supports two PublicationContext
-     * types where PublishingHouse is present: Book and Report.
-     */
-
-    private static ExpandedPublisher extractPublishingHouse(PublicationContext publicationContext,
-                                                            RawContentRetriever uriRetriever) {
-        return isBook(publicationContext)
-                   ? expandPublisher(((Book) publicationContext).getPublisher(), uriRetriever)
-                   : expandPublisher(((Report) publicationContext).getPublisher(), uriRetriever);
-    }
-
-    private static ExpandedPublisher expandPublisher(PublishingHouse publisher, RawContentRetriever uriRetriever) {
-        var publisherExpansionService = new PublisherExpansionServiceImpl(uriRetriever);
-        return publisherExpansionService.createExpandedPublisher(publisher);
-    }
-
-    private static boolean hasPublisher(PublicationContext publicationContext) {
-        return isBook(publicationContext) || isReport(publicationContext);
-    }
-
-    private static boolean isReport(PublicationContext publicationContext) {
-        return publicationContext.getClass().equals(Report.class);
-    }
-
-    private static boolean isBook(PublicationContext publicationContext) {
-        return publicationContext.getClass().equals(Book.class);
-    }
-
-    private static ExpandedJournal extractJournal(ImportCandidate importCandidate, RawContentRetriever uriRetriever) {
-        return isJournalContent(importCandidate) ? getPublicationContext(importCandidate, uriRetriever) : null;
-    }
-
-    private static ExpandedJournal getPublicationContext(ImportCandidate importCandidate,
-                                                         RawContentRetriever uriRetriever) {
-        return Optional.ofNullable(importCandidate.getEntityDescription())
-                   .map(ImportEntityDescription::reference)
-                   .map(Reference::getPublicationContext)
-                   .map(Journal.class::cast)
-                   .map(journal ->  expandJournal(journal, uriRetriever))
-                   .orElse(null);
-    }
-
-    private static ExpandedJournal expandJournal(Journal journal, RawContentRetriever uriRetriever) {
-        var journalExpansionService = new JournalExpansionServiceImpl(uriRetriever);
-        return journalExpansionService.expandJournal(journal);
-    }
-
-    private static boolean isJournalContent(ImportCandidate importCandidate) {
-        return Optional.ofNullable(importCandidate.getEntityDescription())
-                   .map(ImportEntityDescription::reference)
-                   .map(Reference::getPublicationContext)
-                   .map(Journal.class::isInstance)
-                   .orElse(false);
-    }
-
-    private static int extractNumberOfContributors(ImportCandidate importCandidate) {
-        return importCandidate.getEntityDescription().contributors().size();
-    }
-
-    private static String extractMainTitle(ImportCandidate importCandidate) {
-        return importCandidate.getEntityDescription().mainTitle();
-    }
-
-    private static URI extractDoi(ImportCandidate importCandidate) {
-        return Optional.ofNullable(importCandidate.getEntityDescription())
-                   .map(ImportEntityDescription::reference)
-                   .map(Reference::getDoi)
-                   .orElse(null);
-    }
-
-    private static String extractPublicationYear(ImportCandidate importCandidate) {
-        return Optional.ofNullable(importCandidate.getEntityDescription())
-                   .map(ImportEntityDescription::publicationDate)
-                   .map(PublicationDate::getYear)
-                   .orElse(String.valueOf(new DateTime().getYear()));
-    }
-
-    private static Set<ExpandedImportCandidateOrganization> extractOrganizations(ImportCandidate importCandidate,
-                                                                                 RawContentRetriever uriRetriever) {
-
-        return getOrganizationIdList(importCandidate)
-                   .map(id -> fetchCristinOrg(id, uriRetriever))
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
-                   .distinct()
-                   .filter(org -> isNvaCustomer(org, uriRetriever))
-                   .map(ExpandedImportCandidateOrganization::fromCristinOrganization)
-                   .collect(Collectors.toSet());
-
-    }
-
-    private static Stream<URI> getOrganizationIdList(ImportCandidate importCandidate) {
-        return importCandidate.getEntityDescription()
-                   .contributors()
-                   .stream()
-                   .map(ImportContributor::affiliations)
-                   .flatMap(Collection::stream)
-                   .map(Affiliation::targetOrganization)
-                   .filter(Organization.class::isInstance)
-                   .map(Organization.class::cast)
-                   .map(Organization::getId)
-                   .distinct()
-                   .filter(Objects::nonNull);
-    }
-
-    private static boolean isNvaCustomer(CristinOrganization cristinOrganization, RawContentRetriever uriRetriever) {
-        var isCustomer = Optional.ofNullable(cristinOrganization.id())
-                             .map(ExpandedImportCandidate::toFetchCustomerByCristinIdUri)
-                             .map(uri -> fetchCustomer(uriRetriever, uri))
-                             .filter(Optional::isPresent)
-                             .map(Optional::get)
-                             .map(ExpandedImportCandidate::isHttpOk)
-                             .orElse(false);
-        logger.info(IS_CUSTOMER_MESSAGE, cristinOrganization.id(), isCustomer);
-        return isCustomer;
-    }
-
-    private static boolean isHttpOk(HttpResponse<String> stringHttpResponse) {
-        return stringHttpResponse.statusCode() == 200;
-    }
-
-    private static Optional<CristinOrganization> fetchCristinOrg(URI id, RawContentRetriever uriRetriever) {
-        return Optional.ofNullable(getCristinIdentifier(id))
-                   .map(ExpandedImportCandidate::toCristinOrgUri)
-                   .map(uri -> fetch(uri, uriRetriever))
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
-                   .map(ExpandedImportCandidate::toCristinOrganization)
-                   .map(CristinOrganization::getTopLevelOrg);
-    }
-
-    private static String getCristinIdentifier(URI id) {
-        return UriWrapper.fromUri(id).getLastPathElement();
-    }
-
-    private static URI toCristinOrgUri(String cristinId) {
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild(CRISTIN)
-                   .addChild(ORGANIZATION)
-                   .addQueryParameter(DEPTH, TOP)
-                   .addChild(cristinId).getUri();
-    }
-
-    private static Optional<HttpResponse<String>> fetchCustomer(RawContentRetriever uriRetriever, URI uri) {
-        return uriRetriever.fetchResponse(uri, CONTENT_TYPE);
-    }
-
-    private static URI toFetchCustomerByCristinIdUri(URI topLevelOrganization) {
-        var getCustomerEndpoint = UriWrapper.fromHost(API_HOST).addChild(CUSTOMER).addChild(CRISTIN_ID).getUri();
-        return URI.create(
-            getCustomerEndpoint + "/" + URLEncoder.encode(topLevelOrganization.toString(), StandardCharsets.UTF_8));
-    }
-
-    private static CristinOrganization toCristinOrganization(String response) {
-        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, CristinOrganization.class))
-                   .orElseThrow();
-    }
-
-    private static Optional<String> fetch(URI uri, RawContentRetriever uriRetriever) {
-        return uriRetriever.getRawContent(uri, CONTENT_TYPE);
-    }
-
-    public static final class Builder {
-
-        private final ExpandedImportCandidate expandedImportCandidate;
-
-        public Builder() {
-            expandedImportCandidate = new ExpandedImportCandidate();
-        }
-
-        public Builder withIdentifier(URI identifier) {
-            expandedImportCandidate.setIdentifier(identifier);
-            return this;
-        }
-
-        public Builder withAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
-            expandedImportCandidate.setAdditionalIdentifiers(additionalIdentifiers);
-            return this;
-        }
-
-        public Builder withDoi(URI doi) {
-            expandedImportCandidate.setDoi(doi);
-            return this;
-        }
-
-        public Builder withPublicationInstance(PublicationInstance<? extends Pages> publicationInstance) {
-            expandedImportCandidate.setPublicationInstance(publicationInstance);
-            return this;
-        }
-
-        public Builder withMainTitle(String mainTitle) {
-            expandedImportCandidate.setMainTitle(mainTitle);
-            return this;
-        }
-
-        public Builder withPublisher(ExpandedPublisher publisher) {
-            expandedImportCandidate.setPublisher(publisher);
-            return this;
-        }
-
-        public Builder withCooperation(CollaborationType collaborationType) {
-            expandedImportCandidate.setCollaborationType(collaborationType);
-            return this;
-        }
-
-        public Builder withJournal(ExpandedJournal journal) {
-            expandedImportCandidate.setJournal(journal);
-            return this;
-        }
-
-        public Builder withCreatedDate(Instant createdDate) {
-            expandedImportCandidate.setCreatedDate(createdDate);
-            return this;
-        }
-
-        public Builder withNumberOfVerifiedContributors(int numberOfVerifiedContributors) {
-            expandedImportCandidate.setNumberOfVerifiedContributors(numberOfVerifiedContributors);
-            return this;
-        }
-
-        public Builder withTotalNumberOfContributors(int totalNumberOfContributors) {
-            expandedImportCandidate.setTotalNumberOfContributors(totalNumberOfContributors);
-            return this;
-        }
-
-        public Builder withOrganizations(Set<ExpandedImportCandidateOrganization> organizations) {
-            expandedImportCandidate.setOrganizations(organizations);
-            return this;
-        }
-
-        public Builder withImportStatus(ImportStatus importStatus) {
-            expandedImportCandidate.setImportStatus(importStatus);
-            return this;
-        }
-
-        public Builder withPublicationYear(String publicationYear) {
-            expandedImportCandidate.setPublicationYear(publicationYear);
-            return this;
-        }
-
-        public Builder withContributors(List<ImportContributor> contributors) {
-            expandedImportCandidate.setContributors(contributors);
-            return this;
-        }
-
-        public Builder withAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
-            expandedImportCandidate.setAssociatedArtifacts(associatedArtifacts);
-            return this;
-        }
-
-        public ExpandedImportCandidate build() {
-            return expandedImportCandidate;
-        }
-
-        public Builder withPrintIssn(String printIssn) {
-            expandedImportCandidate.setPrintIssn(printIssn);
-            return this;
-        }
-
-        public Builder withOnlineIssn(String onlineIssn) {
-            expandedImportCandidate.setOnlineIssn(onlineIssn);
-            return this;
-        }
-
-        public Builder withHasFile(FilesStatus hasFile) {
-            expandedImportCandidate.setFilesStatus(hasFile);
-            return this;
-        }
-    }
+  public static final String TYPE = "ImportCandidateSummary";
+  private static final Logger logger = LoggerFactory.getLogger(ExpandedImportCandidate.class);
+  private static final String API_HOST = new Environment().readEnv("API_HOST");
+  private static final String PUBLICATION = "publication";
+  private static final String ID_FIELD = "id";
+  private static final String ADDITIONAL_IDENTIFIERS_FIELD = "additionalIdentifiers";
+  private static final String DOI_FIELD = "doi";
+  private static final String MAIN_TITLE_FIELD = "mainTitle";
+  private static final String PUBLISHER_FIELD = "publisher";
+  private static final String JOURNAL_FIELD = "journal";
+  private static final String VERIFIED_CONTRIBUTORS_NUMBER_FIELD = "totalVerifiedContributors";
+  private static final String CONTRIBUTORS_NUMBER_FIELD = "totalContributors";
+  private static final String ORGANIZATIONS_FIELD = "organizations";
+  private static final String IMPORT_STATUS_FIELD = "importStatus";
+  private static final String PUBLICATION_YEAR_FIELD = "publicationYear";
+  private static final String PUBLICATION_INSTANCE_FIELD = "publicationInstance";
+  private static final String CREATED_DATE_FIELD = "createdDate";
+  private static final String CONTRIBUTORS_FIELD = "contributors";
+  private static final String IMPORT_CANDIDATE = "import-candidate";
+  private static final String ASSOCIATED_ARTIFACTS_FIELD = "associatedArtifacts";
+  private static final String COLLABORATION_TYPE_FIELD = "collaborationType";
+  private static final String PRINT_ISSN_FIELD = "printIssn";
+  private static final String ONLINE_ISSN_FIELD = "onlineIssn";
+  private static final String CONTENT_TYPE = "application/json";
+  private static final String CUSTOMER = "customer";
+  private static final String CRISTIN_ID = "cristinId";
+  private static final String IS_CUSTOMER_MESSAGE = "Cristin organization {} is nva customer: {}";
+  private static final String HAS_FILE_FIELD = "filesStatus";
+  private static final String CRISTIN = "cristin";
+  private static final String ORGANIZATION = "organization";
+  private static final String DEPTH = "depth";
+  private static final String TOP = "top";
+
+  @JsonProperty(ID_FIELD)
+  private URI identifier;
+
+  @JsonProperty(ADDITIONAL_IDENTIFIERS_FIELD)
+  private Set<AdditionalIdentifierBase> additionalIdentifiers;
+
+  @JsonProperty(DOI_FIELD)
+  private URI doi;
+
+  @JsonProperty(PUBLICATION_INSTANCE_FIELD)
+  private PublicationInstance<? extends Pages> publicationInstance;
+
+  @JsonProperty(MAIN_TITLE_FIELD)
+  private String mainTitle;
+
+  @JsonProperty(PUBLISHER_FIELD)
+  private ExpandedPublisher publisher;
+
+  @JsonProperty(JOURNAL_FIELD)
+  private ExpandedJournal journal;
+
+  @JsonProperty(VERIFIED_CONTRIBUTORS_NUMBER_FIELD)
+  private int numberOfVerifiedContributors;
+
+  @JsonProperty(CONTRIBUTORS_NUMBER_FIELD)
+  private int totalNumberOfContributors;
+
+  @Getter
+  @JsonProperty(CONTRIBUTORS_FIELD)
+  private List<ImportContributor> contributors;
+
+  @JsonProperty(ORGANIZATIONS_FIELD)
+  private Set<ExpandedImportCandidateOrganization> organizations;
+
+  @JsonProperty(COLLABORATION_TYPE_FIELD)
+  private CollaborationType collaborationType;
+
+  @JsonProperty(IMPORT_STATUS_FIELD)
+  private ImportStatus importStatus;
+
+  @JsonProperty(PUBLICATION_YEAR_FIELD)
+  private String publicationYear;
+
+  @JsonProperty(CREATED_DATE_FIELD)
+  private Instant createdDate;
+
+  @JsonProperty(ASSOCIATED_ARTIFACTS_FIELD)
+  private List<AssociatedArtifact> associatedArtifacts;
+
+  @JsonProperty(PRINT_ISSN_FIELD)
+  private String printIssn;
+
+  @JsonProperty(ONLINE_ISSN_FIELD)
+  private String onlineIssn;
+
+  @JsonProperty(HAS_FILE_FIELD)
+  private FilesStatus filesStatus;
+
+  public static ExpandedImportCandidate fromImportCandidate(
+      ImportCandidate importCandidate, RawContentRetriever uriRetriever) {
+    var organizations = extractOrganizations(importCandidate, uriRetriever);
+    return new ExpandedImportCandidate.Builder()
+        .withIdentifier(generateIdentifier(importCandidate.getIdentifier()))
+        .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
+        .withPublicationInstance(extractPublicationInstance(importCandidate))
+        .withImportStatus(importCandidate.getImportStatus())
+        .withPublicationYear(extractPublicationYear(importCandidate))
+        .withOrganizations(organizations)
+        .withDoi(extractDoi(importCandidate))
+        .withMainTitle(extractMainTitle(importCandidate))
+        .withTotalNumberOfContributors(extractNumberOfContributors(importCandidate))
+        .withNumberOfVerifiedContributors(extractNumberOfVerifiedContributors(importCandidate))
+        .withContributors(extractContributors(importCandidate))
+        .withJournal(extractJournal(importCandidate, uriRetriever))
+        .withPublisher(extractPublisher(importCandidate, uriRetriever))
+        .withCreatedDate(importCandidate.getCreatedDate())
+        .withCooperation(extractCorporation(organizations))
+        .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
+        .withPrintIssn(extractPrintIssn(importCandidate))
+        .withOnlineIssn(extractOnlineIssn(importCandidate))
+        .withHasFile(FilesStatus.fromAssociatedArtifacts(importCandidate.getAssociatedArtifacts()))
+        .build();
+  }
+
+  public String getPrintIssn() {
+    return printIssn;
+  }
+
+  public FilesStatus getFilesStatus() {
+    return filesStatus;
+  }
+
+  public void setFilesStatus(FilesStatus hasFile) {
+    this.filesStatus = hasFile;
+  }
+
+  private void setPrintIssn(String printIssn) {
+    this.printIssn = printIssn;
+  }
+
+  public String getOnlineIssn() {
+    return onlineIssn;
+  }
+
+  public void setOnlineIssn(String onlineIssn) {
+    this.onlineIssn = onlineIssn;
+  }
+
+  public void setContributors(List<ImportContributor> contributors) {
+    this.contributors = contributors;
+  }
+
+  @JacocoGenerated
+  public Instant getCreatedDate() {
+    return createdDate;
+  }
+
+  private void setCreatedDate(Instant createdDate) {
+    this.createdDate = createdDate;
+  }
+
+  @JacocoGenerated
+  public List<AssociatedArtifact> getAssociatedArtifacts() {
+    return associatedArtifacts;
+  }
+
+  @JacocoGenerated
+  public void setAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
+    this.associatedArtifacts = associatedArtifacts;
+  }
+
+  @JacocoGenerated
+  public URI getIdentifier() {
+    return identifier;
+  }
+
+  public void setIdentifier(URI identifier) {
+    this.identifier = identifier;
+  }
+
+  @JacocoGenerated
+  public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
+    return additionalIdentifiers;
+  }
+
+  public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
+    this.additionalIdentifiers = additionalIdentifiers;
+  }
+
+  @JacocoGenerated
+  public URI getDoi() {
+    return doi;
+  }
+
+  public void setDoi(URI doi) {
+    this.doi = doi;
+  }
+
+  @JacocoGenerated
+  public PublicationInstance<? extends Pages> getPublicationInstance() {
+    return publicationInstance;
+  }
+
+  public void setPublicationInstance(PublicationInstance<? extends Pages> publicationInstance) {
+    this.publicationInstance = publicationInstance;
+  }
+
+  @JacocoGenerated
+  public String getMainTitle() {
+    return mainTitle;
+  }
+
+  public void setMainTitle(String mainTitle) {
+    this.mainTitle = mainTitle;
+  }
+
+  @JacocoGenerated
+  public ExpandedPublisher getPublisher() {
+    return publisher;
+  }
+
+  public void setPublisher(ExpandedPublisher publisher) {
+    this.publisher = publisher;
+  }
+
+  @JacocoGenerated
+  public CollaborationType getCollaborationType() {
+    return collaborationType;
+  }
+
+  public void setCollaborationType(CollaborationType collaborationType) {
+    this.collaborationType = collaborationType;
+  }
+
+  @JacocoGenerated
+  public ExpandedJournal getJournal() {
+    return journal;
+  }
+
+  public void setJournal(ExpandedJournal journal) {
+    this.journal = journal;
+  }
+
+  @JacocoGenerated
+  public int getNumberOfVerifiedContributors() {
+    return numberOfVerifiedContributors;
+  }
+
+  public void setNumberOfVerifiedContributors(int numberOfVerifiedContributors) {
+    this.numberOfVerifiedContributors = numberOfVerifiedContributors;
+  }
+
+  @JacocoGenerated
+  public int getTotalNumberOfContributors() {
+    return totalNumberOfContributors;
+  }
+
+  public void setTotalNumberOfContributors(int totalNumberOfContributors) {
+    this.totalNumberOfContributors = totalNumberOfContributors;
+  }
+
+  @JacocoGenerated
+  public Set<ExpandedImportCandidateOrganization> getOrganizations() {
+    return organizations;
+  }
+
+  public void setOrganizations(Set<ExpandedImportCandidateOrganization> organizations) {
+    this.organizations = organizations;
+  }
+
+  @JacocoGenerated
+  public ImportStatus getImportStatus() {
+    return importStatus;
+  }
+
+  public void setImportStatus(ImportStatus importStatus) {
+    this.importStatus = importStatus;
+  }
+
+  @JacocoGenerated
+  public String getPublicationYear() {
+    return publicationYear;
+  }
+
+  public void setPublicationYear(String publicationYear) {
+    this.publicationYear = publicationYear;
+  }
+
+  @Override
+  public String toJsonString() {
+    return ExpandedDataEntry.super.toJsonString();
+  }
+
+  @Override
+  public SortableIdentifier identifyExpandedEntry() {
+    return new SortableIdentifier(UriWrapper.fromUri(identifier).getLastPathElement());
+  }
+
+  private static String extractOnlineIssn(ImportCandidate importCandidate) {
+    return Optional.ofNullable(importCandidate.getEntityDescription().reference())
+        .map(Reference::getPublicationContext)
+        .filter(UnconfirmedJournal.class::isInstance)
+        .map(UnconfirmedJournal.class::cast)
+        .map(UnconfirmedJournal::getOnlineIssn)
+        .orElse(null);
+  }
+
+  private static String extractPrintIssn(ImportCandidate importCandidate) {
+    return Optional.ofNullable(importCandidate.getEntityDescription().reference())
+        .map(Reference::getPublicationContext)
+        .filter(UnconfirmedJournal.class::isInstance)
+        .map(UnconfirmedJournal.class::cast)
+        .map(UnconfirmedJournal::getPrintIssn)
+        .orElse(null);
+  }
+
+  private static CollaborationType extractCorporation(
+      Set<ExpandedImportCandidateOrganization> organizations) {
+    return organizations.size() > 1
+        ? CollaborationType.COLLABORATIVE
+        : CollaborationType.NON_COLLABORATIVE;
+  }
+
+  private static List<ImportContributor> extractContributors(ImportCandidate importCandidate) {
+    var contributors = importCandidate.getEntityDescription().contributors().stream().toList();
+    return contributors.size() < 5
+        ? contributors.subList(0, contributors.size())
+        : contributors.subList(0, 5);
+  }
+
+  private static int extractNumberOfVerifiedContributors(ImportCandidate importCandidate) {
+    return (int)
+        importCandidate.getEntityDescription().contributors().stream()
+            .filter(ExpandedImportCandidate::isVerifiedContributor)
+            .count();
+  }
+
+  private static boolean isVerifiedContributor(ImportContributor contributor) {
+    return ContributorVerificationStatus.VERIFIED.equals(
+        contributor.identity().getVerificationStatus());
+  }
+
+  private static URI generateIdentifier(SortableIdentifier identifier) {
+    return UriWrapper.fromHost(API_HOST)
+        .addChild(PUBLICATION)
+        .addChild(IMPORT_CANDIDATE)
+        .addChild(identifier.toString())
+        .getUri();
+  }
+
+  private static PublicationInstance<? extends Pages> extractPublicationInstance(
+      ImportCandidate importCandidate) {
+    return Optional.ofNullable(importCandidate.getEntityDescription())
+        .map(ImportEntityDescription::reference)
+        .map(Reference::getPublicationInstance)
+        .orElse(null);
+  }
+
+  private static ExpandedPublisher extractPublisher(
+      ImportCandidate importCandidate, RawContentRetriever uriRetriever) {
+    return Optional.ofNullable(importCandidate.getEntityDescription())
+        .map(ImportEntityDescription::reference)
+        .map(Reference::getPublicationContext)
+        .filter(ExpandedImportCandidate::hasPublisher)
+        .map(publicationContext -> extractPublishingHouse(publicationContext, uriRetriever))
+        .orElse(null);
+  }
+
+  /**
+   * For now, importCandidate is an object constructed only by scopusConverter, which supports two
+   * PublicationContext types where PublishingHouse is present: Book and Report.
+   */
+  private static ExpandedPublisher extractPublishingHouse(
+      PublicationContext publicationContext, RawContentRetriever uriRetriever) {
+    return isBook(publicationContext)
+        ? expandPublisher(((Book) publicationContext).getPublisher(), uriRetriever)
+        : expandPublisher(((Report) publicationContext).getPublisher(), uriRetriever);
+  }
+
+  private static ExpandedPublisher expandPublisher(
+      PublishingHouse publisher, RawContentRetriever uriRetriever) {
+    var publisherExpansionService = new PublisherExpansionServiceImpl(uriRetriever);
+    return publisherExpansionService.createExpandedPublisher(publisher);
+  }
+
+  private static boolean hasPublisher(PublicationContext publicationContext) {
+    return isBook(publicationContext) || isReport(publicationContext);
+  }
+
+  private static boolean isReport(PublicationContext publicationContext) {
+    return publicationContext.getClass().equals(Report.class);
+  }
+
+  private static boolean isBook(PublicationContext publicationContext) {
+    return publicationContext.getClass().equals(Book.class);
+  }
+
+  private static ExpandedJournal extractJournal(
+      ImportCandidate importCandidate, RawContentRetriever uriRetriever) {
+    return isJournalContent(importCandidate)
+        ? getPublicationContext(importCandidate, uriRetriever)
+        : null;
+  }
+
+  private static ExpandedJournal getPublicationContext(
+      ImportCandidate importCandidate, RawContentRetriever uriRetriever) {
+    return Optional.ofNullable(importCandidate.getEntityDescription())
+        .map(ImportEntityDescription::reference)
+        .map(Reference::getPublicationContext)
+        .map(Journal.class::cast)
+        .map(journal -> expandJournal(journal, uriRetriever))
+        .orElse(null);
+  }
+
+  private static ExpandedJournal expandJournal(Journal journal, RawContentRetriever uriRetriever) {
+    var journalExpansionService = new JournalExpansionServiceImpl(uriRetriever);
+    return journalExpansionService.expandJournal(journal);
+  }
+
+  private static boolean isJournalContent(ImportCandidate importCandidate) {
+    return Optional.ofNullable(importCandidate.getEntityDescription())
+        .map(ImportEntityDescription::reference)
+        .map(Reference::getPublicationContext)
+        .map(Journal.class::isInstance)
+        .orElse(false);
+  }
+
+  private static int extractNumberOfContributors(ImportCandidate importCandidate) {
+    return importCandidate.getEntityDescription().contributors().size();
+  }
+
+  private static String extractMainTitle(ImportCandidate importCandidate) {
+    return importCandidate.getEntityDescription().mainTitle();
+  }
+
+  private static URI extractDoi(ImportCandidate importCandidate) {
+    return Optional.ofNullable(importCandidate.getEntityDescription())
+        .map(ImportEntityDescription::reference)
+        .map(Reference::getDoi)
+        .orElse(null);
+  }
+
+  private static String extractPublicationYear(ImportCandidate importCandidate) {
+    return Optional.ofNullable(importCandidate.getEntityDescription())
+        .map(ImportEntityDescription::publicationDate)
+        .map(PublicationDate::getYear)
+        .orElse(String.valueOf(new DateTime().getYear()));
+  }
+
+  private static Set<ExpandedImportCandidateOrganization> extractOrganizations(
+      ImportCandidate importCandidate, RawContentRetriever uriRetriever) {
+
+    return getOrganizationIdList(importCandidate)
+        .map(id -> fetchCristinOrg(id, uriRetriever))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .distinct()
+        .filter(org -> isNvaCustomer(org, uriRetriever))
+        .map(ExpandedImportCandidateOrganization::fromCristinOrganization)
+        .collect(Collectors.toSet());
+  }
+
+  private static Stream<URI> getOrganizationIdList(ImportCandidate importCandidate) {
+    return importCandidate.getEntityDescription().contributors().stream()
+        .map(ImportContributor::affiliations)
+        .flatMap(Collection::stream)
+        .map(Affiliation::targetOrganization)
+        .filter(Organization.class::isInstance)
+        .map(Organization.class::cast)
+        .map(Organization::getId)
+        .distinct()
+        .filter(Objects::nonNull);
+  }
+
+  private static boolean isNvaCustomer(
+      CristinOrganization cristinOrganization, RawContentRetriever uriRetriever) {
+    var isCustomer =
+        Optional.ofNullable(cristinOrganization.id())
+            .map(ExpandedImportCandidate::toFetchCustomerByCristinIdUri)
+            .map(uri -> fetchCustomer(uriRetriever, uri))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .map(ExpandedImportCandidate::isHttpOk)
+            .orElse(false);
+    logger.info(IS_CUSTOMER_MESSAGE, cristinOrganization.id(), isCustomer);
+    return isCustomer;
+  }
+
+  private static boolean isHttpOk(HttpResponse<String> stringHttpResponse) {
+    return stringHttpResponse.statusCode() == 200;
+  }
+
+  private static Optional<CristinOrganization> fetchCristinOrg(
+      URI id, RawContentRetriever uriRetriever) {
+    return Optional.ofNullable(getCristinIdentifier(id))
+        .map(ExpandedImportCandidate::toCristinOrgUri)
+        .map(uri -> fetch(uri, uriRetriever))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .map(ExpandedImportCandidate::toCristinOrganization)
+        .map(CristinOrganization::getTopLevelOrg);
+  }
+
+  private static String getCristinIdentifier(URI id) {
+    return UriWrapper.fromUri(id).getLastPathElement();
+  }
+
+  private static URI toCristinOrgUri(String cristinId) {
+    return UriWrapper.fromHost(API_HOST)
+        .addChild(CRISTIN)
+        .addChild(ORGANIZATION)
+        .addQueryParameter(DEPTH, TOP)
+        .addChild(cristinId)
+        .getUri();
+  }
+
+  private static Optional<HttpResponse<String>> fetchCustomer(
+      RawContentRetriever uriRetriever, URI uri) {
+    return uriRetriever.fetchResponse(uri, CONTENT_TYPE);
+  }
+
+  private static URI toFetchCustomerByCristinIdUri(URI topLevelOrganization) {
+    var getCustomerEndpoint =
+        UriWrapper.fromHost(API_HOST).addChild(CUSTOMER).addChild(CRISTIN_ID).getUri();
+    return URI.create(
+        getCustomerEndpoint
+            + "/"
+            + URLEncoder.encode(topLevelOrganization.toString(), StandardCharsets.UTF_8));
+  }
+
+  private static CristinOrganization toCristinOrganization(String response) {
+    return attempt(() -> JsonUtils.dtoObjectMapper.readValue(response, CristinOrganization.class))
+        .orElseThrow();
+  }
+
+  private static Optional<String> fetch(URI uri, RawContentRetriever uriRetriever) {
+    return uriRetriever.getRawContent(uri, CONTENT_TYPE);
+  }
+
+  public static final class Builder {
+
+    private final ExpandedImportCandidate expandedImportCandidate;
+
+    public Builder() {
+      expandedImportCandidate = new ExpandedImportCandidate();
+    }
+
+    public Builder withIdentifier(URI identifier) {
+      expandedImportCandidate.setIdentifier(identifier);
+      return this;
+    }
+
+    public Builder withAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
+      expandedImportCandidate.setAdditionalIdentifiers(additionalIdentifiers);
+      return this;
+    }
+
+    public Builder withDoi(URI doi) {
+      expandedImportCandidate.setDoi(doi);
+      return this;
+    }
+
+    public Builder withPublicationInstance(
+        PublicationInstance<? extends Pages> publicationInstance) {
+      expandedImportCandidate.setPublicationInstance(publicationInstance);
+      return this;
+    }
+
+    public Builder withMainTitle(String mainTitle) {
+      expandedImportCandidate.setMainTitle(mainTitle);
+      return this;
+    }
+
+    public Builder withPublisher(ExpandedPublisher publisher) {
+      expandedImportCandidate.setPublisher(publisher);
+      return this;
+    }
+
+    public Builder withCooperation(CollaborationType collaborationType) {
+      expandedImportCandidate.setCollaborationType(collaborationType);
+      return this;
+    }
+
+    public Builder withJournal(ExpandedJournal journal) {
+      expandedImportCandidate.setJournal(journal);
+      return this;
+    }
+
+    public Builder withCreatedDate(Instant createdDate) {
+      expandedImportCandidate.setCreatedDate(createdDate);
+      return this;
+    }
+
+    public Builder withNumberOfVerifiedContributors(int numberOfVerifiedContributors) {
+      expandedImportCandidate.setNumberOfVerifiedContributors(numberOfVerifiedContributors);
+      return this;
+    }
+
+    public Builder withTotalNumberOfContributors(int totalNumberOfContributors) {
+      expandedImportCandidate.setTotalNumberOfContributors(totalNumberOfContributors);
+      return this;
+    }
+
+    public Builder withOrganizations(Set<ExpandedImportCandidateOrganization> organizations) {
+      expandedImportCandidate.setOrganizations(organizations);
+      return this;
+    }
+
+    public Builder withImportStatus(ImportStatus importStatus) {
+      expandedImportCandidate.setImportStatus(importStatus);
+      return this;
+    }
+
+    public Builder withPublicationYear(String publicationYear) {
+      expandedImportCandidate.setPublicationYear(publicationYear);
+      return this;
+    }
+
+    public Builder withContributors(List<ImportContributor> contributors) {
+      expandedImportCandidate.setContributors(contributors);
+      return this;
+    }
+
+    public Builder withAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
+      expandedImportCandidate.setAssociatedArtifacts(associatedArtifacts);
+      return this;
+    }
+
+    public ExpandedImportCandidate build() {
+      return expandedImportCandidate;
+    }
+
+    public Builder withPrintIssn(String printIssn) {
+      expandedImportCandidate.setPrintIssn(printIssn);
+      return this;
+    }
+
+    public Builder withOnlineIssn(String onlineIssn) {
+      expandedImportCandidate.setOnlineIssn(onlineIssn);
+      return this;
+    }
+
+    public Builder withHasFile(FilesStatus hasFile) {
+      expandedImportCandidate.setFilesStatus(hasFile);
+      return this;
+    }
+  }
 }

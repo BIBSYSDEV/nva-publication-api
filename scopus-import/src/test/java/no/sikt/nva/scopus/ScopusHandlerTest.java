@@ -61,6 +61,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.MessageAttribute;
@@ -144,10 +145,10 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.models.Doi;
 import no.unit.nva.expansion.model.ExpandedImportCandidate;
+import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.importcandidate.CandidateStatus;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
-import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.language.LanguageDescription;
 import no.unit.nva.model.Contributor;
@@ -209,1604 +210,1874 @@ import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 @WireMockTest(httpsEnabled = true)
 class ScopusHandlerTest extends ResourcesLocalTest {
 
-    public static final Context CONTEXT = null;
-    public static final String EXPECTED_CONTENT_STRING_TXT = "expectedContentString.txt";
-    public static final String INF_CLASS_NAME = "inf";
-    public static final String SUP_CLASS_NAME = "sup";
-    public static final String INVALID_ISSN = "096042";
-    public static final String VALID_ISSN = "0960-4286";
-    public static final String LANGUAGE_ENG = "eng";
-    public static final String RESOURCE_EXCEPTION_MESSAGE = "resourceExceptionMessage";
-    private static final String EXPECTED_RESULTS_PATH = "expectedResults";
-    private static final String HARDCODED_EXPECTED_KEYWORD_1 = "<sup>64</sup>Cu";
-    private static final String HARDCODED_EXPECTED_KEYWORD_2 = "excretion";
-    private static final String HARDCODED_EXPECTED_KEYWORD_3 = "sheep";
-    private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
-    private static final String PUBLICATION_DAY_FIELD_NAME = "day";
-    private static final String PUBLICATION_MONTH_FIELD_NAME = "month";
-    private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
-    private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
-    private static final String SCOPUS_IMPORT_BUCKET = "SCOPUS_IMPORT_BUCKET";
-    public static final String HOST = new Environment().readEnv(PiaConnection.API_HOST);
-    private FakeS3Client s3Client;
-    private S3Driver s3Driver;
-    private ScopusHandler scopusHandler;
-    private ContributorExtractor contributorExtractor;
-    private PublicationChannelConnection publicationChannelConnection;
-    private IdentityServiceClient identityServiceClient;
-    private ScopusGenerator scopusData;
-    private ResourceService importCandidateService;
-    private ScopusUpdater scopusUpdater;
-    private ScopusFileConverter scopusFileConverter;
-    private UriRetriever uriRetriever;
-    private AuthorizedBackendUriRetriever authorizedBackendUriRetriever;
+  public static final Context CONTEXT = null;
+  public static final String EXPECTED_CONTENT_STRING_TXT = "expectedContentString.txt";
+  public static final String INF_CLASS_NAME = "inf";
+  public static final String SUP_CLASS_NAME = "sup";
+  public static final String INVALID_ISSN = "096042";
+  public static final String VALID_ISSN = "0960-4286";
+  public static final String LANGUAGE_ENG = "eng";
+  public static final String RESOURCE_EXCEPTION_MESSAGE = "resourceExceptionMessage";
+  private static final String EXPECTED_RESULTS_PATH = "expectedResults";
+  private static final String HARDCODED_EXPECTED_KEYWORD_1 = "<sup>64</sup>Cu";
+  private static final String HARDCODED_EXPECTED_KEYWORD_2 = "excretion";
+  private static final String HARDCODED_EXPECTED_KEYWORD_3 = "sheep";
+  private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
+  private static final String PUBLICATION_DAY_FIELD_NAME = "day";
+  private static final String PUBLICATION_MONTH_FIELD_NAME = "month";
+  private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
+  private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
+  private static final String SCOPUS_IMPORT_BUCKET = "SCOPUS_IMPORT_BUCKET";
+  public static final String HOST = new Environment().readEnv(PiaConnection.API_HOST);
+  private FakeS3Client s3Client;
+  private S3Driver s3Driver;
+  private ScopusHandler scopusHandler;
+  private ContributorExtractor contributorExtractor;
+  private PublicationChannelConnection publicationChannelConnection;
+  private IdentityServiceClient identityServiceClient;
+  private ScopusGenerator scopusData;
+  private ResourceService importCandidateService;
+  private ScopusUpdater scopusUpdater;
+  private ScopusFileConverter scopusFileConverter;
+  private UriRetriever uriRetriever;
+  private AuthorizedBackendUriRetriever authorizedBackendUriRetriever;
 
-    private ResourceService resourcesService;
+  private ResourceService resourcesService;
 
-    public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
-        return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
-                             addLanguageEdgeCases());
-    }
+  public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
+    return Stream.concat(
+        LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
+        addLanguageEdgeCases());
+  }
 
-    @BeforeEach
-    public void init(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException, URISyntaxException {
-        var environment = new Environment();
-        var importCandidateTable = environment.readEnv("TABLE_NAME");
-        var resourcesTable = environment.readEnv("RESOURCES_TABLE_NAME");
-        super.init(importCandidateTable, resourcesTable);
-        s3Client = new FakeS3cClientWithHeadSupport();
-        s3Driver = new S3Driver(s3Client, "ignoredValue");
-        var httpClient = WiremockHttpClient.create();
-        authorizedBackendUriRetriever = mock(AuthorizedBackendUriRetriever.class);
-        publicationChannelConnection = new PublicationChannelConnection(authorizedBackendUriRetriever);
-        importCandidateService = getResourceService(client, importCandidateTable);
-        resourcesService = getResourceService(client, resourcesTable);
-        uriRetriever = mock(UriRetriever.class);
-        scopusUpdater = new ScopusUpdater(importCandidateService, uriRetriever);
-        var mockedEnvironment = mock(Environment.class);
-        when(mockedEnvironment.readEnv(CROSSREF_URI_ENV_VAR_NAME)).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
-        scopusFileConverter = new ScopusFileConverter(httpClient, s3Client, mockedEnvironment, mockedTikaUtils());
-        contributorExtractor = mock(ContributorExtractor.class);
-        var organization = randomUri();
-        when(contributorExtractor.generateContributors(any()))
-            .thenReturn(new ContributorsOrganizationsWrapper(List.of(randomImportContributorWithName(randomString())),
-                                                             List.of(organization)));
-        identityServiceClient = mock(IdentityServiceClient.class);
-        when(attempt(identityServiceClient::getAllCustomers).orElseThrow())
-            .thenReturn(customerList(organization));
-        scopusHandler = new ScopusHandler(s3Client, publicationChannelConnection,
-                                          identityServiceClient, importCandidateService, scopusUpdater, scopusFileConverter,
-                                          mockedSearchService(Collections.emptyList()), contributorExtractor);
-        scopusData = new ScopusGenerator();
-    }
+  @BeforeEach
+  public void init(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException, URISyntaxException {
+    var environment = new Environment();
+    var importCandidateTable = environment.readEnv("TABLE_NAME");
+    var resourcesTable = environment.readEnv("RESOURCES_TABLE_NAME");
+    super.init(importCandidateTable, resourcesTable);
+    s3Client = new FakeS3cClientWithHeadSupport();
+    s3Driver = new S3Driver(s3Client, "ignoredValue");
+    var httpClient = WiremockHttpClient.create();
+    authorizedBackendUriRetriever = mock(AuthorizedBackendUriRetriever.class);
+    publicationChannelConnection = new PublicationChannelConnection(authorizedBackendUriRetriever);
+    importCandidateService = getResourceService(client, importCandidateTable);
+    resourcesService = getResourceService(client, resourcesTable);
+    uriRetriever = mock(UriRetriever.class);
+    scopusUpdater = new ScopusUpdater(importCandidateService, uriRetriever);
+    var mockedEnvironment = mock(Environment.class);
+    when(mockedEnvironment.readEnv(CROSSREF_URI_ENV_VAR_NAME))
+        .thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl());
+    scopusFileConverter =
+        new ScopusFileConverter(httpClient, s3Client, mockedEnvironment, mockedTikaUtils());
+    contributorExtractor = mock(ContributorExtractor.class);
+    var organization = randomUri();
+    when(contributorExtractor.generateContributors(any()))
+        .thenReturn(
+            new ContributorsOrganizationsWrapper(
+                List.of(randomImportContributorWithName(randomString())), List.of(organization)));
+    identityServiceClient = mock(IdentityServiceClient.class);
+    when(attempt(identityServiceClient::getAllCustomers).orElseThrow())
+        .thenReturn(customerList(organization));
+    scopusHandler =
+        new ScopusHandler(
+            s3Client,
+            publicationChannelConnection,
+            identityServiceClient,
+            importCandidateService,
+            scopusUpdater,
+            scopusFileConverter,
+            mockedSearchService(Collections.emptyList()),
+            contributorExtractor);
+    scopusData = new ScopusGenerator();
+  }
 
-    private CustomerList customerList(URI organization) {
-        return new CustomerList(List.of(randomCustomer(organization)));
-    }
+  private CustomerList customerList(URI organization) {
+    return new CustomerList(List.of(randomCustomer(organization)));
+  }
 
-    private SearchService mockedSearchService(List<Publication> publications) {
-        var hits = publications.stream()
-                       .map(ScopusHandlerTest::toResourceWithId)
-                       .toList();
-        when(uriRetriever.fetchResponse(argThat((uri) -> nonNull(uri) && uri.toString().contains(searchUriWithParam("scopusIdentifier").toString())),
-                                        eq(APPLICATION_JSON))).thenReturn(
-            Optional.of(FakeHttpResponse.create("""
-                                                    {
-                                                      "totalHits": 0,
-                                                      "hits": %s
-                                                    }
-                                                    """.formatted(hits), 200)));
-        when(uriRetriever.fetchResponse(argThat((uri) -> nonNull(uri) && uri.toString().contains(searchUriWithParam("doi").toString())),
-                                        eq(APPLICATION_JSON))).thenReturn(
-            Optional.of(FakeHttpResponse.create("""
-                                                    {
-                                                      "totalHits": 0,
-                                                      "hits": %s
-                                                    }
-                                                    """.formatted(hits), 200)));
+  private SearchService mockedSearchService(List<Publication> publications) {
+    var hits = publications.stream().map(ScopusHandlerTest::toResourceWithId).toList();
+    when(uriRetriever.fetchResponse(
+            argThat(
+                (uri) ->
+                    nonNull(uri)
+                        && uri.toString()
+                            .contains(searchUriWithParam("scopusIdentifier").toString())),
+            eq(APPLICATION_JSON)))
+        .thenReturn(
+            Optional.of(
+                FakeHttpResponse.create(
+                    """
+                    {
+                      "totalHits": 0,
+                      "hits": %s
+                    }
+                    """
+                        .formatted(hits),
+                    200)));
+    when(uriRetriever.fetchResponse(
+            argThat(
+                (uri) ->
+                    nonNull(uri) && uri.toString().contains(searchUriWithParam("doi").toString())),
+            eq(APPLICATION_JSON)))
+        .thenReturn(
+            Optional.of(
+                FakeHttpResponse.create(
+                    """
+                    {
+                      "totalHits": 0,
+                      "hits": %s
+                    }
+                    """
+                        .formatted(hits),
+                    200)));
 
-        return SearchService.create(uriRetriever, resourcesService);
-    }
+    return SearchService.create(uriRetriever, resourcesService);
+  }
 
-    private static URI searchUriWithParam(String searchParam) {
-        return UriWrapper.fromHost(HOST)
-                   .addChild("search")
-                   .addChild("resources")
-                   .addQueryParameter(searchParam, null)
-                   .getUri();
-    }
+  private static URI searchUriWithParam(String searchParam) {
+    return UriWrapper.fromHost(HOST)
+        .addChild("search")
+        .addChild("resources")
+        .addQueryParameter(searchParam, null)
+        .getUri();
+  }
 
-    private static ResourceWithId toResourceWithId(Publication publication) {
-        return new ResourceWithId(UriWrapper.fromUri(PublicationGenerator.randomUri())
-                                      .addChild(publication.getIdentifier().toString())
-                                      .getUri());
-    }
+  private static ResourceWithId toResourceWithId(Publication publication) {
+    return new ResourceWithId(
+        UriWrapper.fromUri(PublicationGenerator.randomUri())
+            .addChild(publication.getIdentifier().toString())
+            .getUri());
+  }
 
-    private TikaUtils mockedTikaUtils() throws IOException, URISyntaxException {
-        var tikaUtils = mock(TikaUtils.class);
-        var tikaInputStream = mock(TikaInputStream.class);
-        when(tikaInputStream.getLength()).thenReturn(Long.parseLong(String.valueOf(randomInteger())));
-        when(tikaInputStream.getPath()).thenReturn(
+  private TikaUtils mockedTikaUtils() throws IOException, URISyntaxException {
+    var tikaUtils = mock(TikaUtils.class);
+    var tikaInputStream = mock(TikaInputStream.class);
+    when(tikaInputStream.getLength()).thenReturn(Long.parseLong(String.valueOf(randomInteger())));
+    when(tikaInputStream.getPath())
+        .thenReturn(
             Path.of(getClass().getClassLoader().getResource("2-s2.0-0000469852.xml").toURI()));
-        when(tikaUtils.fetch(any())).thenReturn(tikaInputStream);
-        when(tikaUtils.getMimeType(any())).thenReturn("application/pdf");
-        return tikaUtils;
-    }
+    when(tikaUtils.fetch(any())).thenReturn(tikaInputStream);
+    when(tikaUtils.getMimeType(any())).thenReturn("application/pdf");
+    return tikaUtils;
+  }
 
-    @Test
-    void shouldLogExceptionMessageWhenExceptionOccurs() {
-        final var appender = LogUtils.getTestingAppenderForRootLogger();
+  @Test
+  void shouldLogExceptionMessageWhenExceptionOccurs() {
+    final var appender = LogUtils.getTestingAppenderForRootLogger();
 
-        createEmptyPiaMock();
+    createEmptyPiaMock();
 
-        var event = createSqsEvent(randomString());
-        var expectedMessage = randomString();
-        s3Client = new FakeS3ClientThrowingException(expectedMessage);
-        scopusHandler = new ScopusHandler(s3Client, publicationChannelConnection,
-                                          identityServiceClient, importCandidateService, scopusUpdater, scopusFileConverter,
-                                          mockedSearchService(Collections.emptyList()), contributorExtractor);
-        scopusHandler.handleRequest(event, CONTEXT);
-        assertThat(appender.getMessages(), containsString(expectedMessage));
-    }
+    var event = createSqsEvent(randomString());
+    var expectedMessage = randomString();
+    s3Client = new FakeS3ClientThrowingException(expectedMessage);
+    scopusHandler =
+        new ScopusHandler(
+            s3Client,
+            publicationChannelConnection,
+            identityServiceClient,
+            importCandidateService,
+            scopusUpdater,
+            scopusFileConverter,
+            mockedSearchService(Collections.emptyList()),
+            contributorExtractor);
+    scopusHandler.handleRequest(event, CONTEXT);
+    assertThat(appender.getMessages(), containsString(expectedMessage));
+  }
 
-    @Test
-    void shouldLogExceptionForUnexpectedError() {
-        final var appender = LogUtils.getTestingAppenderForRootLogger();
+  @Test
+  void shouldLogExceptionForUnexpectedError() {
+    final var appender = LogUtils.getTestingAppenderForRootLogger();
 
-        createEmptyPiaMock();
-        var event = createSqsEvent("invalid URI");
-        var expectedMessage = "Unexpected error:";
-        s3Client = new FakeS3ClientThrowingException(expectedMessage);
-        scopusHandler = new ScopusHandler(s3Client, publicationChannelConnection,
-          identityServiceClient, importCandidateService, scopusUpdater, scopusFileConverter,
-          mockedSearchService(Collections.emptyList()), contributorExtractor);
-        scopusHandler.handleRequest(event, CONTEXT);
-        assertThat(appender.getMessages(), containsString(expectedMessage));
-    }
+    createEmptyPiaMock();
+    var event = createSqsEvent("invalid URI");
+    var expectedMessage = "Unexpected error:";
+    s3Client = new FakeS3ClientThrowingException(expectedMessage);
+    scopusHandler =
+        new ScopusHandler(
+            s3Client,
+            publicationChannelConnection,
+            identityServiceClient,
+            importCandidateService,
+            scopusUpdater,
+            scopusFileConverter,
+            mockedSearchService(Collections.emptyList()),
+            contributorExtractor);
+    scopusHandler.handleRequest(event, CONTEXT);
+    assertThat(appender.getMessages(), containsString(expectedMessage));
+  }
 
-    @Test
-    void shouldExtractOnlyScopusIdentifierIgnoreAllOtherIdentifiersAndStoreItInPublication() throws IOException {
-        createEmptyPiaMock();
-        var scopusIdentifier = getEid();
-        var expectedAdditionalIdentifier = ScopusIdentifier.fromValue(scopusIdentifier);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualAdditionalIdentifiers = publication.getAdditionalIdentifiers();
-        assertThat(actualAdditionalIdentifiers, hasItem(expectedAdditionalIdentifier));
-    }
+  @Test
+  void shouldExtractOnlyScopusIdentifierIgnoreAllOtherIdentifiersAndStoreItInPublication()
+      throws IOException {
+    createEmptyPiaMock();
+    var scopusIdentifier = getEid();
+    var expectedAdditionalIdentifier = ScopusIdentifier.fromValue(scopusIdentifier);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualAdditionalIdentifiers = publication.getAdditionalIdentifiers();
+    assertThat(actualAdditionalIdentifiers, hasItem(expectedAdditionalIdentifier));
+  }
 
-    @Test
-    void shouldPersistAssociatedCustomerWhenPersistingImportCandidate() throws IOException, NotFoundException {
-        createEmptyPiaMock();
-        var event = createNewScopusPublicationEvent();
-        var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
+  @Test
+  void shouldPersistAssociatedCustomerWhenPersistingImportCandidate()
+      throws IOException, NotFoundException {
+    createEmptyPiaMock();
+    var event = createNewScopusPublicationEvent();
+    var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
 
-        var persistedImportCandidate = importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+    var persistedImportCandidate =
+        importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
 
-        assertThat(persistedImportCandidate.getAssociatedCustomers(), is(not(emptyIterable())));
-    }
+    assertThat(persistedImportCandidate.getAssociatedCustomers(), is(not(emptyIterable())));
+  }
 
-    @Test
-    void shouldReturnImportCandidateWithoutAssociatedArtifactsWhenExceptionOccursFetchingFiles(
-        WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
-        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccess(wireMockRuntimeInfo));
-        createEmptyPiaMock();
-        mockBadRequestFetchingFilesFromXml(scopusData);
-        var event = createNewScopusPublicationEvent();
-        var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
+  @Test
+  void shouldReturnImportCandidateWithoutAssociatedArtifactsWhenExceptionOccursFetchingFiles(
+      WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
+    scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccess(wireMockRuntimeInfo));
+    createEmptyPiaMock();
+    mockBadRequestFetchingFilesFromXml(scopusData);
+    var event = createNewScopusPublicationEvent();
+    var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
 
-        assertThat(importCandidate.getAssociatedArtifacts(), is(emptyIterable()));
-    }
+    assertThat(importCandidate.getAssociatedArtifacts(), is(emptyIterable()));
+  }
 
-    @Test
-    void shouldFetchFileFromCrossRefDoiWhenScopusXmlDoesNotHaveFileReference(WireMockRuntimeInfo wireMockRuntimeInfo)
-        throws IOException {
-        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccess(wireMockRuntimeInfo));
-        scopusData.getDocument().getMeta().setDoi(randomString());
-        createEmptyPiaMock();
-        mockBadRequestFetchingFilesFromXml(scopusData);
-        var expectedFilename = mockFetchCrossrefDoiResponse(scopusData, wireMockRuntimeInfo);
-        var event = createNewScopusPublicationEvent();
-        var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
+  @Test
+  void shouldFetchFileFromCrossRefDoiWhenScopusXmlDoesNotHaveFileReference(
+      WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
+    scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccess(wireMockRuntimeInfo));
+    scopusData.getDocument().getMeta().setDoi(randomString());
+    createEmptyPiaMock();
+    mockBadRequestFetchingFilesFromXml(scopusData);
+    var expectedFilename = mockFetchCrossrefDoiResponse(scopusData, wireMockRuntimeInfo);
+    var event = createNewScopusPublicationEvent();
+    var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
 
-        assertThat(((File) importCandidate.getAssociatedArtifacts().getFirst()).getName(),
-                   is(equalTo(expectedFilename)));
-    }
+    assertThat(
+        ((File) importCandidate.getAssociatedArtifacts().getFirst()).getName(),
+        is(equalTo(expectedFilename)));
+  }
 
-    @Test
-    void shouldReturnImportCandidateWithoutAssociatedArtifactsWhenFailingFetchingFilesFromFilesFromXmlAndCrossref(
-        WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
-        scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccess(wireMockRuntimeInfo));
-        scopusData.getDocument().getMeta().setDoi(randomString());
-        createEmptyPiaMock();
-        mockBadRequestFetchingFilesFromXml(scopusData);
-        mockBadRequestCrossrefDoiResponse(scopusData);
-        var event = createNewScopusPublicationEvent();
-        var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
+  @Test
+  void
+      shouldReturnImportCandidateWithoutAssociatedArtifactsWhenFailingFetchingFilesFromFilesFromXmlAndCrossref(
+          WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
+    scopusData.getDocument().getMeta().setOpenAccess(randomOpenAccess(wireMockRuntimeInfo));
+    scopusData.getDocument().getMeta().setDoi(randomString());
+    createEmptyPiaMock();
+    mockBadRequestFetchingFilesFromXml(scopusData);
+    mockBadRequestCrossrefDoiResponse(scopusData);
+    var event = createNewScopusPublicationEvent();
+    var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
 
-        assertThat(importCandidate.getAssociatedArtifacts(), is(emptyIterable()));
-    }
+    assertThat(importCandidate.getAssociatedArtifacts(), is(emptyIterable()));
+  }
 
-    @Test
-    void shouldExtractDoiAndPlaceItInsideReferenceObject() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createScopusGeneratorWithSpecificDoi(randomDoi());
-        var expectedURI = Doi.fromDoiIdentifier(scopusData.getDocument().getMeta().getDoi()).getUri();
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        assertThat(publication.getEntityDescription().reference().getDoi(), equalToObject(expectedURI));
-    }
+  @Test
+  void shouldExtractDoiAndPlaceItInsideReferenceObject() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createScopusGeneratorWithSpecificDoi(randomDoi());
+    var expectedURI = Doi.fromDoiIdentifier(scopusData.getDocument().getMeta().getDoi()).getUri();
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    assertThat(publication.getEntityDescription().reference().getDoi(), equalToObject(expectedURI));
+  }
 
-    @Test
-    void shouldReturnPublicationWithMainTitle() throws IOException {
-        createEmptyPiaMock();
-        var event = createNewScopusPublicationEvent();
-        var titleObject = extractTitle(scopusData);
-        var expectedTitleString = expectedTitle(titleObject);
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualMainTitle = publication.getEntityDescription().mainTitle();
-        assertThat(actualMainTitle, is(equalTo(expectedTitleString)));
-    }
+  @Test
+  void shouldReturnPublicationWithMainTitle() throws IOException {
+    createEmptyPiaMock();
+    var event = createNewScopusPublicationEvent();
+    var titleObject = extractTitle(scopusData);
+    var expectedTitleString = expectedTitle(titleObject);
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualMainTitle = publication.getEntityDescription().mainTitle();
+    assertThat(actualMainTitle, is(equalTo(expectedTitleString)));
+  }
 
-    @Test
-    void shouldConvertSpecifiedSupAndInfContentToString() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSupAndInfContent(createContentWithSupAndInfTags());
-        var event = createNewScopusPublicationEvent();
-        var expectedTitleString = IoUtils.stringFromResources(
-            Path.of(EXPECTED_RESULTS_PATH, EXPECTED_CONTENT_STRING_TXT));
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualMainTitle = publication.getEntityDescription().mainTitle();
-        assertThat(actualMainTitle, is(equalTo(expectedTitleString)));
-    }
+  @Test
+  void shouldConvertSpecifiedSupAndInfContentToString() throws IOException {
+    createEmptyPiaMock();
+    scopusData =
+        ScopusGenerator.createWithSpecifiedSupAndInfContent(createContentWithSupAndInfTags());
+    var event = createNewScopusPublicationEvent();
+    var expectedTitleString =
+        IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, EXPECTED_CONTENT_STRING_TXT));
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualMainTitle = publication.getEntityDescription().mainTitle();
+    assertThat(actualMainTitle, is(equalTo(expectedTitleString)));
+  }
 
-    @Test
-    void shouldReturnPublicationWithUnconfirmedPublicationContextWhenEventWithS3UriThatPointsToScopusXml()
-        throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
-    }
+  @Test
+  void
+      shouldReturnPublicationWithUnconfirmedPublicationContextWhenEventWithS3UriThatPointsToScopusXml()
+          throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationContext =
+        publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
+  }
 
-    @Test
-    void shouldReturnPublicationWithUnconfirmedPublicationContextWhenEventS3UriScopusXmlWithValidIssn()
-        throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
-        scopusData.clearIssn();
-        scopusData.addIssn(VALID_ISSN, ISSN_TYPE_PRINT);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
-    }
+  @Test
+  void
+      shouldReturnPublicationWithUnconfirmedPublicationContextWhenEventS3UriScopusXmlWithValidIssn()
+          throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
+    scopusData.clearIssn();
+    scopusData.addIssn(VALID_ISSN, ISSN_TYPE_PRINT);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationContext =
+        publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
+  }
 
-    @Test
-    void shouldReturnPublicationWithUnconfirmedPublicationContextWhenScopusXmlWithInvalidIssn()
-        throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
-        scopusData.clearIssn();
-        scopusData.addIssn(INVALID_ISSN, ISSN_TYPE_PRINT);
-        var event = createNewScopusPublicationEvent();
-        scopusHandler.handleRequest(event, CONTEXT);
-        var expectedMessage = "no.unit.nva.model.exceptions.InvalidIssnException: The ISSN";
-        var report = extractErrorReportFromS3Client();
-        assertThat(report, containsString(expectedMessage));
-    }
+  @Test
+  void shouldReturnPublicationWithUnconfirmedPublicationContextWhenScopusXmlWithInvalidIssn()
+      throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
+    scopusData.clearIssn();
+    scopusData.addIssn(INVALID_ISSN, ISSN_TYPE_PRINT);
+    var event = createNewScopusPublicationEvent();
+    scopusHandler.handleRequest(event, CONTEXT);
+    var expectedMessage = "no.unit.nva.model.exceptions.InvalidIssnException: The ISSN";
+    var report = extractErrorReportFromS3Client();
+    assertThat(report, containsString(expectedMessage));
+  }
 
-    @Test
-    void shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutPrintIssn()
-        throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
-    }
+  @Test
+  void
+      shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutPrintIssn()
+          throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationContext =
+        publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
+  }
 
-    @Test
-    void shouldReturnPublicationContextBookWithUnconfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrcTypeB()
-        throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.B);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(Book.class));
-        var actualPublisher = ((Book) actualPublicationContext).getPublisher();
-        var expectedPublisherName = scopusData.getDocument()
-                                        .getItem()
-                                        .getItem()
-                                        .getBibrecord()
-                                        .getHead()
-                                        .getSource()
-                                        .getPublisher()
-                                        .getFirst()
-                                        .getPublishername();
-        var actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
-        assertThat(actualPublisherName, is(expectedPublisherName));
-    }
+  @Test
+  void
+      shouldReturnPublicationContextBookWithUnconfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrcTypeB()
+          throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.B);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationContext =
+        publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(actualPublicationContext, instanceOf(Book.class));
+    var actualPublisher = ((Book) actualPublicationContext).getPublisher();
+    var expectedPublisherName =
+        scopusData
+            .getDocument()
+            .getItem()
+            .getItem()
+            .getBibrecord()
+            .getHead()
+            .getSource()
+            .getPublisher()
+            .getFirst()
+            .getPublishername();
+    var actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
+    assertThat(actualPublisherName, is(expectedPublisherName));
+  }
 
-    @Test
-    void shouldReturnPublicationContextBookWithUnconfirmedPublisherWhenPublisherIsNull() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.B);
-        removePublishers();
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(Book.class));
-        var publicationContext = (Book) publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(publicationContext.getPublisher(), instanceOf(UnconfirmedPublisher.class));
-    }
+  @Test
+  void shouldReturnPublicationContextBookWithUnconfirmedPublisherWhenPublisherIsNull()
+      throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.B);
+    removePublishers();
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationContext =
+        publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(actualPublicationContext, instanceOf(Book.class));
+    var publicationContext =
+        (Book) publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(publicationContext.getPublisher(), instanceOf(UnconfirmedPublisher.class));
+  }
 
-    @Test
-    void shouldReturnPublicationContextBookWithConfirmedPublisherWhenScopusXmlHasSrcTypeBandIsNotAChapter()
-        throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.B);
-        var expectedPublisherName = randomString();
-        scopusData.setPublishername(expectedPublisherName);
-        var expectedIsbn13 = randomIsbn13();
-        scopusData.addIsbn(expectedIsbn13, "13");
-        var expectedYear = String.valueOf(randomYear());
-        scopusData.setPublicationYear(expectedYear);
-        var event = createNewScopusPublicationEvent();
-        var expectedPublisherId = randomUri();
-        when(authorizedBackendUriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(
-            FakeHttpResponse.create(new PublicationChannelResponse(1,
-                                                            List.of(new PublicationChannelHit(expectedPublisherId))).toJsonString(), HTTP_OK)));
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(Book.class));
-        var actualPublisher = ((Book) actualPublicationContext).getPublisher();
-        assertThat(actualPublisher, instanceOf(Publisher.class));
-        var actualPublisherId = ((Publisher) actualPublisher).getId();
-        assertThat(actualPublisherId, is(expectedPublisherId));
-        var actualIsbnList = ((Book) actualPublicationContext).getIsbnList();
-        assertThat(actualIsbnList.size(), is(1));
-        assertThat(actualIsbnList, containsInAnyOrder(expectedIsbn13));
-    }
+  @Test
+  void
+      shouldReturnPublicationContextBookWithConfirmedPublisherWhenScopusXmlHasSrcTypeBandIsNotAChapter()
+          throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.B);
+    var expectedPublisherName = randomString();
+    scopusData.setPublishername(expectedPublisherName);
+    var expectedIsbn13 = randomIsbn13();
+    scopusData.addIsbn(expectedIsbn13, "13");
+    var expectedYear = String.valueOf(randomYear());
+    scopusData.setPublicationYear(expectedYear);
+    var event = createNewScopusPublicationEvent();
+    var expectedPublisherId = randomUri();
+    when(authorizedBackendUriRetriever.fetchResponse(any(), any()))
+        .thenReturn(
+            Optional.of(
+                FakeHttpResponse.create(
+                    new PublicationChannelResponse(
+                            1, List.of(new PublicationChannelHit(expectedPublisherId)))
+                        .toJsonString(),
+                    HTTP_OK)));
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationContext =
+        publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(actualPublicationContext, instanceOf(Book.class));
+    var actualPublisher = ((Book) actualPublicationContext).getPublisher();
+    assertThat(actualPublisher, instanceOf(Publisher.class));
+    var actualPublisherId = ((Publisher) actualPublisher).getId();
+    assertThat(actualPublisherId, is(expectedPublisherId));
+    var actualIsbnList = ((Book) actualPublicationContext).getIsbnList();
+    assertThat(actualIsbnList.size(), is(1));
+    assertThat(actualIsbnList, containsInAnyOrder(expectedIsbn13));
+  }
 
-    @Test
-    void shouldReturnPublicationContextChapterWhenScopusXmlHasCitationTypeChEvenIfSrcTypeIsB() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.create(CitationtypeAtt.CH);
-        scopusData.setSrcType(SourcetypeAtt.B);
-        var expectedPublisherName = randomString();
-        scopusData.setPublishername(expectedPublisherName);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(Anthology.class));
-        var actualContextUri = ((Anthology) actualPublicationContext).getId();
-        assertThat(actualContextUri, is(nullValue()));
-    }
+  @Test
+  void shouldReturnPublicationContextChapterWhenScopusXmlHasCitationTypeChEvenIfSrcTypeIsB()
+      throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.create(CitationtypeAtt.CH);
+    scopusData.setSrcType(SourcetypeAtt.B);
+    var expectedPublisherName = randomString();
+    scopusData.setPublishername(expectedPublisherName);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationContext =
+        publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(actualPublicationContext, instanceOf(Anthology.class));
+    var actualContextUri = ((Anthology) actualPublicationContext).getId();
+    assertThat(actualContextUri, is(nullValue()));
+  }
 
-    @Test
-    void shouldReturnPublicationContextReportWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrcTypeR()
-        throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.R);
-        var expectedPublisherName = randomString();
-        scopusData.setPublishername(expectedPublisherName);
-        var event = createNewScopusPublicationEvent();
-        var expectedPublisherId = randomUri();
-        when(authorizedBackendUriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(
-            FakeHttpResponse.create(new PublicationChannelResponse(1,
-                                                            List.of(new PublicationChannelHit(expectedPublisherId))).toString(), HTTP_OK)));
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(Book.class));
-        var actualPublisher = ((Report) actualPublicationContext).getPublisher();
-        assertThat(actualPublisher, instanceOf(Publisher.class));
-        var actualPublisherId = ((Publisher) actualPublisher).getId();
-        assertThat(actualPublisherId, is(expectedPublisherId));
-    }
+  @Test
+  void
+      shouldReturnPublicationContextReportWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrcTypeR()
+          throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.R);
+    var expectedPublisherName = randomString();
+    scopusData.setPublishername(expectedPublisherName);
+    var event = createNewScopusPublicationEvent();
+    var expectedPublisherId = randomUri();
+    when(authorizedBackendUriRetriever.fetchResponse(any(), any()))
+        .thenReturn(
+            Optional.of(
+                FakeHttpResponse.create(
+                    new PublicationChannelResponse(
+                            1, List.of(new PublicationChannelHit(expectedPublisherId)))
+                        .toString(),
+                    HTTP_OK)));
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationContext =
+        publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(actualPublicationContext, instanceOf(Book.class));
+    var actualPublisher = ((Report) actualPublicationContext).getPublisher();
+    assertThat(actualPublisher, instanceOf(Publisher.class));
+    var actualPublisherId = ((Publisher) actualPublisher).getId();
+    assertThat(actualPublisherId, is(expectedPublisherId));
+  }
 
-    @Test
-    void shouldReturnPublicationContextUnconfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrcTypeK()
-        throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
-        final var expectedYear = String.valueOf(randomYear());
-        scopusData.setPublicationYear(expectedYear);
-        scopusData.clearIssn();
-        final var expectedIssn = randomIssn();
-        scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(Book.class));
-        var actualSeries = ((Book) actualPublicationContext).getSeries();
-        assertThat(actualSeries, instanceOf(UnconfirmedSeries.class));
-        var actualIssn = ((UnconfirmedSeries) actualSeries).getOnlineIssn();
-        assertThat(actualIssn, is(expectedIssn));
-    }
+  @Test
+  void
+      shouldReturnPublicationContextUnconfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrcTypeK()
+          throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
+    final var expectedYear = String.valueOf(randomYear());
+    scopusData.setPublicationYear(expectedYear);
+    scopusData.clearIssn();
+    final var expectedIssn = randomIssn();
+    scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationContext =
+        publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(actualPublicationContext, instanceOf(Book.class));
+    var actualSeries = ((Book) actualPublicationContext).getSeries();
+    assertThat(actualSeries, instanceOf(UnconfirmedSeries.class));
+    var actualIssn = ((UnconfirmedSeries) actualSeries).getOnlineIssn();
+    assertThat(actualIssn, is(expectedIssn));
+  }
 
-    @Test
-    void shouldReturnPublicationContextUnconfirmedJournalWhenSrcTypeIsPAndIssnExists() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.P);
-        final var expectedYear = String.valueOf(randomYear());
-        scopusData.setPublicationYear(expectedYear);
-        scopusData.clearIssn();
-        final var expectedIssn = randomIssn();
-        scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
-        var event = createSqsEvent(uri);
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
-        var actualIssn = ((UnconfirmedJournal) actualPublicationContext).getOnlineIssn();
-        assertThat(actualIssn, is(expectedIssn));
-    }
+  @Test
+  void shouldReturnPublicationContextUnconfirmedJournalWhenSrcTypeIsPAndIssnExists()
+      throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.P);
+    final var expectedYear = String.valueOf(randomYear());
+    scopusData.setPublicationYear(expectedYear);
+    scopusData.clearIssn();
+    final var expectedIssn = randomIssn();
+    scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
+    var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+    var event = createSqsEvent(uri);
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationContext =
+        publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
+    var actualIssn = ((UnconfirmedJournal) actualPublicationContext).getOnlineIssn();
+    assertThat(actualIssn, is(expectedIssn));
+  }
 
-    @Test
-    void shouldReturnPublicationContextChapterWhenSrcTypeIsPAndIsbnExists() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.P);
-        final var expectedYear = String.valueOf(randomYear());
-        scopusData.setPublicationYear(expectedYear);
-        scopusData.clearIssn();
-        final var expectedIsbn = randomIsbn13();
-        scopusData.addIsbn(expectedIsbn, "13");
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
-        var event = createSqsEvent(uri);
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(Anthology.class));
-        var actualContextUri = ((Anthology) actualPublicationContext).getId();
-        assertThat(actualContextUri, is(nullValue()));
-    }
+  @Test
+  void shouldReturnPublicationContextChapterWhenSrcTypeIsPAndIsbnExists() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.P);
+    final var expectedYear = String.valueOf(randomYear());
+    scopusData.setPublicationYear(expectedYear);
+    scopusData.clearIssn();
+    final var expectedIsbn = randomIsbn13();
+    scopusData.addIsbn(expectedIsbn, "13");
+    var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+    var event = createSqsEvent(uri);
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationContext =
+        publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(actualPublicationContext, instanceOf(Anthology.class));
+    var actualContextUri = ((Anthology) actualPublicationContext).getId();
+    assertThat(actualContextUri, is(nullValue()));
+  }
 
-    @Test
-    void shouldReturnPublicationContextConfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrcTypeK()
-        throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
-        final var expectedYear = String.valueOf(randomYear());
-        scopusData.setPublicationYear(expectedYear);
-        scopusData.clearIssn();
-        final var expectedIssn = randomIssn();
-        scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
-        var event = createNewScopusPublicationEvent();
-        var expectedSeriesId = randomUri();
-        when(authorizedBackendUriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(
-            FakeHttpResponse.create(new PublicationChannelResponse(1,
-                                                                   List.of(new PublicationChannelHit(expectedSeriesId))).toJsonString(), HTTP_OK)));
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(Book.class));
-        var actualSeries = ((Book) actualPublicationContext).getSeries();
-        assertThat(actualSeries, instanceOf(Series.class));
-        var actualUri = ((Series) actualSeries).getId();
-        assertThat(actualUri, is(expectedSeriesId));
-    }
+  @Test
+  void
+      shouldReturnPublicationContextConfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrcTypeK()
+          throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
+    final var expectedYear = String.valueOf(randomYear());
+    scopusData.setPublicationYear(expectedYear);
+    scopusData.clearIssn();
+    final var expectedIssn = randomIssn();
+    scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
+    var event = createNewScopusPublicationEvent();
+    var expectedSeriesId = randomUri();
+    when(authorizedBackendUriRetriever.fetchResponse(any(), any()))
+        .thenReturn(
+            Optional.of(
+                FakeHttpResponse.create(
+                    new PublicationChannelResponse(
+                            1, List.of(new PublicationChannelHit(expectedSeriesId)))
+                        .toJsonString(),
+                    HTTP_OK)));
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationContext =
+        publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(actualPublicationContext, instanceOf(Book.class));
+    var actualSeries = ((Book) actualPublicationContext).getSeries();
+    assertThat(actualSeries, instanceOf(Series.class));
+    var actualUri = ((Series) actualSeries).getId();
+    assertThat(actualUri, is(expectedSeriesId));
+  }
 
-    @Test
-    void shouldReturnPublicationWithJournalWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd()
-        throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
-        var expectedYear = "2022";
-        scopusData.setPublicationYear(expectedYear);
-        scopusData.clearIssn();
-        var expectedIssn = randomIssn();
-        scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
-        var event = createNewScopusPublicationEvent();
-        var expectedJournalId = randomUri();
-        when(authorizedBackendUriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(
-            FakeHttpResponse.create(new PublicationChannelResponse(1,
-                                                                   List.of(new PublicationChannelHit(expectedJournalId))).toJsonString(), HTTP_OK)));
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(Journal.class));
-        var actualJournalUri = ((Journal) actualPublicationContext).getId();
-        assertThat(actualJournalUri, is(expectedJournalId));
-    }
+  @Test
+  void
+      shouldReturnPublicationWithJournalWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd()
+          throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
+    var expectedYear = "2022";
+    scopusData.setPublicationYear(expectedYear);
+    scopusData.clearIssn();
+    var expectedIssn = randomIssn();
+    scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
+    var event = createNewScopusPublicationEvent();
+    var expectedJournalId = randomUri();
+    when(authorizedBackendUriRetriever.fetchResponse(any(), any()))
+        .thenReturn(
+            Optional.of(
+                FakeHttpResponse.create(
+                    new PublicationChannelResponse(
+                            1, List.of(new PublicationChannelHit(expectedJournalId)))
+                        .toJsonString(),
+                    HTTP_OK)));
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationContext =
+        publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(actualPublicationContext, instanceOf(Journal.class));
+    var actualJournalUri = ((Journal) actualPublicationContext).getId();
+    assertThat(actualJournalUri, is(expectedJournalId));
+  }
 
-    @Test
-    void shouldReturnUnconfirmedJournalWhenBadResponseFromPublicationChannelApi() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
-        var expectedYear = "2022";
-        scopusData.setPublicationYear(expectedYear);
-        scopusData.clearIssn();
-        var expectedIssn = randomIssn();
-        scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
-        var event = createNewScopusPublicationEvent();
-        when(authorizedBackendUriRetriever.getRawContent(any(), any())).thenReturn(Optional.of(randomString()));
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationContext = publication.getEntityDescription().reference().getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
-    }
+  @Test
+  void shouldReturnUnconfirmedJournalWhenBadResponseFromPublicationChannelApi() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
+    var expectedYear = "2022";
+    scopusData.setPublicationYear(expectedYear);
+    scopusData.clearIssn();
+    var expectedIssn = randomIssn();
+    scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
+    var event = createNewScopusPublicationEvent();
+    when(authorizedBackendUriRetriever.getRawContent(any(), any()))
+        .thenReturn(Optional.of(randomString()));
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationContext =
+        publication.getEntityDescription().reference().getPublicationContext();
+    assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
+  }
 
-    @Test
-    void shouldThrowExceptionWhenSrcTypeIsNotSupported() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
-        var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, getSrctype(), getEid());
-        var event = createNewScopusPublicationEvent();
-        scopusHandler.handleRequest(event, CONTEXT);
-        var report = extractErrorReportFromS3Client();
+  @Test
+  void shouldThrowExceptionWhenSrcTypeIsNotSupported() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
+    var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, getSrctype(), getEid());
+    var event = createNewScopusPublicationEvent();
+    scopusHandler.handleRequest(event, CONTEXT);
+    var report = extractErrorReportFromS3Client();
 
-        assertThat(report, containsString(expectedMessage));
-    }
+    assertThat(report, containsString(expectedMessage));
+  }
 
-    @Test
-    void shouldSaveErrorReportInS3ContainingTheOriginalFileName() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
-        var event = createNewScopusPublicationEvent();
-        scopusHandler.handleRequest(event, CONTEXT);
-        var errorReportInput = extractInputFromErrorReportFromS3Client();
-        assertThat(errorReportInput, is(equalTo(scopusData.toXml())));
-    }
+  @Test
+  void shouldSaveErrorReportInS3ContainingTheOriginalFileName() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
+    var event = createNewScopusPublicationEvent();
+    scopusHandler.handleRequest(event, CONTEXT);
+    var errorReportInput = extractInputFromErrorReportFromS3Client();
+    assertThat(errorReportInput, is(equalTo(scopusData.toXml())));
+  }
 
+  @Test
+  void shouldSaveSuccessReportInS3() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
+    var event = createNewScopusPublicationEvent();
+    var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
+    var report = extractSuccessReport();
+    assertThat(importCandidate.getScopusIdentifier().orElseThrow(), is(equalTo(report)));
+  }
 
-    @Test
-    void shouldSaveSuccessReportInS3() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
-        var event = createNewScopusPublicationEvent();
-        var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
-        var report = extractSuccessReport();
-        assertThat(importCandidate.getScopusIdentifier().orElseThrow(), is(equalTo(report)));
-    }
+  @Test
+  void shouldExtractAuthorKeyWordsAsPlainText() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
+    scopusData.clearAuthorKeywords();
+    scopusData.addAuthorKeyword(HARDCODED_EXPECTED_KEYWORD_1, LANGUAGE_ENG);
+    scopusData.addAuthorKeyword(HARDCODED_EXPECTED_KEYWORD_2, LANGUAGE_ENG);
+    scopusData.addAuthorKeyword(HARDCODED_EXPECTED_KEYWORD_3, LANGUAGE_ENG);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var expectedKeywords =
+        List.of(
+            HARDCODED_EXPECTED_KEYWORD_1,
+            HARDCODED_EXPECTED_KEYWORD_2,
+            HARDCODED_EXPECTED_KEYWORD_3);
+    var actualPlaintextKeyWords = publication.getEntityDescription().tags();
+    assertThat(actualPlaintextKeyWords, containsInAnyOrder(expectedKeywords.toArray()));
+  }
 
-    @Test
-    void shouldExtractAuthorKeyWordsAsPlainText() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
-        scopusData.clearAuthorKeywords();
-        scopusData.addAuthorKeyword(HARDCODED_EXPECTED_KEYWORD_1, LANGUAGE_ENG);
-        scopusData.addAuthorKeyword(HARDCODED_EXPECTED_KEYWORD_2, LANGUAGE_ENG);
-        scopusData.addAuthorKeyword(HARDCODED_EXPECTED_KEYWORD_3, LANGUAGE_ENG);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var expectedKeywords = List.of(HARDCODED_EXPECTED_KEYWORD_1, HARDCODED_EXPECTED_KEYWORD_2,
-                                       HARDCODED_EXPECTED_KEYWORD_3);
-        var actualPlaintextKeyWords = publication.getEntityDescription().tags();
-        assertThat(actualPlaintextKeyWords, containsInAnyOrder(expectedKeywords.toArray()));
-    }
+  @Test
+  void shouldHaveNoDuplicateContributors() throws IOException {
+    createEmptyPiaMock();
+    var event = createNewScopusPublicationEvent();
+    var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
+    var contributors = importCandidate.getEntityDescription().contributors();
+    checkForDuplicateContributors(contributors);
+  }
 
-    @Test
-    void shouldHaveNoDuplicateContributors() throws IOException {
-        createEmptyPiaMock();
-        var event = createNewScopusPublicationEvent();
-        var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
-        var contributors = importCandidate.getEntityDescription().contributors();
-        checkForDuplicateContributors(contributors);
-    }
+  @Test
+  void shouldExtractPublicationDate() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
+    var year = "1978";
+    var month = "02";
+    var day = "01";
+    scopusData.setPublicationDate(year, month, day);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationDate = publication.getEntityDescription().publicationDate();
+    assertThat(
+        actualPublicationDate,
+        allOf(
+            hasProperty(PUBLICATION_DAY_FIELD_NAME, is(day)),
+            hasProperty(PUBLICATION_MONTH_FIELD_NAME, is(month)),
+            hasProperty(PUBLICATION_YEAR_FIELD_NAME, is(year))));
+  }
 
-    @Test
-    void shouldExtractPublicationDate() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
-        var year = "1978";
-        var month = "02";
-        var day = "01";
-        scopusData.setPublicationDate(year, month, day);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationDate = publication.getEntityDescription().publicationDate();
-        assertThat(actualPublicationDate, allOf(hasProperty(PUBLICATION_DAY_FIELD_NAME, is(day)),
-                                                hasProperty(PUBLICATION_MONTH_FIELD_NAME, is(month)),
-                                                hasProperty(PUBLICATION_YEAR_FIELD_NAME, is(year))));
-    }
-
-    @Test
-    void shouldExtractMainAbstract() throws IOException {
-        createEmptyPiaMock();
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
-        var event = createSqsEvent(uri);
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualMainAbstract = publication.getEntityDescription().mainAbstract();
-        var expectedAbstract = IoUtils.stringFromResources(
+  @Test
+  void shouldExtractMainAbstract() throws IOException {
+    createEmptyPiaMock();
+    var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
+    var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
+    var event = createSqsEvent(uri);
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualMainAbstract = publication.getEntityDescription().mainAbstract();
+    var expectedAbstract =
+        IoUtils.stringFromResources(
             Path.of(EXPECTED_RESULTS_PATH, FILENAME_EXPECTED_ABSTRACT_IN_0000469852));
-        assertThat(actualMainAbstract, is(equalTo(expectedAbstract)));
-    }
+    assertThat(actualMainAbstract, is(equalTo(expectedAbstract)));
+  }
 
-    @Test
-    void shouldNotThrowExceptionWhenScopusXmlDoesNotContainAbstract() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createWithSpecifiedAbstract(null);
-        var event = createNewScopusPublicationEvent();
-        assertDoesNotThrow(() -> scopusHandler.handleRequest(event, CONTEXT));
-    }
+  @Test
+  void shouldNotThrowExceptionWhenScopusXmlDoesNotContainAbstract() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createWithSpecifiedAbstract(null);
+    var event = createNewScopusPublicationEvent();
+    assertDoesNotThrow(() -> scopusHandler.handleRequest(event, CONTEXT));
+  }
 
-    @Test
-    void shouldExtractJournalArticleWhenScopusCitationTypeIsArticle() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.create(CitationtypeAtt.AR);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
-        assertThat(actualPublicationInstance, isA(JournalArticle.class));
-    }
+  @Test
+  void shouldExtractJournalArticleWhenScopusCitationTypeIsArticle() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.create(CitationtypeAtt.AR);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationInstance =
+        publication.getEntityDescription().reference().getPublicationInstance();
+    assertThat(actualPublicationInstance, isA(JournalArticle.class));
+  }
 
-    @Test
-    void shouldExtractJournalArticleWhenScopusCitationTypeIsReview() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.create(CitationtypeAtt.RE);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
-        assertThat(actualPublicationInstance, isA(JournalArticle.class));
-    }
+  @Test
+  void shouldExtractJournalArticleWhenScopusCitationTypeIsReview() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.create(CitationtypeAtt.RE);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationInstance =
+        publication.getEntityDescription().reference().getPublicationInstance();
+    assertThat(actualPublicationInstance, isA(JournalArticle.class));
+  }
 
-    @Test
-    void shouldExtractJournalArticleWhenScopusCitationTypeIsEditorial() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.create(CitationtypeAtt.ED);
-        var expectedIssue = String.valueOf(randomInteger());
-        var expectedVolume = randomString();
-        var expectedPages = randomString();
-        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
-        assertThat(actualPublicationInstance, isA(JournalLeader.class));
-        assertThat(expectedVolume, is(((JournalLeader) actualPublicationInstance).getVolume()));
-        assertThat(expectedIssue, is(((JournalLeader) actualPublicationInstance).getIssue()));
-    }
+  @Test
+  void shouldExtractJournalArticleWhenScopusCitationTypeIsEditorial() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.create(CitationtypeAtt.ED);
+    var expectedIssue = String.valueOf(randomInteger());
+    var expectedVolume = randomString();
+    var expectedPages = randomString();
+    scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationInstance =
+        publication.getEntityDescription().reference().getPublicationInstance();
+    assertThat(actualPublicationInstance, isA(JournalLeader.class));
+    assertThat(expectedVolume, is(((JournalLeader) actualPublicationInstance).getVolume()));
+    assertThat(expectedIssue, is(((JournalLeader) actualPublicationInstance).getIssue()));
+  }
 
-    @Test
-    void shouldExtractJournalArticleWhenScopusCitationTypeIsErratum() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.create(CitationtypeAtt.ER);
-        var expectedIssue = String.valueOf(randomInteger());
-        var expectedVolume = randomString();
-        var expectedPages = randomString();
-        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
-        assertThat(actualPublicationInstance, isA(JournalCorrigendum.class));
-        assertThat(((JournalCorrigendum) actualPublicationInstance).getCorrigendumFor(), is(nullValue()));
-    }
+  @Test
+  void shouldExtractJournalArticleWhenScopusCitationTypeIsErratum() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.create(CitationtypeAtt.ER);
+    var expectedIssue = String.valueOf(randomInteger());
+    var expectedVolume = randomString();
+    var expectedPages = randomString();
+    scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationInstance =
+        publication.getEntityDescription().reference().getPublicationInstance();
+    assertThat(actualPublicationInstance, isA(JournalCorrigendum.class));
+    assertThat(
+        ((JournalCorrigendum) actualPublicationInstance).getCorrigendumFor(), is(nullValue()));
+  }
 
-    @Test
-    void shouldExtractJournalLetterWhenScopusCitationTypeIsLetter() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
-        var expectedIssue = String.valueOf(randomInteger());
-        var expectedVolume = randomString();
-        var expectedPages = randomString();
-        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
-        assertThat(actualPublicationInstance, isA(JournalLetter.class));
-        assertThat(expectedIssue, is(((JournalLetter) actualPublicationInstance).getIssue()));
-    }
+  @Test
+  void shouldExtractJournalLetterWhenScopusCitationTypeIsLetter() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
+    var expectedIssue = String.valueOf(randomInteger());
+    var expectedVolume = randomString();
+    var expectedPages = randomString();
+    scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationInstance =
+        publication.getEntityDescription().reference().getPublicationInstance();
+    assertThat(actualPublicationInstance, isA(JournalLetter.class));
+    assertThat(expectedIssue, is(((JournalLetter) actualPublicationInstance).getIssue()));
+  }
 
-    @Test
-    void shouldExtractJournalArticleWhenScopusCitationTypeIsConferencePaperAndContextJournal() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.create(CitationtypeAtt.CP);
-        scopusData.setSrcType(SourcetypeAtt.P);
-        scopusData.clearIssn();
-        var expectedIssn = randomIssn();
-        scopusData.addIssn(expectedIssn, ISSN_TYPE_PRINT);
-        var expectedIssue = String.valueOf(randomInteger());
-        var expectedVolume = randomString();
-        var expectedPages = randomString();
-        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
-        assertThat(actualPublicationInstance, isA(JournalArticle.class));
-        assertThat(expectedIssue, is(((JournalArticle) actualPublicationInstance).getIssue()));
-    }
+  @Test
+  void shouldExtractJournalArticleWhenScopusCitationTypeIsConferencePaperAndContextJournal()
+      throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.create(CitationtypeAtt.CP);
+    scopusData.setSrcType(SourcetypeAtt.P);
+    scopusData.clearIssn();
+    var expectedIssn = randomIssn();
+    scopusData.addIssn(expectedIssn, ISSN_TYPE_PRINT);
+    var expectedIssue = String.valueOf(randomInteger());
+    var expectedVolume = randomString();
+    var expectedPages = randomString();
+    scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationInstance =
+        publication.getEntityDescription().reference().getPublicationInstance();
+    assertThat(actualPublicationInstance, isA(JournalArticle.class));
+    assertThat(expectedIssue, is(((JournalArticle) actualPublicationInstance).getIssue()));
+  }
 
-    @Test
-    void shouldExtractChapterArticleWhenScopusCitationTypeIsConferencePaperAndContextChapter() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.create(CitationtypeAtt.CP);
-        scopusData.setSrcType(SourcetypeAtt.P);
-        scopusData.clearIssn();
-        var expectedIsbn13 = randomIsbn13();
-        scopusData.addIsbn(expectedIsbn13, "13");
-        var expectedIssue = String.valueOf(randomInteger());
-        var expectedVolume = randomString();
-        var expectedPagesEnd = randomString();
-        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPagesEnd);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
-        assertThat(actualPublicationInstance, isA(ChapterArticle.class));
-        assertThat(expectedPagesEnd, is(((ChapterArticle) actualPublicationInstance).getPages().getEnd()));
-    }
+  @Test
+  void shouldExtractChapterArticleWhenScopusCitationTypeIsConferencePaperAndContextChapter()
+      throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.create(CitationtypeAtt.CP);
+    scopusData.setSrcType(SourcetypeAtt.P);
+    scopusData.clearIssn();
+    var expectedIsbn13 = randomIsbn13();
+    scopusData.addIsbn(expectedIsbn13, "13");
+    var expectedIssue = String.valueOf(randomInteger());
+    var expectedVolume = randomString();
+    var expectedPagesEnd = randomString();
+    scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPagesEnd);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationInstance =
+        publication.getEntityDescription().reference().getPublicationInstance();
+    assertThat(actualPublicationInstance, isA(ChapterArticle.class));
+    assertThat(
+        expectedPagesEnd, is(((ChapterArticle) actualPublicationInstance).getPages().getEnd()));
+  }
 
-    @ParameterizedTest(name = "should not generate publication when CitationType is:{0}")
-    @EnumSource(value = CitationtypeAtt.class, names = {"AR", "BK", "CH", "CP", "ED", "ER", "LE", "NO", "RE",
-        "SH"}, mode = Mode.EXCLUDE)
-    void shouldNotCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
-        throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.create(citationtypeAtt);
-        var eid = getEid();
-        var event = createNewScopusPublicationEvent();
-        var expectedMessage = String.format(
+  @ParameterizedTest(name = "should not generate publication when CitationType is:{0}")
+  @EnumSource(
+      value = CitationtypeAtt.class,
+      names = {"AR", "BK", "CH", "CP", "ED", "ER", "LE", "NO", "RE", "SH"},
+      mode = Mode.EXCLUDE)
+  void shouldNotCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
+      throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.create(citationtypeAtt);
+    var eid = getEid();
+    var event = createNewScopusPublicationEvent();
+    var expectedMessage =
+        String.format(
             PublicationInstanceCreator.UNSUPPORTED_CITATION_TYPE_MESSAGE,
-            citationtypeAtt.value(), eid);
-        assertNull(scopusHandler.handleRequest(event, CONTEXT));
-        var report = extractErrorReportFromS3Client();
-        assertTrue(report.contains(expectedMessage));
+            citationtypeAtt.value(),
+            eid);
+    assertNull(scopusHandler.handleRequest(event, CONTEXT));
+    var report = extractErrorReportFromS3Client();
+    assertTrue(report.contains(expectedMessage));
+  }
+
+  @Test
+  void shouldNotCreateImportCandidateWhenMissingPublicationType() throws IOException {
+    final var appender = LogUtils.getTestingAppenderForRootLogger();
+
+    createEmptyPiaMock();
+    scopusData
+        .getDocument()
+        .getItem()
+        .getItem()
+        .getBibrecord()
+        .getHead()
+        .getCitationInfo()
+        .getCitationType()
+        .clear();
+    var eid = getEid();
+    var event = createNewScopusPublicationEvent();
+    var expectedMessage =
+        String.format(PublicationInstanceCreator.MISSING_CITATION_TYPE_MESSAGE, eid);
+
+    assertNull(scopusHandler.handleRequest(event, CONTEXT));
+    assertThat(appender.getMessages(), containsString(expectedMessage));
+  }
+
+  @Test
+  void shouldExtractCitationTypesToBookMonographPublicationInstance() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.create(CitationtypeAtt.BK);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationInstance =
+        publication.getEntityDescription().reference().getPublicationInstance();
+    assertThat(actualPublicationInstance, isA(BookMonograph.class));
+  }
+
+  @Test
+  void shouldExtractCitationTypesToChapterArticlePublicationInstance() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.create(CitationtypeAtt.CH);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationInstance =
+        publication.getEntityDescription().reference().getPublicationInstance();
+    assertThat(actualPublicationInstance, isA(ChapterArticle.class));
+  }
+
+  @Test
+  void shouldNotThrowExceptionWhenDoiInScopusIsNull() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.createScopusGeneratorWithSpecificDoi(null);
+    var event = createNewScopusPublicationEvent();
+    assertDoesNotThrow(() -> scopusHandler.handleRequest(event, CONTEXT));
+  }
+
+  @Test
+  void shouldExtractVolumeIssueAndPageRange() throws IOException {
+    createEmptyPiaMock();
+    scopusData = ScopusGenerator.create(CitationtypeAtt.AR);
+    var expectedIssue = String.valueOf(randomInteger());
+    var expectedVolume = randomString();
+    var expectedPages = randomString();
+    scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualPublicationInstance =
+        (JournalArticle) publication.getEntityDescription().reference().getPublicationInstance();
+    assertThat(actualPublicationInstance.getVolume(), is(expectedVolume));
+    assertThat(actualPublicationInstance.getIssue(), is(expectedIssue));
+    assertThat(actualPublicationInstance.getPages().getEnd(), is(expectedPages));
+  }
+
+  @ParameterizedTest(name = "Should have entityDescription with language:{1}")
+  @MethodSource("providedLanguagesAndExpectedOutput")
+  void shouldExtractLanguage(List<LanguageDescription> languageCodes, URI expectedLanguageUri)
+      throws IOException {
+    createEmptyPiaMock();
+    scopusData =
+        ScopusGenerator.createScopusGeneratorWithSpecificLanguage(
+            new LanguagesWrapper(languageCodes));
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualLanguageUri = publication.getEntityDescription().language();
+    assertEquals(expectedLanguageUri, actualLanguageUri);
+  }
+
+  @Test
+  void shouldCreateSequenceNumbersInOrder() throws IOException {
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualContributorsSorted =
+        publication.getEntityDescription().contributors().stream()
+            .sorted(Comparator.comparingInt(ImportContributor::sequence))
+            .toList();
+    for (var contributorIndex = 0;
+        contributorIndex < actualContributorsSorted.size();
+        contributorIndex++) {
+      assertThat(
+          actualContributorsSorted.get(contributorIndex).sequence(),
+          is(Matchers.equalTo(contributorIndex + 1)));
     }
+  }
 
-    @Test
-    void shouldNotCreateImportCandidateWhenMissingPublicationType()
-        throws IOException {
-        final var appender = LogUtils.getTestingAppenderForRootLogger();
+  @Test
+  void shouldFetchCristinPersonAndOrganization() throws IOException {
+    scopusData = createWithOneAuthorGroupAndAffiliation(generateAuthorGroup());
+    var piaCristinIdAndAuthors = new HashMap<Integer, AuthorTp>();
+    var cristinAffiliationId = randomString();
+    mockAffiliationResponse(cristinAffiliationId, getAuthorGroup());
+    mockResponsesForAuthors(piaCristinIdAndAuthors, getAuthorGroup());
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    publication
+        .getEntityDescription()
+        .contributors()
+        .forEach(
+            contributor -> hasBeenFetchedFromCristin(contributor, piaCristinIdAndAuthors.keySet()));
+  }
 
-        createEmptyPiaMock();
-        scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getCitationInfo()
-            .getCitationType().clear();
-        var eid = getEid();
-        var event = createNewScopusPublicationEvent();
-        var expectedMessage = String.format(PublicationInstanceCreator.MISSING_CITATION_TYPE_MESSAGE, eid);
+  @Test
+  void shouldReturnAffiliationWithLabelsOnlyWhenNoResponseFromPia() throws IOException {
+    scopusData = generateScopusDataWithOneAffiliation();
+    var authorGroupTpList = new ArrayList<>(keepOnlyAuthorGroups());
+    var piaCristinAffiliationIdAndAuthors = new HashMap<String, AuthorGroupTp>();
+    authorGroupTpList.forEach(
+        group -> piaCristinAffiliationIdAndAuthors.put(randomString(), group));
+    piaCristinAffiliationIdAndAuthors.forEach(
+        (cristinOrganizationId, authorGroupTp) ->
+            generatePiaAffiliationsResponse(authorGroupTp, cristinOrganizationId));
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualContributors = publication.getEntityDescription().contributors();
+    actualContributors.forEach(ScopusHandlerTest::hasNoAffiliationWithId);
+  }
 
-        assertNull(scopusHandler.handleRequest(event, CONTEXT));
-        assertThat(appender.getMessages(), containsString(expectedMessage));
-    }
+  @Test
+  void shouldReturnAffiliationWithLabelsOnlyWhenNoResponseFromCristin() throws IOException {
+    scopusData = generateScopusDataWithOneAffiliation();
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualContributors = publication.getEntityDescription().contributors();
+    actualContributors.forEach(ScopusHandlerTest::hasNoAffiliationWithId);
+  }
 
-    @Test
-    void shouldExtractCitationTypesToBookMonographPublicationInstance() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.create(CitationtypeAtt.BK);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
-        assertThat(actualPublicationInstance, isA(BookMonograph.class));
-    }
+  @Test
+  void shouldNotAddCristinOrganizationFromAuthorGroupWhenNoResponseFromCristin()
+      throws IOException {
+    scopusData = generateScopusDataWithOneAffiliation();
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualContributors = publication.getEntityDescription().contributors();
 
-    @Test
-    void shouldExtractCitationTypesToChapterArticlePublicationInstance() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.create(CitationtypeAtt.CH);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = publication.getEntityDescription().reference().getPublicationInstance();
-        assertThat(actualPublicationInstance, isA(ChapterArticle.class));
-    }
-
-    @Test
-    void shouldNotThrowExceptionWhenDoiInScopusIsNull() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createScopusGeneratorWithSpecificDoi(null);
-        var event = createNewScopusPublicationEvent();
-        assertDoesNotThrow(() -> scopusHandler.handleRequest(event, CONTEXT));
-    }
-
-    @Test
-    void shouldExtractVolumeIssueAndPageRange() throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.create(CitationtypeAtt.AR);
-        var expectedIssue = String.valueOf(randomInteger());
-        var expectedVolume = randomString();
-        var expectedPages = randomString();
-        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualPublicationInstance = (JournalArticle) publication.getEntityDescription()
-                                                             .reference()
-                                                             .getPublicationInstance();
-        assertThat(actualPublicationInstance.getVolume(), is(expectedVolume));
-        assertThat(actualPublicationInstance.getIssue(), is(expectedIssue));
-        assertThat(actualPublicationInstance.getPages().getEnd(), is(expectedPages));
-    }
-
-    @ParameterizedTest(name = "Should have entityDescription with language:{1}")
-    @MethodSource("providedLanguagesAndExpectedOutput")
-    void shouldExtractLanguage(List<LanguageDescription> languageCodes, URI expectedLanguageUri) throws IOException {
-        createEmptyPiaMock();
-        scopusData = ScopusGenerator.createScopusGeneratorWithSpecificLanguage(new LanguagesWrapper(languageCodes));
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualLanguageUri = publication.getEntityDescription().language();
-        assertEquals(expectedLanguageUri, actualLanguageUri);
-    }
-
-    @Test
-    void shouldCreateSequenceNumbersInOrder() throws IOException {
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualContributorsSorted = publication
-                                           .getEntityDescription()
-                                           .contributors()
-                                           .stream()
-                                           .sorted(Comparator.comparingInt(ImportContributor::sequence))
-                                           .toList();
-        for (var contributorIndex = 0; contributorIndex < actualContributorsSorted.size(); contributorIndex++) {
-            assertThat(actualContributorsSorted.get(contributorIndex).sequence(),
-                       is(Matchers.equalTo(contributorIndex + 1)));
-        }
-    }
-
-    @Test
-    void shouldFetchCristinPersonAndOrganization() throws IOException {
-        scopusData = createWithOneAuthorGroupAndAffiliation(generateAuthorGroup());
-        var piaCristinIdAndAuthors = new HashMap<Integer, AuthorTp>();
-        var cristinAffiliationId = randomString();
-        mockAffiliationResponse(cristinAffiliationId, getAuthorGroup());
-        mockResponsesForAuthors(piaCristinIdAndAuthors, getAuthorGroup());
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        publication.getEntityDescription()
-            .contributors()
-            .forEach(contributor -> hasBeenFetchedFromCristin(contributor, piaCristinIdAndAuthors.keySet()));
-    }
-
-    @Test
-    void shouldReturnAffiliationWithLabelsOnlyWhenNoResponseFromPia() throws IOException {
-        scopusData = generateScopusDataWithOneAffiliation();
-        var authorGroupTpList = new ArrayList<>(keepOnlyAuthorGroups());
-        var piaCristinAffiliationIdAndAuthors = new HashMap<String, AuthorGroupTp>();
-        authorGroupTpList.forEach(group -> piaCristinAffiliationIdAndAuthors.put(randomString(), group));
-        piaCristinAffiliationIdAndAuthors.forEach(
-            (cristinOrganizationId, authorGroupTp) -> generatePiaAffiliationsResponse(authorGroupTp,
-                                                                                      cristinOrganizationId));
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualContributors = publication.getEntityDescription().contributors();
-        actualContributors.forEach(ScopusHandlerTest::hasNoAffiliationWithId);
-    }
-
-    @Test
-    void shouldReturnAffiliationWithLabelsOnlyWhenNoResponseFromCristin() throws IOException {
-        scopusData = generateScopusDataWithOneAffiliation();
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualContributors = publication.getEntityDescription().contributors();
-        actualContributors.forEach(ScopusHandlerTest::hasNoAffiliationWithId);
-    }
-
-    @Test
-    void shouldNotAddCristinOrganizationFromAuthorGroupWhenNoResponseFromCristin() throws IOException {
-        scopusData = generateScopusDataWithOneAffiliation();
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualContributors = publication.getEntityDescription().contributors();
-
-        var affiliationIds = actualContributors.stream()
-                                 .map(ImportContributor::affiliations)
-                                 .flatMap(Collection::stream)
-                                 .map(Affiliation::targetOrganization)
-                                 .filter(Organization.class::isInstance)
-                                 .map(Organization.class::cast)
-                                 .filter(org -> nonNull(org.getId()))
-                                 .collect(Collectors.toList());
-        assertThat(affiliationIds, is(equalTo(Collections.emptyList())));
-    }
-
-    @Test
-    void shouldHandleCristinPersonBadRequest() throws IOException {
-        var authorTypes = keepOnlyTheAuthors();
-        var piaCristinIdAndAuthors = new HashMap<Integer, AuthorTp>();
-        authorTypes.forEach(authorTp -> piaCristinIdAndAuthors.put(randomInteger(), authorTp));
-        var authors = new ArrayList<List<Author>>();
-        mockCristinPersonBadRequest();
-        piaCristinIdAndAuthors.forEach(
-            (cristinId, authorTp) -> generatePiaAuthorResponse(authors, cristinId,
-                                                               authorTp));
-        var event = createNewScopusPublicationEvent();
-        assertDoesNotThrow(() -> scopusHandler.handleRequest(event, CONTEXT));
-    }
-
-    @Test
-    void shouldIgnoreCristinNumberThatIsNull() throws IOException {
-        var authorTypes = keepOnlyTheAuthors();
-        var authors = new ArrayList<List<Author>>();
-        authorTypes.forEach(
-            (authorTp) -> authors.add(PiaResponseGenerator.generateAuthors(authorTp.getAuid(), 0)));
-        authors.forEach(this::createPiaAuthorMock);
-        var event = createNewScopusPublicationEvent();
-        var publication = scopusHandler.handleRequest(event, CONTEXT);
-        var actualContributors = publication.getEntityDescription().contributors();
+    var affiliationIds =
         actualContributors.stream()
-            .filter(contributor -> isAuthor(contributor, authorTypes))
-            .forEach(contributor -> assertNull(contributor.identity().getId()));
-    }
-
-    @Test
-    void shouldTryToPersistPublicationInDatabaseSeveralTimesWhenResourceServiceIsThrowingException()
-        throws IOException {
-        var fakeResourceServiceThrowingException = resourceServiceThrowingExceptionWhenSavingResource();
-        var event = createNewScopusPublicationEvent();
-        var handler = new ScopusHandler(this.s3Client,
-                                        this.publicationChannelConnection, identityServiceClient,
-                                        fakeResourceServiceThrowingException,
-                                        scopusUpdater, scopusFileConverter,
-                                        mockedSearchService(Collections.emptyList()), contributorExtractor);
-        assertNull(handler.handleRequest(event, CONTEXT));
-        assertNotNull(extractErrorReportFromS3Client());
-    }
-
-    @Test
-    void shouldMergeIncomingImportCandidateIntoExistingOneWhenScopusIdsMatch() throws IOException {
-        var existingImportCandidate = importCandidateService.persistImportCandidate(randomImportCandidate());
-        createEmptyPiaMock();
-        var scopusIdentifier = existingImportCandidate.getScopusIdentifier().orElseThrow();
-        var uri = UriWrapper.fromHost(HOST)
-                      .addChild("search")
-                      .addChild("customer")
-                      .addChild("import-candidates")
-                      .addQueryParameter("scopusIdentifier", scopusIdentifier)
-                      .addQueryParameter("aggregation", "none")
-                      .getUri();
-        when(uriRetriever.getRawContent(uri, APPLICATION_JSON)).thenReturn(toResponse(existingImportCandidate));
-        scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
-        var expectedIssue = String.valueOf(randomInteger());
-        var expectedVolume = randomString();
-        var expectedPages = randomString();
-        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
-        scopusData.getDocument().getMeta().setEid(scopusIdentifier);
-        var event = createNewScopusPublicationEvent();
-        var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
-
-        assertThat(importCandidate.getIdentifier(), is(equalTo(existingImportCandidate.getIdentifier())));
-        assertThat(importCandidate.getImportStatus(), is(equalTo(existingImportCandidate.getImportStatus())));
-        assertThat(importCandidate.getEntityDescription(),
-                   is(not(equalTo(existingImportCandidate.getEntityDescription()))));
-    }
-
-    @Test
-    void shouldPersistImportCandidateWithStatusImportedWhenThereExistsPublicationWithMatchingScopusIdentifier()
-        throws IOException {
-        scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
-        var scopusIdentifier = ScopusIdentifier.fromValue(scopusData.getDocument().getMeta().getEid());
-
-        var existingPublication = persistPublicationWithScopusIdentifier(scopusIdentifier);
-        var handler = new ScopusHandler(s3Client, publicationChannelConnection,
-                                        identityServiceClient, importCandidateService, scopusUpdater, scopusFileConverter,
-                                        mockedSearchService(List.of(existingPublication)),
-                                        contributorExtractor);
-        createEmptyPiaMock();
-        var event = createNewScopusPublicationEvent();
-        var importCandidate = handler.handleRequest(event, CONTEXT);
-
-        assertEquals(CandidateStatus.IMPORTED, importCandidate.getImportStatus().candidateStatus());
-    }
-
-    @Test
-    void shouldPersistImportCandidateWithStatusImportedWhenThereAreMultiplePublicationWithTheSameScopusIdentifier()
-        throws IOException {
-        scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
-        var scopusIdentifier = ScopusIdentifier.fromValue(scopusData.getDocument().getMeta().getEid());
-        var existingPublications =
-            IntStream.of(3).mapToObj(i -> persistPublicationWithScopusIdentifier(scopusIdentifier)).toList();
-        var handler = new ScopusHandler(s3Client, publicationChannelConnection,
-                                        identityServiceClient, importCandidateService, scopusUpdater, scopusFileConverter,
-                                        mockedSearchService(existingPublications), contributorExtractor);
-        createEmptyPiaMock();
-        var event = createNewScopusPublicationEvent();
-        var importCandidate = handler.handleRequest(event, CONTEXT);
-
-        assertEquals(CandidateStatus.IMPORTED, importCandidate.getImportStatus().candidateStatus());
-    }
-
-    @Test
-    void shouldPersistImportCandidateWithStatusImportedWhenThereArePublicationsWithTheSameDoi()
-        throws IOException {
-        var doi = randomDoi();
-        scopusData = ScopusGenerator.createScopusGeneratorWithSpecificDoi(doi);
-        var existingPublications =
-            IntStream.of(3).mapToObj(i -> persistPublicationWithDoi(doi)).toList();
-        var handler = new ScopusHandler(s3Client, publicationChannelConnection, identityServiceClient,
-                                        importCandidateService,
-                                        scopusUpdater, scopusFileConverter,
-                                        mockedSearchServiceDoiLookup(existingPublications, doi, 200), contributorExtractor);
-        createEmptyPiaMock();
-        var event = createNewScopusPublicationEvent();
-        var importCandidate = handler.handleRequest(event, CONTEXT);
-
-        assertEquals(CandidateStatus.IMPORTED, importCandidate.getImportStatus().candidateStatus());
-    }
-
-    @Test
-    void shouldPersistImportCandidateWhenSearchServiceIsDown()
-        throws IOException {
-        var doi = randomDoi();
-        scopusData = ScopusGenerator.createScopusGeneratorWithSpecificDoi(doi);
-        var existingPublications =
-            IntStream.of(3).mapToObj(i -> persistPublicationWithDoi(doi)).toList();
-        var handler = new ScopusHandler(s3Client, publicationChannelConnection, identityServiceClient,
-                                        importCandidateService, scopusUpdater, scopusFileConverter,
-                                        mockedSearchServiceDoiLookup(existingPublications, doi, 502),
-                                        contributorExtractor);
-        createEmptyPiaMock();
-        var event = createNewScopusPublicationEvent();
-        var importCandidate = handler.handleRequest(event, CONTEXT);
-
-        assertEquals(CandidateStatus.NOT_IMPORTED, importCandidate.getImportStatus().candidateStatus());
-    }
-
-    private SearchService mockedSearchServiceDoiLookup(List<Publication> publications, URI doi, int statusCode) {
-        var hits = publications.stream()
-                       .map(ScopusHandlerTest::toResourceWithId)
-                       .toList();
-        var searchUriWithoutDoi = UriWrapper.fromHost(new Environment().readEnv(API_HOST))
-                                                   .addChild("search")
-                                                   .addChild("resources")
-                                                   .addQueryParameter("doi", doi.toString())
-                                                   .getUri();
-        when(uriRetriever.fetchResponse(eq(searchUriWithoutDoi), eq(APPLICATION_JSON)))
-            .thenReturn(Optional.of(FakeHttpResponse.create("""
-                                                    {
-                                                      "totalHits": %s,
-                                                      "hits": %s
-                                                    }
-                                                    """.formatted(hits.size(), hits), statusCode)));
-        return SearchService.create(uriRetriever, resourcesService);
-    }
-
-    private Publication persistPublicationWithScopusIdentifier(ScopusIdentifier scopusIdentifier) {
-        var publication = randomPublication();
-        publication.setAdditionalIdentifiers(Set.of(scopusIdentifier));
-        return attempt(() -> resourcesService.createPublication(UserInstance.create(randomString(), randomUri()),
-                                                                publication)).orElseThrow();
-    }
-
-    private Publication persistPublicationWithDoi(URI doi) {
-        var publication = randomPublication();
-        publication.getEntityDescription().getReference().setDoi(doi);
-        return attempt(() -> resourcesService.createPublication(UserInstance.create(randomString(), randomUri()),
-                                                                publication)).orElseThrow();
-    }
-
-    void hasBeenFetchedFromCristin(ImportContributor contributor, Set<Integer> cristinIds) {
-        var contributorId = contributor.identity().getId();
-        if (nonNull(contributorId)) {
-            assertThat(cristinIds, hasItem(toCristinIdentifier(contributorId)));
-        }
-    }
-
-    private static String toCrossrefResponse(UriWrapper downloadUrl) {
-        return new CrossrefResponse(new Message(List.of(new CrossrefLink(downloadUrl.getUri(), "application/pdf", VOR)),
-                                                List.of(new License(
-                                                    URI.create("http://creativecommons.org/" + randomString()), 0,
-                                                    new Start(List.of(List.of(2023, 1, 25))), VOR)),
-                                                new Resource(new Primary(randomUri())))).toString();
-    }
-
-    private static void mockBadRequestFileResponse(UpwOaLocationType locationType) {
-        var testUrl = "/" + UriWrapper.fromUri(locationType.getUpwUrlForPdf()).getLastPathElement();
-        stubFor(WireMock.get(urlPathEqualTo(testUrl))
-                    .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
-    }
-
-    private static void hasNoAffiliationWithId(ImportContributor contributor) {
-        contributor.affiliations()
-            .stream()
-            .filter(Objects::nonNull)
+            .map(ImportContributor::affiliations)
+            .flatMap(Collection::stream)
             .map(Affiliation::targetOrganization)
             .filter(Organization.class::isInstance)
             .map(Organization.class::cast)
-            .forEach(affiliation -> assertThat(affiliation.getId(), is(equalTo(null))));
-    }
+            .filter(org -> nonNull(org.getId()))
+            .collect(Collectors.toList());
+    assertThat(affiliationIds, is(equalTo(Collections.emptyList())));
+  }
 
-    private static List<Serializable> contentWithSupInftagsScopus14244261628() {
-        // This is an actual title from doi: 10.1016/j.nuclphysbps.2005.01.029
-        return List.of("Non-factorizable contributions to B", generateInf("d"), generateSup("0"), " - D",
-                       generateInf("s"), "(*) D", generateInf("s"), "(*)");
-    }
+  @Test
+  void shouldHandleCristinPersonBadRequest() throws IOException {
+    var authorTypes = keepOnlyTheAuthors();
+    var piaCristinIdAndAuthors = new HashMap<Integer, AuthorTp>();
+    authorTypes.forEach(authorTp -> piaCristinIdAndAuthors.put(randomInteger(), authorTp));
+    var authors = new ArrayList<List<Author>>();
+    mockCristinPersonBadRequest();
+    piaCristinIdAndAuthors.forEach(
+        (cristinId, authorTp) -> generatePiaAuthorResponse(authors, cristinId, authorTp));
+    var event = createNewScopusPublicationEvent();
+    assertDoesNotThrow(() -> scopusHandler.handleRequest(event, CONTEXT));
+  }
 
-    private static JAXBElement<InfTp> generateInf(Serializable content) {
-        InfTp infTp = new InfTp();
-        infTp.getContent().add(content);
-        return new JAXBElement<>(new QName(INF_CLASS_NAME), InfTp.class, infTp);
-    }
+  @Test
+  void shouldIgnoreCristinNumberThatIsNull() throws IOException {
+    var authorTypes = keepOnlyTheAuthors();
+    var authors = new ArrayList<List<Author>>();
+    authorTypes.forEach(
+        (authorTp) -> authors.add(PiaResponseGenerator.generateAuthors(authorTp.getAuid(), 0)));
+    authors.forEach(this::createPiaAuthorMock);
+    var event = createNewScopusPublicationEvent();
+    var publication = scopusHandler.handleRequest(event, CONTEXT);
+    var actualContributors = publication.getEntityDescription().contributors();
+    actualContributors.stream()
+        .filter(contributor -> isAuthor(contributor, authorTypes))
+        .forEach(contributor -> assertNull(contributor.identity().getId()));
+  }
 
-    private static JAXBElement<SupTp> generateSup(Serializable content) {
-        SupTp supTp = new SupTp();
-        supTp.getContent().add(content);
-        return new JAXBElement<>(new QName(SUP_CLASS_NAME), SupTp.class, supTp);
-    }
+  @Test
+  void shouldTryToPersistPublicationInDatabaseSeveralTimesWhenResourceServiceIsThrowingException()
+      throws IOException {
+    var fakeResourceServiceThrowingException = resourceServiceThrowingExceptionWhenSavingResource();
+    var event = createNewScopusPublicationEvent();
+    var handler =
+        new ScopusHandler(
+            this.s3Client,
+            this.publicationChannelConnection,
+            identityServiceClient,
+            fakeResourceServiceThrowingException,
+            scopusUpdater,
+            scopusFileConverter,
+            mockedSearchService(Collections.emptyList()),
+            contributorExtractor);
+    assertNull(handler.handleRequest(event, CONTEXT));
+    assertNotNull(extractErrorReportFromS3Client());
+  }
 
-    private static Stream<Arguments> addLanguageEdgeCases() {
-        return Stream.of(Arguments.of(null, UNDEFINED_LANGUAGE.getLexvoUri()),
-                         Arguments.of(List.of(ENGLISH, NORWEGIAN), MULTIPLE.getLexvoUri()));
-    }
+  @Test
+  void shouldMergeIncomingImportCandidateIntoExistingOneWhenScopusIdsMatch() throws IOException {
+    var existingImportCandidate =
+        importCandidateService.persistImportCandidate(randomImportCandidate());
+    createEmptyPiaMock();
+    var scopusIdentifier = existingImportCandidate.getScopusIdentifier().orElseThrow();
+    var uri =
+        UriWrapper.fromHost(HOST)
+            .addChild("search")
+            .addChild("customer")
+            .addChild("import-candidates")
+            .addQueryParameter("scopusIdentifier", scopusIdentifier)
+            .addQueryParameter("aggregation", "none")
+            .getUri();
+    when(uriRetriever.getRawContent(uri, APPLICATION_JSON))
+        .thenReturn(toResponse(existingImportCandidate));
+    scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
+    var expectedIssue = String.valueOf(randomInteger());
+    var expectedVolume = randomString();
+    var expectedPages = randomString();
+    scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+    scopusData.getDocument().getMeta().setEid(scopusIdentifier);
+    var event = createNewScopusPublicationEvent();
+    var importCandidate = scopusHandler.handleRequest(event, CONTEXT);
 
-    private static Arguments createArguments(LanguageDescription language) {
-        var languageUri = language.getLexvoUri();
-        if (MISCELLANEOUS.equals(language)) {
-            languageUri = MULTIPLE.getLexvoUri();
-        }
-        if (NORWEGIAN.equals(language)) {
-            languageUri = BOKMAAL.getLexvoUri();
-        }
-        return Arguments.of(List.of(language), languageUri);
-    }
+    assertThat(
+        importCandidate.getIdentifier(), is(equalTo(existingImportCandidate.getIdentifier())));
+    assertThat(
+        importCandidate.getImportStatus(), is(equalTo(existingImportCandidate.getImportStatus())));
+    assertThat(
+        importCandidate.getEntityDescription(),
+        is(not(equalTo(existingImportCandidate.getEntityDescription()))));
+  }
 
-    private static String getScopusIdentifier(Publication publication) {
-        return publication.getAdditionalIdentifiers()
-                   .stream()
-                   .filter(ScopusIdentifier.class::isInstance)
-                   .map(ScopusIdentifier.class::cast)
-                   .map(ScopusIdentifier::value)
-                   .findFirst()
-                   .orElse(null);
-    }
+  @Test
+  void
+      shouldPersistImportCandidateWithStatusImportedWhenThereExistsPublicationWithMatchingScopusIdentifier()
+          throws IOException {
+    scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
+    var scopusIdentifier = ScopusIdentifier.fromValue(scopusData.getDocument().getMeta().getEid());
 
-    private static Optional<String> toResponse(ImportCandidate importCandidate) {
-        var expandedImportCandidate = new ExpandedImportCandidate();
-        expandedImportCandidate.setIdentifier(UriWrapper.fromUri(randomUri()).addChild(importCandidate.getIdentifier().toString()).getUri());
-        return Optional.of(new ImportCandidateSearchApiResponse(List.of(expandedImportCandidate), 1).toString());
-    }
+    var existingPublication = persistPublicationWithScopusIdentifier(scopusIdentifier);
+    var handler =
+        new ScopusHandler(
+            s3Client,
+            publicationChannelConnection,
+            identityServiceClient,
+            importCandidateService,
+            scopusUpdater,
+            scopusFileConverter,
+            mockedSearchService(List.of(existingPublication)),
+            contributorExtractor);
+    createEmptyPiaMock();
+    var event = createNewScopusPublicationEvent();
+    var importCandidate = handler.handleRequest(event, CONTEXT);
 
-    private String getEid() {
-        return scopusData.getDocument().getMeta().getEid();
-    }
+    assertEquals(CandidateStatus.IMPORTED, importCandidate.getImportStatus().candidateStatus());
+  }
 
-    private String getSrctype() {
-        return scopusData.getDocument().getMeta().getSrctype();
-    }
+  @Test
+  void
+      shouldPersistImportCandidateWithStatusImportedWhenThereAreMultiplePublicationWithTheSameScopusIdentifier()
+          throws IOException {
+    scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
+    var scopusIdentifier = ScopusIdentifier.fromValue(scopusData.getDocument().getMeta().getEid());
+    var existingPublications =
+        IntStream.of(3)
+            .mapToObj(i -> persistPublicationWithScopusIdentifier(scopusIdentifier))
+            .toList();
+    var handler =
+        new ScopusHandler(
+            s3Client,
+            publicationChannelConnection,
+            identityServiceClient,
+            importCandidateService,
+            scopusUpdater,
+            scopusFileConverter,
+            mockedSearchService(existingPublications),
+            contributorExtractor);
+    createEmptyPiaMock();
+    var event = createNewScopusPublicationEvent();
+    var importCandidate = handler.handleRequest(event, CONTEXT);
 
-    private String mockFetchCrossrefDoiResponse(ScopusGenerator scopusData, WireMockRuntimeInfo wireMockRuntimeInfo) {
-        var downloadUrl = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpBaseUrl()).addChild(randomString());
-        stubFor(WireMock.get(urlPathEqualTo("/" + scopusData.getDocument().getMeta().getDoi()))
-                    .willReturn(
-                        aResponse().withBody(toCrossrefResponse(downloadUrl)).withStatus(HTTP_OK)));
-        var filename = randomString() + ".pdf";
-        var testUrl = "/" + UriWrapper.fromUri(downloadUrl.getLastPathElement()).getLastPathElement();
-        stubFor(WireMock.get(urlPathEqualTo(testUrl))
-                    .willReturn(aResponse().withBody("abcde")
-                                    .withHeader("Content-Type", "application/pdf;charset=UTF-8")
-                                    .withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-                                    .withStatus(HTTP_OK)));
-        return filename;
-    }
+    assertEquals(CandidateStatus.IMPORTED, importCandidate.getImportStatus().candidateStatus());
+  }
 
-    private void mockBadRequestCrossrefDoiResponse(ScopusGenerator scopusData) {
-        stubFor(WireMock.get(urlPathEqualTo("/" + scopusData.getDocument().getMeta().getDoi()))
-                    .willReturn(aResponse().withBody(randomString()).withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
-    }
+  @Test
+  void shouldPersistImportCandidateWithStatusImportedWhenThereArePublicationsWithTheSameDoi()
+      throws IOException {
+    var doi = randomDoi();
+    scopusData = ScopusGenerator.createScopusGeneratorWithSpecificDoi(doi);
+    var existingPublications =
+        IntStream.of(3).mapToObj(i -> persistPublicationWithDoi(doi)).toList();
+    var handler =
+        new ScopusHandler(
+            s3Client,
+            publicationChannelConnection,
+            identityServiceClient,
+            importCandidateService,
+            scopusUpdater,
+            scopusFileConverter,
+            mockedSearchServiceDoiLookup(existingPublications, doi, 200),
+            contributorExtractor);
+    createEmptyPiaMock();
+    var event = createNewScopusPublicationEvent();
+    var importCandidate = handler.handleRequest(event, CONTEXT);
 
-    private void mockBadRequestFetchingFilesFromXml(ScopusGenerator scopusData) {
-        scopusData.getDocument()
-            .getMeta()
-            .getOpenAccess()
-            .getUpwOpenAccess()
-            .getUpwOaLocations()
-            .getUpwOaLocation()
-            .forEach(ScopusHandlerTest::mockBadRequestFileResponse);
-    }
+    assertEquals(CandidateStatus.IMPORTED, importCandidate.getImportStatus().candidateStatus());
+  }
 
-    private OpenAccessType randomOpenAccess(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        var openAccess = new OpenAccessType();
-        var upwOpenAccess = new UpwOpenAccessType();
-        var locations = new UpwOaLocationsType();
-        var locationList = IntStream.range(0, 3).mapToObj(i -> randomLocation(wireMockRuntimeInfo)).toList();
-        locations.getUpwOaLocation().addAll(locationList);
-        upwOpenAccess.setUpwOaLocations(locations);
-        openAccess.setUpwOpenAccess(upwOpenAccess);
-        return openAccess;
-    }
+  @Test
+  void shouldPersistImportCandidateWhenSearchServiceIsDown() throws IOException {
+    var doi = randomDoi();
+    scopusData = ScopusGenerator.createScopusGeneratorWithSpecificDoi(doi);
+    var existingPublications =
+        IntStream.of(3).mapToObj(i -> persistPublicationWithDoi(doi)).toList();
+    var handler =
+        new ScopusHandler(
+            s3Client,
+            publicationChannelConnection,
+            identityServiceClient,
+            importCandidateService,
+            scopusUpdater,
+            scopusFileConverter,
+            mockedSearchServiceDoiLookup(existingPublications, doi, 502),
+            contributorExtractor);
+    createEmptyPiaMock();
+    var event = createNewScopusPublicationEvent();
+    var importCandidate = handler.handleRequest(event, CONTEXT);
 
-    private UpwOaLocationType randomLocation(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        var location = new UpwOaLocationType();
-        var string = UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl()).addChild(randomString()).toString();
-        location.setUpwUrlForPdf(string);
-        return location;
-    }
+    assertEquals(CandidateStatus.NOT_IMPORTED, importCandidate.getImportStatus().candidateStatus());
+  }
 
-    private void removePublishers() {
-        var publishers = scopusData.getDocument()
-                             .getItem()
-                             .getItem()
-                             .getBibrecord()
-                             .getHead()
-                             .getSource()
-                             .getPublisher();
-        publishers.clear();
-    }
+  private SearchService mockedSearchServiceDoiLookup(
+      List<Publication> publications, URI doi, int statusCode) {
+    var hits = publications.stream().map(ScopusHandlerTest::toResourceWithId).toList();
+    var searchUriWithoutDoi =
+        UriWrapper.fromHost(new Environment().readEnv(API_HOST))
+            .addChild("search")
+            .addChild("resources")
+            .addQueryParameter("doi", doi.toString())
+            .getUri();
+    when(uriRetriever.fetchResponse(eq(searchUriWithoutDoi), eq(APPLICATION_JSON)))
+        .thenReturn(
+            Optional.of(
+                FakeHttpResponse.create(
+                    """
+                    {
+                      "totalHits": %s,
+                      "hits": %s
+                    }
+                    """
+                        .formatted(hits.size(), hits),
+                    statusCode)));
+    return SearchService.create(uriRetriever, resourcesService);
+  }
 
-    private void mockAffiliationResponse(String cristinOrganizationId, AuthorGroupTp authorGroupTp) {
-        generatePiaAndCristinAffiliationResponse(authorGroupTp, cristinOrganizationId);
-    }
+  private Publication persistPublicationWithScopusIdentifier(ScopusIdentifier scopusIdentifier) {
+    var publication = randomPublication();
+    publication.setAdditionalIdentifiers(Set.of(scopusIdentifier));
+    return attempt(
+            () ->
+                resourcesService.createPublication(
+                    UserInstance.create(randomString(), randomUri()), publication))
+        .orElseThrow();
+  }
 
-    private void hasAffiliationWithId(Contributor contributor, String cristinAffiliationId) {
-        var affiliationIdList = contributor.getAffiliations()
-                                    .stream()
-                                    .filter(Organization.class::isInstance)
-                                    .map(Organization.class::cast)
-                                    .map(Organization::getId)
-                                    .collect(Collectors.toSet());
-        assertThat(affiliationIdList.toString(), containsString("cristin/organization/" + cristinAffiliationId));
-    }
+  private Publication persistPublicationWithDoi(URI doi) {
+    var publication = randomPublication();
+    publication.getEntityDescription().getReference().setDoi(doi);
+    return attempt(
+            () ->
+                resourcesService.createPublication(
+                    UserInstance.create(randomString(), randomUri()), publication))
+        .orElseThrow();
+  }
 
-    private AuthorGroupTp generateAuthorGroup() {
-        var authorGroup = new AuthorGroupTp();
-        authorGroup.setAffiliation(randomAffiliation());
-        authorGroup.getAuthorOrCollaboration().addAll(randomAuthorTpList());
-        return authorGroup;
+  void hasBeenFetchedFromCristin(ImportContributor contributor, Set<Integer> cristinIds) {
+    var contributorId = contributor.identity().getId();
+    if (nonNull(contributorId)) {
+      assertThat(cristinIds, hasItem(toCristinIdentifier(contributorId)));
     }
+  }
 
-    private List<Object> randomAuthorTpList() {
-        return IntStream.range(1, 6).boxed().map(i -> scopusData.randomAuthorTp(i)).collect(Collectors.toList());
+  private static String toCrossrefResponse(UriWrapper downloadUrl) {
+    return new CrossrefResponse(
+            new Message(
+                List.of(new CrossrefLink(downloadUrl.getUri(), "application/pdf", VOR)),
+                List.of(
+                    new License(
+                        URI.create("http://creativecommons.org/" + randomString()),
+                        0,
+                        new Start(List.of(List.of(2023, 1, 25))),
+                        VOR)),
+                new Resource(new Primary(randomUri()))))
+        .toString();
+  }
+
+  private static void mockBadRequestFileResponse(UpwOaLocationType locationType) {
+    var testUrl = "/" + UriWrapper.fromUri(locationType.getUpwUrlForPdf()).getLastPathElement();
+    stubFor(
+        WireMock.get(urlPathEqualTo(testUrl))
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
+  }
+
+  private static void hasNoAffiliationWithId(ImportContributor contributor) {
+    contributor.affiliations().stream()
+        .filter(Objects::nonNull)
+        .map(Affiliation::targetOrganization)
+        .filter(Organization.class::isInstance)
+        .map(Organization.class::cast)
+        .forEach(affiliation -> assertThat(affiliation.getId(), is(equalTo(null))));
+  }
+
+  private static List<Serializable> contentWithSupInftagsScopus14244261628() {
+    // This is an actual title from doi: 10.1016/j.nuclphysbps.2005.01.029
+    return List.of(
+        "Non-factorizable contributions to B",
+        generateInf("d"),
+        generateSup("0"),
+        " - D",
+        generateInf("s"),
+        "(*) D",
+        generateInf("s"),
+        "(*)");
+  }
+
+  private static JAXBElement<InfTp> generateInf(Serializable content) {
+    InfTp infTp = new InfTp();
+    infTp.getContent().add(content);
+    return new JAXBElement<>(new QName(INF_CLASS_NAME), InfTp.class, infTp);
+  }
+
+  private static JAXBElement<SupTp> generateSup(Serializable content) {
+    SupTp supTp = new SupTp();
+    supTp.getContent().add(content);
+    return new JAXBElement<>(new QName(SUP_CLASS_NAME), SupTp.class, supTp);
+  }
+
+  private static Stream<Arguments> addLanguageEdgeCases() {
+    return Stream.of(
+        Arguments.of(null, UNDEFINED_LANGUAGE.getLexvoUri()),
+        Arguments.of(List.of(ENGLISH, NORWEGIAN), MULTIPLE.getLexvoUri()));
+  }
+
+  private static Arguments createArguments(LanguageDescription language) {
+    var languageUri = language.getLexvoUri();
+    if (MISCELLANEOUS.equals(language)) {
+      languageUri = MULTIPLE.getLexvoUri();
     }
-
-    private AffiliationTp randomAffiliation() {
-        var affiliation = new AffiliationTp();
-        affiliation.setCountry("Norway");
-        affiliation.setAfid(randomString());
-        affiliation.setDptid(randomString());
-        return affiliation;
+    if (NORWEGIAN.equals(language)) {
+      languageUri = BOKMAAL.getLexvoUri();
     }
+    return Arguments.of(List.of(language), languageUri);
+  }
 
-    private void generatePiaAffiliationsResponse(AuthorGroupTp authorGroupTp,
-                                                 String cristinOrganizationId) {
-        var affiliationList = PiaResponseGenerator.generateAffiliations(cristinOrganizationId);
-        createPiaAffiliationMock(affiliationList, authorGroupTp.getAffiliation().getAfid());
-    }
+  private static String getScopusIdentifier(Publication publication) {
+    return publication.getAdditionalIdentifiers().stream()
+        .filter(ScopusIdentifier.class::isInstance)
+        .map(ScopusIdentifier.class::cast)
+        .map(ScopusIdentifier::value)
+        .findFirst()
+        .orElse(null);
+  }
 
-    private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
-        var resourceService = spy(getResourceService(client));
-        doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService)
-            .createPublicationFromImportedEntry(any(), any());
-        doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE)).when(resourceService).persistImportCandidate(any());
-        return resourceService;
-    }
+  private static Optional<String> toResponse(ImportCandidate importCandidate) {
+    var expandedImportCandidate = new ExpandedImportCandidate();
+    expandedImportCandidate.setIdentifier(
+        UriWrapper.fromUri(randomUri())
+            .addChild(importCandidate.getIdentifier().toString())
+            .getUri());
+    return Optional.of(
+        new ImportCandidateSearchApiResponse(List.of(expandedImportCandidate), 1).toString());
+  }
 
-    private ScopusGenerator generateScopusDataWithOneAffiliation() {
-        return ScopusGenerator.createWithSpecifiedAffiliations(List.of(createAffiliation(List.of("Some Name"))));
-    }
+  private String getEid() {
+    return scopusData.getDocument().getMeta().getEid();
+  }
 
-    private Integer toCristinIdentifier(URI contributorId) {
-        return nonNull(contributorId) ? Integer.parseInt(contributorId.toString().split("/")[3]) : null;
-    }
+  private String getSrctype() {
+    return scopusData.getDocument().getMeta().getSrctype();
+  }
 
-    private void mockResponsesForAuthors(HashMap<Integer, AuthorTp> piaCristinIdAndAuthors,
-                                         AuthorGroupTp authorGroupTp) {
-        var ignore = authorGroupTp.getAuthorOrCollaboration()
-            .stream()
+  private String mockFetchCrossrefDoiResponse(
+      ScopusGenerator scopusData, WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var downloadUrl =
+        UriWrapper.fromUri(wireMockRuntimeInfo.getHttpBaseUrl()).addChild(randomString());
+    stubFor(
+        WireMock.get(urlPathEqualTo("/" + scopusData.getDocument().getMeta().getDoi()))
+            .willReturn(aResponse().withBody(toCrossrefResponse(downloadUrl)).withStatus(HTTP_OK)));
+    var filename = randomString() + ".pdf";
+    var testUrl = "/" + UriWrapper.fromUri(downloadUrl.getLastPathElement()).getLastPathElement();
+    stubFor(
+        WireMock.get(urlPathEqualTo(testUrl))
+            .willReturn(
+                aResponse()
+                    .withBody("abcde")
+                    .withHeader("Content-Type", "application/pdf;charset=UTF-8")
+                    .withHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                    .withStatus(HTTP_OK)));
+    return filename;
+  }
+
+  private void mockBadRequestCrossrefDoiResponse(ScopusGenerator scopusData) {
+    stubFor(
+        WireMock.get(urlPathEqualTo("/" + scopusData.getDocument().getMeta().getDoi()))
+            .willReturn(
+                aResponse()
+                    .withBody(randomString())
+                    .withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
+  }
+
+  private void mockBadRequestFetchingFilesFromXml(ScopusGenerator scopusData) {
+    scopusData
+        .getDocument()
+        .getMeta()
+        .getOpenAccess()
+        .getUpwOpenAccess()
+        .getUpwOaLocations()
+        .getUpwOaLocation()
+        .forEach(ScopusHandlerTest::mockBadRequestFileResponse);
+  }
+
+  private OpenAccessType randomOpenAccess(WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var openAccess = new OpenAccessType();
+    var upwOpenAccess = new UpwOpenAccessType();
+    var locations = new UpwOaLocationsType();
+    var locationList =
+        IntStream.range(0, 3).mapToObj(i -> randomLocation(wireMockRuntimeInfo)).toList();
+    locations.getUpwOaLocation().addAll(locationList);
+    upwOpenAccess.setUpwOaLocations(locations);
+    openAccess.setUpwOpenAccess(upwOpenAccess);
+    return openAccess;
+  }
+
+  private UpwOaLocationType randomLocation(WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var location = new UpwOaLocationType();
+    var string =
+        UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl())
+            .addChild(randomString())
+            .toString();
+    location.setUpwUrlForPdf(string);
+    return location;
+  }
+
+  private void removePublishers() {
+    var publishers =
+        scopusData
+            .getDocument()
+            .getItem()
+            .getItem()
+            .getBibrecord()
+            .getHead()
+            .getSource()
+            .getPublisher();
+    publishers.clear();
+  }
+
+  private void mockAffiliationResponse(String cristinOrganizationId, AuthorGroupTp authorGroupTp) {
+    generatePiaAndCristinAffiliationResponse(authorGroupTp, cristinOrganizationId);
+  }
+
+  private void hasAffiliationWithId(Contributor contributor, String cristinAffiliationId) {
+    var affiliationIdList =
+        contributor.getAffiliations().stream()
+            .filter(Organization.class::isInstance)
+            .map(Organization.class::cast)
+            .map(Organization::getId)
+            .collect(Collectors.toSet());
+    assertThat(
+        affiliationIdList.toString(),
+        containsString("cristin/organization/" + cristinAffiliationId));
+  }
+
+  private AuthorGroupTp generateAuthorGroup() {
+    var authorGroup = new AuthorGroupTp();
+    authorGroup.setAffiliation(randomAffiliation());
+    authorGroup.getAuthorOrCollaboration().addAll(randomAuthorTpList());
+    return authorGroup;
+  }
+
+  private List<Object> randomAuthorTpList() {
+    return IntStream.range(1, 6)
+        .boxed()
+        .map(i -> scopusData.randomAuthorTp(i))
+        .collect(Collectors.toList());
+  }
+
+  private AffiliationTp randomAffiliation() {
+    var affiliation = new AffiliationTp();
+    affiliation.setCountry("Norway");
+    affiliation.setAfid(randomString());
+    affiliation.setDptid(randomString());
+    return affiliation;
+  }
+
+  private void generatePiaAffiliationsResponse(
+      AuthorGroupTp authorGroupTp, String cristinOrganizationId) {
+    var affiliationList = PiaResponseGenerator.generateAffiliations(cristinOrganizationId);
+    createPiaAffiliationMock(affiliationList, authorGroupTp.getAffiliation().getAfid());
+  }
+
+  private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
+    var resourceService = spy(getResourceService(client));
+    doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE))
+        .when(resourceService)
+        .createPublicationFromImportedEntry(any(), any());
+    doThrow(new RuntimeException(RESOURCE_EXCEPTION_MESSAGE))
+        .when(resourceService)
+        .persistImportCandidate(any());
+    return resourceService;
+  }
+
+  private ScopusGenerator generateScopusDataWithOneAffiliation() {
+    return ScopusGenerator.createWithSpecifiedAffiliations(
+        List.of(createAffiliation(List.of("Some Name"))));
+  }
+
+  private Integer toCristinIdentifier(URI contributorId) {
+    return nonNull(contributorId) ? Integer.parseInt(contributorId.toString().split("/")[3]) : null;
+  }
+
+  private void mockResponsesForAuthors(
+      HashMap<Integer, AuthorTp> piaCristinIdAndAuthors, AuthorGroupTp authorGroupTp) {
+    var ignore =
+        authorGroupTp.getAuthorOrCollaboration().stream()
             .filter(author -> author instanceof AuthorTp)
             .map(authorTp -> (AuthorTp) authorTp)
-            .map(author -> attempt(() -> generatePersonResponse(piaCristinIdAndAuthors, author)).orElseThrow());
-    }
+            .map(
+                author ->
+                    attempt(() -> generatePersonResponse(piaCristinIdAndAuthors, author))
+                        .orElseThrow());
+  }
 
-    private AuthorTp generatePersonResponse(HashMap<Integer, AuthorTp> piaCristinIdAndAuthors, AuthorTp authorTp) {
-        var cristinId = randomInteger();
-        piaCristinIdAndAuthors.put(cristinId, authorTp);
-        mockedPiaAuthorIdSearch(authorTp.getAuid(), PiaResponseGenerator.convertAuthorsToJson(
+  private AuthorTp generatePersonResponse(
+      HashMap<Integer, AuthorTp> piaCristinIdAndAuthors, AuthorTp authorTp) {
+    var cristinId = randomInteger();
+    piaCristinIdAndAuthors.put(cristinId, authorTp);
+    mockedPiaAuthorIdSearch(
+        authorTp.getAuid(),
+        PiaResponseGenerator.convertAuthorsToJson(
             PiaResponseGenerator.generateAuthors(authorTp.getAuid(), cristinId)));
-        generateCristinPersonsResponse(new ArrayList<>(), cristinId);
-        return authorTp;
+    generateCristinPersonsResponse(new ArrayList<>(), cristinId);
+    return authorTp;
+  }
+
+  private List<AuthorGroupTp> keepOnlyAuthorGroups() {
+    return new ArrayList<>(
+        scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getAuthorGroup());
+  }
+
+  private AuthorGroupTp getAuthorGroup() {
+    return scopusData
+        .getDocument()
+        .getItem()
+        .getItem()
+        .getBibrecord()
+        .getHead()
+        .getAuthorGroup()
+        .getFirst();
+  }
+
+  private String extractSuccessReport() {
+    var s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
+    var uri = s3Driver.listAllFiles(UnixPath.of("SUCCESS")).getFirst();
+    return s3Driver.getFile(uri);
+  }
+
+  private void generateCristinPersonsResponse(
+      ArrayList<CristinPerson> cristinCristinPeople, Integer cristinId) {
+    var cristinPerson =
+        CristinGenerator.generateCristinPerson(
+            UriWrapper.fromUri("/cristin/person/" + cristinId.toString()).getUri(),
+            randomString(),
+            randomString());
+    cristinCristinPeople.add(cristinPerson);
+    mockCristinPerson(cristinId.toString(), CristinGenerator.convertPersonToJson(cristinPerson));
+  }
+
+  private void generatePiaAuthorResponse(
+      ArrayList<List<Author>> authors, Integer cristinId, AuthorTp authorTp) {
+    var authorList = PiaResponseGenerator.generateAuthors(authorTp.getAuid(), cristinId);
+    authors.add(authorList);
+    createPiaAuthorMock(authorList);
+  }
+
+  private void generatePiaAndCristinAffiliationResponse(
+      AuthorGroupTp authorGroupTp, String cristinOrganizationId) {
+    var affiliation =
+        PiaResponseGenerator.generateAffiliation(cristinOrganizationId, List.of(1).iterator());
+    createPiaAffiliationMock(List.of(affiliation), authorGroupTp.getAffiliation().getAfid());
+    generateCristinOrganizationResponse(affiliation.getUnitIdentifier());
+  }
+
+  private void generateCristinOrganizationResponse(String cristinOrganizationId) {
+    var cristinOrgUri =
+        UriWrapper.fromUri("cristin/organization/" + cristinOrganizationId).getUri();
+    var cristinOrganization =
+        CristinGenerator.generateCristinOrganization(cristinOrgUri, randomString());
+    var organization =
+        attempt(() -> CristinGenerator.convertOrganizationToJson(cristinOrganization))
+            .orElseThrow();
+    mockCristinOrganization(cristinOrganizationId, organization);
+    mockCustomerListResponse(cristinOrgUri);
+  }
+
+  private void mockCustomerListResponse(URI cristinOrganizationId) {
+    var customerList = new CustomerList(List.of(randomCustomer(cristinOrganizationId)));
+    var responseBody =
+        attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(customerList)).orElseThrow();
+    stubFor(
+        WireMock.get(urlPathEqualTo("/customers"))
+            .willReturn(aResponse().withBody(responseBody).withStatus(HTTP_OK)));
+  }
+
+  private ContentWrapper createContentWithSupAndInfTags() {
+    return new ContentWrapper(contentWithSupInftagsScopus14244261628());
+  }
+
+  private void checkForDuplicateContributors(Collection<ImportContributor> contributors) {
+    List<Integer> sequenceNumbers = new ArrayList<>();
+    List<String> orcids = new ArrayList<>();
+    contributors.forEach(contributor -> isNotDuplicated(sequenceNumbers, orcids, contributor));
+  }
+
+  private void isNotDuplicated(
+      List<Integer> sequenceNumbers, List<String> orcids, ImportContributor contributor) {
+    assertThat(sequenceNumbers, not(hasItem(contributor.sequence())));
+    sequenceNumbers.add(contributor.sequence());
+    if (nonNull(contributor.identity().getOrcId())) {
+      assertThat(orcids, not(hasItem(contributor.identity().getOrcId())));
+      orcids.add(contributor.identity().getOrcId());
+    }
+  }
+
+  private Contributor getCorrespondingContributor(List<Contributor> actualPublicationContributors) {
+    createEmptyPiaMock();
+    return actualPublicationContributors.stream()
+        .filter(Contributor::isCorrespondingAuthor)
+        .findAny()
+        .orElse(null);
+  }
+
+  private boolean isAuthor(ImportContributor contributor, Collection<AuthorTp> authorTypes) {
+    return authorTypes.stream().anyMatch(authorTp -> isEqualContributor(contributor, authorTp));
+  }
+
+  private boolean isEqualContributor(ImportContributor contributor, AuthorTp authorTp) {
+    var authorId =
+        contributor.identity().getAdditionalIdentifiers().stream()
+            .filter(
+                additionalIdentifier ->
+                    "scopus-auid".equalsIgnoreCase(additionalIdentifier.sourceName()))
+            .map(AdditionalIdentifierBase::value)
+            .collect(SingletonCollector.collectOrElse(""));
+    return authorTp.getAuid().equals(authorId);
+  }
+
+  private void mockCristinPerson(String cristinPersonId, String response) {
+    stubFor(
+        WireMock.get(urlPathEqualTo("/cristin/person/" + cristinPersonId))
+            .willReturn(aResponse().withBody(response).withStatus(HTTP_OK)));
+  }
+
+  private void mockCristinOrganization(String cristinId, String organization) {
+    stubFor(
+        WireMock.get(urlPathEqualTo("/cristin/organization/" + cristinId))
+            .willReturn(aResponse().withBody(organization).withStatus(HTTP_OK)));
+  }
+
+  private void mockCristinPersonBadRequest() {
+    stubFor(
+        WireMock.get(urlMatching("/cristin/person/.*"))
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
+  }
+
+  private void createPiaAuthorMock(List<Author> author) {
+    var scopusId = author.getFirst().getExternalId();
+    var response = PiaResponseGenerator.convertAuthorsToJson(author);
+    mockedPiaAuthorIdSearch(scopusId, response);
+  }
+
+  private void createPiaAffiliationMock(
+      List<no.sikt.nva.scopus.conversion.model.pia.Affiliation> affiliationList,
+      String affiliationId) {
+    var response = PiaResponseGenerator.convertAffiliationsToJson(affiliationList);
+    mockedPiaAffiliationIdSearch(affiliationId, response);
+  }
+
+  private void createEmptyPiaMock() {
+    stubFor(
+        WireMock.get(urlMatching("/sentralimport/authors"))
+            .willReturn(aResponse().withBody("[]").withStatus(HTTP_OK)));
+  }
+
+  private void mockedPiaException() {
+    stubFor(
+        WireMock.get(urlPathEqualTo("/sentralimport/authors"))
+            .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
+  }
+
+  private void mockedPiaBadRequest() {
+    stubFor(
+        WireMock.get(urlPathEqualTo("/sentralimport/authors"))
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
+  }
+
+  private void mockedPiaAuthorIdSearch(String scopusId, String response) {
+    stubFor(
+        WireMock.get(urlPathEqualTo("/sentralimport/authors"))
+            .withQueryParam("author_id", WireMock.equalTo("SCOPUS:" + scopusId))
+            .willReturn(aResponse().withBody(response).withStatus(HTTP_OK)));
+  }
+
+  private void mockedPiaAffiliationIdSearch(String affiliationId, String response) {
+
+    stubFor(
+        WireMock.get(urlPathEqualTo("/sentralimport/orgs/matches"))
+            .withQueryParam("affiliation_id", WireMock.equalTo("SCOPUS:" + affiliationId))
+            .willReturn(aResponse().withBody(response).withStatus(HTTP_OK)));
+  }
+
+  private AffiliationTp createAffiliation(List<Serializable> organizationName) {
+    var affiliation = new AffiliationTp();
+    affiliation.setCountryAttribute(randomString());
+    affiliation.setAffiliationInstanceId(randomString());
+    affiliation.setAfid(randomString());
+    affiliation.setCityGroup(randomString());
+    affiliation.setDptid(randomString());
+    affiliation.setCity(randomString());
+    affiliation.setCountryAttribute(randomString());
+    affiliation.getOrganization().add(createOrganization(organizationName));
+    return affiliation;
+  }
+
+  private OrganizationTp createOrganization(List<Serializable> organizationName) {
+    var organization = new OrganizationTp();
+    organization.getContent().addAll(organizationName);
+    return organization;
+  }
+
+  private void assertIsSameAuthor(AuthorTp authorTp, List<Contributor> contributors) {
+    if (nonNull(authorTp.getOrcid())) {
+      var orcidAsUriString = getOrcidAsUriString(authorTp);
+      var optionalContributor = findContributorByOrcid(orcidAsUriString, contributors);
+      assertTrue(optionalContributor.isPresent());
+      var contributor = optionalContributor.get();
+      assertThat(contributor.getIdentity().getName(), containsString(authorTp.getSurname()));
+    }
+  }
+
+  private void checkContributor(AuthorTp authorTp, List<Contributor> contributors) {
+    var contributor = findContributorByName(authorTp.getGivenName(), contributors);
+    assertEquals(getExpectedFullAuthorName(authorTp), contributor.getIdentity().getName());
+  }
+
+  private Contributor findContributorByName(String givenName, List<Contributor> contributors) {
+    return contributors.stream()
+        .filter(contributor -> contributor.getIdentity().getName().contains(givenName))
+        .findAny()
+        .orElseThrow();
+  }
+
+  private void checkCollaboration(CollaborationTp collaboration, List<Contributor> contributors) {
+    var contributor = findContributorByName(collaboration.getIndexedName(), contributors);
+
+    assertThat(contributor, is(notNullValue()));
+  }
+
+  private String getExpectedFullAuthorName(AuthorTp authorTp) {
+    return authorTp.getPreferredName().getGivenName()
+        + StringUtils.SPACE
+        + authorTp.getPreferredName().getSurname();
+  }
+
+  private SQSEvent createNewScopusPublicationEvent() throws IOException {
+    var uri = s3Driver.insertFile(randomS3Path(), scopusData.toXml());
+    return createSqsEvent(uri);
+  }
+
+  private UnixPath randomS3Path() {
+    return UnixPath.of(randomString());
+  }
+
+  private TitletextTp extractTitle(ScopusGenerator scopusData) {
+    return Optional.of(scopusData.getDocument())
+        .map(DocTp::getItem)
+        .map(ItemTp::getItem)
+        .map(OrigItemTp::getBibrecord)
+        .map(BibrecordTp::getHead)
+        .map(HeadTp::getCitationTitle)
+        .map(CitationTitleTp::getTitletext)
+        .stream()
+        .flatMap(Collection::stream)
+        .filter(t -> YesnoAtt.Y.equals(t.getOriginal()))
+        .collect(SingletonCollector.collect());
+  }
+
+  private String expectedTitle(TitletextTp titleObject) {
+    return ScopusConverter.extractContentAndPreserveXmlSupAndInfTags(titleObject.getContent());
+  }
+
+  private Optional<Contributor> findContributorByOrcid(
+      String orcid, List<Contributor> contributors) {
+    return contributors.stream()
+        .filter(contributor -> orcid.equals(contributor.getIdentity().getOrcId()))
+        .findFirst();
+  }
+
+  private String getOrcidAsUriString(AuthorTp authorTp) {
+    return isNotBlank(authorTp.getOrcid()) ? craftOrcidUriString(authorTp.getOrcid()) : null;
+  }
+
+  private String craftOrcidUriString(String potentiallyMalformedOrcidString) {
+    return potentiallyMalformedOrcidString.contains(ORCID_DOMAIN_URL)
+        ? potentiallyMalformedOrcidString
+        : ORCID_DOMAIN_URL + potentiallyMalformedOrcidString;
+  }
+
+  private List<AuthorTp> keepOnlyTheAuthors() {
+    return keepOnlyTheCollaborationsAndAuthors().stream()
+        .filter(this::isAuthorTp)
+        .map(author -> (AuthorTp) author)
+        .collect(Collectors.toList());
+  }
+
+  private boolean isAuthorTp(Object object) {
+    return object instanceof AuthorTp;
+  }
+
+  private List<Object> keepOnlyTheCollaborationsAndAuthors() {
+    return scopusData
+        .getDocument()
+        .getItem()
+        .getItem()
+        .getBibrecord()
+        .getHead()
+        .getAuthorGroup()
+        .stream()
+        .map(AuthorGroupTp::getAuthorOrCollaboration)
+        .flatMap(Collection::stream)
+        .collect(Collectors.toList());
+  }
+
+  private SQSEvent createSqsEvent(String expectedObjectKey) {
+    var sqsEvent = new SQSEvent();
+    var message = new SQSMessage();
+    var messageAttribute = new MessageAttribute();
+    messageAttribute.setStringValue(expectedObjectKey);
+    message.setMessageAttributes(Map.of("uri", messageAttribute));
+    sqsEvent.setRecords(List.of(message));
+    return sqsEvent;
+  }
+
+  private SQSEvent createSqsEvent(URI uri) {
+    return createSqsEvent(UriWrapper.fromUri(uri).toS3bucketPath().toString());
+  }
+
+  private String extractErrorReportFromS3Client() throws JsonProcessingException {
+    var s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
+    var uri = s3Driver.listAllFiles(UnixPath.of("ERROR")).getFirst();
+    var content = s3Driver.getFile(uri);
+    return JsonUtils.dtoObjectMapper.writeValueAsString(content);
+  }
+
+  private String extractInputFromErrorReportFromS3Client() throws JsonProcessingException {
+    var s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
+    var uri = s3Driver.listAllFiles(UnixPath.of("ERROR")).getFirst();
+    var content = s3Driver.getFile(uri);
+    return JsonUtils.dtoObjectMapper.readTree(content).get("input").asText();
+  }
+
+  private static class FakeS3ClientThrowingException extends FakeS3Client {
+
+    private final String expectedErrorMessage;
+
+    public FakeS3ClientThrowingException(String expectedErrorMessage) {
+      super();
+      this.expectedErrorMessage = expectedErrorMessage;
     }
 
-    private List<AuthorGroupTp> keepOnlyAuthorGroups() {
-        return new ArrayList<>(scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getAuthorGroup());
+    @Override
+    public <ReturnT> ReturnT getObject(
+        GetObjectRequest getObjectRequest,
+        ResponseTransformer<GetObjectResponse, ReturnT> responseTransformer) {
+      throw new RuntimeException(expectedErrorMessage);
+    }
+  }
+
+  public static class FakeS3cClientWithHeadSupport extends FakeS3Client {
+
+    public static final long SOME_CONTENT_LENGTH = 2932645L;
+    public static final String APPLICATION_PDF_MIMETYPE = "application/pdf";
+
+    @Override
+    public CopyObjectResponse copyObject(CopyObjectRequest copyObjectRequest) {
+      return CopyObjectResponse.builder().build();
     }
 
-    private AuthorGroupTp getAuthorGroup() {
-        return scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getAuthorGroup().getFirst();
+    @Override
+    public HeadObjectResponse headObject(HeadObjectRequest headObjectRequest) {
+      return HeadObjectResponse.builder()
+          .contentLength(SOME_CONTENT_LENGTH)
+          .contentType(APPLICATION_PDF_MIMETYPE)
+          .build();
     }
-
-    private String extractSuccessReport() {
-        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
-        var uri = s3Driver.listAllFiles(UnixPath.of("SUCCESS")).getFirst();
-        return s3Driver.getFile(uri);
-    }
-
-    private void generateCristinPersonsResponse(ArrayList<CristinPerson> cristinCristinPeople, Integer cristinId) {
-        var cristinPerson = CristinGenerator.generateCristinPerson(
-            UriWrapper.fromUri("/cristin/person/" + cristinId.toString()).getUri(), randomString(), randomString());
-        cristinCristinPeople.add(cristinPerson);
-        mockCristinPerson(cristinId.toString(), CristinGenerator.convertPersonToJson(cristinPerson));
-    }
-
-    private void generatePiaAuthorResponse(ArrayList<List<Author>> authors,
-                                           Integer cristinId,
-                                           AuthorTp authorTp) {
-        var authorList = PiaResponseGenerator.generateAuthors(authorTp.getAuid(), cristinId);
-        authors.add(authorList);
-        createPiaAuthorMock(authorList);
-    }
-
-    private void generatePiaAndCristinAffiliationResponse(AuthorGroupTp authorGroupTp, String cristinOrganizationId) {
-        var affiliation = PiaResponseGenerator.generateAffiliation(cristinOrganizationId, List.of(1).iterator());
-        createPiaAffiliationMock(List.of(affiliation), authorGroupTp.getAffiliation().getAfid());
-        generateCristinOrganizationResponse(affiliation.getUnitIdentifier());
-    }
-
-    private void generateCristinOrganizationResponse(String cristinOrganizationId) {
-        var cristinOrgUri = UriWrapper.fromUri("cristin/organization/" + cristinOrganizationId).getUri();
-        var cristinOrganization = CristinGenerator.generateCristinOrganization(cristinOrgUri, randomString());
-        var organization = attempt(() -> CristinGenerator.convertOrganizationToJson(cristinOrganization)).orElseThrow();
-        mockCristinOrganization(cristinOrganizationId, organization);
-        mockCustomerListResponse(cristinOrgUri);
-    }
-
-    private void mockCustomerListResponse(URI cristinOrganizationId) {
-        var customerList = new CustomerList(List.of(randomCustomer(cristinOrganizationId)));
-        var responseBody = attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(customerList)).orElseThrow();
-        stubFor(WireMock.get(urlPathEqualTo("/customers"))
-                    .willReturn(aResponse().withBody(responseBody).withStatus(HTTP_OK)));
-    }
-
-    private ContentWrapper createContentWithSupAndInfTags() {
-        return new ContentWrapper(contentWithSupInftagsScopus14244261628());
-    }
-
-    private void checkForDuplicateContributors(Collection<ImportContributor> contributors) {
-        List<Integer> sequenceNumbers = new ArrayList<>();
-        List<String> orcids = new ArrayList<>();
-        contributors.forEach(contributor -> isNotDuplicated(sequenceNumbers, orcids, contributor));
-    }
-
-    private void isNotDuplicated(List<Integer> sequenceNumbers, List<String> orcids, ImportContributor contributor) {
-        assertThat(sequenceNumbers, not(hasItem(contributor.sequence())));
-        sequenceNumbers.add(contributor.sequence());
-        if (nonNull(contributor.identity().getOrcId())) {
-            assertThat(orcids, not(hasItem(contributor.identity().getOrcId())));
-            orcids.add(contributor.identity().getOrcId());
-        }
-    }
-
-    private Contributor getCorrespondingContributor(List<Contributor> actualPublicationContributors) {
-        createEmptyPiaMock();
-        return actualPublicationContributors.stream().filter(Contributor::isCorrespondingAuthor).findAny().orElse(null);
-    }
-
-    private boolean isAuthor(ImportContributor contributor, Collection<AuthorTp> authorTypes) {
-        return authorTypes.stream().anyMatch(authorTp -> isEqualContributor(contributor, authorTp));
-    }
-
-    private boolean isEqualContributor(ImportContributor contributor, AuthorTp authorTp) {
-        var authorId = contributor.identity().getAdditionalIdentifiers()
-                           .stream()
-                           .filter(additionalIdentifier ->
-                                       "scopus-auid".equalsIgnoreCase(additionalIdentifier.sourceName()))
-                           .map(AdditionalIdentifierBase::value)
-                           .collect(SingletonCollector.collectOrElse(""));
-        return authorTp.getAuid().equals(authorId);
-    }
-
-    private void mockCristinPerson(String cristinPersonId, String response) {
-        stubFor(WireMock.get(urlPathEqualTo("/cristin/person/" + cristinPersonId))
-                    .willReturn(aResponse().withBody(response).withStatus(HTTP_OK)));
-    }
-
-    private void mockCristinOrganization(String cristinId, String organization) {
-        stubFor(WireMock.get(urlPathEqualTo("/cristin/organization/" + cristinId))
-                    .willReturn(aResponse().withBody(organization).withStatus(HTTP_OK)));
-    }
-
-    private void mockCristinPersonBadRequest() {
-        stubFor(WireMock.get(urlMatching("/cristin/person/.*"))
-                    .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
-    }
-
-    private void createPiaAuthorMock(List<Author> author) {
-        var scopusId = author.getFirst().getExternalId();
-        var response = PiaResponseGenerator.convertAuthorsToJson(author);
-        mockedPiaAuthorIdSearch(scopusId, response);
-    }
-
-    private void createPiaAffiliationMock(List<no.sikt.nva.scopus.conversion.model.pia.Affiliation> affiliationList,
-                                          String affiliationId) {
-        var response = PiaResponseGenerator.convertAffiliationsToJson(affiliationList);
-        mockedPiaAffiliationIdSearch(affiliationId, response);
-    }
-
-    private void createEmptyPiaMock() {
-        stubFor(WireMock.get(urlMatching("/sentralimport/authors"))
-                    .willReturn(aResponse().withBody("[]").withStatus(HTTP_OK)));
-    }
-
-    private void mockedPiaException() {
-        stubFor(WireMock.get(urlPathEqualTo("/sentralimport/authors"))
-                    .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
-    }
-
-    private void mockedPiaBadRequest() {
-        stubFor(WireMock.get(urlPathEqualTo("/sentralimport/authors"))
-                    .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
-    }
-
-    private void mockedPiaAuthorIdSearch(String scopusId, String response) {
-        stubFor(WireMock.get(urlPathEqualTo("/sentralimport/authors"))
-                    .withQueryParam("author_id", WireMock.equalTo("SCOPUS:" + scopusId))
-                    .willReturn(aResponse().withBody(response).withStatus(HTTP_OK)));
-    }
-
-    private void mockedPiaAffiliationIdSearch(String affiliationId, String response) {
-
-        stubFor(WireMock.get(urlPathEqualTo("/sentralimport/orgs/matches"))
-                    .withQueryParam("affiliation_id", WireMock.equalTo("SCOPUS:" + affiliationId))
-                    .willReturn(aResponse().withBody(response).withStatus(HTTP_OK)));
-    }
-
-    private AffiliationTp createAffiliation(List<Serializable> organizationName) {
-        var affiliation = new AffiliationTp();
-        affiliation.setCountryAttribute(randomString());
-        affiliation.setAffiliationInstanceId(randomString());
-        affiliation.setAfid(randomString());
-        affiliation.setCityGroup(randomString());
-        affiliation.setDptid(randomString());
-        affiliation.setCity(randomString());
-        affiliation.setCountryAttribute(randomString());
-        affiliation.getOrganization().add(createOrganization(organizationName));
-        return affiliation;
-    }
-
-    private OrganizationTp createOrganization(List<Serializable> organizationName) {
-        var organization = new OrganizationTp();
-        organization.getContent().addAll(organizationName);
-        return organization;
-    }
-
-    private void assertIsSameAuthor(AuthorTp authorTp, List<Contributor> contributors) {
-        if (nonNull(authorTp.getOrcid())) {
-            var orcidAsUriString = getOrcidAsUriString(authorTp);
-            var optionalContributor = findContributorByOrcid(orcidAsUriString, contributors);
-            assertTrue(optionalContributor.isPresent());
-            var contributor = optionalContributor.get();
-            assertThat(contributor.getIdentity().getName(), containsString(authorTp.getSurname()));
-        }
-    }
-
-    private void checkContributor(AuthorTp authorTp, List<Contributor> contributors) {
-        var contributor = findContributorByName(authorTp.getGivenName(), contributors);
-        assertEquals(getExpectedFullAuthorName(authorTp), contributor.getIdentity().getName());
-    }
-
-    private Contributor findContributorByName(String givenName, List<Contributor> contributors) {
-        return contributors.stream()
-                   .filter(contributor -> contributor.getIdentity().getName().contains(givenName))
-                   .findAny()
-                   .orElseThrow();
-    }
-
-    private void checkCollaboration(CollaborationTp collaboration, List<Contributor> contributors) {
-        var contributor = findContributorByName(collaboration.getIndexedName(), contributors);
-
-        assertThat(contributor, is(notNullValue()));
-    }
-
-    private String getExpectedFullAuthorName(AuthorTp authorTp) {
-        return authorTp.getPreferredName().getGivenName() + StringUtils.SPACE + authorTp.getPreferredName()
-                                                                                    .getSurname();
-    }
-
-    private SQSEvent createNewScopusPublicationEvent() throws IOException {
-        var uri = s3Driver.insertFile(randomS3Path(), scopusData.toXml());
-        return createSqsEvent(uri);
-    }
-
-    private UnixPath randomS3Path() {
-        return UnixPath.of(randomString());
-    }
-
-    private TitletextTp extractTitle(ScopusGenerator scopusData) {
-        return Optional.of(scopusData.getDocument())
-                   .map(DocTp::getItem)
-                   .map(ItemTp::getItem)
-                   .map(OrigItemTp::getBibrecord)
-                   .map(BibrecordTp::getHead)
-                   .map(HeadTp::getCitationTitle)
-                   .map(CitationTitleTp::getTitletext)
-                   .stream()
-                   .flatMap(Collection::stream)
-                   .filter(t -> YesnoAtt.Y.equals(t.getOriginal()))
-                   .collect(SingletonCollector.collect());
-    }
-
-    private String expectedTitle(TitletextTp titleObject) {
-        return ScopusConverter.extractContentAndPreserveXmlSupAndInfTags(titleObject.getContent());
-    }
-
-    private Optional<Contributor> findContributorByOrcid(String orcid, List<Contributor> contributors) {
-        return contributors.stream()
-                   .filter(contributor -> orcid.equals(contributor.getIdentity().getOrcId()))
-                   .findFirst();
-    }
-
-    private String getOrcidAsUriString(AuthorTp authorTp) {
-        return isNotBlank(authorTp.getOrcid()) ? craftOrcidUriString(authorTp.getOrcid()) : null;
-    }
-
-    private String craftOrcidUriString(String potentiallyMalformedOrcidString) {
-        return potentiallyMalformedOrcidString.contains(ORCID_DOMAIN_URL) ? potentiallyMalformedOrcidString
-                   : ORCID_DOMAIN_URL + potentiallyMalformedOrcidString;
-    }
-
-    private List<AuthorTp> keepOnlyTheAuthors() {
-        return keepOnlyTheCollaborationsAndAuthors().stream()
-                   .filter(this::isAuthorTp)
-                   .map(author -> (AuthorTp) author)
-                   .collect(Collectors.toList());
-    }
-
-    private boolean isAuthorTp(Object object) {
-        return object instanceof AuthorTp;
-    }
-
-    private List<Object> keepOnlyTheCollaborationsAndAuthors() {
-        return scopusData.getDocument()
-                   .getItem()
-                   .getItem()
-                   .getBibrecord()
-                   .getHead()
-                   .getAuthorGroup()
-                   .stream()
-                   .map(AuthorGroupTp::getAuthorOrCollaboration)
-                   .flatMap(Collection::stream)
-                   .collect(Collectors.toList());
-    }
-
-    private SQSEvent createSqsEvent(String expectedObjectKey) {
-        var sqsEvent = new SQSEvent();
-        var message = new SQSMessage();
-        var messageAttribute = new MessageAttribute();
-        messageAttribute.setStringValue(expectedObjectKey);
-        message.setMessageAttributes(Map.of("uri", messageAttribute));
-        sqsEvent.setRecords(List.of(message));
-        return sqsEvent;
-    }
-
-    private SQSEvent createSqsEvent(URI uri) {
-        return createSqsEvent(UriWrapper.fromUri(uri).toS3bucketPath().toString());
-    }
-
-    private String extractErrorReportFromS3Client()
-        throws JsonProcessingException {
-        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
-        var uri = s3Driver.listAllFiles(UnixPath.of("ERROR")).getFirst();
-        var content = s3Driver.getFile(uri);
-        return JsonUtils.dtoObjectMapper.writeValueAsString(content);
-    }
-
-    private String extractInputFromErrorReportFromS3Client()
-        throws JsonProcessingException {
-        var s3Driver = new S3Driver(s3Client, new Environment().readEnv(SCOPUS_IMPORT_BUCKET));
-        var uri = s3Driver.listAllFiles(UnixPath.of("ERROR")).getFirst();
-        var content = s3Driver.getFile(uri);
-        return JsonUtils.dtoObjectMapper.readTree(content).get("input").asText();
-    }
-
-    private static class FakeS3ClientThrowingException extends FakeS3Client {
-
-        private final String expectedErrorMessage;
-
-        public FakeS3ClientThrowingException(String expectedErrorMessage) {
-            super();
-            this.expectedErrorMessage = expectedErrorMessage;
-        }
-
-        @Override
-        public <ReturnT> ReturnT getObject(GetObjectRequest getObjectRequest,
-                                           ResponseTransformer<GetObjectResponse, ReturnT> responseTransformer) {
-            throw new RuntimeException(expectedErrorMessage);
-        }
-    }
-
-    public static class FakeS3cClientWithHeadSupport extends FakeS3Client {
-
-        public static final long SOME_CONTENT_LENGTH = 2932645L;
-        public static final String APPLICATION_PDF_MIMETYPE = "application/pdf";
-
-        @Override
-        public CopyObjectResponse copyObject(CopyObjectRequest copyObjectRequest) {
-            return CopyObjectResponse.builder().build();
-        }
-
-        @Override
-        public HeadObjectResponse headObject(HeadObjectRequest headObjectRequest) {
-            return HeadObjectResponse.builder()
-                       .contentLength(SOME_CONTENT_LENGTH)
-                       .contentType(APPLICATION_PDF_MIMETYPE)
-                       .build();
-        }
-    }
+  }
 }

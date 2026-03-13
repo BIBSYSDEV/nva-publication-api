@@ -6,58 +6,59 @@ import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
 import java.net.URI;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
-
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ResearchData implements PublicationContext {
 
-    public static final String PUBLISHER_FIELD = "publisher";
-    @JsonProperty(PUBLISHER_FIELD)
-    private final PublishingHouse publisher;
+  public static final String PUBLISHER_FIELD = "publisher";
 
-    public ResearchData(@JsonProperty(PUBLISHER_FIELD) PublishingHouse publisher) {
-        this.publisher = publisher;
-    }
+  @JsonProperty(PUBLISHER_FIELD)
+  private final PublishingHouse publisher;
 
-    public PublishingHouse getPublisher() {
-        return isEffectivelyNullPublisher() ? new NullPublisher() : publisher;
-    }
+  public ResearchData(@JsonProperty(PUBLISHER_FIELD) PublishingHouse publisher) {
+    this.publisher = publisher;
+  }
 
-    private boolean isEffectivelyNullPublisher() {
-        return isNull(publisher) || !publisher.isValid();
-    }
+  public PublishingHouse getPublisher() {
+    return isEffectivelyNullPublisher() ? new NullPublisher() : publisher;
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof ResearchData)) {
-            return false;
-        }
-        ResearchData that = (ResearchData) o;
-        return Objects.equals(publisher, that.publisher);
-    }
+  private boolean isEffectivelyNullPublisher() {
+    return isNull(publisher) || !publisher.isValid();
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(publisher);
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (!(o instanceof ResearchData)) {
+      return false;
+    }
+    ResearchData that = (ResearchData) o;
+    return Objects.equals(publisher, that.publisher);
+  }
 
-    @JsonIgnore
-    @Override
-    public Set<URI> extractPublicationContextUris() {
-        if (nonNull(publisher) && publisher instanceof Publisher publisherWithId && nonNull(publisherWithId.getId())) {
-            return Set.of(publisherWithId.getId());
-        }
-        return Collections.emptySet();
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(publisher);
+  }
+
+  @JsonIgnore
+  @Override
+  public Set<URI> extractPublicationContextUris() {
+    if (nonNull(publisher)
+        && publisher instanceof Publisher publisherWithId
+        && nonNull(publisherWithId.getId())) {
+      return Set.of(publisherWithId.getId());
     }
+    return Collections.emptySet();
+  }
 }

@@ -9,11 +9,11 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 
 public interface UpdateRequest {
 
-    Resource generateUpdate(Resource resource) throws ForbiddenException;
+  Resource generateUpdate(Resource resource) throws ForbiddenException;
 
-    AssociatedArtifactList getAssociatedArtifacts();
+  AssociatedArtifactList getAssociatedArtifacts();
 
-    void authorize(PublicationPermissions permissions) throws UnauthorizedException;
+  void authorize(PublicationPermissions permissions) throws UnauthorizedException;
 
-    SortableIdentifier getIdentifier();
+  SortableIdentifier getIdentifier();
 }

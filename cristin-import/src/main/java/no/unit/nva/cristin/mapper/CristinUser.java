@@ -15,27 +15,23 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @Data
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinUser {
 
-    @JsonProperty("personlopenr")
-    private String identifier;
+  @JsonProperty("personlopenr")
+  private String identifier;
 
-    @JsonProperty("fornavn")
-    private String firstName;
+  @JsonProperty("fornavn")
+  private String firstName;
 
-    @JsonProperty("etternavn")
-    private String lastName;
+  @JsonProperty("etternavn")
+  private String lastName;
 
-    @JacocoGenerated
-    @JsonCreator
-    public CristinUser() {
-
-    }
-
+  @JacocoGenerated
+  @JsonCreator
+  public CristinUser() {}
 }

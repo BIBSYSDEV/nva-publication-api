@@ -6,9 +6,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class MediaInterview extends MediaBase {
 
-    @JsonCreator
-    public MediaInterview() {
-        super();
-    }
-
+  @JsonCreator
+  public MediaInterview() {
+    super();
+  }
 }

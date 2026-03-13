@@ -21,74 +21,78 @@ import nva.commons.core.StringUtils;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"arstall", "antall_deltakere",
-    "antall_internasjonale_deltakere", "antall_nasjonale_deltakere",
-    "institusjonsnr_arrangor", "avdnr_arrangor", "undavdnr_arrangor", "gruppenr_arrangor",
-    "utbredelsesomrade", "url", "personlopenr_arrangor"})
-// antall_internasjonale_deltakere, antall_nasjonale_deltakere, antall_deltakere, url are always null
+@JsonIgnoreProperties({
+  "arstall",
+  "antall_deltakere",
+  "antall_internasjonale_deltakere",
+  "antall_nasjonale_deltakere",
+  "institusjonsnr_arrangor",
+  "avdnr_arrangor",
+  "undavdnr_arrangor",
+  "gruppenr_arrangor",
+  "utbredelsesomrade",
+  "url",
+  "personlopenr_arrangor"
+})
+// antall_internasjonale_deltakere, antall_nasjonale_deltakere, antall_deltakere, url are always
+// null
 public class ExhibitionEvent {
 
-    private static final String RE_OCCURING_REDUNDANT_TITLE = "utstilling";
+  private static final String RE_OCCURING_REDUNDANT_TITLE = "utstilling";
 
-    @JsonProperty("hendelsetype")
-    private MuseumEventCategory museumEventCategory;
+  @JsonProperty("hendelsetype")
+  private MuseumEventCategory museumEventCategory;
 
-    @JsonProperty("dato_til")
-    private String dateTo;
+  @JsonProperty("dato_til")
+  private String dateTo;
 
-    @JsonProperty("dato_fra")
-    private String dateFrom;
+  @JsonProperty("dato_fra")
+  private String dateFrom;
 
-    @JsonProperty("arrangornavn")
-    private String organizerName;
+  @JsonProperty("arrangornavn")
+  private String organizerName;
 
-    @JsonProperty("stedangivelse")
-    private String placeDescription;
+  @JsonProperty("stedangivelse")
+  private String placeDescription;
 
-    @JsonProperty("landkode")
-    private String countryCode;
+  @JsonProperty("landkode")
+  private String countryCode;
 
-    @JsonProperty("titteltekst")
-    private String titleText;
+  @JsonProperty("titteltekst")
+  private String titleText;
 
-    @JacocoGenerated
-    public ExhibitionEvent() {
+  @JacocoGenerated
+  public ExhibitionEvent() {}
 
-    }
+  public Period toPeriod() {
+    return new Period(Time.convertToInstant(dateFrom), extractToDate());
+  }
 
-    public Period toPeriod() {
-        return new Period(Time.convertToInstant(dateFrom), extractToDate());
-    }
+  public boolean isInfiniteEvent() {
+    return StringUtils.isBlank(dateTo);
+  }
 
-    public boolean isInfiniteEvent() {
-        return StringUtils.isBlank(dateTo);
-    }
+  public UnconfirmedPlace extractPlace() {
+    return new UnconfirmedPlace(placeDescription, countryCode);
+  }
 
-    public UnconfirmedPlace extractPlace() {
-        return new UnconfirmedPlace(placeDescription, countryCode);
-    }
+  public UnconfirmedOrganization extractOrganisation() {
+    return new UnconfirmedOrganization(organizerName);
+  }
 
-    public UnconfirmedOrganization extractOrganisation() {
-        return new UnconfirmedOrganization(organizerName);
-    }
+  public Optional<String> getDescription() {
+    return Optional.ofNullable(titleText).filter(ExhibitionEvent::isNotRedundantDescription);
+  }
 
-    public Optional<String> getDescription() {
-        return Optional.ofNullable(titleText)
-                   .filter(ExhibitionEvent::isNotRedundantDescription);
-    }
+  private static boolean isNotRedundantDescription(String titleText) {
+    return !RE_OCCURING_REDUNDANT_TITLE.equalsIgnoreCase(titleText);
+  }
 
-    private static boolean isNotRedundantDescription(String titleText) {
-        return !RE_OCCURING_REDUNDANT_TITLE.equalsIgnoreCase(titleText);
-    }
-
-    private Instant extractToDate() {
-        return Optional.ofNullable(dateTo)
-                   .map(Time::convertToInstant)
-                   .orElse(null);
-    }
+  private Instant extractToDate() {
+    return Optional.ofNullable(dateTo).map(Time::convertToInstant).orElse(null);
+  }
 }

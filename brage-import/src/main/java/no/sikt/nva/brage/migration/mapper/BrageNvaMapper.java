@@ -7,6 +7,7 @@ import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.BRAGE_M
 import static no.sikt.nva.brage.migration.mapper.PublicationContextMapper.HTTPS_PREFIX;
 import static no.sikt.nva.brage.migration.merger.CristinImportPublicationMerger.DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS;
 import static nva.commons.core.attempt.Try.attempt;
+
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -74,416 +75,466 @@ import software.amazon.awssdk.services.s3.S3Client;
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public final class BrageNvaMapper {
 
-    public static final String CRISTIN = "cristin";
-    public static final String PERSON = "person";
-    public static final String BASE_PATH = new Environment().readEnv("DOMAIN_NAME");
-    public static final String ORGANIZATION = "organization";
-    public static final int HUNDRED_YEARS = 36_524;
-    public static final String UNDEFINED_LANGUAGE = "und";
-    public static final String TWO_NEWLINES = "\n\n";
-    public static final String NO_ABSTRACT = null;
-    public static final String ERROR_REPORT = "ERROR_REPORT";
-    public static final String INSPERA_SOURCE = "inspera";
-    public static final String WISEFLOW_SOURCE = "wiseflow";
-    private static final List<String> LEGAL_NOTES_WITH_EMBARGO = List.of(
-        "Dette dokumentet er ikke elektronisk tilgjengelig etter ønske fra forfatter",
-        "Kun forskere og studenter kan få innsyn i dokumentet",
-        "Dokumentet er klausulert grunnet lovpålagt taushetsplikt",
-        "Klausulert: Kan bare siteres etter nærmere avtale med forfatter",
-        "Klausulert: Kan bare tillates lest etter nærmere avtale med forfatter");
+  public static final String CRISTIN = "cristin";
+  public static final String PERSON = "person";
+  public static final String BASE_PATH = new Environment().readEnv("DOMAIN_NAME");
+  public static final String ORGANIZATION = "organization";
+  public static final int HUNDRED_YEARS = 36_524;
+  public static final String UNDEFINED_LANGUAGE = "und";
+  public static final String TWO_NEWLINES = "\n\n";
+  public static final String NO_ABSTRACT = null;
+  public static final String ERROR_REPORT = "ERROR_REPORT";
+  public static final String INSPERA_SOURCE = "inspera";
+  public static final String WISEFLOW_SOURCE = "wiseflow";
+  private static final List<String> LEGAL_NOTES_WITH_EMBARGO =
+      List.of(
+          "Dette dokumentet er ikke elektronisk tilgjengelig etter ønske fra forfatter",
+          "Kun forskere og studenter kan få innsyn i dokumentet",
+          "Dokumentet er klausulert grunnet lovpålagt taushetsplikt",
+          "Klausulert: Kan bare siteres etter nærmere avtale med forfatter",
+          "Klausulert: Kan bare tillates lest etter nærmere avtale med forfatter");
 
-    private BrageNvaMapper() {
-    }
+  private BrageNvaMapper() {}
 
-    public static Publication toNvaPublication(Record brageRecord, String host, S3Client s3Client)
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var customer = Customer.fromBrageArchiveName(brageRecord.getCustomer().getName());
-        validateBrageRecord(brageRecord);
-        var publication = new Publication.Builder().withEntityDescription(extractEntityDescription(brageRecord, customer.toResourceOwner(host).getOwnerAffiliation()))
-                              .withPublisher(customer.toPublisher(host))
-                              .withResourceOwner(customer.toResourceOwner(host))
-                              .withAssociatedArtifacts(extractAssociatedArtifacts(brageRecord, customer))
-                              .withAdditionalIdentifiers(extractAdditionalIdentifiers(brageRecord))
-                              .withFundings(extractFundings(brageRecord))
-                              .build();
-        if (!isCristinRecord(brageRecord)) {
-            assertPublicationDoesNotHaveEmptyFields(publication, brageRecord, s3Client);
-        }
-        return publication;
+  public static Publication toNvaPublication(Record brageRecord, String host, S3Client s3Client)
+      throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    var customer = Customer.fromBrageArchiveName(brageRecord.getCustomer().getName());
+    validateBrageRecord(brageRecord);
+    var publication =
+        new Publication.Builder()
+            .withEntityDescription(
+                extractEntityDescription(
+                    brageRecord, customer.toResourceOwner(host).getOwnerAffiliation()))
+            .withPublisher(customer.toPublisher(host))
+            .withResourceOwner(customer.toResourceOwner(host))
+            .withAssociatedArtifacts(extractAssociatedArtifacts(brageRecord, customer))
+            .withAdditionalIdentifiers(extractAdditionalIdentifiers(brageRecord))
+            .withFundings(extractFundings(brageRecord))
+            .build();
+    if (!isCristinRecord(brageRecord)) {
+      assertPublicationDoesNotHaveEmptyFields(publication, brageRecord, s3Client);
     }
+    return publication;
+  }
 
-    public static String extractDescription(Record record) {
-        return Optional.ofNullable(record.getEntityDescription().getDescriptions())
-                   .map(BrageNvaMapper::filterOutEmptyValues)
-                   .filter(descriptions -> !descriptions.isEmpty())
-                   .map(BrageNvaMapper::joinByNewLine)
-                   .orElse(null);
-    }
+  public static String extractDescription(Record record) {
+    return Optional.ofNullable(record.getEntityDescription().getDescriptions())
+        .map(BrageNvaMapper::filterOutEmptyValues)
+        .filter(descriptions -> !descriptions.isEmpty())
+        .map(BrageNvaMapper::joinByNewLine)
+        .orElse(null);
+  }
 
-    private static void validateBrageRecord(Record brageRecord) {
-        if (isNull(brageRecord.getId()) || StringUtils.isBlank(brageRecord.getId().toString())) {
-            throw new IllegalArgumentException("Record must contain a handle");
-        }
+  private static void validateBrageRecord(Record brageRecord) {
+    if (isNull(brageRecord.getId()) || StringUtils.isBlank(brageRecord.getId().toString())) {
+      throw new IllegalArgumentException("Record must contain a handle");
     }
+  }
 
-    private static Set<Funding> extractFundings(Record brageRecord) {
-        return nonNull(brageRecord.getProjects()) ? new HashSet<>(brageRecord.getProjects()
-                                                        .stream()
-                                                        .map(Project::toFunding)
-                                                        .toList()) : emptySet();
-    }
+  private static Set<Funding> extractFundings(Record brageRecord) {
+    return nonNull(brageRecord.getProjects())
+        ? new HashSet<>(brageRecord.getProjects().stream().map(Project::toFunding).toList())
+        : emptySet();
+  }
 
-    private static String joinByNewLine(List<String> values) {
-        return values.stream().collect(Collectors.joining(System.lineSeparator()));
-    }
+  private static String joinByNewLine(List<String> values) {
+    return values.stream().collect(Collectors.joining(System.lineSeparator()));
+  }
 
-    private static List<AssociatedLink> extractAssociatedLinksFromSubjects(Record brageRecord) {
-        return Optional.ofNullable(brageRecord)
-                   .map(Record::getSubjects)
-                   .stream()
-                   .flatMap(Collection::stream)
-                   .map(uri -> new AssociatedLink(uri, null, null, RelationType.SAME_AS))
-                   .toList();
-    }
+  private static List<AssociatedLink> extractAssociatedLinksFromSubjects(Record brageRecord) {
+    return Optional.ofNullable(brageRecord).map(Record::getSubjects).stream()
+        .flatMap(Collection::stream)
+        .map(uri -> new AssociatedLink(uri, null, null, RelationType.SAME_AS))
+        .toList();
+  }
 
-    private static boolean isCristinRecord(Record record) {
-        return NvaType.CRISTIN_RECORD.getValue().equals(record.getType().getNva());
-    }
+  private static boolean isCristinRecord(Record record) {
+    return NvaType.CRISTIN_RECORD.getValue().equals(record.getType().getNva());
+  }
 
-    private static List<String> filterOutEmptyValues(List<String> descriptions) {
-        return descriptions.stream().filter(StringUtils::isNotBlank).toList();
-    }
+  private static List<String> filterOutEmptyValues(List<String> descriptions) {
+    return descriptions.stream().filter(StringUtils::isNotBlank).toList();
+  }
 
-    private static List<AssociatedArtifact> extractAssociatedArtifacts(Record brageRecord, Customer customer) {
-        var associatedArtifacts = new ArrayList<>(extractAssociatedFiles(brageRecord, customer));
-        associatedArtifacts.add(extractAssociatedLink(brageRecord));
-        associatedArtifacts.addAll(extractAssociatedLinksFromSubjects(brageRecord));
-        return associatedArtifacts.stream().filter(Objects::nonNull).toList();
-    }
+  private static List<AssociatedArtifact> extractAssociatedArtifacts(
+      Record brageRecord, Customer customer) {
+    var associatedArtifacts = new ArrayList<>(extractAssociatedFiles(brageRecord, customer));
+    associatedArtifacts.add(extractAssociatedLink(brageRecord));
+    associatedArtifacts.addAll(extractAssociatedLinksFromSubjects(brageRecord));
+    return associatedArtifacts.stream().filter(Objects::nonNull).toList();
+  }
 
-    private static AssociatedLink extractAssociatedLink(Record brageRecord) {
-        return nonNull(brageRecord.getLink()) ? new AssociatedLink(brageRecord.getLink(), null, null, RelationType.SAME_AS) : null;
-    }
+  private static AssociatedLink extractAssociatedLink(Record brageRecord) {
+    return nonNull(brageRecord.getLink())
+        ? new AssociatedLink(brageRecord.getLink(), null, null, RelationType.SAME_AS)
+        : null;
+  }
 
-    private static Set<AdditionalIdentifierBase> extractAdditionalIdentifiers(Record brageRecord) {
-        return Stream.of(extractCristinAdditionalIdentifier(brageRecord), extractBrageHandle(brageRecord),
-                         extractInsperaIdentifier(brageRecord), extractWiseflowIdentifier(brageRecord))
-                   .filter(Optional::isPresent)
-                   .map(Optional::get)
-                   .collect(Collectors.toSet());
-    }
+  private static Set<AdditionalIdentifierBase> extractAdditionalIdentifiers(Record brageRecord) {
+    return Stream.of(
+            extractCristinAdditionalIdentifier(brageRecord), extractBrageHandle(brageRecord),
+            extractInsperaIdentifier(brageRecord), extractWiseflowIdentifier(brageRecord))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(Collectors.toSet());
+  }
 
-    private static Optional<? extends AdditionalIdentifierBase> extractInsperaIdentifier(Record brageRecord) {
-        return isNull(brageRecord.getInsperaIdentifier()) ? Optional.empty()
-                   : Optional.of(new AdditionalIdentifier(INSPERA_SOURCE, brageRecord.getInsperaIdentifier()));
-    }
+  private static Optional<? extends AdditionalIdentifierBase> extractInsperaIdentifier(
+      Record brageRecord) {
+    return isNull(brageRecord.getInsperaIdentifier())
+        ? Optional.empty()
+        : Optional.of(new AdditionalIdentifier(INSPERA_SOURCE, brageRecord.getInsperaIdentifier()));
+  }
 
-    private static Optional<? extends AdditionalIdentifierBase> extractWiseflowIdentifier(Record brageRecord) {
-        return isNull(brageRecord.getWiseflowIdentifier()) ? Optional.empty()
-                   : Optional.of(new AdditionalIdentifier(WISEFLOW_SOURCE, brageRecord.getWiseflowIdentifier()));
-    }
+  private static Optional<? extends AdditionalIdentifierBase> extractWiseflowIdentifier(
+      Record brageRecord) {
+    return isNull(brageRecord.getWiseflowIdentifier())
+        ? Optional.empty()
+        : Optional.of(
+            new AdditionalIdentifier(WISEFLOW_SOURCE, brageRecord.getWiseflowIdentifier()));
+  }
 
-    private static Optional<AdditionalIdentifierBase> extractBrageHandle(Record brageRecord) {
-        return isDummyHandle(brageRecord) ? Optional.empty() : Optional.of(handleIdentifierFromRecord(brageRecord));
-    }
+  private static Optional<AdditionalIdentifierBase> extractBrageHandle(Record brageRecord) {
+    return isDummyHandle(brageRecord)
+        ? Optional.empty()
+        : Optional.of(handleIdentifierFromRecord(brageRecord));
+  }
 
-    private static HandleIdentifier handleIdentifierFromRecord(Record brageRecord) {
-        return new HandleIdentifier(SourceName.fromBrage(brageRecord.getCustomer().getName()), brageRecord.getId());
-    }
+  private static HandleIdentifier handleIdentifierFromRecord(Record brageRecord) {
+    return new HandleIdentifier(
+        SourceName.fromBrage(brageRecord.getCustomer().getName()), brageRecord.getId());
+  }
 
-    private static boolean isDummyHandle(Record brageRecord) {
-        return brageRecord.getId().toString().contains(DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS);
-    }
+  private static boolean isDummyHandle(Record brageRecord) {
+    return brageRecord.getId().toString().contains(DUMMY_HANDLE_THAT_EXIST_FOR_PROCESSING_UNIS);
+  }
 
-    private static Optional<CristinIdentifier> extractCristinAdditionalIdentifier(Record brageRecord) {
-        return isNull(brageRecord.getCristinId()) ? Optional.empty() : Optional.of(
-            new CristinIdentifier(SourceName.fromBrage(brageRecord.getCustomer().getName()),
-                                  brageRecord.getCristinId()));
-    }
+  private static Optional<CristinIdentifier> extractCristinAdditionalIdentifier(
+      Record brageRecord) {
+    return isNull(brageRecord.getCristinId())
+        ? Optional.empty()
+        : Optional.of(
+            new CristinIdentifier(
+                SourceName.fromBrage(brageRecord.getCustomer().getName()),
+                brageRecord.getCristinId()));
+  }
 
-    private static void assertPublicationDoesNotHaveEmptyFields(Publication publication, Record brageRecord,
-                                                                S3Client s3Client) {
-        try {
-            var ignoredAndPossiblyEmptyPublicationFields =
-                MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
-            DoesNotHaveEmptyValues.checkForEmptyFields(publication, ignoredAndPossiblyEmptyPublicationFields);
-        } catch (Exception error) {
-            persistErrorReport(brageRecord, s3Client, error);
-        }
+  private static void assertPublicationDoesNotHaveEmptyFields(
+      Publication publication, Record brageRecord, S3Client s3Client) {
+    try {
+      var ignoredAndPossiblyEmptyPublicationFields =
+          MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
+      DoesNotHaveEmptyValues.checkForEmptyFields(
+          publication, ignoredAndPossiblyEmptyPublicationFields);
+    } catch (Exception error) {
+      persistErrorReport(brageRecord, s3Client, error);
     }
+  }
 
-    private static void persistErrorReport(Record brageRecord, S3Client s3Client, Exception error) {
-        var customerName = brageRecord.getCustomer().getName();
-        var handlePath = brageRecord.getId().getPath();
-        var location = UnixPath.fromString(ERROR_REPORT)
-                           .addChild(customerName)
-                           .addChild(MissingFieldsError.name())
-                           .addChild(handlePath);
-        var errorMessage = error.getMessage();
-        var driver = new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_REPORTS_BUCKET_NAME));
-        attempt(() -> driver.insertFile(location, errorMessage)).orElseThrow();
-    }
+  private static void persistErrorReport(Record brageRecord, S3Client s3Client, Exception error) {
+    var customerName = brageRecord.getCustomer().getName();
+    var handlePath = brageRecord.getId().getPath();
+    var location =
+        UnixPath.fromString(ERROR_REPORT)
+            .addChild(customerName)
+            .addChild(MissingFieldsError.name())
+            .addChild(handlePath);
+    var errorMessage = error.getMessage();
+    var driver =
+        new S3Driver(s3Client, new Environment().readEnv(BRAGE_MIGRATION_REPORTS_BUCKET_NAME));
+    attempt(() -> driver.insertFile(location, errorMessage)).orElseThrow();
+  }
 
-    private static List<AssociatedArtifact> extractAssociatedFiles(Record brageRecord, Customer customer) {
-        return Optional.ofNullable(brageRecord.getContentBundle())
-                   .map(ResourceContent::getContentFiles)
-                   .map(list -> convertFilesToAssociatedArtifact(list, brageRecord, customer))
-                   .orElse(Collections.emptyList());
-    }
+  private static List<AssociatedArtifact> extractAssociatedFiles(
+      Record brageRecord, Customer customer) {
+    return Optional.ofNullable(brageRecord.getContentBundle())
+        .map(ResourceContent::getContentFiles)
+        .map(list -> convertFilesToAssociatedArtifact(list, brageRecord, customer))
+        .orElse(Collections.emptyList());
+  }
 
-    private static List<AssociatedArtifact> convertFilesToAssociatedArtifact(List<ContentFile> files,
-                                                                             Record brageRecord, Customer customer) {
-        return files.stream().map(file -> generateFile(file, brageRecord, customer)).toList();
-    }
+  private static List<AssociatedArtifact> convertFilesToAssociatedArtifact(
+      List<ContentFile> files, Record brageRecord, Customer customer) {
+    return files.stream().map(file -> generateFile(file, brageRecord, customer)).toList();
+  }
 
-    private static AssociatedArtifact generateFile(ContentFile file, Record brageRecord, Customer customer) {
-        var legalNote = extractLegalNote(brageRecord);
-        var embargoDate = defineEmbargoDate(legalNote, file);
-        return switch (file.getBundleType()) {
-            case BundleType.ORIGINAL -> createOpenFile(file, brageRecord, embargoDate, legalNote, customer);
-            case BundleType.LICENSE, BundleType.IGNORED -> createHiddenFile(file, customer);
-            default -> new NullAssociatedArtifact();
-        };
-    }
+  private static AssociatedArtifact generateFile(
+      ContentFile file, Record brageRecord, Customer customer) {
+    var legalNote = extractLegalNote(brageRecord);
+    var embargoDate = defineEmbargoDate(legalNote, file);
+    return switch (file.getBundleType()) {
+      case BundleType.ORIGINAL ->
+          createOpenFile(file, brageRecord, embargoDate, legalNote, customer);
+      case BundleType.LICENSE, BundleType.IGNORED -> createHiddenFile(file, customer);
+      default -> new NullAssociatedArtifact();
+    };
+  }
 
-    private static AssociatedArtifact createHiddenFile(ContentFile file, Customer customer) {
-        return File.builder()
-                   .withName(file.getFilename())
-                   .withIdentifier(file.getIdentifier())
-                   .withUploadDetails(createUploadDetails(customer))
-                   .buildHiddenFile();
-    }
+  private static AssociatedArtifact createHiddenFile(ContentFile file, Customer customer) {
+    return File.builder()
+        .withName(file.getFilename())
+        .withIdentifier(file.getIdentifier())
+        .withUploadDetails(createUploadDetails(customer))
+        .buildHiddenFile();
+  }
 
-    private static ImportUploadDetails createUploadDetails(Customer customer) {
-        return new ImportUploadDetails(Source.BRAGE, customer.shortName(), Instant.now());
-    }
+  private static ImportUploadDetails createUploadDetails(Customer customer) {
+    return new ImportUploadDetails(Source.BRAGE, customer.shortName(), Instant.now());
+  }
 
-    private static File createOpenFile(ContentFile file, Record brageRecord, Instant embargoDate, String legalNote,
-                                       Customer customer) {
-        return File.builder()
-                   .withName(file.getFilename())
-                   .withIdentifier(file.getIdentifier())
-                   .withLicense(getLicenseUri(file))
-                   .withPublisherVersion(extractPublisherAuthority(brageRecord))
-                   .withEmbargoDate(embargoDate)
-                   .withLegalNote(legalNote)
-                   .withUploadDetails(createUploadDetails(customer))
-                   .buildOpenFile();
-    }
+  private static File createOpenFile(
+      ContentFile file,
+      Record brageRecord,
+      Instant embargoDate,
+      String legalNote,
+      Customer customer) {
+    return File.builder()
+        .withName(file.getFilename())
+        .withIdentifier(file.getIdentifier())
+        .withLicense(getLicenseUri(file))
+        .withPublisherVersion(extractPublisherAuthority(brageRecord))
+        .withEmbargoDate(embargoDate)
+        .withLegalNote(legalNote)
+        .withUploadDetails(createUploadDetails(customer))
+        .buildOpenFile();
+  }
 
-    private static Instant defineEmbargoDate(String legalNote, ContentFile file) {
-        return extractEmbargoDate(file).orElse(applyHundredYearsEmbargoIfNeeded(legalNote));
-    }
+  private static Instant defineEmbargoDate(String legalNote, ContentFile file) {
+    return extractEmbargoDate(file).orElse(applyHundredYearsEmbargoIfNeeded(legalNote));
+  }
 
-    private static Instant applyHundredYearsEmbargoIfNeeded(String legalNote) {
-        return nonNull(legalNote) && LEGAL_NOTES_WITH_EMBARGO.contains(legalNote)
-            ? Instant.now().plus(Duration.ofDays(HUNDRED_YEARS))
-            : null;
-    }
+  private static Instant applyHundredYearsEmbargoIfNeeded(String legalNote) {
+    return nonNull(legalNote) && LEGAL_NOTES_WITH_EMBARGO.contains(legalNote)
+        ? Instant.now().plus(Duration.ofDays(HUNDRED_YEARS))
+        : null;
+  }
 
-    private static String extractLegalNote(Record brageRecord) {
-        return Optional.ofNullable(brageRecord)
-                   .map(Record::getAccessCode)
-                   .orElse(brageRecord.getRightsholder());
-    }
+  private static String extractLegalNote(Record brageRecord) {
+    return Optional.ofNullable(brageRecord)
+        .map(Record::getAccessCode)
+        .orElse(brageRecord.getRightsholder());
+  }
 
-    private static Optional<Instant> extractEmbargoDate(ContentFile file) {
-        return Optional.ofNullable(file).map(ContentFile::getEmbargoDate);
-    }
+  private static Optional<Instant> extractEmbargoDate(ContentFile file) {
+    return Optional.ofNullable(file).map(ContentFile::getEmbargoDate);
+  }
 
-    private static PublisherVersion extractPublisherAuthority(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getPublisherAuthority()).map(PublisherAuthority::getNva).orElse(null);
-    }
+  private static PublisherVersion extractPublisherAuthority(Record brageRecord) {
+    return Optional.ofNullable(brageRecord.getPublisherAuthority())
+        .map(PublisherAuthority::getNva)
+        .orElse(null);
+  }
 
-    private static URI getLicenseUri(ContentFile file) {
-        return file.getLicense().getNvaLicense().getLicense();
-    }
+  private static URI getLicenseUri(ContentFile file) {
+    return file.getLicense().getNvaLicense().getLicense();
+  }
 
-    private static EntityDescription extractEntityDescription(Record brageRecord, URI organizationId)
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var abstractList = extractAbstract(brageRecord);
-        return new EntityDescription.Builder().withLanguage(extractLanguage(brageRecord))
-                   .withAbstract(abstractList.isEmpty() ? NO_ABSTRACT : abstractList.getFirst())
-                   .withAlternativeAbstracts(extractAlternativeAbstracts(abstractList))
-                   .withDescription(extractDescription(brageRecord))
-                   .withPublicationDate(extractDate(brageRecord))
-                   .withContributors(extractContributors(brageRecord))
-                   .withTags(extractTags(brageRecord))
-                   .withReference(extractReference(brageRecord, organizationId))
-                   .withMainTitle(extractMainTitle(brageRecord))
-                   .withAlternativeTitles(extractAlternativeTitles(brageRecord))
-                   .build();
-    }
+  private static EntityDescription extractEntityDescription(Record brageRecord, URI organizationId)
+      throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    var abstractList = extractAbstract(brageRecord);
+    return new EntityDescription.Builder()
+        .withLanguage(extractLanguage(brageRecord))
+        .withAbstract(abstractList.isEmpty() ? NO_ABSTRACT : abstractList.getFirst())
+        .withAlternativeAbstracts(extractAlternativeAbstracts(abstractList))
+        .withDescription(extractDescription(brageRecord))
+        .withPublicationDate(extractDate(brageRecord))
+        .withContributors(extractContributors(brageRecord))
+        .withTags(extractTags(brageRecord))
+        .withReference(extractReference(brageRecord, organizationId))
+        .withMainTitle(extractMainTitle(brageRecord))
+        .withAlternativeTitles(extractAlternativeTitles(brageRecord))
+        .build();
+  }
 
-    private static Map<String, String> extractAlternativeAbstracts(List<String> abstractList) {
-        return nonNull(abstractList) && hasMoreThatOneEntry(abstractList) ? abstractList.subList(1, abstractList.size())
-                                                                                .stream()
-                                                                                .collect(Collectors.collectingAndThen(
-                                                                                    Collectors.joining(TWO_NEWLINES),
-                                                                                    joined -> Map.of(UNDEFINED_LANGUAGE,
-                                                                                                     joined)))
-                   : Map.of();
-    }
+  private static Map<String, String> extractAlternativeAbstracts(List<String> abstractList) {
+    return nonNull(abstractList) && hasMoreThatOneEntry(abstractList)
+        ? abstractList.subList(1, abstractList.size()).stream()
+            .collect(
+                Collectors.collectingAndThen(
+                    Collectors.joining(TWO_NEWLINES), joined -> Map.of(UNDEFINED_LANGUAGE, joined)))
+        : Map.of();
+  }
 
-    private static boolean hasMoreThatOneEntry(List<String> abstractList) {
-        return abstractList.size() >= 2;
-    }
+  private static boolean hasMoreThatOneEntry(List<String> abstractList) {
+    return abstractList.size() >= 2;
+  }
 
-    private static Map<String, String> extractAlternativeTitles(Record brageRecord) {
-        return Optional.of(emptyIfNull(brageRecord.getEntityDescription().getAlternativeTitles()).stream()
-                               .filter(title -> nonNull(title) && !title.isEmpty())
-                               .map(BrageNvaMapper::generateLanguageMap)
-                               .flatMap(i -> i.entrySet().stream())
-                               .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (first, second) -> first)))
-                   .orElse(null);
-    }
+  private static Map<String, String> extractAlternativeTitles(Record brageRecord) {
+    return Optional.of(
+            emptyIfNull(brageRecord.getEntityDescription().getAlternativeTitles()).stream()
+                .filter(title -> nonNull(title) && !title.isEmpty())
+                .map(BrageNvaMapper::generateLanguageMap)
+                .flatMap(i -> i.entrySet().stream())
+                .collect(
+                    Collectors.toMap(Entry::getKey, Entry::getValue, (first, second) -> first)))
+        .orElse(null);
+  }
 
-    @JacocoGenerated
-    private static List<String> emptyIfNull(List<String> values) {
-        return isNull(values) ? Collections.emptyList() : values;
-    }
+  @JacocoGenerated
+  private static List<String> emptyIfNull(List<String> values) {
+    return isNull(values) ? Collections.emptyList() : values;
+  }
 
-    private static Map<String, String> generateLanguageMap(String title) {
-        var detector = new OptimaizeLangDetector().loadModels();
-        var language = detector.detect(title).getLanguage();
-        return Map.of(language, title);
-    }
+  private static Map<String, String> generateLanguageMap(String title) {
+    var detector = new OptimaizeLangDetector().loadModels();
+    var language = detector.detect(title).getLanguage();
+    return Map.of(language, title);
+  }
 
-    private static String extractMainTitle(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getEntityDescription())
-                   .map(no.sikt.nva.brage.migration.record.EntityDescription::getMainTitle)
-                   .orElse(null);
-    }
+  private static String extractMainTitle(Record brageRecord) {
+    return Optional.ofNullable(brageRecord.getEntityDescription())
+        .map(no.sikt.nva.brage.migration.record.EntityDescription::getMainTitle)
+        .orElse(null);
+  }
 
-    private static Reference extractReference(Record brageRecord, URI organizationId)
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        return new Reference.Builder().withPublishingContext(
-                PublicationContextMapper.buildPublicationContext(brageRecord, organizationId))
-                   .withPublicationInstance(PublicationInstanceMapper.buildPublicationInstance(brageRecord))
-                   .withDoi(extractDoi(brageRecord))
-                   .build();
-    }
+  private static Reference extractReference(Record brageRecord, URI organizationId)
+      throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    return new Reference.Builder()
+        .withPublishingContext(
+            PublicationContextMapper.buildPublicationContext(brageRecord, organizationId))
+        .withPublicationInstance(PublicationInstanceMapper.buildPublicationInstance(brageRecord))
+        .withDoi(extractDoi(brageRecord))
+        .build();
+  }
 
-    private static URI extractDoi(Record brageRecord) {
-        return brageRecord.getDoi();
-    }
+  private static URI extractDoi(Record brageRecord) {
+    return brageRecord.getDoi();
+  }
 
-    private static List<String> extractTags(Record brageRecord) {
-        return brageRecord.getEntityDescription().getTags().stream().filter(StringUtils::isNotBlank).toList();
-    }
+  private static List<String> extractTags(Record brageRecord) {
+    return brageRecord.getEntityDescription().getTags().stream()
+        .filter(StringUtils::isNotBlank)
+        .toList();
+  }
 
-    private static List<Contributor> extractContributors(Record brageRecord) {
-        return Optional.ofNullable(getContributors(brageRecord)).map(BrageNvaMapper::generateContributors).orElse(null);
-    }
+  private static List<Contributor> extractContributors(Record brageRecord) {
+    return Optional.ofNullable(getContributors(brageRecord))
+        .map(BrageNvaMapper::generateContributors)
+        .orElse(null);
+  }
 
-    private static List<no.sikt.nva.brage.migration.record.Contributor> getContributors(Record brageRecord) {
-        return brageRecord.getEntityDescription().getContributors();
-    }
+  private static List<no.sikt.nva.brage.migration.record.Contributor> getContributors(
+      Record brageRecord) {
+    return brageRecord.getEntityDescription().getContributors();
+  }
 
-    private static List<Contributor> generateContributors(
-        List<no.sikt.nva.brage.migration.record.Contributor> contributors) {
-        return contributors.stream().filter(Objects::nonNull).map(BrageNvaMapper::mapContributorToNva).toList();
-    }
+  private static List<Contributor> generateContributors(
+      List<no.sikt.nva.brage.migration.record.Contributor> contributors) {
+    return contributors.stream()
+        .filter(Objects::nonNull)
+        .map(BrageNvaMapper::mapContributorToNva)
+        .toList();
+  }
 
-    private static Contributor mapContributorToNva(no.sikt.nva.brage.migration.record.Contributor contributor) {
-        return new Contributor.Builder().withRole(extractRole(contributor))
-                   .withIdentity(extractIdentity(contributor))
-                   .withAffiliations(generateAffiliations(contributor))
-                   .withSequence(contributor.getSequence())
-                   .build();
-    }
+  private static Contributor mapContributorToNva(
+      no.sikt.nva.brage.migration.record.Contributor contributor) {
+    return new Contributor.Builder()
+        .withRole(extractRole(contributor))
+        .withIdentity(extractIdentity(contributor))
+        .withAffiliations(generateAffiliations(contributor))
+        .withSequence(contributor.getSequence())
+        .build();
+  }
 
-    private static List<Corporation> generateAffiliations(no.sikt.nva.brage.migration.record.Contributor contributor) {
-        return Optional.ofNullable(contributor.getAffiliations())
-                   .map(BrageNvaMapper::getCristinOrganizationList)
-                   .orElse(null);
-    }
+  private static List<Corporation> generateAffiliations(
+      no.sikt.nva.brage.migration.record.Contributor contributor) {
+    return Optional.ofNullable(contributor.getAffiliations())
+        .map(BrageNvaMapper::getCristinOrganizationList)
+        .orElse(null);
+  }
 
-    private static List<Corporation> getCristinOrganizationList(List<Affiliation> affiliations) {
-        return affiliations.stream().map(BrageNvaMapper::toCristinOrganization).toList();
-    }
+  private static List<Corporation> getCristinOrganizationList(List<Affiliation> affiliations) {
+    return affiliations.stream().map(BrageNvaMapper::toCristinOrganization).toList();
+  }
 
-    private static Corporation toCristinOrganization(Affiliation affiliation) {
-        return new Organization.Builder().withId(generateCristinOrganization(affiliation)).build();
-    }
+  private static Corporation toCristinOrganization(Affiliation affiliation) {
+    return new Organization.Builder().withId(generateCristinOrganization(affiliation)).build();
+  }
 
-    private static URI generateCristinOrganization(Affiliation affiliation) {
-        return Optional.ofNullable(affiliation)
-                   .map(Affiliation::getIdentifier)
-                   .map(BrageNvaMapper::constructOrganizationUri)
-                   .orElse(null);
-    }
+  private static URI generateCristinOrganization(Affiliation affiliation) {
+    return Optional.ofNullable(affiliation)
+        .map(Affiliation::getIdentifier)
+        .map(BrageNvaMapper::constructOrganizationUri)
+        .orElse(null);
+  }
 
-    private static URI constructOrganizationUri(String id) {
-        return UriWrapper.fromUri(HTTPS_PREFIX + BASE_PATH)
-                   .addChild(CRISTIN)
-                   .addChild(ORGANIZATION)
-                   .addChild(id)
-                   .getUri();
-    }
+  private static URI constructOrganizationUri(String id) {
+    return UriWrapper.fromUri(HTTPS_PREFIX + BASE_PATH)
+        .addChild(CRISTIN)
+        .addChild(ORGANIZATION)
+        .addChild(id)
+        .getUri();
+  }
 
-    private static RoleType extractRole(no.sikt.nva.brage.migration.record.Contributor contributor) {
-        return Optional.of(new RoleType(Role.parse(contributor.getRole()))).orElse(new RoleType(Role.OTHER));
-    }
+  private static RoleType extractRole(no.sikt.nva.brage.migration.record.Contributor contributor) {
+    return Optional.of(new RoleType(Role.parse(contributor.getRole())))
+        .orElse(new RoleType(Role.OTHER));
+  }
 
-    private static Identity extractIdentity(no.sikt.nva.brage.migration.record.Contributor contributor) {
-        return Optional.ofNullable(contributor.getIdentity()).map(BrageNvaMapper::generateIdentity).orElse(null);
-    }
+  private static Identity extractIdentity(
+      no.sikt.nva.brage.migration.record.Contributor contributor) {
+    return Optional.ofNullable(contributor.getIdentity())
+        .map(BrageNvaMapper::generateIdentity)
+        .orElse(null);
+  }
 
-    private static Identity generateIdentity(no.sikt.nva.brage.migration.record.Identity identity) {
-        return new Identity.Builder().withName(identity.getName())
-                   .withId(generateIdentityIdentifier(identity))
-                   .withOrcId(getOrcId(identity))
-                   .build();
-    }
+  private static Identity generateIdentity(no.sikt.nva.brage.migration.record.Identity identity) {
+    return new Identity.Builder()
+        .withName(identity.getName())
+        .withId(generateIdentityIdentifier(identity))
+        .withOrcId(getOrcId(identity))
+        .build();
+  }
 
-    private static String getOrcId(no.sikt.nva.brage.migration.record.Identity identity) {
-        return Optional.ofNullable(identity.getOrcId()).map(URI::toString).orElse(null);
-    }
+  private static String getOrcId(no.sikt.nva.brage.migration.record.Identity identity) {
+    return Optional.ofNullable(identity.getOrcId()).map(URI::toString).orElse(null);
+  }
 
-    private static URI generateIdentityIdentifier(no.sikt.nva.brage.migration.record.Identity identity) {
-        return Optional.ofNullable(identity)
-                   .map(no.sikt.nva.brage.migration.record.Identity::getIdentifier)
-                   .map(BrageNvaMapper::generateIdentityUri)
-                   .orElse(null);
-    }
+  private static URI generateIdentityIdentifier(
+      no.sikt.nva.brage.migration.record.Identity identity) {
+    return Optional.ofNullable(identity)
+        .map(no.sikt.nva.brage.migration.record.Identity::getIdentifier)
+        .map(BrageNvaMapper::generateIdentityUri)
+        .orElse(null);
+  }
 
-    private static URI generateIdentityUri(String identifier) {
-        return UriWrapper.fromUri(HTTPS_PREFIX + BASE_PATH)
-                   .addChild(CRISTIN)
-                   .addChild(PERSON)
-                   .addChild(identifier)
-                   .getUri();
-    }
+  private static URI generateIdentityUri(String identifier) {
+    return UriWrapper.fromUri(HTTPS_PREFIX + BASE_PATH)
+        .addChild(CRISTIN)
+        .addChild(PERSON)
+        .addChild(identifier)
+        .getUri();
+  }
 
-    private static PublicationDate extractDate(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getEntityDescription().getPublicationDate())
-                   .map(BrageNvaMapper::generatePublicationDate)
-                   .orElse(null);
-    }
+  private static PublicationDate extractDate(Record brageRecord) {
+    return Optional.ofNullable(brageRecord.getEntityDescription().getPublicationDate())
+        .map(BrageNvaMapper::generatePublicationDate)
+        .orElse(null);
+  }
 
-    private static PublicationDate generatePublicationDate(
-        no.sikt.nva.brage.migration.record.PublicationDate publicationDate) {
-        return new Builder().withYear(publicationDate.getNva().getYear())
-                   .withMonth(publicationDate.getNva().getMonth())
-                   .withDay(publicationDate.getNva().getDay())
-                   .build();
-    }
+  private static PublicationDate generatePublicationDate(
+      no.sikt.nva.brage.migration.record.PublicationDate publicationDate) {
+    return new Builder()
+        .withYear(publicationDate.getNva().getYear())
+        .withMonth(publicationDate.getNva().getMonth())
+        .withDay(publicationDate.getNva().getDay())
+        .build();
+  }
 
-    private static URI extractLanguage(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getEntityDescription().getLanguage())
-                   .map(BrageNvaMapper::generateLanguage)
-                   .orElse(null);
-    }
+  private static URI extractLanguage(Record brageRecord) {
+    return Optional.ofNullable(brageRecord.getEntityDescription().getLanguage())
+        .map(BrageNvaMapper::generateLanguage)
+        .orElse(null);
+  }
 
-    private static URI generateLanguage(Language language) {
-        return language.getNva();
-    }
+  private static URI generateLanguage(Language language) {
+    return language.getNva();
+  }
 
-    private static List<String> extractAbstract(Record brageRecord) {
-        return Optional.ofNullable(brageRecord.getEntityDescription().getAbstracts())
-                   .map(BrageNvaMapper::filterOutEmptyValues)
-                   .filter(abstracts -> !abstracts.isEmpty())
-                   .orElse(List.of());
-    }
+  private static List<String> extractAbstract(Record brageRecord) {
+    return Optional.ofNullable(brageRecord.getEntityDescription().getAbstracts())
+        .map(BrageNvaMapper::filterOutEmptyValues)
+        .filter(abstracts -> !abstracts.isEmpty())
+        .orElse(List.of());
+  }
 }

@@ -4,6 +4,7 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.paths.UriWrapper.HTTPS;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
@@ -43,143 +44,144 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 @SuppressWarnings("PMD.CouplingBetweenObjects")
-public class HandleIdentifierEventHandler
-    implements RequestHandler<SQSEvent, Void> {
+public class HandleIdentifierEventHandler implements RequestHandler<SQSEvent, Void> {
 
-    private static final Logger logger = LoggerFactory.getLogger(HandleIdentifierEventHandler.class);
-    public static final String LEGACY_HANDLE_SOURCE_NAME = "handle";
-    public static final TypeReference<AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>>> SQS_VALUE_TYPE_REF =
-        new TypeReference<>() {
-    };
-    private final String backendClientAuthUrl;
-    private final String backendClientSecretName;
-    private final ResourceService resourceService;
-    private final S3Driver s3Driver;
-    public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
-    private static final Set<PublicationStatus> PUBLISHED_STATUSES = Set.of(PUBLISHED,
-                                                                            PUBLISHED_METADATA);
-    private static final String REGISTRATION_PATH = "registration";
-    private final SecretsReader secretsManagerClient;
-    private final HandleService handleService;
-    private final String frontendDomain;
+  private static final Logger logger = LoggerFactory.getLogger(HandleIdentifierEventHandler.class);
+  public static final String LEGACY_HANDLE_SOURCE_NAME = "handle";
+  public static final TypeReference<AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>>>
+      SQS_VALUE_TYPE_REF = new TypeReference<>() {};
+  private final String backendClientAuthUrl;
+  private final String backendClientSecretName;
+  private final ResourceService resourceService;
+  private final S3Driver s3Driver;
+  public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
+  private static final Set<PublicationStatus> PUBLISHED_STATUSES =
+      Set.of(PUBLISHED, PUBLISHED_METADATA);
+  private static final String REGISTRATION_PATH = "registration";
+  private final SecretsReader secretsManagerClient;
+  private final HandleService handleService;
+  private final String frontendDomain;
 
-    @JacocoGenerated
-    public HandleIdentifierEventHandler() {
-        this(ResourceService.defaultService(),
-             S3Driver.defaultS3Client().build(),
-             new Environment(),
-             HttpClient.newBuilder().build(),
-             SecretsReader.defaultSecretsManagerClient());
+  @JacocoGenerated
+  public HandleIdentifierEventHandler() {
+    this(
+        ResourceService.defaultService(),
+        S3Driver.defaultS3Client().build(),
+        new Environment(),
+        HttpClient.newBuilder().build(),
+        SecretsReader.defaultSecretsManagerClient());
+  }
+
+  protected HandleIdentifierEventHandler(
+      ResourceService resourceService,
+      S3Client s3Client,
+      Environment environment,
+      HttpClient httpClient,
+      SecretsManagerClient secretsManagerClient) {
+    var apiDomain = environment.readEnv("API_DOMAIN");
+    var handleBasePath = environment.readEnv("HANDLE_BASE_PATH");
+    this.backendClientSecretName = environment.readEnv("BACKEND_CLIENT_SECRET_NAME");
+    this.backendClientAuthUrl = environment.readEnv("BACKEND_CLIENT_AUTH_URL");
+    this.frontendDomain = environment.readEnv("NVA_FRONTEND_DOMAIN");
+    this.resourceService = resourceService;
+    this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
+    this.secretsManagerClient = new SecretsReader(secretsManagerClient);
+    AuthorizedBackendClient authorizedBackendClient =
+        AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, fetchCredentials());
+    this.handleService = new HandleService(authorizedBackendClient, apiDomain, handleBasePath);
+  }
+
+  @Override
+  public Void handleRequest(SQSEvent sqsEvent, Context context) {
+    sqsEvent.getRecords().stream()
+        .map(HandleIdentifierEventHandler::parseEventReference)
+        .forEach(this::processInputPayload);
+    return null;
+  }
+
+  private static EventReference parseEventReference(SQSMessage sqs) {
+    logger.info("Processing sqsEvent: {}", sqs.getBody());
+    try {
+      return JsonUtils.dtoObjectMapper
+          .readValue(sqs.getBody(), SQS_VALUE_TYPE_REF)
+          .getDetail()
+          .getResponsePayload();
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
     }
+  }
 
-    protected HandleIdentifierEventHandler(ResourceService resourceService,
-                                           S3Client s3Client,
-                                           Environment environment,
-                                           HttpClient httpClient,
-                                           SecretsManagerClient secretsManagerClient) {
-        var apiDomain = environment.readEnv("API_DOMAIN");
-        var handleBasePath = environment.readEnv("HANDLE_BASE_PATH");
-        this.backendClientSecretName = environment.readEnv("BACKEND_CLIENT_SECRET_NAME");
-        this.backendClientAuthUrl = environment.readEnv("BACKEND_CLIENT_AUTH_URL");
-        this.frontendDomain = environment.readEnv("NVA_FRONTEND_DOMAIN");
-        this.resourceService = resourceService;
-        this.s3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
-        this.secretsManagerClient = new SecretsReader(secretsManagerClient);
-        AuthorizedBackendClient authorizedBackendClient = AuthorizedBackendClient.prepareWithCognitoCredentials(
-            httpClient,
-            fetchCredentials());
-        this.handleService = new HandleService(authorizedBackendClient, apiDomain, handleBasePath);
+  private CognitoCredentials fetchCredentials() {
+    var credentials =
+        secretsManagerClient.fetchClassSecret(
+            backendClientSecretName, BackendClientCredentials.class);
+    var uri = UriWrapper.fromHost(backendClientAuthUrl).getUri();
+    return new CognitoCredentials(credentials::getId, credentials::getSecret, uri);
+  }
+
+  protected Void processInputPayload(EventReference input) {
+    var eventBlob = s3Driver.readEvent(input.getUri());
+
+    if (RESOURCE_UPDATE_EVENT_TOPIC.equals(input.getTopic())) {
+      parseResourceUpdateInput(eventBlob)
+          .filter(HandleIdentifierEventHandler::isPublished)
+          .filter(HandleIdentifierEventHandler::isMissingHandle)
+          .ifPresent(this::createAndAssignHandle);
     }
+    return null;
+  }
 
-    @Override
-    public Void handleRequest(SQSEvent sqsEvent, Context context) {
-        sqsEvent.getRecords()
-            .stream()
-            .map(HandleIdentifierEventHandler::parseEventReference)
-            .forEach(this::processInputPayload);
-        return null;
-    }
+  private void createAndAssignHandle(Resource resourceUpdate) {
+    logger.info("Creating handle for publication: {}", resourceUpdate.getIdentifier());
+    var publication = fetchPublication(resourceUpdate.getIdentifier());
+    var additionalIdentifiers = new HashSet<>(publication.getAdditionalIdentifiers());
+    var handle = createNewHandle(getLandingPage(publication.getIdentifier()));
+    logger.info("Created handle: {}", handle.value());
+    additionalIdentifiers.add(handle);
+    publication.setAdditionalIdentifiers(additionalIdentifiers);
+    attempt(() -> resourceService.updatePublication(publication));
+  }
 
-    private static EventReference parseEventReference(SQSMessage sqs) {
-        logger.info("Processing sqsEvent: {}", sqs.getBody());
-        try {
-            return JsonUtils.dtoObjectMapper
-                       .readValue(sqs.getBody(), SQS_VALUE_TYPE_REF)
-                       .getDetail()
-                       .getResponsePayload();
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
+  private URI getLandingPage(SortableIdentifier identifier) {
+    return new UriWrapper(HTTPS, frontendDomain)
+        .addChild(REGISTRATION_PATH)
+        .addChild(identifier.toString())
+        .getUri();
+  }
 
-    private CognitoCredentials fetchCredentials() {
-        var credentials = secretsManagerClient.fetchClassSecret(backendClientSecretName,
-                                                                BackendClientCredentials.class);
-        var uri = UriWrapper.fromHost(backendClientAuthUrl).getUri();
-        return new CognitoCredentials(credentials::getId, credentials::getSecret, uri);
-    }
+  private static boolean isMissingHandle(Resource resourceUpdate) {
+    return !resourceContainsHandle(resourceUpdate) && !resourceContainsLegacyHandle(resourceUpdate);
+  }
 
-    protected Void processInputPayload(EventReference input) {
-        var eventBlob = s3Driver.readEvent(input.getUri());
+  private static boolean resourceContainsHandle(Resource resourceUpdate) {
+    return resourceUpdate.getAdditionalIdentifiers().stream()
+        .anyMatch(HandleIdentifier.class::isInstance);
+  }
 
-        if (RESOURCE_UPDATE_EVENT_TOPIC.equals(input.getTopic())) {
-            parseResourceUpdateInput(eventBlob)
-                    .filter(HandleIdentifierEventHandler::isPublished)
-                    .filter(HandleIdentifierEventHandler::isMissingHandle)
-                    .ifPresent(this::createAndAssignHandle);
-        }
-        return null;
-    }
+  // this method can be deleted after AdditionalIdentifier handles is migrated to HandleIdentifier
+  private static boolean resourceContainsLegacyHandle(Resource resourceUpdate) {
+    return resourceUpdate.getAdditionalIdentifiers().stream()
+        .filter(AdditionalIdentifier.class::isInstance)
+        .anyMatch(a -> LEGACY_HANDLE_SOURCE_NAME.equals(a.sourceName()));
+  }
 
-    private void createAndAssignHandle(Resource resourceUpdate) {
-        logger.info("Creating handle for publication: {}", resourceUpdate.getIdentifier());
-        var publication = fetchPublication(resourceUpdate.getIdentifier());
-        var additionalIdentifiers = new HashSet<>(publication.getAdditionalIdentifiers());
-        var handle = createNewHandle(getLandingPage(publication.getIdentifier()));
-        logger.info("Created handle: {}", handle.value());
-        additionalIdentifiers.add(handle);
-        publication.setAdditionalIdentifiers(additionalIdentifiers);
-        attempt(() -> resourceService.updatePublication(publication));
-    }
+  private static boolean isPublished(Resource resourceUpdate) {
+    return PUBLISHED_STATUSES.contains(resourceUpdate.getStatus());
+  }
 
-    private URI getLandingPage(SortableIdentifier identifier) {
-        return new UriWrapper(HTTPS, frontendDomain).addChild(REGISTRATION_PATH)
-                   .addChild(identifier.toString())
-                   .getUri();
-    }
+  private HandleIdentifier createNewHandle(URI link) {
+    return new HandleIdentifier(new SourceName("nva", "sikt"), handleService.createHandle(link));
+  }
 
-    private static boolean isMissingHandle(Resource resourceUpdate) {
-        return !resourceContainsHandle(resourceUpdate) && !resourceContainsLegacyHandle(resourceUpdate);
-    }
+  private Publication fetchPublication(SortableIdentifier publicationIdentifier) {
+    return attempt(() -> resourceService.getPublicationByIdentifier(publicationIdentifier))
+        .orElseThrow();
+  }
 
-    private static boolean resourceContainsHandle(Resource resourceUpdate) {
-        return resourceUpdate.getAdditionalIdentifiers().stream().anyMatch(HandleIdentifier.class::isInstance);
-    }
-
-    // this method can be deleted after AdditionalIdentifier handles is migrated to HandleIdentifier
-    private static boolean resourceContainsLegacyHandle(Resource resourceUpdate) {
-        return resourceUpdate.getAdditionalIdentifiers()
-                   .stream()
-                   .filter(AdditionalIdentifier.class::isInstance)
-                   .anyMatch(a -> LEGACY_HANDLE_SOURCE_NAME.equals(a.sourceName()));
-    }
-
-    private static boolean isPublished(Resource resourceUpdate) {
-        return PUBLISHED_STATUSES.contains(resourceUpdate.getStatus());
-    }
-
-    private HandleIdentifier createNewHandle(URI link) {
-        return new HandleIdentifier(new SourceName("nva", "sikt"), handleService.createHandle(link));
-    }
-
-    private Publication fetchPublication(SortableIdentifier publicationIdentifier) {
-        return attempt(() -> resourceService.getPublicationByIdentifier(publicationIdentifier)).orElseThrow();
-    }
-
-    private static Optional<Resource> parseResourceUpdateInput(String eventBlob) {
-        var entryUpdate = DataEntryUpdateEvent.fromJson(eventBlob);
-        return Optional.ofNullable(entryUpdate.getNewData())
-                .filter(Resource.class::isInstance)
-                .map(Resource.class::cast);
-    }
+  private static Optional<Resource> parseResourceUpdateInput(String eventBlob) {
+    var entryUpdate = DataEntryUpdateEvent.fromJson(eventBlob);
+    return Optional.ofNullable(entryUpdate.getNewData())
+        .filter(Resource.class::isInstance)
+        .map(Resource.class::cast);
+  }
 }

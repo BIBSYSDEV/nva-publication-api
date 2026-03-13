@@ -7,6 +7,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,47 +28,48 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class DeleteImportCandidateEventHandlerTest {
 
-    public static final Context CONTEXT = null;
-    private ByteArrayOutputStream output;
-    private S3Client s3Client;
-    private DeleteImportCandidateEventHandler handler;
+  public static final Context CONTEXT = null;
+  private ByteArrayOutputStream output;
+  private S3Client s3Client;
+  private DeleteImportCandidateEventHandler handler;
 
-    @BeforeEach
-    public void init() {
-        output = new ByteArrayOutputStream();
-        s3Client = new FakeS3Client();
-        this.handler = new DeleteImportCandidateEventHandler(s3Client);
-    }
+  @BeforeEach
+  public void init() {
+    output = new ByteArrayOutputStream();
+    s3Client = new FakeS3Client();
+    this.handler = new DeleteImportCandidateEventHandler(s3Client);
+  }
 
-    @Test
-    void shouldProduceAnExpandedDataEntryDeleteEvent() throws IOException {
-        var oldImage = randomImportCandidate();
-        var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, null);
-        handler.handleRequest(request, output, CONTEXT);
-        var response = objectMapper.readValue(output.toString(), DeleteImportCandidateEvent.class);
-        assertThat(oldImage.getIdentifier(), is(equalTo(response.getIdentifier())));
-    }
+  @Test
+  void shouldProduceAnExpandedDataEntryDeleteEvent() throws IOException {
+    var oldImage = randomImportCandidate();
+    var request = emulateEventEmittedByImportCandidateUpdateHandler(oldImage, null);
+    handler.handleRequest(request, output, CONTEXT);
+    var response = objectMapper.readValue(output.toString(), DeleteImportCandidateEvent.class);
+    assertThat(oldImage.getIdentifier(), is(equalTo(response.getIdentifier())));
+  }
 
-    @Test
-    void shouldTrowExceptionWhenBlobToDeleteIsEmpty() throws IOException {
-        var request = emulateEventEmittedByImportCandidateUpdateHandler(null, null);
+  @Test
+  void shouldTrowExceptionWhenBlobToDeleteIsEmpty() throws IOException {
+    var request = emulateEventEmittedByImportCandidateUpdateHandler(null, null);
 
-        assertThrows(IllegalStateException.class, () -> handler.handleRequest(request, output, CONTEXT));
-    }
+    assertThrows(
+        IllegalStateException.class, () -> handler.handleRequest(request, output, CONTEXT));
+  }
 
-    private InputStream emulateEventEmittedByImportCandidateUpdateHandler(ImportCandidate oldImage,
-                                                                          ImportCandidate newImage)
-        throws IOException {
-        var blobUri = createSampleBlob(oldImage, newImage);
-        var event = new EventReference("ImportCandidates.Resource.Update", blobUri);
-        return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(event);
-    }
+  private InputStream emulateEventEmittedByImportCandidateUpdateHandler(
+      ImportCandidate oldImage, ImportCandidate newImage) throws IOException {
+    var blobUri = createSampleBlob(oldImage, newImage);
+    var event = new EventReference("ImportCandidates.Resource.Update", blobUri);
+    return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(event);
+  }
 
-    private URI createSampleBlob(ImportCandidate oldImage, ImportCandidate newImage) throws IOException {
-        var dataEntryUpdateEvent =
-            new ImportCandidateDataEntryUpdate("ImportCandidates.Resource.Update", oldImage, newImage);
-        var filePath = UnixPath.of(UUID.randomUUID().toString());
-        var s3Writer = new S3Driver(s3Client, EVENTS_BUCKET);
-        return s3Writer.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
-    }
+  private URI createSampleBlob(ImportCandidate oldImage, ImportCandidate newImage)
+      throws IOException {
+    var dataEntryUpdateEvent =
+        new ImportCandidateDataEntryUpdate("ImportCandidates.Resource.Update", oldImage, newImage);
+    var filePath = UnixPath.of(UUID.randomUUID().toString());
+    var s3Writer = new S3Driver(s3Client, EVENTS_BUCKET);
+    return s3Writer.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
+  }
 }

@@ -18,45 +18,48 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class ResourceDeletedEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
+public class ResourceDeletedEventHandler
+    extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
-    private static final String RESOURCE_STORAGE_BUCKET_NAME_ENV_KEY = "RESOURCE_STORAGE_BUCKET_NAME";
+  private static final String RESOURCE_STORAGE_BUCKET_NAME_ENV_KEY = "RESOURCE_STORAGE_BUCKET_NAME";
 
-    private final S3Driver eventsS3Driver;
-    private final S3Driver resourceStorageS3Driver;
-    private final ResourceService resourceService;
-    private final Logger logger = LoggerFactory.getLogger(ResourceDeletedEventHandler.class);
+  private final S3Driver eventsS3Driver;
+  private final S3Driver resourceStorageS3Driver;
+  private final ResourceService resourceService;
+  private final Logger logger = LoggerFactory.getLogger(ResourceDeletedEventHandler.class);
 
-    @JacocoGenerated
-    public ResourceDeletedEventHandler() {
-        this(new Environment(), S3Driver.defaultS3Client().build(), ResourceService.defaultService());
-    }
+  @JacocoGenerated
+  public ResourceDeletedEventHandler() {
+    this(new Environment(), S3Driver.defaultS3Client().build(), ResourceService.defaultService());
+  }
 
-    public ResourceDeletedEventHandler(Environment environment, S3Client s3Client, ResourceService resourceService) {
-        super(EventReference.class);
-        this.eventsS3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
-        this.resourceStorageS3Driver = new S3Driver(s3Client,
-                                                    environment.readEnv(RESOURCE_STORAGE_BUCKET_NAME_ENV_KEY));
-        this.resourceService = resourceService;
-    }
+  public ResourceDeletedEventHandler(
+      Environment environment, S3Client s3Client, ResourceService resourceService) {
+    super(EventReference.class);
+    this.eventsS3Driver = new S3Driver(s3Client, PublicationEventsConfig.EVENTS_BUCKET);
+    this.resourceStorageS3Driver =
+        new S3Driver(s3Client, environment.readEnv(RESOURCE_STORAGE_BUCKET_NAME_ENV_KEY));
+    this.resourceService = resourceService;
+  }
 
-    @Override
-    protected Void processInputPayload(EventReference input,
-                                       AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
-                                       Context context) {
-        var eventContent = eventsS3Driver.readEvent(input.getUri());
-        logger.info("Received event: {}", eventContent);
-        var entryUpdate = DataEntryUpdateEvent.fromJson(eventContent);
-        var deletedResource = (Resource) entryUpdate.getOldData();
+  @Override
+  protected Void processInputPayload(
+      EventReference input,
+      AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
+      Context context) {
+    var eventContent = eventsS3Driver.readEvent(input.getUri());
+    logger.info("Received event: {}", eventContent);
+    var entryUpdate = DataEntryUpdateEvent.fromJson(eventContent);
+    var deletedResource = (Resource) entryUpdate.getOldData();
 
-        var files = resourceService.fetchFileEntriesForResource(deletedResource);
-        resourceService.deleteAllResourceAssociatedEntries(deletedResource.getCustomerId(),
-                                                           deletedResource.getIdentifier());
-        files.forEach(this::deleteFromS3IfStillPresent);
-        return null;
-    }
+    var files = resourceService.fetchFileEntriesForResource(deletedResource);
+    resourceService.deleteAllResourceAssociatedEntries(
+        deletedResource.getCustomerId(), deletedResource.getIdentifier());
+    files.forEach(this::deleteFromS3IfStillPresent);
+    return null;
+  }
 
-    private void deleteFromS3IfStillPresent(FileEntry fileEntry) {
-        resourceStorageS3Driver.deleteFile(UnixPath.of(fileEntry.getIdentifier().toString()));
-    }
+  private void deleteFromS3IfStillPresent(FileEntry fileEntry) {
+    resourceStorageS3Driver.deleteFile(UnixPath.of(fileEntry.getIdentifier().toString()));
+  }
 }

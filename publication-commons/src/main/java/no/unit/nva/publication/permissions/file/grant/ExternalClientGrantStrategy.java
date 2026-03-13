@@ -11,18 +11,16 @@ import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
 public class ExternalClientGrantStrategy extends FileStrategyBase implements FileGrantStrategy {
 
-    public ExternalClientGrantStrategy(FileEntry file,
-                                       UserInstance userInstance,
-                                       Resource resource) {
-        super(file, userInstance, resource);
-    }
+  public ExternalClientGrantStrategy(FileEntry file, UserInstance userInstance, Resource resource) {
+    super(file, userInstance, resource);
+  }
 
-    @Override
-    public boolean allowsAction(FileOperation permission) {
-        return isExternalClientWithRelation() && isAllowedFileType();
-    }
+  @Override
+  public boolean allowsAction(FileOperation permission) {
+    return isExternalClientWithRelation() && isAllowedFileType();
+  }
 
-    private boolean isAllowedFileType() {
-        return file.getFile() instanceof OpenFile || file.getFile() instanceof InternalFile;
-    }
+  private boolean isAllowedFileType() {
+    return file.getFile() instanceof OpenFile || file.getFile() instanceof InternalFile;
+  }
 }

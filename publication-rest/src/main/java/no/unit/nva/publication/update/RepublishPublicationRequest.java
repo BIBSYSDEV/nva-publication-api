@@ -7,5 +7,5 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @JsonTypeName(RepublishPublicationRequest.TYPE)
 public class RepublishPublicationRequest implements PublicationRequest {
 
-    public static final String TYPE = "RepublishPublicationRequest";
+  public static final String TYPE = "RepublishPublicationRequest";
 }

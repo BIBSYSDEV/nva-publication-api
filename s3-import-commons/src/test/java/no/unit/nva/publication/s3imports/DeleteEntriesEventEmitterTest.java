@@ -10,6 +10,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -41,107 +42,111 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 @ExtendWith(MockitoExtension.class)
 public class DeleteEntriesEventEmitterTest {
 
-    public static final Context context = mock(Context.class);
-    public static final String HARDCODED_PATH = "reports/date/";
-    private final String bucketName = "some_bucket";
+  public static final Context context = mock(Context.class);
+  public static final String HARDCODED_PATH = "reports/date/";
+  private final String bucketName = "some_bucket";
 
-    private FakeEventBridgeClient eventBridgeClient;
-    private FakeS3Client s3Client;
-    private DeleteEntriesEventEmitter handler;
+  private FakeEventBridgeClient eventBridgeClient;
+  private FakeS3Client s3Client;
+  private DeleteEntriesEventEmitter handler;
 
-    private ByteArrayOutputStream outputStream;
+  private ByteArrayOutputStream outputStream;
 
-    @BeforeEach
-    void init() {
-        s3Client = new FakeS3Client();
-        eventBridgeClient = new FakeEventBridgeClient(EVENT_BUS_NAME);
-        handler = new DeleteEntriesEventEmitter(s3Client, eventBridgeClient);
-        outputStream = new ByteArrayOutputStream();
+  @BeforeEach
+  void init() {
+    s3Client = new FakeS3Client();
+    eventBridgeClient = new FakeEventBridgeClient(EVENT_BUS_NAME);
+    handler = new DeleteEntriesEventEmitter(s3Client, eventBridgeClient);
+    outputStream = new ByteArrayOutputStream();
+  }
+
+  @Test
+  void shouldReturnListOfImportedPublicationsFromS3() {
+    var expectedIdentifiers = createRandomIdentifiers();
+    putObjectsInBucket(expectedIdentifiers);
+    EventReference importRequest =
+        new EventReference(null, null, URI.create("s3://brage-migration-reports-750639270376"));
+    InputStream inputStream = toInputStream(importRequest);
+    handler.handleRequest(inputStream, outputStream, context);
+    List<DeleteEntryEvent> eventBodiesOfEmittedEventReferences =
+        collectBodiesOfEmittedEventReferences();
+    assertThat(
+        eventBodiesOfEmittedEventReferences,
+        (Every.everyItem(
+            HasPropertyWithValue.hasProperty("topic", is(equalTo(DeleteEntryEvent.EVENT_TOPIC))))));
+    var actualEmittedIdentifier =
+        eventBodiesOfEmittedEventReferences.stream()
+            .map(DeleteEntriesEventEmitterTest::getIdentifier)
+            .collect(Collectors.toList());
+    assertThat(actualEmittedIdentifier, containsInAnyOrder(expectedIdentifiers.toArray()));
+  }
+
+  @Test
+  void shouldLogErrorWhenEmittingEventsFails() {
+    final var appender = LogUtils.getTestingAppender(DeleteEntriesEventEmitter.class);
+    eventBridgeClient = new FakeEventBridgeClientThatFailsAllPutEvents(EVENT_BUS_NAME);
+    handler = new DeleteEntriesEventEmitter(s3Client, eventBridgeClient);
+    var identifiers = createRandomIdentifiers();
+    putObjectsInBucket(identifiers);
+    var input =
+        toInputStream(
+            new EventReference(
+                null, null, URI.create("s3://brage-migration-reports-750639270376")));
+    handler.handleRequest(input, outputStream, context);
+    assertThat(appender.getMessages(), containsString(identifiers.get(0)));
+  }
+
+  @Test
+  void shouldThrowExceptionWhenUriInEventIsNull() {
+    var input = toInputStream(new EventReference(null, null, null));
+    assertThrows(
+        IllegalArgumentException.class, () -> handler.handleRequest(input, outputStream, context));
+  }
+
+  private static String getIdentifier(DeleteEntryEvent deleteEntryEvent) {
+    return deleteEntryEvent.getIdentifier().toString();
+  }
+
+  private List<DeleteEntryEvent> collectBodiesOfEmittedEventReferences() {
+    return eventBridgeClient.getRequestEntries().stream()
+        .map(PutEventsRequestEntry::detail)
+        .map(DeleteEntryEvent::fromJson)
+        .collect(Collectors.toList());
+  }
+
+  private InputStream toInputStream(EventReference request) {
+    return attempt(() -> s3ImportsMapper.writeValueAsString(request))
+        .map(IoUtils::stringToStream)
+        .orElseThrow();
+  }
+
+  private List<String> createRandomIdentifiers() {
+    return IntStream.range(0, 2000)
+        .boxed()
+        .map(index -> SortableIdentifier.next().toString())
+        .collect(Collectors.toList());
+  }
+
+  private void putObjectsInBucket(List<String> keys) {
+    keys.forEach(
+        object ->
+            s3Client.putObject(
+                PutObjectRequest.builder().bucket(bucketName).key(HARDCODED_PATH + object).build(),
+                RequestBody.empty()));
+  }
+
+  static class FakeEventBridgeClientThatFailsAllPutEvents extends FakeEventBridgeClient {
+
+    public FakeEventBridgeClientThatFailsAllPutEvents(String eventBusName) {
+      super(eventBusName);
     }
 
-    @Test
-    void shouldReturnListOfImportedPublicationsFromS3() {
-        var expectedIdentifiers = createRandomIdentifiers();
-        putObjectsInBucket(expectedIdentifiers);
-        EventReference importRequest = new EventReference(null, null,
-                                                          URI.create("s3://brage-migration-reports-750639270376"));
-        InputStream inputStream = toInputStream(importRequest);
-        handler.handleRequest(inputStream, outputStream, context);
-        List<DeleteEntryEvent> eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
-        assertThat(eventBodiesOfEmittedEventReferences,
-                   (Every.everyItem(HasPropertyWithValue.hasProperty("topic",
-                                                                     is(equalTo(
-                                                                         DeleteEntryEvent.EVENT_TOPIC))))));
-        var actualEmittedIdentifier =
-            eventBodiesOfEmittedEventReferences.stream()
-                .map(DeleteEntriesEventEmitterTest::getIdentifier)
-                .collect(
-                    Collectors.toList());
-        assertThat(actualEmittedIdentifier, containsInAnyOrder(expectedIdentifiers.toArray()));
+    @Override
+    public PutEventsResponse putEvents(PutEventsRequest putEventsRequest)
+        throws AwsServiceException, SdkClientException {
+      return PutEventsResponse.builder()
+          .failedEntryCount(putEventsRequest.entries().size())
+          .build();
     }
-
-    @Test
-    void shouldLogErrorWhenEmittingEventsFails() {
-        final var appender = LogUtils.getTestingAppender(DeleteEntriesEventEmitter.class);
-        eventBridgeClient = new FakeEventBridgeClientThatFailsAllPutEvents(EVENT_BUS_NAME);
-        handler = new DeleteEntriesEventEmitter(s3Client, eventBridgeClient);
-        var identifiers = createRandomIdentifiers();
-        putObjectsInBucket(identifiers);
-        var input = toInputStream(
-            new EventReference(null, null, URI.create("s3://brage-migration-reports-750639270376")));
-        handler.handleRequest(input, outputStream, context);
-        assertThat(appender.getMessages(), containsString(identifiers.get(0)));
-    }
-
-    @Test
-    void shouldThrowExceptionWhenUriInEventIsNull() {
-        var input = toInputStream(
-            new EventReference(null, null, null));
-        assertThrows(IllegalArgumentException.class, () -> handler.handleRequest(input, outputStream, context));
-    }
-
-    private static String getIdentifier(DeleteEntryEvent deleteEntryEvent) {
-        return deleteEntryEvent.getIdentifier().toString();
-    }
-
-    private List<DeleteEntryEvent> collectBodiesOfEmittedEventReferences() {
-        return eventBridgeClient.getRequestEntries()
-                   .stream()
-                   .map(PutEventsRequestEntry::detail)
-                   .map(DeleteEntryEvent::fromJson)
-                   .collect(Collectors.toList());
-    }
-
-    private InputStream toInputStream(EventReference request) {
-        return attempt(() -> s3ImportsMapper.writeValueAsString(request))
-                   .map(IoUtils::stringToStream)
-                   .orElseThrow();
-    }
-
-    private List<String> createRandomIdentifiers() {
-        return IntStream.range(0, 2000)
-                   .boxed()
-                   .map(index -> SortableIdentifier.next().toString())
-                   .collect(Collectors.toList());
-    }
-
-    private void putObjectsInBucket(List<String> keys) {
-        keys.forEach(object -> s3Client.putObject(
-            PutObjectRequest.builder().bucket(bucketName).key(HARDCODED_PATH + object).build(),
-            RequestBody.empty()));
-    }
-
-    static class FakeEventBridgeClientThatFailsAllPutEvents extends FakeEventBridgeClient {
-
-        public FakeEventBridgeClientThatFailsAllPutEvents(String eventBusName) {
-            super(eventBusName);
-        }
-
-        @Override
-        public PutEventsResponse putEvents(PutEventsRequest putEventsRequest) throws
-                                                                              AwsServiceException,
-                                                                              SdkClientException {
-            return PutEventsResponse.builder().failedEntryCount(putEventsRequest.entries().size()).build();
-        }
-    }
+  }
 }

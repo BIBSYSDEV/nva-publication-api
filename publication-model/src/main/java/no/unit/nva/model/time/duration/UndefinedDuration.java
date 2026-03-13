@@ -9,36 +9,36 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public final class UndefinedDuration implements Duration {
 
-    private final String value;
+  private final String value;
 
-    @JsonCreator
-    private UndefinedDuration(@JsonProperty("value") String value) {
-        this.value = value;
-    }
+  @JsonCreator
+  private UndefinedDuration(@JsonProperty("value") String value) {
+    this.value = value;
+  }
 
-    public static UndefinedDuration fromValue(String value) {
-        return new UndefinedDuration(value);
-    }
+  public static UndefinedDuration fromValue(String value) {
+    return new UndefinedDuration(value);
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(value);
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(value);
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof UndefinedDuration that)) {
-            return false;
-        }
-        return Objects.equals(value, that.value);
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (!(o instanceof UndefinedDuration that)) {
+      return false;
+    }
+    return Objects.equals(value, that.value);
+  }
 
-    public String getValue() {
-        return value;
-    }
+  public String getValue() {
+    return value;
+  }
 }

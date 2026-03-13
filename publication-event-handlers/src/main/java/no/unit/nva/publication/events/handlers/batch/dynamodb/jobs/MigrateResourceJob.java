@@ -8,33 +8,31 @@ import nva.commons.core.JacocoGenerated;
 
 public class MigrateResourceJob implements DynamodbResourceBatchJobExecutor {
 
-    private static final String JOB_TYPE = "MIGRATE_RESOURCE";
-    private final ResourceService resourceService;
+  private static final String JOB_TYPE = "MIGRATE_RESOURCE";
+  private final ResourceService resourceService;
 
-    @JacocoGenerated
-    public MigrateResourceJob() {
-        this(ResourceService.defaultService());
+  @JacocoGenerated
+  public MigrateResourceJob() {
+    this(ResourceService.defaultService());
+  }
+
+  public MigrateResourceJob(ResourceService resourceService) {
+    this.resourceService = resourceService;
+  }
+
+  @Override
+  public void executeBatch(List<BatchWorkItem> workItems) {
+    if (workItems.isEmpty()) {
+      return;
     }
 
-    public MigrateResourceJob(ResourceService resourceService) {
-        this.resourceService = resourceService;
-    }
+    var keys = workItems.stream().map(workItem -> workItem.dynamoDbKey().toPrimaryKey()).toList();
 
-    @Override
-    public void executeBatch(List<BatchWorkItem> workItems) {
-        if (workItems.isEmpty()) {
-            return;
-        }
+    resourceService.refreshResourcesByKeys(keys);
+  }
 
-        var keys = workItems.stream()
-            .map(workItem -> workItem.dynamoDbKey().toPrimaryKey())
-            .toList();
-
-        resourceService.refreshResourcesByKeys(keys);
-    }
-
-    @Override
-    public String getJobType() {
-        return JOB_TYPE;
-    }
+  @Override
+  public String getJobType() {
+    return JOB_TYPE;
+  }
 }

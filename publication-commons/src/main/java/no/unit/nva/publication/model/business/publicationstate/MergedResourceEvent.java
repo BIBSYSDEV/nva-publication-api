@@ -10,24 +10,33 @@ import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 
-public record MergedResourceEvent(Instant date, User user, URI institution, ImportSource importSource,
-                                  SortableIdentifier identifier) implements ResourceEvent {
+public record MergedResourceEvent(
+    Instant date,
+    User user,
+    URI institution,
+    ImportSource importSource,
+    SortableIdentifier identifier)
+    implements ResourceEvent {
 
-    public static MergedResourceEvent fromImportSource(ImportSource importSource, UserInstance userInstance,
-                                                         Instant date) {
-        return new MergedResourceEvent(date, userInstance.getUser(), userInstance.getTopLevelOrgCristinId(),
-                                         importSource, SortableIdentifier.next());
-    }
+  public static MergedResourceEvent fromImportSource(
+      ImportSource importSource, UserInstance userInstance, Instant date) {
+    return new MergedResourceEvent(
+        date,
+        userInstance.getUser(),
+        userInstance.getTopLevelOrgCristinId(),
+        importSource,
+        SortableIdentifier.next());
+  }
 
-    @Override
-    public PublicationLogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogAgent user) {
-        return PublicationLogEntry.builder()
-                   .withResourceIdentifier(resourceIdentifier)
-                   .withIdentifier(identifier)
-                   .withTopic(LogTopic.PUBLICATION_MERGED)
-                   .withTimestamp(date)
-                   .withPerformedBy(user)
-                   .withImportSource(importSource)
-                   .build();
-    }
+  @Override
+  public PublicationLogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogAgent user) {
+    return PublicationLogEntry.builder()
+        .withResourceIdentifier(resourceIdentifier)
+        .withIdentifier(identifier)
+        .withTopic(LogTopic.PUBLICATION_MERGED)
+        .withTimestamp(date)
+        .withPerformedBy(user)
+        .withImportSource(importSource)
+        .build();
+  }
 }

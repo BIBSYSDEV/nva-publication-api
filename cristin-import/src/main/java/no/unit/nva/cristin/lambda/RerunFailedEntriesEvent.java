@@ -7,7 +7,7 @@ import nva.commons.core.paths.UriWrapper;
 
 public record RerunFailedEntriesEvent(URI uri) implements JsonSerializable {
 
-    public UnixPath s3Path() {
-        return UriWrapper.fromUri(uri).getPath().removeRoot();
-    }
+  public UnixPath s3Path() {
+    return UriWrapper.fromUri(uri).getPath().removeRoot();
+  }
 }

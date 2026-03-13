@@ -5,6 +5,7 @@ import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EV
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.events.handlers.fanout.DynamodbStreamRecordDaoMapper.toImportCandidate;
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
@@ -37,101 +38,110 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class ImportCandidateDynamoDbStreamToEventBridgeHandler
     implements RequestHandler<DynamodbEvent, EventReference> {
 
-    private static final String PROCESSING_EVENT_MESSAGE = "Processing event for identifier: {}";
-    private static final String DETAIL_TYPE_NOT_IMPORTANT = "See event topic";
-    private static final String EMITTED_EVENT_MESSAGE = "Emitted Event:{}";
-    private static final String DYNAMO_DB_STREAM_SOURCE = "DynamoDbStream";
-    private static final Logger logger = LoggerFactory.getLogger(
-        ImportCandidateDynamoDbStreamToEventBridgeHandler.class);
-    private static final EventReference EMPTY_EVENT = null;
-    private final S3Driver s3Driver;
-    private final EventBridgeClient eventBridgeClient;
+  private static final String PROCESSING_EVENT_MESSAGE = "Processing event for identifier: {}";
+  private static final String DETAIL_TYPE_NOT_IMPORTANT = "See event topic";
+  private static final String EMITTED_EVENT_MESSAGE = "Emitted Event:{}";
+  private static final String DYNAMO_DB_STREAM_SOURCE = "DynamoDbStream";
+  private static final Logger logger =
+      LoggerFactory.getLogger(ImportCandidateDynamoDbStreamToEventBridgeHandler.class);
+  private static final EventReference EMPTY_EVENT = null;
+  private final S3Driver s3Driver;
+  private final EventBridgeClient eventBridgeClient;
 
-    @JacocoGenerated
-    public ImportCandidateDynamoDbStreamToEventBridgeHandler() {
-        this(S3Driver.defaultS3Client().build(), defaultEventBridgeClient());
-    }
+  @JacocoGenerated
+  public ImportCandidateDynamoDbStreamToEventBridgeHandler() {
+    this(S3Driver.defaultS3Client().build(), defaultEventBridgeClient());
+  }
 
-    protected ImportCandidateDynamoDbStreamToEventBridgeHandler(S3Client s3Client,
-                                                                EventBridgeClient eventBridgeClient) {
-        this.s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
-        this.eventBridgeClient = eventBridgeClient;
-    }
+  protected ImportCandidateDynamoDbStreamToEventBridgeHandler(
+      S3Client s3Client, EventBridgeClient eventBridgeClient) {
+    this.s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
+    this.eventBridgeClient = eventBridgeClient;
+  }
 
-    @Override
-    public EventReference handleRequest(DynamodbEvent inputEvent, Context context) {
-        var dynamodbStreamRecord = inputEvent.getRecords().getFirst();
-        var dataEntryUpdateEvent = convertToUpdateEvent(dynamodbStreamRecord);
-        return isEmptyEvent(dataEntryUpdateEvent) ? EMPTY_EVENT : sendEvent(dataEntryUpdateEvent, context);
-    }
+  @Override
+  public EventReference handleRequest(DynamodbEvent inputEvent, Context context) {
+    var dynamodbStreamRecord = inputEvent.getRecords().getFirst();
+    var dataEntryUpdateEvent = convertToUpdateEvent(dynamodbStreamRecord);
+    return isEmptyEvent(dataEntryUpdateEvent)
+        ? EMPTY_EVENT
+        : sendEvent(dataEntryUpdateEvent, context);
+  }
 
-    private static boolean isEmptyEvent(ImportCandidateDataEntryUpdate dataEntryUpdateEvent) {
-        return dataEntryUpdateEvent.getNewData().isEmpty() && dataEntryUpdateEvent.getOldData().isEmpty();
-    }
+  private static boolean isEmptyEvent(ImportCandidateDataEntryUpdate dataEntryUpdateEvent) {
+    return dataEntryUpdateEvent.getNewData().isEmpty()
+        && dataEntryUpdateEvent.getOldData().isEmpty();
+  }
 
-    private static SortableIdentifier getImportCandidateIdentifier(ImportCandidateDataEntryUpdate blobObject) {
-        return blobObject.getOldData()
-                   .map(ImportCandidate::getIdentifier)
-                   .orElseGet(() -> getIdentifierFromNewData(blobObject));
-    }
+  private static SortableIdentifier getImportCandidateIdentifier(
+      ImportCandidateDataEntryUpdate blobObject) {
+    return blobObject
+        .getOldData()
+        .map(ImportCandidate::getIdentifier)
+        .orElseGet(() -> getIdentifierFromNewData(blobObject));
+  }
 
-    private static SortableIdentifier getIdentifierFromNewData(ImportCandidateDataEntryUpdate blobObject) {
-        return blobObject.getNewData()
-                   .map(ImportCandidate::getIdentifier)
-                   .orElseThrow();
-    }
+  private static SortableIdentifier getIdentifierFromNewData(
+      ImportCandidateDataEntryUpdate blobObject) {
+    return blobObject.getNewData().map(ImportCandidate::getIdentifier).orElseThrow();
+  }
 
-    private static String toEvenBridgeDetail(EventReference eventReference) {
-        var detail = AwsEventBridgeDetail.newBuilder().withResponsePayload(eventReference).build();
-        return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(detail))
-                   .orElseThrow();
-    }
+  private static String toEvenBridgeDetail(EventReference eventReference) {
+    var detail = AwsEventBridgeDetail.newBuilder().withResponsePayload(eventReference).build();
+    return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(detail)).orElseThrow();
+  }
 
-    private EventReference sendEvent(ImportCandidateDataEntryUpdate blob, Context context) {
-        logger.info(PROCESSING_EVENT_MESSAGE, getImportCandidateIdentifier(blob));
-        var uri = saveBlobToS3(blob);
-        var eventReference = new EventReference(blob.getTopic(), uri);
-        sendEvent(eventReference, context);
-        return eventReference;
-    }
+  private EventReference sendEvent(ImportCandidateDataEntryUpdate blob, Context context) {
+    logger.info(PROCESSING_EVENT_MESSAGE, getImportCandidateIdentifier(blob));
+    var uri = saveBlobToS3(blob);
+    var eventReference = new EventReference(blob.getTopic(), uri);
+    sendEvent(eventReference, context);
+    return eventReference;
+  }
 
-    private void sendEvent(EventReference eventReference, Context context) {
-        var eventRequest = createPutEventRequest(context, eventReference);
-        eventBridgeClient.putEvents(eventRequest);
-        logger.info(EMITTED_EVENT_MESSAGE, eventReference.toJsonString());
-    }
+  private void sendEvent(EventReference eventReference, Context context) {
+    var eventRequest = createPutEventRequest(context, eventReference);
+    eventBridgeClient.putEvents(eventRequest);
+    logger.info(EMITTED_EVENT_MESSAGE, eventReference.toJsonString());
+  }
 
-    private PutEventsRequest createPutEventRequest(Context context, EventReference eventReference) {
-        var entry = PutEventsRequestEntry.builder()
-                        .eventBusName(EVENT_BUS_NAME)
-                        .time(Instant.now())
-                        .source(DYNAMO_DB_STREAM_SOURCE)
-                        .detailType(DETAIL_TYPE_NOT_IMPORTANT)
-                        .resources(context.getInvokedFunctionArn())
-                        .detail(toEvenBridgeDetail(eventReference))
-                        .build();
-        return PutEventsRequest.builder().entries(entry).build();
-    }
+  private PutEventsRequest createPutEventRequest(Context context, EventReference eventReference) {
+    var entry =
+        PutEventsRequestEntry.builder()
+            .eventBusName(EVENT_BUS_NAME)
+            .time(Instant.now())
+            .source(DYNAMO_DB_STREAM_SOURCE)
+            .detailType(DETAIL_TYPE_NOT_IMPORTANT)
+            .resources(context.getInvokedFunctionArn())
+            .detail(toEvenBridgeDetail(eventReference))
+            .build();
+    return PutEventsRequest.builder().entries(entry).build();
+  }
 
-    private URI saveBlobToS3(ImportCandidateDataEntryUpdate blob) {
-        return attempt(() -> s3Driver.insertFile(UnixPath.of(UUID.randomUUID().toString()), blob.toJsonString()))
-                   .orElseThrow(failure -> new RuntimeException("Failed to save blob to S3: " + blob.toJsonString()));
-    }
+  private URI saveBlobToS3(ImportCandidateDataEntryUpdate blob) {
+    return attempt(
+            () ->
+                s3Driver.insertFile(UnixPath.of(UUID.randomUUID().toString()), blob.toJsonString()))
+        .orElseThrow(
+            failure -> new RuntimeException("Failed to save blob to S3: " + blob.toJsonString()));
+  }
 
-    private ImportCandidateDataEntryUpdate convertToUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {
-        return new ImportCandidateDataEntryUpdate(dynamoDbRecord.getEventName(),
-                                                  getImportCandidate(dynamoDbRecord.getDynamodb().getOldImage()),
-                                                  getImportCandidate(dynamoDbRecord.getDynamodb().getNewImage()));
-    }
+  private ImportCandidateDataEntryUpdate convertToUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {
+    return new ImportCandidateDataEntryUpdate(
+        dynamoDbRecord.getEventName(),
+        getImportCandidate(dynamoDbRecord.getDynamodb().getOldImage()),
+        getImportCandidate(dynamoDbRecord.getDynamodb().getNewImage()));
+  }
 
-    private ImportCandidate getImportCandidate(Map<String, AttributeValue> image) {
-        return attempt(() -> toImportCandidate(image)).toOptional(this::logFailureInDebugging)
-                   .flatMap(Function.identity())
-                   .orElse(null);
-    }
+  private ImportCandidate getImportCandidate(Map<String, AttributeValue> image) {
+    return attempt(() -> toImportCandidate(image))
+        .toOptional(this::logFailureInDebugging)
+        .flatMap(Function.identity())
+        .orElse(null);
+  }
 
-    @JacocoGenerated
-    private void logFailureInDebugging(Failure<Optional<ImportCandidate>> fail) {
-        logger.debug(ExceptionUtils.stackTraceInSingleLine(fail.getException()));
-    }
+  @JacocoGenerated
+  private void logFailureInDebugging(Failure<Optional<ImportCandidate>> fail) {
+    logger.debug(ExceptionUtils.stackTraceInSingleLine(fail.getException()));
+  }
 }

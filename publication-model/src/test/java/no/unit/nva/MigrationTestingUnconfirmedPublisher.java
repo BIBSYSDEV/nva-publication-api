@@ -1,5 +1,7 @@
 package no.unit.nva;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.instancetypes.artistic.film.realization.Broadcast;
 import no.unit.nva.model.instancetypes.artistic.film.realization.OtherRelease;
@@ -8,13 +10,13 @@ import no.unit.nva.model.instancetypes.artistic.music.MusicScore;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-
 @Deprecated
 public class MigrationTestingUnconfirmedPublisher {
 
-    @ParameterizedTest
-    @ValueSource(strings = {"{\n"
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "{\n"
             + "  \"type\": \"Broadcast\",\n"
             + "  \"publisher\": \"My publisher\",\n"
             + "  \"date\": {\n"
@@ -32,14 +34,16 @@ public class MigrationTestingUnconfirmedPublisher {
             + "    \"value\": \"2022-03-23T00:00:00.000000Z\"\n"
             + "  },\n"
             + "  \"sequence\": \"1\"\n"
-            + "}"})
-    void shouldMigrateBroadcastPublishers(String value) {
-        assertDoesNotThrow(() -> JsonUtils.dtoObjectMapper.readValue(value, Broadcast.class));
+            + "}"
+      })
+  void shouldMigrateBroadcastPublishers(String value) {
+    assertDoesNotThrow(() -> JsonUtils.dtoObjectMapper.readValue(value, Broadcast.class));
+  }
 
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"{\n"
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "{\n"
             + "  \"type\" : \"OtherRelease\",\n"
             + "  \"description\" : \"SmM4g4sYfz\",\n"
             + "  \"place\" : {\n"
@@ -56,7 +60,8 @@ public class MigrationTestingUnconfirmedPublisher {
             + "    \"value\" : \"2016-01-09T00:59:20.264Z\"\n"
             + "  },\n"
             + "  \"sequence\" : 191312365\n"
-            + "}", "{\n"
+            + "}",
+        "{\n"
             + "  \"type\" : \"OtherRelease\",\n"
             + "  \"description\" : \"SmM4g4sYfz\",\n"
             + "  \"place\" : {\n"
@@ -70,13 +75,16 @@ public class MigrationTestingUnconfirmedPublisher {
             + "    \"value\" : \"2016-01-09T00:59:20.264Z\"\n"
             + "  },\n"
             + "  \"sequence\" : 191312365\n"
-            + "}"})
-    void shouldMigrateOtherRelease(String value) {
-        assertDoesNotThrow(() -> JsonUtils.dtoObjectMapper.readValue(value, OtherRelease.class));
-    }
+            + "}"
+      })
+  void shouldMigrateOtherRelease(String value) {
+    assertDoesNotThrow(() -> JsonUtils.dtoObjectMapper.readValue(value, OtherRelease.class));
+  }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"{\n"
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "{\n"
             + "          \"type\" : \"AudioVisualPublication\",\n"
             + "          \"mediaType\" : \"DigitalFile\",\n"
             + "          \"publisher\" : {\n"
@@ -89,7 +97,8 @@ public class MigrationTestingUnconfirmedPublisher {
             + "            \"title\" : \"prvhN5ATlNDbcAAX0G\",\n"
             + "            \"composer\" : \"DtePAk2ZjLw8Lzr\",\n"
             + "            \"extent\" : \"GuJRYj8fAOMcQPQSMI\"\n"
-            + "          }]}", "{\n"
+            + "          }]}",
+        "{\n"
             + "  \"type\": \"AudioVisualPublication\",\n"
             + "  \"mediaType\": \"DigitalFile\",\n"
             + "  \"publisher\": \"UnconfirmedPublisher\",\n"
@@ -102,13 +111,17 @@ public class MigrationTestingUnconfirmedPublisher {
             + "      \"extent\": \"GuJRYj8fAOMcQPQSMI\"\n"
             + "    }\n"
             + "  ]\n"
-            + "}"})
-    void shouldMigrateAudioVisualPublication(String value) {
-        assertDoesNotThrow(() -> JsonUtils.dtoObjectMapper.readValue(value, AudioVisualPublication.class));
-    }
+            + "}"
+      })
+  void shouldMigrateAudioVisualPublication(String value) {
+    assertDoesNotThrow(
+        () -> JsonUtils.dtoObjectMapper.readValue(value, AudioVisualPublication.class));
+  }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"{\n"
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "{\n"
             + "          \"type\" : \"MusicScore\",\n"
             + "          \"ensemble\" : \"e2d9YoIg1eVxFiTZV\",\n"
             + "          \"movements\" : \"ID9aYllhE3N5SZ\",\n"
@@ -126,7 +139,8 @@ public class MigrationTestingUnconfirmedPublisher {
             + "            \"type\" : \"Isrc\",\n"
             + "            \"value\" : \"USRC17607839\"\n"
             + "          }\n"
-            + "        }", "{\n"
+            + "        }",
+        "{\n"
             + "  \"type\" : \"MusicScore\",\n"
             + "  \"ensemble\" : \"e2d9YoIg1eVxFiTZV\",\n"
             + "  \"movements\" : \"ID9aYllhE3N5SZ\",\n"
@@ -141,8 +155,9 @@ public class MigrationTestingUnconfirmedPublisher {
             + "    \"type\" : \"Isrc\",\n"
             + "    \"value\" : \"USRC17607839\"\n"
             + "  }\n"
-            + "}"})
-    void shouldMigratePublisherInMusicScore(String value) {
-        assertDoesNotThrow(() -> JsonUtils.dtoObjectMapper.readValue(value, MusicScore.class));
-    }
+            + "}"
+      })
+  void shouldMigratePublisherInMusicScore(String value) {
+    assertDoesNotThrow(() -> JsonUtils.dtoObjectMapper.readValue(value, MusicScore.class));
+  }
 }

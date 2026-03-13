@@ -3,5 +3,5 @@ package no.unit.nva.publication.permissions.ticket;
 import no.unit.nva.model.TicketOperation;
 
 public interface TicketGrantStrategy {
-    boolean allowsAction(TicketOperation permission);
+  boolean allowsAction(TicketOperation permission);
 }

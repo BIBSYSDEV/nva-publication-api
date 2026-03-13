@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.net.URI;
 import java.util.List;
@@ -44,218 +45,241 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 public class ResourceRelationPersistenceTest extends ResourcesLocalTest {
 
-    public static final String PUBLICATION_PATH = "publication";
-    private ResourceService resourceService;
+  public static final String PUBLICATION_PATH = "publication";
+  private ResourceService resourceService;
 
-    @BeforeEach
-    public void init() {
-        super.init();
-        resourceService = getResourceService(client);
-    }
+  @BeforeEach
+  public void init() {
+    super.init();
+    resourceService = getResourceService(client);
+  }
 
-    @ParameterizedTest
-    @EnumSource(value = PublicationStatus.class, mode = Mode.EXCLUDE, names = {"PUBLISHED"})
-    void shouldNotCreateResourceRelationForNonPublishedResource(PublicationStatus publicationStatus) {
-        var anthology = persist(randomPublication(BookAnthology.class));
-        persistChaptersWithAnthology(anthology, 1, publicationStatus).getFirst();
+  @ParameterizedTest
+  @EnumSource(
+      value = PublicationStatus.class,
+      mode = Mode.EXCLUDE,
+      names = {"PUBLISHED"})
+  void shouldNotCreateResourceRelationForNonPublishedResource(PublicationStatus publicationStatus) {
+    var anthology = persist(randomPublication(BookAnthology.class));
+    persistChaptersWithAnthology(anthology, 1, publicationStatus).getFirst();
 
-        var anthologyWithNewRelation = fetchResource(anthology);
+    var anthologyWithNewRelation = fetchResource(anthology);
 
-        assertTrue(anthologyWithNewRelation.getRelatedResources().isEmpty());
-    }
+    assertTrue(anthologyWithNewRelation.getRelatedResources().isEmpty());
+  }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"example.com", "https://example.com/publication/123",
-        "https://example.com/something/0198cc8f7d15-3bfde61e-71c3-4253-8662-714a460886f1"})
-    void shouldNotCreateRelationFromAnthologyWithIdWhichIsNotPublicationId(String value) {
-        var anthology = persist(randomPublication(BookAnthology.class));
-        persist(randomChapterWithAnthology(URI.create(value), PUBLISHED));
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "example.com",
+        "https://example.com/publication/123",
+        "https://example.com/something/0198cc8f7d15-3bfde61e-71c3-4253-8662-714a460886f1"
+      })
+  void shouldNotCreateRelationFromAnthologyWithIdWhichIsNotPublicationId(String value) {
+    var anthology = persist(randomPublication(BookAnthology.class));
+    persist(randomChapterWithAnthology(URI.create(value), PUBLISHED));
 
-        var anthologyWithoutRelation = fetchResource(anthology);
+    var anthologyWithoutRelation = fetchResource(anthology);
 
-        assertTrue(anthologyWithoutRelation.getRelatedResources().isEmpty());
-    }
+    assertTrue(anthologyWithoutRelation.getRelatedResources().isEmpty());
+  }
 
-    @Test
-    void shouldListMultipleRelatedResources() {
-        var anthology = persist(randomPublication(BookAnthology.class));
-        var chapters = persistChaptersWithAnthology(anthology, 5, PUBLISHED);
+  @Test
+  void shouldListMultipleRelatedResources() {
+    var anthology = persist(randomPublication(BookAnthology.class));
+    var chapters = persistChaptersWithAnthology(anthology, 5, PUBLISHED);
 
-        var anthologyWithRelations = fetchResource(anthology);
+    var anthologyWithRelations = fetchResource(anthology);
 
-        var expectedRelations = chapters.stream().map(Publication::getIdentifier).toList();
+    var expectedRelations = chapters.stream().map(Publication::getIdentifier).toList();
 
-        assertThat(expectedRelations,
-                   containsInAnyOrder(anthologyWithRelations.getRelatedResources().toArray(SortableIdentifier[]::new)));
-    }
+    assertThat(
+        expectedRelations,
+        containsInAnyOrder(
+            anthologyWithRelations.getRelatedResources().toArray(SortableIdentifier[]::new)));
+  }
 
-    @Test
-    void shouldPersistResourceRelationshipWhenPersistingAnthologyWithParentResource() {
-        var anthology = persist(randomPublication(BookAnthology.class));
-        var chapter = persistChaptersWithAnthology(anthology, 1, PUBLISHED).getFirst();
+  @Test
+  void shouldPersistResourceRelationshipWhenPersistingAnthologyWithParentResource() {
+    var anthology = persist(randomPublication(BookAnthology.class));
+    var chapter = persistChaptersWithAnthology(anthology, 1, PUBLISHED).getFirst();
 
-        var anthologyWithNewRelation = fetchResource(anthology);
+    var anthologyWithNewRelation = fetchResource(anthology);
 
-        assertEquals(chapter.getIdentifier(), anthologyWithNewRelation.getRelatedResources().getFirst());
-    }
+    assertEquals(
+        chapter.getIdentifier(), anthologyWithNewRelation.getRelatedResources().getFirst());
+  }
 
-    @Test
-    void shouldRemoveResourceRelationshipWhenUpdatingResourceToTypeWithoutAnthology() {
-        var anthology = persist(randomPublication(BookAnthology.class));
-        var chapter = persistChaptersWithAnthology(anthology, 1, PUBLISHED).getFirst();
+  @Test
+  void shouldRemoveResourceRelationshipWhenUpdatingResourceToTypeWithoutAnthology() {
+    var anthology = persist(randomPublication(BookAnthology.class));
+    var chapter = persistChaptersWithAnthology(anthology, 1, PUBLISHED).getFirst();
 
-        updateToNonChapter(chapter);
+    updateToNonChapter(chapter);
 
-        var anthologyWithNewRelation = fetchResource(anthology);
+    var anthologyWithNewRelation = fetchResource(anthology);
 
-        assertTrue(anthologyWithNewRelation.getRelatedResources().isEmpty());
-    }
+    assertTrue(anthologyWithNewRelation.getRelatedResources().isEmpty());
+  }
 
-    @Test
-    void shouldRemoveOldRelationWhenUpdatingAnthologyId() {
-        var anthology = persist(randomPublication(BookAnthology.class));
-        var chapter = persistChaptersWithAnthology(anthology, 1, PUBLISHED).getFirst();
-        var newAnthology = persist(randomPublication(BookAnthology.class));
+  @Test
+  void shouldRemoveOldRelationWhenUpdatingAnthologyId() {
+    var anthology = persist(randomPublication(BookAnthology.class));
+    var chapter = persistChaptersWithAnthology(anthology, 1, PUBLISHED).getFirst();
+    var newAnthology = persist(randomPublication(BookAnthology.class));
 
-        moveChapterToAnthology(chapter, newAnthology.getIdentifier());
+    moveChapterToAnthology(chapter, newAnthology.getIdentifier());
 
-        var anthologyWithRemovedRelation = fetchResource(anthology);
+    var anthologyWithRemovedRelation = fetchResource(anthology);
 
-        assertTrue(anthologyWithRemovedRelation.getRelatedResources().isEmpty());
-    }
+    assertTrue(anthologyWithRemovedRelation.getRelatedResources().isEmpty());
+  }
 
-    @Test
-    void shouldAddNewRelationWhenUpdatingAnthologyId() {
-        var anthology = persist(randomPublication(BookAnthology.class));
-        var chapter = persistChaptersWithAnthology(anthology, 1, PUBLISHED).getFirst();
-        var newAnthology = persist(randomPublication(BookAnthology.class));
+  @Test
+  void shouldAddNewRelationWhenUpdatingAnthologyId() {
+    var anthology = persist(randomPublication(BookAnthology.class));
+    var chapter = persistChaptersWithAnthology(anthology, 1, PUBLISHED).getFirst();
+    var newAnthology = persist(randomPublication(BookAnthology.class));
 
-        moveChapterToAnthology(chapter, newAnthology.getIdentifier());
+    moveChapterToAnthology(chapter, newAnthology.getIdentifier());
 
-        var anthologyWithNewRelation = fetchResource(newAnthology);
+    var anthologyWithNewRelation = fetchResource(newAnthology);
 
-        assertEquals(chapter.getIdentifier(), anthologyWithNewRelation.getRelatedResources().getFirst());
-    }
+    assertEquals(
+        chapter.getIdentifier(), anthologyWithNewRelation.getRelatedResources().getFirst());
+  }
 
-    @Test
-    void databaseShouldHandleMultiplePublicationsSharingTheSameRelatedResource() {
-        var anthology1 = persist(randomPublication(BookAnthology.class));
-        var anthology2 = persist(randomPublication(BookAnthology.class));
-        var childIdentifier = SortableIdentifier.next();
+  @Test
+  void databaseShouldHandleMultiplePublicationsSharingTheSameRelatedResource() {
+    var anthology1 = persist(randomPublication(BookAnthology.class));
+    var anthology2 = persist(randomPublication(BookAnthology.class));
+    var childIdentifier = SortableIdentifier.next();
 
-        insertRelationBetween(anthology1.getIdentifier(), childIdentifier);
-        insertRelationBetween(anthology2.getIdentifier(), childIdentifier);
+    insertRelationBetween(anthology1.getIdentifier(), childIdentifier);
+    insertRelationBetween(anthology2.getIdentifier(), childIdentifier);
 
-        assertDoesNotThrow(() -> fetchResource(anthology1));
-        assertDoesNotThrow(() -> fetchResource(anthology2));
-    }
+    assertDoesNotThrow(() -> fetchResource(anthology1));
+    assertDoesNotThrow(() -> fetchResource(anthology2));
+  }
 
-    @Test
-    void shouldRefreshAllRelatedResourcesWhenUpdatingResourceWithRelatedResources() {
-        var anthology = persist(randomPublication(BookAnthology.class));
-        var chapter = persistChaptersWithAnthology(anthology, 1, PUBLISHED).getFirst();
+  @Test
+  void shouldRefreshAllRelatedResourcesWhenUpdatingResourceWithRelatedResources() {
+    var anthology = persist(randomPublication(BookAnthology.class));
+    var chapter = persistChaptersWithAnthology(anthology, 1, PUBLISHED).getFirst();
 
-        var currentVersion = fetchResource(chapter).getVersion();
+    var currentVersion = fetchResource(chapter).getVersion();
 
-        updatePublication(anthology);
+    updatePublication(anthology);
 
-        var refreshedVersion = fetchResource(chapter).getVersion();
+    var refreshedVersion = fetchResource(chapter).getVersion();
 
-        assertNotEquals(currentVersion, refreshedVersion);
-    }
+    assertNotEquals(currentVersion, refreshedVersion);
+  }
 
-    @Test
-    void shouldRefreshAnthologyWhenNewRelationIsPersistedOnResourceCreation() {
-        var anthology = persist(randomPublication(BookAnthology.class));
+  @Test
+  void shouldRefreshAnthologyWhenNewRelationIsPersistedOnResourceCreation() {
+    var anthology = persist(randomPublication(BookAnthology.class));
 
-        var currentVersion = fetchResource(anthology).getVersion();
+    var currentVersion = fetchResource(anthology).getVersion();
 
-        persistChaptersWithAnthology(anthology, 1, PUBLISHED).getFirst();
+    persistChaptersWithAnthology(anthology, 1, PUBLISHED).getFirst();
 
-        var refreshedVersion = fetchResource(anthology).getVersion();
+    var refreshedVersion = fetchResource(anthology).getVersion();
 
-        assertNotEquals(currentVersion, refreshedVersion);
-    }
+    assertNotEquals(currentVersion, refreshedVersion);
+  }
 
-    @Test
-    void shouldRefreshAnthologyWhenRelationIsPersistedOnUpdateOfExistingResource() {
-        var anthology = persist(randomPublication(BookAnthology.class));
-        var chapter = persistChaptersWithAnthology(anthology, 1, PUBLISHED).getFirst();
+  @Test
+  void shouldRefreshAnthologyWhenRelationIsPersistedOnUpdateOfExistingResource() {
+    var anthology = persist(randomPublication(BookAnthology.class));
+    var chapter = persistChaptersWithAnthology(anthology, 1, PUBLISHED).getFirst();
 
-        var newAnthology = persist(randomPublication(BookAnthology.class));
-        var currentVersion = fetchResource(newAnthology).getVersion();
+    var newAnthology = persist(randomPublication(BookAnthology.class));
+    var currentVersion = fetchResource(newAnthology).getVersion();
 
-        moveChapterToAnthology(chapter, newAnthology.getIdentifier());
+    moveChapterToAnthology(chapter, newAnthology.getIdentifier());
 
-        var refreshedVersion = fetchResource(newAnthology).getVersion();
+    var refreshedVersion = fetchResource(newAnthology).getVersion();
 
-        assertNotEquals(currentVersion, refreshedVersion);
-    }
+    assertNotEquals(currentVersion, refreshedVersion);
+  }
 
-    private void insertRelationBetween(SortableIdentifier parentIdentifier, SortableIdentifier childIdentifier) {
-        var relationship = new ResourceRelationship(parentIdentifier, childIdentifier);
-        client.putItem(new PutItemRequest(RESOURCES_TABLE_NAME, ResourceRelationshipDao.from(relationship).toDynamoFormat()));
-    }
+  private void insertRelationBetween(
+      SortableIdentifier parentIdentifier, SortableIdentifier childIdentifier) {
+    var relationship = new ResourceRelationship(parentIdentifier, childIdentifier);
+    client.putItem(
+        new PutItemRequest(
+            RESOURCES_TABLE_NAME, ResourceRelationshipDao.from(relationship).toDynamoFormat()));
+  }
 
-    private Resource fetchResource(Publication publication) {
-        return Resource.fromPublication(publication).fetch(resourceService).orElseThrow();
-    }
+  private Resource fetchResource(Publication publication) {
+    return Resource.fromPublication(publication).fetch(resourceService).orElseThrow();
+  }
 
-    private void updatePublication(Publication publication) {
-        var updatedPublication = publication.copy().withLink(randomUri()).build();
-        resourceService.updateResource(Resource.fromPublication(updatedPublication),
-                                       UserInstance.fromPublication(publication));
-    }
+  private void updatePublication(Publication publication) {
+    var updatedPublication = publication.copy().withLink(randomUri()).build();
+    resourceService.updateResource(
+        Resource.fromPublication(updatedPublication), UserInstance.fromPublication(publication));
+  }
 
-    private static Publication randomChapterWithAnthology(URI anthologyId, PublicationStatus status) {
-        var chapter = buildRandomPublicationFromInstance(AcademicChapter.class);
-        chapter.getEntityDescription()
-            .getReference()
-            .setPublicationContext(new Anthology.Builder().withId(anthologyId).build());
-        chapter.setStatus(status);
-        return chapter;
-    }
+  private static Publication randomChapterWithAnthology(URI anthologyId, PublicationStatus status) {
+    var chapter = buildRandomPublicationFromInstance(AcademicChapter.class);
+    chapter
+        .getEntityDescription()
+        .getReference()
+        .setPublicationContext(new Anthology.Builder().withId(anthologyId).build());
+    chapter.setStatus(status);
+    return chapter;
+  }
 
-    private static URI toPublicationId(SortableIdentifier anthology) {
-        return UriWrapper.fromUri(randomUri()).addChild("publication").addChild(anthology.toString()).getUri();
-    }
+  private static URI toPublicationId(SortableIdentifier anthology) {
+    return UriWrapper.fromUri(randomUri())
+        .addChild("publication")
+        .addChild(anthology.toString())
+        .getUri();
+  }
 
-    private List<Publication> persistChaptersWithAnthology(Publication anthology, int numberOfChapters,
-                                                           PublicationStatus status) {
-        return IntStream.of(numberOfChapters)
-                   .mapToObj(i -> randomChapterWithAnthology(toPublicationId(anthology.getIdentifier()), status))
-                   .map(this::persist)
-                   .toList();
-    }
+  private List<Publication> persistChaptersWithAnthology(
+      Publication anthology, int numberOfChapters, PublicationStatus status) {
+    return IntStream.of(numberOfChapters)
+        .mapToObj(
+            i -> randomChapterWithAnthology(toPublicationId(anthology.getIdentifier()), status))
+        .map(this::persist)
+        .toList();
+  }
 
-    private void updateToNonChapter(Publication publication) {
-        publication.getEntityDescription().setReference(randomReference(JournalArticle.class));
-        Resource.fromPublication(publication).update(resourceService, UserInstance.fromPublication(publication));
-    }
+  private void updateToNonChapter(Publication publication) {
+    publication.getEntityDescription().setReference(randomReference(JournalArticle.class));
+    Resource.fromPublication(publication)
+        .update(resourceService, UserInstance.fromPublication(publication));
+  }
 
-    private void moveChapterToAnthology(Publication publication, SortableIdentifier identifier) {
-        var anthologyId = UriWrapper.fromUri(randomUri())
-                              .addChild(PUBLICATION_PATH)
-                              .addChild(identifier.toString())
-                              .getUri();
-        publication.getEntityDescription()
-            .getReference()
-            .setPublicationContext(new Anthology.Builder().withId(anthologyId).build());
-        Resource.fromPublication(publication).update(resourceService, UserInstance.fromPublication(publication));
-    }
+  private void moveChapterToAnthology(Publication publication, SortableIdentifier identifier) {
+    var anthologyId =
+        UriWrapper.fromUri(randomUri())
+            .addChild(PUBLICATION_PATH)
+            .addChild(identifier.toString())
+            .getUri();
+    publication
+        .getEntityDescription()
+        .getReference()
+        .setPublicationContext(new Anthology.Builder().withId(anthologyId).build());
+    Resource.fromPublication(publication)
+        .update(resourceService, UserInstance.fromPublication(publication));
+  }
 
-    private Publication persist(Publication publication) {
-        return attempt(() -> save(publication)).orElseThrow();
-    }
+  private Publication persist(Publication publication) {
+    return attempt(() -> save(publication)).orElseThrow();
+  }
 
-    private Publication save(Publication publication) throws BadRequestException {
-        return Resource.fromPublication(publication)
-                   .persistNew(resourceService, getExternalUser());
-    }
+  private Publication save(Publication publication) throws BadRequestException {
+    return Resource.fromPublication(publication).persistNew(resourceService, getExternalUser());
+  }
 
-    private static UserInstance getExternalUser() {
-        return UserInstance.createExternalUser(new ResourceOwner(new Username(randomString()), randomUri()),
-                                               randomUri(), ThirdPartySystem.OTHER);
-    }
+  private static UserInstance getExternalUser() {
+    return UserInstance.createExternalUser(
+        new ResourceOwner(new Username(randomString()), randomUri()),
+        randomUri(),
+        ThirdPartySystem.OTHER);
+  }
 }
-

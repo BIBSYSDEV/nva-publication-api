@@ -7,7 +7,7 @@ import no.unit.nva.model.pages.Range;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class PopularScienceChapter extends ChapterArticle {
 
-    public PopularScienceChapter(@JsonProperty(PAGES_FIELD) Range pages) {
-        super(pages);
-    }
+  public PopularScienceChapter(@JsonProperty(PAGES_FIELD) Range pages) {
+    super(pages);
+  }
 }

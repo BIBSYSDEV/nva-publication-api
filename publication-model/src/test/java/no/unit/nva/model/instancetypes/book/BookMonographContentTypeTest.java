@@ -14,6 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import java.util.stream.Stream;
@@ -27,49 +28,50 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class BookMonographContentTypeTest {
 
-    public static Stream<Arguments> deprecatedValuesProvider() {
-        return Stream.of(Arguments.of("Academic Monograph", ACADEMIC_MONOGRAPH),
-                         Arguments.of("Non-fiction Monograph", NON_FICTION_MONOGRAPH),
-                         Arguments.of("Popular Science Monograph", POPULAR_SCIENCE_MONOGRAPH)
-        );
-    }
+  public static Stream<Arguments> deprecatedValuesProvider() {
+    return Stream.of(
+        Arguments.of("Academic Monograph", ACADEMIC_MONOGRAPH),
+        Arguments.of("Non-fiction Monograph", NON_FICTION_MONOGRAPH),
+        Arguments.of("Popular Science Monograph", POPULAR_SCIENCE_MONOGRAPH));
+  }
 
-    @ParameterizedTest
-    @EnumSource(BookMonographContentType.class)
-    void shouldReturnBookMonographContentTypeWhenInputIsCurrentValue(BookMonographContentType bookMonographContentType)
-        throws JsonProcessingException {
-        var currentValue = "\"" + bookMonographContentType.getValue() + "\"";
-        var expectedBookMonographContentType = JsonUtils.dtoObjectMapper.readValue(currentValue,
-                                                                                   BookMonographContentType.class);
-        assertEquals(expectedBookMonographContentType, bookMonographContentType);
-    }
+  @ParameterizedTest
+  @EnumSource(BookMonographContentType.class)
+  void shouldReturnBookMonographContentTypeWhenInputIsCurrentValue(
+      BookMonographContentType bookMonographContentType) throws JsonProcessingException {
+    var currentValue = "\"" + bookMonographContentType.getValue() + "\"";
+    var expectedBookMonographContentType =
+        JsonUtils.dtoObjectMapper.readValue(currentValue, BookMonographContentType.class);
+    assertEquals(expectedBookMonographContentType, bookMonographContentType);
+  }
 
-    @ParameterizedTest(name = "should return BookMonographContentType when input is {0}")
-    @MethodSource("deprecatedValuesProvider")
-    void shouldReturnBookMonographContentTypeWhenInputIsDeprecatedValue(
-        String deprecatedValue,
-        BookMonographContentType bookMonographContentType)
-        throws JsonProcessingException {
-        var deprecated = "\"" + deprecatedValue + "\"";
-        var expectedBookMonographContentType = JsonUtils.dtoObjectMapper.readValue(deprecated,
-                                                                                   BookMonographContentType.class);
-        assertEquals(expectedBookMonographContentType, bookMonographContentType);
-    }
+  @ParameterizedTest(name = "should return BookMonographContentType when input is {0}")
+  @MethodSource("deprecatedValuesProvider")
+  void shouldReturnBookMonographContentTypeWhenInputIsDeprecatedValue(
+      String deprecatedValue, BookMonographContentType bookMonographContentType)
+      throws JsonProcessingException {
+    var deprecated = "\"" + deprecatedValue + "\"";
+    var expectedBookMonographContentType =
+        JsonUtils.dtoObjectMapper.readValue(deprecated, BookMonographContentType.class);
+    assertEquals(expectedBookMonographContentType, bookMonographContentType);
+  }
 
-    @Test
-    void shouldThrowErrorWithProperErrorMessageWhenInvalidInputValueSupplied() {
-        var invalidInput = randomString();
-        var inputJsonValue = "\"" + invalidInput + "\"";
-        Executable handleRequest = () -> JsonUtils.dtoObjectMapper.readValue(inputJsonValue,
-                                                                             BookMonographContentType.class);
+  @Test
+  void shouldThrowErrorWithProperErrorMessageWhenInvalidInputValueSupplied() {
+    var invalidInput = randomString();
+    var inputJsonValue = "\"" + invalidInput + "\"";
+    Executable handleRequest =
+        () -> JsonUtils.dtoObjectMapper.readValue(inputJsonValue, BookMonographContentType.class);
 
-        var response = assertThrows(ValueInstantiationException.class, handleRequest);
-        var actualErrorMessage = createErrorMessage(invalidInput);
-        assertThat(response.getMessage(), containsString(actualErrorMessage));
-    }
+    var response = assertThrows(ValueInstantiationException.class, handleRequest);
+    var actualErrorMessage = createErrorMessage(invalidInput);
+    assertThat(response.getMessage(), containsString(actualErrorMessage));
+  }
 
-    private static String createErrorMessage(String value) {
-        return format(ERROR_MESSAGE_TEMPLATE, value, stream(values())
-            .map(BookMonographContentType::toString).collect(joining(DELIMITER)));
-    }
+  private static String createErrorMessage(String value) {
+    return format(
+        ERROR_MESSAGE_TEMPLATE,
+        value,
+        stream(values()).map(BookMonographContentType::toString).collect(joining(DELIMITER)));
+  }
 }

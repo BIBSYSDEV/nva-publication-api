@@ -11,6 +11,7 @@ import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersiste
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -46,292 +47,346 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class PublishingRequestResolverTest extends ResourcesLocalTest {
 
-    private TicketService ticketService;
-    private ResourceService resourceService;
+  private TicketService ticketService;
+  private ResourceService resourceService;
 
-    @BeforeEach
-    public void setUp() throws NotFoundException {
-        super.init();
-        ticketService = getTicketService();
-        resourceService = getResourceService(client);
-    }
+  @BeforeEach
+  public void setUp() throws NotFoundException {
+    super.init();
+    ticketService = getTicketService();
+    resourceService = getResourceService(client);
+  }
 
-    @DisplayName("When user removes unpublished files from a publication" +
-                 "and there exists pending publishing request with those files" +
-                 "and there are no new unpublished files to publish" +
-                 "then existing pending publishing request should be completed")
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#notApprovedFilesProvider")
-    void shouldApprovePendingPublishingReqeustForInstitutionWhenUserRemovesUnpublishedFiles(File file)
-        throws ApiGatewayException {
-        var publication = createPersistedPublicationWithFile(PublicationStatus.PUBLISHED, file, resourceService);
-        persistPublishingRequestContainingExistingPendingFiles(publication);
-        var publicationUpdateRemovingUnpublishedFiles = publication.copy()
-                                                            .withAssociatedArtifacts(List.of())
-                                                            .withStatus(PublicationStatus.PUBLISHED)
-                                                            .build();
-        publishingRequestResolver(publication).resolve(Resource.fromPublication(publication),
-                                                       Resource.fromPublication(publicationUpdateRemovingUnpublishedFiles));
-
-        var publishingRequest = getFileApprovalEntry(publication);
-
-        Assertions.assertEquals(COMPLETED, publishingRequest.getStatus());
-        assertTrue(publishingRequest.getFilesForApproval().isEmpty());
-        assertTrue(publishingRequest.getApprovedFiles().isEmpty());
-    }
-
-    @Test
-    void shouldApprovePendingPublishingReqeustForInstitutionWhenUserRemovesUnpublishedFilesButPublicationHasPublishedFiles()
-        throws ApiGatewayException {
-        var publication = randomPublication();
-        var openFile = randomOpenFile();
-        var pendingOpenFile = randomPendingOpenFile();
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile, openFile)));
-        var persistedPublication = persistPublication(publication);
-        Resource.fromPublication(persistedPublication).publish(resourceService, UserInstance.fromPublication(publication));
-        persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
-        var publicationUpdateRemovingUnpublishedFiles = persistedPublication.copy()
-                                                            .withAssociatedArtifacts(List.of(openFile))
-                                                            .withStatus(PublicationStatus.PUBLISHED)
-                                                            .build();
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
-                                                                Resource.fromPublication(publicationUpdateRemovingUnpublishedFiles));
-
-        var publishingRequest = getFileApprovalEntry(persistedPublication);
-
-        Assertions.assertEquals(COMPLETED, publishingRequest.getStatus());
-        assertTrue(publishingRequest.getFilesForApproval().isEmpty());
-        assertTrue(publishingRequest.getApprovedFiles().isEmpty());
-    }
-
-    private FilesApprovalEntry getFileApprovalEntry(Publication publication) {
-        return resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication))
-                   .map(FilesApprovalEntry.class::cast)
-                   .toList()
-                   .getFirst();
-    }
-
-    @Test
-    void shouldUpdateExistingPendingFileInFilesForApprovalInPendingPublishingRequestWhenUpdatingFileForPublication()
-        throws ApiGatewayException {
-        var publication = randomPublication();
-        var pendingOpenFile = randomPendingOpenFile().copy().withLicense(null).buildPendingOpenFile();
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile)));
-        var persistedPublication = persistPublication(publication);
-        persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
-
-        var updatedFile = pendingOpenFile.copy().withLicense(randomUri()).buildPendingOpenFile();
-        var updatedPublication = persistedPublication.copy()
-            .withAssociatedArtifacts(List.of(updatedFile))
+  @DisplayName(
+      "When user removes unpublished files from a publication"
+          + "and there exists pending publishing request with those files"
+          + "and there are no new unpublished files to publish"
+          + "then existing pending publishing request should be completed")
+  @ParameterizedTest
+  @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#notApprovedFilesProvider")
+  void shouldApprovePendingPublishingReqeustForInstitutionWhenUserRemovesUnpublishedFiles(File file)
+      throws ApiGatewayException {
+    var publication =
+        createPersistedPublicationWithFile(PublicationStatus.PUBLISHED, file, resourceService);
+    persistPublishingRequestContainingExistingPendingFiles(publication);
+    var publicationUpdateRemovingUnpublishedFiles =
+        publication
+            .copy()
+            .withAssociatedArtifacts(List.of())
+            .withStatus(PublicationStatus.PUBLISHED)
             .build();
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
-                                                               Resource.fromPublication(updatedPublication));
+    publishingRequestResolver(publication)
+        .resolve(
+            Resource.fromPublication(publication),
+            Resource.fromPublication(publicationUpdateRemovingUnpublishedFiles));
 
-        var filesForApproval = getFileApprovalEntry(persistedPublication).getFilesForApproval();
+    var publishingRequest = getFileApprovalEntry(publication);
 
-        assertTrue(filesForApproval.contains(updatedFile));
-    }
+    Assertions.assertEquals(COMPLETED, publishingRequest.getStatus());
+    assertTrue(publishingRequest.getFilesForApproval().isEmpty());
+    assertTrue(publishingRequest.getApprovedFiles().isEmpty());
+  }
 
-    @Test
-    void shouldNotChangeApprovalListWhenChangingFromOnePendingToAnotherStatus()
-        throws ApiGatewayException {
-        var publication = randomPublication();
-        var randomPendingOpenFile1 = randomPendingOpenFile();
-        var randomPendingOpenFile2 = randomPendingOpenFile();
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(randomPendingOpenFile1, randomPendingOpenFile2)));
-        var persistedPublication = persistPublication(publication);
-        persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
+  @Test
+  void
+      shouldApprovePendingPublishingReqeustForInstitutionWhenUserRemovesUnpublishedFilesButPublicationHasPublishedFiles()
+          throws ApiGatewayException {
+    var publication = randomPublication();
+    var openFile = randomOpenFile();
+    var pendingOpenFile = randomPendingOpenFile();
+    publication.setAssociatedArtifacts(
+        new AssociatedArtifactList(List.of(pendingOpenFile, openFile)));
+    var persistedPublication = persistPublication(publication);
+    Resource.fromPublication(persistedPublication)
+        .publish(resourceService, UserInstance.fromPublication(publication));
+    persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
+    var publicationUpdateRemovingUnpublishedFiles =
+        persistedPublication
+            .copy()
+            .withAssociatedArtifacts(List.of(openFile))
+            .withStatus(PublicationStatus.PUBLISHED)
+            .build();
+    publishingRequestResolver(persistedPublication)
+        .resolve(
+            resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
+            Resource.fromPublication(publicationUpdateRemovingUnpublishedFiles));
 
-        var randomPendingInternalFile2 = randomPendingOpenFile2.copy().buildPendingInternalFile();
-        var updatedPublication = persistedPublication.copy()
-                                     .withAssociatedArtifacts(List.of(randomPendingOpenFile1, randomPendingInternalFile2))
-                                     .build();
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
-                                                                Resource.fromPublication(updatedPublication));
+    var publishingRequest = getFileApprovalEntry(persistedPublication);
 
-        var filesForApproval = getFileApprovalEntry(persistedPublication).getFilesForApproval();
+    Assertions.assertEquals(COMPLETED, publishingRequest.getStatus());
+    assertTrue(publishingRequest.getFilesForApproval().isEmpty());
+    assertTrue(publishingRequest.getApprovedFiles().isEmpty());
+  }
 
-        assertTrue(filesForApproval.contains(randomPendingInternalFile2));
-        assertTrue(filesForApproval.contains(randomPendingOpenFile1));
-    }
+  private FilesApprovalEntry getFileApprovalEntry(Publication publication) {
+    return resourceService
+        .fetchAllTicketsForResource(Resource.fromPublication(publication))
+        .map(FilesApprovalEntry.class::cast)
+        .toList()
+        .getFirst();
+  }
 
-    @Test
-    void shouldRemoveFileFromPendingPublishingRequestWhenFileIsBeingUpdatedFromPendingToHiddenFile()
-        throws ApiGatewayException {
-        var publication = randomPublication();
-        var randomPendingOpenFile1 = randomPendingOpenFile();
-        var randomPendingOpenFile2 = randomPendingOpenFile();
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(randomPendingOpenFile1, randomPendingOpenFile2)));
-        var persistedPublication = persistPublication(publication);
-        persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
+  @Test
+  void
+      shouldUpdateExistingPendingFileInFilesForApprovalInPendingPublishingRequestWhenUpdatingFileForPublication()
+          throws ApiGatewayException {
+    var publication = randomPublication();
+    var pendingOpenFile = randomPendingOpenFile().copy().withLicense(null).buildPendingOpenFile();
+    publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile)));
+    var persistedPublication = persistPublication(publication);
+    persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
 
-        var hiddenFile = randomPendingOpenFile2.copy().buildHiddenFile();
-        var updatedPublication = persistedPublication.copy()
-                                     .withAssociatedArtifacts(List.of(randomPendingOpenFile1, hiddenFile))
-                                     .build();
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
-                                                                Resource.fromPublication(updatedPublication));
+    var updatedFile = pendingOpenFile.copy().withLicense(randomUri()).buildPendingOpenFile();
+    var updatedPublication =
+        persistedPublication.copy().withAssociatedArtifacts(List.of(updatedFile)).build();
+    publishingRequestResolver(persistedPublication)
+        .resolve(
+            resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
+            Resource.fromPublication(updatedPublication));
 
-        var filesForApproval = getFileApprovalEntry(persistedPublication).getFilesForApproval();
+    var filesForApproval = getFileApprovalEntry(persistedPublication).getFilesForApproval();
 
-        assertFalse(filesForApproval.contains(hiddenFile));
-        assertTrue(filesForApproval.contains(randomPendingOpenFile1));
-    }
+    assertTrue(filesForApproval.contains(updatedFile));
+  }
 
-    @Test
-    void shouldCompletePendingPublishingRequestWhenFileIsBeingUpdatedFromPendingToHiddenFileAndIsTheOnlyFileToApprove()
-        throws ApiGatewayException {
-        var publication = randomPublication();
-        var pendingFile = randomPendingOpenFile();
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingFile)));
-        var persistedPublication = persistPublication(publication);
-        persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
+  @Test
+  void shouldNotChangeApprovalListWhenChangingFromOnePendingToAnotherStatus()
+      throws ApiGatewayException {
+    var publication = randomPublication();
+    var randomPendingOpenFile1 = randomPendingOpenFile();
+    var randomPendingOpenFile2 = randomPendingOpenFile();
+    publication.setAssociatedArtifacts(
+        new AssociatedArtifactList(List.of(randomPendingOpenFile1, randomPendingOpenFile2)));
+    var persistedPublication = persistPublication(publication);
+    persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
 
-        var hiddenFile = pendingFile.copy().buildHiddenFile();
-        var updatedPublication = persistedPublication.copy()
-                                     .withAssociatedArtifacts(List.of(hiddenFile))
-                                     .build();
-        publishingRequestResolver(persistedPublication).resolve(resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
-                                                                Resource.fromPublication(updatedPublication));
+    var randomPendingInternalFile2 = randomPendingOpenFile2.copy().buildPendingInternalFile();
+    var updatedPublication =
+        persistedPublication
+            .copy()
+            .withAssociatedArtifacts(List.of(randomPendingOpenFile1, randomPendingInternalFile2))
+            .build();
+    publishingRequestResolver(persistedPublication)
+        .resolve(
+            resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
+            Resource.fromPublication(updatedPublication));
 
-        var publishingRequest = getFileApprovalEntry(persistedPublication);
+    var filesForApproval = getFileApprovalEntry(persistedPublication).getFilesForApproval();
 
-        assertEquals(COMPLETED, publishingRequest.getStatus());
-        assertTrue(publishingRequest.getFilesForApproval().isEmpty());
-        assertTrue(publishingRequest.getApprovedFiles().isEmpty());
-    }
+    assertTrue(filesForApproval.contains(randomPendingInternalFile2));
+    assertTrue(filesForApproval.contains(randomPendingOpenFile1));
+  }
 
-    @Test
-    void shouldPersistFilesApprovalThesisWhenUpdatingFileToPendingWhenDegreeAndChannelClaimedByUserInstitution()
-        throws ApiGatewayException {
-        var instanceType = DegreeBachelor.class;
-        var resource = Resource.fromPublication(randomPublication(instanceType));
-        var uploadedFile = randomUploadedFile();
-        resource.setAssociatedArtifacts(new AssociatedArtifactList(List.of(uploadedFile)));
-        var persistedResource = Resource.fromPublication(persistPublication(resource.toPublication()));
+  @Test
+  void shouldRemoveFileFromPendingPublishingRequestWhenFileIsBeingUpdatedFromPendingToHiddenFile()
+      throws ApiGatewayException {
+    var publication = randomPublication();
+    var randomPendingOpenFile1 = randomPendingOpenFile();
+    var randomPendingOpenFile2 = randomPendingOpenFile();
+    publication.setAssociatedArtifacts(
+        new AssociatedArtifactList(List.of(randomPendingOpenFile1, randomPendingOpenFile2)));
+    var persistedPublication = persistPublication(publication);
+    persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
 
-        var pendingFile = uploadedFile.copy().buildPendingOpenFile();
-        var updatedResource = persistedResource.copy()
-                                     .withAssociatedArtifactsList(new AssociatedArtifactList(List.of(pendingFile)))
-                                     .build();
-        updatedResource.setPublicationChannels(List.of(claimedPublicationChannel(
-            instanceType, resource.getResourceOwner().getOwnerAffiliation())));
-        publishingRequestResolver(persistedResource.toPublication()).resolve(resourceService.getResourceByIdentifier(persistedResource.getIdentifier()),
-                                                                updatedResource);
+    var hiddenFile = randomPendingOpenFile2.copy().buildHiddenFile();
+    var updatedPublication =
+        persistedPublication
+            .copy()
+            .withAssociatedArtifacts(List.of(randomPendingOpenFile1, hiddenFile))
+            .build();
+    publishingRequestResolver(persistedPublication)
+        .resolve(
+            resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
+            Resource.fromPublication(updatedPublication));
 
-        var fileApprovalEntry = getFileApprovalEntry(persistedResource.toPublication());
+    var filesForApproval = getFileApprovalEntry(persistedPublication).getFilesForApproval();
 
-        assertEquals(PENDING, fileApprovalEntry.getStatus());
-        assertTrue(fileApprovalEntry.getFilesForApproval().contains(pendingFile));
-        assertEquals(UserInstance.fromPublication(resource.toPublication()).getTopLevelOrgCristinId(),
-                     fileApprovalEntry.getOwnerAffiliation());
-    }
+    assertFalse(filesForApproval.contains(hiddenFile));
+    assertTrue(filesForApproval.contains(randomPendingOpenFile1));
+  }
 
-    private static ClaimedPublicationChannel claimedPublicationChannel(Class<DegreeBachelor> instanceType,
-                                                                       URI organizationId) {
-        return new ClaimedPublicationChannel(randomUri(), randomUri(),
-                                             organizationId,
-                                             constraintWithScope(instanceType), ChannelType.PUBLISHER,
-                                             SortableIdentifier.next(),
-                                             SortableIdentifier.next(), Instant.now(),
-                                             Instant.now());
-    }
+  @Test
+  void
+      shouldCompletePendingPublishingRequestWhenFileIsBeingUpdatedFromPendingToHiddenFileAndIsTheOnlyFileToApprove()
+          throws ApiGatewayException {
+    var publication = randomPublication();
+    var pendingFile = randomPendingOpenFile();
+    publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingFile)));
+    var persistedPublication = persistPublication(publication);
+    persistPublishingRequestContainingExistingPendingFiles(persistedPublication);
 
-    private static Constraint constraintWithScope(Class<DegreeBachelor> instanceType) {
-        return new Constraint(ChannelPolicy.EVERYONE,
-                              ChannelPolicy.OWNER_ONLY,
-                              List.of(instanceType.getSimpleName())
-        );
-    }
+    var hiddenFile = pendingFile.copy().buildHiddenFile();
+    var updatedPublication =
+        persistedPublication.copy().withAssociatedArtifacts(List.of(hiddenFile)).build();
+    publishingRequestResolver(persistedPublication)
+        .resolve(
+            resourceService.getResourceByIdentifier(persistedPublication.getIdentifier()),
+            Resource.fromPublication(updatedPublication));
 
-    @Test
-    void shouldPersistFilesApprovalThesisWhenUpdatingFileToPendingWhenDegreeAndChannelClaimedWithinTheScopeByNotUserInstitution()
-        throws ApiGatewayException {
-        var instanceType = DegreeBachelor.class;
-        var resource = Resource.fromPublication(randomPublication(instanceType));
-        var uploadedFile = randomUploadedFile();
-        resource.setAssociatedArtifacts(new AssociatedArtifactList(List.of(uploadedFile)));
-        var persistedResource = Resource.fromPublication(persistPublication(resource.toPublication()));
+    var publishingRequest = getFileApprovalEntry(persistedPublication);
 
-        var pendingFile = uploadedFile.copy().buildPendingOpenFile();
-        var updatedResource = persistedResource.copy()
-                                     .withAssociatedArtifactsList(new AssociatedArtifactList(List.of(pendingFile)))
-                                     .build();
-        var claimedChannel = claimedPublicationChannel(instanceType, randomUri());
-        updatedResource.setPublicationChannels(List.of(claimedChannel));
-        publishingRequestResolver(persistedResource.toPublication()).resolve(resourceService.getResourceByIdentifier(persistedResource.getIdentifier()),
-                                                                updatedResource);
+    assertEquals(COMPLETED, publishingRequest.getStatus());
+    assertTrue(publishingRequest.getFilesForApproval().isEmpty());
+    assertTrue(publishingRequest.getApprovedFiles().isEmpty());
+  }
 
-        var fileApprovalEntry = getFileApprovalEntry(persistedResource.toPublication());
+  @Test
+  void
+      shouldPersistFilesApprovalThesisWhenUpdatingFileToPendingWhenDegreeAndChannelClaimedByUserInstitution()
+          throws ApiGatewayException {
+    var instanceType = DegreeBachelor.class;
+    var resource = Resource.fromPublication(randomPublication(instanceType));
+    var uploadedFile = randomUploadedFile();
+    resource.setAssociatedArtifacts(new AssociatedArtifactList(List.of(uploadedFile)));
+    var persistedResource = Resource.fromPublication(persistPublication(resource.toPublication()));
 
-        assertEquals(PENDING, fileApprovalEntry.getStatus());
-        assertTrue(fileApprovalEntry.getFilesForApproval().contains(pendingFile));
-        assertEquals(claimedChannel.getOrganizationId(), fileApprovalEntry.getReceivingOrganizationDetails().topLevelOrganizationId());
-        assertEquals(claimedChannel.getOrganizationId(), fileApprovalEntry.getReceivingOrganizationDetails().subOrganizationId());
-    }
+    var pendingFile = uploadedFile.copy().buildPendingOpenFile();
+    var updatedResource =
+        persistedResource
+            .copy()
+            .withAssociatedArtifactsList(new AssociatedArtifactList(List.of(pendingFile)))
+            .build();
+    updatedResource.setPublicationChannels(
+        List.of(
+            claimedPublicationChannel(
+                instanceType, resource.getResourceOwner().getOwnerAffiliation())));
+    publishingRequestResolver(persistedResource.toPublication())
+        .resolve(
+            resourceService.getResourceByIdentifier(persistedResource.getIdentifier()),
+            updatedResource);
 
-    @Test
-    void shouldApprovePendingFilesApprovalThesisWhenUserRemovesTheOnlyPendingFileFromPublicationAndTicketIsOwnedByClaimedInstitution()
-        throws ApiGatewayException {
+    var fileApprovalEntry = getFileApprovalEntry(persistedResource.toPublication());
 
-        var instanceType = DegreeBachelor.class;
-        var resource = Resource.fromPublication(randomPublication(instanceType));
-        var claimedChannel = claimedPublicationChannel(instanceType,
-                                                                 resource.getResourceOwner()
-                                                                     .getOwnerAffiliation());
-        resource.setPublicationChannels(List.of(claimedChannel));
-        var pendingOpenFile = randomPendingOpenFile();
-        resource.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile)));
-        resource.setStatus(PublicationStatus.PUBLISHED);
-        var persistedResource = super.persistResource(resource);
-        var channelClaimOwner = randomUri();
-        var channelClaimIdentifier = SortableIdentifier.next();
-        persistFilesApprovalContainingExistingPendingFiles(persistedResource.toPublication(), channelClaimOwner, channelClaimIdentifier);
-        var updatedResource = persistedResource.copy()
-                                     .withAssociatedArtifactsList(AssociatedArtifactList.empty())
-                                     .build();
-        publishingRequestResolver(persistedResource.toPublication()).resolve(resource,
-                                                                updatedResource);
+    assertEquals(PENDING, fileApprovalEntry.getStatus());
+    assertTrue(fileApprovalEntry.getFilesForApproval().contains(pendingFile));
+    assertEquals(
+        UserInstance.fromPublication(resource.toPublication()).getTopLevelOrgCristinId(),
+        fileApprovalEntry.getOwnerAffiliation());
+  }
 
-        var fileApprovalEntry = getFileApprovalEntry(persistedResource.toPublication());
+  private static ClaimedPublicationChannel claimedPublicationChannel(
+      Class<DegreeBachelor> instanceType, URI organizationId) {
+    return new ClaimedPublicationChannel(
+        randomUri(),
+        randomUri(),
+        organizationId,
+        constraintWithScope(instanceType),
+        ChannelType.PUBLISHER,
+        SortableIdentifier.next(),
+        SortableIdentifier.next(),
+        Instant.now(),
+        Instant.now());
+  }
 
-        assertEquals(COMPLETED, fileApprovalEntry.getStatus());
-    }
+  private static Constraint constraintWithScope(Class<DegreeBachelor> instanceType) {
+    return new Constraint(
+        ChannelPolicy.EVERYONE, ChannelPolicy.OWNER_ONLY, List.of(instanceType.getSimpleName()));
+  }
 
-    private Publication persistPublication(Publication publication) throws ApiGatewayException {
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = resourceService.createPublication(userInstance,
-                                                                     publication);
-        Resource.fromPublication(persistedPublication).publish(resourceService, UserInstance.fromPublication(publication));
-        return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
-    }
+  @Test
+  void
+      shouldPersistFilesApprovalThesisWhenUpdatingFileToPendingWhenDegreeAndChannelClaimedWithinTheScopeByNotUserInstitution()
+          throws ApiGatewayException {
+    var instanceType = DegreeBachelor.class;
+    var resource = Resource.fromPublication(randomPublication(instanceType));
+    var uploadedFile = randomUploadedFile();
+    resource.setAssociatedArtifacts(new AssociatedArtifactList(List.of(uploadedFile)));
+    var persistedResource = Resource.fromPublication(persistPublication(resource.toPublication()));
 
-    private static Customer customerNotAllowingPublishingFiles() {
-        return new Customer(Set.of(), PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue(), null);
-    }
+    var pendingFile = uploadedFile.copy().buildPendingOpenFile();
+    var updatedResource =
+        persistedResource
+            .copy()
+            .withAssociatedArtifactsList(new AssociatedArtifactList(List.of(pendingFile)))
+            .build();
+    var claimedChannel = claimedPublicationChannel(instanceType, randomUri());
+    updatedResource.setPublicationChannels(List.of(claimedChannel));
+    publishingRequestResolver(persistedResource.toPublication())
+        .resolve(
+            resourceService.getResourceByIdentifier(persistedResource.getIdentifier()),
+            updatedResource);
 
-    private PublishingRequestResolver publishingRequestResolver(Publication publication) {
-        return new PublishingRequestResolver(resourceService, ticketService, UserInstance.fromPublication(publication),
-                                             customerNotAllowingPublishingFiles());
-    }
+    var fileApprovalEntry = getFileApprovalEntry(persistedResource.toPublication());
 
-    private void persistPublishingRequestContainingExistingPendingFiles(Publication publication)
-        throws ApiGatewayException {
-        PublishingRequestCase.create(Resource.fromPublication(publication),
-                                     UserInstance.fromPublication(publication),
-                                     PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-                                 .persistNewTicket(ticketService);
+    assertEquals(PENDING, fileApprovalEntry.getStatus());
+    assertTrue(fileApprovalEntry.getFilesForApproval().contains(pendingFile));
+    assertEquals(
+        claimedChannel.getOrganizationId(),
+        fileApprovalEntry.getReceivingOrganizationDetails().topLevelOrganizationId());
+    assertEquals(
+        claimedChannel.getOrganizationId(),
+        fileApprovalEntry.getReceivingOrganizationDetails().subOrganizationId());
+  }
 
-    }
+  @Test
+  void
+      shouldApprovePendingFilesApprovalThesisWhenUserRemovesTheOnlyPendingFileFromPublicationAndTicketIsOwnedByClaimedInstitution()
+          throws ApiGatewayException {
 
-    private void persistFilesApprovalContainingExistingPendingFiles(Publication publication, URI organizationId,
-                                                                    SortableIdentifier channelClaimIdentifier)
-        throws ApiGatewayException {
-        FilesApprovalThesis.createForChannelOwningInstitution(Resource.fromPublication(publication),
-                                                              UserInstance.fromPublication(publication),
-                                                              organizationId,
-                                                              channelClaimIdentifier,
-                                                              PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-            .persistNewTicket(ticketService);
-    }
+    var instanceType = DegreeBachelor.class;
+    var resource = Resource.fromPublication(randomPublication(instanceType));
+    var claimedChannel =
+        claimedPublicationChannel(instanceType, resource.getResourceOwner().getOwnerAffiliation());
+    resource.setPublicationChannels(List.of(claimedChannel));
+    var pendingOpenFile = randomPendingOpenFile();
+    resource.setAssociatedArtifacts(new AssociatedArtifactList(List.of(pendingOpenFile)));
+    resource.setStatus(PublicationStatus.PUBLISHED);
+    var persistedResource = super.persistResource(resource);
+    var channelClaimOwner = randomUri();
+    var channelClaimIdentifier = SortableIdentifier.next();
+    persistFilesApprovalContainingExistingPendingFiles(
+        persistedResource.toPublication(), channelClaimOwner, channelClaimIdentifier);
+    var updatedResource =
+        persistedResource
+            .copy()
+            .withAssociatedArtifactsList(AssociatedArtifactList.empty())
+            .build();
+    publishingRequestResolver(persistedResource.toPublication()).resolve(resource, updatedResource);
+
+    var fileApprovalEntry = getFileApprovalEntry(persistedResource.toPublication());
+
+    assertEquals(COMPLETED, fileApprovalEntry.getStatus());
+  }
+
+  private Publication persistPublication(Publication publication) throws ApiGatewayException {
+    var userInstance = UserInstance.fromPublication(publication);
+    var persistedPublication = resourceService.createPublication(userInstance, publication);
+    Resource.fromPublication(persistedPublication)
+        .publish(resourceService, UserInstance.fromPublication(publication));
+    return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+  }
+
+  private static Customer customerNotAllowingPublishingFiles() {
+    return new Customer(
+        Set.of(), PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue(), null);
+  }
+
+  private PublishingRequestResolver publishingRequestResolver(Publication publication) {
+    return new PublishingRequestResolver(
+        resourceService,
+        ticketService,
+        UserInstance.fromPublication(publication),
+        customerNotAllowingPublishingFiles());
+  }
+
+  private void persistPublishingRequestContainingExistingPendingFiles(Publication publication)
+      throws ApiGatewayException {
+    PublishingRequestCase.create(
+            Resource.fromPublication(publication),
+            UserInstance.fromPublication(publication),
+            PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
+        .persistNewTicket(ticketService);
+  }
+
+  private void persistFilesApprovalContainingExistingPendingFiles(
+      Publication publication, URI organizationId, SortableIdentifier channelClaimIdentifier)
+      throws ApiGatewayException {
+    FilesApprovalThesis.createForChannelOwningInstitution(
+            Resource.fromPublication(publication),
+            UserInstance.fromPublication(publication),
+            organizationId,
+            channelClaimIdentifier,
+            PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
+        .persistNewTicket(ticketService);
+  }
 }

@@ -25,6 +25,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -81,594 +82,723 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class CreateTicketHandlerTest extends TicketTestLocal {
 
-    public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
-    private static final String PERSON_AFFILIATION_CLAIM = "custom:personAffiliation";
+  public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
+  private static final String PERSON_AFFILIATION_CLAIM = "custom:personAffiliation";
 
-    private CreateTicketHandler handler;
-    private TicketResolver ticketResolver;
-    private MessageService messageService;
+  private CreateTicketHandler handler;
+  private TicketResolver ticketResolver;
+  private MessageService messageService;
 
-    public static Stream<Arguments> ticketEntryProvider() {
-        return TypeProvider.listSubTypes(TicketEntry.class)
-                   .filter(type -> !type.getPayload().equals(UnpublishRequest.class))
-                   .filter(type -> !type.getPayload().equals(FilesApprovalThesis.class))
-                   .filter(type -> !type.getPayload().equals(PublishingRequestCase.class))
-                   .map(Arguments::of);
-    }
+  public static Stream<Arguments> ticketEntryProvider() {
+    return TypeProvider.listSubTypes(TicketEntry.class)
+        .filter(type -> !type.getPayload().equals(UnpublishRequest.class))
+        .filter(type -> !type.getPayload().equals(FilesApprovalThesis.class))
+        .filter(type -> !type.getPayload().equals(PublishingRequestCase.class))
+        .map(Arguments::of);
+  }
 
-    @BeforeEach
-    public void setup() {
-        super.init();
-        cristinUnitsUtil = new FakeCristinUnitsUtil();
-        ticketResolver = new TicketResolver(resourceService, ticketService);
-        messageService = new MessageService(client, new UriRetriever(), cristinUnitsUtil);
-        this.handler = new CreateTicketHandler(ticketResolver, messageService, new Environment());
-    }
+  @BeforeEach
+  public void setup() {
+    super.init();
+    cristinUnitsUtil = new FakeCristinUnitsUtil();
+    ticketResolver = new TicketResolver(resourceService, ticketService);
+    messageService = new MessageService(client, new UriRetriever(), cristinUnitsUtil);
+    this.handler = new CreateTicketHandler(ticketResolver, messageService, new Environment());
+  }
 
-    @ParameterizedTest
-    @DisplayName("should persist ticket when publication exists, user is publication owner and "
-                 + "publication meets ticket creation criteria")
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldPersistTicketWhenPublicationExistsUserIsOwnerAndPublicationMeetsTicketCreationCriteria(
-        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws IOException, ApiGatewayException {
+  @ParameterizedTest
+  @DisplayName(
+      "should persist ticket when publication exists, user is publication owner and "
+          + "publication meets ticket creation criteria")
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+  void shouldPersistTicketWhenPublicationExistsUserIsOwnerAndPublicationMeetsTicketCreationCriteria(
+      Class<? extends TicketEntry> ticketType, PublicationStatus status)
+      throws IOException, ApiGatewayException {
 
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var requestBody = constructDto(ticketType);
-        var owner = UserInstance.fromPublication(publication);
-        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
-        handler.handleRequest(input, output, CONTEXT);
+    var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+    var requestBody = constructDto(ticketType);
+    var owner = UserInstance.fromPublication(publication);
+    var input = createHttpTicketCreationRequest(requestBody, publication, owner);
+    handler.handleRequest(input, output, CONTEXT);
 
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
 
-        var location = URI.create(response.getHeaders().get(LOCATION_HEADER));
+    var location = URI.create(response.getHeaders().get(LOCATION_HEADER));
 
-        assertThatLocationHeaderHasExpectedFormat(publication, location);
-        assertThatLocationHeaderPointsToCreatedTicket(location);
-    }
+    assertThatLocationHeaderHasExpectedFormat(publication, location);
+    assertThatLocationHeaderPointsToCreatedTicket(location);
+  }
 
-    @ParameterizedTest(name = "should be possible to create DoiTicket for published publication")
-    @EnumSource(value = PublicationStatus.class, names = {"PUBLISHED", "PUBLISHED_METADATA"})
-    void shouldBePossibleToCreateDoiTicketForPublishedPublication(PublicationStatus publicationStatus)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(publicationStatus,
-                                                                     resourceService);
-        var requestBody = constructDto(DoiRequest.class);
-        var owner = UserInstance.fromPublication(publication);
-        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
-        handler.handleRequest(input, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
-        var location = URI.create(response.getHeaders().get(LOCATION_HEADER));
-        assertThatLocationHeaderHasExpectedFormat(publication, location);
-        assertThatLocationHeaderPointsToCreatedTicket(location);
-    }
+  @ParameterizedTest(name = "should be possible to create DoiTicket for published publication")
+  @EnumSource(
+      value = PublicationStatus.class,
+      names = {"PUBLISHED", "PUBLISHED_METADATA"})
+  void shouldBePossibleToCreateDoiTicketForPublishedPublication(PublicationStatus publicationStatus)
+      throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedPublication(publicationStatus, resourceService);
+    var requestBody = constructDto(DoiRequest.class);
+    var owner = UserInstance.fromPublication(publication);
+    var input = createHttpTicketCreationRequest(requestBody, publication, owner);
+    handler.handleRequest(input, output, CONTEXT);
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+    var location = URI.create(response.getHeaders().get(LOCATION_HEADER));
+    assertThatLocationHeaderHasExpectedFormat(publication, location);
+    assertThatLocationHeaderPointsToCreatedTicket(location);
+  }
 
-    @ParameterizedTest(name = "ticket type: {0}")
-    @DisplayName("should should not allow creating a ticket for non existing publication")
-    @MethodSource("ticketEntryProvider")
-    void shouldNotAllowTicketCreationForNonExistingPublication(Class<? extends TicketEntry> ticketType)
-        throws IOException {
-        var publication = nonPersistedPublication();
-        var requestBody = constructDto(ticketType);
-        var owner = UserInstance.fromPublication(publication);
-        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
-        handler.handleRequest(input, output, CONTEXT);
+  @ParameterizedTest(name = "ticket type: {0}")
+  @DisplayName("should should not allow creating a ticket for non existing publication")
+  @MethodSource("ticketEntryProvider")
+  void shouldNotAllowTicketCreationForNonExistingPublication(
+      Class<? extends TicketEntry> ticketType) throws IOException {
+    var publication = nonPersistedPublication();
+    var requestBody = constructDto(ticketType);
+    var owner = UserInstance.fromPublication(publication);
+    var input = createHttpTicketCreationRequest(requestBody, publication, owner);
+    handler.handleRequest(input, output, CONTEXT);
 
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
-    }
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+  }
 
-    @ParameterizedTest
-    @DisplayName("should not allow users to create tickets for publications they do not own")
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldNotAllowUsersToCreateTicketsForPublicationsTheyDoNotOwn(Class<? extends TicketEntry> ticketType,
-                                                                       PublicationStatus status)
-        throws IOException, ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var requestBody = constructDto(ticketType);
-        var user = UserInstance.create(randomString(), publication.getPublisher().getId(),
-                                       randomUri(), List.of(), publication.getResourceOwner().getOwnerAffiliation());
-        var input = createHttpTicketCreationRequest(requestBody, publication, user);
-        handler.handleRequest(input, output, CONTEXT);
+  @ParameterizedTest
+  @DisplayName("should not allow users to create tickets for publications they do not own")
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+  void shouldNotAllowUsersToCreateTicketsForPublicationsTheyDoNotOwn(
+      Class<? extends TicketEntry> ticketType, PublicationStatus status)
+      throws IOException, ApiGatewayException {
+    var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+    var requestBody = constructDto(ticketType);
+    var user =
+        UserInstance.create(
+            randomString(),
+            publication.getPublisher().getId(),
+            randomUri(),
+            List.of(),
+            publication.getResourceOwner().getOwnerAffiliation());
+    var input = createHttpTicketCreationRequest(requestBody, publication, user);
+    handler.handleRequest(input, output, CONTEXT);
 
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
-    }
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+  }
 
-    @ParameterizedTest
-    @DisplayName("should not allow users to create tickets for publications they do not belong to, i.e. "
-                 + "where they are not listed as contributors, owner or curators for owner or contributors institution")
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldNotAllowUsersToCreateTicketsForPublicationsBelongingToDifferentOrgThanTheOneTheyAreLoggedInTo(
-        Class<? extends TicketEntry> ticketType, PublicationStatus status)
-        throws IOException, ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var requestBody = constructDto(ticketType);
-        var user = UserInstance.create(randomString(), randomUri(), randomUri(), List.of(), randomUri());
-        var input = createHttpTicketCreationRequest(requestBody, publication, user);
-        handler.handleRequest(input, output, CONTEXT);
+  @ParameterizedTest
+  @DisplayName(
+      "should not allow users to create tickets for publications they do not belong to, i.e. where"
+          + " they are not listed as contributors, owner or curators for owner or contributors"
+          + " institution")
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+  void
+      shouldNotAllowUsersToCreateTicketsForPublicationsBelongingToDifferentOrgThanTheOneTheyAreLoggedInTo(
+          Class<? extends TicketEntry> ticketType, PublicationStatus status)
+          throws IOException, ApiGatewayException {
+    var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+    var requestBody = constructDto(ticketType);
+    var user =
+        UserInstance.create(randomString(), randomUri(), randomUri(), List.of(), randomUri());
+    var input = createHttpTicketCreationRequest(requestBody, publication, user);
+    handler.handleRequest(input, output, CONTEXT);
 
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
-    }
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+  }
 
-    @ParameterizedTest
-    @DisplayName("should not allow anonymous users to create tickets")
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldNotAllowAnonymousUsersToCreateTickets(Class<? extends TicketEntry> ticketType, PublicationStatus status)
-        throws IOException, ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
-        var requestBody = constructDto(ticketType);
-        var input = createAnonymousHttpTicketCreationRequest(requestBody, publication);
-        handler.handleRequest(input, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
-    }
+  @ParameterizedTest
+  @DisplayName("should not allow anonymous users to create tickets")
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+  void shouldNotAllowAnonymousUsersToCreateTickets(
+      Class<? extends TicketEntry> ticketType, PublicationStatus status)
+      throws IOException, ApiGatewayException {
+    var publication = TicketTestUtils.createPersistedPublication(status, resourceService);
+    var requestBody = constructDto(ticketType);
+    var input = createAnonymousHttpTicketCreationRequest(requestBody, publication);
+    handler.handleRequest(input, output, CONTEXT);
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
+  }
 
-    @ParameterizedTest
-    @DisplayName("should mark ticket as read for only the publication owner when publication owner creates new "
-                 + "ticket")
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldNotMarkTicketAsReadForThePublicationOwnerWhenPublicationOwnerCreatesNewTicket(
-        Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedNonDegreePublication(randomBackendUri("customer"), status,
-                                                                              resourceService);
-        var owner = UserInstance.fromPublication(publication);
-        var requestBody = constructDto(ticketType);
-        var input = createHttpTicketCreationRequest(requestBody, publication, owner);
-        handler.handleRequest(input, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        TicketEntry ticket = fetchTicket(response);
-        assertTrue(ticket.getViewedBy().isEmpty());
-    }
+  @ParameterizedTest
+  @DisplayName(
+      "should mark ticket as read for only the publication owner when publication owner creates new"
+          + " ticket")
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+  void shouldNotMarkTicketAsReadForThePublicationOwnerWhenPublicationOwnerCreatesNewTicket(
+      Class<? extends TicketEntry> ticketType, PublicationStatus status)
+      throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedNonDegreePublication(
+            randomBackendUri("customer"), status, resourceService);
+    var owner = UserInstance.fromPublication(publication);
+    var requestBody = constructDto(ticketType);
+    var input = createHttpTicketCreationRequest(requestBody, publication, owner);
+    handler.handleRequest(input, output, CONTEXT);
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    TicketEntry ticket = fetchTicket(response);
+    assertTrue(ticket.getViewedBy().isEmpty());
+  }
 
-    @DisplayName("should update existing DoiRequest when new DOI is requested but a DoiRequest that has not been "
-                 + "fulfilled already exists")
-    @Test
-    void shouldUpdateExistingDoiRequestWhenNewDoiIsRequestedButUnfulfilledDoiRequestAlreadyExists()
-        throws ApiGatewayException, IOException {
-        var publication = createPersistedNonDegreePublishedPublication();
-        var owner = UserInstance.fromPublication(publication);
-        var requestBody = constructDto(DoiRequest.class);
-        ticketResolver = new TicketResolver(resourceService, ticketService);
-        this.handler = new CreateTicketHandler(ticketResolver, messageService, new Environment());
-        var firstRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
-        handler.handleRequest(firstRequest, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+  @DisplayName(
+      "should update existing DoiRequest when new DOI is requested but a DoiRequest that has not"
+          + " been fulfilled already exists")
+  @Test
+  void shouldUpdateExistingDoiRequestWhenNewDoiIsRequestedButUnfulfilledDoiRequestAlreadyExists()
+      throws ApiGatewayException, IOException {
+    var publication = createPersistedNonDegreePublishedPublication();
+    var owner = UserInstance.fromPublication(publication);
+    var requestBody = constructDto(DoiRequest.class);
+    ticketResolver = new TicketResolver(resourceService, ticketService);
+    this.handler = new CreateTicketHandler(ticketResolver, messageService, new Environment());
+    var firstRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
+    handler.handleRequest(firstRequest, output, CONTEXT);
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
 
-        final var createdTicket = fetchTicket(response).copy();
-        final var secondRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
-        output = new ByteArrayOutputStream();
-        ticketResolver = new TicketResolver(resourceService, ticketService);
-        this.handler = new CreateTicketHandler(ticketResolver, messageService, new Environment());
-        handler.handleRequest(secondRequest, output, CONTEXT);
+    final var createdTicket = fetchTicket(response).copy();
+    final var secondRequest = createHttpTicketCreationRequest(requestBody, publication, owner);
+    output = new ByteArrayOutputStream();
+    ticketResolver = new TicketResolver(resourceService, ticketService);
+    this.handler = new CreateTicketHandler(ticketResolver, messageService, new Environment());
+    handler.handleRequest(secondRequest, output, CONTEXT);
 
-        var secondResponse = GatewayResponse.fromOutputStream(output, Void.class);
+    var secondResponse = GatewayResponse.fromOutputStream(output, Void.class);
 
-        assertThat(secondResponse.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    assertThat(secondResponse.getStatusCode(), is(equalTo(HTTP_CREATED)));
 
-        var existingTicket = fetchTicket(secondResponse);
-        assertThat(existingTicket.getModifiedDate(), is(greaterThan(createdTicket.getModifiedDate())));
-    }
+    var existingTicket = fetchTicket(secondResponse);
+    assertThat(existingTicket.getModifiedDate(), is(greaterThan(createdTicket.getModifiedDate())));
+  }
 
-    @Test
-    void shouldNotAllowUserWithManageDoiAccessRightToCreateDoiRequestForPublicationUserDoesNotBelongsTo()
-        throws ApiGatewayException, IOException {
-        var publication = createPersistedPublishedPublication();
-        var requestBody = constructDto(DoiRequest.class);
-        var request = createHttpTicketCreationRequestWithApprovedAccessRight(requestBody, publication,
-                                                                             randomBackendUri("customer")
-        );
-        handler.handleRequest(request, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
-    }
+  @Test
+  void
+      shouldNotAllowUserWithManageDoiAccessRightToCreateDoiRequestForPublicationUserDoesNotBelongsTo()
+          throws ApiGatewayException, IOException {
+    var publication = createPersistedPublishedPublication();
+    var requestBody = constructDto(DoiRequest.class);
+    var request =
+        createHttpTicketCreationRequestWithApprovedAccessRight(
+            requestBody, publication, randomBackendUri("customer"));
+    handler.handleRequest(request, output, CONTEXT);
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+  }
 
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#invalidAccessRightForTicketTypeProvider")
-    void shouldNotAllowCuratorWithoutValidAccessRightToCreateTicket(Class<? extends TicketEntry> ticketType,
-                                                                    AccessRight... accessRights)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), DRAFT, resourceService);
-        var requestBody = constructDto(ticketType);
-        var user = UserInstance.create(randomString(), publication.getPublisher().getId());
-        var input = createHttpTicketCreationRequestWithApprovedAccessRight(
+  @ParameterizedTest
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#invalidAccessRightForTicketTypeProvider")
+  void shouldNotAllowCuratorWithoutValidAccessRightToCreateTicket(
+      Class<? extends TicketEntry> ticketType, AccessRight... accessRights)
+      throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedNonDegreePublication(randomUri(), DRAFT, resourceService);
+    var requestBody = constructDto(ticketType);
+    var user = UserInstance.create(randomString(), publication.getPublisher().getId());
+    var input =
+        createHttpTicketCreationRequestWithApprovedAccessRight(
             requestBody, publication, user.getUsername(), user.getCustomerId(), accessRights);
-        handler.handleRequest(input, output, CONTEXT);
+    handler.handleRequest(input, output, CONTEXT);
 
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+  }
+
+  @ParameterizedTest
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndAccessRightProvider")
+  void shouldAllowCuratorWithValidAccessRightToCreateTicket(
+      PublicationStatus status,
+      Class<? extends TicketEntry> ticketType,
+      AccessRight... accessRights)
+      throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedNonDegreePublication(randomUri(), status, resourceService);
+    var requestBody = constructDto(ticketType);
+    var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
+    var input =
+        createHttpTicketCreationRequest(
+            requestBody,
+            publication.getIdentifier(),
+            curatingInstitution,
+            randomUri(),
+            randomString(),
+            accessRights);
+    handler.handleRequest(input, output, CONTEXT);
+
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+  }
+
+  @ParameterizedTest
+  @MethodSource("ticketEntryProvider")
+  void shouldAllowContributorToCreateTicketForNonDegreePublication(
+      Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedNonDegreePublication(
+            randomUri(), PUBLISHED, resourceService);
+    var requestBody = constructDto(ticketType);
+
+    var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
+    var contributorCristinId =
+        publication.getEntityDescription().getContributors().getFirst().getIdentity().getId();
+    var request =
+        createHttpTicketCreationRequest(
+            requestBody,
+            publication.getIdentifier(),
+            curatingInstitution,
+            contributorCristinId,
+            randomString());
+    handler.handleRequest(request, output, CONTEXT);
+
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+  }
+
+  @ParameterizedTest
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndAccessRightProvider")
+  void
+      shouldAllowCuratorWithValidAccessRightAndRelatedToContributorToCreateTicketForNonDegreePublication(
+          PublicationStatus publicationStatus,
+          Class<? extends TicketEntry> ticketType,
+          AccessRight... accessRights)
+          throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedNonDegreePublication(
+            randomUri(), publicationStatus, resourceService);
+    var requestBody = constructDto(ticketType);
+
+    var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
+    var request =
+        createHttpTicketCreationRequest(
+            requestBody,
+            publication.getIdentifier(),
+            curatingInstitution,
+            randomUri(),
+            randomString(),
+            accessRights);
+    handler.handleRequest(request, output, CONTEXT);
+
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+  }
+
+  @ParameterizedTest
+  @MethodSource("ticketEntryProvider")
+  void shouldAllowContributorToCreateTicketForDegreePublication(
+      Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
+    var publication = TicketTestUtils.createPersistedDegreePublication(PUBLISHED, resourceService);
+    var requestBody = constructDto(ticketType);
+
+    var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
+    var contributorCristinId =
+        publication.getEntityDescription().getContributors().getFirst().getIdentity().getId();
+    var request =
+        createHttpTicketCreationRequest(
+            requestBody,
+            publication.getIdentifier(),
+            curatingInstitution,
+            contributorCristinId,
+            randomString());
+    handler.handleRequest(request, output, CONTEXT);
+
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+  }
+
+  @ParameterizedTest
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndAccessRightProvider")
+  void
+      shouldAllowCuratorWithValidAccessRightAndRelatedContributorToCreateTicketForDegreePublication(
+          PublicationStatus publicationStatus,
+          Class<? extends TicketEntry> ticketType,
+          AccessRight... accessRights)
+          throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedDegreePublication(publicationStatus, resourceService);
+    var requestBody = constructDto(ticketType);
+
+    var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
+    var request =
+        createHttpTicketCreationRequest(
+            requestBody,
+            publication.getIdentifier(),
+            curatingInstitution,
+            randomUri(),
+            randomString(),
+            accessRights);
+    handler.handleRequest(request, output, CONTEXT);
+
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+  }
+
+  @ParameterizedTest
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndAccessRightProvider")
+  void shouldNotAllowNotRelatedCuratorWithValidAccessRightForNonDegreePublication(
+      PublicationStatus publicationStatus,
+      Class<? extends TicketEntry> ticketType,
+      AccessRight... accessRights)
+      throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedNonDegreePublication(
+            randomUri(), publicationStatus, resourceService);
+    var requestBody = constructDto(ticketType);
+
+    var request =
+        createHttpTicketCreationRequest(
+            requestBody,
+            publication.getIdentifier(),
+            randomUri(),
+            randomUri(),
+            randomString(),
+            accessRights);
+    handler.handleRequest(request, output, CONTEXT);
+
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
+  }
+
+  @Test
+  void contributorAtAnotherInstitutionThanPublicationOwnerShouldBeAbleToCreateTicketForPublication()
+      throws ApiGatewayException, IOException {
+    var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+    var contributorId = randomUri();
+    var affiliationId = randomUri();
+    publication
+        .getEntityDescription()
+        .setContributors(
+            List.of(randomContributorWithIdAndAffiliation(contributorId, affiliationId)));
+    publication.setCuratingInstitutions(
+        Set.of(new CuratingInstitution(affiliationId, Set.of(contributorId))));
+    mockCuratingInstitution(affiliationId);
+    when(customerService.fetchCustomers())
+        .thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), affiliationId))));
+    resourceService.updatePublication(publication);
+    var requestBody = constructDto(DoiRequest.class);
+
+    var request =
+        createHttpTicketCreationRequest(
+            requestBody, publication.getIdentifier(), affiliationId, contributorId, randomString());
+    handler.handleRequest(request, output, CONTEXT);
+
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+  }
+
+  private void mockCuratingInstitution(URI affiliationId) {
+    when(uriRetriever.getRawContent(affiliationId, APPLICATION_JSON))
+        .thenReturn(
+            Optional.of(
+                """
+                {
+                  "type": "Organization",
+                  "partOf": [
+                    {
+                      "type": "Organization",
+                      "id": "%s"
+                    }
+                  ]
+                }
+                """
+                    .formatted(affiliationId)));
+  }
+
+  @Test
+  void curatorAtAnotherInstitutionThanPublicationOwnerShouldBeAbleToCreateTicketForPublication()
+      throws ApiGatewayException, IOException {
+    var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+    var curatingInstitution = randomUri();
+    publication.setCuratingInstitutions(
+        Set.of(new CuratingInstitution(curatingInstitution, Set.of(randomUri()))));
+    resourceService.updatePublication(publication);
+    var requestBody = constructDto(GeneralSupportRequest.class);
+
+    var request =
+        createHttpTicketCreationRequest(
+            requestBody,
+            publication.getIdentifier(),
+            curatingInstitution,
+            randomUri(),
+            randomString(),
+            MANAGE_RESOURCES_STANDARD);
+    handler.handleRequest(request, output, CONTEXT);
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+  }
+
+  @Test
+  void shouldPersistMessageWhenCreatingTicketWithMessage() throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedNonDegreePublication(
+            randomUri(), PUBLISHED, resourceService);
+    var message = Message.builder().withText(randomString()).build();
+    var requestBody =
+        GeneralSupportRequestDto.builder()
+            .withMessages(List.of(MessageDto.fromMessage(message)))
+            .build(new GeneralSupportRequest());
+
+    var request =
+        createHttpTicketCreationRequest(
+            requestBody,
+            publication.getIdentifier(),
+            publication.getResourceOwner().getOwnerAffiliation(),
+            randomUri(),
+            randomString(),
+            MANAGE_RESOURCES_STANDARD,
+            SUPPORT);
+    handler.handleRequest(request, output, CONTEXT);
+
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    var ticket =
+        resourceService
+            .fetchAllTicketsForResource(Resource.fromPublication(publication))
+            .toList()
+            .getFirst();
+    var persistedMessage = ticket.fetchMessages(ticketService).getFirst();
+
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    assertThat(persistedMessage.getText(), is(equalTo(message.getText())));
+  }
+
+  @Test
+  void shouldPersistSingleMessageWhenCreatingTicketWithMultipleMessage()
+      throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedNonDegreePublication(
+            randomUri(), PUBLISHED, resourceService);
+    var firstMessage = Message.builder().withText(randomString()).build();
+    var secondMessage = Message.builder().withText(randomString()).build();
+    var requestBody =
+        GeneralSupportRequestDto.builder()
+            .withMessages(
+                List.of(
+                    MessageDto.fromMessage(firstMessage), MessageDto.fromMessage(secondMessage)))
+            .build(new GeneralSupportRequest());
+
+    var request =
+        createHttpTicketCreationRequest(
+            requestBody,
+            publication.getIdentifier(),
+            publication.getResourceOwner().getOwnerAffiliation(),
+            randomUri(),
+            randomString(),
+            MANAGE_RESOURCES_STANDARD,
+            SUPPORT);
+    handler.handleRequest(request, output, CONTEXT);
+
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    var ticket =
+        resourceService
+            .fetchAllTicketsForResource(Resource.fromPublication(publication))
+            .toList()
+            .getFirst();
+    var persistedMessage = ticket.fetchMessages(ticketService);
+
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+    assertThat(persistedMessage, hasSize(1));
+  }
+
+  @Test
+  void creatingTicketWithoutMessageShouldNotLogAnyMessages()
+      throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedNonDegreePublication(
+            randomUri(), PUBLISHED, resourceService);
+
+    var request =
+        createHttpTicketCreationRequest(
+            constructDto(GeneralSupportRequest.class),
+            publication.getIdentifier(),
+            publication.getResourceOwner().getOwnerAffiliation(),
+            randomUri(),
+            randomString(),
+            MANAGE_RESOURCES_STANDARD,
+            SUPPORT);
+    var logAppender = LogUtils.getTestingAppender(CreateTicketHandler.class);
+    handler.handleRequest(request, output, CONTEXT);
+
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+    var logMessages = logAppender.getMessages();
+
+    assertThat(logMessages, is(emptyString()));
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+  }
+
+  @ParameterizedTest
+  @MethodSource("ticketEntryProvider")
+  void shouldSetUserFromRequestAsTicketOwner(Class<? extends TicketEntry> ticketType)
+      throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedNonDegreePublication(
+            randomUri(), PUBLISHED, resourceService);
+    var requestBody = constructDto(ticketType);
+    var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
+
+    var userId =
+        publication.getEntityDescription().getContributors().getFirst().getIdentity().getId();
+    var username = randomString();
+    var request =
+        createHttpTicketCreationRequest(
+            requestBody, publication.getIdentifier(), curatingInstitution, userId, username);
+    handler.handleRequest(request, output, CONTEXT);
+
+    var ticket =
+        resourceService
+            .fetchAllTicketsForResource(Resource.fromPublication(publication))
+            .toList()
+            .getFirst();
+
+    assertThat(ticket.getOwner().toString(), is(equalTo(username)));
+  }
+
+  private TicketEntry fetchTicket(GatewayResponse<Void> response) throws NotFoundException {
+    var ticketIdentifier =
+        new SortableIdentifier(
+            UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER)).getLastPathElement());
+    return ticketService.fetchTicketByIdentifier(ticketIdentifier);
+  }
+
+  private static SortableIdentifier extractTicketIdentifierFromLocation(URI location) {
+    return new SortableIdentifier(UriWrapper.fromUri(location).getLastPathElement());
+  }
+
+  private static void assertThatLocationHeaderHasExpectedFormat(
+      Publication publication, URI location) {
+    var ticketIdentifier = extractTicketIdentifierFromLocation(location);
+    var publicationIdentifier = extractPublicationIdentifierFromLocation(location);
+    assertThat(publicationIdentifier, is(equalTo(publication.getIdentifier())));
+    assertThat(ticketIdentifier, is(not(nullValue())));
+  }
+
+  private static SortableIdentifier extractPublicationIdentifierFromLocation(URI location) {
+    return UriWrapper.fromUri(location)
+        .getParent()
+        .flatMap(UriWrapper::getParent)
+        .map(UriWrapper::getLastPathElement)
+        .map(SortableIdentifier::new)
+        .orElseThrow();
+  }
+
+  private void assertThatLocationHeaderPointsToCreatedTicket(URI ticketUri)
+      throws NotFoundException {
+    var publication = fetchPublication(ticketUri);
+    var ticketIdentifier = extractTicketIdentifierFromLocation(ticketUri);
+    var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
+    assertThat(ticket.getResourceIdentifier(), is(equalTo(publication.getIdentifier())));
+    assertThat(ticket.getIdentifier(), is(equalTo(ticketIdentifier)));
+  }
+
+  private Publication fetchPublication(URI ticketUri) throws NotFoundException {
+    var publicationIdentifier = extractPublicationIdentifierFromLocation(ticketUri);
+    return resourceService.getPublicationByIdentifier(publicationIdentifier);
+  }
+
+  private TicketDto constructDto(Class<? extends TicketEntry> ticketType) {
+    if (DoiRequest.class.equals(ticketType)) {
+      return DoiRequestDto.empty();
+    } else if (PublishingRequestCase.class.equals(ticketType)) {
+      return PublishingRequestDto.empty();
+    } else if (GeneralSupportRequest.class.equals(ticketType)) {
+      return GeneralSupportRequestDto.empty();
     }
+    throw new RuntimeException("Unrecognized ticket type");
+  }
 
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndAccessRightProvider")
-    void shouldAllowCuratorWithValidAccessRightToCreateTicket(PublicationStatus status,
-                                                              Class<? extends TicketEntry> ticketType,
-                                                                    AccessRight... accessRights)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), status, resourceService);
-        var requestBody = constructDto(ticketType);
-        var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
-        var input = createHttpTicketCreationRequest(
-            requestBody, publication.getIdentifier(), curatingInstitution, randomUri(), randomString(), accessRights);
-        handler.handleRequest(input, output, CONTEXT);
+  private Publication createPersistedPublishedPublication() throws ApiGatewayException {
+    var publication = randomPublication();
+    publication.setDoi(null); // for creating DoiRequests
+    publication =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    Resource.fromPublication(publication)
+        .publish(resourceService, UserInstance.fromPublication(publication));
+    return resourceService.getPublicationByIdentifier(publication.getIdentifier());
+  }
 
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-    }
+  private Publication createPersistedNonDegreePublishedPublication() throws ApiGatewayException {
+    var publication = randomNonDegreePublication();
+    publication.setDoi(null); // for creating DoiRequests
+    publication =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    Resource.fromPublication(publication)
+        .publish(resourceService, UserInstance.fromPublication(publication));
+    return resourceService.getPublicationByIdentifier(publication.getIdentifier());
+  }
 
-    @ParameterizedTest
-    @MethodSource("ticketEntryProvider")
-    void shouldAllowContributorToCreateTicketForNonDegreePublication(Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), PUBLISHED, resourceService);
-        var requestBody = constructDto(ticketType);
+  private InputStream createHttpTicketCreationRequest(
+      TicketDto ticketDto, Publication publication, UserInstance userCredentials)
+      throws JsonProcessingException {
+    return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
+        .withBody(ticketDto)
+        .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, userCredentials.getUsername())
+        .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+        .withUserName(userCredentials.getUsername())
+        .withCurrentCustomer(userCredentials.getCustomerId())
+        .withPersonCristinId(randomUri())
+        .withTopLevelCristinOrgId(userCredentials.getTopLevelOrgCristinId())
+        .build();
+  }
 
-        var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
-        var contributorCristinId = publication.getEntityDescription().getContributors().getFirst().getIdentity().getId();
-        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
-                                                      curatingInstitution, contributorCristinId, randomString());
-        handler.handleRequest(request, output, CONTEXT);
+  private InputStream createHttpTicketCreationRequest(
+      TicketDto ticketDto,
+      SortableIdentifier publicationIdentifier,
+      URI topLevelCristinOrganizationId,
+      URI userCristinId,
+      String username,
+      AccessRight... accessRights)
+      throws JsonProcessingException {
+    return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
+        .withBody(ticketDto)
+        .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()))
+        .withUserName(username)
+        .withCurrentCustomer(randomBackendUri("customer"))
+        .withPersonCristinId(userCristinId)
+        .withTopLevelCristinOrgId(topLevelCristinOrganizationId)
+        .withAccessRights(randomUri(), accessRights)
+        .build();
+  }
 
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-    }
+  private InputStream createHttpTicketCreationRequestWithApprovedAccessRight(
+      TicketDto ticketDto, Publication publication, URI customerId) throws JsonProcessingException {
+    return createHttpTicketCreationRequestWithApprovedAccessRight(
+        ticketDto, publication, randomString(), customerId, AccessRight.MANAGE_DOI);
+  }
 
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndAccessRightProvider")
-    void shouldAllowCuratorWithValidAccessRightAndRelatedToContributorToCreateTicketForNonDegreePublication(
-        PublicationStatus publicationStatus, Class<? extends TicketEntry> ticketType, AccessRight... accessRights)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), publicationStatus, resourceService);
-        var requestBody = constructDto(ticketType);
+  private InputStream createHttpTicketCreationRequestWithApprovedAccessRight(
+      TicketDto ticketDto,
+      Publication publication,
+      String userName,
+      URI customerId,
+      AccessRight... accessRight)
+      throws JsonProcessingException {
+    return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
+        .withBody(ticketDto)
+        .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, customerId.toString())
+        .withAccessRights(customerId, accessRight)
+        .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+        .withUserName(userName)
+        .withCurrentCustomer(customerId)
+        .withPersonCristinId(randomUri())
+        .build();
+  }
 
-        var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
-        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
-                                                      curatingInstitution, randomUri(), randomString(),accessRights);
-        handler.handleRequest(request, output, CONTEXT);
-
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-    }
-
-    @ParameterizedTest
-    @MethodSource("ticketEntryProvider")
-    void shouldAllowContributorToCreateTicketForDegreePublication(Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedDegreePublication(PUBLISHED, resourceService);
-        var requestBody = constructDto(ticketType);
-
-        var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
-        var contributorCristinId = publication.getEntityDescription().getContributors().getFirst().getIdentity().getId();
-        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
-                                                      curatingInstitution, contributorCristinId, randomString());
-        handler.handleRequest(request, output, CONTEXT);
-
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-    }
-
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndAccessRightProvider")
-    void shouldAllowCuratorWithValidAccessRightAndRelatedContributorToCreateTicketForDegreePublication(
-        PublicationStatus publicationStatus, Class<? extends TicketEntry> ticketType, AccessRight... accessRights)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedDegreePublication(publicationStatus, resourceService);
-        var requestBody = constructDto(ticketType);
-
-        var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
-        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
-                                                      curatingInstitution, randomUri(), randomString(),accessRights);
-        handler.handleRequest(request, output, CONTEXT);
-
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-    }
-
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndAccessRightProvider")
-    void shouldNotAllowNotRelatedCuratorWithValidAccessRightForNonDegreePublication(
-        PublicationStatus publicationStatus, Class<? extends TicketEntry> ticketType, AccessRight... accessRights)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), publicationStatus,
-                                                                              resourceService);
-        var requestBody = constructDto(ticketType);
-
-        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
-                                                      randomUri(), randomUri(), randomString(),accessRights);
-        handler.handleRequest(request, output, CONTEXT);
-
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_FORBIDDEN)));
-    }
-
-    @Test
-    void contributorAtAnotherInstitutionThanPublicationOwnerShouldBeAbleToCreateTicketForPublication()
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
-        var contributorId = randomUri();
-        var affiliationId = randomUri();
-        publication.getEntityDescription().setContributors(List.of(randomContributorWithIdAndAffiliation(contributorId, affiliationId)));
-        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(affiliationId, Set.of(contributorId))));
-        mockCuratingInstitution(affiliationId);
-        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(),
-                                                                                                       affiliationId))));
-        resourceService.updatePublication(publication);
-        var requestBody = constructDto(DoiRequest.class);
-
-        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
-                                                      affiliationId, contributorId, randomString());
-        handler.handleRequest(request, output, CONTEXT);
-
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-    }
-
-    private void mockCuratingInstitution(URI affiliationId) {
-        when(uriRetriever.getRawContent(affiliationId, APPLICATION_JSON))
-            .thenReturn(Optional.of("""
-                                        {
-                                          "type": "Organization",
-                                          "partOf": [
-                                            {
-                                              "type": "Organization",
-                                              "id": "%s"
-                                            }
-                                          ]
-                                        }
-                                        """.formatted(affiliationId)));
-    }
-
-    @Test
-    void curatorAtAnotherInstitutionThanPublicationOwnerShouldBeAbleToCreateTicketForPublication()
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
-        var curatingInstitution = randomUri();
-        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(curatingInstitution, Set.of(randomUri()))));
-        resourceService.updatePublication(publication);
-        var requestBody = constructDto(GeneralSupportRequest.class);
-
-        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
-                                                      curatingInstitution, randomUri(), randomString(),
-                                                      MANAGE_RESOURCES_STANDARD);
-        handler.handleRequest(request, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-    }
-
-    @Test
-    void shouldPersistMessageWhenCreatingTicketWithMessage()
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), PUBLISHED,
-                                                                              resourceService);
-        var message = Message.builder().withText(randomString()).build();
-        var requestBody = GeneralSupportRequestDto.builder()
-                         .withMessages(List.of(MessageDto.fromMessage(message)))
-                         .build(new GeneralSupportRequest());
-
-
-        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
-                                                      publication.getResourceOwner().getOwnerAffiliation(),
-                                                      randomUri(), randomString(),
-                                                      MANAGE_RESOURCES_STANDARD, SUPPORT);
-        handler.handleRequest(request, output, CONTEXT);
-
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        var ticket = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication))
-                         .toList().getFirst();
-        var persistedMessage = ticket.fetchMessages(ticketService).getFirst();
-
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-        assertThat(persistedMessage.getText(), is(equalTo(message.getText())));
-    }
-
-    @Test
-    void shouldPersistSingleMessageWhenCreatingTicketWithMultipleMessage()
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), PUBLISHED,
-                                                                              resourceService);
-        var firstMessage = Message.builder().withText(randomString()).build();
-        var secondMessage = Message.builder().withText(randomString()).build();
-        var requestBody = GeneralSupportRequestDto.builder()
-                              .withMessages(List.of(MessageDto.fromMessage(firstMessage),
-                                                    MessageDto.fromMessage(secondMessage)))
-                              .build(new GeneralSupportRequest());
-
-
-        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
-                                                      publication.getResourceOwner().getOwnerAffiliation(),
-                                                      randomUri(), randomString(),
-                                                      MANAGE_RESOURCES_STANDARD, SUPPORT);
-        handler.handleRequest(request, output, CONTEXT);
-
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        var ticket = resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication))
-                         .toList().getFirst();
-        var persistedMessage = ticket.fetchMessages(ticketService);
-
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-        assertThat(persistedMessage, hasSize(1));
-    }
-
-    @Test
-    void creatingTicketWithoutMessageShouldNotLogAnyMessages()
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), PUBLISHED,
-                                                                              resourceService);
-
-        var request = createHttpTicketCreationRequest(
-            constructDto(GeneralSupportRequest.class), publication.getIdentifier(),
-            publication.getResourceOwner().getOwnerAffiliation(), randomUri(), randomString(),
-            MANAGE_RESOURCES_STANDARD, SUPPORT);
-        var logAppender = LogUtils.getTestingAppender(CreateTicketHandler.class);
-        handler.handleRequest(request, output, CONTEXT);
-
-        var response = GatewayResponse.fromOutputStream(output, Void.class);
-        var logMessages = logAppender.getMessages();
-
-        assertThat(logMessages, is(emptyString()));
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-    }
-
-    @ParameterizedTest
-    @MethodSource("ticketEntryProvider")
-    void shouldSetUserFromRequestAsTicketOwner(Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException, IOException {
-        var publication = TicketTestUtils.createPersistedNonDegreePublication(randomUri(), PUBLISHED, resourceService);
-        var requestBody = constructDto(ticketType);
-        var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
-
-        var userId = publication.getEntityDescription().getContributors().getFirst().getIdentity().getId();
-        var username = randomString();
-        var request = createHttpTicketCreationRequest(requestBody, publication.getIdentifier(),
-                                                      curatingInstitution, userId, username);
-        handler.handleRequest(request, output, CONTEXT);
-
-        var ticket =
-            resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList().getFirst();
-
-        assertThat(ticket.getOwner().toString(), is(equalTo(username)));
-    }
-
-    private TicketEntry fetchTicket(GatewayResponse<Void> response) throws NotFoundException {
-        var ticketIdentifier = new SortableIdentifier(UriWrapper.fromUri(response.getHeaders().get(LOCATION_HEADER))
-                                                          .getLastPathElement());
-        return ticketService.fetchTicketByIdentifier(ticketIdentifier);
-    }
-
-    private static SortableIdentifier extractTicketIdentifierFromLocation(URI location) {
-        return new SortableIdentifier(UriWrapper.fromUri(location).getLastPathElement());
-    }
-
-    private static void assertThatLocationHeaderHasExpectedFormat(Publication publication, URI location) {
-        var ticketIdentifier = extractTicketIdentifierFromLocation(location);
-        var publicationIdentifier = extractPublicationIdentifierFromLocation(location);
-        assertThat(publicationIdentifier, is(equalTo(publication.getIdentifier())));
-        assertThat(ticketIdentifier, is(not(nullValue())));
-    }
-
-    private static SortableIdentifier extractPublicationIdentifierFromLocation(URI location) {
-        return UriWrapper.fromUri(location)
-                   .getParent()
-                   .flatMap(UriWrapper::getParent)
-                   .map(UriWrapper::getLastPathElement)
-                   .map(SortableIdentifier::new)
-                   .orElseThrow();
-    }
-
-    private void assertThatLocationHeaderPointsToCreatedTicket(URI ticketUri)
-        throws NotFoundException {
-        var publication = fetchPublication(ticketUri);
-        var ticketIdentifier = extractTicketIdentifierFromLocation(ticketUri);
-        var ticket = ticketService.fetchTicketByIdentifier(ticketIdentifier);
-        assertThat(ticket.getResourceIdentifier(), is(equalTo(publication.getIdentifier())));
-        assertThat(ticket.getIdentifier(), is(equalTo(ticketIdentifier)));
-    }
-
-    private Publication fetchPublication(URI ticketUri) throws NotFoundException {
-        var publicationIdentifier = extractPublicationIdentifierFromLocation(ticketUri);
-        return resourceService.getPublicationByIdentifier(publicationIdentifier);
-    }
-
-    private TicketDto constructDto(Class<? extends TicketEntry> ticketType) {
-        if (DoiRequest.class.equals(ticketType)) {
-            return DoiRequestDto.empty();
-        } else if (PublishingRequestCase.class.equals(ticketType)) {
-            return PublishingRequestDto.empty();
-        } else if (GeneralSupportRequest.class.equals(ticketType)) {
-            return GeneralSupportRequestDto.empty();
-        }
-        throw new RuntimeException("Unrecognized ticket type");
-    }
-
-    private Publication createPersistedPublishedPublication() throws ApiGatewayException {
-        var publication = randomPublication();
-        publication.setDoi(null); // for creating DoiRequests
-        publication = Resource.fromPublication(publication)
-                          .persistNew(resourceService, UserInstance.fromPublication(publication));
-        Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
-        return resourceService.getPublicationByIdentifier(publication.getIdentifier());
-    }
-
-    private Publication createPersistedNonDegreePublishedPublication() throws ApiGatewayException {
-        var publication = randomNonDegreePublication();
-        publication.setDoi(null); // for creating DoiRequests
-        publication = Resource.fromPublication(publication)
-                          .persistNew(resourceService, UserInstance.fromPublication(publication));
-        Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
-        return resourceService.getPublicationByIdentifier(publication.getIdentifier());
-    }
-
-    private InputStream createHttpTicketCreationRequest(TicketDto ticketDto,
-                                                        Publication publication,
-                                                        UserInstance userCredentials)
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
-                   .withBody(ticketDto)
-                   .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, userCredentials.getUsername())
-                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-                   .withUserName(userCredentials.getUsername())
-                   .withCurrentCustomer(userCredentials.getCustomerId())
-                   .withPersonCristinId(randomUri())
-                   .withTopLevelCristinOrgId(userCredentials.getTopLevelOrgCristinId())
-                   .build();
-    }
-
-    private InputStream createHttpTicketCreationRequest(TicketDto ticketDto,
-                                                        SortableIdentifier publicationIdentifier,
-                                                        URI topLevelCristinOrganizationId,
-                                                        URI userCristinId,
-                                                        String username,
-                                                        AccessRight... accessRights)
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
-                   .withBody(ticketDto)
-                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString()))
-                   .withUserName(username)
-                   .withCurrentCustomer(randomBackendUri("customer"))
-                   .withPersonCristinId(userCristinId)
-                   .withTopLevelCristinOrgId(topLevelCristinOrganizationId)
-                   .withAccessRights(randomUri(), accessRights)
-                   .build();
-    }
-
-    private InputStream createHttpTicketCreationRequestWithApprovedAccessRight(TicketDto ticketDto,
-                                                                               Publication publication,
-                                                                               URI customerId)
-        throws JsonProcessingException {
-        return createHttpTicketCreationRequestWithApprovedAccessRight(ticketDto,
-                                                                      publication,
-                                                                      randomString(),
-                                                                      customerId,
-                                                                      AccessRight.MANAGE_DOI);
-    }
-
-    private InputStream createHttpTicketCreationRequestWithApprovedAccessRight(TicketDto ticketDto,
-                                                                               Publication publication,
-                                                                               String userName,
-                                                                               URI customerId,
-                                                                               AccessRight... accessRight)
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
-                   .withBody(ticketDto)
-                   .withAuthorizerClaim(PERSON_AFFILIATION_CLAIM, customerId.toString())
-                   .withAccessRights(customerId, accessRight)
-                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-                   .withUserName(userName)
-                   .withCurrentCustomer(customerId)
-                   .withPersonCristinId(randomUri())
-                   .build();
-    }
-
-    private InputStream createAnonymousHttpTicketCreationRequest(TicketDto ticketDto,
-                                                                 Publication publication)
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
-                   .withBody(ticketDto)
-                   .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-                   .build();
-    }
+  private InputStream createAnonymousHttpTicketCreationRequest(
+      TicketDto ticketDto, Publication publication) throws JsonProcessingException {
+    return new HandlerRequestBuilder<TicketDto>(JsonUtils.dtoObjectMapper)
+        .withBody(ticketDto)
+        .withPathParameters(Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+        .build();
+  }
 }

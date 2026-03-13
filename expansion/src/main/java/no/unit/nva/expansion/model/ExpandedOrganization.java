@@ -6,12 +6,13 @@ import java.net.URI;
 import java.util.List;
 
 @JsonTypeName(ExpandedOrganization.TYPE)
-public record ExpandedOrganization(@JsonProperty(ID_FIELD) URI id,
-                                   @JsonProperty(IDENTIFIER_FIELD) String identifier,
-                                   @JsonProperty(PART_OF_FIELD) List<ExpandedOrganization> partOf) {
+public record ExpandedOrganization(
+    @JsonProperty(ID_FIELD) URI id,
+    @JsonProperty(IDENTIFIER_FIELD) String identifier,
+    @JsonProperty(PART_OF_FIELD) List<ExpandedOrganization> partOf) {
 
-    public static final String TYPE = "Organization";
-    public static final String ID_FIELD = "id";
-    public static final String IDENTIFIER_FIELD = "identifier";
-    public static final String PART_OF_FIELD = "partOf";
+  public static final String TYPE = "Organization";
+  public static final String ID_FIELD = "id";
+  public static final String IDENTIFIER_FIELD = "identifier";
+  public static final String PART_OF_FIELD = "partOf";
 }

@@ -24,7 +24,6 @@ import static org.apache.http.HttpHeaders.ETAG;
 import static org.apache.http.HttpHeaders.LOCATION;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import nva.commons.apigateway.MediaType;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.List;
@@ -45,6 +44,7 @@ import no.unit.nva.publication.validation.ETag;
 import no.unit.nva.schemaorg.SchemaOrgDocument;
 import no.unit.nva.transformer.Transformer;
 import nva.commons.apigateway.ApiGatewayHandler;
+import nva.commons.apigateway.MediaType;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.GoneException;
@@ -56,202 +56,227 @@ import nva.commons.core.paths.UriWrapper;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
-    public static final String BACKEND_CLIENT_AUTH_URL = ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
-    public static final String BACKEND_CLIENT_SECRET_NAME = ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
-    public static final String GONE_MESSAGE = "Publication has been removed";
-    protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
-    private static final String REGISTRATION_PATH = "registration";
-    public static final String DO_NOT_REDIRECT_QUERY_PARAM = "doNotRedirect";
-    public static final String NO_BODY = "";
-    private final IdentityServiceClient identityServiceClient;
-    private final ResourceService resourceService;
-    private final RawContentRetriever authorizedBackendUriRetriever;
-    private int statusCode = HttpURLConnection.HTTP_OK;
+  public static final String BACKEND_CLIENT_AUTH_URL =
+      ENVIRONMENT.readEnv("BACKEND_CLIENT_AUTH_URL");
+  public static final String BACKEND_CLIENT_SECRET_NAME =
+      ENVIRONMENT.readEnv("BACKEND_CLIENT_SECRET_NAME");
+  public static final String GONE_MESSAGE = "Publication has been removed";
+  protected static final String ENV_NAME_NVA_FRONTEND_DOMAIN = "NVA_FRONTEND_DOMAIN";
+  private static final String REGISTRATION_PATH = "registration";
+  public static final String DO_NOT_REDIRECT_QUERY_PARAM = "doNotRedirect";
+  public static final String NO_BODY = "";
+  private final IdentityServiceClient identityServiceClient;
+  private final ResourceService resourceService;
+  private final RawContentRetriever authorizedBackendUriRetriever;
+  private int statusCode = HttpURLConnection.HTTP_OK;
 
-    @JacocoGenerated
-    public FetchPublicationHandler() {
-        this(ResourceService.defaultService(),
-             new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME),
-             new Environment(),
-             IdentityServiceClient.prepare());
+  @JacocoGenerated
+  public FetchPublicationHandler() {
+    this(
+        ResourceService.defaultService(),
+        new AuthorizedBackendUriRetriever(BACKEND_CLIENT_AUTH_URL, BACKEND_CLIENT_SECRET_NAME),
+        new Environment(),
+        IdentityServiceClient.prepare());
+  }
+
+  /**
+   * Constructor for MainHandler.
+   *
+   * @param resourceService publicationService
+   * @param environment environment
+   */
+  public FetchPublicationHandler(
+      ResourceService resourceService,
+      RawContentRetriever authorizedBackendUriRetriever,
+      Environment environment,
+      IdentityServiceClient identityServiceClient) {
+    super(Void.class, environment);
+    this.authorizedBackendUriRetriever = authorizedBackendUriRetriever;
+    this.resourceService = resourceService;
+    this.identityServiceClient = identityServiceClient;
+  }
+
+  @Override
+  protected List<MediaType> listSupportedMediaTypes() {
+    return List.of(
+        HTML_UTF_8,
+        ANY_TEXT_TYPE,
+        XHTML_UTF_8,
+        APPLICATION_JSON_LD,
+        APPLICATION_DATACITE_XML,
+        SCHEMA_ORG,
+        JSON_UTF_8);
+  }
+
+  @Override
+  protected void validateRequest(Void unused, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
+    // Do nothing
+  }
+
+  @Override
+  protected String processInput(Void input, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
+
+    statusCode = HttpURLConnection.HTTP_OK; // make sure to reset to default on each invocation
+
+    var identifier = RequestUtil.getIdentifier(requestInfo);
+    var resource = fetchResource(identifier);
+
+    if (eTagMatches(requestInfo, resource)) {
+      statusCode = HttpURLConnection.HTTP_NOT_MODIFIED;
+      return FetchPublicationHandler.NO_BODY;
     }
 
-    /**
-     * Constructor for MainHandler.
-     *
-     * @param resourceService publicationService
-     * @param environment     environment
-     */
-    public FetchPublicationHandler(ResourceService resourceService,
-                                   RawContentRetriever authorizedBackendUriRetriever,
-                                   Environment environment,
-                                   IdentityServiceClient identityServiceClient) {
-        super(Void.class, environment);
-        this.authorizedBackendUriRetriever = authorizedBackendUriRetriever;
-        this.resourceService = resourceService;
-        this.identityServiceClient = identityServiceClient;
+    return switch (resource.getStatus()) {
+      case DRAFT, PUBLISHED -> producePublicationResponse(requestInfo, resource);
+      case UNPUBLISHED, DELETED -> produceRemovedPublicationResponse(resource, requestInfo);
+      default -> throwNotFoundException();
+    };
+  }
+
+  private boolean eTagMatches(RequestInfo requestInfo, Resource resource) {
+    var clientETag = getETagValueFromIfNoneMatchHeader(requestInfo).map(ETag::fromString);
+    var serverETag = ETag.create(getUsername(requestInfo), getResourceVersion(resource));
+    return clientETag.map(etag -> etag.equals(serverETag)).orElse(false);
+  }
+
+  private static String getResourceVersion(Resource resource) {
+    return resource.getVersion().toString();
+  }
+
+  private static String getUsername(RequestInfo requestInfo) {
+    return attempt(requestInfo::getUserName).orElse(failure -> null);
+  }
+
+  private boolean shouldRedirectToDuplicate(RequestInfo requestInfo, Resource resource) {
+    return nonNull(resource.getDuplicateOf()) && shouldRedirect(requestInfo);
+  }
+
+  private boolean userCanUpdateResource(RequestInfo requestInfo, Resource resource) {
+    return getPublicationPermissionStrategy(requestInfo, resource)
+        .map(value -> value.allowsAction(UPDATE))
+        .orElse(false);
+  }
+
+  private Resource fetchResource(SortableIdentifier identifierInPath) throws NotFoundException {
+    return Resource.resourceQueryObject(identifierInPath)
+        .fetch(resourceService)
+        .orElseThrow(
+            () -> new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifierInPath));
+  }
+
+  @Override
+  protected Integer getSuccessStatusCode(Void input, String output) {
+    return statusCode;
+  }
+
+  private String produceRemovedPublicationResponse(Resource resource, RequestInfo requestInfo)
+      throws GoneException {
+    if (shouldRedirectToDuplicate(requestInfo, resource)) {
+      return produceRedirect(resource.getDuplicateOf());
+    } else if (userWithAccessRequestsUnpublishedResource(resource, requestInfo)) {
+      return createPublicationResponse(requestInfo, resource);
+    } else {
+      return produceTombstone(resource, requestInfo);
     }
+  }
 
-    @Override
-    protected List<MediaType> listSupportedMediaTypes() {
-        return List.of(HTML_UTF_8, ANY_TEXT_TYPE, XHTML_UTF_8, APPLICATION_JSON_LD, APPLICATION_DATACITE_XML,
-                       SCHEMA_ORG, JSON_UTF_8);
+  private String produceTombstone(Resource resource, RequestInfo requestInfo) throws GoneException {
+    var allowedOperations =
+        getPublicationPermissionStrategy(requestInfo, resource)
+            .map(PublicationPermissions::getAllAllowedActions)
+            .orElse(emptySet());
+    var tombstone =
+        DeletedPublicationResponse.fromPublication(resource.toPublication(), allowedOperations);
+    throw new GoneException(GONE_MESSAGE, tombstone);
+  }
+
+  private boolean userWithAccessRequestsUnpublishedResource(
+      Resource resource, RequestInfo requestInfo) {
+    return userCanUpdateResource(requestInfo, resource) && UNPUBLISHED.equals(resource.getStatus());
+  }
+
+  private boolean shouldRedirect(RequestInfo requestInfo) {
+    return attempt(() -> requestInfo.getQueryParameter(DO_NOT_REDIRECT_QUERY_PARAM))
+        .map(FetchPublicationHandler::shouldRedirect)
+        .orElse(fail -> true);
+  }
+
+  private static boolean shouldRedirect(String value) {
+    return !Boolean.parseBoolean(value);
+  }
+
+  private String produceRedirect(URI duplicateOf) {
+    statusCode = HTTP_MOVED_PERM;
+    // cache control header here to avoid permanent browser caching of the redirect
+    addAdditionalHeaders(() -> Map.of(LOCATION, duplicateOf.toString(), CACHE_CONTROL, "no-cache"));
+    return null;
+  }
+
+  @JacocoGenerated
+  private String throwNotFoundException() throws NotFoundException {
+    throw new NotFoundException("Publication is not found");
+  }
+
+  private String producePublicationResponse(RequestInfo requestInfo, Resource resource)
+      throws UnsupportedAcceptHeaderException {
+
+    String response = null;
+    var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
+
+    var headers = new ConcurrentHashMap<String, String>();
+
+    if (APPLICATION_DATACITE_XML.equals(contentType)) {
+      response = createDataCiteMetadata(resource);
+    } else if (SCHEMA_ORG.equals(contentType)) {
+      response = createSchemaOrgRepresentation(resource);
+    } else if (contentType.matches(ANY_TEXT_TYPE) || XHTML_UTF_8.equals(contentType)) {
+      statusCode = HTTP_SEE_OTHER;
+      headers.put(LOCATION, landingPageLocation(resource.getIdentifier()).toString());
+    } else {
+      headers.put(
+          ETAG, ETag.create(getUsername(requestInfo), getResourceVersion(resource)).toString());
+      headers.put(ACCESS_CONTROL_EXPOSE_HEADERS, ETAG);
+      response = createPublicationResponse(requestInfo, resource);
     }
+    addAdditionalHeaders(() -> headers);
+    return response;
+  }
 
-    @Override
-    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        //Do nothing
-    }
+  private URI landingPageLocation(SortableIdentifier identifier) {
+    return new UriWrapper(HTTPS, environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN))
+        .addChild(REGISTRATION_PATH)
+        .addChild(identifier.toString())
+        .getUri();
+  }
 
-    @Override
-    protected String processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+  private String createPublicationResponse(RequestInfo requestInfo, Resource resource) {
+    var response = PublicationResponseFactory.create(resource, requestInfo, identityServiceClient);
+    addAdditionalHeaders(
+        () ->
+            Map.of(
+                ETAG,
+                ETag.create(getUsername(requestInfo), getResourceVersion(resource)).toString()));
+    return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(response)).orElseThrow();
+  }
 
-        statusCode = HttpURLConnection.HTTP_OK; // make sure to reset to default on each invocation
+  private Optional<PublicationPermissions> getPublicationPermissionStrategy(
+      RequestInfo requestInfo, Resource resource) {
+    return attempt(
+            () -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient))
+        .toOptional()
+        .map(userInstance -> PublicationPermissions.create(resource, userInstance));
+  }
 
-        var identifier = RequestUtil.getIdentifier(requestInfo);
-        var resource = fetchResource(identifier);
+  private String createDataCiteMetadata(Resource resource) {
+    var dataCiteMetadataDto =
+        DataCiteMetadataDtoMapper.fromPublication(
+            resource.toPublication(), authorizedBackendUriRetriever);
+    return attempt(() -> new Transformer(dataCiteMetadataDto).asXml()).orElseThrow();
+  }
 
-        if (eTagMatches(requestInfo, resource)) {
-            statusCode = HttpURLConnection.HTTP_NOT_MODIFIED;
-            return FetchPublicationHandler.NO_BODY;
-        }
-
-        return switch (resource.getStatus()) {
-            case DRAFT, PUBLISHED -> producePublicationResponse(requestInfo, resource);
-            case UNPUBLISHED, DELETED -> produceRemovedPublicationResponse(resource, requestInfo);
-            default -> throwNotFoundException();
-        };
-    }
-
-    private boolean eTagMatches(RequestInfo requestInfo, Resource resource) {
-        var clientETag = getETagValueFromIfNoneMatchHeader(requestInfo).map(ETag::fromString);
-        var serverETag = ETag.create(getUsername(requestInfo), getResourceVersion(resource));
-        return clientETag.map(etag -> etag.equals(serverETag)).orElse(false);
-    }
-
-    private static String getResourceVersion(Resource resource) {
-        return resource.getVersion().toString();
-    }
-
-    private static String getUsername(RequestInfo requestInfo) {
-        return attempt(requestInfo::getUserName).orElse(failure -> null);
-    }
-
-    private boolean shouldRedirectToDuplicate(RequestInfo requestInfo, Resource resource) {
-        return nonNull(resource.getDuplicateOf()) && shouldRedirect(requestInfo);
-    }
-
-    private boolean userCanUpdateResource(RequestInfo requestInfo, Resource resource) {
-        return getPublicationPermissionStrategy(requestInfo, resource)
-                   .map(value -> value.allowsAction(UPDATE))
-                   .orElse(false);
-    }
-
-    private Resource fetchResource(SortableIdentifier identifierInPath) throws NotFoundException {
-        return Resource.resourceQueryObject(identifierInPath)
-                   .fetch(resourceService)
-                    .orElseThrow(() -> new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifierInPath));
-    }
-
-    @Override
-    protected Integer getSuccessStatusCode(Void input, String output) {
-        return statusCode;
-    }
-
-    private String produceRemovedPublicationResponse(Resource resource, RequestInfo requestInfo)
-        throws GoneException {
-        if (shouldRedirectToDuplicate(requestInfo, resource)) {
-            return produceRedirect(resource.getDuplicateOf());
-        } else if (userWithAccessRequestsUnpublishedResource(resource, requestInfo)) {
-            return createPublicationResponse(requestInfo, resource);
-        } else {
-            return produceTombstone(resource, requestInfo);
-        }
-    }
-
-    private String produceTombstone(Resource resource, RequestInfo requestInfo) throws GoneException {
-        var allowedOperations = getPublicationPermissionStrategy(requestInfo, resource)
-                                    .map(PublicationPermissions::getAllAllowedActions)
-                                    .orElse(emptySet());
-        var tombstone = DeletedPublicationResponse.fromPublication(resource.toPublication(), allowedOperations);
-        throw new GoneException(GONE_MESSAGE, tombstone);
-    }
-
-    private boolean userWithAccessRequestsUnpublishedResource(Resource resource, RequestInfo requestInfo) {
-        return userCanUpdateResource(requestInfo, resource) && UNPUBLISHED.equals(resource.getStatus());
-    }
-
-    private boolean shouldRedirect(RequestInfo requestInfo) {
-        return attempt(() -> requestInfo.getQueryParameter(DO_NOT_REDIRECT_QUERY_PARAM))
-                   .map(FetchPublicationHandler::shouldRedirect)
-                   .orElse(fail -> true);
-    }
-
-    private static boolean shouldRedirect(String value) {
-        return !Boolean.parseBoolean(value);
-    }
-
-    private String produceRedirect(URI duplicateOf) {
-        statusCode = HTTP_MOVED_PERM;
-        // cache control header here to avoid permanent browser caching of the redirect
-        addAdditionalHeaders(() -> Map.of(LOCATION, duplicateOf.toString(), CACHE_CONTROL, "no-cache"));
-        return null;
-    }
-
-    @JacocoGenerated
-    private String throwNotFoundException() throws NotFoundException {
-        throw new NotFoundException("Publication is not found");
-    }
-
-    private String producePublicationResponse(RequestInfo requestInfo, Resource resource)
-        throws UnsupportedAcceptHeaderException {
-
-        String response = null;
-        var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
-
-        var headers = new ConcurrentHashMap<String, String>();
-
-        if (APPLICATION_DATACITE_XML.equals(contentType)) {
-            response = createDataCiteMetadata(resource);
-        } else if (SCHEMA_ORG.equals(contentType)) {
-            response = createSchemaOrgRepresentation(resource);
-        } else if (contentType.matches(ANY_TEXT_TYPE) || XHTML_UTF_8.equals(contentType)) {
-            statusCode = HTTP_SEE_OTHER;
-            headers.put(LOCATION, landingPageLocation(resource.getIdentifier()).toString());
-        } else {
-            headers.put(ETAG, ETag.create(getUsername(requestInfo), getResourceVersion(resource)).toString());
-            headers.put(ACCESS_CONTROL_EXPOSE_HEADERS, ETAG);
-            response = createPublicationResponse(requestInfo, resource);
-        }
-        addAdditionalHeaders(() -> headers);
-        return response;
-    }
-
-    private URI landingPageLocation(SortableIdentifier identifier) {
-        return new UriWrapper(HTTPS, environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).addChild(REGISTRATION_PATH)
-                   .addChild(identifier.toString())
-                   .getUri();
-    }
-
-    private String createPublicationResponse(RequestInfo requestInfo, Resource resource) {
-        var response = PublicationResponseFactory.create(resource, requestInfo, identityServiceClient);
-        addAdditionalHeaders(() -> Map.of(ETAG, ETag.create(getUsername(requestInfo), getResourceVersion(resource)).toString()));
-        return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(response)).orElseThrow();
-    }
-
-    private Optional<PublicationPermissions> getPublicationPermissionStrategy(RequestInfo requestInfo,
-                                                                              Resource resource) {
-        return attempt(() -> RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient)).toOptional()
-                   .map(userInstance -> PublicationPermissions.create(resource, userInstance));
-    }
-
-    private String createDataCiteMetadata(Resource resource) {
-        var dataCiteMetadataDto = DataCiteMetadataDtoMapper.fromPublication(resource.toPublication(),
-                                                                            authorizedBackendUriRetriever);
-        return attempt(() -> new Transformer(dataCiteMetadataDto).asXml()).orElseThrow();
-    }
-
-    private String createSchemaOrgRepresentation(Resource resource) {
-        return SchemaOrgDocument.fromPublication(resource.toPublication());
-    }
+  private String createSchemaOrgRepresentation(Resource resource) {
+    return SchemaOrgDocument.fromPublication(resource.toPublication());
+  }
 }

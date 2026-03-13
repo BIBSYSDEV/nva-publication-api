@@ -3,6 +3,7 @@ package no.unit.nva.cristin.mapper;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_PATH;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.ORGANIZATION_PATH;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -21,63 +22,70 @@ import nva.commons.core.paths.UriWrapper;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"stednavn_opprinnelig", "avdelingsnavn_opprinnelig", "institusjonsnavn_opprinnelig",
-    "stedkode_opprinnelig"})
+@JsonIgnoreProperties({
+  "stednavn_opprinnelig",
+  "avdelingsnavn_opprinnelig",
+  "institusjonsnavn_opprinnelig",
+  "stedkode_opprinnelig"
+})
 public class CristinContributorsAffiliation {
 
-    public static final String CRISTIN_UNITS_DELIMITER = ".";
-    public static final String INSITITUTION_IDENTIFIER = "institusjonsnr";
-    public static final String DEPARTMENT_IDENTIFIER = "avdnr";
-    public static final String SUBDEPARTMENT_IDENTIFIER = "undavdnr";
-    public static final String GROUP_IDENTIFIER = "gruppenr";
-    @JsonProperty(INSITITUTION_IDENTIFIER)
-    private Integer institutionIdentifier;
-    @JsonProperty(DEPARTMENT_IDENTIFIER)
-    private Integer departmentIdentifier;
-    @JsonProperty(SUBDEPARTMENT_IDENTIFIER)
-    private Integer subdepartmentIdentifier;
-    @JsonProperty(GROUP_IDENTIFIER)
-    private Integer groupNumber;
-    @JsonProperty("VARBEID_PERSON_STED_ROLLE")
-    private List<CristinContributorRole> roles;
+  public static final String CRISTIN_UNITS_DELIMITER = ".";
+  public static final String INSITITUTION_IDENTIFIER = "institusjonsnr";
+  public static final String DEPARTMENT_IDENTIFIER = "avdnr";
+  public static final String SUBDEPARTMENT_IDENTIFIER = "undavdnr";
+  public static final String GROUP_IDENTIFIER = "gruppenr";
 
-    public CristinContributorsAffiliation() {
-    }
+  @JsonProperty(INSITITUTION_IDENTIFIER)
+  private Integer institutionIdentifier;
 
-    public Organization toNvaOrganization() {
-        return new Organization.Builder()
-                   .withId(buildId())
-                   .build();
-    }
+  @JsonProperty(DEPARTMENT_IDENTIFIER)
+  private Integer departmentIdentifier;
 
-    public CristinContributorsAffiliationBuilder copy() {
-        return this.toBuilder();
-    }
+  @JsonProperty(SUBDEPARTMENT_IDENTIFIER)
+  private Integer subdepartmentIdentifier;
 
-    @JsonIgnore
-    public boolean isKnownAffiliation() {
-        return isKnownInstitution();
-    }
+  @JsonProperty(GROUP_IDENTIFIER)
+  private Integer groupNumber;
 
-    private boolean isKnownInstitution() {
-        return institutionIdentifier != 0;
-    }
+  @JsonProperty("VARBEID_PERSON_STED_ROLLE")
+  private List<CristinContributorRole> roles;
 
-    private URI buildId() {
-        String affiliationCristinCode = String.join(CRISTIN_UNITS_DELIMITER,
-                                                    institutionIdentifier.toString(),
-                                                    departmentIdentifier.toString(),
-                                                    subdepartmentIdentifier.toString(),
-                                                    groupNumber.toString());
-        return UriWrapper.fromUri(NVA_API_DOMAIN)
-                   .addChild(CRISTIN_PATH)
-                   .addChild(ORGANIZATION_PATH)
-                   .addChild(affiliationCristinCode)
-                   .getUri();
-    }
+  public CristinContributorsAffiliation() {}
+
+  public Organization toNvaOrganization() {
+    return new Organization.Builder().withId(buildId()).build();
+  }
+
+  public CristinContributorsAffiliationBuilder copy() {
+    return this.toBuilder();
+  }
+
+  @JsonIgnore
+  public boolean isKnownAffiliation() {
+    return isKnownInstitution();
+  }
+
+  private boolean isKnownInstitution() {
+    return institutionIdentifier != 0;
+  }
+
+  private URI buildId() {
+    String affiliationCristinCode =
+        String.join(
+            CRISTIN_UNITS_DELIMITER,
+            institutionIdentifier.toString(),
+            departmentIdentifier.toString(),
+            subdepartmentIdentifier.toString(),
+            groupNumber.toString());
+    return UriWrapper.fromUri(NVA_API_DOMAIN)
+        .addChild(CRISTIN_PATH)
+        .addChild(ORGANIZATION_PATH)
+        .addChild(affiliationCristinCode)
+        .getUri();
+  }
 }

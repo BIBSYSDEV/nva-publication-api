@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.net.URI;
 import java.util.List;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -43,124 +44,157 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 
 class FilePermissionTest {
 
-    @Test
-    void shouldReturnAllowedActionsSuccessfullyAsRandomUser() {
-        var permissions = getFilePermissions(File.builder().withIdentifier(randomUUID()).buildOpenFile());
+  @Test
+  void shouldReturnAllowedActionsSuccessfullyAsRandomUser() {
+    var permissions =
+        getFilePermissions(File.builder().withIdentifier(randomUUID()).buildOpenFile());
 
-        var actual = permissions.getAllAllowedActions();
+    var actual = permissions.getAllAllowedActions();
 
-        assertThat(actual, hasItems(FileOperation.READ_METADATA));
-    }
+    assertThat(actual, hasItems(FileOperation.READ_METADATA));
+  }
 
-    @Test
-    void shouldThrowUnauthorizedExceptionWhenReadingHiddenFileAsRandomUser() {
-        var permissions = getFilePermissions(File.builder().withIdentifier(randomUUID()).buildHiddenFile());
+  @Test
+  void shouldThrowUnauthorizedExceptionWhenReadingHiddenFileAsRandomUser() {
+    var permissions =
+        getFilePermissions(File.builder().withIdentifier(randomUUID()).buildHiddenFile());
 
-        assertThrows(UnauthorizedException.class, () -> permissions.authorize(FileOperation.READ_METADATA));
-    }
+    assertThrows(
+        UnauthorizedException.class, () -> permissions.authorize(FileOperation.READ_METADATA));
+  }
 
-    @Test
-    void shouldThrowUnauthorizedExceptionWhenAuthorizingWriteAsRandomUserAndNoHitOnStrategies() {
-        var permissions = getFilePermissions(File.builder().withIdentifier(randomUUID()).buildPendingInternalFile());
+  @Test
+  void shouldThrowUnauthorizedExceptionWhenAuthorizingWriteAsRandomUserAndNoHitOnStrategies() {
+    var permissions =
+        getFilePermissions(File.builder().withIdentifier(randomUUID()).buildPendingInternalFile());
 
-        assertThrows(UnauthorizedException.class, () -> permissions.authorize(WRITE_METADATA));
-    }
+    assertThrows(UnauthorizedException.class, () -> permissions.authorize(WRITE_METADATA));
+  }
 
-    @Test
-    void shouldNotThrowExceptionWhenAuthorizingReadForOpenFileAndRandomUser() {
-        var permissions = getFilePermissions(File.builder().withIdentifier(randomUUID()).buildOpenFile());
+  @Test
+  void shouldNotThrowExceptionWhenAuthorizingReadForOpenFileAndRandomUser() {
+    var permissions =
+        getFilePermissions(File.builder().withIdentifier(randomUUID()).buildOpenFile());
 
-        assertDoesNotThrow(() -> permissions.authorize(FileOperation.READ_METADATA));
-    }
+    assertDoesNotThrow(() -> permissions.authorize(FileOperation.READ_METADATA));
+  }
 
-    @ParameterizedTest
-    @EnumSource(value = FileOperation.class, mode = Mode.INCLUDE, names = {"WRITE_METADATA", "DELETE"})
-    void shouldAllowFileCuratorOnFileForResourceWithClaimedPublisherOwnedByCuratorOrganization(
-        FileOperation fileOperation) {
-        var curatingInstitution = Institution.random();
-        var resource = randomResource();
-        setPublicationChannelWithinScope(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
-        var userInstance = fileCuratorUserInstance(curatingInstitution.getTopLevelCristinId());
-        var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
+  @ParameterizedTest
+  @EnumSource(
+      value = FileOperation.class,
+      mode = Mode.INCLUDE,
+      names = {"WRITE_METADATA", "DELETE"})
+  void shouldAllowFileCuratorOnFileForResourceWithClaimedPublisherOwnedByCuratorOrganization(
+      FileOperation fileOperation) {
+    var curatingInstitution = Institution.random();
+    var resource = randomResource();
+    setPublicationChannelWithinScope(resource, curatingInstitution, EVERYONE, OWNER_ONLY);
+    var userInstance = fileCuratorUserInstance(curatingInstitution.getTopLevelCristinId());
+    var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
 
-        assertTrue(FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
-    }
+    assertTrue(
+        FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
+  }
 
-    @ParameterizedTest
-    @EnumSource(value = FileOperation.class, mode = Mode.INCLUDE, names = {"WRITE_METADATA", "DELETE"})
-    void shouldAllowExternalClientOnFileForResourceWithClaimedPublisherWhenClientRelatesToPublication(
-        FileOperation fileOperation) {
-        var institution = Institution.random();
+  @ParameterizedTest
+  @EnumSource(
+      value = FileOperation.class,
+      mode = Mode.INCLUDE,
+      names = {"WRITE_METADATA", "DELETE"})
+  void shouldAllowExternalClientOnFileForResourceWithClaimedPublisherWhenClientRelatesToPublication(
+      FileOperation fileOperation) {
+    var institution = Institution.random();
 
-        var publication = randomPublication(DegreeBachelor.class);
-        var resource = Resource.fromPublication(publication);
-        setPublicationChannelWithinScope(resource, institution, EVERYONE, OWNER_ONLY);
+    var publication = randomPublication(DegreeBachelor.class);
+    var resource = Resource.fromPublication(publication);
+    setPublicationChannelWithinScope(resource, institution, EVERYONE, OWNER_ONLY);
 
-        var userInstance = UserInstance.createExternalUser(publication.getResourceOwner(),
-                                                           publication.getPublisher().getId(), ThirdPartySystem.OTHER);
-        var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
+    var userInstance =
+        UserInstance.createExternalUser(
+            publication.getResourceOwner(),
+            publication.getPublisher().getId(),
+            ThirdPartySystem.OTHER);
+    var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
 
-        assertTrue(FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
-    }
+    assertTrue(
+        FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
+  }
 
-    @ParameterizedTest
-    @EnumSource(value = FileOperation.class, mode = Mode.INCLUDE, names = {"WRITE_METADATA", "DELETE"})
-    void shouldDenyFileCuratorOnOpenFileForResourceWithClaimedPublisherNotOwnedByCuratorInstitution(
-        FileOperation fileOperation) {
-        var institutionSuite = InstitutionSuite.random();
-        var owningInstitution = institutionSuite.owningInstitution();
-        var curatingInstitution = institutionSuite.curatingInstitution();
+  @ParameterizedTest
+  @EnumSource(
+      value = FileOperation.class,
+      mode = Mode.INCLUDE,
+      names = {"WRITE_METADATA", "DELETE"})
+  void shouldDenyFileCuratorOnOpenFileForResourceWithClaimedPublisherNotOwnedByCuratorInstitution(
+      FileOperation fileOperation) {
+    var institutionSuite = InstitutionSuite.random();
+    var owningInstitution = institutionSuite.owningInstitution();
+    var curatingInstitution = institutionSuite.curatingInstitution();
 
-        var resource = randomResource();
-        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+    var resource = randomResource();
+    setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
-        var userInstance = fileCuratorUserInstance(curatingInstitution.getTopLevelCristinId());
-        var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
+    var userInstance = fileCuratorUserInstance(curatingInstitution.getTopLevelCristinId());
+    var fileEntry = FileEntry.create(randomOpenFile(), resource.getIdentifier(), userInstance);
 
-        assertFalse(FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
-    }
+    assertFalse(
+        FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
+  }
 
-    @ParameterizedTest
-    @EnumSource(value = FileOperation.class, mode = Mode.INCLUDE, names = {"WRITE_METADATA", "DELETE"})
-    void shouldAllowRelatedUserOnNonOpenFileForNonDegreeWithClaimedPublisherNotOwnedByCuratorInstitution(
-        FileOperation fileOperation) {
-        var institutionSuite = InstitutionSuite.random();
-        var owningInstitution = institutionSuite.owningInstitution();
-        var curatingInstitution = institutionSuite.curatingInstitution();
+  @ParameterizedTest
+  @EnumSource(
+      value = FileOperation.class,
+      mode = Mode.INCLUDE,
+      names = {"WRITE_METADATA", "DELETE"})
+  void
+      shouldAllowRelatedUserOnNonOpenFileForNonDegreeWithClaimedPublisherNotOwnedByCuratorInstitution(
+          FileOperation fileOperation) {
+    var institutionSuite = InstitutionSuite.random();
+    var owningInstitution = institutionSuite.owningInstitution();
+    var curatingInstitution = institutionSuite.curatingInstitution();
 
-        var publication = randomNonDegreePublication();
-        setContributor(publication, curatingInstitution.contributor());
-        var resource = Resource.fromPublication(publication);
-        setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
+    var publication = randomNonDegreePublication();
+    setContributor(publication, curatingInstitution.contributor());
+    var resource = Resource.fromPublication(publication);
+    setPublicationChannelWithinScope(resource, owningInstitution, EVERYONE, OWNER_ONLY);
 
-        var userInstance = registratorUserInstance(curatingInstitution);
-        var fileEntry = FileEntry.create(randomPendingOpenFile(), resource.getIdentifier(), userInstance);
+    var userInstance = registratorUserInstance(curatingInstitution);
+    var fileEntry =
+        FileEntry.create(randomPendingOpenFile(), resource.getIdentifier(), userInstance);
 
-        assertTrue(FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
-    }
+    assertTrue(
+        FilePermissions.create(fileEntry, userInstance, resource).allowsAction(fileOperation));
+  }
 
-    private static UserInstance fileCuratorUserInstance(URI institutionId) {
-        return UserInstance.create(randomString(), randomUri(), randomUri(),
-                                   List.of(MANAGE_RESOURCE_FILES, MANAGE_DEGREE, MANAGE_DEGREE_EMBARGO),
-                                   institutionId);
-    }
+  private static UserInstance fileCuratorUserInstance(URI institutionId) {
+    return UserInstance.create(
+        randomString(),
+        randomUri(),
+        randomUri(),
+        List.of(MANAGE_RESOURCE_FILES, MANAGE_DEGREE, MANAGE_DEGREE_EMBARGO),
+        institutionId);
+  }
 
-    private static UserInstance registratorUserInstance(Institution institution) {
-        return UserInstance.create(randomString(), institution.getCustomerId(), randomUri(),
-                                   getAccessRightsForRegistrator(),
-                                   institution.getTopLevelCristinId());
-    }
+  private static UserInstance registratorUserInstance(Institution institution) {
+    return UserInstance.create(
+        randomString(),
+        institution.getCustomerId(),
+        randomUri(),
+        getAccessRightsForRegistrator(),
+        institution.getTopLevelCristinId());
+  }
 
-    private static Resource randomResource() {
-        return Resource.fromPublication(randomPublication());
-    }
+  private static Resource randomResource() {
+    return Resource.fromPublication(randomPublication());
+  }
 
-    private static FilePermissions getFilePermissions(File file) {
-        var fileEntry = FileEntry.create(file, SortableIdentifier.next(),
-                                         UserInstance.create(randomString(), randomUri()));
-        var resource = Resource.fromPublication(randomNonDegreePublication()).copy().withStatus(PUBLISHED).build();
-        return FilePermissions.create(fileEntry,
-                                      UserInstance.create(randomString(), randomUri()),
-                                      resource);
-    }
+  private static FilePermissions getFilePermissions(File file) {
+    var fileEntry =
+        FileEntry.create(
+            file, SortableIdentifier.next(), UserInstance.create(randomString(), randomUri()));
+    var resource =
+        Resource.fromPublication(randomNonDegreePublication()).copy().withStatus(PUBLISHED).build();
+    return FilePermissions.create(
+        fileEntry, UserInstance.create(randomString(), randomUri()), resource);
+  }
 }

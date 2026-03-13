@@ -12,6 +12,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -47,129 +48,145 @@ import org.zalando.problem.Problem;
 
 class DeleteMessageHandlerTest extends ResourcesLocalTest {
 
-    private static final FakeContext CONTEXT = new FakeContext();
-    private DeleteMessageHandler handler;
-    private ByteArrayOutputStream output;
-    private ResourceService resourceService;
-    private TicketService ticketService;
-    private MessageService messageService;
+  private static final FakeContext CONTEXT = new FakeContext();
+  private DeleteMessageHandler handler;
+  private ByteArrayOutputStream output;
+  private ResourceService resourceService;
+  private TicketService ticketService;
+  private MessageService messageService;
 
-    @BeforeEach
-    public void setup() {
-        super.init();
-        this.resourceService = getResourceService(client);
-        this.ticketService = getTicketService();
-        this.messageService = getMessageService();
-        this.handler = new DeleteMessageHandler(messageService, ticketService, resourceService, new Environment());
-        this.output = new ByteArrayOutputStream();
-    }
+  @BeforeEach
+  public void setup() {
+    super.init();
+    this.resourceService = getResourceService(client);
+    this.ticketService = getTicketService();
+    this.messageService = getMessageService();
+    this.handler =
+        new DeleteMessageHandler(messageService, ticketService, resourceService, new Environment());
+    this.output = new ByteArrayOutputStream();
+  }
 
-    @Test
-    void shouldReturnNotFoundWhenMessageToDeleteDoesNotExist() throws IOException {
-        handler.handleRequest(deleteNonExistentMessageRequest(), output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+  @Test
+  void shouldReturnNotFoundWhenMessageToDeleteDoesNotExist() throws IOException {
+    handler.handleRequest(deleteNonExistentMessageRequest(), output, CONTEXT);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
-    }
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+  }
 
-    @ParameterizedTest
-    @ValueSource(classes = {DoiRequest.class, PublishingRequestCase.class, GeneralSupportRequest.class})
-    void shouldReturnSuccessWhenTicketIsSuccessfullyDeleted(Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException, IOException {
-        var publication = randomPublishedPublication();
-        var ticket = createTicket(publication, ticketType);
-        var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
+  @ParameterizedTest
+  @ValueSource(
+      classes = {DoiRequest.class, PublishingRequestCase.class, GeneralSupportRequest.class})
+  void shouldReturnSuccessWhenTicketIsSuccessfullyDeleted(Class<? extends TicketEntry> ticketType)
+      throws ApiGatewayException, IOException {
+    var publication = randomPublishedPublication();
+    var ticket = createTicket(publication, ticketType);
+    var message =
+        messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
 
-        handler.handleRequest(deleteMessageRequest(publication, ticket, message), output, CONTEXT);
+    handler.handleRequest(deleteMessageRequest(publication, ticket, message), output, CONTEXT);
 
-        var deletedMessage = messageService.getMessage(UserInstance.fromMessage(message), message.getIdentifier());
+    var deletedMessage =
+        messageService.getMessage(UserInstance.fromMessage(message), message.getIdentifier());
 
-        assertThat(deletedMessage.getStatus(), is(equalTo(MessageStatus.DELETED)));
-        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_OK)));
-    }
+    assertThat(deletedMessage.getStatus(), is(equalTo(MessageStatus.DELETED)));
+    assertThat(
+        GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_OK)));
+  }
 
-    @ParameterizedTest
-    @ValueSource(classes = {
-        DoiRequest.class,
-        PublishingRequestCase.class,
-        GeneralSupportRequest.class})
-    void shouldReturnUnauthorizedWhenUserIsAttemptingToDeleteTicketUserDoesNotOwn(
-        Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException, IOException {
-        var publication = randomPublishedPublication();
-        var ticket = createTicket(publication, ticketType);
-        var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
+  @ParameterizedTest
+  @ValueSource(
+      classes = {DoiRequest.class, PublishingRequestCase.class, GeneralSupportRequest.class})
+  void shouldReturnUnauthorizedWhenUserIsAttemptingToDeleteTicketUserDoesNotOwn(
+      Class<? extends TicketEntry> ticketType) throws ApiGatewayException, IOException {
+    var publication = randomPublishedPublication();
+    var ticket = createTicket(publication, ticketType);
+    var message =
+        messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
 
-        handler.handleRequest(deleteForeignMessageRequest(publication, ticket, message), output, CONTEXT);
+    handler.handleRequest(
+        deleteForeignMessageRequest(publication, ticket, message), output, CONTEXT);
 
-        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(),
-                   is(equalTo(HTTP_UNAUTHORIZED)));
-    }
+    assertThat(
+        GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(),
+        is(equalTo(HTTP_UNAUTHORIZED)));
+  }
 
-    @Test
-    void shouldCompleteGeneralSupportRequestWhenAllMessagesAreDeleted()
-        throws ApiGatewayException, IOException {
-        var publication = randomPublishedPublication();
-        var ticket = createTicket(publication, GeneralSupportRequest.class);
-        var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
+  @Test
+  void shouldCompleteGeneralSupportRequestWhenAllMessagesAreDeleted()
+      throws ApiGatewayException, IOException {
+    var publication = randomPublishedPublication();
+    var ticket = createTicket(publication, GeneralSupportRequest.class);
+    var message =
+        messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
 
-        handler.handleRequest(deleteMessageRequest(publication, ticket, message), output, CONTEXT);
+    handler.handleRequest(deleteMessageRequest(publication, ticket, message), output, CONTEXT);
 
-        var completedTicket = ticket.fetch(ticketService);
+    var completedTicket = ticket.fetch(ticketService);
 
-        assertThat(completedTicket.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
-        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_OK)));
-    }
+    assertThat(completedTicket.getStatus(), is(equalTo(TicketStatus.COMPLETED)));
+    assertThat(
+        GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_OK)));
+  }
 
-    private Publication randomPublishedPublication() throws BadRequestException {
-        var publication = randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication)
-                              .persistNew(resourceService, userInstance);
-        return Resource.fromPublication(persistedPublication).publish(resourceService, userInstance).toPublication();
-    }
+  private Publication randomPublishedPublication() throws BadRequestException {
+    var publication = randomPublication();
+    var userInstance = UserInstance.fromPublication(publication);
+    var persistedPublication =
+        Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+    return Resource.fromPublication(persistedPublication)
+        .publish(resourceService, userInstance)
+        .toPublication();
+  }
 
-    private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
-        return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
-                   .withOwner(randomString())
-                   .persistNewTicket(ticketService);
-    }
+  private TicketEntry createTicket(Publication publication, Class<? extends TicketEntry> ticketType)
+      throws ApiGatewayException {
+    return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
+        .withOwner(randomString())
+        .persistNewTicket(ticketService);
+  }
 
-    private InputStream deleteMessageRequest(Publication publication, TicketEntry ticketEntry, Message message)
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                   .withPathParameters(pathParams(publication.getIdentifier(), ticketEntry.getIdentifier(),
-                                                  message.getIdentifier()))
-                   .withUserName(message.getOwner().toString())
-                   .withCurrentCustomer(message.getCustomerId())
-                   .build();
-    }
+  private InputStream deleteMessageRequest(
+      Publication publication, TicketEntry ticketEntry, Message message)
+      throws JsonProcessingException {
+    return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+        .withPathParameters(
+            pathParams(
+                publication.getIdentifier(), ticketEntry.getIdentifier(), message.getIdentifier()))
+        .withUserName(message.getOwner().toString())
+        .withCurrentCustomer(message.getCustomerId())
+        .build();
+  }
 
-    private InputStream deleteForeignMessageRequest(Publication publication, TicketEntry ticketEntry, Message message)
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                   .withPathParameters(pathParams(publication.getIdentifier(), ticketEntry.getIdentifier(),
-                                                  message.getIdentifier()))
-                   .withUserName(randomString())
-                   .withCurrentCustomer(randomUri())
-                   .build();
-    }
+  private InputStream deleteForeignMessageRequest(
+      Publication publication, TicketEntry ticketEntry, Message message)
+      throws JsonProcessingException {
+    return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+        .withPathParameters(
+            pathParams(
+                publication.getIdentifier(), ticketEntry.getIdentifier(), message.getIdentifier()))
+        .withUserName(randomString())
+        .withCurrentCustomer(randomUri())
+        .build();
+  }
 
-    private InputStream deleteNonExistentMessageRequest()
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                   .withPathParameters(pathParams(SortableIdentifier.next(), SortableIdentifier.next(),
-                                                  SortableIdentifier.next()))
-                   .withUserName(randomString())
-                   .withCurrentCustomer(randomUri())
-                   .build();
-    }
+  private InputStream deleteNonExistentMessageRequest() throws JsonProcessingException {
+    return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+        .withPathParameters(
+            pathParams(
+                SortableIdentifier.next(), SortableIdentifier.next(), SortableIdentifier.next()))
+        .withUserName(randomString())
+        .withCurrentCustomer(randomUri())
+        .build();
+  }
 
-    private static Map<String, String> pathParams(SortableIdentifier publicationIdentifier,
-                                                  SortableIdentifier ticketIdentifier,
-                                                  SortableIdentifier messageIdentifier) {
-        return Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString(),
-                      TICKET_IDENTIFIER, ticketIdentifier.toString(),
-                      MESSAGE_IDENTIFIER_PATH_PARAMETER, messageIdentifier.toString());
-    }
+  private static Map<String, String> pathParams(
+      SortableIdentifier publicationIdentifier,
+      SortableIdentifier ticketIdentifier,
+      SortableIdentifier messageIdentifier) {
+    return Map.of(
+        PUBLICATION_IDENTIFIER, publicationIdentifier.toString(),
+        TICKET_IDENTIFIER, ticketIdentifier.toString(),
+        MESSAGE_IDENTIFIER_PATH_PARAMETER, messageIdentifier.toString());
+  }
 }

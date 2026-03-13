@@ -7,12 +7,12 @@ import no.unit.nva.identifiers.SortableIdentifier;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName(ReceivingOrganizationDetails.RECEIVING_ORGANIZATION_DETAILS)
-public record ReceivingOrganizationDetails(URI topLevelOrganizationId, URI subOrganizationId,
-                                           SortableIdentifier influencingChannelClaim) {
+public record ReceivingOrganizationDetails(
+    URI topLevelOrganizationId, URI subOrganizationId, SortableIdentifier influencingChannelClaim) {
 
-    static final String RECEIVING_ORGANIZATION_DETAILS = "ReceivingOrganizationDetails";
+  static final String RECEIVING_ORGANIZATION_DETAILS = "ReceivingOrganizationDetails";
 
-    public ReceivingOrganizationDetails(URI topLevelOrganizationId, URI subOrganizationId) {
-        this(topLevelOrganizationId, subOrganizationId, null);
-    }
+  public ReceivingOrganizationDetails(URI topLevelOrganizationId, URI subOrganizationId) {
+    this(topLevelOrganizationId, subOrganizationId, null);
+  }
 }

@@ -2,6 +2,7 @@ package no.unit.nva.publication.ticket.create;
 
 import static no.unit.nva.model.PublicationOperation.DOI_REQUEST_CREATE;
 import static no.unit.nva.model.PublicationOperation.SUPPORT_REQUEST_CREATE;
+
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Resource;
@@ -24,63 +25,66 @@ import org.slf4j.LoggerFactory;
 
 public class TicketResolver {
 
-    public static final String CREATING_TICKET_ERROR_MESSAGE =
-        "Creating ticket {} for publication {} is forbidden for user {}";
-    private final Logger logger = LoggerFactory.getLogger(TicketResolver.class);
-    private final ResourceService resourceService;
-    private final TicketService ticketService;
+  public static final String CREATING_TICKET_ERROR_MESSAGE =
+      "Creating ticket {} for publication {} is forbidden for user {}";
+  private final Logger logger = LoggerFactory.getLogger(TicketResolver.class);
+  private final ResourceService resourceService;
+  private final TicketService ticketService;
 
-    @JacocoGenerated
-    public TicketResolver() {
-        this(ResourceService.defaultService(), TicketService.defaultService());
-    }
+  @JacocoGenerated
+  public TicketResolver() {
+    this(ResourceService.defaultService(), TicketService.defaultService());
+  }
 
-    public TicketResolver(ResourceService resourceService, TicketService ticketService) {
-        this.resourceService = resourceService;
-        this.ticketService = ticketService;
-    }
+  public TicketResolver(ResourceService resourceService, TicketService ticketService) {
+    this.resourceService = resourceService;
+    this.ticketService = ticketService;
+  }
 
-    public TicketEntry resolveAndPersistTicket(TicketDto ticketDto, RequestUtils requestUtils)
-        throws ApiGatewayException {
-        var resource = fetchResource(requestUtils);
-        var userInstance = requestUtils.toUserInstance();
+  public TicketEntry resolveAndPersistTicket(TicketDto ticketDto, RequestUtils requestUtils)
+      throws ApiGatewayException {
+    var resource = fetchResource(requestUtils);
+    var userInstance = requestUtils.toUserInstance();
 
-        validateUserPermissions(resource, ticketDto, userInstance);
+    validateUserPermissions(resource, ticketDto, userInstance);
 
-        var ticket = switch (ticketDto) {
-            case DoiRequestDto ignore -> DoiRequest.create(resource, userInstance);
-            case GeneralSupportRequestDto ignore -> GeneralSupportRequest.create(resource, userInstance);
-            default -> throw new BadRequestException("Not supported ticket type");
+    var ticket =
+        switch (ticketDto) {
+          case DoiRequestDto ignore -> DoiRequest.create(resource, userInstance);
+          case GeneralSupportRequestDto ignore ->
+              GeneralSupportRequest.create(resource, userInstance);
+          default -> throw new BadRequestException("Not supported ticket type");
         };
-        return ticket.persistNewTicket(ticketService);
-    }
+    return ticket.persistNewTicket(ticketService);
+  }
 
-    private static boolean userHasPermissionToCreateTicket(PublicationPermissions permissionStrategy,
-                                                           TicketDto ticketDto) {
-        var allowedActions = permissionStrategy.getAllAllowedActions();
-        return switch (ticketDto) {
-            case DoiRequestDto ignored -> allowedActions.contains(DOI_REQUEST_CREATE);
-            case GeneralSupportRequestDto ignored -> allowedActions.contains(SUPPORT_REQUEST_CREATE);
-            case null, default -> false;
-        };
-    }
+  private static boolean userHasPermissionToCreateTicket(
+      PublicationPermissions permissionStrategy, TicketDto ticketDto) {
+    var allowedActions = permissionStrategy.getAllAllowedActions();
+    return switch (ticketDto) {
+      case DoiRequestDto ignored -> allowedActions.contains(DOI_REQUEST_CREATE);
+      case GeneralSupportRequestDto ignored -> allowedActions.contains(SUPPORT_REQUEST_CREATE);
+      case null, default -> false;
+    };
+  }
 
-    private void validateUserPermissions(Resource resource, TicketDto ticketDto, UserInstance userInstance)
-        throws ForbiddenException {
-        var permissionStrategy = PublicationPermissions.create(resource, userInstance);
-        if (!userHasPermissionToCreateTicket(permissionStrategy, ticketDto)) {
-            logger.error(CREATING_TICKET_ERROR_MESSAGE,
-                         ticketDto.ticketType().getSimpleName(),
-                         resource.getIdentifier(),
-                         userInstance.getUser().toString());
-            throw new ForbiddenException();
-        }
+  private void validateUserPermissions(
+      Resource resource, TicketDto ticketDto, UserInstance userInstance) throws ForbiddenException {
+    var permissionStrategy = PublicationPermissions.create(resource, userInstance);
+    if (!userHasPermissionToCreateTicket(permissionStrategy, ticketDto)) {
+      logger.error(
+          CREATING_TICKET_ERROR_MESSAGE,
+          ticketDto.ticketType().getSimpleName(),
+          resource.getIdentifier(),
+          userInstance.getUser().toString());
+      throw new ForbiddenException();
     }
+  }
 
-    private Resource fetchResource(RequestUtils requestUtils) throws ApiGatewayException {
-        var resourceIdentifier = requestUtils.publicationIdentifier();
-        return Resource.resourceQueryObject(resourceIdentifier)
-                   .fetch(resourceService)
-                   .orElseThrow(() -> new NotFoundException("Publication not found"));
-    }
+  private Resource fetchResource(RequestUtils requestUtils) throws ApiGatewayException {
+    var resourceIdentifier = requestUtils.publicationIdentifier();
+    return Resource.resourceQueryObject(resourceIdentifier)
+        .fetch(resourceService)
+        .orElseThrow(() -> new NotFoundException("Publication not found"));
+  }
 }

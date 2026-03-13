@@ -15,50 +15,50 @@ import nva.commons.core.ioutils.IoUtils;
 @JacocoGenerated
 public class FakeHttpResponse<T> implements HttpResponse<T> {
 
-    private final HttpRequest inputRequest;
+  private final HttpRequest inputRequest;
 
-    public FakeHttpResponse(HttpRequest request) {
-        this.inputRequest = request;
-    }
+  public FakeHttpResponse(HttpRequest request) {
+    this.inputRequest = request;
+  }
 
-    @Override
-    public int statusCode() {
-        return HttpURLConnection.HTTP_OK;
-    }
-    
-    @Override
-    public HttpRequest request() {
-        return this.inputRequest;
-    }
+  @Override
+  public int statusCode() {
+    return HttpURLConnection.HTTP_OK;
+  }
 
-    @Override
-    public Optional<HttpResponse<T>> previousResponse() {
-        return Optional.empty();
-    }
+  @Override
+  public HttpRequest request() {
+    return this.inputRequest;
+  }
 
-    @Override
-    public HttpHeaders headers() {
-        return null;
-    }
+  @Override
+  public Optional<HttpResponse<T>> previousResponse() {
+    return Optional.empty();
+  }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public T body() {
-        return (T) IoUtils.stringFromResources(Path.of("fake_person_api_response.json"));
-    }
+  @Override
+  public HttpHeaders headers() {
+    return null;
+  }
 
-    @Override
-    public Optional<SSLSession> sslSession() {
-        return Optional.empty();
-    }
+  @SuppressWarnings("unchecked")
+  @Override
+  public T body() {
+    return (T) IoUtils.stringFromResources(Path.of("fake_person_api_response.json"));
+  }
 
-    @Override
-    public URI uri() {
-        return null;
-    }
+  @Override
+  public Optional<SSLSession> sslSession() {
+    return Optional.empty();
+  }
 
-    @Override
-    public Version version() {
-        return null;
-    }
+  @Override
+  public URI uri() {
+    return null;
+  }
+
+  @Override
+  public Version version() {
+    return null;
+  }
 }

@@ -10,22 +10,19 @@ import no.unit.nva.publication.model.business.User;
 
 public final class ExpansionUtil {
 
-    private ExpansionUtil() {
-    }
+  private ExpansionUtil() {}
 
-    public static ExpandedPerson expandPerson(Username username,
-                                              ResourceExpansionService expansionService) {
-        return Optional.ofNullable(username)
-            .map(Username::getValue)
-            .map(User::new)
-            .map(expansionService::expandPerson)
-            .orElse(null);
-    }
+  public static ExpandedPerson expandPerson(
+      Username username, ResourceExpansionService expansionService) {
+    return Optional.ofNullable(username)
+        .map(Username::getValue)
+        .map(User::new)
+        .map(expansionService::expandPerson)
+        .orElse(null);
+  }
 
-    public static Set<ExpandedPerson> expandPersonViewedBy(Set<User> users,
-                                                           ResourceExpansionService resourceExpansionService) {
-        return users.stream()
-            .map(resourceExpansionService::expandPerson)
-            .collect(Collectors.toSet());
-    }
+  public static Set<ExpandedPerson> expandPersonViewedBy(
+      Set<User> users, ResourceExpansionService resourceExpansionService) {
+    return users.stream().map(resourceExpansionService::expandPerson).collect(Collectors.toSet());
+  }
 }
