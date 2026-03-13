@@ -10,23 +10,29 @@ import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(CreatedResourceEvent.class), @JsonSubTypes.Type(UpdatedResourceEvent.class),
-    @JsonSubTypes.Type(PublishedResourceEvent.class), @JsonSubTypes.Type(UnpublishedResourceEvent.class),
-    @JsonSubTypes.Type(DeletedResourceEvent.class), @JsonSubTypes.Type(RepublishedResourceEvent.class),
-    @JsonSubTypes.Type(ImportedResourceEvent.class), @JsonSubTypes.Type(DoiReservedEvent.class),
-    @JsonSubTypes.Type(MergedResourceEvent.class)})
+@JsonSubTypes({
+  @JsonSubTypes.Type(CreatedResourceEvent.class),
+  @JsonSubTypes.Type(UpdatedResourceEvent.class),
+  @JsonSubTypes.Type(PublishedResourceEvent.class),
+  @JsonSubTypes.Type(UnpublishedResourceEvent.class),
+  @JsonSubTypes.Type(DeletedResourceEvent.class),
+  @JsonSubTypes.Type(RepublishedResourceEvent.class),
+  @JsonSubTypes.Type(ImportedResourceEvent.class),
+  @JsonSubTypes.Type(DoiReservedEvent.class),
+  @JsonSubTypes.Type(MergedResourceEvent.class)
+})
 public interface ResourceEvent {
 
-    Instant date();
+  Instant date();
 
-    User user();
+  User user();
 
-    SortableIdentifier identifier();
+  SortableIdentifier identifier();
 
-    /**
-     * @return id of the top level cristin organizations
-     */
-    URI institution();
+  /**
+   * @return id of the top level cristin organizations
+   */
+  URI institution();
 
-    PublicationLogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogAgent user);
+  PublicationLogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogAgent user);
 }

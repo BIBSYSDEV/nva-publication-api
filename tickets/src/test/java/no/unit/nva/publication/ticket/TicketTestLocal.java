@@ -3,6 +3,7 @@ package no.unit.nva.publication.ticket;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.util.List;
@@ -24,78 +25,92 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public abstract class TicketTestLocal extends ResourcesLocalTest {
-    
-    public static final FakeContext CONTEXT = new FakeContext();
-    protected ResourceService resourceService;
-    protected TicketService ticketService;
-    protected ByteArrayOutputStream output;
 
-    
-    public void init() {
-        super.init();
-        this.resourceService = getResourceService(client);
-        this.ticketService = getTicketService();
-        this.output = new ByteArrayOutputStream();
-    }
-    
-    protected Publication createPersistAndPublishPublication()
-        throws ApiGatewayException {
-        return createAndPersistPublicationAndThenActOnIt(this::publish);
-    }
+  public static final FakeContext CONTEXT = new FakeContext();
+  protected ResourceService resourceService;
+  protected TicketService ticketService;
+  protected ByteArrayOutputStream output;
 
-    protected Publication createPersistAndPublishPublicationWithDoi() throws NotFoundException, BadRequestException {
-        return createAndPersistPublicationWithDoiAndThenActOnIt(this::publish);
-    }
-    
-    protected TicketEntry createPersistedDoiTicket(Publication publication)
-        throws ApiGatewayException {
-        var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
-        var resource = Resource.fromPublication(publication);
-        return DoiRequest.create(resource, userInstanceWithTopLevelCristinOrg(ownerAffiliation))
-                            .persistNewTicket(ticketService);
-    }
+  public void init() {
+    super.init();
+    this.resourceService = getResourceService(client);
+    this.ticketService = getTicketService();
+    this.output = new ByteArrayOutputStream();
+  }
 
-    protected TicketEntry createPersistedDoiRequestWithOwnerAffiliation(Publication publication, URI ownerAffiliation)
-        throws ApiGatewayException {
-        var userInstance = userInstanceWithTopLevelCristinOrg(ownerAffiliation);
-        return DoiRequest.create(Resource.fromPublication(publication), userInstance).persistNewTicket(ticketService);
-    }
+  protected Publication createPersistAndPublishPublication() throws ApiGatewayException {
+    return createAndPersistPublicationAndThenActOnIt(this::publish);
+  }
 
-    public static UserInstance userInstanceWithTopLevelCristinOrg(URI topLevelOrgCristinId) {
-        return new UserInstance(randomString(), randomUri(), topLevelOrgCristinId, randomUri(), randomUri(),
-                                List.of(), UserClientType.INTERNAL, null);
-    }
+  protected Publication createPersistAndPublishPublicationWithDoi()
+      throws NotFoundException, BadRequestException {
+    return createAndPersistPublicationWithDoiAndThenActOnIt(this::publish);
+  }
 
-    protected Publication nonPersistedPublication() {
-        return randomPublication();
-    }
-    
-    protected void publish(Publication publication) {
-        Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
-    }
-    
-    public static Publication randomPublicationWithoutDoi() {
-        return randomPublication().copy().withDoi(null).build();
-    }
-    
-    private Publication createAndPersistPublicationAndThenActOnIt(Consumer<Publication> action)
-        throws ApiGatewayException {
-        var publication = randomPublicationWithoutDoi();
-        publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
-        var userInstance = UserInstance.fromPublication(publication);
-        var storedResult = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-        action.accept(storedResult);
-        return resourceService.getPublicationByIdentifier(storedResult.getIdentifier());
-    }
+  protected TicketEntry createPersistedDoiTicket(Publication publication)
+      throws ApiGatewayException {
+    var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
+    var resource = Resource.fromPublication(publication);
+    return DoiRequest.create(resource, userInstanceWithTopLevelCristinOrg(ownerAffiliation))
+        .persistNewTicket(ticketService);
+  }
 
-    private Publication createAndPersistPublicationWithDoiAndThenActOnIt(Consumer<Publication> action)
-        throws NotFoundException, BadRequestException {
-        var publication = randomPublication();
-        publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
-        publication.setDoi(RandomDataGenerator.randomDoi());
-        var userInstance = UserInstance.fromPublication(publication);
-        var storedResult = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-        action.accept(storedResult);
-        return resourceService.getPublicationByIdentifier(storedResult.getIdentifier());
-    }
+  protected TicketEntry createPersistedDoiRequestWithOwnerAffiliation(
+      Publication publication, URI ownerAffiliation) throws ApiGatewayException {
+    var userInstance = userInstanceWithTopLevelCristinOrg(ownerAffiliation);
+    return DoiRequest.create(Resource.fromPublication(publication), userInstance)
+        .persistNewTicket(ticketService);
+  }
+
+  public static UserInstance userInstanceWithTopLevelCristinOrg(URI topLevelOrgCristinId) {
+    return new UserInstance(
+        randomString(),
+        randomUri(),
+        topLevelOrgCristinId,
+        randomUri(),
+        randomUri(),
+        List.of(),
+        UserClientType.INTERNAL,
+        null);
+  }
+
+  protected Publication nonPersistedPublication() {
+    return randomPublication();
+  }
+
+  protected void publish(Publication publication) {
+    Resource.fromPublication(publication)
+        .publish(resourceService, UserInstance.fromPublication(publication));
+  }
+
+  public static Publication randomPublicationWithoutDoi() {
+    return randomPublication().copy().withDoi(null).build();
+  }
+
+  private Publication createAndPersistPublicationAndThenActOnIt(Consumer<Publication> action)
+      throws ApiGatewayException {
+    var publication = randomPublicationWithoutDoi();
+    publication
+        .getEntityDescription()
+        .setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
+    var userInstance = UserInstance.fromPublication(publication);
+    var storedResult =
+        Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+    action.accept(storedResult);
+    return resourceService.getPublicationByIdentifier(storedResult.getIdentifier());
+  }
+
+  private Publication createAndPersistPublicationWithDoiAndThenActOnIt(Consumer<Publication> action)
+      throws NotFoundException, BadRequestException {
+    var publication = randomPublication();
+    publication
+        .getEntityDescription()
+        .setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
+    publication.setDoi(RandomDataGenerator.randomDoi());
+    var userInstance = UserInstance.fromPublication(publication);
+    var storedResult =
+        Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+    action.accept(storedResult);
+    return resourceService.getPublicationByIdentifier(storedResult.getIdentifier());
+  }
 }

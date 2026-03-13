@@ -15,6 +15,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -62,265 +63,285 @@ import no.unit.nva.publication.storage.model.DatabaseConstants;
 @SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class ReadResourceService {
 
-    public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";
-    public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource ";
-    public static final int DEFAULT_LIMIT = 100;
-    private static final String ADDITIONAL_IDENTIFIER_CRISTIN = "Cristin";
-    private static final String TYPE = "type";
-    private final AmazonDynamoDB client;
-    private final String tableName;
+  public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";
+  public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource ";
+  public static final int DEFAULT_LIMIT = 100;
+  private static final String ADDITIONAL_IDENTIFIER_CRISTIN = "Cristin";
+  private static final String TYPE = "type";
+  private final AmazonDynamoDB client;
+  private final String tableName;
 
-    protected ReadResourceService(AmazonDynamoDB client, String tableName) {
-        this.client = client;
-        this.tableName = tableName;
-    }
+  protected ReadResourceService(AmazonDynamoDB client, String tableName) {
+    this.client = client;
+    this.tableName = tableName;
+  }
 
-    public List<PublicationSummary> getResourcesByOwner(UserInstance userInstance) {
-        var partitionKey = constructPrimaryPartitionKey(userInstance);
-        var querySpec = partitionKeyToQuerySpec(partitionKey);
-        var valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(), String.class);
-        var namesMap = querySpec.getNameMap();
-        var result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap, DEFAULT_LIMIT);
+  public List<PublicationSummary> getResourcesByOwner(UserInstance userInstance) {
+    var partitionKey = constructPrimaryPartitionKey(userInstance);
+    var querySpec = partitionKeyToQuerySpec(partitionKey);
+    var valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(), String.class);
+    var namesMap = querySpec.getNameMap();
+    var result =
+        performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap, DEFAULT_LIMIT);
 
-        return queryResultToListOfPublicationSummaries(result);
-    }
+    return queryResultToListOfPublicationSummaries(result);
+  }
 
-    public Optional<Resource> getResourceByIdentifier(SortableIdentifier identifier) {
-        var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
-        var queryRequest = new QueryRequest()
-                               .withTableName(tableName)
-                               .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
-                               .withKeyConditionExpression("#PK3 = :value")
-                               .withExpressionAttributeNames(Map.of("#PK3", "PK3"))
-                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue(partitionKey)));
+  public Optional<Resource> getResourceByIdentifier(SortableIdentifier identifier) {
+    var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
+    var queryRequest =
+        new QueryRequest()
+            .withTableName(tableName)
+            .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+            .withKeyConditionExpression("#PK3 = :value")
+            .withExpressionAttributeNames(Map.of("#PK3", "PK3"))
+            .withExpressionAttributeValues(Map.of(":value", new AttributeValue(partitionKey)));
 
-        var entries = client.query(queryRequest).getItems().stream().toList();
+    var entries = client.query(queryRequest).getItems().stream().toList();
 
-        var resource = extractResource(entries);
-        var fileEntries = extractFileEntries(entries);
-        var publicationChannels = extractPublicationChannels(entries);
-        var resourceRelationships = extractResourceRelationships(entries);
+    var resource = extractResource(entries);
+    var fileEntries = extractFileEntries(entries);
+    var publicationChannels = extractPublicationChannels(entries);
+    var resourceRelationships = extractResourceRelationships(entries);
 
-        resource.ifPresent(res -> {
-            var associatedArtifacts = new ArrayList<AssociatedArtifact>();
+    resource.ifPresent(
+        res -> {
+          var associatedArtifacts = new ArrayList<AssociatedArtifact>();
 
-            var files = fileEntries.stream().map(FileEntry::getFile).toList();
-            var associatedLinks = res.getAssociatedArtifacts().stream()
-                                      .filter(associatedArtifact -> !(associatedArtifact instanceof File))
-                                      .toList();
+          var files = fileEntries.stream().map(FileEntry::getFile).toList();
+          var associatedLinks =
+              res.getAssociatedArtifacts().stream()
+                  .filter(associatedArtifact -> !(associatedArtifact instanceof File))
+                  .toList();
 
-            associatedArtifacts.addAll(files);
-            associatedArtifacts.addAll(associatedLinks);
+          associatedArtifacts.addAll(files);
+          associatedArtifacts.addAll(associatedLinks);
 
-            res.setFileEntries(fileEntries);
-            res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
-            res.setPublicationChannels(publicationChannels);
-            res.setRelatedResources(resourceRelationships);
+          res.setFileEntries(fileEntries);
+          res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
+          res.setPublicationChannels(publicationChannels);
+          res.setRelatedResources(resourceRelationships);
         });
-        return resource;
+    return resource;
+  }
+
+  private List<SortableIdentifier> extractResourceRelationships(
+      Collection<Map<String, AttributeValue>> entries) {
+    return entries.stream()
+        .filter(map -> hasTypeProperty(map, ResourceRelationshipDao.TYPE))
+        .map(
+            map -> DatabaseEntryWithData.fromAttributeValuesMap(map, ResourceRelationshipDao.class))
+        .map(ResourceRelationshipDao::getData)
+        .map(ResourceRelationship::childIdentifier)
+        .toList();
+  }
+
+  public Optional<ImportCandidate> getImportCandidateByIdentifier(SortableIdentifier identifier) {
+    var getItemRequest = getGetItemRequest(identifier);
+    var result = client.getItem(getItemRequest);
+    if (isNull(result.getItem()) || result.getItem().isEmpty()) {
+      return Optional.empty();
     }
+    return Optional.of(
+            DatabaseEntryWithData.fromAttributeValuesMap(
+                result.getItem(), ImportCandidateDao.class))
+        .map(ImportCandidateDao::getData);
+  }
 
-    private List<SortableIdentifier> extractResourceRelationships(Collection<Map<String, AttributeValue>> entries) {
-        return entries.stream()
-                   .filter(map -> hasTypeProperty(map, ResourceRelationshipDao.TYPE))
-                   .map(map -> DatabaseEntryWithData.fromAttributeValuesMap(map, ResourceRelationshipDao.class))
-                   .map(ResourceRelationshipDao::getData)
-                   .map(ResourceRelationship::childIdentifier)
-                   .toList();
-    }
+  private GetItemRequest getGetItemRequest(SortableIdentifier identifier) {
+    var primaryKey = new AttributeValue(IMPORT_CANDIDATE_KEY_PATTERN.formatted(identifier));
+    return new GetItemRequest(
+        tableName,
+        Map.of(
+            PRIMARY_KEY_PARTITION_KEY_NAME, primaryKey,
+            PRIMARY_KEY_SORT_KEY_NAME, primaryKey));
+  }
 
-    public Optional<ImportCandidate> getImportCandidateByIdentifier(SortableIdentifier identifier) {
-        var getItemRequest = getGetItemRequest(identifier);
-        var result = client.getItem(getItemRequest);
-        if (isNull(result.getItem()) || result.getItem().isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(DatabaseEntryWithData.fromAttributeValuesMap(result.getItem(), ImportCandidateDao.class))
-                   .map(ImportCandidateDao::getData);
-    }
+  public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
+    var dao = (ResourceDao) resource.toDao();
+    return dao.fetchAllTickets(client).stream()
+        .map(TicketDao::getData)
+        .map(TicketEntry.class::cast)
+        .filter(ReadResourceService::isNotRemoved);
+  }
 
-    private GetItemRequest getGetItemRequest(SortableIdentifier identifier) {
-        var primaryKey = new AttributeValue(IMPORT_CANDIDATE_KEY_PATTERN.formatted(identifier));
-        return new GetItemRequest(tableName, Map.of(PRIMARY_KEY_PARTITION_KEY_NAME, primaryKey,
-                                                    PRIMARY_KEY_SORT_KEY_NAME, primaryKey));
-    }
+  public List<Dao> fetchAllResourceAssociatedEntries(
+      URI customerId, SortableIdentifier resourceIdentifier) {
+    var value =
+        "Customer:%s:Resource:%s"
+            .formatted(Dao.orgUriToOrgIdentifier(customerId), resourceIdentifier);
 
-    public Stream<TicketEntry> fetchAllTicketsForResource(Resource resource) {
-        var dao = (ResourceDao) resource.toDao();
-        return dao.fetchAllTickets(client)
-                   .stream()
-                   .map(TicketDao::getData)
-                   .map(TicketEntry.class::cast)
-                   .filter(ReadResourceService::isNotRemoved);
-    }
+    var queryRequest =
+        new QueryRequest()
+            .withTableName(RESOURCES_TABLE_NAME)
+            .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+            .withKeyConditionExpression("PK2 = :value")
+            .withExpressionAttributeValues(Map.of(":value", new AttributeValue().withS(value)));
 
-    public List<Dao> fetchAllResourceAssociatedEntries(URI customerId, SortableIdentifier resourceIdentifier) {
-        var value = "Customer:%s:Resource:%s".formatted(Dao.orgUriToOrgIdentifier(customerId), resourceIdentifier);
+    var daoList = new ArrayList<Dao>();
+    Map<String, AttributeValue> lastEvaluatedKey = null;
 
-        var queryRequest = new QueryRequest()
-                               .withTableName(RESOURCES_TABLE_NAME)
-                               .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                               .withKeyConditionExpression("PK2 = :value")
-                               .withExpressionAttributeValues(Map.of(":value", new AttributeValue().withS(value)));
+    do {
+      if (nonNull(lastEvaluatedKey)) {
+        queryRequest = queryRequest.withExclusiveStartKey(lastEvaluatedKey);
+      }
+      var queryResult = client.query(queryRequest);
+      var currentPageItems =
+          queryResult.getItems().stream()
+              .map(item -> parseAttributeValuesMap(item, Dao.class))
+              .toList();
+      daoList.addAll(currentPageItems);
 
-        var daoList = new ArrayList<Dao>();
-        Map<String, AttributeValue> lastEvaluatedKey = null;
+      lastEvaluatedKey = queryResult.getLastEvaluatedKey();
 
-        do {
-            if (nonNull(lastEvaluatedKey)) {
-                queryRequest = queryRequest.withExclusiveStartKey(lastEvaluatedKey);
-            }
-            var queryResult = client.query(queryRequest);
-            var currentPageItems = queryResult.getItems().stream()
-                                             .map(item -> parseAttributeValuesMap(item, Dao.class))
-                                             .toList();
-            daoList.addAll(currentPageItems);
+    } while (nonNull(lastEvaluatedKey));
 
-            lastEvaluatedKey = queryResult.getLastEvaluatedKey();
+    return daoList;
+  }
 
-        } while (nonNull(lastEvaluatedKey));
+  private static boolean isNotRemoved(TicketEntry ticket) {
+    return !TicketStatus.REMOVED.equals(ticket.getStatus());
+  }
 
-        return daoList;
-    }
+  private static Optional<Resource> extractResource(
+      Collection<Map<String, AttributeValue>> entries) {
+    return entries.stream()
+        .filter(map -> hasTypeProperty(map, ResourceDao.TYPE))
+        .map(map -> parseAttributeValuesMap(map, Dao.class))
+        .filter(ResourceDao.class::isInstance)
+        .map(ResourceDao.class::cast)
+        .map(ResourceDao::getResource)
+        .findFirst();
+  }
 
-    private static boolean isNotRemoved(TicketEntry ticket) {
-        return !TicketStatus.REMOVED.equals(ticket.getStatus());
-    }
+  private static boolean hasTypeProperty(Map<String, AttributeValue> map, String type) {
+    return type.equals(map.getOrDefault(TYPE, new AttributeValue()).getS());
+  }
 
-    private static Optional<Resource> extractResource(Collection<Map<String, AttributeValue>> entries) {
-        return entries.stream()
-                   .filter(map -> hasTypeProperty(map, ResourceDao.TYPE))
-                   .map(map -> parseAttributeValuesMap(map, Dao.class))
-                   .filter(ResourceDao.class::isInstance)
-                   .map(ResourceDao.class::cast)
-                   .map(ResourceDao::getResource)
-                   .findFirst();
-    }
+  private static List<FileEntry> extractFileEntries(
+      Collection<Map<String, AttributeValue>> entries) {
+    return entries.stream()
+        .filter(map -> hasTypeProperty(map, FileDao.TYPE))
+        .map(map -> parseAttributeValuesMap(map, Dao.class))
+        .filter(FileDao.class::isInstance)
+        .map(FileDao.class::cast)
+        .map(FileDao::getFileEntry)
+        .filter(ReadResourceService::isNotSoftDeleted)
+        .toList();
+  }
 
-    private static boolean hasTypeProperty(Map<String, AttributeValue> map, String type) {
-        return type.equals(map.getOrDefault(TYPE, new AttributeValue()).getS());
-    }
+  private List<PublicationChannel> extractPublicationChannels(
+      Collection<Map<String, AttributeValue>> entries) {
+    return entries.stream()
+        .filter(map -> hasTypeProperty(map, PublicationChannelDao.TYPE))
+        .map(map -> parseAttributeValuesMap(map, Dao.class))
+        .filter(PublicationChannelDao.class::isInstance)
+        .map(PublicationChannelDao.class::cast)
+        .map(PublicationChannelDao::getData)
+        .map(PublicationChannel.class::cast)
+        .toList();
+  }
 
-    private static List<FileEntry> extractFileEntries(Collection<Map<String, AttributeValue>> entries) {
-        return entries.stream()
-                   .filter(map -> hasTypeProperty(map, FileDao.TYPE))
-                   .map(map -> parseAttributeValuesMap(map, Dao.class))
-                   .filter(FileDao.class::isInstance)
-                   .map(FileDao.class::cast)
-                   .map(FileDao::getFileEntry)
-                   .filter(ReadResourceService::isNotSoftDeleted)
-                   .toList();
-    }
+  private static boolean isNotSoftDeleted(FileEntry fileEntry) {
+    return !(fileEntry.getFileEvent() instanceof FileDeletedEvent);
+  }
 
-    private List<PublicationChannel> extractPublicationChannels(Collection<Map<String, AttributeValue>> entries) {
-        return entries.stream()
-                   .filter(map -> hasTypeProperty(map, PublicationChannelDao.TYPE))
-                   .map(map -> parseAttributeValuesMap(map, Dao.class))
-                   .filter(PublicationChannelDao.class::isInstance)
-                   .map(PublicationChannelDao.class::cast)
-                   .map(PublicationChannelDao::getData)
-                   .map(PublicationChannel.class::cast)
-                   .toList();
-    }
+  public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
+    var queryObject =
+        new ResourceDao(resourceQueryObjectWithAdditionalIdentifier(cristinIdentifier));
+    var queryRequest = queryObject.createQueryFindByCristinIdentifier();
+    var queryResult = client.query(queryRequest);
+    return queryResultToListOfPublications(queryResult);
+  }
 
-    private static boolean isNotSoftDeleted(FileEntry fileEntry) {
-        return !(fileEntry.getFileEvent() instanceof FileDeletedEvent);
-    }
+  public List<Publication> getPublicationsByScopusIdentifier(String scopusIdentifier) {
+    var queryRequest =
+        new QueryRequest()
+            .withTableName(tableName)
+            .withIndexName(GSI_1_INDEX_NAME)
+            .withKeyConditionExpression("#PK1 = :value")
+            .withExpressionAttributeNames(Map.of("#PK1", "PK1"))
+            .withExpressionAttributeValues(
+                Map.of(
+                    ":value",
+                    new AttributeValue(
+                        String.format(
+                            "%s:%s", SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX, scopusIdentifier))));
+    var queryResult = client.query(queryRequest);
+    return queryResultToListOfPublications(queryResult);
+  }
 
-    public List<Publication> getPublicationsByCristinIdentifier(String cristinIdentifier) {
-        var queryObject = new ResourceDao(resourceQueryObjectWithAdditionalIdentifier(cristinIdentifier));
-        var queryRequest = queryObject.createQueryFindByCristinIdentifier();
-        var queryResult = client.query(queryRequest);
-        return queryResultToListOfPublications(queryResult);
-    }
+  protected List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(
+      UserInstance userInstance, SortableIdentifier resourceIdentifier) {
+    ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
+    QueryRequest queryRequest = attempt(() -> queryByResourceIndex(queryObject)).orElseThrow();
+    QueryResult queryResult = client.query(queryRequest);
+    return parseResultSetToDaos(queryResult);
+  }
 
-    public List<Publication> getPublicationsByScopusIdentifier(String scopusIdentifier) {
-        var queryRequest = new QueryRequest().withTableName(tableName)
-                               .withIndexName(GSI_1_INDEX_NAME)
-                               .withKeyConditionExpression("#PK1 = :value")
-                               .withExpressionAttributeNames(Map.of("#PK1", "PK1"))
-                               .withExpressionAttributeValues(Map.of(":value",
-                                                                     new AttributeValue(String.format("%s:%s", SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX, scopusIdentifier))));
-        var queryResult = client.query(queryRequest);
-        return queryResultToListOfPublications(queryResult);
-    }
+  private static List<Resource> queryResultToResourceList(QueryResult result) {
+    return result.getItems().stream()
+        .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
+        .map(ResourceDao::getData)
+        .map(Resource.class::cast)
+        .collect(Collectors.toList());
+  }
 
-    protected List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
-                                                                         SortableIdentifier resourceIdentifier) {
-        ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
-        QueryRequest queryRequest = attempt(() -> queryByResourceIndex(queryObject)).orElseThrow();
-        QueryResult queryResult = client.query(queryRequest);
-        return parseResultSetToDaos(queryResult);
-    }
+  private Resource resourceQueryObjectWithAdditionalIdentifier(String identifier) {
+    var resource = new Resource();
+    resource.setAdditionalIdentifiers(
+        Set.of(new AdditionalIdentifier(ADDITIONAL_IDENTIFIER_CRISTIN, identifier)));
+    return resource;
+  }
 
-    private static List<Resource> queryResultToResourceList(QueryResult result) {
-        return result.getItems()
-                   .stream()
-                   .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
-                   .map(ResourceDao::getData)
-                   .map(Resource.class::cast)
-                   .collect(Collectors.toList());
-    }
+  private String constructPrimaryPartitionKey(UserInstance userInstance) {
+    return ResourceDao.constructPrimaryPartitionKey(
+        userInstance.getCustomerId(), userInstance.getUsername());
+  }
 
-    private Resource resourceQueryObjectWithAdditionalIdentifier(String identifier) {
-        var resource = new Resource();
-        resource.setAdditionalIdentifiers(
-            Set.of(new AdditionalIdentifier(ADDITIONAL_IDENTIFIER_CRISTIN, identifier)));
-        return resource;
-    }
+  private List<Publication> queryResultToListOfPublications(QueryResult result) {
+    return queryResultToResourceList(result).stream().map(Resource::toPublication).toList();
+  }
 
-    private String constructPrimaryPartitionKey(UserInstance userInstance) {
-        return ResourceDao.constructPrimaryPartitionKey(userInstance.getCustomerId(),
-                                                        userInstance.getUsername());
-    }
+  private List<PublicationSummary> queryResultToListOfPublicationSummaries(QueryResult result) {
+    return queryResultToResourceList(result).stream().map(Resource::toSummary).toList();
+  }
 
-    private List<Publication> queryResultToListOfPublications(QueryResult result) {
-        return queryResultToResourceList(result)
-                   .stream()
-                   .map(Resource::toPublication)
-                   .toList();
-    }
+  private QueryResult performQuery(
+      String conditionExpression,
+      Map<String, AttributeValue> valuesMap,
+      Map<String, String> namesMap,
+      int limit) {
+    return client.query(
+        new QueryRequest()
+            .withKeyConditionExpression(conditionExpression)
+            .withExpressionAttributeNames(namesMap)
+            .withExpressionAttributeValues(valuesMap)
+            .withTableName(tableName)
+            .withLimit(limit));
+  }
 
-    private List<PublicationSummary> queryResultToListOfPublicationSummaries(QueryResult result) {
-        return queryResultToResourceList(result)
-                   .stream()
-                   .map(Resource::toSummary)
-                   .toList();
-    }
+  private QueryExpressionSpec partitionKeyToQuerySpec(String partitionKey) {
+    return new ExpressionSpecBuilder()
+        .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey))
+        .buildForQuery();
+  }
 
-    private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,
-                                     Map<String, String> namesMap, int limit) {
-        return client.query(
-            new QueryRequest().withKeyConditionExpression(conditionExpression)
-                .withExpressionAttributeNames(namesMap)
-                .withExpressionAttributeValues(valuesMap)
-                .withTableName(tableName)
-                .withLimit(limit)
-        );
-    }
+  private QueryRequest queryByResourceIndex(ResourceDao queryObject) {
+    var doiRequestQueryObject = DoiRequestDao.queryObject(queryObject);
+    Map<String, Condition> keyConditions =
+        queryObject.byResource(
+            queryObject.joinByResourceContainedOrderedType(),
+            doiRequestQueryObject.joinByResourceContainedOrderedType());
+    return new QueryRequest()
+        .withTableName(tableName)
+        .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+        .withKeyConditions(keyConditions);
+  }
 
-    private QueryExpressionSpec partitionKeyToQuerySpec(String partitionKey) {
-        return new ExpressionSpecBuilder()
-                   .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey)).buildForQuery();
-    }
-
-    private QueryRequest queryByResourceIndex(ResourceDao queryObject) {
-        var doiRequestQueryObject = DoiRequestDao.queryObject(queryObject);
-        Map<String, Condition> keyConditions = queryObject
-                                                   .byResource(
-                                                       queryObject.joinByResourceContainedOrderedType(),
-                                                       doiRequestQueryObject.joinByResourceContainedOrderedType()
-                                                   );
-        return new QueryRequest()
-                   .withTableName(tableName)
-                   .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                   .withKeyConditions(keyConditions);
-    }
-
-    private List<Dao> parseResultSetToDaos(QueryResult queryResult) {
-        return queryResult.getItems()
-                   .stream()
-                   .map(values -> parseAttributeValuesMap(values, Dao.class))
-                   .collect(Collectors.toList());
-    }
+  private List<Dao> parseResultSetToDaos(QueryResult queryResult) {
+    return queryResult.getItems().stream()
+        .map(values -> parseAttributeValuesMap(values, Dao.class))
+        .collect(Collectors.toList());
+  }
 }

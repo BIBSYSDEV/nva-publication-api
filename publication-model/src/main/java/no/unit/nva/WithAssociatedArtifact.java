@@ -5,8 +5,7 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
 
 public interface WithAssociatedArtifact extends PublicationBase {
 
-    List<AssociatedArtifactDto> getAssociatedArtifacts();
+  List<AssociatedArtifactDto> getAssociatedArtifacts();
 
-    void setAssociatedArtifacts(List<AssociatedArtifactDto> associatedArtifact);
-
+  void setAssociatedArtifacts(List<AssociatedArtifactDto> associatedArtifact);
 }

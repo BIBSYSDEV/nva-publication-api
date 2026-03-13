@@ -8,81 +8,80 @@ import nva.commons.core.JacocoGenerated;
 
 public class JournalNonPeerReviewedContent extends NonPeerReviewedPaper implements JournalContent {
 
-    @JsonProperty("volume")
-    private String volume;
-    @JsonProperty("issue")
-    private String issue;
-    @JsonProperty("articleNumber")
-    private String articleNumber;
+  @JsonProperty("volume")
+  private String volume;
 
-    /**
-     * Creates an object that matches the Journal pattern, but throws an exception if peerReviewed is set to true.
-     *
-     * @param volume Journal volume for the article.
-     * @param issue Journal issue for the article.
-     * @param articleNumber Article number for the article.
-     * @param pages Page range for the article.
-     */
-    public JournalNonPeerReviewedContent(
-            String volume,
-            String issue,
-            String articleNumber,
-            Range pages
-    ) {
-        super(pages);
-        this.volume = volume;
-        this.issue = issue;
-        this.articleNumber = articleNumber;
-    }
+  @JsonProperty("issue")
+  private String issue;
 
-    @Override
-    public void setVolume(String volume) {
-        this.volume = volume;
-    }
+  @JsonProperty("articleNumber")
+  private String articleNumber;
 
-    @Override
-    public String getVolume() {
-        return volume;
-    }
+  /**
+   * Creates an object that matches the Journal pattern, but throws an exception if peerReviewed is
+   * set to true.
+   *
+   * @param volume Journal volume for the article.
+   * @param issue Journal issue for the article.
+   * @param articleNumber Article number for the article.
+   * @param pages Page range for the article.
+   */
+  public JournalNonPeerReviewedContent(
+      String volume, String issue, String articleNumber, Range pages) {
+    super(pages);
+    this.volume = volume;
+    this.issue = issue;
+    this.articleNumber = articleNumber;
+  }
 
-    @Override
-    public void setIssue(String issue) {
-        this.issue = issue;
-    }
+  @Override
+  public void setVolume(String volume) {
+    this.volume = volume;
+  }
 
-    @Override
-    public String getIssue() {
-        return issue;
-    }
+  @Override
+  public String getVolume() {
+    return volume;
+  }
 
-    @Override
-    public void setArticleNumber(String articleNumber) {
-        this.articleNumber = articleNumber;
-    }
+  @Override
+  public void setIssue(String issue) {
+    this.issue = issue;
+  }
 
-    @Override
-    public String getArticleNumber() {
-        return articleNumber;
-    }
+  @Override
+  public String getIssue() {
+    return issue;
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof JournalNonPeerReviewedContent)) {
-            return false;
-        }
-        JournalNonPeerReviewedContent that = (JournalNonPeerReviewedContent) o;
-        return Objects.equals(getVolume(), that.getVolume())
-                && Objects.equals(getIssue(), that.getIssue())
-                && Objects.equals(getArticleNumber(), that.getArticleNumber());
-    }
+  @Override
+  public void setArticleNumber(String articleNumber) {
+    this.articleNumber = articleNumber;
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getVolume(), getIssue(), getArticleNumber());
+  @Override
+  public String getArticleNumber() {
+    return articleNumber;
+  }
+
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (!(o instanceof JournalNonPeerReviewedContent)) {
+      return false;
+    }
+    JournalNonPeerReviewedContent that = (JournalNonPeerReviewedContent) o;
+    return Objects.equals(getVolume(), that.getVolume())
+        && Objects.equals(getIssue(), that.getIssue())
+        && Objects.equals(getArticleNumber(), that.getArticleNumber());
+  }
+
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(getVolume(), getIssue(), getArticleNumber());
+  }
 }

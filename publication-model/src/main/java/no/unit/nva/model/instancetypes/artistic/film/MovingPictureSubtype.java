@@ -7,51 +7,53 @@ import nva.commons.core.JacocoGenerated;
 
 public class MovingPictureSubtype {
 
-    public static final String TYPE = "type";
-    @JsonProperty(TYPE)
-    private final MovingPictureSubtypeEnum type;
+  public static final String TYPE = "type";
 
-    protected MovingPictureSubtype(MovingPictureSubtypeEnum type) {
-        this.type = type;
-    }
+  @JsonProperty(TYPE)
+  private final MovingPictureSubtypeEnum type;
 
-    public static MovingPictureSubtype createOther(String description) {
-        return new MovingPictureSubtypeOther(MovingPictureSubtypeEnum.OTHER, description);
-    }
+  protected MovingPictureSubtype(MovingPictureSubtypeEnum type) {
+    this.type = type;
+  }
 
-    @JsonCreator
-    public static MovingPictureSubtype fromJson(@JsonProperty(TYPE) MovingPictureSubtypeEnum type,
-                                                @JsonProperty("description") String description) {
-        if (MovingPictureSubtypeEnum.OTHER == type) {
-            return createOther(description);
-        }
-        return new MovingPictureSubtype(type);
-    }
+  public static MovingPictureSubtype createOther(String description) {
+    return new MovingPictureSubtypeOther(MovingPictureSubtypeEnum.OTHER, description);
+  }
 
-    public static MovingPictureSubtype create(MovingPictureSubtypeEnum type) {
-        return new MovingPictureSubtype(type);
+  @JsonCreator
+  public static MovingPictureSubtype fromJson(
+      @JsonProperty(TYPE) MovingPictureSubtypeEnum type,
+      @JsonProperty("description") String description) {
+    if (MovingPictureSubtypeEnum.OTHER == type) {
+      return createOther(description);
     }
+    return new MovingPictureSubtype(type);
+  }
 
-    public MovingPictureSubtypeEnum getType() {
-        return type;
-    }
+  public static MovingPictureSubtype create(MovingPictureSubtypeEnum type) {
+    return new MovingPictureSubtype(type);
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getType());
-    }
+  public MovingPictureSubtypeEnum getType() {
+    return type;
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof MovingPictureSubtype)) {
-            return false;
-        }
-        MovingPictureSubtype movingPictureSubtype = (MovingPictureSubtype) o;
-        return getType() == movingPictureSubtype.getType();
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(getType());
+  }
+
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (!(o instanceof MovingPictureSubtype)) {
+      return false;
+    }
+    MovingPictureSubtype movingPictureSubtype = (MovingPictureSubtype) o;
+    return getType() == movingPictureSubtype.getType();
+  }
 }

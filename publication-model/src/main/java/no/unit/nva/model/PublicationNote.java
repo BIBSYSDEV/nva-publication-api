@@ -9,9 +9,8 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @JsonTypeName("PublicationNote")
 public class PublicationNote extends PublicationNoteBase {
 
-    @JsonCreator
-    public PublicationNote(@JsonProperty("note") @JsonAlias({"publicationNoteMessage"}) String note) {
-        super(note);
-    }
-
+  @JsonCreator
+  public PublicationNote(@JsonProperty("note") @JsonAlias({"publicationNoteMessage"}) String note) {
+    super(note);
+  }
 }

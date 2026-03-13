@@ -9,5 +9,5 @@ import java.net.URI;
 @JsonTypeName(ExpandedJournal.TYPE)
 public record ExpandedJournal(URI id, String name) {
 
-    public static final String TYPE = "Journal";
+  public static final String TYPE = "Journal";
 }

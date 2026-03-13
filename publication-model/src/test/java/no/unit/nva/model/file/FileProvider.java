@@ -4,6 +4,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+
 import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.util.ArrayList;
@@ -29,87 +30,94 @@ import org.reflections.Reflections;
 
 public class FileProvider implements ArgumentsProvider {
 
-    public static final URI LICENSE_URI = URI.create("http://creativecommons.org/licenses/by/4.0/");
+  public static final URI LICENSE_URI = URI.create("http://creativecommons.org/licenses/by/4.0/");
 
-    @Override
-    public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
-        var reflections = new Reflections(File.class.getPackageName());
-        var classes = reflections.getSubTypesOf(File.class);
+  @Override
+  public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+    var reflections = new Reflections(File.class.getPackageName());
+    var classes = reflections.getSubTypesOf(File.class);
 
-        var output = new ArrayList<File>();
-        for (var aClass : classes) {
-            if (File.class.isAssignableFrom(aClass) && !Modifier.isAbstract(aClass.getModifiers())) {
-                output.add(resolveFileFromType(aClass));
-            }
-        }
-
-        return output.stream().map(file -> Arguments.of(Named.of(file.getClass().getSimpleName(), file)));
+    var output = new ArrayList<File>();
+    for (var aClass : classes) {
+      if (File.class.isAssignableFrom(aClass) && !Modifier.isAbstract(aClass.getModifiers())) {
+        output.add(resolveFileFromType(aClass));
+      }
     }
 
-    private static File resolveFileFromType(Class<?> aClass) {
-        return switch (aClass.getSimpleName()) {
-            case OpenFile.TYPE -> randomOpenFile();
-            case PendingOpenFile.TYPE -> randomPendingOpenFile();
-            case RejectedFile.TYPE -> randomRejectedFile();
-            case InternalFile.TYPE -> randomInternalFile();
-            case PendingInternalFile.TYPE -> randomPendingInternalFile();
-            case HiddenFile.TYPE -> randomHiddenFile();
-            case UploadedFile.TYPE -> randomUploadedFile();
-            default -> throw new IllegalArgumentException(
-                "Unexpected value, make sure to include new types here: " + aClass.getSimpleName());
-        };
-    }
+    return output.stream()
+        .map(file -> Arguments.of(Named.of(file.getClass().getSimpleName(), file)));
+  }
 
-    private static File randomHiddenFile() {
-        return buildNonAdministrativeAgreement().buildHiddenFile();
-    }
+  private static File resolveFileFromType(Class<?> aClass) {
+    return switch (aClass.getSimpleName()) {
+      case OpenFile.TYPE -> randomOpenFile();
+      case PendingOpenFile.TYPE -> randomPendingOpenFile();
+      case RejectedFile.TYPE -> randomRejectedFile();
+      case InternalFile.TYPE -> randomInternalFile();
+      case PendingInternalFile.TYPE -> randomPendingInternalFile();
+      case HiddenFile.TYPE -> randomHiddenFile();
+      case UploadedFile.TYPE -> randomUploadedFile();
+      default ->
+          throw new IllegalArgumentException(
+              "Unexpected value, make sure to include new types here: " + aClass.getSimpleName());
+    };
+  }
 
-    private static File randomUploadedFile() {
-        return new UploadedFile(UUID.randomUUID(), randomString(), randomString(), randomInteger().longValue(),
-                                null, randomInserted());
-    }
+  private static File randomHiddenFile() {
+    return buildNonAdministrativeAgreement().buildHiddenFile();
+  }
 
-    private static File randomOpenFile() {
-        return buildNonAdministrativeAgreement().buildOpenFile();
-    }
+  private static File randomUploadedFile() {
+    return new UploadedFile(
+        UUID.randomUUID(),
+        randomString(),
+        randomString(),
+        randomInteger().longValue(),
+        null,
+        randomInserted());
+  }
 
-    private static File randomPendingOpenFile() {
-        return buildNonAdministrativeAgreement().buildPendingOpenFile();
-    }
+  private static File randomOpenFile() {
+    return buildNonAdministrativeAgreement().buildOpenFile();
+  }
 
-    private static File randomRejectedFile() {
-        return buildNonAdministrativeAgreement().buildRejectedFile();
-    }
+  private static File randomPendingOpenFile() {
+    return buildNonAdministrativeAgreement().buildPendingOpenFile();
+  }
 
-    private static File randomInternalFile() {
-        return buildNonAdministrativeAgreement().buildInternalFile();
-    }
+  private static File randomRejectedFile() {
+    return buildNonAdministrativeAgreement().buildRejectedFile();
+  }
 
-    private static File randomPendingInternalFile() {
-        return buildNonAdministrativeAgreement().buildPendingInternalFile();
-    }
+  private static File randomInternalFile() {
+    return buildNonAdministrativeAgreement().buildInternalFile();
+  }
 
-    private static Username randomUsername() {
-        return new Username(randomInteger().toString() + "@" + randomString());
-    }
+  private static File randomPendingInternalFile() {
+    return buildNonAdministrativeAgreement().buildPendingInternalFile();
+  }
 
-    private static UploadDetails randomInserted() {
-        return new UserUploadDetails(randomUsername(), randomInstant());
-    }
+  private static Username randomUsername() {
+    return new Username(randomInteger().toString() + "@" + randomString());
+  }
 
-    public static File.Builder buildNonAdministrativeAgreement() {
-        return File.builder()
-                   .withName(randomString())
-                   .withMimeType(randomString())
-                   .withSize(randomInteger().longValue())
-                   .withEmbargoDate(randomInstant())
-                   .withLicense(LICENSE_URI)
-                   .withIdentifier(UUID.randomUUID())
-                   .withUploadDetails(randomInserted())
-                   .withPublisherVersion(randomPublisherVersion());
-    }
+  private static UploadDetails randomInserted() {
+    return new UserUploadDetails(randomUsername(), randomInstant());
+  }
 
-    private static PublisherVersion randomPublisherVersion() {
-        return randomBoolean() ? PublisherVersion.PUBLISHED_VERSION : PublisherVersion.ACCEPTED_VERSION;
-    }
+  public static File.Builder buildNonAdministrativeAgreement() {
+    return File.builder()
+        .withName(randomString())
+        .withMimeType(randomString())
+        .withSize(randomInteger().longValue())
+        .withEmbargoDate(randomInstant())
+        .withLicense(LICENSE_URI)
+        .withIdentifier(UUID.randomUUID())
+        .withUploadDetails(randomInserted())
+        .withPublisherVersion(randomPublisherVersion());
+  }
+
+  private static PublisherVersion randomPublisherVersion() {
+    return randomBoolean() ? PublisherVersion.PUBLISHED_VERSION : PublisherVersion.ACCEPTED_VERSION;
+  }
 }

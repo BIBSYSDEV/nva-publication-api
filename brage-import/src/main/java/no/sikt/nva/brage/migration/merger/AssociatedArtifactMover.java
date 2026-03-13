@@ -15,92 +15,96 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 
 public class AssociatedArtifactMover {
 
-    public static final String COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE = "Could not copy associated "
-                                                                                      + "artifact: ";
-    private final S3Client s3Client;
-    private final S3Event s3Event;
-    private final String persistedStorageBucket;
-    private final Context context;
+  public static final String COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE =
+      "Could not copy associated " + "artifact: ";
+  private final S3Client s3Client;
+  private final S3Event s3Event;
+  private final String persistedStorageBucket;
+  private final Context context;
 
-    public AssociatedArtifactMover(S3Client s3Client, S3Event s3Event, Context context) {
-        this.s3Client = s3Client;
-        this.s3Event = s3Event;
-        this.context = context;
-        this.persistedStorageBucket = new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
+  public AssociatedArtifactMover(S3Client s3Client, S3Event s3Event, Context context) {
+    this.s3Client = s3Client;
+    this.s3Event = s3Event;
+    this.context = context;
+    this.persistedStorageBucket = new Environment().readEnv("NVA_PERSISTED_STORAGE_BUCKET_NAME");
+  }
+
+  public void pushAssociatedArtifactsToPersistedStorage(Publication publication) {
+    publication.setAssociatedArtifacts(
+        pushAssociatedArtefactsToPersistedStorageAndGetMetadata(publication));
+  }
+
+  private AssociatedArtifactList pushAssociatedArtefactsToPersistedStorageAndGetMetadata(
+      Publication publication) {
+    var associatedArtifacts =
+        publication.getAssociatedArtifacts().stream()
+            .map(this::pushAssociatedArtifactToPersistedStorage)
+            .toList();
+    return new AssociatedArtifactList(associatedArtifacts);
+  }
+
+  private AssociatedArtifact pushAssociatedArtifactToPersistedStorage(
+      AssociatedArtifact associatedArtifact) {
+    try {
+      if (associatedArtifact instanceof File file) {
+        var objectKey = file.getIdentifier().toString();
+
+        S3MultipartCopier.fromSourceKey(getObjectKeyPath() + objectKey)
+            .sourceBucket(getSourceBucket())
+            .destinationKey(objectKey)
+            .destinationBucket(persistedStorageBucket)
+            .copy(s3Client, context);
+
+        return extractMimeTypeAndSize(file, objectKey);
+      } else {
+        return associatedArtifact;
+      }
+    } catch (Exception e) {
+      throw new AssociatedArtifactException(
+          COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE + associatedArtifact, e);
     }
+  }
 
-    public void pushAssociatedArtifactsToPersistedStorage(Publication publication) {
-        publication.setAssociatedArtifacts(pushAssociatedArtefactsToPersistedStorageAndGetMetadata(publication));
+  private File extractMimeTypeAndSize(File file, String objectKey) {
+    var headObjectResponse = s3Client.headObject(createHeadObjectRequest(objectKey));
+    var size = headObjectResponse.contentLength();
+    var mimeType = headObjectResponse.contentType();
+    return buildFile(file, mimeType, size);
+  }
+
+  private static File buildFile(File file, String mimeType, Long size) {
+    var builder =
+        File.builder()
+            .withName(file.getName())
+            .withIdentifier(file.getIdentifier())
+            .withLicense(file.getLicense())
+            .withPublisherVersion(file.getPublisherVersion())
+            .withEmbargoDate(file.getEmbargoDate().orElse(null))
+            .withMimeType(mimeType)
+            .withSize(size)
+            .withLegalNote(file.getLegalNote())
+            .withUploadDetails(file.getUploadDetails());
+    if (file instanceof HiddenFile) {
+      return builder.buildHiddenFile();
+    } else {
+      return builder.buildOpenFile();
     }
+  }
 
-    private AssociatedArtifactList pushAssociatedArtefactsToPersistedStorageAndGetMetadata(Publication publication) {
-        var associatedArtifacts = publication.getAssociatedArtifacts()
-                                      .stream()
-                                      .map(this::pushAssociatedArtifactToPersistedStorage)
-                                      .toList();
-        return new AssociatedArtifactList(associatedArtifacts);
-    }
+  private HeadObjectRequest createHeadObjectRequest(String objectKey) {
+    return HeadObjectRequest.builder().bucket(persistedStorageBucket).key(objectKey).build();
+  }
 
-    private AssociatedArtifact pushAssociatedArtifactToPersistedStorage(AssociatedArtifact associatedArtifact) {
-        try {
-            if (associatedArtifact instanceof File file) {
-                var objectKey = file.getIdentifier().toString();
+  private String getSourceBucket() {
+    return s3Event.getRecords().getFirst().getS3().getBucket().getName();
+  }
 
-                S3MultipartCopier.fromSourceKey(getObjectKeyPath() + objectKey)
-                    .sourceBucket(getSourceBucket())
-                    .destinationKey(objectKey)
-                    .destinationBucket(persistedStorageBucket)
-                    .copy(s3Client, context);
+  private String getObjectKeyPath() {
+    var directory = UnixPath.of(getRecordObjectKey()).getParent();
+    return directory.map(unixPath -> unixPath + "/").orElse(StringUtils.EMPTY_STRING);
+  }
 
-                return extractMimeTypeAndSize(file, objectKey);
-            } else {
-                return associatedArtifact;
-            }
-        } catch (Exception e) {
-            throw new AssociatedArtifactException(
-                COULD_NOT_COPY_ASSOCIATED_ARTEFACT_EXCEPTION_MESSAGE + associatedArtifact, e);
-        }
-    }
-
-    private File extractMimeTypeAndSize(File file, String objectKey) {
-        var headObjectResponse = s3Client.headObject(createHeadObjectRequest(objectKey));
-        var size = headObjectResponse.contentLength();
-        var mimeType = headObjectResponse.contentType();
-        return buildFile(file, mimeType, size);
-    }
-
-    private static File buildFile(File file, String mimeType, Long size) {
-        var builder =  File.builder()
-                           .withName(file.getName())
-                           .withIdentifier(file.getIdentifier())
-                           .withLicense(file.getLicense())
-                           .withPublisherVersion(file.getPublisherVersion())
-                           .withEmbargoDate(file.getEmbargoDate().orElse(null))
-                           .withMimeType(mimeType)
-                           .withSize(size)
-                           .withLegalNote(file.getLegalNote())
-                           .withUploadDetails(file.getUploadDetails());
-        if (file instanceof HiddenFile) {
-            return builder.buildHiddenFile();
-        } else  {
-            return builder.buildOpenFile();
-        }
-    }
-
-    private HeadObjectRequest createHeadObjectRequest(String objectKey) {
-        return HeadObjectRequest.builder().bucket(persistedStorageBucket).key(objectKey).build();
-    }
-
-    private String getSourceBucket() {
-        return s3Event.getRecords().getFirst().getS3().getBucket().getName();
-    }
-
-    private String getObjectKeyPath() {
-        var directory = UnixPath.of(getRecordObjectKey()).getParent();
-        return directory.map(unixPath -> unixPath + "/").orElse(StringUtils.EMPTY_STRING);
-    }
-
-    private String getRecordObjectKey() {
-        return s3Event.getRecords().getFirst().getS3().getObject().getKey();
-    }
+  private String getRecordObjectKey() {
+    return s3Event.getRecords().getFirst().getS3().getObject().getKey();
+  }
 }

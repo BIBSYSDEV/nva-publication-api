@@ -10,6 +10,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -31,70 +32,78 @@ import org.zalando.problem.Problem;
 
 public class PrepareUploadPartHandlerTest {
 
-    public static final String SAMPLE_KEY = "key";
-    public static final String SAMPLE_UPLOAD_ID = "uploadId";
-    public static final String SAMPLE_BODY = "body";
-    public static final String SAMPLE_PART_NUMBER = "1";
-    private PrepareUploadPartHandler prepareUploadPartHandler;
-    private ByteArrayOutputStream outputStream;
-    private Context context;
-    private AmazonS3Client s3client;
+  public static final String SAMPLE_KEY = "key";
+  public static final String SAMPLE_UPLOAD_ID = "uploadId";
+  public static final String SAMPLE_BODY = "body";
+  public static final String SAMPLE_PART_NUMBER = "1";
+  private PrepareUploadPartHandler prepareUploadPartHandler;
+  private ByteArrayOutputStream outputStream;
+  private Context context;
+  private AmazonS3Client s3client;
 
-    @BeforeEach
-    void setUp() {
-        s3client = mock(AmazonS3Client.class);
-        prepareUploadPartHandler = new PrepareUploadPartHandler(s3client, new Environment());
-        context = mock(Context.class);
-        outputStream = new ByteArrayOutputStream();
-    }
+  @BeforeEach
+  void setUp() {
+    s3client = mock(AmazonS3Client.class);
+    prepareUploadPartHandler = new PrepareUploadPartHandler(s3client, new Environment());
+    context = mock(Context.class);
+    outputStream = new ByteArrayOutputStream();
+  }
 
-    @Test
-    void canPrepareUploadPart() throws IOException {
-        var dummyUrl = URI.create("http://localhost").toURL();
-        when(s3client.generatePresignedUrl(Mockito.any(GeneratePresignedUrlRequest.class))).thenReturn(dummyUrl);
+  @Test
+  void canPrepareUploadPart() throws IOException {
+    var dummyUrl = URI.create("http://localhost").toURL();
+    when(s3client.generatePresignedUrl(Mockito.any(GeneratePresignedUrlRequest.class)))
+        .thenReturn(dummyUrl);
 
-        prepareUploadPartHandler.handleRequest(prepareUploadPartRequestWithBody(), outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, PrepareUploadPartResponseBody.class);
+    prepareUploadPartHandler.handleRequest(
+        prepareUploadPartRequestWithBody(), outputStream, context);
+    var response =
+        GatewayResponse.fromOutputStream(outputStream, PrepareUploadPartResponseBody.class);
 
-        assertThat(response, is(notNullValue()));
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
-        assertThat(response.getBody(), is(notNullValue()));
-        var responseBody = response.getBodyObject(PrepareUploadPartResponseBody.class);
-        assertThat(responseBody.url(), is(notNullValue()));
-    }
+    assertThat(response, is(notNullValue()));
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+    assertThat(response.getBody(), is(notNullValue()));
+    var responseBody = response.getBodyObject(PrepareUploadPartResponseBody.class);
+    assertThat(responseBody.url(), is(notNullValue()));
+  }
 
-    @Test
-    void prepareUploadPartWithInvalidInputReturnsBadRequest() throws IOException {
-        prepareUploadPartHandler.handleRequest(prepareUploadPartRequestWithoutBody(), outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
-    }
+  @Test
+  void prepareUploadPartWithInvalidInputReturnsBadRequest() throws IOException {
+    prepareUploadPartHandler.handleRequest(
+        prepareUploadPartRequestWithoutBody(), outputStream, context);
+    var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
+  }
 
-    @Test
-    void prepareUploadPartWithS3ErrorReturnsInternalServerError() throws IOException {
-        when(s3client.generatePresignedUrl(Mockito.any(GeneratePresignedUrlRequest.class)))
-            .thenThrow(AmazonS3Exception.class);
+  @Test
+  void prepareUploadPartWithS3ErrorReturnsInternalServerError() throws IOException {
+    when(s3client.generatePresignedUrl(Mockito.any(GeneratePresignedUrlRequest.class)))
+        .thenThrow(AmazonS3Exception.class);
 
-        prepareUploadPartHandler.handleRequest(prepareUploadPartRequestWithBody(), outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+    prepareUploadPartHandler.handleRequest(
+        prepareUploadPartRequestWithBody(), outputStream, context);
+    var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
 
-        assertThat(response, is(notNullValue()));
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
-        assertThat(response.getBody(), is(notNullValue()));
-    }
+    assertThat(response, is(notNullValue()));
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
+    assertThat(response.getBody(), is(notNullValue()));
+  }
 
-    private InputStream prepareUploadPartRequestWithBody() throws com.fasterxml.jackson.core.JsonProcessingException {
-        return new HandlerRequestBuilder<PrepareUploadPartRequestBody>(dtoObjectMapper).withBody(
-            prepareUploadPartRequestBody()).build();
-    }
+  private InputStream prepareUploadPartRequestWithBody()
+      throws com.fasterxml.jackson.core.JsonProcessingException {
+    return new HandlerRequestBuilder<PrepareUploadPartRequestBody>(dtoObjectMapper)
+        .withBody(prepareUploadPartRequestBody())
+        .build();
+  }
 
-    private InputStream prepareUploadPartRequestWithoutBody() throws JsonProcessingException {
-        return new HandlerRequestBuilder<PrepareUploadPartRequestBody>(dtoObjectMapper)
-                   .withBody(new PrepareUploadPartRequestBody(null, null, null, null))
-                   .build();
-    }
+  private InputStream prepareUploadPartRequestWithoutBody() throws JsonProcessingException {
+    return new HandlerRequestBuilder<PrepareUploadPartRequestBody>(dtoObjectMapper)
+        .withBody(new PrepareUploadPartRequestBody(null, null, null, null))
+        .build();
+  }
 
-    private PrepareUploadPartRequestBody prepareUploadPartRequestBody() {
-        return new PrepareUploadPartRequestBody(SAMPLE_UPLOAD_ID, SAMPLE_KEY, SAMPLE_BODY, SAMPLE_PART_NUMBER);
-    }
+  private PrepareUploadPartRequestBody prepareUploadPartRequestBody() {
+    return new PrepareUploadPartRequestBody(
+        SAMPLE_UPLOAD_ID, SAMPLE_KEY, SAMPLE_BODY, SAMPLE_PART_NUMBER);
+  }
 }

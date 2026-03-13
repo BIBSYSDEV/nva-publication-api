@@ -16,44 +16,42 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class NvaPublicationPartOfCristinPublication implements JsonSerializable {
 
-    @JsonProperty("nvapublicationidentifier")
-    private String nvaPublicationIdentifier;
+  @JsonProperty("nvapublicationidentifier")
+  private String nvaPublicationIdentifier;
 
-    @JsonProperty("childpublication")
-    private Publication childPublication;
+  @JsonProperty("childpublication")
+  private Publication childPublication;
 
-    @JsonProperty("partof")
-    private NvaPublicationPartOf partOf;
+  @JsonProperty("partof")
+  private NvaPublicationPartOf partOf;
 
-    @JacocoGenerated
-    public NvaPublicationPartOfCristinPublication() {
+  @JacocoGenerated
+  public NvaPublicationPartOfCristinPublication() {}
+
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        NvaPublicationPartOfCristinPublication that = (NvaPublicationPartOfCristinPublication) o;
-        return Objects.equals(getNvaPublicationIdentifier(), that.getNvaPublicationIdentifier())
-               && Objects.equals(getChildPublication(), that.getChildPublication())
-               && Objects.equals(getPartOf(), that.getPartOf());
+    if (o == null || getClass() != o.getClass()) {
+      return false;
     }
+    NvaPublicationPartOfCristinPublication that = (NvaPublicationPartOfCristinPublication) o;
+    return Objects.equals(getNvaPublicationIdentifier(), that.getNvaPublicationIdentifier())
+        && Objects.equals(getChildPublication(), that.getChildPublication())
+        && Objects.equals(getPartOf(), that.getPartOf());
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getNvaPublicationIdentifier(), getChildPublication(), getPartOf());
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(getNvaPublicationIdentifier(), getChildPublication(), getPartOf());
+  }
 }

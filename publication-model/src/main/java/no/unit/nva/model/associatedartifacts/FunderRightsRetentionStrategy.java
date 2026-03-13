@@ -12,28 +12,29 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeName(FunderRightsRetentionStrategy.TYPE_NAME)
 public final class FunderRightsRetentionStrategy extends AbstractRightsRetentionStrategy {
 
-    public static final String TYPE_NAME = "FunderRightsRetentionStrategy";
+  public static final String TYPE_NAME = "FunderRightsRetentionStrategy";
 
-    @JsonCreator
-    private FunderRightsRetentionStrategy(
-        @JsonProperty(FIELD_NAME_CONFIGURED_TYPE) RightsRetentionStrategyConfiguration configuredType) {
-        super(configuredType);
-    }
+  @JsonCreator
+  private FunderRightsRetentionStrategy(
+      @JsonProperty(FIELD_NAME_CONFIGURED_TYPE)
+          RightsRetentionStrategyConfiguration configuredType) {
+    super(configuredType);
+  }
 
-    public static FunderRightsRetentionStrategy create(RightsRetentionStrategyConfiguration configuredType) {
-        return new FunderRightsRetentionStrategy(configuredType);
-    }
+  public static FunderRightsRetentionStrategy create(
+      RightsRetentionStrategyConfiguration configuredType) {
+    return new FunderRightsRetentionStrategy(configuredType);
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(FunderRightsRetentionStrategy.class.getName(), super.hashCode());
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(FunderRightsRetentionStrategy.class.getName(), super.hashCode());
+  }
 
-    }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof FunderRightsRetentionStrategy && super.equals(o);
-    }
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    return o instanceof FunderRightsRetentionStrategy && super.equals(o);
+  }
 }

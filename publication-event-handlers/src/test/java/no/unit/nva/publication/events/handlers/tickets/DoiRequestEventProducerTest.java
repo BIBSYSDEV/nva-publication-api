@@ -23,6 +23,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -67,285 +68,306 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class DoiRequestEventProducerTest extends ResourcesLocalTest {
 
-    private DoiRequestEventProducer handler;
-    private Context context;
-    private ByteArrayOutputStream outputStream;
-    private ResourceService resourceService;
-    private FakeHttpClient<String> httpClient;
-    private FakeS3Client s3Client;
+  private DoiRequestEventProducer handler;
+  private Context context;
+  private ByteArrayOutputStream outputStream;
+  private ResourceService resourceService;
+  private FakeHttpClient<String> httpClient;
+  private FakeS3Client s3Client;
 
-    public static Stream<Function<Publication, Entity>> entityProvider() {
-        return Stream.of(Resource::fromPublication,
-                         publication -> DoiRequest.create(Resource.fromPublication(publication),
-                                                          UserInstance.fromPublication(publication)));
+  public static Stream<Function<Publication, Entity>> entityProvider() {
+    return Stream.of(
+        Resource::fromPublication,
+        publication ->
+            DoiRequest.create(
+                Resource.fromPublication(publication), UserInstance.fromPublication(publication)));
+  }
+
+  /** Setting up test environment. */
+  @BeforeEach
+  public void setUp() {
+    super.init();
+    this.resourceService = getResourceService(client);
+    var response = FakeHttpResponse.create(randomString(), HttpURLConnection.HTTP_OK);
+    this.httpClient = new FakeHttpClient<>(response);
+    s3Client = new FakeS3Client();
+    handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
+    context = null;
+    outputStream = new ByteArrayOutputStream();
+  }
+
+  @Test
+  void handleRequestThrowsExceptionWhenEventContainsResourceUpdateThatCannotBeReferenced()
+      throws ApiGatewayException, IOException {
+
+    var doiRequestWithoutIdentifier = sampleDoiRequestForExistingPublishedPublication();
+    doiRequestWithoutIdentifier.setIdentifier(null);
+    try (var event = createEvent(null, doiRequestWithoutIdentifier)) {
+      Executable action = () -> handler.handleRequest(event, outputStream, context);
+      IllegalStateException exception = assertThrows(IllegalStateException.class, action);
+      assertThat(exception.getMessage(), is(equalTo(DOI_REQUEST_HAS_NO_IDENTIFIER)));
     }
+  }
 
-    /**
-     * Setting up test environment.
-     */
-    @BeforeEach
-    public void setUp() {
-        super.init();
-        this.resourceService = getResourceService(client);
-        var response = FakeHttpResponse.create(randomString(), HttpURLConnection.HTTP_OK);
-        this.httpClient = new FakeHttpClient<>(response);
-        s3Client = new FakeS3Client();
-        handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
-        context = null;
-        outputStream = new ByteArrayOutputStream();
+  @Test
+  void handleRequestThrowsExceptionWhenEventIsADeletion() throws IOException {
+    var publication = randomPublishedPublication();
+    try (var event =
+        createEvent(Resource.fromPublication(publication), Resource.fromPublication(null))) {
+      Executable action = () -> handler.handleRequest(event, outputStream, context);
+      InvalidInputException exception = assertThrows(InvalidInputException.class, action);
+      assertThat(exception.getMessage(), is(equalTo(HANDLER_DOES_NOT_DEAL_WITH_DELETIONS)));
     }
+  }
 
-    @Test
-    void handleRequestThrowsExceptionWhenEventContainsResourceUpdateThatCannotBeReferenced()
-        throws ApiGatewayException, IOException {
+  @Test
+  void handleRequestThrowsExceptionWhenEventContainsResourceUpdateWithoutReferenceToResource()
+      throws ApiGatewayException, IOException {
 
-        var doiRequestWithoutIdentifier = sampleDoiRequestForExistingPublishedPublication();
-        doiRequestWithoutIdentifier.setIdentifier(null);
-        try (var event = createEvent(null, doiRequestWithoutIdentifier)) {
-            Executable action = () -> handler.handleRequest(event, outputStream, context);
-            IllegalStateException exception = assertThrows(IllegalStateException.class, action);
-            assertThat(exception.getMessage(), is(equalTo(DOI_REQUEST_HAS_NO_IDENTIFIER)));
-        }
+    var doiRequestWithoutResourceIdentifier = sampleDoiRequestForExistingPublishedPublication();
+    doiRequestWithoutResourceIdentifier.setResourceIdentifier(null);
+    try (var event = createEvent(null, doiRequestWithoutResourceIdentifier)) {
+      Executable action = () -> handler.handleRequest(event, outputStream, context);
+      IllegalStateException exception = assertThrows(IllegalStateException.class, action);
+      assertThat(
+          exception.getMessage(),
+          is(equalTo(TicketEntry.TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR)));
     }
+  }
 
-    @Test
-    void handleRequestThrowsExceptionWhenEventIsADeletion() throws IOException {
-        var publication = randomPublishedPublication();
-        try (var event = createEvent(Resource.fromPublication(publication), Resource.fromPublication(null))) {
-            Executable action = () -> handler.handleRequest(event, outputStream, context);
-            InvalidInputException exception = assertThrows(InvalidInputException.class, action);
-            assertThat(exception.getMessage(), is(equalTo(HANDLER_DOES_NOT_DEAL_WITH_DELETIONS)));
-        }
-    }
+  @Test
+  void
+      shouldNotPropagateEventWhenThereIsNoDoiRequestButThePublicationHasBeenAssignedANonFindableDoiByNvaPredecessor()
+          throws IOException, BadRequestException {
+    var publication = persistPublishedPublicationWithDoi();
+    var publicationUpdate = updateTitle(publication);
+    assertThat(publication.getDoi(), is(not(nullValue())));
+    assertThat(publicationUpdate.getDoi(), is(equalTo(publication.getDoi())));
 
-    @Test
-    void handleRequestThrowsExceptionWhenEventContainsResourceUpdateWithoutReferenceToResource()
-        throws ApiGatewayException, IOException {
+    var event =
+        createEvent(
+            Resource.fromPublication(publication), Resource.fromPublication(publicationUpdate));
+    this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(null, HTTP_NOT_FOUND));
+    this.handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
+    handler.handleRequest(event, outputStream, context);
+    var actual = outputToPublicationHolder(outputStream);
 
-        var doiRequestWithoutResourceIdentifier = sampleDoiRequestForExistingPublishedPublication();
-        doiRequestWithoutResourceIdentifier.setResourceIdentifier(null);
-        try (var event = createEvent(null, doiRequestWithoutResourceIdentifier)) {
-            Executable action = () -> handler.handleRequest(event, outputStream, context);
-            IllegalStateException exception = assertThrows(IllegalStateException.class, action);
-            assertThat(exception.getMessage(), is(equalTo(TicketEntry.TICKET_WITHOUT_REFERENCE_TO_PUBLICATION_ERROR)));
-        }
-    }
+    assertThat(actual, is(equalTo(EMPTY_EVENT)));
+  }
 
-    @Test
-    void shouldNotPropagateEventWhenThereIsNoDoiRequestButThePublicationHasBeenAssignedANonFindableDoiByNvaPredecessor()
-        throws IOException, BadRequestException {
-        var publication = persistPublishedPublicationWithDoi();
-        var publicationUpdate = updateTitle(publication);
-        assertThat(publication.getDoi(), is(not(nullValue())));
-        assertThat(publicationUpdate.getDoi(), is(equalTo(publication.getDoi())));
+  @Test
+  void handlerCreatesUpdateDoiEventWhenPublicationHasAFindableDoi() throws IOException {
+    var publication = randomPublishedPublication();
+    var updatedPublication = updateTitle(publication);
+    var event =
+        createEvent(
+            Resource.fromPublication(publication), Resource.fromPublication(updatedPublication));
+    this.httpClient = new FakeHttpClient<>(findableDoiResponse());
+    this.handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
 
-        var event = createEvent(Resource.fromPublication(publication), Resource.fromPublication(publicationUpdate));
-        this.httpClient = new FakeHttpClient<>(FakeHttpResponse.create(null, HTTP_NOT_FOUND));
-        this.handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
-        handler.handleRequest(event, outputStream, context);
-        var actual = outputToPublicationHolder(outputStream);
+    handler.handleRequest(event, outputStream, context);
+    var actual = outputToPublicationHolder(outputStream);
 
-        assertThat(actual, is(equalTo(EMPTY_EVENT)));
-    }
-
-    @Test
-    void handlerCreatesUpdateDoiEventWhenPublicationHasAFindableDoi()
-        throws IOException {
-        var publication = randomPublishedPublication();
-        var updatedPublication = updateTitle(publication);
-        var event = createEvent(Resource.fromPublication(publication),
-                                Resource.fromPublication(updatedPublication));
-        this.httpClient = new FakeHttpClient<>(findableDoiResponse());
-        this.handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
-
-        handler.handleRequest(event, outputStream, context);
-        var actual = outputToPublicationHolder(outputStream);
-
-        assertThat(actual.getTopic(), is(equalTo(UPDATE_DOI_EVENT_TOPIC)));
-        var expectedPublicationId = inferExpectedPublicationId(publication);
-        var expectedCustomerId = extractExpectedCustomerId(publication);
-        assertThat(actual, allOf(
+    assertThat(actual.getTopic(), is(equalTo(UPDATE_DOI_EVENT_TOPIC)));
+    var expectedPublicationId = inferExpectedPublicationId(publication);
+    var expectedCustomerId = extractExpectedCustomerId(publication);
+    assertThat(
+        actual,
+        allOf(
             hasProperty(PUBLICATION_ID, equalTo(expectedPublicationId)),
-            hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId)))
-        );
-    }
+            hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId))));
+  }
 
-    @Test
-    void shouldCreateUpdateEventWhenPublicationHasNoDoiAndADraftDoiRequestGetsApproved()
-        throws IOException,
-               ApiGatewayException {
-        var publication = persistPublishedPublicationWithoutDoi();
-        var draftRequest = DoiRequest.create(Resource.fromPublication(publication), UserInstance.fromPublication(publication));
-        var approvedRequest = draftRequest.complete(publication, UserInstance.create(randomString(), randomUri()));
-        var event = createEvent(draftRequest, approvedRequest);
+  @Test
+  void shouldCreateUpdateEventWhenPublicationHasNoDoiAndADraftDoiRequestGetsApproved()
+      throws IOException, ApiGatewayException {
+    var publication = persistPublishedPublicationWithoutDoi();
+    var draftRequest =
+        DoiRequest.create(
+            Resource.fromPublication(publication), UserInstance.fromPublication(publication));
+    var approvedRequest =
+        draftRequest.complete(publication, UserInstance.create(randomString(), randomUri()));
+    var event = createEvent(draftRequest, approvedRequest);
 
-        handler.handleRequest(event, outputStream, context);
-        var actual = outputToPublicationHolder(outputStream);
-        assertThat(actual.getTopic(), is(equalTo(UPDATE_DOI_EVENT_TOPIC)));
-        var expectedPublicationId = inferExpectedPublicationId(publication);
-        var expectedCustomerId = extractExpectedCustomerId(publication);
-        assertThat(actual, allOf(
+    handler.handleRequest(event, outputStream, context);
+    var actual = outputToPublicationHolder(outputStream);
+    assertThat(actual.getTopic(), is(equalTo(UPDATE_DOI_EVENT_TOPIC)));
+    var expectedPublicationId = inferExpectedPublicationId(publication);
+    var expectedCustomerId = extractExpectedCustomerId(publication);
+    assertThat(
+        actual,
+        allOf(
             hasProperty(PUBLICATION_ID, equalTo(expectedPublicationId)),
-            hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId)))
-        );
-    }
+            hasProperty(CUSTOMER_ID, equalTo(expectedCustomerId))));
+  }
 
-    @Test
-    void shouldNotCreateEventForPublicationsWithoutDoi() throws IOException, ApiGatewayException {
-        var publication = persistPublishedPublicationWithoutDoi();
-        var publicationUpdate = publication.copy().withModifiedDate(randomInstant()).build();
-        assertThat(publication.getModifiedDate(), is(not(equalTo(publicationUpdate.getModifiedDate()))));
+  @Test
+  void shouldNotCreateEventForPublicationsWithoutDoi() throws IOException, ApiGatewayException {
+    var publication = persistPublishedPublicationWithoutDoi();
+    var publicationUpdate = publication.copy().withModifiedDate(randomInstant()).build();
+    assertThat(
+        publication.getModifiedDate(), is(not(equalTo(publicationUpdate.getModifiedDate()))));
 
-        var updateEvent = createEvent(
-            Resource.fromPublication(publication),
-            Resource.fromPublication(publicationUpdate));
-        handler.handleRequest(updateEvent, outputStream, context);
+    var updateEvent =
+        createEvent(
+            Resource.fromPublication(publication), Resource.fromPublication(publicationUpdate));
+    handler.handleRequest(updateEvent, outputStream, context);
 
-        var emittedEvent = outputToPublicationHolder(outputStream);
-        assertThat(emittedEvent, is(equalTo(EMPTY_EVENT)));
-    }
+    var emittedEvent = outputToPublicationHolder(outputStream);
+    assertThat(emittedEvent, is(equalTo(EMPTY_EVENT)));
+  }
 
-    @ParameterizedTest(name = "should ignore events when old and new image are identical")
-    @MethodSource("entityProvider")
-    void shouldIgnoreEventsWhenNewAndOldImageAreIdentical(Function<Publication, Entity> entityProvider)
-        throws IOException, ApiGatewayException {
-        var publication = persistPublishedPublicationWithoutDoi();
-        var entity = entityProvider.apply(publication);
-        var event = createEvent(entity, entity);
-        handler.handleRequest(event, outputStream, context);
-        var actual = outputToPublicationHolder(outputStream);
+  @ParameterizedTest(name = "should ignore events when old and new image are identical")
+  @MethodSource("entityProvider")
+  void shouldIgnoreEventsWhenNewAndOldImageAreIdentical(
+      Function<Publication, Entity> entityProvider) throws IOException, ApiGatewayException {
+    var publication = persistPublishedPublicationWithoutDoi();
+    var entity = entityProvider.apply(publication);
+    var event = createEvent(entity, entity);
+    handler.handleRequest(event, outputStream, context);
+    var actual = outputToPublicationHolder(outputStream);
 
-        assertThat(actual, is(equalTo(EMPTY_EVENT)));
-    }
+    assertThat(actual, is(equalTo(EMPTY_EVENT)));
+  }
 
-    @Test
-    void shouldNotSendRequestForDraftingADoiWhenThereHasBeenVeryRecentPreviousDoiRequestButNoDoiHasBeenCreated()
-        throws ApiGatewayException, IOException {
-        var publication = persistPublishedPublicationWithoutDoi();
-        var resource = Resource.fromPublication(publication);
-        var userInstance = UserInstance.fromPublication(publication);
-        var oldDoiRequest = DoiRequest.create(resource, userInstance);
-        var tooShortIntervalForRerequesting = MIN_INTERVAL_FOR_REREQUESTING_A_DOI.minusSeconds(1);
-        oldDoiRequest.setModifiedDate(oldDoiRequest.getModifiedDate().minus(tooShortIntervalForRerequesting));
-        var newDoiRequest = DoiRequest.create(resource, userInstance);
-        var event = createEvent(oldDoiRequest, newDoiRequest);
-        handler.handleRequest(event, outputStream, context);
-        var actual = outputToPublicationHolder(outputStream);
+  @Test
+  void
+      shouldNotSendRequestForDraftingADoiWhenThereHasBeenVeryRecentPreviousDoiRequestButNoDoiHasBeenCreated()
+          throws ApiGatewayException, IOException {
+    var publication = persistPublishedPublicationWithoutDoi();
+    var resource = Resource.fromPublication(publication);
+    var userInstance = UserInstance.fromPublication(publication);
+    var oldDoiRequest = DoiRequest.create(resource, userInstance);
+    var tooShortIntervalForRerequesting = MIN_INTERVAL_FOR_REREQUESTING_A_DOI.minusSeconds(1);
+    oldDoiRequest.setModifiedDate(
+        oldDoiRequest.getModifiedDate().minus(tooShortIntervalForRerequesting));
+    var newDoiRequest = DoiRequest.create(resource, userInstance);
+    var event = createEvent(oldDoiRequest, newDoiRequest);
+    handler.handleRequest(event, outputStream, context);
+    var actual = outputToPublicationHolder(outputStream);
 
-        assertThat(actual, is(equalTo(EMPTY_EVENT)));
-    }
+    assertThat(actual, is(equalTo(EMPTY_EVENT)));
+  }
 
-    @Test
-    void shouldNotEmitEventForPublicationMissingRequiredFields() throws IOException {
-        var publication = createPublicationWithAllRequiredFieldsSetToFaulty();
-        var updatedPublication = updateDescription(publication);
-        var event = createEvent(Resource.fromPublication(publication),
-                                Resource.fromPublication(updatedPublication));
-        this.httpClient = new FakeHttpClient<>(findableDoiResponse());
-        this.handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
+  @Test
+  void shouldNotEmitEventForPublicationMissingRequiredFields() throws IOException {
+    var publication = createPublicationWithAllRequiredFieldsSetToFaulty();
+    var updatedPublication = updateDescription(publication);
+    var event =
+        createEvent(
+            Resource.fromPublication(publication), Resource.fromPublication(updatedPublication));
+    this.httpClient = new FakeHttpClient<>(findableDoiResponse());
+    this.handler = new DoiRequestEventProducer(resourceService, httpClient, s3Client);
 
-        handler.handleRequest(event, outputStream, context);
-        var actual = outputToPublicationHolder(outputStream);
+    handler.handleRequest(event, outputStream, context);
+    var actual = outputToPublicationHolder(outputStream);
 
-        assertThat(actual, is(equalTo(EMPTY_EVENT)));
-    }
+    assertThat(actual, is(equalTo(EMPTY_EVENT)));
+  }
 
-    private Publication updateDescription(Publication publication) {
-        var publicationUpdate = publication.copy().build();
-        publicationUpdate.getEntityDescription().setDescription(randomString());
-        return publicationUpdate;
-    }
+  private Publication updateDescription(Publication publication) {
+    var publicationUpdate = publication.copy().build();
+    publicationUpdate.getEntityDescription().setDescription(randomString());
+    return publicationUpdate;
+  }
 
-    private Publication createPublicationWithAllRequiredFieldsSetToFaulty() {
-        var publication = randomPublication().copy().withAssociatedArtifacts(Collections.emptyList()).build();
-        publication.setStatus(PublicationStatus.DRAFT);
-        publication.getEntityDescription().setMainTitle(StringUtils.EMPTY_STRING);
-        publication.getEntityDescription().getPublicationDate().setYear(null);
-        publication.getEntityDescription().getReference().setPublicationInstance(null);
-        publication.setPublisher(null);
-        publication.setModifiedDate(null);
-        return publication;
-    }
+  private Publication createPublicationWithAllRequiredFieldsSetToFaulty() {
+    var publication =
+        randomPublication().copy().withAssociatedArtifacts(Collections.emptyList()).build();
+    publication.setStatus(PublicationStatus.DRAFT);
+    publication.getEntityDescription().setMainTitle(StringUtils.EMPTY_STRING);
+    publication.getEntityDescription().getPublicationDate().setYear(null);
+    publication.getEntityDescription().getReference().setPublicationInstance(null);
+    publication.setPublisher(null);
+    publication.setModifiedDate(null);
+    return publication;
+  }
 
-    private Publication randomPublishedPublication() {
-        var publication = randomPublication();
-        publication.setStatus(PublicationStatus.PUBLISHED);
-        publication.getEntityDescription()
-            .setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
-        return publication;
-    }
+  private Publication randomPublishedPublication() {
+    var publication = randomPublication();
+    publication.setStatus(PublicationStatus.PUBLISHED);
+    publication
+        .getEntityDescription()
+        .setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
+    return publication;
+  }
 
-    private URI extractExpectedCustomerId(Publication publication) {
-        return publication.getPublisher().getId();
-    }
+  private URI extractExpectedCustomerId(Publication publication) {
+    return publication.getPublisher().getId();
+  }
 
-    private URI inferExpectedPublicationId(Publication publication) {
-        return UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
-                   .addChild("publication")
-                   .addChild(publication.getIdentifier().toString())
-                   .getUri();
-    }
+  private URI inferExpectedPublicationId(Publication publication) {
+    return UriWrapper.fromHost(new Environment().readEnv("API_HOST"))
+        .addChild("publication")
+        .addChild(publication.getIdentifier().toString())
+        .getUri();
+  }
 
-    private InputStream createEvent(Entity oldImage, Entity newImage) throws IOException {
-        var dataEntry = createDataEntry(oldImage, newImage);
-        var s3driver = new S3Driver(s3Client, "ignored");
-        var content = dataEntry.toJsonString();
-        var eventBlobUri = s3driver.insertEvent(UnixPath.EMPTY_PATH, content);
-        var eventReference = new EventReference(randomString(), eventBlobUri);
-        return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventReference);
-    }
+  private InputStream createEvent(Entity oldImage, Entity newImage) throws IOException {
+    var dataEntry = createDataEntry(oldImage, newImage);
+    var s3driver = new S3Driver(s3Client, "ignored");
+    var content = dataEntry.toJsonString();
+    var eventBlobUri = s3driver.insertEvent(UnixPath.EMPTY_PATH, content);
+    var eventReference = new EventReference(randomString(), eventBlobUri);
+    return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventReference);
+  }
 
-    private DataEntryUpdateEvent createDataEntry(Entity draftRequest, Entity approvedRequest) {
-        return new DataEntryUpdateEvent(randomElement(OperationType.values()).toString(), draftRequest, approvedRequest);
-    }
+  private DataEntryUpdateEvent createDataEntry(Entity draftRequest, Entity approvedRequest) {
+    return new DataEntryUpdateEvent(
+        randomElement(OperationType.values()).toString(), draftRequest, approvedRequest);
+  }
 
-    private Publication persistPublishedPublicationWithoutDoi() throws ApiGatewayException {
-        var publication = randomPublication();
-        publication.setDoi(null);
-        publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
-        var persistedPublication = persistPublication(publication);
+  private Publication persistPublishedPublicationWithoutDoi() throws ApiGatewayException {
+    var publication = randomPublication();
+    publication.setDoi(null);
+    publication
+        .getEntityDescription()
+        .setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
+    var persistedPublication = persistPublication(publication);
 
-        return Resource.fromPublication(persistedPublication)
-                   .publish(resourceService, UserInstance.fromPublication(persistedPublication))
-                   .toPublication();
-    }
+    return Resource.fromPublication(persistedPublication)
+        .publish(resourceService, UserInstance.fromPublication(persistedPublication))
+        .toPublication();
+  }
 
-    private Publication persistPublishedPublicationWithDoi() throws BadRequestException {
-        var publication = randomPublication();
-        publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
-        var persistedPublication = persistPublication(publication);
+  private Publication persistPublishedPublicationWithDoi() throws BadRequestException {
+    var publication = randomPublication();
+    publication
+        .getEntityDescription()
+        .setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
+    var persistedPublication = persistPublication(publication);
 
-        return Resource.fromPublication(persistedPublication)
-                   .publish(resourceService, UserInstance.fromPublication(persistedPublication))
-                   .toPublication();
-    }
+    return Resource.fromPublication(persistedPublication)
+        .publish(resourceService, UserInstance.fromPublication(persistedPublication))
+        .toPublication();
+  }
 
-    private Publication updateTitle(Publication publication) {
-        var publicationUpdate = publication.copy().build();
-        var entityDescription = randomPublication().getEntityDescription();
-        entityDescription.setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
-        publicationUpdate.setEntityDescription(entityDescription);
-        return publicationUpdate;
-    }
+  private Publication updateTitle(Publication publication) {
+    var publicationUpdate = publication.copy().build();
+    var entityDescription = randomPublication().getEntityDescription();
+    entityDescription.setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
+    publicationUpdate.setEntityDescription(entityDescription);
+    return publicationUpdate;
+  }
 
-    private FakeHttpResponse<String> findableDoiResponse() {
-        return FakeHttpResponse.create(null, HTTP_FOUND);
-    }
+  private FakeHttpResponse<String> findableDoiResponse() {
+    return FakeHttpResponse.create(null, HTTP_FOUND);
+  }
 
-    private DoiRequest sampleDoiRequestForExistingPublishedPublication() throws ApiGatewayException {
-        var publication = persistPublishedPublicationWithoutDoi();
-        return DoiRequest.create(Resource.fromPublication(publication),
-                                 UserInstance.fromPublication(publication));
-    }
+  private DoiRequest sampleDoiRequestForExistingPublishedPublication() throws ApiGatewayException {
+    var publication = persistPublishedPublicationWithoutDoi();
+    return DoiRequest.create(
+        Resource.fromPublication(publication), UserInstance.fromPublication(publication));
+  }
 
-    private Publication persistPublication(Publication publication) throws BadRequestException {
-        return Resource.fromPublication(publication).persistNew(resourceService,
-                                                                UserInstance.fromPublication(publication));
-    }
+  private Publication persistPublication(Publication publication) throws BadRequestException {
+    return Resource.fromPublication(publication)
+        .persistNew(resourceService, UserInstance.fromPublication(publication));
+  }
 
-    private DoiMetadataUpdateEvent outputToPublicationHolder(ByteArrayOutputStream outputStream)
-        throws JsonProcessingException {
-        String outputString = outputStream.toString();
-        return objectMapper.readValue(outputString, DoiMetadataUpdateEvent.class);
-    }
+  private DoiMetadataUpdateEvent outputToPublicationHolder(ByteArrayOutputStream outputStream)
+      throws JsonProcessingException {
+    String outputString = outputStream.toString();
+    return objectMapper.readValue(outputString, DoiMetadataUpdateEvent.class);
+  }
 }

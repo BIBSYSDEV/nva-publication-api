@@ -11,8 +11,8 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -42,148 +42,168 @@ import org.junit.jupiter.api.Test;
 
 class PublicationSummaryTest extends ResourcesLocalTest {
 
-    private static final int MAX_SIZE_CONTRIBUTOR_LIST = 10;
+  private static final int MAX_SIZE_CONTRIBUTOR_LIST = 10;
 
-    @BeforeEach
-    public void setup() {
-        super.init();
+  @BeforeEach
+  public void setup() {
+    super.init();
+  }
+
+  @Test
+  @DisplayName("objectMapper Can Write And Read PublicationSummary")
+  void objectMapperCanWriteAndReadPublicationSummary() throws JsonProcessingException {
+    var publicationSummary = publicationSummary();
+    var content = dtoObjectMapper.writeValueAsString(publicationSummary);
+    var processedPublicationSummary = dtoObjectMapper.readValue(content, PublicationSummary.class);
+
+    assertEquals(publicationSummary, processedPublicationSummary);
+  }
+
+  @Test
+  void fromPublicationReturnsPublicationSummaryWithoutEmptyFields() {
+    var publication = PublicationGenerator.publicationWithIdentifier();
+    var summary = PublicationSummary.create(publication);
+    assertThat(summary, doesNotHaveEmptyValues());
+    assertThat(summary.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
+    assertThat(summary.getTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
+    assertThat(
+        summary.getOwner(),
+        is(equalTo(new User(publication.getResourceOwner().getOwner().getValue()))));
+    assertThat(
+        summary.getPublicationInstance(),
+        is(equalTo(publication.getEntityDescription().getReference().getPublicationInstance())));
+    assertThat(summary.getPublishedDate(), is(equalTo(publication.getPublishedDate())));
+    assertThat(
+        summary.getContributors(),
+        containsInAnyOrder(publication.getEntityDescription().getContributors().toArray()));
+  }
+
+  @Test
+  void shouldReturnsPublicationSummaryWithMaxSizeOfContributors() {
+    var publication = PublicationGenerator.publicationWithIdentifier();
+    var entityDescription = publication.getEntityDescription();
+    entityDescription.setContributors(
+        getNumberOfContributors(getRandomNumberOfContributorsLargerThanMaxSize()));
+    var summary = PublicationSummary.create(publication);
+    assertThat(summary.getContributors().size(), is(equalTo(MAX_SIZE_CONTRIBUTOR_LIST)));
+  }
+
+  @Test
+  void shouldReturnsPublicationSummaryWithMaxSizeOfContributorsWithLowestSequenceNumbers() {
+    var publication = PublicationGenerator.publicationWithIdentifier();
+    var entityDescription = publication.getEntityDescription();
+    entityDescription.setContributors(
+        getNumberOfContributors(getRandomNumberOfContributorsLargerThanMaxSize()));
+    var summary = PublicationSummary.create(publication);
+    assertThat(
+        summary.getContributors(),
+        containsInAnyOrder(
+            entityDescription.getContributors().stream()
+                .sorted(Comparator.comparing(Contributor::getSequence))
+                .limit(MAX_SIZE_CONTRIBUTOR_LIST)
+                .toArray()));
+  }
+
+  @Test
+  void shouldReturnTotalNumberOfContributorsWhenNumberOfContributorsExceedsMaxSize() {
+    var publication = PublicationGenerator.publicationWithIdentifier();
+    var entityDescription = publication.getEntityDescription();
+    entityDescription.setContributors(
+        getNumberOfContributors(getRandomNumberOfContributorsLargerThanMaxSize()));
+    var summary = PublicationSummary.create(publication);
+    assertThat(
+        summary.getContributorsCount(), is(equalTo(entityDescription.getContributors().size())));
+  }
+
+  @Test
+  void shouldAllowCreationOfMinimumPossibleInformation() {
+    var publicationId = randomPublicationId();
+    var publicationTitle = randomString();
+    var summary = PublicationSummary.create(publicationId, publicationTitle);
+    assertThat(summary.getPublicationId(), is(equalTo(publicationId)));
+    assertThat(summary.getTitle(), is(equalTo(publicationTitle)));
+  }
+
+  @Test
+  void shouldReturnPublicationSummaryWithHandleWhenPublicationHasHandle() {
+    var handle = randomUri();
+    var publication = randomPublication().copy().withHandle(handle).build();
+    var summary = PublicationSummary.create(publication);
+
+    assertTrue(summary.getHandles().contains(handle));
+  }
+
+  @Test
+  void
+      shouldReturnPublicationSummaryWithoutHandleWhenPublicationIsMissingHandleAndHandlesInAdditionalIdentifiers() {
+    var publication =
+        randomPublication()
+            .copy()
+            .withHandle(null)
+            .withAdditionalIdentifiers(Collections.emptySet())
+            .build();
+    var summary = PublicationSummary.create(publication);
+
+    assertTrue(summary.getHandles().isEmpty());
+  }
+
+  @Test
+  void shouldReturnPublicationSummaryHandlesFromAdditionalIdentifiers() {
+    var handles = Set.of(randomUri(), randomUri());
+    var publication =
+        randomPublication().copy().withAdditionalIdentifiers(toHandleIdentifiers(handles)).build();
+    var summary = PublicationSummary.create(publication);
+
+    assertTrue(summary.getHandles().containsAll(handles));
+  }
+
+  private static Set<AdditionalIdentifierBase> toHandleIdentifiers(Set<URI> handles) {
+    return handles.stream()
+        .map(uri -> new HandleIdentifier(SourceName.nva(), uri))
+        .collect(Collectors.toSet());
+  }
+
+  private int getRandomNumberOfContributorsLargerThanMaxSize() {
+    return MAX_SIZE_CONTRIBUTOR_LIST
+        + new Random().nextInt(10 - MAX_SIZE_CONTRIBUTOR_LIST + 1)
+        + MAX_SIZE_CONTRIBUTOR_LIST;
+  }
+
+  private List<Contributor> getNumberOfContributors(int number) {
+    var contributors = new ArrayList<Contributor>(Collections.emptyList());
+    for (int i = 0; i < number; i++) {
+      contributors.add(getRandomContributor(i));
     }
+    return contributors;
+  }
 
-    @Test
-    @DisplayName("objectMapper Can Write And Read PublicationSummary")
-    void objectMapperCanWriteAndReadPublicationSummary() throws JsonProcessingException {
-        var publicationSummary = publicationSummary();
-        var content = dtoObjectMapper.writeValueAsString(publicationSummary);
-        var processedPublicationSummary = dtoObjectMapper.readValue(content, PublicationSummary.class);
+  private Contributor getRandomContributor(int sequenceNumber) {
+    return new Contributor.Builder()
+        .withIdentity(getRandomIdentity())
+        .withAffiliations(getListOfRandomOrganizations())
+        .withRole(new RoleType(Role.OTHER))
+        .withSequence(sequenceNumber)
+        .withCorrespondingAuthor(randomBoolean())
+        .build();
+  }
 
-        assertEquals(publicationSummary, processedPublicationSummary);
-    }
+  private List<Corporation> getListOfRandomOrganizations() {
+    return List.of(new Organization.Builder().withId(randomUri()).build());
+  }
 
-    @Test
-    void fromPublicationReturnsPublicationSummaryWithoutEmptyFields() {
-        var publication = PublicationGenerator.publicationWithIdentifier();
-        var summary = PublicationSummary.create(publication);
-        assertThat(summary, doesNotHaveEmptyValues());
-        assertThat(summary.extractPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
-        assertThat(summary.getTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
-        assertThat(summary.getOwner(), is(equalTo(new User(publication.getResourceOwner().getOwner().getValue()))));
-        assertThat(summary.getPublicationInstance(),
-                   is(equalTo(publication.getEntityDescription().getReference().getPublicationInstance())));
-        assertThat(summary.getPublishedDate(), is(equalTo(publication.getPublishedDate())));
-        assertThat(summary.getContributors(),
-                   containsInAnyOrder(publication.getEntityDescription().getContributors().toArray()));
-    }
+  private Identity getRandomIdentity() {
+    return new Identity.Builder()
+        .withName(randomString())
+        .withOrcId(randomString())
+        .withId(randomUri())
+        .build();
+  }
 
-    @Test
-    void shouldReturnsPublicationSummaryWithMaxSizeOfContributors() {
-        var publication = PublicationGenerator.publicationWithIdentifier();
-        var entityDescription = publication.getEntityDescription();
-        entityDescription.setContributors(getNumberOfContributors(getRandomNumberOfContributorsLargerThanMaxSize()));
-        var summary = PublicationSummary.create(publication);
-        assertThat(summary.getContributors().size(), is(equalTo(MAX_SIZE_CONTRIBUTOR_LIST)));
-    }
+  private URI randomPublicationId() {
+    return UriWrapper.fromUri(randomUri()).addChild(SortableIdentifier.next().toString()).getUri();
+  }
 
-    @Test
-    void shouldReturnsPublicationSummaryWithMaxSizeOfContributorsWithLowestSequenceNumbers() {
-        var publication = PublicationGenerator.publicationWithIdentifier();
-        var entityDescription = publication.getEntityDescription();
-        entityDescription.setContributors(getNumberOfContributors(getRandomNumberOfContributorsLargerThanMaxSize()));
-        var summary = PublicationSummary.create(publication);
-        assertThat(summary.getContributors(), containsInAnyOrder(entityDescription.getContributors()
-                                                                     .stream()
-                                                                     .sorted(
-                                                                         Comparator.comparing(Contributor::getSequence))
-                                                                     .limit(MAX_SIZE_CONTRIBUTOR_LIST)
-                                                                     .toArray()));
-    }
-
-    @Test
-    void shouldReturnTotalNumberOfContributorsWhenNumberOfContributorsExceedsMaxSize() {
-        var publication = PublicationGenerator.publicationWithIdentifier();
-        var entityDescription = publication.getEntityDescription();
-        entityDescription.setContributors(getNumberOfContributors(getRandomNumberOfContributorsLargerThanMaxSize()));
-        var summary = PublicationSummary.create(publication);
-        assertThat(summary.getContributorsCount(), is(equalTo(entityDescription.getContributors().size())));
-    }
-
-    @Test
-    void shouldAllowCreationOfMinimumPossibleInformation() {
-        var publicationId = randomPublicationId();
-        var publicationTitle = randomString();
-        var summary = PublicationSummary.create(publicationId, publicationTitle);
-        assertThat(summary.getPublicationId(), is(equalTo(publicationId)));
-        assertThat(summary.getTitle(), is(equalTo(publicationTitle)));
-    }
-
-    @Test
-    void shouldReturnPublicationSummaryWithHandleWhenPublicationHasHandle() {
-        var handle = randomUri();
-        var publication = randomPublication().copy().withHandle(handle).build();
-        var summary = PublicationSummary.create(publication);
-
-        assertTrue(summary.getHandles().contains(handle));
-    }
-
-    @Test
-    void shouldReturnPublicationSummaryWithoutHandleWhenPublicationIsMissingHandleAndHandlesInAdditionalIdentifiers() {
-        var publication = randomPublication().copy().withHandle(null).withAdditionalIdentifiers(Collections.emptySet()).build();
-        var summary = PublicationSummary.create(publication);
-
-        assertTrue(summary.getHandles().isEmpty());
-    }
-
-    @Test
-    void shouldReturnPublicationSummaryHandlesFromAdditionalIdentifiers() {
-        var handles = Set.of(randomUri(), randomUri());
-        var publication = randomPublication().copy()
-                              .withAdditionalIdentifiers(toHandleIdentifiers(handles))
-                              .build();
-        var summary = PublicationSummary.create(publication);
-
-        assertTrue(summary.getHandles().containsAll(handles));
-    }
-
-    private static Set<AdditionalIdentifierBase> toHandleIdentifiers(Set<URI> handles) {
-        return handles.stream().map(uri -> new HandleIdentifier(SourceName.nva(), uri)).collect(Collectors.toSet());
-    }
-
-    private int getRandomNumberOfContributorsLargerThanMaxSize() {
-        return MAX_SIZE_CONTRIBUTOR_LIST
-               + new Random().nextInt(10 - MAX_SIZE_CONTRIBUTOR_LIST + 1)
-               + MAX_SIZE_CONTRIBUTOR_LIST;
-    }
-
-    private List<Contributor> getNumberOfContributors(int number) {
-        var contributors = new ArrayList<Contributor>(Collections.emptyList());
-        for (int i = 0; i < number; i++) {
-            contributors.add(getRandomContributor(i));
-        }
-        return contributors;
-    }
-
-    private Contributor getRandomContributor(int sequenceNumber) {
-        return new Contributor.Builder()
-                   .withIdentity(getRandomIdentity())
-                   .withAffiliations(getListOfRandomOrganizations())
-                   .withRole(new RoleType(Role.OTHER))
-                   .withSequence(sequenceNumber)
-                   .withCorrespondingAuthor(randomBoolean())
-                   .build();
-    }
-
-    private List<Corporation> getListOfRandomOrganizations() {
-        return List.of(new Organization.Builder().withId(randomUri()).build());
-    }
-
-    private Identity getRandomIdentity() {
-        return new Identity.Builder().withName(randomString()).withOrcId(randomString()).withId(randomUri()).build();
-    }
-
-    private URI randomPublicationId() {
-        return UriWrapper.fromUri(randomUri()).addChild(SortableIdentifier.next().toString()).getUri();
-    }
-
-    private PublicationSummary publicationSummary() {
-        return PublicationSummary.create(randomPublication());
-    }
+  private PublicationSummary publicationSummary() {
+    return PublicationSummary.create(randomPublication());
+  }
 }

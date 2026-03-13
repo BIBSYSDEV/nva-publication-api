@@ -8,24 +8,20 @@ import lombok.Getter;
 import lombok.Setter;
 import nva.commons.core.JacocoGenerated;
 
-
 @Builder(
     builderClassName = "CristinObjectBuilder",
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class Identifiable {
 
-    @JsonProperty("id")
-    private String id;
+  @JsonProperty("id")
+  private String id;
 
-    @JacocoGenerated
-    public Identifiable() {
-
-    }
+  @JacocoGenerated
+  public Identifiable() {}
 }

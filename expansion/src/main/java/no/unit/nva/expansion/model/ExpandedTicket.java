@@ -26,198 +26,204 @@ import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
-    @JsonSubTypes.Type(name = ExpandedDoiRequest.TYPE, value = ExpandedDoiRequest.class),
-    @JsonSubTypes.Type(name = ExpandedPublishingRequest.TYPE, value = ExpandedPublishingRequest.class),
-    @JsonSubTypes.Type(name = ExpandedGeneralSupportRequest.TYPE, value = ExpandedGeneralSupportRequest.class),
-    @JsonSubTypes.Type(name = ExpandedUnpublishRequest.TYPE, value = ExpandedUnpublishRequest.class),
-    @JsonSubTypes.Type(name = ExpandedFilesApprovalThesis.TYPE, value = ExpandedFilesApprovalThesis.class)
+  @JsonSubTypes.Type(name = ExpandedDoiRequest.TYPE, value = ExpandedDoiRequest.class),
+  @JsonSubTypes.Type(
+      name = ExpandedPublishingRequest.TYPE,
+      value = ExpandedPublishingRequest.class),
+  @JsonSubTypes.Type(
+      name = ExpandedGeneralSupportRequest.TYPE,
+      value = ExpandedGeneralSupportRequest.class),
+  @JsonSubTypes.Type(name = ExpandedUnpublishRequest.TYPE, value = ExpandedUnpublishRequest.class),
+  @JsonSubTypes.Type(
+      name = ExpandedFilesApprovalThesis.TYPE,
+      value = ExpandedFilesApprovalThesis.class)
 })
 public abstract class ExpandedTicket implements ExpandedDataEntry {
 
-    private static final String PUBLICATION_FIELD = "publication";
-    private static final String ORGANIZATION_FIELD = "organization";
-    private static final String ID_FIELD = "id";
-    private static final String VIEWED_BY_FIELD = "viewedBy";
-    private static final String ASSIGNEE_FIELD = "assignee";
-    private static final String FINALIZED_BY_FIELD = "finalizedBy";
-    private static final String OWNER_FIELD = "owner";
-    private static final String MESSAGES_FIELD = "messages";
-    protected static final String MODIFIED_DATE_FIELD = "modifiedDate";
-    protected static final String CREATED_DATE_FIELD = "createdDate";
-    protected static final String CUSTOMER_ID_FIELD = "customerId";
-    protected static final String STATUS_FIELD = "status";
+  private static final String PUBLICATION_FIELD = "publication";
+  private static final String ORGANIZATION_FIELD = "organization";
+  private static final String ID_FIELD = "id";
+  private static final String VIEWED_BY_FIELD = "viewedBy";
+  private static final String ASSIGNEE_FIELD = "assignee";
+  private static final String FINALIZED_BY_FIELD = "finalizedBy";
+  private static final String OWNER_FIELD = "owner";
+  private static final String MESSAGES_FIELD = "messages";
+  protected static final String MODIFIED_DATE_FIELD = "modifiedDate";
+  protected static final String CREATED_DATE_FIELD = "createdDate";
+  protected static final String CUSTOMER_ID_FIELD = "customerId";
+  protected static final String STATUS_FIELD = "status";
 
-    @JsonProperty(CUSTOMER_ID_FIELD)
-    private URI customerId;
-    @JsonProperty(MODIFIED_DATE_FIELD)
-    private Instant modifiedDate;
-    @JsonProperty(CREATED_DATE_FIELD)
-    private Instant createdDate;
-    @JsonProperty(ID_FIELD)
-    private URI id;
-    @JsonProperty(MESSAGES_FIELD)
-    private List<ExpandedMessage> messages;
-    @JsonProperty(VIEWED_BY_FIELD)
-    private Set<ExpandedPerson> viewedBy;
-    @JsonProperty(PUBLICATION_FIELD)
-    private PublicationSummary publication;
-    @JsonProperty(FINALIZED_BY_FIELD)
-    private ExpandedPerson finalizedBy;
-    @JsonProperty(OWNER_FIELD)
-    private ExpandedPerson owner;
-    @JsonProperty(ASSIGNEE_FIELD)
-    private ExpandedPerson assignee;
-    @JsonProperty(ORGANIZATION_FIELD)
-    private ExpandedOrganization organization;
-    @JsonProperty(STATUS_FIELD)
-    private ExpandedTicketStatus status;
+  @JsonProperty(CUSTOMER_ID_FIELD)
+  private URI customerId;
 
+  @JsonProperty(MODIFIED_DATE_FIELD)
+  private Instant modifiedDate;
 
-    public static ExpandedDataEntry create(TicketEntry ticketEntry,
-                                           ResourceService resourceService,
-                                           ResourceExpansionService expansionService,
-                                           TicketService ticketService)
-        throws NotFoundException, JsonProcessingException {
-        return switch (ticketEntry) {
-            case DoiRequest doiRequest -> ExpandedDoiRequest.createEntry(doiRequest,
-                                                                         expansionService,
-                                                                         resourceService,
-                                                                         ticketService);
-            case PublishingRequestCase publishingRequestCase -> ExpandedPublishingRequest.createEntry(
-                publishingRequestCase,
-                resourceService,
-                expansionService,
-                ticketService);
-            case GeneralSupportRequest generalSupportRequest -> ExpandedGeneralSupportRequest.createEntry(
-                generalSupportRequest,
-                resourceService,
-                expansionService,
-                ticketService
-            );
-            case UnpublishRequest unpublishRequest -> ExpandedUnpublishRequest.createEntry(
-                unpublishRequest,
-                resourceService,
-                expansionService,
-                ticketService
-            );
-            case FilesApprovalThesis filesApprovalThesis -> ExpandedFilesApprovalThesis.createEntry(
-                filesApprovalThesis,
-                resourceService,
-                expansionService,
-                ticketService
-            );
-            default -> throw new UnsupportedOperationException("Unsupported ticket entry type %s"
-                                                                   .formatted(ticketEntry.getClass().getSimpleName()));
-        };
-    }
+  @JsonProperty(CREATED_DATE_FIELD)
+  private Instant createdDate;
 
-    public static SortableIdentifier extractIdentifier(URI id) {
-        return new SortableIdentifier(UriWrapper.fromUri(id).getLastPathElement());
-    }
+  @JsonProperty(ID_FIELD)
+  private URI id;
 
-    public ExpandedPerson getFinalizedBy() {
-        return finalizedBy;
-    }
+  @JsonProperty(MESSAGES_FIELD)
+  private List<ExpandedMessage> messages;
 
-    public void setFinalizedBy(ExpandedPerson finalizedBy) {
-        this.finalizedBy = finalizedBy;
-    }
+  @JsonProperty(VIEWED_BY_FIELD)
+  private Set<ExpandedPerson> viewedBy;
 
-    public final Set<ExpandedPerson> getViewedBy() {
-        return viewedBy;
-    }
+  @JsonProperty(PUBLICATION_FIELD)
+  private PublicationSummary publication;
 
-    public final void setViewedBy(Set<ExpandedPerson> viewedBy) {
-        this.viewedBy = viewedBy;
-    }
+  @JsonProperty(FINALIZED_BY_FIELD)
+  private ExpandedPerson finalizedBy;
 
-    @JsonProperty(PUBLICATION_FIELD)
-    public final PublicationSummary getPublication() {
-        return this.publication;
-    }
+  @JsonProperty(OWNER_FIELD)
+  private ExpandedPerson owner;
 
-    public final void setPublication(PublicationSummary publication) {
-        this.publication = publication;
-    }
+  @JsonProperty(ASSIGNEE_FIELD)
+  private ExpandedPerson assignee;
 
-    @JsonProperty(ORGANIZATION_FIELD)
-    public ExpandedOrganization getOrganization() {
-        return this.organization;
-    }
+  @JsonProperty(ORGANIZATION_FIELD)
+  private ExpandedOrganization organization;
 
-    public void setOrganization(ExpandedOrganization organization) {
-        this.organization = organization;
-    }
+  @JsonProperty(STATUS_FIELD)
+  private ExpandedTicketStatus status;
 
-    @JsonProperty(ID_FIELD)
-    public final URI getId() {
-        return this.id;
-    }
+  public static ExpandedDataEntry create(
+      TicketEntry ticketEntry,
+      ResourceService resourceService,
+      ResourceExpansionService expansionService,
+      TicketService ticketService)
+      throws NotFoundException, JsonProcessingException {
+    return switch (ticketEntry) {
+      case DoiRequest doiRequest ->
+          ExpandedDoiRequest.createEntry(
+              doiRequest, expansionService, resourceService, ticketService);
+      case PublishingRequestCase publishingRequestCase ->
+          ExpandedPublishingRequest.createEntry(
+              publishingRequestCase, resourceService, expansionService, ticketService);
+      case GeneralSupportRequest generalSupportRequest ->
+          ExpandedGeneralSupportRequest.createEntry(
+              generalSupportRequest, resourceService, expansionService, ticketService);
+      case UnpublishRequest unpublishRequest ->
+          ExpandedUnpublishRequest.createEntry(
+              unpublishRequest, resourceService, expansionService, ticketService);
+      case FilesApprovalThesis filesApprovalThesis ->
+          ExpandedFilesApprovalThesis.createEntry(
+              filesApprovalThesis, resourceService, expansionService, ticketService);
+      default ->
+          throw new UnsupportedOperationException(
+              "Unsupported ticket entry type %s".formatted(ticketEntry.getClass().getSimpleName()));
+    };
+  }
 
-    public final void setId(URI id) {
-        this.id = id;
-    }
+  public static SortableIdentifier extractIdentifier(URI id) {
+    return new SortableIdentifier(UriWrapper.fromUri(id).getLastPathElement());
+  }
 
-    public ExpandedTicketStatus getStatus() {
-        return status;
-    }
+  public ExpandedPerson getFinalizedBy() {
+    return finalizedBy;
+  }
 
-    public final List<ExpandedMessage> getMessages() {
-        return this.messages;
-    }
+  public void setFinalizedBy(ExpandedPerson finalizedBy) {
+    this.finalizedBy = finalizedBy;
+  }
 
-    public final void setMessages(List<ExpandedMessage> messages) {
-        this.messages = messages;
-    }
+  public final Set<ExpandedPerson> getViewedBy() {
+    return viewedBy;
+  }
 
-    public final ExpandedPerson getOwner() {
-        return this.owner;
-    }
+  public final void setViewedBy(Set<ExpandedPerson> viewedBy) {
+    this.viewedBy = viewedBy;
+  }
 
-    public final void setOwner(ExpandedPerson owner) {
-        this.owner = owner;
-    }
+  @JsonProperty(PUBLICATION_FIELD)
+  public final PublicationSummary getPublication() {
+    return this.publication;
+  }
 
-    public final ExpandedPerson getAssignee() {
-        return assignee;
-    }
+  public final void setPublication(PublicationSummary publication) {
+    this.publication = publication;
+  }
 
-    public final void setAssignee(ExpandedPerson assignee) {
-        this.assignee = assignee;
-    }
+  @JsonProperty(ORGANIZATION_FIELD)
+  public ExpandedOrganization getOrganization() {
+    return this.organization;
+  }
 
-    public Instant getCreatedDate() {
-        return createdDate;
-    }
+  public void setOrganization(ExpandedOrganization organization) {
+    this.organization = organization;
+  }
 
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
-    }
+  @JsonProperty(ID_FIELD)
+  public final URI getId() {
+    return this.id;
+  }
 
-    public Instant getModifiedDate() {
-        return modifiedDate;
-    }
+  public final void setId(URI id) {
+    this.id = id;
+  }
 
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
+  public ExpandedTicketStatus getStatus() {
+    return status;
+  }
 
-    public URI getCustomerId() {
-        return customerId;
-    }
+  public final List<ExpandedMessage> getMessages() {
+    return this.messages;
+  }
 
-    public void setCustomerId(URI customerId) {
-        this.customerId = customerId;
-    }
+  public final void setMessages(List<ExpandedMessage> messages) {
+    this.messages = messages;
+  }
 
-    public void setStatus(ExpandedTicketStatus status) {
-        this.status = status;
-    }
+  public final ExpandedPerson getOwner() {
+    return this.owner;
+  }
 
-    protected static URI generateId(URI publicationId, SortableIdentifier identifier) {
-        return UriWrapper.fromUri(publicationId)
-            .addChild(PublicationServiceConfig.TICKET_PATH)
-            .addChild(identifier.toString())
-            .getUri();
-    }
+  public final void setOwner(ExpandedPerson owner) {
+    this.owner = owner;
+  }
+
+  public final ExpandedPerson getAssignee() {
+    return assignee;
+  }
+
+  public final void setAssignee(ExpandedPerson assignee) {
+    this.assignee = assignee;
+  }
+
+  public Instant getCreatedDate() {
+    return createdDate;
+  }
+
+  public void setCreatedDate(Instant createdDate) {
+    this.createdDate = createdDate;
+  }
+
+  public Instant getModifiedDate() {
+    return modifiedDate;
+  }
+
+  public void setModifiedDate(Instant modifiedDate) {
+    this.modifiedDate = modifiedDate;
+  }
+
+  public URI getCustomerId() {
+    return customerId;
+  }
+
+  public void setCustomerId(URI customerId) {
+    this.customerId = customerId;
+  }
+
+  public void setStatus(ExpandedTicketStatus status) {
+    this.status = status;
+  }
+
+  protected static URI generateId(URI publicationId, SortableIdentifier identifier) {
+    return UriWrapper.fromUri(publicationId)
+        .addChild(PublicationServiceConfig.TICKET_PATH)
+        .addChild(identifier.toString())
+        .getUri();
+  }
 }

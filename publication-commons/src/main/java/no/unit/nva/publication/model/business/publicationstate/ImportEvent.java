@@ -4,5 +4,5 @@ import java.net.URI;
 
 public interface ImportEvent {
 
-    URI institution();
+  URI institution();
 }

@@ -12,6 +12,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
@@ -52,232 +53,234 @@ import nva.commons.core.JacocoGenerated;
 public class ResourceDao extends Dao
     implements JoinWithResource, JsonSerializable, DynamoEntryByIdentifier {
 
-    public static final String CRISTIN_SOURCE = "Cristin";
-    private static final String NVA_SOURCE = "nva";
-    public static final String TYPE = "Resource";
-    private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
-    private static final String STATUS_FIELD = "status";
-    private static final String MODIFIED_DATA_FIELD = "modifiedDate";
-    private static final String DOI_FIELD = "doi";
-    private static final String IMPORT_DETAILS_FIELD = "importDetails";
-    private static final String BRAGE_SOURCE = "brage";
+  public static final String CRISTIN_SOURCE = "Cristin";
+  private static final String NVA_SOURCE = "nva";
+  public static final String TYPE = "Resource";
+  private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
+  private static final String STATUS_FIELD = "status";
+  private static final String MODIFIED_DATA_FIELD = "modifiedDate";
+  private static final String DOI_FIELD = "doi";
+  private static final String IMPORT_DETAILS_FIELD = "importDetails";
+  private static final String BRAGE_SOURCE = "brage";
 
-    @JsonProperty(STATUS_FIELD)
-    private PublicationStatus status;
+  @JsonProperty(STATUS_FIELD)
+  private PublicationStatus status;
 
-    @JsonProperty(MODIFIED_DATA_FIELD)
-    private Instant modifiedDate;
-    @JsonProperty(DOI_FIELD)
-    private URI doi;
-    @JsonProperty(IMPORT_DETAILS_FIELD)
-    private List<ImportDetail> importDetails;
+  @JsonProperty(MODIFIED_DATA_FIELD)
+  private Instant modifiedDate;
 
-    public ResourceDao() {
-        this(new Resource());
+  @JsonProperty(DOI_FIELD)
+  private URI doi;
+
+  @JsonProperty(IMPORT_DETAILS_FIELD)
+  private List<ImportDetail> importDetails;
+
+  public ResourceDao() {
+    this(new Resource());
+  }
+
+  public ResourceDao(Resource resource) {
+    super(resource);
+    setIdentifier(resource.getIdentifier());
+    this.status = resource.getStatus();
+    this.modifiedDate = resource.getModifiedDate();
+    this.doi = resource.getDoi();
+    this.importDetails = resource.getImportDetails();
+  }
+
+  public static ResourceDao queryObject(
+      UserInstance userInstance, SortableIdentifier resourceIdentifier) {
+    Resource resource =
+        Resource.emptyResource(
+            userInstance.getUser(), userInstance.getCustomerId(), resourceIdentifier);
+    return new ResourceDao(resource);
+  }
+
+  public static String constructPrimaryPartitionKey(URI customerId, String owner) {
+    return String.format(
+        PRIMARY_KEY_PARTITION_KEY_FORMAT, Resource.TYPE, orgUriToOrgIdentifier(customerId), owner);
+  }
+
+  @JsonIgnore
+  public String joinByResourceContainedOrderedType() {
+    return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + getData().getType();
+  }
+
+  @Override
+  public String indexingType() {
+    return this.getData().getType();
+  }
+
+  @Override
+  public URI getCustomerId() {
+    return getResource().getPublisher().getId();
+  }
+
+  // TODO: cover when refactoring to ticket importSource is completed
+  @JacocoGenerated
+  @Override
+  public TransactWriteItemsRequest createInsertionTransactionRequest() {
+    throw new UnsupportedOperationException();
+  }
+
+  @JacocoGenerated
+  @Override
+  public void updateExistingEntry(AmazonDynamoDB client) {
+    throw new UnsupportedOperationException(
+        "Not implemented yet.Call the appropriate resource service method");
+  }
+
+  @Override
+  @JacocoGenerated
+  public int hashCode() {
+    return Objects.hash(getData());
+  }
+
+  @Override
+  @JacocoGenerated
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
-
-    public ResourceDao(Resource resource) {
-        super(resource);
-        setIdentifier(resource.getIdentifier());
-        this.status = resource.getStatus();
-        this.modifiedDate = resource.getModifiedDate();
-        this.doi = resource.getDoi();
-        this.importDetails = resource.getImportDetails();
+    if (!(o instanceof ResourceDao)) {
+      return false;
     }
+    ResourceDao that = (ResourceDao) o;
+    return Objects.equals(getData(), that.getData());
+  }
 
-    public static ResourceDao queryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
-        Resource resource = Resource.emptyResource(
-            userInstance.getUser(),
-            userInstance.getCustomerId(),
-            resourceIdentifier);
-        return new ResourceDao(resource);
-    }
+  public PublicationStatus getStatus() {
+    return status;
+  }
 
-    public static String constructPrimaryPartitionKey(URI customerId, String owner) {
-        return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, Resource.TYPE,
-                             orgUriToOrgIdentifier(customerId), owner);
-    }
+  public void setStatus(PublicationStatus status) {
+    this.status = status;
+  }
 
-    @JsonIgnore
-    public String joinByResourceContainedOrderedType() {
-        return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + getData().getType();
-    }
+  public Instant getModifiedDate() {
+    return modifiedDate;
+  }
 
-    @Override
-    public String indexingType() {
-        return this.getData().getType();
-    }
+  public void setModifiedDate(Instant modifiedDate) {
+    this.modifiedDate = modifiedDate;
+  }
 
-    @Override
-    public URI getCustomerId() {
-        return getResource().getPublisher().getId();
-    }
+  public URI getDoi() {
+    return doi;
+  }
 
-    //TODO: cover when refactoring to ticket importSource is completed
-    @JacocoGenerated
-    @Override
-    public TransactWriteItemsRequest createInsertionTransactionRequest() {
-        throw new UnsupportedOperationException();
-    }
+  public void setDoi(URI doi) {
+    this.doi = doi;
+  }
 
-    @JacocoGenerated
-    @Override
-    public void updateExistingEntry(AmazonDynamoDB client) {
-        throw new UnsupportedOperationException("Not implemented yet.Call the appropriate resource service method");
-    }
+  public List<ImportDetail> getImportDetails() {
+    return nonNull(importDetails) ? importDetails : Collections.emptyList();
+  }
 
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getData());
-    }
+  public void setImportDetails(Collection<ImportDetail> importDetails) {
+    this.importDetails = new ArrayList<>(importDetails);
+  }
 
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof ResourceDao)) {
-            return false;
-        }
-        ResourceDao that = (ResourceDao) o;
-        return Objects.equals(getData(), that.getData());
-    }
+  @Override
+  protected User getOwner() {
+    return getData().getOwner();
+  }
 
-    public PublicationStatus getStatus() {
-        return status;
-    }
+  public List<TicketDao> fetchAllTickets(AmazonDynamoDB client) {
+    var queryRequest =
+        new QueryRequest()
+            .withTableName(RESOURCES_TABLE_NAME)
+            .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+            .withKeyConditions(joinAllRelatedTicketsForResource());
+    return client.query(queryRequest).getItems().stream()
+        .map(item -> parseAttributeValuesMap(item, TicketDao.class))
+        .collect(Collectors.toList());
+  }
 
-    public void setStatus(PublicationStatus status) {
-        this.status = status;
-    }
+  @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME)
+  public String getResourceByCristinIdentifierPartitionKey() {
+    return extractCristinIdentifier()
+        .map(value -> CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + value)
+        .orElse(null);
+  }
 
-    public Instant getModifiedDate() {
-        return modifiedDate;
-    }
+  @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME)
+  public String getResourceByCristinIdentifierSortKey() {
+    return indexingType() + KEY_FIELDS_DELIMITER + getIdentifier();
+  }
 
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
+  @JsonProperty(GSI_1_PARTITION_KEY_NAME)
+  public String getResourceByScopusIdentifierPartitionKey() {
+    return extractScopusIdentifier()
+        .map(value -> String.format("%s:%s", SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX, value))
+        .orElse(null);
+  }
 
-    public URI getDoi() {
-        return doi;
-    }
+  @JsonProperty(GSI_1_SORT_KEY_NAME)
+  public String getResourceByScopusIdentifierSortKey() {
+    return indexingType() + KEY_FIELDS_DELIMITER + getIdentifier();
+  }
 
-    public void setDoi(URI doi) {
-        this.doi = doi;
-    }
+  public QueryRequest createQueryFindByCristinIdentifier() {
+    return new QueryRequest()
+        .withTableName(RESOURCES_TABLE_NAME)
+        .withIndexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME)
+        .withKeyConditions(createConditionsWithCristinIdentifier());
+  }
 
-    public List<ImportDetail> getImportDetails() {
-        return nonNull(importDetails) ? importDetails : Collections.emptyList();
-    }
+  public Map<String, Condition> createConditionsWithCristinIdentifier() {
+    Condition condition =
+        new Condition()
+            .withComparisonOperator(ComparisonOperator.EQ)
+            .withAttributeValueList(
+                new AttributeValue(getResourceByCristinIdentifierPartitionKey()));
+    return Map.of(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME, condition);
+  }
 
-    public void setImportDetails(Collection<ImportDetail> importDetails) {
-        this.importDetails = new ArrayList<>(importDetails);
-    }
+  public Optional<String> extractCristinIdentifier() {
+    return getAdditionalIdentifier(CristinIdentifier.class, CRISTIN_SOURCE)
+        .or(() -> getAdditionalIdentifier(AdditionalIdentifier.class, CRISTIN_SOURCE))
+        .or(() -> getAdditionalIdentifier(CristinIdentifier.class, BRAGE_SOURCE))
+        .or(() -> getAdditionalIdentifier(CristinIdentifier.class, NVA_SOURCE));
+  }
 
-    @Override
-    protected User getOwner() {
-        return getData().getOwner();
-    }
+  public Optional<String> extractScopusIdentifier() {
+    return getResource().getAdditionalIdentifiers().stream()
+        .filter(ScopusIdentifier.class::isInstance)
+        .map(ScopusIdentifier.class::cast)
+        .map(ScopusIdentifier::value)
+        .findFirst();
+  }
 
-    public List<TicketDao> fetchAllTickets(AmazonDynamoDB client) {
-        var queryRequest = new QueryRequest()
-                               .withTableName(RESOURCES_TABLE_NAME)
-                               .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                               .withKeyConditions(joinAllRelatedTicketsForResource());
-        return client.query(queryRequest)
-                   .getItems()
-                   .stream()
-                   .map(item -> parseAttributeValuesMap(item, TicketDao.class))
-                   .collect(Collectors.toList());
-    }
+  private <T extends AdditionalIdentifierBase> Optional<String> getAdditionalIdentifier(
+      Class<T> identifierType, String source) {
+    return getResource().getAdditionalIdentifiers().stream()
+        .filter(identifierType::isInstance)
+        .map(identifierType::cast)
+        .filter(identifier -> containsIgnoringCase(identifier.sourceName(), source))
+        .map(AdditionalIdentifierBase::value)
+        .findFirst();
+  }
 
-    @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME)
-    public String getResourceByCristinIdentifierPartitionKey() {
-        return extractCristinIdentifier()
-                   .map(value -> CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + value)
-                   .orElse(null);
-    }
+  private static boolean containsIgnoringCase(String input, String search) {
+    return input.toLowerCase(Locale.ROOT).contains(search.toLowerCase(Locale.ROOT));
+  }
 
-    @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME)
-    public String getResourceByCristinIdentifierSortKey() {
-        return indexingType() + KEY_FIELDS_DELIMITER + getIdentifier();
-    }
+  @JsonIgnore
+  public Resource getResource() {
+    var resource = (Resource) getData();
+    resource.setVersion(getVersion());
+    return resource;
+  }
 
-    @JsonProperty(GSI_1_PARTITION_KEY_NAME)
-    public String getResourceByScopusIdentifierPartitionKey() {
-        return extractScopusIdentifier()
-                   .map(value -> String.format("%s:%s", SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX, value))
-                   .orElse(null);
-    }
+  @Override
+  public String joinByResourceOrderedType() {
+    return joinByResourceContainedOrderedType();
+  }
 
-    @JsonProperty(GSI_1_SORT_KEY_NAME)
-    public String getResourceByScopusIdentifierSortKey() {
-        return indexingType() + KEY_FIELDS_DELIMITER + getIdentifier();
-    }
-
-    public QueryRequest createQueryFindByCristinIdentifier() {
-        return new QueryRequest()
-                   .withTableName(RESOURCES_TABLE_NAME)
-                   .withIndexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME)
-                   .withKeyConditions(createConditionsWithCristinIdentifier());
-    }
-
-    public Map<String, Condition> createConditionsWithCristinIdentifier() {
-        Condition condition = new Condition()
-                                  .withComparisonOperator(ComparisonOperator.EQ)
-                                  .withAttributeValueList(
-                                      new AttributeValue(getResourceByCristinIdentifierPartitionKey()));
-        return Map.of(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME, condition);
-    }
-
-    public Optional<String> extractCristinIdentifier() {
-        return getAdditionalIdentifier(CristinIdentifier.class, CRISTIN_SOURCE)
-                   .or(() -> getAdditionalIdentifier(AdditionalIdentifier.class, CRISTIN_SOURCE))
-                   .or(() -> getAdditionalIdentifier(CristinIdentifier.class, BRAGE_SOURCE))
-                   .or(() -> getAdditionalIdentifier(CristinIdentifier.class, NVA_SOURCE));
-    }
-
-    public Optional<String> extractScopusIdentifier() {
-        return getResource().getAdditionalIdentifiers().stream()
-                   .filter(ScopusIdentifier.class::isInstance)
-                    .map(ScopusIdentifier.class::cast)
-                    .map(ScopusIdentifier::value)
-                    .findFirst();
-    }
-
-    private <T extends AdditionalIdentifierBase> Optional<String> getAdditionalIdentifier(Class<T> identifierType,
-                                                                                          String source) {
-        return getResource().getAdditionalIdentifiers().stream().filter(identifierType::isInstance)
-                   .map(identifierType::cast)
-                   .filter(identifier -> containsIgnoringCase(identifier.sourceName(), source))
-                   .map(AdditionalIdentifierBase::value)
-                   .findFirst();
-    }
-
-    private static boolean containsIgnoringCase(String input, String search) {
-        return input
-                   .toLowerCase(Locale.ROOT)
-                   .contains(search.toLowerCase(Locale.ROOT));
-    }
-
-    @JsonIgnore
-    public Resource getResource() {
-        var resource = (Resource) getData();
-        resource.setVersion(getVersion());
-        return resource;
-    }
-
-    @Override
-    public String joinByResourceOrderedType() {
-        return joinByResourceContainedOrderedType();
-    }
-
-    @Override
-    @JsonIgnore
-    public SortableIdentifier getResourceIdentifier() {
-        return this.getIdentifier();
-    }
+  @Override
+  @JsonIgnore
+  public SortableIdentifier getResourceIdentifier() {
+    return this.getIdentifier();
+  }
 }

@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -30,61 +31,67 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class UriShortenerResolverTest extends UriShortenerLocalDynamoDb {
-    private static final String UNPARSABLE_URI = "https://doi.org/10.1577/1548-8667(1998)010<0056:EOOAFI>2.0.CO;2";
-    private static final String TABLE_NAME = "url_shortener";
-    private static final String SHORTENED_URI_KEY = "shortenedUri";
+  private static final String UNPARSABLE_URI =
+      "https://doi.org/10.1577/1548-8667(1998)010<0056:EOOAFI>2.0.CO;2";
+  private static final String TABLE_NAME = "url_shortener";
+  private static final String SHORTENED_URI_KEY = "shortenedUri";
 
-    private UriResolver uriResolver;
-    private UriShortener uriShortener;
-    private String basePath;
+  private UriResolver uriResolver;
+  private UriShortener uriShortener;
+  private String basePath;
 
-    @BeforeEach
-    void initialize() {
-        super.init(TABLE_NAME);
-        this.uriResolver = new UriResolverImpl(client, TABLE_NAME);
-        this.uriShortener = new UriShortenerImpl(UriWrapper.fromUri(randomUri()),
-                                                 new UriShortenerWriteClient(client, TABLE_NAME));
-        this.basePath = randomString();
-    }
+  @BeforeEach
+  void initialize() {
+    super.init(TABLE_NAME);
+    this.uriResolver = new UriResolverImpl(client, TABLE_NAME);
+    this.uriShortener =
+        new UriShortenerImpl(
+            UriWrapper.fromUri(randomUri()), new UriShortenerWriteClient(client, TABLE_NAME));
+    this.basePath = randomString();
+  }
 
-    @Test
-    void shouldThrowNotFoundExceptionWhenShortenedUriIsNotInDatabase() {
-        assertThrows(NotFoundException.class, () -> uriResolver.resolve(randomUri()));
-    }
+  @Test
+  void shouldThrowNotFoundExceptionWhenShortenedUriIsNotInDatabase() {
+    assertThrows(NotFoundException.class, () -> uriResolver.resolve(randomUri()));
+  }
 
-    @Test
-    void shouldThrowBadGatewayErrorWhenDynamoDbClientThrowsException() {
-        var client = mock(AmazonDynamoDB.class);
-        when(client.getItem(any())).thenThrow(AmazonDynamoDBException.class);
-        uriResolver = new UriResolverImpl(client, TABLE_NAME);
-        assertThrows(BadGatewayException.class, () -> uriResolver.resolve(randomUri()));
-    }
+  @Test
+  void shouldThrowBadGatewayErrorWhenDynamoDbClientThrowsException() {
+    var client = mock(AmazonDynamoDB.class);
+    when(client.getItem(any())).thenThrow(AmazonDynamoDBException.class);
+    uriResolver = new UriResolverImpl(client, TABLE_NAME);
+    assertThrows(BadGatewayException.class, () -> uriResolver.resolve(randomUri()));
+  }
 
-    @Test
-    void shouldThrowInternalServerErrorWhenDtoCannotParseDynamoDbItem() {
-        var client = mock(AmazonDynamoDB.class);
-        var unparsableGetItemResult = new GetItemResult();
-        unparsableGetItemResult.addItemEntry(SHORTENED_URI_KEY, new AttributeValue(UNPARSABLE_URI));
-        when(client.getItem(any())).thenReturn(unparsableGetItemResult);
-        uriResolver = new UriResolverImpl(client, TABLE_NAME);
-        assertThrows(GatewayResponseSerializingException.class, () -> uriResolver.resolve(randomUri()));
-    }
+  @Test
+  void shouldThrowInternalServerErrorWhenDtoCannotParseDynamoDbItem() {
+    var client = mock(AmazonDynamoDB.class);
+    var unparsableGetItemResult = new GetItemResult();
+    unparsableGetItemResult.addItemEntry(SHORTENED_URI_KEY, new AttributeValue(UNPARSABLE_URI));
+    when(client.getItem(any())).thenReturn(unparsableGetItemResult);
+    uriResolver = new UriResolverImpl(client, TABLE_NAME);
+    assertThrows(GatewayResponseSerializingException.class, () -> uriResolver.resolve(randomUri()));
+  }
 
-    @Test
-    void shouldReturnLongUriWhenShortenedUriIsInDatabase() throws ApiGatewayException {
-        var longUri = randomUri();
-        var shortenedUri = uriShortener.shorten(longUri, basePath, randomInstant());
-        var actualResult = uriResolver.resolve(shortenedUri);
-        assertThat(actualResult, is(equalTo(longUri)));
-    }
+  @Test
+  void shouldReturnLongUriWhenShortenedUriIsInDatabase() throws ApiGatewayException {
+    var longUri = randomUri();
+    var shortenedUri = uriShortener.shorten(longUri, basePath, randomInstant());
+    var actualResult = uriResolver.resolve(shortenedUri);
+    assertThat(actualResult, is(equalTo(longUri)));
+  }
 
-    @Test
-    void shouldThrowTransactionFailedExceptionOnTransactionFail() {
-        var longUri = randomUri();
-        var dynamoDbClient = mock(AmazonDynamoDB.class);
-        this.uriShortener = new UriShortenerImpl(UriWrapper.fromUri(randomUri()),
-                                                 new UriShortenerWriteClient(dynamoDbClient, TABLE_NAME));
-        when(dynamoDbClient.transactWriteItems(any())).thenThrow(AmazonDynamoDBException.class);
-        assertThrows(TransactionFailedException.class, () -> uriShortener.shorten(longUri, basePath, randomInstant()));
-    }
+  @Test
+  void shouldThrowTransactionFailedExceptionOnTransactionFail() {
+    var longUri = randomUri();
+    var dynamoDbClient = mock(AmazonDynamoDB.class);
+    this.uriShortener =
+        new UriShortenerImpl(
+            UriWrapper.fromUri(randomUri()),
+            new UriShortenerWriteClient(dynamoDbClient, TABLE_NAME));
+    when(dynamoDbClient.transactWriteItems(any())).thenThrow(AmazonDynamoDBException.class);
+    assertThrows(
+        TransactionFailedException.class,
+        () -> uriShortener.shorten(longUri, basePath, randomInstant()));
+  }
 }

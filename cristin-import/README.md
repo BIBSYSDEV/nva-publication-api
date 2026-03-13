@@ -13,7 +13,7 @@ Various integrity checks and deduplication occur in this process.
 ## Notes
 
 1. This module will be removed once all relevant institutional archives have been imported.
-2. The origin data is produced by Cristin. 
+2. The origin data is produced by Cristin.
 
 # How to run cristin import
 

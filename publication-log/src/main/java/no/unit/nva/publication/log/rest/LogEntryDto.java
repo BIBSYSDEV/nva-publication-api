@@ -11,16 +11,16 @@ import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 import no.unit.nva.publication.model.business.logentry.TicketLogEntry;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(name = FileLogEntry.TYPE, value = FileLogEntryDto.class),
-    @JsonSubTypes.Type(name = PublicationLogEntry.TYPE, value = PublicationLogEntryDto.class),
-    @JsonSubTypes.Type(name = TicketLogEntry.TYPE, value = TicketLogEntryDto.class)
-    })
+@JsonSubTypes({
+  @JsonSubTypes.Type(name = FileLogEntry.TYPE, value = FileLogEntryDto.class),
+  @JsonSubTypes.Type(name = PublicationLogEntry.TYPE, value = PublicationLogEntryDto.class),
+  @JsonSubTypes.Type(name = TicketLogEntry.TYPE, value = TicketLogEntryDto.class)
+})
 public interface LogEntryDto {
 
-    LogTopic topic();
+  LogTopic topic();
 
-    Instant timestamp();
+  Instant timestamp();
 
-    LogAgent performedBy();
-
+  LogAgent performedBy();
 }

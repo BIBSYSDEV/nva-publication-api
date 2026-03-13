@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -48,152 +49,174 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class RequestUtilsTest {
 
-    private ResourceService resourceService;
+  private ResourceService resourceService;
 
-    @BeforeEach
-    public void setup() {
-        this.resourceService = mock(ResourceService.class);
-    }
+  @BeforeEach
+  public void setup() {
+    this.resourceService = mock(ResourceService.class);
+  }
 
-    public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
-        return Stream.of(Arguments.of(PUBLISHED, DoiRequest.class, MANAGE_DOI),
-                         Arguments.of(PublicationStatus.DRAFT, PublishingRequestCase.class,
-                                      MANAGE_PUBLISHING_REQUESTS),
-                         Arguments.of(PUBLISHED, UnpublishRequest.class, MANAGE_PUBLISHING_REQUESTS),
-                         Arguments.of(PUBLISHED, GeneralSupportRequest.class, SUPPORT));
-    }
+  public static Stream<Arguments> ticketTypeAndAccessRightProvider() {
+    return Stream.of(
+        Arguments.of(PUBLISHED, DoiRequest.class, MANAGE_DOI),
+        Arguments.of(
+            PublicationStatus.DRAFT, PublishingRequestCase.class, MANAGE_PUBLISHING_REQUESTS),
+        Arguments.of(PUBLISHED, UnpublishRequest.class, MANAGE_PUBLISHING_REQUESTS),
+        Arguments.of(PUBLISHED, GeneralSupportRequest.class, SUPPORT));
+  }
 
-    @Test
-    void shouldReturnFalseWhenCheckingAuthorizationForNullTicket() throws UnauthorizedException {
-        Assertions.assertFalse(
-            RequestUtils.fromRequestInfo(mockedRequestInfo()).isAuthorizedToManage(null));
-    }
+  @Test
+  void shouldReturnFalseWhenCheckingAuthorizationForNullTicket() throws UnauthorizedException {
+    Assertions.assertFalse(
+        RequestUtils.fromRequestInfo(mockedRequestInfo()).isAuthorizedToManage(null));
+  }
 
-    @Test
-    void shouldThrowNotFoundExceptionWhenExtractingMissingTicketIdentifier() throws UnauthorizedException {
-        var requestInfo = mockedRequestInfoWithoutPathParams();
+  @Test
+  void shouldThrowNotFoundExceptionWhenExtractingMissingTicketIdentifier()
+      throws UnauthorizedException {
+    var requestInfo = mockedRequestInfoWithoutPathParams();
 
-        assertThrows(NotFoundException.class,
-                     () -> RequestUtils.fromRequestInfo(requestInfo).ticketIdentifier());
-    }
+    assertThrows(
+        NotFoundException.class,
+        () -> RequestUtils.fromRequestInfo(requestInfo).ticketIdentifier());
+  }
 
-    @Test
-    void shouldThrowNotFoundExceptionWhenExtractingMissingPublicationIdentifier() throws UnauthorizedException {
-        var requestInfo = mockedRequestInfoWithoutPathParams();
+  @Test
+  void shouldThrowNotFoundExceptionWhenExtractingMissingPublicationIdentifier()
+      throws UnauthorizedException {
+    var requestInfo = mockedRequestInfoWithoutPathParams();
 
-        assertThrows(NotFoundException.class,
-                     () -> RequestUtils.fromRequestInfo(requestInfo).publicationIdentifier());
-    }
+    assertThrows(
+        NotFoundException.class,
+        () -> RequestUtils.fromRequestInfo(requestInfo).publicationIdentifier());
+  }
 
-    @Test
-    void shouldReturnIdentifiersFromPathParamsWhenTheyArePresent() throws UnauthorizedException, NotFoundException {
-        var requestUtils = RequestUtils.fromRequestInfo(mockedRequestInfo());
+  @Test
+  void shouldReturnIdentifiersFromPathParamsWhenTheyArePresent()
+      throws UnauthorizedException, NotFoundException {
+    var requestUtils = RequestUtils.fromRequestInfo(mockedRequestInfo());
 
-        Assertions.assertTrue(nonNull(requestUtils.publicationIdentifier()));
-        Assertions.assertTrue(nonNull(requestUtils.ticketIdentifier()));
-    }
+    Assertions.assertTrue(nonNull(requestUtils.publicationIdentifier()));
+    Assertions.assertTrue(nonNull(requestUtils.ticketIdentifier()));
+  }
 
-    @ParameterizedTest
-    @MethodSource("ticketTypeAndAccessRightProvider")
-    void shouldReturnTrueWhenUserHasAccessRightToManageTicket(PublicationStatus publicationStatus,
-                                                              Class<? extends TicketEntry> ticketType,
-                                                              AccessRight accessRight)
-        throws UnauthorizedException, NotFoundException {
-        var publication = publicationWithOwner(randomString()).copy().withStatus(publicationStatus).build();
-        var requestInfo = requestInfoWithAccessRight(publication.getResourceOwner().getOwnerAffiliation(), accessRight);
-        var ticket = TicketEntry.requestNewTicket(publication, ticketType);
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
+  @ParameterizedTest
+  @MethodSource("ticketTypeAndAccessRightProvider")
+  void shouldReturnTrueWhenUserHasAccessRightToManageTicket(
+      PublicationStatus publicationStatus,
+      Class<? extends TicketEntry> ticketType,
+      AccessRight accessRight)
+      throws UnauthorizedException, NotFoundException {
+    var publication =
+        publicationWithOwner(randomString()).copy().withStatus(publicationStatus).build();
+    var requestInfo =
+        requestInfoWithAccessRight(
+            publication.getResourceOwner().getOwnerAffiliation(), accessRight);
+    var ticket = TicketEntry.requestNewTicket(publication, ticketType);
+    var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
 
-        when(resourceService.getPublicationByIdentifier(any())).thenReturn(publication);
+    when(resourceService.getPublicationByIdentifier(any())).thenReturn(publication);
 
-        Assertions.assertTrue(requestUtils.isAuthorizedToManage(ticket));
-    }
+    Assertions.assertTrue(requestUtils.isAuthorizedToManage(ticket));
+  }
 
-    @Test
-    void shouldReturnTrueWhenUserIsTicketOwner() throws UnauthorizedException {
-        var requestInfo = mockedRequestInfo();
-        var ticket = TicketEntry.requestNewTicket(publicationWithOwner(requestInfo.getUserName()), DoiRequest.class);
-        var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
+  @Test
+  void shouldReturnTrueWhenUserIsTicketOwner() throws UnauthorizedException {
+    var requestInfo = mockedRequestInfo();
+    var ticket =
+        TicketEntry.requestNewTicket(
+            publicationWithOwner(requestInfo.getUserName()), DoiRequest.class);
+    var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
 
-        Assertions.assertTrue(requestUtils.isTicketOwner(ticket));
-    }
+    Assertions.assertTrue(requestUtils.isTicketOwner(ticket));
+  }
 
-    @Test
-    void shouldConvertRequestUtilToUserInstance() throws UnauthorizedException {
-        var requestInfo = mockedRequestInfo();
+  @Test
+  void shouldConvertRequestUtilToUserInstance() throws UnauthorizedException {
+    var requestInfo = mockedRequestInfo();
 
-        var expectedUserInstance = new UserInstance(requestInfo.getUserName(),
-                                                    requestInfo.getCurrentCustomer(),
-                                                    requestInfo.getTopLevelOrgCristinId().orElseThrow(),
-                                                    requestInfo.getPersonAffiliation(), requestInfo.getPersonCristinId(),
-                                                    requestInfo.getAccessRights(),
-                                                    UserClientType.INTERNAL,
-                                                    null);
-        var createdUserInstance = RequestUtils.fromRequestInfo(requestInfo).toUserInstance();
-        Assertions.assertEquals(createdUserInstance, expectedUserInstance);
-    }
+    var expectedUserInstance =
+        new UserInstance(
+            requestInfo.getUserName(),
+            requestInfo.getCurrentCustomer(),
+            requestInfo.getTopLevelOrgCristinId().orElseThrow(),
+            requestInfo.getPersonAffiliation(),
+            requestInfo.getPersonCristinId(),
+            requestInfo.getAccessRights(),
+            UserClientType.INTERNAL,
+            null);
+    var createdUserInstance = RequestUtils.fromRequestInfo(requestInfo).toUserInstance();
+    Assertions.assertEquals(createdUserInstance, expectedUserInstance);
+  }
 
-    @Test
-    void shouldReturnTrueWhenUserHasOneOfAccessRights() throws UnauthorizedException {
-        var requestInfo = requestInfoWithAccessRight(randomUri(), MANAGE_DOI);
+  @Test
+  void shouldReturnTrueWhenUserHasOneOfAccessRights() throws UnauthorizedException {
+    var requestInfo = requestInfoWithAccessRight(randomUri(), MANAGE_DOI);
 
-        Assertions.assertTrue(RequestUtils.fromRequestInfo(requestInfo)
-                                  .hasOneOfAccessRights(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS));
-    }
+    Assertions.assertTrue(
+        RequestUtils.fromRequestInfo(requestInfo)
+            .hasOneOfAccessRights(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS));
+  }
 
-    @Test
-    void shouldReturnNullWhenPersonAffiliationIsMissing() throws UnauthorizedException {
-        var requestInfo = requestInfoWithAccessRight(randomUri(), MANAGE_DOI);
+  @Test
+  void shouldReturnNullWhenPersonAffiliationIsMissing() throws UnauthorizedException {
+    var requestInfo = requestInfoWithAccessRight(randomUri(), MANAGE_DOI);
 
-        Assertions.assertNull(RequestUtils.fromRequestInfo(requestInfo).personAffiliation());
-    }
+    Assertions.assertNull(RequestUtils.fromRequestInfo(requestInfo).personAffiliation());
+  }
 
-    @Test
-    void shouldReturnPersonAffiliationWhenPersonAffiliationIsPresent() throws UnauthorizedException {
-        var requestInfo = mockedRequestInfo();
+  @Test
+  void shouldReturnPersonAffiliationWhenPersonAffiliationIsPresent() throws UnauthorizedException {
+    var requestInfo = mockedRequestInfo();
 
-        assertNotNull(RequestUtils.fromRequestInfo(requestInfo).personAffiliation());
-    }
+    assertNotNull(RequestUtils.fromRequestInfo(requestInfo).personAffiliation());
+  }
 
-    private static Publication publicationWithOwner(String owner) {
-        return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES).copy()
-                   .withStatus(PUBLISHED)
-                   .withResourceOwner(new ResourceOwner(new Username(owner), randomUri())).build();
-    }
+  private static Publication publicationWithOwner(String owner) {
+    return fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES)
+        .copy()
+        .withStatus(PUBLISHED)
+        .withResourceOwner(new ResourceOwner(new Username(owner), randomUri()))
+        .build();
+  }
 
-    private RequestInfo requestInfoWithAccessRight(URI customer, AccessRight accessRight) throws UnauthorizedException {
-        var requestInfo = mock(RequestInfo.class);
-        when(requestInfo.getAccessRights()).thenReturn(List.of(MANAGE_RESOURCES_STANDARD, accessRight));
-        when(requestInfo.getCurrentCustomer()).thenReturn(customer);
-        when(requestInfo.getTopLevelOrgCristinId()).thenReturn(Optional.of(customer));
-        return requestInfo;
-    }
+  private RequestInfo requestInfoWithAccessRight(URI customer, AccessRight accessRight)
+      throws UnauthorizedException {
+    var requestInfo = mock(RequestInfo.class);
+    when(requestInfo.getAccessRights()).thenReturn(List.of(MANAGE_RESOURCES_STANDARD, accessRight));
+    when(requestInfo.getCurrentCustomer()).thenReturn(customer);
+    when(requestInfo.getTopLevelOrgCristinId()).thenReturn(Optional.of(customer));
+    return requestInfo;
+  }
 
-    private static RequestInfo mockedRequestInfo() throws UnauthorizedException {
-        var requestInfo = mock(RequestInfo.class);
-        when(requestInfo.getCurrentCustomer()).thenReturn(randomUri());
-        when(requestInfo.getUserName()).thenReturn(randomString());
-        when(requestInfo.getPathParameters()).thenReturn(Map.of(PUBLICATION_IDENTIFIER, randomSortableIdentifier(),
-                                                                TICKET_IDENTIFIER, randomSortableIdentifier()));
-        when(requestInfo.getAccessRights()).thenReturn(List.of());
-        when(requestInfo.getPersonCristinId()).thenReturn(randomUri());
-        when(requestInfo.getTopLevelOrgCristinId()).thenReturn(Optional.of(randomUri()));
-        when(requestInfo.getPersonAffiliation()).thenReturn(randomUri());
-        return requestInfo;
-    }
+  private static RequestInfo mockedRequestInfo() throws UnauthorizedException {
+    var requestInfo = mock(RequestInfo.class);
+    when(requestInfo.getCurrentCustomer()).thenReturn(randomUri());
+    when(requestInfo.getUserName()).thenReturn(randomString());
+    when(requestInfo.getPathParameters())
+        .thenReturn(
+            Map.of(
+                PUBLICATION_IDENTIFIER, randomSortableIdentifier(),
+                TICKET_IDENTIFIER, randomSortableIdentifier()));
+    when(requestInfo.getAccessRights()).thenReturn(List.of());
+    when(requestInfo.getPersonCristinId()).thenReturn(randomUri());
+    when(requestInfo.getTopLevelOrgCristinId()).thenReturn(Optional.of(randomUri()));
+    when(requestInfo.getPersonAffiliation()).thenReturn(randomUri());
+    return requestInfo;
+  }
 
-    private static RequestInfo mockedRequestInfoWithoutPathParams() throws UnauthorizedException {
-        var requestInfo = mock(RequestInfo.class);
-        when(requestInfo.getCurrentCustomer()).thenReturn(randomUri());
-        when(requestInfo.getUserName()).thenReturn(randomString());
-        when(requestInfo.getPathParameters()).thenReturn(Map.of());
-        when(requestInfo.getAccessRights()).thenReturn(List.of());
-        when(requestInfo.getPersonCristinId()).thenReturn(randomUri());
-        when(requestInfo.getTopLevelOrgCristinId()).thenReturn(Optional.of(randomUri()));
-        return requestInfo;
-    }
+  private static RequestInfo mockedRequestInfoWithoutPathParams() throws UnauthorizedException {
+    var requestInfo = mock(RequestInfo.class);
+    when(requestInfo.getCurrentCustomer()).thenReturn(randomUri());
+    when(requestInfo.getUserName()).thenReturn(randomString());
+    when(requestInfo.getPathParameters()).thenReturn(Map.of());
+    when(requestInfo.getAccessRights()).thenReturn(List.of());
+    when(requestInfo.getPersonCristinId()).thenReturn(randomUri());
+    when(requestInfo.getTopLevelOrgCristinId()).thenReturn(Optional.of(randomUri()));
+    return requestInfo;
+  }
 
-    private static String randomSortableIdentifier() {
-        return SortableIdentifier.next().toString();
-    }
+  private static String randomSortableIdentifier() {
+    return SortableIdentifier.next().toString();
+  }
 }

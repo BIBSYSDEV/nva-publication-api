@@ -5,16 +5,16 @@ import no.unit.nva.model.instancetypes.book.Textbook;
 
 public final class TextbookMerger extends PublicationInstanceMerger<Textbook> {
 
-    public TextbookMerger(Textbook textbook) {
-        super(textbook);
-    }
+  public TextbookMerger(Textbook textbook) {
+    super(textbook);
+  }
 
-    @Override
-    public Textbook merge(PublicationInstance<?> publicationInstance) {
-        if (publicationInstance instanceof Textbook textbook) {
-            return new Textbook(getPages(this.publicationInstance.getPages(), textbook.getPages()));
-        } else {
-            return this.publicationInstance;
-        }
+  @Override
+  public Textbook merge(PublicationInstance<?> publicationInstance) {
+    if (publicationInstance instanceof Textbook textbook) {
+      return new Textbook(getPages(this.publicationInstance.getPages(), textbook.getPages()));
+    } else {
+      return this.publicationInstance;
     }
+  }
 }

@@ -10,10 +10,9 @@ import no.unit.nva.model.instancetypes.realization.WithSequence;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-    @JsonSubTypes.Type(name = "Competition", value = Competition.class),
-    @JsonSubTypes.Type(name = "MentionInPublication", value = MentionInPublication.class),
-    @JsonSubTypes.Type(name = "Award", value = Award.class),
-    @JsonSubTypes.Type(name = "Exhibition", value = Exhibition.class)
+  @JsonSubTypes.Type(name = "Competition", value = Competition.class),
+  @JsonSubTypes.Type(name = "MentionInPublication", value = MentionInPublication.class),
+  @JsonSubTypes.Type(name = "Award", value = Award.class),
+  @JsonSubTypes.Type(name = "Exhibition", value = Exhibition.class)
 })
-public interface ArchitectureOutput extends WithSequence {
-}
+public interface ArchitectureOutput extends WithSequence {}

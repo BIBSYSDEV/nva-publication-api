@@ -8,6 +8,7 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.associatedartifacts.file.File.APPROVED_FILE_TYPES;
 import static no.unit.nva.model.associatedartifacts.file.File.FINALIZED_FILE_TYPES;
+
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
@@ -27,125 +28,130 @@ import org.slf4j.LoggerFactory;
 
 public class PublicationStrategyBase {
 
-    public static final Logger logger = LoggerFactory.getLogger(PublicationStrategyBase.class);
-    private static final Set<String> IMPORT_IDENTIFIER_SOURCES = Set.of("inspera", "wiseflow");
+  public static final Logger logger = LoggerFactory.getLogger(PublicationStrategyBase.class);
+  private static final Set<String> IMPORT_IDENTIFIER_SOURCES = Set.of("inspera", "wiseflow");
 
-    protected final Resource resource;
-    protected final UserInstance userInstance;
+  protected final Resource resource;
+  protected final UserInstance userInstance;
 
-    protected PublicationStrategyBase(Resource resource, UserInstance userInstance) {
-        this.resource = resource;
-        this.userInstance = userInstance;
+  protected PublicationStrategyBase(Resource resource, UserInstance userInstance) {
+    this.resource = resource;
+    this.userInstance = userInstance;
+  }
+
+  protected boolean hasAccessRight(AccessRight accessRight) {
+    return nonNull(userInstance) && userInstance.getAccessRights().contains(accessRight);
+  }
+
+  protected boolean isProtectedDegreeInstanceType() {
+    return Optional.ofNullable(resource.getEntityDescription())
+        .map(EntityDescription::getReference)
+        .map(Reference::getPublicationInstance)
+        .map(PublicationStrategyBase::publicationInstanceIsDegree)
+        .orElse(false);
+  }
+
+  protected boolean userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() {
+    return userIsFromSameInstitutionAsPublicationOwner() || userBelongsToCuratingInstitution();
+  }
+
+  protected boolean userRelatesToPublication() {
+    return userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()
+        || userBelongsToPublicationChannelOwner();
+  }
+
+  protected boolean userBelongsToPublicationChannelOwner() {
+    if (Optional.ofNullable(userInstance).map(UserInstance::getTopLevelOrgCristinId).isEmpty()) {
+      return false;
     }
 
-    protected boolean hasAccessRight(AccessRight accessRight) {
-        return nonNull(userInstance) && userInstance.getAccessRights().contains(accessRight);
+    var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannelWithinScope();
+
+    if (claimedPublicationChannel.isEmpty()) {
+      return false;
     }
 
-    protected boolean isProtectedDegreeInstanceType() {
-        return Optional.ofNullable(resource.getEntityDescription())
-                   .map(EntityDescription::getReference)
-                   .map(Reference::getPublicationInstance)
-                   .map(PublicationStrategyBase::publicationInstanceIsDegree)
-                   .orElse(false);
+    var channelOwner = claimedPublicationChannel.get().getOrganizationId();
+    return userInstance.getTopLevelOrgCristinId().equals(channelOwner);
+  }
+
+  private boolean userBelongsToCuratingInstitution() {
+    if (isNull(userInstance)) {
+      return false;
     }
 
-    protected boolean userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution() {
-        return userIsFromSameInstitutionAsPublicationOwner() || userBelongsToCuratingInstitution();
+    var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
+
+    logger.info(
+        "found topLevels {} for user {} of {}.",
+        resource.getCuratingInstitutions(),
+        userInstance.getUser(),
+        userTopLevelOrg);
+    return resource.getCuratingInstitutions().stream()
+        .anyMatch(org -> org.id().equals(userTopLevelOrg));
+  }
+
+  protected boolean userIsFromSameInstitutionAsPublicationOwner() {
+    if (isNull(userInstance)
+        || isNull(userInstance.getTopLevelOrgCristinId())
+        || isNull(resource.getResourceOwner())) {
+      return false;
     }
 
-    protected boolean userRelatesToPublication() {
-        return userRelatesToPublicationThroughPublicationOwnerOrCuratingInstitution()
-               || userBelongsToPublicationChannelOwner();
-    }
+    return userInstance
+        .getTopLevelOrgCristinId()
+        .equals(resource.getResourceOwner().getOwnerAffiliation());
+  }
 
-    protected boolean userBelongsToPublicationChannelOwner() {
-        if (Optional.ofNullable(userInstance).map(UserInstance::getTopLevelOrgCristinId).isEmpty()) {
-            return false;
-        }
+  protected boolean isVerifiedContributor(Contributor contributor) {
+    return Optional.ofNullable(contributor.getIdentity()).map(Identity::getId).isPresent();
+  }
 
-        var claimedPublicationChannel = resource.getPrioritizedClaimedPublicationChannelWithinScope();
+  protected boolean hasApprovedFiles() {
+    return resource.getAssociatedArtifacts().stream()
+        .anyMatch(artifact -> APPROVED_FILE_TYPES.contains(artifact.getClass()));
+  }
 
-        if (claimedPublicationChannel.isEmpty()) {
-            return false;
-        }
+  protected boolean hasFinalizedFiles() {
+    return resource.getAssociatedArtifacts().stream()
+        .anyMatch(artifact -> FINALIZED_FILE_TYPES.contains(artifact.getClass()));
+  }
 
-        var channelOwner = claimedPublicationChannel.get().getOrganizationId();
-        return userInstance.getTopLevelOrgCristinId().equals(channelOwner);
-    }
+  protected boolean isImportedStudentThesis() {
+    return resource.getAdditionalIdentifiers().stream()
+        .filter(AdditionalIdentifier.class::isInstance)
+        .anyMatch(
+            identifier ->
+                IMPORT_IDENTIFIER_SOURCES.contains(
+                    identifier.sourceName().toLowerCase(Locale.ROOT)));
+  }
 
-    private boolean userBelongsToCuratingInstitution() {
-        if (isNull(userInstance)) {
-            return false;
-        }
+  protected boolean isOwner() {
+    var owner = UserInstance.fromPublication(resource.toPublication()).getUsername();
+    return Optional.ofNullable(userInstance)
+        .map(userInstance -> owner.equals(userInstance.getUsername()))
+        .orElse(false);
+  }
 
-        var userTopLevelOrg = userInstance.getTopLevelOrgCristinId();
+  protected boolean isUsersDraft() {
+    return isDraft() && isOwner();
+  }
 
-        logger.info("found topLevels {} for user {} of {}.",
-                    resource.getCuratingInstitutions(),
-                    userInstance.getUser(),
-                    userTopLevelOrg);
-        return resource.getCuratingInstitutions().stream().anyMatch(org -> org.id().equals(userTopLevelOrg));
-    }
+  protected boolean isDraft() {
+    return resource.getStatus().equals(DRAFT);
+  }
 
-    protected boolean userIsFromSameInstitutionAsPublicationOwner() {
-        if (isNull(userInstance) || isNull(userInstance.getTopLevelOrgCristinId()) || isNull(
-            resource.getResourceOwner())) {
-            return false;
-        }
+  protected boolean isUnpublished() {
+    return resource.getStatus().equals(UNPUBLISHED);
+  }
 
-        return userInstance.getTopLevelOrgCristinId().equals(resource.getResourceOwner().getOwnerAffiliation());
-    }
+  protected boolean isPublished() {
+    return resource.getStatus().equals(PUBLISHED);
+  }
 
-    protected boolean isVerifiedContributor(Contributor contributor) {
-        return Optional.ofNullable(contributor.getIdentity()).map(Identity::getId).isPresent();
-    }
-
-    protected boolean hasApprovedFiles() {
-        return resource.getAssociatedArtifacts()
-                   .stream()
-                   .anyMatch(artifact -> APPROVED_FILE_TYPES.contains(artifact.getClass()));
-    }
-
-    protected boolean hasFinalizedFiles() {
-        return resource.getAssociatedArtifacts()
-                   .stream()
-                   .anyMatch(artifact -> FINALIZED_FILE_TYPES.contains(artifact.getClass()));
-    }
-
-    protected boolean isImportedStudentThesis() {
-        return resource.getAdditionalIdentifiers().stream()
-                   .filter(AdditionalIdentifier.class::isInstance)
-                   .anyMatch(
-                       identifier -> IMPORT_IDENTIFIER_SOURCES.contains(
-                           identifier.sourceName().toLowerCase(Locale.ROOT)));
-    }
-
-    protected boolean isOwner() {
-        var owner = UserInstance.fromPublication(resource.toPublication()).getUsername();
-        return Optional.ofNullable(userInstance)
-                   .map(userInstance -> owner.equals(userInstance.getUsername()))
-                   .orElse(false);
-    }
-
-    protected boolean isUsersDraft() {
-        return isDraft() && isOwner();
-    }
-
-    protected boolean isDraft() {
-        return resource.getStatus().equals(DRAFT);
-    }
-
-    protected boolean isUnpublished() {
-        return resource.getStatus().equals(UNPUBLISHED);
-    }
-
-    protected boolean isPublished() {
-        return resource.getStatus().equals(PUBLISHED);
-    }
-
-    private static Boolean publicationInstanceIsDegree(PublicationInstance<? extends Pages> publicationInstance) {
-        return Arrays.stream(PROTECTED_DEGREE_INSTANCE_TYPES)
-                   .anyMatch(instanceTypeClass -> instanceTypeClass.equals(publicationInstance.getClass()));
-    }
+  private static Boolean publicationInstanceIsDegree(
+      PublicationInstance<? extends Pages> publicationInstance) {
+    return Arrays.stream(PROTECTED_DEGREE_INSTANCE_TYPES)
+        .anyMatch(instanceTypeClass -> instanceTypeClass.equals(publicationInstance.getClass()));
+  }
 }

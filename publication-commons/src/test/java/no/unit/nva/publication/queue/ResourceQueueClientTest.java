@@ -6,8 +6,8 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 public class ResourceQueueClientTest {
 
-    @Test
-    void shouldSendMessage() {
-        new FakeSqsClient().sendMessage(SendMessageRequest.builder().build());
-    }
+  @Test
+  void shouldSendMessage() {
+    new FakeSqsClient().sendMessage(SendMessageRequest.builder().build());
+  }
 }

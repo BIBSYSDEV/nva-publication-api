@@ -2,15 +2,15 @@ package no.unit.nva.model.instancetypes.journal;
 
 public interface JournalContent {
 
-    void setVolume(String volume);
+  void setVolume(String volume);
 
-    String getVolume();
+  String getVolume();
 
-    void setIssue(String issue);
+  void setIssue(String issue);
 
-    String getIssue();
+  String getIssue();
 
-    void setArticleNumber(String articleNumber);
+  void setArticleNumber(String articleNumber);
 
-    String getArticleNumber();
+  String getArticleNumber();
 }

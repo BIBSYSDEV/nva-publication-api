@@ -12,42 +12,42 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeName(OverriddenRightsRetentionStrategy.TYPE_NAME)
 public final class OverriddenRightsRetentionStrategy extends AbstractRightsRetentionStrategy {
 
-    private static final String FIELD_NAME_OVERRIDDEN_BY = "overriddenBy";
-    public static final String TYPE_NAME = "OverriddenRightsRetentionStrategy";
+  private static final String FIELD_NAME_OVERRIDDEN_BY = "overriddenBy";
+  public static final String TYPE_NAME = "OverriddenRightsRetentionStrategy";
 
-    private String overriddenBy;
+  private String overriddenBy;
 
-    @JsonCreator
-    private OverriddenRightsRetentionStrategy(
-        @JsonProperty(FIELD_NAME_CONFIGURED_TYPE) RightsRetentionStrategyConfiguration configuredType,
-        @JsonProperty(FIELD_NAME_OVERRIDDEN_BY) String overriddenBy
-    ) {
-        super(configuredType);
-        this.overriddenBy = overriddenBy;
-    }
+  @JsonCreator
+  private OverriddenRightsRetentionStrategy(
+      @JsonProperty(FIELD_NAME_CONFIGURED_TYPE) RightsRetentionStrategyConfiguration configuredType,
+      @JsonProperty(FIELD_NAME_OVERRIDDEN_BY) String overriddenBy) {
+    super(configuredType);
+    this.overriddenBy = overriddenBy;
+  }
 
-    public static OverriddenRightsRetentionStrategy create(RightsRetentionStrategyConfiguration configuredType,
-                                                           String overriddenBy) {
-        return new OverriddenRightsRetentionStrategy(configuredType, overriddenBy);
-    }
+  public static OverriddenRightsRetentionStrategy create(
+      RightsRetentionStrategyConfiguration configuredType, String overriddenBy) {
+    return new OverriddenRightsRetentionStrategy(configuredType, overriddenBy);
+  }
 
-    public String getOverriddenBy() {
-        return overriddenBy;
-    }
+  public String getOverriddenBy() {
+    return overriddenBy;
+  }
 
-    public void setOverriddenBy(String overriddenBy) {
-        this.overriddenBy = overriddenBy;
-    }
+  public void setOverriddenBy(String overriddenBy) {
+    this.overriddenBy = overriddenBy;
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(OverriddenRightsRetentionStrategy.class.getName(), overriddenBy, super.hashCode());
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        OverriddenRightsRetentionStrategy.class.getName(), overriddenBy, super.hashCode());
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof OverriddenRightsRetentionStrategy && super.equals(o);
-    }
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    return o instanceof OverriddenRightsRetentionStrategy && super.equals(o);
+  }
 }

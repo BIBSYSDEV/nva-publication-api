@@ -6,8 +6,8 @@ import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
 
 public class FakeS3ClientThrowingExceptionWhenCopying extends FakeS3Client {
 
-    @Override
-    public CopyObjectResponse copyObject(CopyObjectRequest copyObjectRequest) {
-        throw new RuntimeException("I threw an exception");
-    }
+  @Override
+  public CopyObjectResponse copyObject(CopyObjectRequest copyObjectRequest) {
+    throw new RuntimeException("I threw an exception");
+  }
 }

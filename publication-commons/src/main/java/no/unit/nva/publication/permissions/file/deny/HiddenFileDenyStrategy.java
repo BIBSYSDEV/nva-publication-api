@@ -10,26 +10,26 @@ import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
 public final class HiddenFileDenyStrategy extends FileStrategyBase implements FileDenyStrategy {
 
-    public HiddenFileDenyStrategy(FileEntry file, UserInstance userInstance, Resource resource) {
-        super(file, userInstance, resource);
+  public HiddenFileDenyStrategy(FileEntry file, UserInstance userInstance, Resource resource) {
+    super(file, userInstance, resource);
+  }
+
+  @Override
+  public boolean deniesAction(FileOperation permission) {
+    if (!fileIsHidden()) {
+      return false;
     }
 
-    @Override
-    public boolean deniesAction(FileOperation permission) {
-        if (!fileIsHidden()) {
-            return false;
-        }
-
-        if (resourceIsDegree()) {
-            return fileHasEmbargo()
-                       ? !currentUserIsDegreeEmbargoFileCuratorForGivenFile()
-                       : !currentUserIsDegreeFileCuratorForGivenFile();
-        }
-
-        return !currentUserIsFileCuratorForGivenFile();
+    if (resourceIsDegree()) {
+      return fileHasEmbargo()
+          ? !currentUserIsDegreeEmbargoFileCuratorForGivenFile()
+          : !currentUserIsDegreeFileCuratorForGivenFile();
     }
 
-    private boolean fileIsHidden() {
-        return file.getFile() instanceof HiddenFile;
-    }
+    return !currentUserIsFileCuratorForGivenFile();
+  }
+
+  private boolean fileIsHidden() {
+    return file.getFile() instanceof HiddenFile;
+  }
 }

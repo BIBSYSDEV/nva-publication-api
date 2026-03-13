@@ -10,6 +10,7 @@ import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
 import static nva.commons.core.StringUtils.isEmpty;
 import static nva.commons.core.attempt.Try.attempt;
+
 import jakarta.xml.bind.JAXBElement;
 import java.net.URI;
 import java.time.Instant;
@@ -63,302 +64,324 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ScopusConverter {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ScopusConverter.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ScopusConverter.class);
 
-    private static final String MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE =
-        "None of contributors belongs to NVA customer, all contributors affiliations: ";
-    private final DocTp docTp;
-    private final IdentityServiceClient identityServiceClient;
-    private final PublicationChannelConnection publicationChannelConnection;
-    private final ContributorExtractor contributorExtractor;
-    private final ScopusFileConverter scopusFileConverter;
+  private static final String MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE =
+      "None of contributors belongs to NVA customer, all contributors affiliations: ";
+  private final DocTp docTp;
+  private final IdentityServiceClient identityServiceClient;
+  private final PublicationChannelConnection publicationChannelConnection;
+  private final ContributorExtractor contributorExtractor;
+  private final ScopusFileConverter scopusFileConverter;
 
-    public ScopusConverter(DocTp docTp,
-                           PublicationChannelConnection publicationChannelConnection,
-                           IdentityServiceClient identityServiceClient,
-                           ScopusFileConverter scopusFileConverter, ContributorExtractor contributorExtractor1) {
-        this.contributorExtractor = contributorExtractor1;
-        this.docTp = docTp;
-        this.publicationChannelConnection = publicationChannelConnection;
-        this.identityServiceClient = identityServiceClient;
-        this.scopusFileConverter = scopusFileConverter;
+  public ScopusConverter(
+      DocTp docTp,
+      PublicationChannelConnection publicationChannelConnection,
+      IdentityServiceClient identityServiceClient,
+      ScopusFileConverter scopusFileConverter,
+      ContributorExtractor contributorExtractor1) {
+    this.contributorExtractor = contributorExtractor1;
+    this.docTp = docTp;
+    this.publicationChannelConnection = publicationChannelConnection;
+    this.identityServiceClient = identityServiceClient;
+    this.scopusFileConverter = scopusFileConverter;
+  }
+
+  public static String extractContentString(Object content) {
+    return switch (content) {
+      case String string -> string.trim();
+      case JAXBElement<?> jaxbElement -> extractContentString(jaxbElement.getValue());
+      case SupTp supTp -> extractContentString(supTp.getContent());
+      case InfTp infTp -> extractContentString(infTp.getContent());
+      default -> convertFromArray((ArrayList<?>) content);
+    };
+  }
+
+  public static String extractContentAndPreserveXmlSupAndInfTags(Object content) {
+    return switch (content) {
+      case String string -> string.trim();
+      case JAXBElement<?> jaxbElement ->
+          extractContentAndPreserveXmlSupAndInfTags(jaxbElement.getValue());
+      case SupTp supTp ->
+          SUP_START + extractContentAndPreserveXmlSupAndInfTags(supTp.getContent()) + SUP_END;
+      case InfTp infTp ->
+          INF_START + extractContentAndPreserveXmlSupAndInfTags(infTp.getContent()) + INF_END;
+      default ->
+          ((ArrayList<?>) content)
+              .stream()
+                  .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
+                  .collect(Collectors.joining());
+    };
+  }
+
+  public ImportCandidate generateImportCandidate() {
+    LOGGER.info("Building import candidate");
+    var contributorsWithCustomers = getContributors();
+    var entityDescription = generateEntityDescription(contributorsWithCustomers.contributors());
+    var associatedArtifacts = scopusFileConverter.fetchAssociatedArtifacts(docTp);
+    var importedAt = Instant.now();
+    return new ImportCandidate.Builder()
+        .withAdditionalIdentifiers(generateAdditionalIdentifiers())
+        .withEntityDescription(entityDescription)
+        .withCreatedDate(importedAt)
+        .withModifiedDate(importedAt)
+        .withImportStatus(ImportStatusFactory.createNotImported())
+        .withAssociatedArtifacts(associatedArtifacts)
+        .withAssociatedCustomers(contributorsWithCustomers.associatedCustomerUris())
+        .build();
+  }
+
+  private static String convertFromArray(ArrayList<?> content) {
+    return content.stream()
+        .map(ScopusConverter::extractContentString)
+        .collect(Collectors.joining());
+  }
+
+  private Optional<AuthorKeywordsTp> extractAuthorKeyWords() {
+    return Optional.ofNullable(extractHead())
+        .map(HeadTp::getCitationInfo)
+        .map(CitationInfoTp::getAuthorKeywords);
+  }
+
+  private HeadTp extractHead() {
+    return docTp.getItem().getItem().getBibrecord().getHead();
+  }
+
+  private ImportEntityDescription generateEntityDescription(List<ImportContributor> contributors) {
+    LOGGER.info("Generating entity description");
+    return new ImportEntityDescription(
+        extractMainTitle(),
+        new LanguageExtractor(extractCitationLanguages()).extractLanguage(),
+        extractPublicationDate(),
+        contributors,
+        extractMainAbstract(),
+        null,
+        generateTags(),
+        null,
+        generateReference());
+  }
+
+  private ContributorsWithCustomers getContributors() {
+    LOGGER.info("Extracting contributors");
+    var contributorsOrganizationsWrapper = contributorExtractor.generateContributors(docTp);
+    var cristinTopLevelOrgs = contributorsOrganizationsWrapper.topLevelOrgs();
+    var customerList = attempt(identityServiceClient::getAllCustomers).orElseThrow();
+
+    var associatedCustomers = getAssociatedCustomers(customerList, cristinTopLevelOrgs);
+    if (associatedCustomers.isEmpty()) {
+      throw new MissingNvaContributorException(
+          MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE + cristinTopLevelOrgs);
     }
+    var customerUris = associatedCustomers.stream().map(CustomerDto::id).toList();
+    return new ContributorsWithCustomers(
+        contributorsOrganizationsWrapper.contributors(), customerUris);
+  }
 
-    public static String extractContentString(Object content) {
-        return switch (content) {
-            case String string -> string.trim();
-            case JAXBElement<?> jaxbElement -> extractContentString(jaxbElement.getValue());
-            case SupTp supTp -> extractContentString(supTp.getContent());
-            case InfTp infTp -> extractContentString(infTp.getContent());
-            default -> convertFromArray((ArrayList<?>) content);
-        };
-    }
+  private static Collection<CustomerDto> getAssociatedCustomers(
+      CustomerList customerList, Collection<URI> cristinTopLevelOrgs) {
+    return customerList.customers().stream()
+        .filter(customer -> cristinTopLevelOrgs.contains(customer.cristinId()))
+        .toList();
+  }
 
-    public static String extractContentAndPreserveXmlSupAndInfTags(Object content) {
-        return switch (content) {
-            case String string -> string.trim();
-            case JAXBElement<?> jaxbElement -> extractContentAndPreserveXmlSupAndInfTags(jaxbElement.getValue());
-            case SupTp supTp -> SUP_START + extractContentAndPreserveXmlSupAndInfTags(supTp.getContent()) + SUP_END;
-            case InfTp infTp -> INF_START + extractContentAndPreserveXmlSupAndInfTags(infTp.getContent()) + INF_END;
-            default -> ((ArrayList<?>) content).stream()
-                           .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
-                           .collect(Collectors.joining());
-        };
-    }
+  private record ContributorsWithCustomers(
+      List<ImportContributor> contributors, Collection<URI> associatedCustomerUris) {}
 
-    public ImportCandidate generateImportCandidate() {
-        LOGGER.info("Building import candidate");
-        var contributorsWithCustomers = getContributors();
-        var entityDescription = generateEntityDescription(contributorsWithCustomers.contributors());
-        var associatedArtifacts = scopusFileConverter.fetchAssociatedArtifacts(docTp);
-        var importedAt = Instant.now();
-        return new ImportCandidate.Builder()
-                   .withAdditionalIdentifiers(generateAdditionalIdentifiers())
-                   .withEntityDescription(entityDescription)
-                   .withCreatedDate(importedAt)
-                   .withModifiedDate(importedAt)
-                   .withImportStatus(ImportStatusFactory.createNotImported())
-                   .withAssociatedArtifacts(associatedArtifacts)
-                   .withAssociatedCustomers(contributorsWithCustomers.associatedCustomerUris())
-                   .build();
-    }
+  private List<CitationLanguageTp> extractCitationLanguages() {
+    return docTp
+        .getItem()
+        .getItem()
+        .getBibrecord()
+        .getHead()
+        .getCitationInfo()
+        .getCitationLanguage();
+  }
 
-    private static String convertFromArray(ArrayList<?> content) {
-        return content.stream()
-                   .map(ScopusConverter::extractContentString)
-                   .collect(Collectors.joining());
-    }
+  private PublicationDate extractPublicationDate() {
+    return getPublicationDateFromOaAccessEffectiveDate()
+        .orElseGet(this::getPublicationDateFromDateSort);
+  }
 
-    private Optional<AuthorKeywordsTp> extractAuthorKeyWords() {
-        return Optional.ofNullable(extractHead()).map(HeadTp::getCitationInfo).map(CitationInfoTp::getAuthorKeywords);
-    }
+  private PublicationDate getPublicationDateFromDateSort() {
+    var dateSort = getDateSortTp();
+    return new PublicationDate.Builder()
+        .withDay(dateSort.getDay())
+        .withMonth(dateSort.getMonth())
+        .withYear(dateSort.getYear())
+        .build();
+  }
 
-    private HeadTp extractHead() {
-        return docTp.getItem().getItem().getBibrecord().getHead();
-    }
+  private Optional<PublicationDate> getPublicationDateFromOaAccessEffectiveDate() {
+    return Optional.of(docTp.getMeta())
+        .map(MetaTp::getOpenAccess)
+        .map(OpenAccessType::getOaAccessEffectiveDate)
+        .map(this::toPublicationDate);
+  }
 
-    private ImportEntityDescription generateEntityDescription(List<ImportContributor> contributors) {
-        LOGGER.info("Generating entity description");
-        return new ImportEntityDescription(extractMainTitle(),
-                                    new LanguageExtractor(extractCitationLanguages()).extractLanguage(),
-                                    extractPublicationDate(),
-                                    contributors,
-                                    extractMainAbstract(),
-                                    null,
-                                    generateTags(),
-                                    null,
-                                    generateReference());
-    }
+  private PublicationDate toPublicationDate(String value) {
+    var localDate = attempt(() -> LocalDate.parse(value)).toOptional();
+    return localDate.map(ScopusConverter::toPublicationDate).orElse(null);
+  }
 
-    private ContributorsWithCustomers getContributors() {
-        LOGGER.info("Extracting contributors");
-        var contributorsOrganizationsWrapper = contributorExtractor.generateContributors(docTp);
-        var cristinTopLevelOrgs = contributorsOrganizationsWrapper.topLevelOrgs();
-        var customerList = attempt(identityServiceClient::getAllCustomers).orElseThrow();
+  private static PublicationDate toPublicationDate(LocalDate date) {
+    return new PublicationDate.Builder()
+        .withYear(String.valueOf(date.getYear()))
+        .withMonth(String.valueOf(date.getMonthValue()))
+        .withDay(String.valueOf(date.getDayOfMonth()))
+        .build();
+  }
 
-        var associatedCustomers = getAssociatedCustomers(customerList, cristinTopLevelOrgs);
-        if (associatedCustomers.isEmpty()) {
-            throw new MissingNvaContributorException(MISSING_CONTRIBUTORS_OF_NVA_CUSTOMERS_MESSAGE + cristinTopLevelOrgs);
-        }
-        var customerUris = associatedCustomers.stream().map(CustomerDto::id).toList();
-        return new ContributorsWithCustomers(contributorsOrganizationsWrapper.contributors(), customerUris);
-    }
+  /*
+  According to the "SciVerse SCOPUS CUSTOM DATA DOCUMENTATION" dateSort contains the publication date if it exists,
+   if not there are several rules to determine what's the second-best date is. See "SciVerse SCOPUS CUSTOM DATA
+   DOCUMENTATION" for details.
+   */
+  private DateSortTp getDateSortTp() {
+    return docTp.getItem().getItem().getProcessInfo().getDateSort();
+  }
 
-    private static Collection<CustomerDto> getAssociatedCustomers(CustomerList customerList,
-                                                         Collection<URI> cristinTopLevelOrgs) {
-        return customerList.customers().stream()
-                   .filter(customer -> cristinTopLevelOrgs.contains(customer.cristinId()))
-                   .toList();
-    }
+  private String extractMainAbstract() {
+    return getMainAbstract()
+        .flatMap(this::extractAbstractStringOrReturnNull)
+        .map(this::trim)
+        .orElse(null);
+  }
 
-    private record ContributorsWithCustomers(List<ImportContributor> contributors, Collection<URI> associatedCustomerUris) {
-    }
+  private String trim(String string) {
+    return Optional.ofNullable(string)
+        .map(s -> s.replace("\\n\\r", StringUtils.SPACE))
+        .map(s -> s.replace(StringUtils.DOUBLE_WHITESPACE, StringUtils.EMPTY_STRING))
+        .orElse(null);
+  }
 
-    private List<CitationLanguageTp> extractCitationLanguages() {
-        return docTp.getItem().getItem().getBibrecord().getHead().getCitationInfo().getCitationLanguage();
-    }
+  private Optional<String> returnNullInsteadOfEmptyString(String input) {
+    return isEmpty(input.trim()) ? Optional.empty() : Optional.of(input);
+  }
 
-    private PublicationDate extractPublicationDate() {
-        return getPublicationDateFromOaAccessEffectiveDate()
-                   .orElseGet(this::getPublicationDateFromDateSort);
-    }
+  private Optional<String> extractAbstractStringOrReturnNull(AbstractTp abstractTp) {
+    return returnNullInsteadOfEmptyString(extractAbstractString(abstractTp));
+  }
 
-    private PublicationDate getPublicationDateFromDateSort() {
-        var dateSort = getDateSortTp();
-        return new PublicationDate.Builder()
-                   .withDay(dateSort.getDay())
-                   .withMonth(dateSort.getMonth())
-                   .withYear(dateSort.getYear())
-                   .build();
-    }
+  private String extractAbstractString(AbstractTp abstractTp) {
+    return abstractTp.getPara().stream()
+        .map(para -> extractContentAndPreserveXmlSupAndInfTags(para.getContent()))
+        .collect(Collectors.joining());
+  }
 
-    private Optional<PublicationDate> getPublicationDateFromOaAccessEffectiveDate() {
-        return Optional.of(docTp.getMeta())
-                   .map(MetaTp::getOpenAccess)
-                   .map(OpenAccessType::getOaAccessEffectiveDate)
-                   .map(this::toPublicationDate);
-    }
+  private Optional<AbstractTp> getMainAbstract() {
+    return getAbstracts().isEmpty()
+        ? Optional.empty()
+        : getAbstracts().stream().filter(this::isOriginalAbstract).findFirst();
+  }
 
-    private PublicationDate toPublicationDate(String value) {
-        var localDate = attempt(() -> LocalDate.parse(value)).toOptional();
-        return localDate.map(ScopusConverter::toPublicationDate).orElse(null);
-    }
+  private List<AbstractTp> getAbstracts() {
+    return nonNull(extractHead().getAbstracts())
+        ? extractHead().getAbstracts().getAbstract()
+        : emptyList();
+  }
 
-    private static PublicationDate toPublicationDate(LocalDate date) {
-        return new PublicationDate.Builder()
-                   .withYear(String.valueOf(date.getYear()))
-                   .withMonth(String.valueOf(date.getMonthValue()))
-                   .withDay(String.valueOf(date.getDayOfMonth()))
-                   .build();
-    }
+  private boolean isOriginalAbstract(AbstractTp abstractTp) {
+    return YesnoAtt.Y.equals(abstractTp.getOriginal());
+  }
 
-    /*
-    According to the "SciVerse SCOPUS CUSTOM DATA DOCUMENTATION" dateSort contains the publication date if it exists,
-     if not there are several rules to determine what's the second-best date is. See "SciVerse SCOPUS CUSTOM DATA
-     DOCUMENTATION" for details.
-     */
-    private DateSortTp getDateSortTp() {
-        return docTp.getItem().getItem().getProcessInfo().getDateSort();
-    }
+  private List<String> generateTags() {
+    return extractAuthorKeyWords().map(this::extractKeywordsAsStrings).orElse(emptyList());
+  }
 
-    private String extractMainAbstract() {
-        return getMainAbstract().flatMap(this::extractAbstractStringOrReturnNull).map(this::trim).orElse(null);
-    }
+  private List<String> extractKeywordsAsStrings(AuthorKeywordsTp authorKeywordsTp) {
+    return authorKeywordsTp.getAuthorKeyword().stream()
+        .map(this::extractConcatenatedKeywordString)
+        .toList();
+  }
 
-    private String trim(String string) {
-        return Optional.ofNullable(string)
-                   .map(s -> s.replace("\\n\\r", StringUtils.SPACE))
-                   .map(s -> s.replace(StringUtils.DOUBLE_WHITESPACE, StringUtils.EMPTY_STRING))
-                   .orElse(null);
-    }
+  private String extractConcatenatedKeywordString(AuthorKeywordTp keyword) {
+    return keyword.getContent().stream()
+        .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
+        .collect(Collectors.joining());
+  }
 
-    private Optional<String> returnNullInsteadOfEmptyString(String input) {
-        return isEmpty(input.trim()) ? Optional.empty() : Optional.of(input);
-    }
+  private String extractMainTitle() {
+    return getOriginalMainTitleTextTp()
+        .or(this::getCitationTextTpWhenErCitationType)
+        .map(this::extractMainTitleContent)
+        .orElse(null);
+  }
 
-    private Optional<String> extractAbstractStringOrReturnNull(AbstractTp abstractTp) {
-        return returnNullInsteadOfEmptyString(extractAbstractString(abstractTp));
-    }
+  private String extractMainTitleContent(TitletextTp titletextTp) {
+    return extractContentAndPreserveXmlSupAndInfTags(titletextTp.getContent());
+  }
 
-    private String extractAbstractString(AbstractTp abstractTp) {
-        return abstractTp.getPara()
-                   .stream()
-                   .map(para -> extractContentAndPreserveXmlSupAndInfTags(para.getContent()))
-                   .collect(Collectors.joining());
-    }
+  private Reference generateReference() {
+    var reference = new Reference();
+    LOGGER.info("Resolving publication context");
+    reference.setPublicationContext(
+        new PublicationContextCreator(docTp, publicationChannelConnection).getPublicationContext());
+    reference.setPublicationInstance(
+        new PublicationInstanceCreator(docTp, reference.getPublicationContext())
+            .getPublicationInstance());
+    reference.setDoi(extractDOI());
+    return reference;
+  }
 
-    private Optional<AbstractTp> getMainAbstract() {
-        return getAbstracts().isEmpty()
-                   ? Optional.empty()
-                   : getAbstracts().stream().filter(this::isOriginalAbstract).findFirst();
-    }
+  private URI extractDOI() {
+    return nonNull(docTp.getMeta().getDoi())
+        ? UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri()
+        : null;
+  }
 
-    private List<AbstractTp> getAbstracts() {
-        return nonNull(extractHead().getAbstracts()) ? extractHead().getAbstracts().getAbstract() : emptyList();
-    }
+  private Optional<TitletextTp> getOriginalMainTitleTextTp() {
+    return Optional.ofNullable(extractHead())
+        .map(HeadTp::getCitationTitle)
+        .map(CitationTitleTp::getTitletext)
+        .flatMap(text -> text.stream().filter(this::isTitleOriginal).findFirst());
+  }
 
-    private boolean isOriginalAbstract(AbstractTp abstractTp) {
-        return YesnoAtt.Y.equals(abstractTp.getOriginal());
-    }
+  /**
+   * Extracts the title for Errata/Corrigendum (Scopus: ER) type. Because this type is a commentary
+   * on another document, the concept of "original title" becomes ambiguous, so the ER type (mapped
+   * to JournalCorrigendum in NVA) does not have an "original title" type in Scopus, but rather a
+   * "citation title" which we use as the main title.
+   */
+  private Optional<TitletextTp> getCitationTextTpWhenErCitationType() {
+    var citationtypeAtt = getCitationtypeAtt();
+    return citationtypeAtt.isPresent() && ER.equals(citationtypeAtt.get())
+        ? getCitationTitleTextTp()
+        : Optional.empty();
+  }
 
-    private List<String> generateTags() {
-        return extractAuthorKeyWords().map(this::extractKeywordsAsStrings).orElse(emptyList());
-    }
+  private Optional<TitletextTp> getCitationTitleTextTp() {
+    return Optional.ofNullable(extractHead())
+        .map(HeadTp::getCitationTitle)
+        .map(CitationTitleTp::getTitletext)
+        .flatMap(text -> text.stream().filter(this::isTitleNonOriginal).findFirst());
+  }
 
-    private List<String> extractKeywordsAsStrings(AuthorKeywordsTp authorKeywordsTp) {
-        return authorKeywordsTp.getAuthorKeyword()
-                   .stream()
-                   .map(this::extractConcatenatedKeywordString)
-                   .toList();
-    }
+  private Optional<CitationtypeAtt> getCitationtypeAtt() {
+    return docTp
+        .getItem()
+        .getItem()
+        .getBibrecord()
+        .getHead()
+        .getCitationInfo()
+        .getCitationType()
+        .stream()
+        .findFirst()
+        .map(CitationTypeTp::getCode);
+  }
 
-    private String extractConcatenatedKeywordString(AuthorKeywordTp keyword) {
-        return keyword.getContent()
-                   .stream()
-                   .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
-                   .collect(Collectors.joining());
-    }
+  private boolean isTitleOriginal(TitletextTp titletextTp) {
+    return nonNull(titletextTp) && titletextTp.getOriginal().equals(YesnoAtt.Y);
+  }
 
-    private String extractMainTitle() {
-        return getOriginalMainTitleTextTp()
-                   .or(this::getCitationTextTpWhenErCitationType)
-                   .map(this::extractMainTitleContent)
-                   .orElse(null);
-    }
+  private boolean isTitleNonOriginal(TitletextTp titletextTp) {
+    return nonNull(titletextTp) && titletextTp.getOriginal().equals(YesnoAtt.N);
+  }
 
-    private String extractMainTitleContent(TitletextTp titletextTp) {
-        return extractContentAndPreserveXmlSupAndInfTags(titletextTp.getContent());
-    }
+  private Set<AdditionalIdentifierBase> generateAdditionalIdentifiers() {
+    return Set.of(extractScopusIdentifier());
+  }
 
-    private Reference generateReference() {
-        var reference = new Reference();
-        LOGGER.info("Resolving publication context");
-        reference.setPublicationContext(
-            new PublicationContextCreator(docTp, publicationChannelConnection).getPublicationContext());
-        reference.setPublicationInstance(
-            new PublicationInstanceCreator(docTp, reference.getPublicationContext()).getPublicationInstance());
-        reference.setDoi(extractDOI());
-        return reference;
-    }
-
-    private URI extractDOI() {
-        return nonNull(docTp.getMeta().getDoi()) ? UriWrapper.fromUri(DOI_OPEN_URL_FORMAT)
-                                                       .addChild(docTp.getMeta().getDoi())
-                                                       .getUri() : null;
-    }
-
-    private Optional<TitletextTp> getOriginalMainTitleTextTp() {
-        return Optional.ofNullable(extractHead())
-                   .map(HeadTp::getCitationTitle)
-                   .map(CitationTitleTp::getTitletext)
-                   .flatMap(text -> text.stream().filter(this::isTitleOriginal).findFirst());
-    }
-
-    /**
-     * Extracts the title for Errata/Corrigendum (Scopus: ER) type. Because this type is
-     * a commentary on another document, the concept of "original title" becomes ambiguous,
-     * so the ER type (mapped to JournalCorrigendum in NVA) does not have an "original
-     * title" type in Scopus, but rather a "citation title" which we use as the main title.
-     */
-    private Optional<TitletextTp> getCitationTextTpWhenErCitationType() {
-        var citationtypeAtt = getCitationtypeAtt();
-        return citationtypeAtt.isPresent() && ER.equals(citationtypeAtt.get())
-                   ? getCitationTitleTextTp()
-                   : Optional.empty();
-    }
-
-    private Optional<TitletextTp> getCitationTitleTextTp() {
-        return Optional.ofNullable(extractHead())
-            .map(HeadTp::getCitationTitle)
-            .map(CitationTitleTp::getTitletext)
-            .flatMap(text -> text.stream().filter(this::isTitleNonOriginal).findFirst());
-    }
-
-    private Optional<CitationtypeAtt> getCitationtypeAtt() {
-        return docTp.getItem()
-                   .getItem()
-                   .getBibrecord()
-                   .getHead()
-                   .getCitationInfo()
-                   .getCitationType()
-                   .stream()
-                   .findFirst()
-                   .map(CitationTypeTp::getCode);
-    }
-
-    private boolean isTitleOriginal(TitletextTp titletextTp) {
-        return nonNull(titletextTp) && titletextTp.getOriginal().equals(YesnoAtt.Y);
-    }
-
-    private boolean isTitleNonOriginal(TitletextTp titletextTp) {
-        return nonNull(titletextTp) && titletextTp.getOriginal().equals(YesnoAtt.N);
-    }
-
-    private Set<AdditionalIdentifierBase> generateAdditionalIdentifiers() {
-        return Set.of(extractScopusIdentifier());
-    }
-
-    private ScopusIdentifier extractScopusIdentifier() {
-        return ScopusIdentifier.fromValue(docTp.getMeta().getEid());
-    }
+  private ScopusIdentifier extractScopusIdentifier() {
+    return ScopusIdentifier.fromValue(docTp.getMeta().getEid());
+  }
 }

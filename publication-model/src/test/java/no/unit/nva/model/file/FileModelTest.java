@@ -4,20 +4,21 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.RIGHTS_RETENTION_STRATEGY;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
@@ -30,9 +31,9 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
-import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.MissingLicenseException;
@@ -53,333 +54,399 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 public class FileModelTest {
 
-    public static final URI LICENSE_URI = URI.create("http://creativecommons.org/licenses/by/4.0/");
-    public static final String APPLICATION_PDF = "application/pdf";
-    public static final String FIRST_FILE_TXT = "First_file.txt";
-    public static final long SIZE = 200L;
-    public static final ObjectMapper dataModelObjectMapper = JsonUtils.dtoObjectMapper;
+  public static final URI LICENSE_URI = URI.create("http://creativecommons.org/licenses/by/4.0/");
+  public static final String APPLICATION_PDF = "application/pdf";
+  public static final String FIRST_FILE_TXT = "First_file.txt";
+  public static final long SIZE = 200L;
+  public static final ObjectMapper dataModelObjectMapper = JsonUtils.dtoObjectMapper;
 
-    public static File randomPendingOpenFile() {
-        return buildNonAdministrativeAgreement().buildPendingOpenFile();
+  public static File randomPendingOpenFile() {
+    return buildNonAdministrativeAgreement().buildPendingOpenFile();
+  }
+
+  public static Stream<File> notAdministrativeAgreements() {
+    return Stream.of(randomPendingOpenFile(), internalFile());
+  }
+
+  public static File.Builder buildNonAdministrativeAgreement() {
+    return File.builder()
+        .withName(randomString())
+        .withMimeType(randomString())
+        .withSize(randomInteger().longValue())
+        .withEmbargoDate(randomInstant())
+        .withLicense(LICENSE_URI)
+        .withIdentifier(UUID.randomUUID())
+        .withUploadDetails(randomInserted())
+        .withPublisherVersion(randomPublisherVersion());
+  }
+
+  @ParameterizedTest
+  @ArgumentsSource(FileProvider.class)
+  @DisplayName("Should round trip all file types")
+  void shouldRoundTripAllFileTypes(AssociatedArtifact file) throws JsonProcessingException {
+    var json = JsonUtils.dtoObjectMapper.writeValueAsString(file);
+    var deserialized = JsonUtils.dtoObjectMapper.readValue(json, File.class);
+    if (deserialized instanceof UploadedFile) {
+      assertThat(
+          deserialized,
+          doesNotHaveEmptyValuesIgnoringFields(
+              Set.of(".rightsRetentionStrategy", "legalNote", ".publisherVersion", ".license")));
+    } else {
+      assertThat(
+          deserialized,
+          doesNotHaveEmptyValuesIgnoringFields(Set.of(".rightsRetentionStrategy", "legalNote")));
+      assertThat(deserialized, is(equalTo(file)));
     }
+  }
 
-    public static Stream<File> notAdministrativeAgreements() {
-        return Stream.of(randomPendingOpenFile(), internalFile());
-    }
+  @Test
+  void shouldThrowMissingLicenseExceptionWhenFileIsNotAdministrativeAgreementAndLicenseIsMissing() {
+    var file = getOpenFile();
+    assertThrows(MissingLicenseException.class, file::validate);
+  }
 
-    public static File.Builder buildNonAdministrativeAgreement() {
-        return File.builder()
-                   .withName(randomString())
-                   .withMimeType(randomString())
-                   .withSize(randomInteger().longValue())
-                   .withEmbargoDate(randomInstant())
-                   .withLicense(LICENSE_URI)
-                   .withIdentifier(UUID.randomUUID())
-                   .withUploadDetails(randomInserted())
-                   .withPublisherVersion(randomPublisherVersion());
-    }
+  @Test
+  void shouldNotThrowMissingLicenseExceptionWhenFileIsAdministrativeAgreementAndLicenseIsPresent() {
+    var file = getInternalFile(LICENSE_URI);
+    assertDoesNotThrow(file::validate);
+  }
 
-    @ParameterizedTest
-    @ArgumentsSource(FileProvider.class)
-    @DisplayName("Should round trip all file types")
-    void shouldRoundTripAllFileTypes(AssociatedArtifact file) throws JsonProcessingException {
-        var json = JsonUtils.dtoObjectMapper.writeValueAsString(file);
-        var deserialized = JsonUtils.dtoObjectMapper.readValue(json, File.class);
-        if (deserialized instanceof UploadedFile) {
-            assertThat(deserialized,
-                       doesNotHaveEmptyValuesIgnoringFields(Set.of(
-                           ".rightsRetentionStrategy", "legalNote", ".publisherVersion", ".license")));
-        } else {
-            assertThat(deserialized, doesNotHaveEmptyValuesIgnoringFields(Set.of(".rightsRetentionStrategy", "legalNote")));
-            assertThat(deserialized, is(equalTo(file)));
+  @Test
+  void shouldNotThrowCcbyLicenseExceptionWhenNotCustomerRrs() throws JsonProcessingException {
+    var file = JsonUtils.dtoObjectMapper.readValue(generateNewFile(), File.class);
+    assertDoesNotThrow(file::validate);
+  }
+
+  @Test
+  void shouldAssignDefaultStrategyWhenNoneProvided() throws JsonProcessingException {
+    var file = JsonUtils.dtoObjectMapper.readValue(generateNewFile(), File.class);
+    assertThat(file.getRightsRetentionStrategy(), instanceOf(NullRightsRetentionStrategy.class));
+  }
+
+  @Test
+  void shouldSetNewRightsRetentionStrategy() {
+    var file = getOpenFile();
+    var rightsRetentionStrategy =
+        CustomerRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
+    file.setRightsRetentionStrategy(rightsRetentionStrategy);
+    assertThat(file.getRightsRetentionStrategy(), is(equalTo(rightsRetentionStrategy)));
+  }
+
+  @ParameterizedTest(
+      name = "should not throw MissingLicenseException when not administrative agreement")
+  @MethodSource("notAdministrativeAgreements")
+  void shouldNotThrowMissingLicenseExceptionWhenFileIsNotAdministrativeAgreementAndLicenseIsPresent(
+      File file) {
+    assertDoesNotThrow(file::validate);
+  }
+
+  @Test
+  void shouldNotBeVisibleForNonOwnersWhenFileIsAdministrativeAgreement() {
+    var file = randomInternalFile();
+    assertFalse(file.isVisibleForNonOwner());
+  }
+
+  @Test
+  void shouldNotBeVisibleForNonOwnersWhenFileIsEmbargoed() {
+    var embargoedFile = openFileWithActiveEmbargo();
+    assertFalse(embargoedFile.isVisibleForNonOwner());
+  }
+
+  @Test
+  void shouldNotBeVisibleForNonOwnerWhenUnpublished() throws JsonProcessingException {
+    var file = randomPendingOpenFile();
+    var mapped = dataModelObjectMapper.writeValueAsString(file);
+    var unmapped = dataModelObjectMapper.readValue(mapped, File.class);
+
+    assertThat(file.isVisibleForNonOwner(), equalTo(false));
+    assertThat(unmapped.isVisibleForNonOwner(), equalTo(false));
+  }
+
+  @Test
+  void shouldThrowIllegalStateExceptionWhenApprovingPendingFileWithoutLicense() {
+    var fileWithoutLicense =
+        randomPendingOpenFile().copy().withLicense(null).buildPendingOpenFile();
+    var pendingFile = (PendingFile<?, ?>) fileWithoutLicense;
+
+    assertThrows(
+        IllegalStateException.class,
+        pendingFile::approve,
+        "Cannot publish a file without a license: " + fileWithoutLicense.getIdentifier());
+  }
+
+  // TODO: Remove when right reserved license has been migrated. NP-49368
+  @Deprecated
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "https://rightsstatements.org/page/InC/1.0/",
+        "https://rightsstatements.org/page/InC/1.0",
+        "http://rightsstatements.org/vocab/InC/1.0/",
+        "http://rightsstatements.org/vocab/inc/1.0/",
+        "https" + "://rightsstatements.org/vocab/InC/1.0/",
+        "https://rightsstatements.org/data/InC/1.0/"
+      })
+  void shouldMigrateLegacyRightsReservedLicenses(String value) throws JsonProcessingException {
+    var json =
+        """
+        {
+        "type": "OpenFile",
+        "license": "%s"
         }
-    }
+        """
+            .formatted(value);
+    var file = JsonUtils.dtoObjectMapper.readValue(json, File.class);
 
-    @Test
-    void shouldThrowMissingLicenseExceptionWhenFileIsNotAdministrativeAgreementAndLicenseIsMissing() {
-        var file = getOpenFile();
-        assertThrows(MissingLicenseException.class, file::validate);
-    }
+    assertEquals(URI.create("https://nva.sikt.no/license/copyright-act/1.0"), file.getLicense());
+  }
 
-    @Test
-    void shouldNotThrowMissingLicenseExceptionWhenFileIsAdministrativeAgreementAndLicenseIsPresent() {
-        var file = getInternalFile(LICENSE_URI);
-        assertDoesNotThrow(file::validate);
-    }
+  @Test
+  void shouldConsiderFilesEqualWhenOnlyRrsConfiguredTypeDiffers() {
+    var fileId = UUID.randomUUID();
+    var uploadDetails = randomInserted();
+    var fileFromInstitutionA =
+        createPendingFileWithRrs(fileId, RIGHTS_RETENTION_STRATEGY, uploadDetails);
+    var fileFromInstitutionB =
+        createPendingFileWithRrs(fileId, OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, uploadDetails);
 
-    @Test
-    void shouldNotThrowCcbyLicenseExceptionWhenNotCustomerRrs() throws JsonProcessingException {
-        var file = JsonUtils.dtoObjectMapper.readValue(generateNewFile(), File.class);
-        assertDoesNotThrow(file::validate);
-    }
+    assertThat(fileFromInstitutionA, is(not(equalTo(fileFromInstitutionB))));
+    assertTrue(fileFromInstitutionA.equalsExcludingRrsConfiguredType(fileFromInstitutionB));
+  }
 
-    @Test
-    void shouldAssignDefaultStrategyWhenNoneProvided() throws JsonProcessingException {
-        var file = JsonUtils.dtoObjectMapper.readValue(generateNewFile(), File.class);
-        assertThat(file.getRightsRetentionStrategy(), instanceOf(NullRightsRetentionStrategy.class));
-    }
+  @ParameterizedTest
+  @MethodSource("filesWithPublishedDate")
+  void shouldHavePublishedDateSet(File file) {
+    assertThat(file.getPublishedDate().isPresent(), is(true));
+  }
 
-    @Test
-    void shouldSetNewRightsRetentionStrategy() {
-        var file = getOpenFile();
-        var rightsRetentionStrategy = CustomerRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY);
-        file.setRightsRetentionStrategy(rightsRetentionStrategy);
-        assertThat(file.getRightsRetentionStrategy(), is(equalTo(rightsRetentionStrategy)));
-    }
+  @ParameterizedTest
+  @MethodSource("filesWithoutPublishedDate")
+  void shouldNotHavePublishedDateSet(File file) {
+    assertThat(file.getPublishedDate().isPresent(), is(false));
+  }
 
-    @ParameterizedTest(name = "should not throw MissingLicenseException when not administrative agreement")
-    @MethodSource("notAdministrativeAgreements")
-    void shouldNotThrowMissingLicenseExceptionWhenFileIsNotAdministrativeAgreementAndLicenseIsPresent(File file) {
-        assertDoesNotThrow(file::validate);
-    }
+  @ParameterizedTest
+  @MethodSource("filesWithPublishedDate")
+  void shouldPreservePublishedDateWhenCopyingAndRebuilding(File file) {
+    var originalPublishedDate = file.getPublishedDate().orElseThrow();
+    var rebuilt = file.copy().build(file.getClass());
+    assertThat(
+        Objects.requireNonNull(rebuilt.getPublishedDate().orElse(null)),
+        is(equalTo(originalPublishedDate)));
+  }
 
-    @Test
-    void shouldNotBeVisibleForNonOwnersWhenFileIsAdministrativeAgreement() {
-        var file = randomInternalFile();
-        assertFalse(file.isVisibleForNonOwner());
-    }
+  static Stream<File> filesWithPublishedDate() {
+    return Stream.of(
+        buildNonAdministrativeAgreement().buildOpenFile(),
+        buildNonAdministrativeAgreement().buildInternalFile());
+  }
 
-    @Test
-    void shouldNotBeVisibleForNonOwnersWhenFileIsEmbargoed() {
-        var embargoedFile = openFileWithActiveEmbargo();
-        assertFalse(embargoedFile.isVisibleForNonOwner());
-    }
+  static Stream<File> filesWithoutPublishedDate() {
+    return Stream.of(
+        buildNonAdministrativeAgreement().buildPendingOpenFile(),
+        buildNonAdministrativeAgreement().buildPendingInternalFile(),
+        buildNonAdministrativeAgreement().buildHiddenFile(),
+        buildNonAdministrativeAgreement().buildRejectedFile());
+  }
 
-    @Test
-    void shouldNotBeVisibleForNonOwnerWhenUnpublished() throws JsonProcessingException {
-        var file = randomPendingOpenFile();
-        var mapped = dataModelObjectMapper.writeValueAsString(file);
-        var unmapped = dataModelObjectMapper.readValue(mapped, File.class);
+  @Test
+  void shouldSetPublishedDateWhenTransitioningPendingFileToOpenFile() {
+    var pendingFile = buildNonAdministrativeAgreement().buildPendingOpenFile();
+    var before = Instant.now();
+    var openFile = pendingFile.toOpenFile();
+    assertThat(openFile.getPublishedDate().isPresent(), is(true));
+    assertFalse(openFile.getPublishedDate().get().isBefore(before));
+  }
 
-        assertThat(file.isVisibleForNonOwner(), equalTo(false));
-        assertThat(unmapped.isVisibleForNonOwner(), equalTo(false));
-    }
+  @Test
+  void shouldSetPublishedDateWhenTransitioningPendingFileToInternalFile() {
+    var pendingFile = buildNonAdministrativeAgreement().buildPendingInternalFile();
+    var before = Instant.now();
+    var internalFile = pendingFile.toInternalFile();
+    assertThat(internalFile.getPublishedDate().isPresent(), is(true));
+    assertFalse(internalFile.getPublishedDate().get().isBefore(before));
+  }
 
-    @Test
-    void shouldThrowIllegalStateExceptionWhenApprovingPendingFileWithoutLicense() {
-        var fileWithoutLicense = randomPendingOpenFile().copy().withLicense(null).buildPendingOpenFile();
-        var pendingFile = (PendingFile<?, ?>) fileWithoutLicense;
+  @Test
+  void shouldPreservePublishedDateWhenConvertingAlreadyPublishedFileToOpenFile() {
+    var originalPublishedDate = Instant.parse("2026-01-27T14:51:47.353704642Z");
+    var file =
+        buildNonAdministrativeAgreement()
+            .withPublishedDate(originalPublishedDate)
+            .buildInternalFile();
+    var openFile = file.toOpenFile();
+    assertThat(
+        Objects.requireNonNull(openFile.getPublishedDate().orElse(null)),
+        is(equalTo(originalPublishedDate)));
+  }
 
-        assertThrows(IllegalStateException.class, pendingFile::approve,
-                     "Cannot publish a file without a license: " + fileWithoutLicense.getIdentifier());
-    }
+  @Test
+  void shouldPreservePublishedDateWhenConvertingAlreadyPublishedFileToInternalFile() {
+    var originalPublishedDate = Instant.parse("2026-01-27T14:51:47.353704642Z");
+    var file =
+        buildNonAdministrativeAgreement().withPublishedDate(originalPublishedDate).buildOpenFile();
+    var internalFile = file.toInternalFile();
+    assertThat(
+        Objects.requireNonNull(internalFile.getPublishedDate().orElse(null)),
+        is(equalTo(originalPublishedDate)));
+  }
 
-    //TODO: Remove when right reserved license has been migrated. NP-49368
-    @Deprecated
-    @ParameterizedTest
-    @ValueSource(strings = {"https://rightsstatements.org/page/InC/1.0/", "https://rightsstatements.org/page/InC/1.0",
-        "http://rightsstatements.org/vocab/InC/1.0/", "http://rightsstatements.org/vocab/inc/1.0/", "https" +
-                                                                                                    "://rightsstatements.org/vocab/InC/1.0/",
-    "https://rightsstatements.org/data/InC/1.0/"})
-    void shouldMigrateLegacyRightsReservedLicenses(String value) throws JsonProcessingException {
-        var json = """
-            {
-            "type": "OpenFile",
-            "license": "%s"
-            }
-            """.formatted(value);
-        var file = JsonUtils.dtoObjectMapper.readValue(json, File.class);
+  @Test
+  void shouldConsiderOpenFilesEqualWhenOnlyRrsConfiguredTypeDiffers() {
+    var fileId = UUID.randomUUID();
+    var publishedDate = randomInstant();
+    var uploadDetails = randomInserted();
+    var openFileFromInstitutionA =
+        createOpenFileWithRrs(fileId, RIGHTS_RETENTION_STRATEGY, publishedDate, uploadDetails);
+    var openFileFromInstitutionB =
+        createOpenFileWithRrs(
+            fileId, OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, publishedDate, uploadDetails);
 
-        assertEquals(URI.create("https://nva.sikt.no/license/copyright-act/1.0"), file.getLicense());
-    }
+    assertThat(openFileFromInstitutionA, is(not(equalTo(openFileFromInstitutionB))));
+    assertTrue(openFileFromInstitutionA.equalsExcludingRrsConfiguredType(openFileFromInstitutionB));
+  }
 
-    @Test
-    void shouldConsiderFilesEqualWhenOnlyRrsConfiguredTypeDiffers() {
-        var fileId = UUID.randomUUID();
-        var uploadDetails = randomInserted();
-        var fileFromInstitutionA = createPendingFileWithRrs(fileId,
-                                                            RIGHTS_RETENTION_STRATEGY, uploadDetails);
-        var fileFromInstitutionB = createPendingFileWithRrs(fileId,
-                                                            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, uploadDetails);
+  @Test
+  void shouldDetectFileChangeWhenRrsTypeChanges() {
+    var fileId = UUID.randomUUID();
+    var uploadDetails = randomInserted();
+    var originalFile = createPendingFileWithRrs(fileId, RIGHTS_RETENTION_STRATEGY, uploadDetails);
+    var updatedFile = createPendingFileWithRrs(fileId, RIGHTS_RETENTION_STRATEGY, uploadDetails);
+    updatedFile.setRightsRetentionStrategy(
+        OverriddenRightsRetentionStrategy.create(
+            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, randomString()));
 
-        assertThat(fileFromInstitutionA, is(not(equalTo(fileFromInstitutionB))));
-        assertTrue(fileFromInstitutionA.equalsExcludingRrsConfiguredType(fileFromInstitutionB));
-    }
+    assertFalse(originalFile.equalsExcludingRrsConfiguredType(updatedFile));
+  }
 
-    @ParameterizedTest
-    @MethodSource("filesWithPublishedDate")
-    void shouldHavePublishedDateSet(File file) {
-        assertThat(file.getPublishedDate().isPresent(), is(true));
-    }
+  private static PendingOpenFile createPendingFileWithRrs(
+      UUID identifier,
+      RightsRetentionStrategyConfiguration configuration,
+      UploadDetails uploadDetails) {
+    return new PendingOpenFile(
+        identifier,
+        "test.pdf",
+        APPLICATION_PDF,
+        SIZE,
+        LICENSE_URI,
+        PublisherVersion.ACCEPTED_VERSION,
+        null,
+        CustomerRightsRetentionStrategy.create(configuration),
+        null,
+        uploadDetails);
+  }
 
-    @ParameterizedTest
-    @MethodSource("filesWithoutPublishedDate")
-    void shouldNotHavePublishedDateSet(File file) {
-        assertThat(file.getPublishedDate().isPresent(), is(false));
-    }
+  private static OpenFile createOpenFileWithRrs(
+      UUID identifier,
+      RightsRetentionStrategyConfiguration configuration,
+      Instant publishedDate,
+      UploadDetails uploadDetails) {
+    return new OpenFile(
+        identifier,
+        "test.pdf",
+        APPLICATION_PDF,
+        SIZE,
+        LICENSE_URI,
+        PublisherVersion.ACCEPTED_VERSION,
+        null,
+        CustomerRightsRetentionStrategy.create(configuration),
+        null,
+        publishedDate,
+        uploadDetails);
+  }
 
-    @ParameterizedTest
-    @MethodSource("filesWithPublishedDate")
-    void shouldPreservePublishedDateWhenCopyingAndRebuilding(File file) {
-        var originalPublishedDate = file.getPublishedDate().orElseThrow();
-        var rebuilt = file.copy().build(file.getClass());
-        assertThat(Objects.requireNonNull(rebuilt.getPublishedDate().orElse(null)), is(equalTo(originalPublishedDate)));
-    }
+  private static Username randomUsername() {
+    return new Username(randomInteger().toString() + "@" + randomString());
+  }
 
-    static Stream<File> filesWithPublishedDate() {
-        return Stream.of(
-            buildNonAdministrativeAgreement().buildOpenFile(),
-            buildNonAdministrativeAgreement().buildInternalFile()
-        );
-    }
+  private static UploadDetails randomInserted() {
+    return new UserUploadDetails(randomUsername(), randomInstant());
+  }
 
-    static Stream<File> filesWithoutPublishedDate() {
-        return Stream.of(
-            buildNonAdministrativeAgreement().buildPendingOpenFile(),
-            buildNonAdministrativeAgreement().buildPendingInternalFile(),
-            buildNonAdministrativeAgreement().buildHiddenFile(),
-            buildNonAdministrativeAgreement().buildRejectedFile()
-        );
-    }
+  private static PublisherVersion randomPublisherVersion() {
+    return randomBoolean() ? PublisherVersion.PUBLISHED_VERSION : PublisherVersion.ACCEPTED_VERSION;
+  }
 
-    @Test
-    void shouldSetPublishedDateWhenTransitioningPendingFileToOpenFile() {
-        var pendingFile = buildNonAdministrativeAgreement().buildPendingOpenFile();
-        var before = Instant.now();
-        var openFile = pendingFile.toOpenFile();
-        assertThat(openFile.getPublishedDate().isPresent(), is(true));
-        assertFalse(openFile.getPublishedDate().get().isBefore(before));
-    }
+  private static File internalFile() {
+    return new InternalFile(
+        UUID.randomUUID(),
+        randomString(),
+        randomString(),
+        randomInteger().longValue(),
+        LICENSE_URI,
+        PublisherVersion.ACCEPTED_VERSION,
+        randomInstant(),
+        RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
+        randomString(),
+        randomInstant(),
+        randomInserted());
+  }
 
-    @Test
-    void shouldSetPublishedDateWhenTransitioningPendingFileToInternalFile() {
-        var pendingFile = buildNonAdministrativeAgreement().buildPendingInternalFile();
-        var before = Instant.now();
-        var internalFile = pendingFile.toInternalFile();
-        assertThat(internalFile.getPublishedDate().isPresent(), is(true));
-        assertFalse(internalFile.getPublishedDate().get().isBefore(before));
-    }
+  private static String generateNewFile() {
+    return """
+    {
+        "type" : "OpenFile",
+        "identifier" : "d9fc5844-f1a3-491b-825a-5a4cabc12aa2",
+        "name" : "Per Magne Østertun.pdf",
+        "mimeType" : "application/pdf",
+        "size" : 1025817,
+        "license" : "https://creativecommons.org/licenses/by-nc/2.0/",
+        "administrativeAgreement" : false,
+        "publisherAuthority" : false,
+        "publishedDate" : "2023-05-25T19:31:17.302914Z",
+        "visibleForNonOwner" : true
+    }\
+    """;
+  }
 
-    @Test
-    void shouldPreservePublishedDateWhenConvertingAlreadyPublishedFileToOpenFile() {
-        var originalPublishedDate = Instant.parse("2026-01-27T14:51:47.353704642Z");
-        var file = buildNonAdministrativeAgreement().withPublishedDate(originalPublishedDate).buildInternalFile();
-        var openFile = file.toOpenFile();
-        assertThat(Objects.requireNonNull(openFile.getPublishedDate().orElse(null)), is(equalTo(originalPublishedDate)));
-    }
+  private InternalFile getInternalFile(URI license) {
+    return File.builder()
+        .withIdentifier(UUID.randomUUID())
+        .withLicense(license)
+        .withName(FileModelTest.FIRST_FILE_TXT)
+        .buildInternalFile()
+        .toInternalFile();
+  }
 
-    @Test
-    void shouldPreservePublishedDateWhenConvertingAlreadyPublishedFileToInternalFile() {
-        var originalPublishedDate = Instant.parse("2026-01-27T14:51:47.353704642Z");
-        var file = buildNonAdministrativeAgreement().withPublishedDate(originalPublishedDate).buildOpenFile();
-        var internalFile = file.toInternalFile();
-        assertThat(Objects.requireNonNull(internalFile.getPublishedDate().orElse(null)), is(equalTo(originalPublishedDate)));
-    }
+  private InternalFile randomInternalFile() {
+    return new InternalFile(
+        UUID.randomUUID(),
+        randomString(),
+        randomString(),
+        randomInteger().longValue(),
+        LICENSE_URI,
+        PublisherVersion.ACCEPTED_VERSION,
+        randomInstant(),
+        RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
+        randomString(),
+        randomInstant(),
+        randomInserted());
+  }
 
-    @Test
-    void shouldConsiderOpenFilesEqualWhenOnlyRrsConfiguredTypeDiffers() {
-        var fileId = UUID.randomUUID();
-        var publishedDate = randomInstant();
-        var uploadDetails = randomInserted();
-        var openFileFromInstitutionA = createOpenFileWithRrs(fileId,
-                                                             RIGHTS_RETENTION_STRATEGY, publishedDate, uploadDetails);
-        var openFileFromInstitutionB = createOpenFileWithRrs(fileId,
-                                                             OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, publishedDate,
-                                                             uploadDetails);
+  private OpenFile openFileWithActiveEmbargo() {
+    return new OpenFile(
+        UUID.randomUUID(),
+        randomString(),
+        randomString(),
+        randomInteger().longValue(),
+        LICENSE_URI,
+        PublisherVersion.ACCEPTED_VERSION,
+        Instant.now().plus(1, DAYS),
+        RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(),
+        randomString(),
+        randomInstant(),
+        randomInserted());
+  }
 
-        assertThat(openFileFromInstitutionA, is(not(equalTo(openFileFromInstitutionB))));
-        assertTrue(openFileFromInstitutionA.equalsExcludingRrsConfiguredType(openFileFromInstitutionB));
-    }
-
-    @Test
-    void shouldDetectFileChangeWhenRrsTypeChanges() {
-        var fileId = UUID.randomUUID();
-        var uploadDetails = randomInserted();
-        var originalFile = createPendingFileWithRrs(fileId,
-                                                    RIGHTS_RETENTION_STRATEGY, uploadDetails);
-        var updatedFile = createPendingFileWithRrs(fileId,
-                                                    RIGHTS_RETENTION_STRATEGY, uploadDetails);
-        updatedFile.setRightsRetentionStrategy(
-            OverriddenRightsRetentionStrategy.create(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, randomString()));
-
-        assertFalse(originalFile.equalsExcludingRrsConfiguredType(updatedFile));
-    }
-
-    private static PendingOpenFile createPendingFileWithRrs(UUID identifier,
-                                                            RightsRetentionStrategyConfiguration configuration,
-                                                            UploadDetails uploadDetails) {
-        return new PendingOpenFile(identifier, "test.pdf", APPLICATION_PDF, SIZE, LICENSE_URI,
-                                   PublisherVersion.ACCEPTED_VERSION, null,
-                                   CustomerRightsRetentionStrategy.create(configuration),
-                                   null, uploadDetails);
-    }
-
-    private static OpenFile createOpenFileWithRrs(UUID identifier,
-                                                  RightsRetentionStrategyConfiguration configuration,
-                                                  Instant publishedDate, UploadDetails uploadDetails) {
-        return new OpenFile(identifier, "test.pdf", APPLICATION_PDF, SIZE, LICENSE_URI,
-                            PublisherVersion.ACCEPTED_VERSION, null,
-                            CustomerRightsRetentionStrategy.create(configuration),
-                            null, publishedDate, uploadDetails);
-    }
-
-    private static Username randomUsername() {
-        return new Username(randomInteger().toString() + "@" + randomString());
-    }
-
-    private static UploadDetails randomInserted() {
-        return new UserUploadDetails(randomUsername(), randomInstant());
-    }
-
-    private static PublisherVersion randomPublisherVersion() {
-        return randomBoolean() ? PublisherVersion.PUBLISHED_VERSION : PublisherVersion.ACCEPTED_VERSION;
-    }
-
-    private static File internalFile() {
-        return new InternalFile(UUID.randomUUID(), randomString(), randomString(), randomInteger().longValue(),
-                                LICENSE_URI, PublisherVersion.ACCEPTED_VERSION, randomInstant(),
-                                RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(), randomString(),
-                                randomInstant(), randomInserted());
-    }
-
-    private static String generateNewFile() {
-        return """
-            {
-                "type" : "OpenFile",
-                "identifier" : "d9fc5844-f1a3-491b-825a-5a4cabc12aa2",
-                "name" : "Per Magne Østertun.pdf",
-                "mimeType" : "application/pdf",
-                "size" : 1025817,
-                "license" : "https://creativecommons.org/licenses/by-nc/2.0/",
-                "administrativeAgreement" : false,
-                "publisherAuthority" : false,
-                "publishedDate" : "2023-05-25T19:31:17.302914Z",
-                "visibleForNonOwner" : true
-            }""";
-    }
-
-    private InternalFile getInternalFile(URI license) {
-        return File.builder()
-                   .withIdentifier(UUID.randomUUID())
-                   .withLicense(license)
-                   .withName(FileModelTest.FIRST_FILE_TXT)
-                   .buildInternalFile()
-                   .toInternalFile();
-    }
-
-    private InternalFile randomInternalFile() {
-        return new InternalFile(UUID.randomUUID(), randomString(), randomString(), randomInteger().longValue(),
-                                LICENSE_URI, PublisherVersion.ACCEPTED_VERSION, randomInstant(),
-                                RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(), randomString(),
-                                randomInstant(), randomInserted());
-    }
-
-    private OpenFile openFileWithActiveEmbargo() {
-        return new OpenFile(UUID.randomUUID(), randomString(), randomString(), randomInteger().longValue(), LICENSE_URI,
-                            PublisherVersion.ACCEPTED_VERSION, Instant.now().plus(1, DAYS),
-                            RightsRetentionStrategyGenerator.randomRightsRetentionStrategy(), randomString(),
-                            randomInstant(), randomInserted());
-    }
-
-    private File getOpenFile() {
-        return File.builder()
-                   .withEmbargoDate(null)
-                   .withIdentifier(UUID.randomUUID())
-                   .withLicense(null)
-                   .withMimeType(APPLICATION_PDF)
-                   .withName(FIRST_FILE_TXT)
-                   .withPublisherVersion(PublisherVersion.PUBLISHED_VERSION)
-                   .withSize(SIZE)
-                   .buildOpenFile();
-    }
+  private File getOpenFile() {
+    return File.builder()
+        .withEmbargoDate(null)
+        .withIdentifier(UUID.randomUUID())
+        .withLicense(null)
+        .withMimeType(APPLICATION_PDF)
+        .withName(FIRST_FILE_TXT)
+        .withPublisherVersion(PublisherVersion.PUBLISHED_VERSION)
+        .withSize(SIZE)
+        .buildOpenFile();
+  }
 }

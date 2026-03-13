@@ -7,21 +7,21 @@ import nva.commons.core.JacocoGenerated;
 
 public class PutSqsMessageResultFailureEntry implements JsonSerializable {
 
-    private final EventReference event;
-    private final String cause;
+  private final EventReference event;
+  private final String cause;
 
-    public PutSqsMessageResultFailureEntry(@JsonProperty("event") EventReference event,
-                                           @JsonProperty("cause") String cause) {
-        this.event = event;
-        this.cause = cause;
-    }
+  public PutSqsMessageResultFailureEntry(
+      @JsonProperty("event") EventReference event, @JsonProperty("cause") String cause) {
+    this.event = event;
+    this.cause = cause;
+  }
 
-    public EventReference getEvent() {
-        return event;
-    }
+  public EventReference getEvent() {
+    return event;
+  }
 
-    @JacocoGenerated
-    public String getCause() {
-        return cause;
-    }
+  @JacocoGenerated
+  public String getCause() {
+    return cause;
+  }
 }

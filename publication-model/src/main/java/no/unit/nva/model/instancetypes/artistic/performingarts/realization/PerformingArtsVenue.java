@@ -8,9 +8,10 @@ import no.unit.nva.model.time.Time;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class PerformingArtsVenue extends Venue implements PerformingArtsOutput {
-    public PerformingArtsVenue(@JsonProperty(PLACE) Place place,
-                               @JsonProperty(DATE) Time date,
-                               @JsonProperty(SEQUENCE_FIELD) int sequence) {
-        super(place, date, sequence);
-    }
+  public PerformingArtsVenue(
+      @JsonProperty(PLACE) Place place,
+      @JsonProperty(DATE) Time date,
+      @JsonProperty(SEQUENCE_FIELD) int sequence) {
+    super(place, date, sequence);
+  }
 }

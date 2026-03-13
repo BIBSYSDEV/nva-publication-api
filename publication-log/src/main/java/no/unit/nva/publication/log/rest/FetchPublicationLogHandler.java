@@ -1,6 +1,7 @@
 package no.unit.nva.publication.log.rest;
 
 import static java.net.HttpURLConnection.HTTP_OK;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationOperation;
@@ -19,53 +20,56 @@ import nva.commons.core.JacocoGenerated;
 
 public class FetchPublicationLogHandler extends ApiGatewayHandler<Void, PublicationLogResponse> {
 
-    public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
-    private final ResourceService resourceService;
+  public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
+  private final ResourceService resourceService;
 
-    @JacocoGenerated
-    public FetchPublicationLogHandler() {
-        this(ResourceService.defaultService(), new Environment());
+  @JacocoGenerated
+  public FetchPublicationLogHandler() {
+    this(ResourceService.defaultService(), new Environment());
+  }
+
+  public FetchPublicationLogHandler(ResourceService resourceService, Environment environment) {
+    super(Void.class, environment);
+    this.resourceService = resourceService;
+  }
+
+  @Override
+  protected void validateRequest(Void input, RequestInfo requestInfo, Context context) {
+    // NO OP
+  }
+
+  @Override
+  protected PublicationLogResponse processInput(
+      Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+    var resourceIdentifier =
+        new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER));
+    var resource =
+        Resource.resourceQueryObject(resourceIdentifier)
+            .fetch(resourceService)
+            .orElseThrow(() -> new NotFoundException("Resource not found!"));
+
+    validateUserRights(requestInfo, resource);
+
+    var logEntries = resource.fetchLogEntries(resourceService);
+    return PublicationLogResponse.fromLogEntries(logEntries);
+  }
+
+  @Override
+  protected Integer getSuccessStatusCode(
+      Void input, PublicationLogResponse publicationLogResponse) {
+    return HTTP_OK;
+  }
+
+  private static void validateUserRights(RequestInfo requestInfo, Resource resource)
+      throws UnauthorizedException, ForbiddenException {
+    if (userHasNoAccessToLog(requestInfo, resource)) {
+      throw new ForbiddenException();
     }
+  }
 
-    public FetchPublicationLogHandler(ResourceService resourceService, Environment environment) {
-        super(Void.class, environment);
-        this.resourceService = resourceService;
-    }
-
-    @Override
-    protected void validateRequest(Void input, RequestInfo requestInfo, Context context) {
-        //NO OP
-    }
-
-    @Override
-    protected PublicationLogResponse processInput(Void input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
-        var resourceIdentifier = new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER));
-        var resource = Resource.resourceQueryObject(resourceIdentifier)
-                           .fetch(resourceService)
-                           .orElseThrow(() -> new NotFoundException("Resource not found!"));
-
-        validateUserRights(requestInfo, resource);
-
-        var logEntries = resource.fetchLogEntries(resourceService);
-        return PublicationLogResponse.fromLogEntries(logEntries);
-    }
-
-    @Override
-    protected Integer getSuccessStatusCode(Void input, PublicationLogResponse publicationLogResponse) {
-        return HTTP_OK;
-    }
-
-    private static void validateUserRights(RequestInfo requestInfo, Resource resource)
-        throws UnauthorizedException, ForbiddenException {
-        if (userHasNoAccessToLog(requestInfo, resource)) {
-            throw new ForbiddenException();
-        }
-    }
-
-    private static boolean userHasNoAccessToLog(RequestInfo requestInfo, Resource resource)
-        throws UnauthorizedException {
-        return !PublicationPermissions.create(resource, UserInstance.fromRequestInfo(requestInfo))
-                    .allowsAction(PublicationOperation.PARTIAL_UPDATE);
-    }
+  private static boolean userHasNoAccessToLog(RequestInfo requestInfo, Resource resource)
+      throws UnauthorizedException {
+    return !PublicationPermissions.create(resource, UserInstance.fromRequestInfo(requestInfo))
+        .allowsAction(PublicationOperation.PARTIAL_UPDATE);
+  }
 }

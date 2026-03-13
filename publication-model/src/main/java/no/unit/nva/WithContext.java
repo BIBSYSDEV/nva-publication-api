@@ -4,8 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 public interface WithContext extends PublicationBase {
 
-    JsonNode getContext();
+  JsonNode getContext();
 
-    void setContext(JsonNode context);
-
+  void setContext(JsonNode context);
 }

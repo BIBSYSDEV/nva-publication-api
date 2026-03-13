@@ -10,13 +10,13 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ChannelRegistryPublisherByNameRepresentation {
 
-    @CsvBindByName(column = "Original tittel")
-    private String title;
+  @CsvBindByName(column = "Original tittel")
+  private String title;
 
-    @CsvBindByName(column = "PID")
-    private String pid;
+  @CsvBindByName(column = "PID")
+  private String pid;
 
-    public boolean hasTitle(String value) {
-        return title.equalsIgnoreCase(value);
-    }
+  public boolean hasTitle(String value) {
+    return title.equalsIgnoreCase(value);
+  }
 }

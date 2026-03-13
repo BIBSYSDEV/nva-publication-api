@@ -1,6 +1,7 @@
 package no.unit.nva.publication.fetch;
 
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.List;
@@ -14,16 +15,18 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeName("Publication")
 public final class DeletedPublicationResponse {
 
-    @JacocoGenerated
-    private DeletedPublicationResponse() {
-    }
+  @JacocoGenerated
+  private DeletedPublicationResponse() {}
 
-    public static Object fromPublication(Publication publication, Set<PublicationOperation> allowedOperations) {
-        var publicationWithoutAssociatedArtifacts = publication.copy().withAssociatedArtifacts(List.of()).build();
-        var tombstone = PublicationResponseElevatedUser.fromPublicationWithAllowedOperations(
+  public static Object fromPublication(
+      Publication publication, Set<PublicationOperation> allowedOperations) {
+    var publicationWithoutAssociatedArtifacts =
+        publication.copy().withAssociatedArtifacts(List.of()).build();
+    var tombstone =
+        PublicationResponseElevatedUser.fromPublicationWithAllowedOperations(
             publicationWithoutAssociatedArtifacts, allowedOperations);
-        return attempt(
-            () -> JsonUtils.dtoObjectMapper.convertValue(tombstone, new TypeReference<>() {
-            })).orElseThrow();
-    }
+    return attempt(
+            () -> JsonUtils.dtoObjectMapper.convertValue(tombstone, new TypeReference<>() {}))
+        .orElseThrow();
+  }
 }

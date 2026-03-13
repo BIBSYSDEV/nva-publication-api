@@ -9,9 +9,9 @@ import nva.commons.core.JacocoGenerated;
 public record MergeResult(Publication institutionImage, Publication oldImage, Publication newImage)
     implements JsonSerializable {
 
-    @JacocoGenerated
-    @Override
-    public String toString() {
-        return this.toJsonString();
-    }
+  @JacocoGenerated
+  @Override
+  public String toString() {
+    return this.toJsonString();
+  }
 }

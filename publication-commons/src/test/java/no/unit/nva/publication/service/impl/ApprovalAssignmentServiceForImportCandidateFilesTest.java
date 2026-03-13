@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,376 +39,447 @@ import org.junit.jupiter.api.Test;
 
 class ApprovalAssignmentServiceForImportCandidateFilesTest {
 
-    private ApprovalAssignmentServiceForImportCandidateFiles service;
-    private IdentityServiceClient identityServiceClient;
+  private ApprovalAssignmentServiceForImportCandidateFiles service;
+  private IdentityServiceClient identityServiceClient;
 
-    @BeforeEach
-    void setUp() {
-        identityServiceClient = mock(IdentityServiceClient.class);
-        service = new ApprovalAssignmentServiceForImportCandidateFiles(identityServiceClient);
-    }
+  @BeforeEach
+  void setUp() {
+    identityServiceClient = mock(IdentityServiceClient.class);
+    service = new ApprovalAssignmentServiceForImportCandidateFiles(identityServiceClient);
+  }
 
-    @Test
-    void shouldThrowExceptionWhenAssociatedCustomersAreEmpty() {
-        var resource = createResourceWithoutCustomers();
+  @Test
+  void shouldThrowExceptionWhenAssociatedCustomersAreEmpty() {
+    var resource = createResourceWithoutCustomers();
 
-        var exception = assertThrows(ApprovalAssignmentException.class,
-                                     () -> service.determineCustomerResponsibleForApproval(resource, List.of()));
+    var exception =
+        assertThrows(
+            ApprovalAssignmentException.class,
+            () -> service.determineCustomerResponsibleForApproval(resource, List.of()));
 
-        assertEquals("No customers for import candidate " + resource.getIdentifier(), exception.getMessage());
-    }
+    assertEquals(
+        "No customers for import candidate " + resource.getIdentifier(), exception.getMessage());
+  }
 
-    @Test
-    void shouldThrowExceptionWhenUnableToFetchCustomer() throws NotFoundException {
-        var customerId = randomUri();
-        when(identityServiceClient.getCustomerById(customerId)).thenThrow(RuntimeException.class);
-        var resource = createResource();
+  @Test
+  void shouldThrowExceptionWhenUnableToFetchCustomer() throws NotFoundException {
+    var customerId = randomUri();
+    when(identityServiceClient.getCustomerById(customerId)).thenThrow(RuntimeException.class);
+    var resource = createResource();
 
-        var exception = assertThrows(ApprovalAssignmentException.class,
-                                     () -> service.determineCustomerResponsibleForApproval(resource,
-                                                                                           List.of(customerId)));
+    var exception =
+        assertThrows(
+            ApprovalAssignmentException.class,
+            () -> service.determineCustomerResponsibleForApproval(resource, List.of(customerId)));
 
-        assertEquals("Could not fetch customer with id " + customerId, exception.getMessage());
-    }
+    assertEquals("Could not fetch customer with id " + customerId, exception.getMessage());
+  }
 
-    @Test
-    void shouldThrowExceptionWhenNoContributorForCustomerExist() throws Exception {
-        var customer = new CustomerSetup();
-        mockCustomer(customer);
+  @Test
+  void shouldThrowExceptionWhenNoContributorForCustomerExist() throws Exception {
+    var customer = new CustomerSetup();
+    mockCustomer(customer);
 
-        var resource = createResource(
-            createContributor(createCristinId(), true, 1));
+    var resource = createResource(createContributor(createCristinId(), true, 1));
 
-        assertThrows(ApprovalAssignmentException.class,
-                     () -> service.determineCustomerResponsibleForApproval(resource,
-                                                                           List.of(customer.customerId)));
-    }
+    assertThrows(
+        ApprovalAssignmentException.class,
+        () ->
+            service.determineCustomerResponsibleForApproval(
+                resource, List.of(customer.customerId)));
+  }
 
-    @Test
-    void shouldThrowExceptionWhenNoContributors() throws Exception {
-        var customer = new CustomerSetup();
-        mockCustomer(customer);
+  @Test
+  void shouldThrowExceptionWhenNoContributors() throws Exception {
+    var customer = new CustomerSetup();
+    mockCustomer(customer);
 
-        var resource = resourceWithoutContributors();
+    var resource = resourceWithoutContributors();
 
-        assertThrows(ApprovalAssignmentException.class,
-                     () -> service.determineCustomerResponsibleForApproval(resource,
-                                                                           List.of(customer.customerId)));
-    }
+    assertThrows(
+        ApprovalAssignmentException.class,
+        () ->
+            service.determineCustomerResponsibleForApproval(
+                resource, List.of(customer.customerId)));
+  }
 
-    @Test
-    void shouldReturnNoApprovalNeededWhenAllCustomersAllowAutoPublishing() throws Exception {
-        var firstCustomer = new CustomerSetup();
-        var secondCustomer = new CustomerSetup();
+  @Test
+  void shouldReturnNoApprovalNeededWhenAllCustomersAllowAutoPublishing() throws Exception {
+    var firstCustomer = new CustomerSetup();
+    var secondCustomer = new CustomerSetup();
 
-        mockCustomer(firstCustomer.customerId, firstCustomer.cristinId, true);
-        mockCustomer(secondCustomer.customerId, secondCustomer.cristinId, true);
+    mockCustomer(firstCustomer.customerId, firstCustomer.cristinId, true);
+    mockCustomer(secondCustomer.customerId, secondCustomer.cristinId, true);
 
-        var result = service.determineCustomerResponsibleForApproval(createResource(), List.of(firstCustomer.customerId,
-                                                                                                    secondCustomer.customerId));
+    var result =
+        service.determineCustomerResponsibleForApproval(
+            createResource(), List.of(firstCustomer.customerId, secondCustomer.customerId));
 
+    assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
+    assertTrue(result.getReason().contains("allows auto publishing"));
+  }
 
-        assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
-        assertTrue(result.getReason().contains("allows auto publishing"));
-    }
+  @Test
+  void shouldReturnApprovalNeededWhenAtLeastOneCustomersRequiresApproval() throws Exception {
+    var firstCustomer = new CustomerSetup();
+    var secondCustomer = new CustomerSetup();
 
-    @Test
-    void shouldReturnApprovalNeededWhenAtLeastOneCustomersRequiresApproval() throws Exception {
-        var firstCustomer = new CustomerSetup();
-        var secondCustomer = new CustomerSetup();
+    mockCustomer(firstCustomer.customerId, firstCustomer.cristinId, true);
+    mockCustomer(secondCustomer.customerId, secondCustomer.cristinId, false);
 
-        mockCustomer(firstCustomer.customerId, firstCustomer.cristinId, true);
-        mockCustomer(secondCustomer.customerId, secondCustomer.cristinId, false);
-
-        var resource = createResource(
+    var resource =
+        createResource(
             createContributor(firstCustomer.cristinId, false, 1),
             createContributor(secondCustomer.cristinId, true, 2));
 
-        var result = service.determineCustomerResponsibleForApproval(resource, List.of(firstCustomer.customerId,
-                                                                                               secondCustomer.customerId));
+    var result =
+        service.determineCustomerResponsibleForApproval(
+            resource, List.of(firstCustomer.customerId, secondCustomer.customerId));
 
-        assertEquals(APPROVAL_NEEDED, result.getStatus());
-        assertEquals(secondCustomer.customerId, result.getCustomer().id());
-    }
+    assertEquals(APPROVAL_NEEDED, result.getStatus());
+    assertEquals(secondCustomer.customerId, result.getCustomer().id());
+  }
 
-    @Test
-    void shouldReturnApprovalNeededWithCustomerThatRequiresApproval() throws Exception {
-        var firstCustomer = new CustomerSetup();
-        var secondCustomer = new CustomerSetup();
+  @Test
+  void shouldReturnApprovalNeededWithCustomerThatRequiresApproval() throws Exception {
+    var firstCustomer = new CustomerSetup();
+    var secondCustomer = new CustomerSetup();
 
-        mockCustomer(firstCustomer.customerId, firstCustomer.cristinId, true);
-        mockCustomer(secondCustomer.customerId, secondCustomer.cristinId, false);
+    mockCustomer(firstCustomer.customerId, firstCustomer.cristinId, true);
+    mockCustomer(secondCustomer.customerId, secondCustomer.cristinId, false);
 
-        var resource = createResource(
+    var resource =
+        createResource(
             createContributor(firstCustomer.cristinId, true, 1),
             createContributor(secondCustomer.cristinId, false, 2));
 
-        var result = service.determineCustomerResponsibleForApproval(resource, List.of(firstCustomer.customerId,
-                                                                                       secondCustomer.customerId));
+    var result =
+        service.determineCustomerResponsibleForApproval(
+            resource, List.of(firstCustomer.customerId, secondCustomer.customerId));
 
-        assertEquals(secondCustomer.customerId, result.getCustomer().id());
-    }
+    assertEquals(secondCustomer.customerId, result.getCustomer().id());
+  }
 
-    @Test
-    void shouldReturnCustomerFoundWhenCustomerIsFound() throws Exception {
-        var customer = new CustomerSetup();
-        mockCustomer(customer);
+  @Test
+  void shouldReturnCustomerFoundWhenCustomerIsFound() throws Exception {
+    var customer = new CustomerSetup();
+    mockCustomer(customer);
 
-        var resource = createResource(
-            createContributor(customer.cristinId, true, 1));
+    var resource = createResource(createContributor(customer.cristinId, true, 1));
 
-        var associatedCustomers = List.of(customer.customerId);
-        var result = service.determineCustomerResponsibleForApproval(resource, associatedCustomers).getStatus();
+    var associatedCustomers = List.of(customer.customerId);
+    var result =
+        service.determineCustomerResponsibleForApproval(resource, associatedCustomers).getStatus();
 
-        assertEquals(APPROVAL_NEEDED, result);
-    }
+    assertEquals(APPROVAL_NEEDED, result);
+  }
 
-    @Test
-    void shouldReturnCorrespondenceContributorCustomerWhenMultipleContributorsExist() throws Exception {
-        var correspondenceCustomer = new CustomerSetup();
-        var nonCorrespondenceCustomer = new CustomerSetup();
+  @Test
+  void shouldReturnCorrespondenceContributorCustomerWhenMultipleContributorsExist()
+      throws Exception {
+    var correspondenceCustomer = new CustomerSetup();
+    var nonCorrespondenceCustomer = new CustomerSetup();
 
-        mockCustomer(correspondenceCustomer);
-        mockCustomer(nonCorrespondenceCustomer);
+    mockCustomer(correspondenceCustomer);
+    mockCustomer(nonCorrespondenceCustomer);
 
-        var resource = createResource(
+    var resource =
+        createResource(
             createContributor(nonCorrespondenceCustomer.cristinId, false, 1),
             createContributor(correspondenceCustomer.cristinId, true, 2));
 
-        var associatedCustomers = List.of(nonCorrespondenceCustomer.customerId, correspondenceCustomer.customerId);
-        var customerDto = service.determineCustomerResponsibleForApproval(resource,
-                                                                          associatedCustomers).getCustomer();
+    var associatedCustomers =
+        List.of(nonCorrespondenceCustomer.customerId, correspondenceCustomer.customerId);
+    var customerDto =
+        service
+            .determineCustomerResponsibleForApproval(resource, associatedCustomers)
+            .getCustomer();
 
-        assertEquals(correspondenceCustomer.customerId, customerDto.id());
-    }
+    assertEquals(correspondenceCustomer.customerId, customerDto.id());
+  }
 
-    @Test
-    void shouldReturnLowestSequenceContributorCustomerWhenNoCorrespondenceContributor() throws Exception {
-        var lowestSequenceCustomer = new CustomerSetup();
-        var otherCustomer = new CustomerSetup();
+  @Test
+  void shouldReturnLowestSequenceContributorCustomerWhenNoCorrespondenceContributor()
+      throws Exception {
+    var lowestSequenceCustomer = new CustomerSetup();
+    var otherCustomer = new CustomerSetup();
 
-        mockCustomer(lowestSequenceCustomer);
-        mockCustomer(otherCustomer);
+    mockCustomer(lowestSequenceCustomer);
+    mockCustomer(otherCustomer);
 
-        var associatedCustomers = List.of(otherCustomer.customerId, lowestSequenceCustomer.customerId);
-        var resource = createResource(
+    var associatedCustomers = List.of(otherCustomer.customerId, lowestSequenceCustomer.customerId);
+    var resource =
+        createResource(
             createContributor(otherCustomer.cristinId, false, 2),
             createContributor(lowestSequenceCustomer.cristinId, false, 1));
 
-        var customerDto = service.determineCustomerResponsibleForApproval(resource, associatedCustomers).getCustomer();
+    var customerDto =
+        service
+            .determineCustomerResponsibleForApproval(resource, associatedCustomers)
+            .getCustomer();
 
-        assertEquals(lowestSequenceCustomer.customerId, customerDto.id());
-    }
+    assertEquals(lowestSequenceCustomer.customerId, customerDto.id());
+  }
 
-    @Test
-    void shouldReturnFirstContributorCustomerWhenNoCorrespondenceContributorAndNoSequenceNumbers() throws Exception {
-        var firstCustomer = new CustomerSetup();
-        var secondCustomer = new CustomerSetup();
+  @Test
+  void shouldReturnFirstContributorCustomerWhenNoCorrespondenceContributorAndNoSequenceNumbers()
+      throws Exception {
+    var firstCustomer = new CustomerSetup();
+    var secondCustomer = new CustomerSetup();
 
-        mockCustomer(firstCustomer);
-        mockCustomer(secondCustomer);
+    mockCustomer(firstCustomer);
+    mockCustomer(secondCustomer);
 
-        var associatedCustomers = List.of(firstCustomer.customerId, secondCustomer.customerId);
-        var resource = createResource(
+    var associatedCustomers = List.of(firstCustomer.customerId, secondCustomer.customerId);
+    var resource =
+        createResource(
             createNonCorrespondenceContributorWithoutSequence(firstCustomer.cristinId, false),
             createNonCorrespondenceContributorWithoutSequence(secondCustomer.cristinId, false));
 
-        var customerDto = service.determineCustomerResponsibleForApproval(resource, associatedCustomers);
+    var customerDto =
+        service.determineCustomerResponsibleForApproval(resource, associatedCustomers);
 
-        assertEquals(firstCustomer.customerId, customerDto.getCustomer().id());
-    }
+    assertEquals(firstCustomer.customerId, customerDto.getCustomer().id());
+  }
 
-    @Test
-    void shouldPrioritizeCorrespondenceContributorCustomerEvenWithoutSequenceNumber() throws Exception {
-        var correspondenceCustomer = new CustomerSetup();
-        var otherCustomer = new CustomerSetup();
+  @Test
+  void shouldPrioritizeCorrespondenceContributorCustomerEvenWithoutSequenceNumber()
+      throws Exception {
+    var correspondenceCustomer = new CustomerSetup();
+    var otherCustomer = new CustomerSetup();
 
-        mockCustomer(correspondenceCustomer);
-        mockCustomer(otherCustomer);
+    mockCustomer(correspondenceCustomer);
+    mockCustomer(otherCustomer);
 
-        var resource = createResource(
+    var resource =
+        createResource(
             createContributor(otherCustomer.cristinId, false, 1),
-            createNonCorrespondenceContributorWithoutSequence(correspondenceCustomer.cristinId, true));
+            createNonCorrespondenceContributorWithoutSequence(
+                correspondenceCustomer.cristinId, true));
 
-        var associatedCustomers = List.of(otherCustomer.customerId, correspondenceCustomer.customerId);
-        var customerDto = service.determineCustomerResponsibleForApproval(resource,
-                                                                          associatedCustomers).getCustomer();
+    var associatedCustomers = List.of(otherCustomer.customerId, correspondenceCustomer.customerId);
+    var customerDto =
+        service
+            .determineCustomerResponsibleForApproval(resource, associatedCustomers)
+            .getCustomer();
 
-        assertEquals(correspondenceCustomer.customerId, customerDto.id());
-    }
+    assertEquals(correspondenceCustomer.customerId, customerDto.id());
+  }
 
-    @Test
-    void shouldReturnLowestSequenceCorrespondenceContributorCustomerWhenMultipleCorrespondenceContributorsExist()
-        throws Exception {
-        var lowestSequenceCorrespondenceCustomer = new CustomerSetup();
-        var higherSequenceCorrespondenceCustomer = new CustomerSetup();
-        var nonCorrespondenceCustomer = new CustomerSetup();
+  @Test
+  void
+      shouldReturnLowestSequenceCorrespondenceContributorCustomerWhenMultipleCorrespondenceContributorsExist()
+          throws Exception {
+    var lowestSequenceCorrespondenceCustomer = new CustomerSetup();
+    var higherSequenceCorrespondenceCustomer = new CustomerSetup();
+    var nonCorrespondenceCustomer = new CustomerSetup();
 
-        mockCustomer(lowestSequenceCorrespondenceCustomer);
-        mockCustomer(higherSequenceCorrespondenceCustomer);
-        mockCustomer(nonCorrespondenceCustomer);
+    mockCustomer(lowestSequenceCorrespondenceCustomer);
+    mockCustomer(higherSequenceCorrespondenceCustomer);
+    mockCustomer(nonCorrespondenceCustomer);
 
-        var associatedCustomers = associatedCustomers(lowestSequenceCorrespondenceCustomer, 
-                                                      higherSequenceCorrespondenceCustomer, 
-                                                      nonCorrespondenceCustomer);
-        var resource = createResource(
+    var associatedCustomers =
+        associatedCustomers(
+            lowestSequenceCorrespondenceCustomer,
+            higherSequenceCorrespondenceCustomer,
+            nonCorrespondenceCustomer);
+    var resource =
+        createResource(
             createContributor(nonCorrespondenceCustomer.cristinId, false, 1),
             createContributor(higherSequenceCorrespondenceCustomer.cristinId, true, 3),
-            createContributor(lowestSequenceCorrespondenceCustomer.cristinId, true, 2)
-        );
+            createContributor(lowestSequenceCorrespondenceCustomer.cristinId, true, 2));
 
-        var customerDto = service.determineCustomerResponsibleForApproval(resource, associatedCustomers).getCustomer();
+    var customerDto =
+        service
+            .determineCustomerResponsibleForApproval(resource, associatedCustomers)
+            .getCustomer();
 
-        assertEquals(lowestSequenceCorrespondenceCustomer.customerId, customerDto.id());
-    }
+    assertEquals(lowestSequenceCorrespondenceCustomer.customerId, customerDto.id());
+  }
 
-    @Test
-    void shouldReturnApprovalNeededWithCustomerThatRequiresApprovalAndHasRegistratorPublishesMetadataOnlyWorkflow() throws Exception {
-        var firstCustomer = new CustomerSetup();
-        var secondCustomer = new CustomerSetup();
+  @Test
+  void
+      shouldReturnApprovalNeededWithCustomerThatRequiresApprovalAndHasRegistratorPublishesMetadataOnlyWorkflow()
+          throws Exception {
+    var firstCustomer = new CustomerSetup();
+    var secondCustomer = new CustomerSetup();
 
-        mockCustomer(firstCustomer.customerId, firstCustomer.cristinId, false, REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        mockCustomer(secondCustomer.customerId, secondCustomer.cristinId, false, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
+    mockCustomer(
+        firstCustomer.customerId,
+        firstCustomer.cristinId,
+        false,
+        REGISTRATOR_PUBLISHES_METADATA_ONLY);
+    mockCustomer(
+        secondCustomer.customerId,
+        secondCustomer.cristinId,
+        false,
+        REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
 
-        var resource = createResource(
+    var resource =
+        createResource(
             createContributor(firstCustomer.cristinId, false, 2),
             createContributor(secondCustomer.cristinId, true, 1));
 
-        var result = service.determineCustomerResponsibleForApproval(resource, List.of(firstCustomer.customerId,
-                                                                                       secondCustomer.customerId));
+    var result =
+        service.determineCustomerResponsibleForApproval(
+            resource, List.of(firstCustomer.customerId, secondCustomer.customerId));
 
-        assertEquals(firstCustomer.customerId, result.getCustomer().id());
-    }
+    assertEquals(firstCustomer.customerId, result.getCustomer().id());
+  }
 
-    @Test
-    void shouldReturnApprovalNotNeededWhenCustomerRequiresScopusFileApprovalButAllowsPublishingFiles() throws Exception {
-        var customer = new CustomerSetup();
+  @Test
+  void shouldReturnApprovalNotNeededWhenCustomerRequiresScopusFileApprovalButAllowsPublishingFiles()
+      throws Exception {
+    var customer = new CustomerSetup();
 
-        mockCustomer(customer.customerId, customer.cristinId, false, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
+    mockCustomer(
+        customer.customerId, customer.cristinId, false, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
 
-        var resource = createResource(createContributor(customer.cristinId, false, 1));
+    var resource = createResource(createContributor(customer.cristinId, false, 1));
 
-        var result = service.determineCustomerResponsibleForApproval(resource, List.of(customer.customerId));
+    var result =
+        service.determineCustomerResponsibleForApproval(resource, List.of(customer.customerId));
 
-        assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
-    }
+    assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
+  }
 
-    @Test
-    void shouldReturnApprovalNotNeededWhenCustomerDoesNotRequiresScopusFileApprovalAndAllowsPublishingFiles() throws Exception {
-        var customer = new CustomerSetup();
+  @Test
+  void
+      shouldReturnApprovalNotNeededWhenCustomerDoesNotRequiresScopusFileApprovalAndAllowsPublishingFiles()
+          throws Exception {
+    var customer = new CustomerSetup();
 
-        mockCustomer(customer.customerId, customer.cristinId, true, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
+    mockCustomer(
+        customer.customerId, customer.cristinId, true, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
 
-        var resource = createResource(createContributor(customer.cristinId, false, 1));
+    var resource = createResource(createContributor(customer.cristinId, false, 1));
 
-        var result = service.determineCustomerResponsibleForApproval(resource, List.of(customer.customerId));
+    var result =
+        service.determineCustomerResponsibleForApproval(resource, List.of(customer.customerId));
 
-        assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
-    }
+    assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
+  }
 
-    @Test
-    void shouldReturnApprovalNotNeededWhenCustomerDoesNotRequiresScopusFileApprovalAndHasRegistratorPublishesMetadataOnlyWorkflow() throws Exception {
-        var customer = new CustomerSetup();
+  @Test
+  void
+      shouldReturnApprovalNotNeededWhenCustomerDoesNotRequiresScopusFileApprovalAndHasRegistratorPublishesMetadataOnlyWorkflow()
+          throws Exception {
+    var customer = new CustomerSetup();
 
-        mockCustomer(customer.customerId, customer.cristinId, true, REGISTRATOR_PUBLISHES_METADATA_ONLY);
+    mockCustomer(
+        customer.customerId, customer.cristinId, true, REGISTRATOR_PUBLISHES_METADATA_ONLY);
 
-        var resource = createResource(createContributor(customer.cristinId, false, 1));
+    var resource = createResource(createContributor(customer.cristinId, false, 1));
 
-        var result = service.determineCustomerResponsibleForApproval(resource, List.of(customer.customerId));
+    var result =
+        service.determineCustomerResponsibleForApproval(resource, List.of(customer.customerId));
 
-        assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
-    }
-    
-    private static List<URI> associatedCustomers(CustomerSetup lowestSequenceCorrespondenceCustomer,
-                                                 CustomerSetup higherSequenceCorrespondenceCustomer,
-                                                 CustomerSetup nonCorrespondenceCustomer) {
-        return List.of(
-            lowestSequenceCorrespondenceCustomer.customerId,
-            higherSequenceCorrespondenceCustomer.customerId,
-            nonCorrespondenceCustomer.customerId
-        );
-    }
+    assertEquals(NO_APPROVAL_NEEDED, result.getStatus());
+  }
 
-    private static Contributor createNonCorrespondenceContributorWithoutSequence(URI cristinId,
-                                                                                 boolean correspondingAuthor) {
-        return new Contributor(new Identity.Builder().build(),
-                                     List.of(Organization.fromUri(cristinId)),
-                                     new RoleType(Role.CREATOR), null, correspondingAuthor);
-    }
+  private static List<URI> associatedCustomers(
+      CustomerSetup lowestSequenceCorrespondenceCustomer,
+      CustomerSetup higherSequenceCorrespondenceCustomer,
+      CustomerSetup nonCorrespondenceCustomer) {
+    return List.of(
+        lowestSequenceCorrespondenceCustomer.customerId,
+        higherSequenceCorrespondenceCustomer.customerId,
+        nonCorrespondenceCustomer.customerId);
+  }
 
-    private static CustomerDto createCustomerDto(URI customerId, URI cristinId, boolean allowsPublishing,
-                                                 PublishingWorkflow workflow) {
-        return new CustomerDto(customerId, UUID.randomUUID(), randomString(), randomString(), randomString(), cristinId,
-                               workflow.getValue(), randomBoolean(),
-                               randomBoolean(), randomBoolean(), Collections.emptyList(),
-                               new CustomerDto.RightsRetentionStrategy(randomString(), RandomDataGenerator.randomUri()),
-                               allowsPublishing, randomString());
-    }
+  private static Contributor createNonCorrespondenceContributorWithoutSequence(
+      URI cristinId, boolean correspondingAuthor) {
+    return new Contributor(
+        new Identity.Builder().build(),
+        List.of(Organization.fromUri(cristinId)),
+        new RoleType(Role.CREATOR),
+        null,
+        correspondingAuthor);
+  }
 
-    private static Contributor createContributor(URI affiliation, boolean isCorrespondence, int sequence) {
-        return new Contributor.Builder()
-                   .withIdentity(new Identity.Builder().build())
-                   .withAffiliations(List.of(Organization.fromUri(affiliation)))
-                   .withRole(new RoleType(Role.CREATOR))
-                   .withSequence(sequence)
-                   .withCorrespondingAuthor(isCorrespondence)
-                   .build();
-    }
+  private static CustomerDto createCustomerDto(
+      URI customerId, URI cristinId, boolean allowsPublishing, PublishingWorkflow workflow) {
+    return new CustomerDto(
+        customerId,
+        UUID.randomUUID(),
+        randomString(),
+        randomString(),
+        randomString(),
+        cristinId,
+        workflow.getValue(),
+        randomBoolean(),
+        randomBoolean(),
+        randomBoolean(),
+        Collections.emptyList(),
+        new CustomerDto.RightsRetentionStrategy(randomString(), RandomDataGenerator.randomUri()),
+        allowsPublishing,
+        randomString());
+  }
 
-    private static URI createCristinId() {
-        return UriWrapper.fromUri(randomUri())
-                   .addChild("cristin")
-                   .addChild("organization")
-                   .addChild("%s.%s.%s".formatted(randomString(), randomString(), randomString()))
-                   .getUri();
-    }
+  private static Contributor createContributor(
+      URI affiliation, boolean isCorrespondence, int sequence) {
+    return new Contributor.Builder()
+        .withIdentity(new Identity.Builder().build())
+        .withAffiliations(List.of(Organization.fromUri(affiliation)))
+        .withRole(new RoleType(Role.CREATOR))
+        .withSequence(sequence)
+        .withCorrespondingAuthor(isCorrespondence)
+        .build();
+  }
 
-    private void mockCustomer(CustomerSetup setup) throws NotFoundException {
-        mockCustomer(setup.customerId, setup.cristinId, false);
-    }
+  private static URI createCristinId() {
+    return UriWrapper.fromUri(randomUri())
+        .addChild("cristin")
+        .addChild("organization")
+        .addChild("%s.%s.%s".formatted(randomString(), randomString(), randomString()))
+        .getUri();
+  }
 
-    private void mockCustomer(URI customerId, URI cristinId, boolean allowsPublishing) throws NotFoundException {
-        mockCustomer(customerId, cristinId, allowsPublishing, REGISTRATOR_PUBLISHES_METADATA_ONLY);
-    }
+  private void mockCustomer(CustomerSetup setup) throws NotFoundException {
+    mockCustomer(setup.customerId, setup.cristinId, false);
+  }
 
-    private void mockCustomer(URI customerId, URI cristinId, boolean allowsPublishing, PublishingWorkflow workflow) throws NotFoundException {
-        when(identityServiceClient.getCustomerById(customerId)).thenReturn(
-            createCustomerDto(customerId, cristinId, allowsPublishing,
-                              workflow));
-    }
+  private void mockCustomer(URI customerId, URI cristinId, boolean allowsPublishing)
+      throws NotFoundException {
+    mockCustomer(customerId, cristinId, allowsPublishing, REGISTRATOR_PUBLISHES_METADATA_ONLY);
+  }
 
-    private Resource createResource() {
-        return Resource.builder()
-                   .withIdentifier(SortableIdentifier.next())
-                   .withEntityDescription(randomEntityDescription(JournalArticle.class))
-                   .build();
-    }
+  private void mockCustomer(
+      URI customerId, URI cristinId, boolean allowsPublishing, PublishingWorkflow workflow)
+      throws NotFoundException {
+    when(identityServiceClient.getCustomerById(customerId))
+        .thenReturn(createCustomerDto(customerId, cristinId, allowsPublishing, workflow));
+  }
 
-    private Resource createResourceWithoutCustomers() {
-        return Resource.builder()
-                   .withIdentifier(SortableIdentifier.next())
-                   .build();
-    }
+  private Resource createResource() {
+    return Resource.builder()
+        .withIdentifier(SortableIdentifier.next())
+        .withEntityDescription(randomEntityDescription(JournalArticle.class))
+        .build();
+  }
 
-    private Resource createResource(Contributor... contributors) {
-        var entityDescription = randomEntityDescription(JournalArticle.class)
-                                    .copy()
-                                    .withContributors(Arrays.asList(contributors))
-                                    .build();
-        return Resource.builder()
-                   .withEntityDescription(entityDescription)
-                   .build();
-    }
+  private Resource createResourceWithoutCustomers() {
+    return Resource.builder().withIdentifier(SortableIdentifier.next()).build();
+  }
 
-    private Resource resourceWithoutContributors() {
-        var resource = createResource();
-        resource.getEntityDescription().setContributors(Collections.emptyList());
-        return resource;
-    }
+  private Resource createResource(Contributor... contributors) {
+    var entityDescription =
+        randomEntityDescription(JournalArticle.class)
+            .copy()
+            .withContributors(Arrays.asList(contributors))
+            .build();
+    return Resource.builder().withEntityDescription(entityDescription).build();
+  }
 
-    private static class CustomerSetup {
+  private Resource resourceWithoutContributors() {
+    var resource = createResource();
+    resource.getEntityDescription().setContributors(Collections.emptyList());
+    return resource;
+  }
 
-        final URI customerId = randomUri();
-        final URI cristinId = createCristinId();
-    }
+  private static class CustomerSetup {
+
+    final URI customerId = randomUri();
+    final URI cristinId = createCristinId();
+  }
 }

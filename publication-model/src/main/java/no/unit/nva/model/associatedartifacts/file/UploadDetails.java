@@ -5,9 +5,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.time.Instant;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(name = "UserUploadDetails", value = UserUploadDetails.class),
-    @JsonSubTypes.Type(name = "ImportUploadDetails", value = ImportUploadDetails.class)})
+@JsonSubTypes({
+  @JsonSubTypes.Type(name = "UserUploadDetails", value = UserUploadDetails.class),
+  @JsonSubTypes.Type(name = "ImportUploadDetails", value = ImportUploadDetails.class)
+})
 public interface UploadDetails {
 
-    Instant uploadedDate();
+  Instant uploadedDate();
 }

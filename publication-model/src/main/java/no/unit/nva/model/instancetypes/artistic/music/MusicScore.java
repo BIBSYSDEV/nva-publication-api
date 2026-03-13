@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.util.Objects;
-
 import no.unit.nva.model.PublisherInInstance;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
@@ -13,91 +12,99 @@ import no.unit.nva.model.instancetypes.artistic.UnconfirmedPublisherMigrator;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public class MusicScore implements MusicPerformanceManifestation, UnconfirmedPublisherMigrator, PublisherInInstance {
+public class MusicScore
+    implements MusicPerformanceManifestation, UnconfirmedPublisherMigrator, PublisherInInstance {
 
-    public static final String ENSEMBLE_FIELD = "ensemble";
-    public static final String MOVEMENTS_FIELD = "movements";
-    public static final String EXTENT_FIELD = "extent";
-    public static final String PUBLISHER_FIELD = "publisher";
-    public static final String ISMN_FIELD = "ismn";
+  public static final String ENSEMBLE_FIELD = "ensemble";
+  public static final String MOVEMENTS_FIELD = "movements";
+  public static final String EXTENT_FIELD = "extent";
+  public static final String PUBLISHER_FIELD = "publisher";
+  public static final String ISMN_FIELD = "ismn";
 
-    @JsonProperty(ENSEMBLE_FIELD)
-    private final String ensemble;
-    @JsonProperty(MOVEMENTS_FIELD)
-    private final String movements;
-    @JsonProperty(EXTENT_FIELD)
-    private final String extent;
-    @JsonProperty(PUBLISHER_FIELD)
-    private final PublishingHouse publisher;
-    @JsonProperty(ISMN_FIELD)
-    private final Ismn ismn;
+  @JsonProperty(ENSEMBLE_FIELD)
+  private final String ensemble;
 
-    public MusicScore(@JsonProperty(ENSEMBLE_FIELD) String ensemble,
-                      @JsonProperty(MOVEMENTS_FIELD) String movements,
-                      @JsonProperty(EXTENT_FIELD) String extent,
-                      @JsonProperty(PUBLISHER_FIELD) PublishingHouse publisher,
-                      @JsonProperty(ISMN_FIELD) Ismn ismn) {
+  @JsonProperty(MOVEMENTS_FIELD)
+  private final String movements;
 
-        this.ensemble = ensemble;
-        this.movements = movements;
-        this.extent = extent;
-        this.publisher = publisher;
-        this.ismn = ismn;
+  @JsonProperty(EXTENT_FIELD)
+  private final String extent;
+
+  @JsonProperty(PUBLISHER_FIELD)
+  private final PublishingHouse publisher;
+
+  @JsonProperty(ISMN_FIELD)
+  private final Ismn ismn;
+
+  public MusicScore(
+      @JsonProperty(ENSEMBLE_FIELD) String ensemble,
+      @JsonProperty(MOVEMENTS_FIELD) String movements,
+      @JsonProperty(EXTENT_FIELD) String extent,
+      @JsonProperty(PUBLISHER_FIELD) PublishingHouse publisher,
+      @JsonProperty(ISMN_FIELD) Ismn ismn) {
+
+    this.ensemble = ensemble;
+    this.movements = movements;
+    this.extent = extent;
+    this.publisher = publisher;
+    this.ismn = ismn;
+  }
+
+  @JsonCreator
+  public static MusicScore fromJson(
+      @JsonProperty(ENSEMBLE_FIELD) String ensemble,
+      @JsonProperty(MOVEMENTS_FIELD) String movements,
+      @JsonProperty(EXTENT_FIELD) String extent,
+      @JsonProperty(PUBLISHER_FIELD) Object publisher,
+      @JsonProperty(ISMN_FIELD) Ismn ismn) {
+    var publishingHouse =
+        publisher instanceof String
+            ? new UnconfirmedPublisher((String) publisher)
+            : UnconfirmedPublisherMigrator.toPublisher(publisher);
+    return new MusicScore(ensemble, movements, extent, publishingHouse, ismn);
+  }
+
+  @Override
+  @JacocoGenerated
+  public int hashCode() {
+    return Objects.hash(getEnsemble(), getMovements(), getExtent(), getPublisher(), getIsmn());
+  }
+
+  @Override
+  @JacocoGenerated
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
-
-    @JsonCreator
-    public static MusicScore fromJson(@JsonProperty(ENSEMBLE_FIELD) String ensemble,
-                                      @JsonProperty(MOVEMENTS_FIELD) String movements,
-                                      @JsonProperty(EXTENT_FIELD) String extent,
-                                      @JsonProperty(PUBLISHER_FIELD) Object publisher,
-                                      @JsonProperty(ISMN_FIELD) Ismn ismn) {
-        var publishingHouse = publisher instanceof String
-                                  ? new UnconfirmedPublisher((String) publisher)
-                                  : UnconfirmedPublisherMigrator.toPublisher(publisher);
-        return new MusicScore(ensemble, movements, extent, publishingHouse, ismn);
+    if (!(o instanceof MusicScore)) {
+      return false;
     }
+    MusicScore that = (MusicScore) o;
+    return Objects.equals(getEnsemble(), that.getEnsemble())
+        && Objects.equals(getMovements(), that.getMovements())
+        && Objects.equals(getExtent(), that.getExtent())
+        && Objects.equals(getPublisher(), that.getPublisher())
+        && Objects.equals(getIsmn(), that.getIsmn());
+  }
 
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getEnsemble(), getMovements(), getExtent(), getPublisher(), getIsmn());
-    }
+  public String getEnsemble() {
+    return ensemble;
+  }
 
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof MusicScore)) {
-            return false;
-        }
-        MusicScore that = (MusicScore) o;
-        return Objects.equals(getEnsemble(), that.getEnsemble())
-               && Objects.equals(getMovements(), that.getMovements())
-               && Objects.equals(getExtent(), that.getExtent())
-               && Objects.equals(getPublisher(), that.getPublisher())
-               && Objects.equals(getIsmn(), that.getIsmn());
-    }
+  public String getMovements() {
+    return movements;
+  }
 
-    public String getEnsemble() {
-        return ensemble;
-    }
+  public String getExtent() {
+    return extent;
+  }
 
-    public String getMovements() {
-        return movements;
-    }
+  @Override
+  public PublishingHouse getPublisher() {
+    return publisher;
+  }
 
-    public String getExtent() {
-        return extent;
-    }
-
-    @Override
-    public PublishingHouse getPublisher() {
-        return publisher;
-    }
-
-    public Ismn getIsmn() {
-        return ismn;
-    }
+  public Ismn getIsmn() {
+    return ismn;
+  }
 }

@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.merger.publicationcontextmerger;
 
 import static java.util.Objects.nonNull;
+
 import java.net.URI;
 import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.Agent;
@@ -11,41 +12,41 @@ import nva.commons.core.JacocoGenerated;
 
 public final class EventMerger extends PublicationContextMerger {
 
-    @JacocoGenerated
-    private EventMerger(Record record) {
-        super(record);
-    }
+  @JacocoGenerated
+  private EventMerger(Record record) {
+    super(record);
+  }
 
-    public static Event merge(Event event, PublicationContext publicationContext) {
-        if (publicationContext instanceof Event newEvent) {
-            return new Event.Builder()
-                       .withPlace(getPlace(event.getPlace(), newEvent.getPlace()))
-                       .withSubEvent(getSubEvent(event, newEvent))
-                       .withProduct(getProduct(event, newEvent))
-                       .withTime(getTime(event.getTime(), newEvent.getTime()))
-                       .withAgent(getAgent(event.getAgent(), newEvent.getAgent()))
-                       .withName(getNonNullValue(event.getName(), newEvent.getName()))
-                       .build();
-        } else {
-            return event;
-        }
+  public static Event merge(Event event, PublicationContext publicationContext) {
+    if (publicationContext instanceof Event newEvent) {
+      return new Event.Builder()
+          .withPlace(getPlace(event.getPlace(), newEvent.getPlace()))
+          .withSubEvent(getSubEvent(event, newEvent))
+          .withProduct(getProduct(event, newEvent))
+          .withTime(getTime(event.getTime(), newEvent.getTime()))
+          .withAgent(getAgent(event.getAgent(), newEvent.getAgent()))
+          .withName(getNonNullValue(event.getName(), newEvent.getName()))
+          .build();
+    } else {
+      return event;
     }
+  }
 
-    private static Agent getAgent(Agent oldAgent, Agent newAgent) {
-        return nonNull(oldAgent) ? oldAgent : newAgent;
-    }
+  private static Agent getAgent(Agent oldAgent, Agent newAgent) {
+    return nonNull(oldAgent) ? oldAgent : newAgent;
+  }
 
-    private static URI getProduct(Event event, Event newEvent) {
-        return event.getProduct().isPresent()
-                   ? event.getProduct().orElse(null)
-                   : newEvent.getProduct().orElse(null);
-    }
+  private static URI getProduct(Event event, Event newEvent) {
+    return event.getProduct().isPresent()
+        ? event.getProduct().orElse(null)
+        : newEvent.getProduct().orElse(null);
+  }
 
-    private static Event getSubEvent(Event oldEvent, Event newEvent) {
-        return nonNull(oldEvent) ? oldEvent : newEvent;
-    }
+  private static Event getSubEvent(Event oldEvent, Event newEvent) {
+    return nonNull(oldEvent) ? oldEvent : newEvent;
+  }
 
-    private static Place getPlace(Place oldPlace, Place newPlace) {
-        return nonNull(oldPlace) ? oldPlace : newPlace;
-    }
+  private static Place getPlace(Place oldPlace, Place newPlace) {
+    return nonNull(oldPlace) ? oldPlace : newPlace;
+  }
 }

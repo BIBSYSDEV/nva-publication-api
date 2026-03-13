@@ -15,39 +15,37 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class NvaPublicationPartOf {
 
-    @JsonProperty("cristinid")
-    private String cristinId;
+  @JsonProperty("cristinid")
+  private String cristinId;
 
-    private Publication parentPublication;
+  private Publication parentPublication;
 
-    @JacocoGenerated
-    public NvaPublicationPartOf() {
+  @JacocoGenerated
+  public NvaPublicationPartOf() {}
+
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        NvaPublicationPartOf that = (NvaPublicationPartOf) o;
-        return Objects.equals(getCristinId(), that.getCristinId()) && Objects.equals(
-            getParentPublication(), that.getParentPublication());
+    if (o == null || getClass() != o.getClass()) {
+      return false;
     }
+    NvaPublicationPartOf that = (NvaPublicationPartOf) o;
+    return Objects.equals(getCristinId(), that.getCristinId())
+        && Objects.equals(getParentPublication(), that.getParentPublication());
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getCristinId(), getParentPublication());
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(getCristinId(), getParentPublication());
+  }
 }

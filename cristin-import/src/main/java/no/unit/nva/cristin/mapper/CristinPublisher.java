@@ -13,22 +13,21 @@ import lombok.Setter;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"forlagsnr"})
 public class CristinPublisher {
-    
-    public static final String PUBLISHER_NAME = "forlagsnavn";
-    public static final String NSD_CODE = "nsdkode";
-    @JsonProperty(PUBLISHER_NAME)
-    private String publisherName;
-    @JsonProperty(NSD_CODE)
-    private Integer nsdCode;
 
-    public CristinPublisher() {
+  public static final String PUBLISHER_NAME = "forlagsnavn";
+  public static final String NSD_CODE = "nsdkode";
 
-    }
+  @JsonProperty(PUBLISHER_NAME)
+  private String publisherName;
+
+  @JsonProperty(NSD_CODE)
+  private Integer nsdCode;
+
+  public CristinPublisher() {}
 }

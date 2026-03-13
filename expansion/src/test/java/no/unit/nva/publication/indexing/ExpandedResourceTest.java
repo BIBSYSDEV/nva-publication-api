@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -43,7 +44,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import nva.commons.apigateway.MediaType;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
@@ -94,6 +94,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.uriretriever.FakeUriResponse;
 import no.unit.nva.publication.uriretriever.FakeUriRetriever;
+import nva.commons.apigateway.MediaType;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
@@ -108,1229 +109,1441 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class ExpandedResourceTest extends ResourcesLocalTest {
 
-    private static final JsonPointer JSON_PTR_CONTRIBUTORS =
-            JsonPointer.compile("/entityDescription/contributors");
-    private static final JsonPointer JSON_PTR_TOP_LEVEL_ORGS =
-            JsonPointer.compile("/topLevelOrganizations");
-    private static final JsonPointer JSON_CONTRIBUTOR_ORGANIZATIONS =
-            JsonPointer.compile("/contributorOrganizations");
-    private static final JsonPointer JSON_PTR_ID = JsonPointer.compile("/id");
-    private static final JsonPointer JSON_PTR_HAS_PART = JsonPointer.compile("/hasPart");
-    private static final JsonPointer JSON_PTR_PART_OF = JsonPointer.compile("/partOf");
-    private static final JsonPointer JSON_PTR_AFFILIATIONS = JsonPointer.compile("/affiliations");
-    private static final JsonPointer SERIES_LEVEL_JSON_PTR =
-            JsonPointer.compile(
-                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/series/scientificValue");
-    private static final JsonPointer PUBLISHER_LEVEL_JSON_PTR =
-            JsonPointer.compile(
-                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/publisher/scientificValue");
-    private static final JsonPointer PUBLISHER_ID_JSON_PTR =
-            JsonPointer.compile(
-                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/publisher/id");
-    private static final JsonPointer SERIES_ID_JSON_PTR =
-            JsonPointer.compile(
-                    "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/series/id");
-    private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
-    private FakeUriRetriever fakeUriRetriever;
-    private ResourceService resourceService;
-    private FakeSqsClient sqsClient;
+  private static final JsonPointer JSON_PTR_CONTRIBUTORS =
+      JsonPointer.compile("/entityDescription/contributors");
+  private static final JsonPointer JSON_PTR_TOP_LEVEL_ORGS =
+      JsonPointer.compile("/topLevelOrganizations");
+  private static final JsonPointer JSON_CONTRIBUTOR_ORGANIZATIONS =
+      JsonPointer.compile("/contributorOrganizations");
+  private static final JsonPointer JSON_PTR_ID = JsonPointer.compile("/id");
+  private static final JsonPointer JSON_PTR_HAS_PART = JsonPointer.compile("/hasPart");
+  private static final JsonPointer JSON_PTR_PART_OF = JsonPointer.compile("/partOf");
+  private static final JsonPointer JSON_PTR_AFFILIATIONS = JsonPointer.compile("/affiliations");
+  private static final JsonPointer SERIES_LEVEL_JSON_PTR =
+      JsonPointer.compile(
+          "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/series/scientificValue");
+  private static final JsonPointer PUBLISHER_LEVEL_JSON_PTR =
+      JsonPointer.compile(
+          "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/publisher/scientificValue");
+  private static final JsonPointer PUBLISHER_ID_JSON_PTR =
+      JsonPointer.compile(
+          "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/publisher/id");
+  private static final JsonPointer SERIES_ID_JSON_PTR =
+      JsonPointer.compile(
+          "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/series/id");
+  private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
+  private FakeUriRetriever fakeUriRetriever;
+  private ResourceService resourceService;
+  private FakeSqsClient sqsClient;
 
-    public static Stream<Arguments> fundingPairProvider() {
-        var unconfirmedFunding = randomUnconfirmedFunding();
-        var confirmedFunding = (ConfirmedFunding) new FundingBuilder()
-                                                      .withId(randomUri())
-                                                      .withSource(unconfirmedFunding.getSource())
-                                                      .withIdentifier(unconfirmedFunding.getIdentifier())
-                                                      .withLabels(unconfirmedFunding.getLabels())
-                                                      .withFundingAmount(unconfirmedFunding.getFundingAmount())
-                                                      .withActiveFrom(unconfirmedFunding.getActiveFrom())
-                                                      .withActiveTo(randomInstant(unconfirmedFunding.getActiveTo()))
-                                                      .build();
+  public static Stream<Arguments> fundingPairProvider() {
+    var unconfirmedFunding = randomUnconfirmedFunding();
+    var confirmedFunding =
+        (ConfirmedFunding)
+            new FundingBuilder()
+                .withId(randomUri())
+                .withSource(unconfirmedFunding.getSource())
+                .withIdentifier(unconfirmedFunding.getIdentifier())
+                .withLabels(unconfirmedFunding.getLabels())
+                .withFundingAmount(unconfirmedFunding.getFundingAmount())
+                .withActiveFrom(unconfirmedFunding.getActiveFrom())
+                .withActiveTo(randomInstant(unconfirmedFunding.getActiveTo()))
+                .build();
 
-        return Stream.of(Arguments.of(new FundingList(Set.of(unconfirmedFunding)),
-                                               new FundingList(List.of(confirmedFunding))),
-                         Arguments.of(new FundingList(List.of(confirmedFunding)),
-                                               new FundingList(Set.of(unconfirmedFunding))));
-    }
+    return Stream.of(
+        Arguments.of(
+            new FundingList(Set.of(unconfirmedFunding)),
+            new FundingList(List.of(confirmedFunding))),
+        Arguments.of(
+            new FundingList(List.of(confirmedFunding)),
+            new FundingList(Set.of(unconfirmedFunding))));
+  }
 
-    @BeforeEach
-    void setup() {
-        super.init();
-        this.fakeUriRetriever = FakeUriRetriever.newInstance();
-        resourceService = getResourceService(client);
-        sqsClient = new FakeSqsClient();
-    }
+  @BeforeEach
+  void setup() {
+    super.init();
+    this.fakeUriRetriever = FakeUriRetriever.newInstance();
+    resourceService = getResourceService(client);
+    sqsClient = new FakeSqsClient();
+  }
 
-    @Test
-    void shouldReturnIndexDocumentWithValidReferenceData() throws Exception {
+  @Test
+  void shouldReturnIndexDocumentWithValidReferenceData() throws Exception {
 
-        final Publication publication = randomBookWithConfirmedPublisher();
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        final ExpandedResource indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient,
-                                                               Resource.fromPublication(resource));
-        final JsonNode framedResultNode = indexDocument.asJsonNode();
+    final Publication publication = randomBookWithConfirmedPublisher();
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    final ExpandedResource indexDocument =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+    final JsonNode framedResultNode = indexDocument.asJsonNode();
 
-        var publisherResultString = framedResultNode.at(PublicationJsonPointers.PUBLISHER_JSON_PTR).toString();
-        var publisher =
-            attempt(() -> objectMapper.readValue(publisherResultString, PublisherResult.class)).orElseThrow();
+    var publisherResultString =
+        framedResultNode.at(PublicationJsonPointers.PUBLISHER_JSON_PTR).toString();
+    var publisher =
+        attempt(() -> objectMapper.readValue(publisherResultString, PublisherResult.class))
+            .orElseThrow();
 
-        assertTrue(publisher.isNotEmpty());
-    }
+    assertTrue(publisher.isNotEmpty());
+  }
 
-    @Test
-    void shouldReturnIndexDocumentWithContributorsPreviewAndCount() throws Exception {
-        var publication = randomPublication(AcademicArticle.class);
+  @Test
+  void shouldReturnIndexDocumentWithContributorsPreviewAndCount() throws Exception {
+    var publication = randomPublication(AcademicArticle.class);
 
-        var contributor1 = contributorWithSequence(1);
-        var contributor2 = contributorWithSequence(2);
-        var contributor3 = contributorWithSequence(3);
-        var contributor4 = contributorWithSequence(4);
+    var contributor1 = contributorWithSequence(1);
+    var contributor2 = contributorWithSequence(2);
+    var contributor3 = contributorWithSequence(3);
+    var contributor4 = contributorWithSequence(4);
 
-        var contributors = Arrays.asList(contributor1, contributor2, contributor3, contributor4);
-        Collections.shuffle(contributors);
-        var expectedContributors = List.of(contributor1, contributor2, contributor3, contributor4);
+    var contributors = Arrays.asList(contributor1, contributor2, contributor3, contributor4);
+    Collections.shuffle(contributors);
+    var expectedContributors = List.of(contributor1, contributor2, contributor3, contributor4);
 
-        publication.getEntityDescription().setContributors(contributors);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient,
-                                            Resource.fromPublication(resource));
-        var framedResultNode = indexDocument.asJsonNode();
+    publication.getEntityDescription().setContributors(contributors);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    var indexDocument =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+    var framedResultNode = indexDocument.asJsonNode();
 
-        var contributorsPreviewNode = (ArrayNode) framedResultNode.at("/entityDescription")
-                                                      .at("/contributorsPreview");
+    var contributorsPreviewNode =
+        (ArrayNode) framedResultNode.at("/entityDescription").at("/contributorsPreview");
 
-        var actualContributorsPreview = stream(contributorsPreviewNode.spliterator(), false)
-                                            .map(node -> objectMapper.convertValue(node, Contributor.class))
-                                            .toList();
+    var actualContributorsPreview =
+        stream(contributorsPreviewNode.spliterator(), false)
+            .map(node -> objectMapper.convertValue(node, Contributor.class))
+            .toList();
 
-        assertThat(actualContributorsPreview, is(equalTo(expectedContributors)));
-    }
+    assertThat(actualContributorsPreview, is(equalTo(expectedContributors)));
+  }
 
-    @Test
-    void shouldAllowMissingChannelButPersistRecoveryMessage() throws BadRequestException {
-        var publication = randomPublication(AcademicArticle.class);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var channel = ((Journal) resource.getEntityDescription().getReference().getPublicationContext()).getId();
-        fakeUriRetriever.registerResponse(channel, 404, APPLICATION_JSON_LD, "");
-        assertDoesNotThrow(() -> fromPublication(fakeUriRetriever, resourceService, sqsClient,
-                                                 Resource.fromPublication(resource)));
+  @Test
+  void shouldAllowMissingChannelButPersistRecoveryMessage() throws BadRequestException {
+    var publication = randomPublication(AcademicArticle.class);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    var channel =
+        ((Journal) resource.getEntityDescription().getReference().getPublicationContext()).getId();
+    fakeUriRetriever.registerResponse(channel, 404, APPLICATION_JSON_LD, "");
+    assertDoesNotThrow(
+        () ->
+            fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)));
 
-        var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
-        assertEquals(resource.getIdentifier().toString(),
-                     id);
-    }
+    var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
+    assertEquals(resource.getIdentifier().toString(), id);
+  }
 
-    @Test
-    void shouldAllowNotExpandedAffiliationButPersistRecoveryMessage() throws BadRequestException {
-        var publication = randomPublication(AcademicArticle.class);
-        var affiliation = randomOrganization();
-        publication.getEntityDescription()
-            .setContributors(List.of(new Contributor.Builder().withAffiliations(List.of(affiliation)).build()));
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        fakeUriRetriever.registerResponse(affiliation.getId(), 500, APPLICATION_JSON_LD, "");
-        assertDoesNotThrow(() -> fromPublication(fakeUriRetriever, resourceService, sqsClient,
-                                                 Resource.fromPublication(resource)));
+  @Test
+  void shouldAllowNotExpandedAffiliationButPersistRecoveryMessage() throws BadRequestException {
+    var publication = randomPublication(AcademicArticle.class);
+    var affiliation = randomOrganization();
+    publication
+        .getEntityDescription()
+        .setContributors(
+            List.of(new Contributor.Builder().withAffiliations(List.of(affiliation)).build()));
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    fakeUriRetriever.registerResponse(affiliation.getId(), 500, APPLICATION_JSON_LD, "");
+    assertDoesNotThrow(
+        () ->
+            fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)));
 
-        var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
+    var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
 
-        assertEquals(resource.getIdentifier().toString(), id);
-    }
+    assertEquals(resource.getIdentifier().toString(), id);
+  }
 
-    @Test
-    void shouldReturnIndexDocumentWithContributorsPreviewWithNoMoreThan10Contributors() throws Exception {
-        var publication = randomPublication();
+  @Test
+  void shouldReturnIndexDocumentWithContributorsPreviewWithNoMoreThan10Contributors()
+      throws Exception {
+    var publication = randomPublication();
 
-        var contributors = IntStream.range(0, 20)
-                               .mapToObj(i -> contributorWithSequence(randomInteger()))
-                               .toList();
+    var contributors =
+        IntStream.range(0, 20).mapToObj(i -> contributorWithSequence(randomInteger())).toList();
 
-        publication.getEntityDescription().setContributors(contributors);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource));
-        var framedResultNode = indexDocument.asJsonNode();
+    publication.getEntityDescription().setContributors(contributors);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    var indexDocument =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+    var framedResultNode = indexDocument.asJsonNode();
 
-        var contributorsCountNode = (IntNode) framedResultNode.at("/entityDescription")
-                                                  .at("/contributorsCount");
+    var contributorsCountNode =
+        (IntNode) framedResultNode.at("/entityDescription").at("/contributorsCount");
 
-        var contributorsPreviewNode = (ArrayNode) framedResultNode.at("/entityDescription")
-                                                      .at("/contributorsPreview");
+    var contributorsPreviewNode =
+        (ArrayNode) framedResultNode.at("/entityDescription").at("/contributorsPreview");
 
-        var actualContributorsPreview = stream(contributorsPreviewNode.spliterator(), false)
-                                            .map(node -> objectMapper.convertValue(node, Contributor.class))
-                                            .toList();
+    var actualContributorsPreview =
+        stream(contributorsPreviewNode.spliterator(), false)
+            .map(node -> objectMapper.convertValue(node, Contributor.class))
+            .toList();
 
-        assertThat(actualContributorsPreview.size(), is(equalTo(10)));
-        assertThat(contributorsCountNode.intValue(), is(equalTo(20)));
-    }
+    assertThat(actualContributorsPreview.size(), is(equalTo(10)));
+    assertThat(contributorsCountNode.intValue(), is(equalTo(20)));
+  }
 
-    @Test
-    void shouldReturnIndexDocumentWithTopLevelOrganizationsWithTreeToRelevantAffiliation() throws Exception {
-        final var publication = randomPublication(AcademicArticle.class);
-        final var affiliationToBeExpanded = HARD_CODED_LEVEL_3_ORG_URI;
-        var contributorAffiliatedToTopLevel = publication.getEntityDescription().getContributors().getFirst().copy()
-                                                  .withAffiliations(
-                                                      List.of(Organization.fromUri(affiliationToBeExpanded))).build();
+  @Test
+  void shouldReturnIndexDocumentWithTopLevelOrganizationsWithTreeToRelevantAffiliation()
+      throws Exception {
+    final var publication = randomPublication(AcademicArticle.class);
+    final var affiliationToBeExpanded = HARD_CODED_LEVEL_3_ORG_URI;
+    var contributorAffiliatedToTopLevel =
+        publication
+            .getEntityDescription()
+            .getContributors()
+            .getFirst()
+            .copy()
+            .withAffiliations(List.of(Organization.fromUri(affiliationToBeExpanded)))
+            .build();
 
-        publication.getEntityDescription().setContributors(List.of(contributorAffiliatedToTopLevel));
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    publication.getEntityDescription().setContributors(List.of(contributorAffiliatedToTopLevel));
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
-        var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)).asJsonNode();
-        var topLevelNodes = (ArrayNode) framedResultNode.at(JSON_PTR_TOP_LEVEL_ORGS);
-        var topLevelForExpandedAffiliation = getTopLevel(topLevelNodes, HARD_CODED_TOP_LEVEL_ORG_URI.toString());
+    var framedResultNode =
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
+    var topLevelNodes = (ArrayNode) framedResultNode.at(JSON_PTR_TOP_LEVEL_ORGS);
+    var topLevelForExpandedAffiliation =
+        getTopLevel(topLevelNodes, HARD_CODED_TOP_LEVEL_ORG_URI.toString());
 
-        assertThat(findDeepestNestedSubUnit(topLevelForExpandedAffiliation).at(JSON_PTR_ID).textValue(),
-                   is(equalTo(affiliationToBeExpanded.toString())));
-    }
+    assertThat(
+        findDeepestNestedSubUnit(topLevelForExpandedAffiliation).at(JSON_PTR_ID).textValue(),
+        is(equalTo(affiliationToBeExpanded.toString())));
+  }
 
-    @Test
-    void shouldReturnIndexDocumentWithContributorsOrganizations() throws Exception {
-        var publication = randomPublication(AcademicArticle.class);
-        var contributor1org = Organization.fromUri(HARD_CODED_LEVEL_3_ORG_URI);
-        var contributor1parentOrg = Organization.fromUri(HARD_CODED_LEVEL_2_ORG_URI);
-        var contributor2org = Organization.fromUri(FakeUriResponse.constructCristinOrgUri("123.1.2.0"));
-        var topLevelOrg = Organization.fromUri(HARD_CODED_TOP_LEVEL_ORG_URI);
+  @Test
+  void shouldReturnIndexDocumentWithContributorsOrganizations() throws Exception {
+    var publication = randomPublication(AcademicArticle.class);
+    var contributor1org = Organization.fromUri(HARD_CODED_LEVEL_3_ORG_URI);
+    var contributor1parentOrg = Organization.fromUri(HARD_CODED_LEVEL_2_ORG_URI);
+    var contributor2org = Organization.fromUri(FakeUriResponse.constructCristinOrgUri("123.1.2.0"));
+    var topLevelOrg = Organization.fromUri(HARD_CODED_TOP_LEVEL_ORG_URI);
 
-        var contributor1 = contributorWithOneAffiliation(contributor1org);
-        var contributor2 = contributorWithOneAffiliation(contributor2org);
-        publication.getEntityDescription().setContributors(List.of(contributor1, contributor2));
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    var contributor1 = contributorWithOneAffiliation(contributor1org);
+    var contributor2 = contributorWithOneAffiliation(contributor2org);
+    publication.getEntityDescription().setContributors(List.of(contributor1, contributor2));
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
-        var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)).asJsonNode();
-        var contributorOrganizationsNode = framedResultNode.at(JSON_CONTRIBUTOR_ORGANIZATIONS);
-        var actualOrganizations = stream(contributorOrganizationsNode.spliterator(), false)
-                                      .map(JsonNode::textValue)
-                                      .toList();
+    var framedResultNode =
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
+    var contributorOrganizationsNode = framedResultNode.at(JSON_CONTRIBUTOR_ORGANIZATIONS);
+    var actualOrganizations =
+        stream(contributorOrganizationsNode.spliterator(), false).map(JsonNode::textValue).toList();
 
-        var expectedOrganizations = Stream.of(contributor1org,
-                                              contributor1parentOrg,
-                                              topLevelOrg,
-                                              contributor2org).map(Organization::getId).map(URI::toString).toArray();
+    var expectedOrganizations =
+        Stream.of(contributor1org, contributor1parentOrg, topLevelOrg, contributor2org)
+            .map(Organization::getId)
+            .map(URI::toString)
+            .toArray();
 
-        assertThat(actualOrganizations, containsInAnyOrder(expectedOrganizations));
-    }
+    assertThat(actualOrganizations, containsInAnyOrder(expectedOrganizations));
+  }
 
-    @Test
-    void shouldReturnIndexDocumentWithTopLevelOrganizationWithoutHasPartsIfContributorAffiliatedWithTopLevel()
-        throws Exception {
-        final var publication = randomBookWithConfirmedPublisher();
-        final var affiliationToBeExpanded = HARD_CODED_TOP_LEVEL_ORG_URI;
-        var contributorAffiliatedToTopLevel = publication.getEntityDescription().getContributors().getFirst().copy()
-                                                  .withAffiliations(
-                                                      List.of(Organization.fromUri(affiliationToBeExpanded))).build();
+  @Test
+  void
+      shouldReturnIndexDocumentWithTopLevelOrganizationWithoutHasPartsIfContributorAffiliatedWithTopLevel()
+          throws Exception {
+    final var publication = randomBookWithConfirmedPublisher();
+    final var affiliationToBeExpanded = HARD_CODED_TOP_LEVEL_ORG_URI;
+    var contributorAffiliatedToTopLevel =
+        publication
+            .getEntityDescription()
+            .getContributors()
+            .getFirst()
+            .copy()
+            .withAffiliations(List.of(Organization.fromUri(affiliationToBeExpanded)))
+            .build();
 
-        publication.getEntityDescription().setContributors(List.of(contributorAffiliatedToTopLevel));
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    publication.getEntityDescription().setContributors(List.of(contributorAffiliatedToTopLevel));
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
-        var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)).asJsonNode();
-        var topLevelNodes = (ArrayNode) framedResultNode.at(JSON_PTR_TOP_LEVEL_ORGS);
-        var topLevelForExpandedAffiliation = getTopLevel(topLevelNodes, affiliationToBeExpanded.toString());
+    var framedResultNode =
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
+    var topLevelNodes = (ArrayNode) framedResultNode.at(JSON_PTR_TOP_LEVEL_ORGS);
+    var topLevelForExpandedAffiliation =
+        getTopLevel(topLevelNodes, affiliationToBeExpanded.toString());
 
-        var deepestNestedSubUnit = findDeepestNestedSubUnit(topLevelForExpandedAffiliation);
-        assertThat(deepestNestedSubUnit.at(JSON_PTR_ID).textValue(), is(equalTo(affiliationToBeExpanded.toString())));
-    }
+    var deepestNestedSubUnit = findDeepestNestedSubUnit(topLevelForExpandedAffiliation);
+    assertThat(
+        deepestNestedSubUnit.at(JSON_PTR_ID).textValue(),
+        is(equalTo(affiliationToBeExpanded.toString())));
+  }
 
-    @Test
-    void shouldReturnIndexDocumentWithSortedContributorsByTheirSequence() throws Exception {
-        final var publication = randomBookWithManyContributors();
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+  @Test
+  void shouldReturnIndexDocumentWithSortedContributorsByTheirSequence() throws Exception {
+    final var publication = randomBookWithManyContributors();
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
-        var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)).asJsonNode();
-        var contributorsJson = framedResultNode.at("/entityDescription/contributors");
+    var framedResultNode =
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
+    var contributorsJson = framedResultNode.at("/entityDescription/contributors");
 
-        List<Contributor> contributors = objectMapper.convertValue(contributorsJson,
-                                                                   objectMapper.getTypeFactory()
-                                                                       .constructCollectionType(List.class,
-                                                                                                Contributor.class));
-        var sortedContributors = contributors.stream().sorted(Comparator.comparing(Contributor::getSequence)).toList();
+    List<Contributor> contributors =
+        objectMapper.convertValue(
+            contributorsJson,
+            objectMapper.getTypeFactory().constructCollectionType(List.class, Contributor.class));
+    var sortedContributors =
+        contributors.stream().sorted(Comparator.comparing(Contributor::getSequence)).toList();
 
-        assertThat(contributors, is(equalTo(sortedContributors)));
-    }
+    assertThat(contributors, is(equalTo(sortedContributors)));
+  }
 
-    @Test
-    void shouldReturnIndexDocumentWithIdWhenThereIsNoEntityDescription() throws Exception {
-        final var publication = randomPublicationWithoutEntityDescription();
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+  @Test
+  void shouldReturnIndexDocumentWithIdWhenThereIsNoEntityDescription() throws Exception {
+    final var publication = randomPublicationWithoutEntityDescription();
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
-        var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)).asJsonNode();
-        var id = URI.create(framedResultNode.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
+    var framedResultNode =
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
+    var id = URI.create(framedResultNode.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
 
-        assertThat(id, is(not(nullValue())));
-    }
+    assertThat(id, is(not(nullValue())));
+  }
 
-    @Test
-    @Deprecated
-    void shouldReturnIndexDocumentWithValidFundingSource() throws Exception {
-        final var publication = randomBookWithConfirmedPublisher();
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+  @Test
+  @Deprecated
+  void shouldReturnIndexDocumentWithValidFundingSource() throws Exception {
+    final var publication = randomBookWithConfirmedPublisher();
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
-        final var framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)).asJsonNode();
-        final var extractedSourceId = extractSourceId(framedResultNode);
+    final var framedResultNode =
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
+    final var extractedSourceId = extractSourceId(framedResultNode);
 
-        // TODO: Better test here?
-        assertThat(extractedSourceId.size(), is(equalTo(2)));
-    }
+    // TODO: Better test here?
+    assertThat(extractedSourceId.size(), is(equalTo(2)));
+  }
 
-    @Test
-    void shouldReturnIndexDocumentWithValidFundingSourceInsertingContextInFundingSource() throws Exception {
+  @Test
+  void shouldReturnIndexDocumentWithValidFundingSourceInsertingContextInFundingSource()
+      throws Exception {
 
-        final var publication = randomBookWithConfirmedPublisher();
-        var fundings =  publication.getFundings().iterator();
-        final var sourceUri0 = fundings.next().getSource();
-        final var sourceUri1 = fundings.next().getSource();
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    final var publication = randomBookWithConfirmedPublisher();
+    var fundings = publication.getFundings().iterator();
+    final var sourceUri0 = fundings.next().getSource();
+    final var sourceUri1 = fundings.next().getSource();
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
-        assertHasExpectedFundings(sourceUri0, sourceUri1,
-                                  fromPublication(fakeUriRetriever, resourceService, sqsClient
-                                      , Resource.fromPublication(resource)).asJsonNode());
-    }
+    assertHasExpectedFundings(
+        sourceUri0,
+        sourceUri1,
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode());
+  }
 
-    @Test
-    void shouldExpandMultipleFundingsWithTheSameSource() throws JsonProcessingException, BadRequestException {
-        final var publication = randomBookWithConfirmedPublisher();
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+  @Test
+  void shouldExpandMultipleFundingsWithTheSameSource()
+      throws JsonProcessingException, BadRequestException {
+    final var publication = randomBookWithConfirmedPublisher();
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)).asJsonNode();
-        var type = new TypeReference<List<FundingResult>>() {
-        };
+    var expandedResource =
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
+    var type = new TypeReference<List<FundingResult>>() {};
 
-        var string = expandedResource.at("/fundings").toString();
-        var fundings = attempt(() -> objectMapper.readValue(string, type)).orElseThrow();
-        fundings.forEach(funding -> assertTrue(funding.isNotEmpty()));
-    }
+    var string = expandedResource.at("/fundings").toString();
+    var fundings = attempt(() -> objectMapper.readValue(string, type)).orElseThrow();
+    fundings.forEach(funding -> assertTrue(funding.isNotEmpty()));
+  }
 
-    @Test
-    void shouldReturnIndexDocumentWithValidExpandedFundingSourceWhenFetchFundingReturnNotFound()
-        throws JsonProcessingException, BadRequestException {
-        final var publication = randomBookWithConfirmedPublisher();
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        int statusCode = 404;
+  @Test
+  void shouldReturnIndexDocumentWithValidExpandedFundingSourceWhenFetchFundingReturnNotFound()
+      throws JsonProcessingException, BadRequestException {
+    final var publication = randomBookWithConfirmedPublisher();
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    int statusCode = 404;
 
-        resource.getFundings().stream()
-            .filter(ConfirmedFunding.class::isInstance)
-            .map(ConfirmedFunding.class::cast)
-            .map(ConfirmedFunding::getSource)
-            .forEach(uri -> {
-                fakeUriRetriever.registerResponse(uri, statusCode, MediaType.ANY_APPLICATION_TYPE, "");
+    resource.getFundings().stream()
+        .filter(ConfirmedFunding.class::isInstance)
+        .map(ConfirmedFunding.class::cast)
+        .map(ConfirmedFunding::getSource)
+        .forEach(
+            uri -> {
+              fakeUriRetriever.registerResponse(
+                  uri, statusCode, MediaType.ANY_APPLICATION_TYPE, "");
             });
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)).asJsonNode();
+    var expandedResource =
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
 
-        assertTrue(expandedResource.at(JsonPointer.compile("/fundings/1/source")).has("id"));
-        assertTrue(expandedResource.at(JsonPointer.compile("/fundings/0/source")).has("id"));
-    }
+    assertTrue(expandedResource.at(JsonPointer.compile("/fundings/1/source")).has("id"));
+    assertTrue(expandedResource.at(JsonPointer.compile("/fundings/0/source")).has("id"));
+  }
 
-    @Test
-    void shouldAddProjectFundingIdentifierToPublicationWhenFundingsIsEmpty()
-        throws BadRequestException, JsonProcessingException {
-        var publication = randomPublication();
+  @Test
+  void shouldAddProjectFundingIdentifierToPublicationWhenFundingsIsEmpty()
+      throws BadRequestException, JsonProcessingException {
+    var publication = randomPublication();
 
-        var fundings = new FundingList(publication.getFundings());
-        publication.setFundings(emptySet());
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, fundings);
+    var fundings = new FundingList(publication.getFundings());
+    publication.setFundings(emptySet());
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, fundings);
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
-                                               Resource.fromPublication(resource))
-                                   .asJsonNode();
+    var expandedResource =
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
 
-        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
-    }
+    assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+  }
 
-    @Test
-    void shouldKeepFundingIdentifierWhenProjectFundingIdentifierIsEmpty()
-        throws BadRequestException, JsonProcessingException {
-        var publication = randomPublication();
+  @Test
+  void shouldKeepFundingIdentifierWhenProjectFundingIdentifierIsEmpty()
+      throws BadRequestException, JsonProcessingException {
+    var publication = randomPublication();
 
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptySet());
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptySet());
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
-                                               Resource.fromPublication(resource))
-                                   .asJsonNode();
+    var expandedResource =
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
 
-        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
-    }
+    assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+  }
 
-    @Disabled("Requirement created by developers and seems difficult to fix")
-    @Test
-    void shouldNotAddDuplicateFundingIdentifierWhenProjectFundingIdentifierIsSameAsFundingSource()
-        throws BadRequestException, JsonProcessingException {
-        var publication = randomPublication();
-        var existingFundings = new FundingList(publication.getFundings());
+  @Disabled("Requirement created by developers and seems difficult to fix")
+  @Test
+  void shouldNotAddDuplicateFundingIdentifierWhenProjectFundingIdentifierIsSameAsFundingSource()
+      throws BadRequestException, JsonProcessingException {
+    var publication = randomPublication();
+    var existingFundings = new FundingList(publication.getFundings());
 
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, existingFundings);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, existingFundings);
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
-                                               Resource.fromPublication(resource))
-                                   .asJsonNode();
+    var expandedResource =
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
 
-        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
-        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/1/type")).isMissingNode());
-        assertTrue(expandedResource.at(JsonPointer.compile("/fundings/2/type")).isMissingNode());
-    }
+    assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+    assertFalse(expandedResource.at(JsonPointer.compile("/fundings/1/type")).isMissingNode());
+    assertTrue(expandedResource.at(JsonPointer.compile("/fundings/2/type")).isMissingNode());
+  }
 
-    @ParameterizedTest
-    @DisplayName("Should keep funding when source and identifier match but not type")
-    @MethodSource("fundingPairProvider")
-    void shouldKeepBothFundingsWhenTypesAreMismatched(FundingList publicationFundings, FundingList projectFundings)
-        throws BadRequestException,
-               JsonProcessingException {
-        var publication = randomPublication();
+  @ParameterizedTest
+  @DisplayName("Should keep funding when source and identifier match but not type")
+  @MethodSource("fundingPairProvider")
+  void shouldKeepBothFundingsWhenTypesAreMismatched(
+      FundingList publicationFundings, FundingList projectFundings)
+      throws BadRequestException, JsonProcessingException {
+    var publication = randomPublication();
 
-        publication.setFundings(publicationFundings);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, projectFundings);
+    publication.setFundings(publicationFundings);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, projectFundings);
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
-                                               Resource.fromPublication(resource))
-                                   .asJsonNode();
+    var expandedResource =
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
 
-        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
-        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/1/type")).isMissingNode());
-    }
+    assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+    assertFalse(expandedResource.at(JsonPointer.compile("/fundings/1/type")).isMissingNode());
+  }
 
-    @Test
-    void shouldHandleCasesWhereNoFundingIdentifierIsPresentAnywhere()
-        throws BadRequestException, JsonProcessingException {
-        var publication = randomPublication();
+  @Test
+  void shouldHandleCasesWhereNoFundingIdentifierIsPresentAnywhere()
+      throws BadRequestException, JsonProcessingException {
+    var publication = randomPublication();
 
-        publication.setFundings(null);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptySet());
+    publication.setFundings(null);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    FakeUriResponse.fakeProjectResponses(fakeUriRetriever, publication, emptySet());
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
-                                               Resource.fromPublication(resource))
-                                   .asJsonNode();
+    var expandedResource =
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
 
-        var fundingsNode = expandedResource.at(JsonPointer.compile("/fundings"));
-        assertTrue(fundingsNode.isMissingNode() || fundingsNode.isEmpty());
-    }
+    var fundingsNode = expandedResource.at(JsonPointer.compile("/fundings"));
+    assertTrue(fundingsNode.isMissingNode() || fundingsNode.isEmpty());
+  }
 
-    @Test
-    void shouldNotCreateTopLevelOrgForBlankNodes() throws Exception {
+  @Test
+  void shouldNotCreateTopLevelOrgForBlankNodes() throws Exception {
 
-        final Publication publication = randomBookWithConfirmedPublisher();
+    final Publication publication = randomBookWithConfirmedPublisher();
 
-        ((Organization) publication.getEntityDescription()
-                            .getContributors()
-                            .getFirst()
-                            .getAffiliations()
-                            .getFirst()).setId(null);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    ((Organization)
+            publication
+                .getEntityDescription()
+                .getContributors()
+                .getFirst()
+                .getAffiliations()
+                .getFirst())
+        .setId(null);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
 
-        ObjectNode framedResultNode = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)).asJsonNode();
+    ObjectNode framedResultNode =
+        fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
 
-        var affiliations = framedResultNode.findValues("affiliations").getFirst();
-        affiliations.forEach(aff -> {
-            if (!aff.has("id")) {
-                assertThat(aff.has("topLevelOrganization"), is(equalTo(false)));
-            }
+    var affiliations = framedResultNode.findValues("affiliations").getFirst();
+    affiliations.forEach(
+        aff -> {
+          if (!aff.has("id")) {
+            assertThat(aff.has("topLevelOrganization"), is(equalTo(false)));
+          }
         });
-    }
+  }
 
-    @ParameterizedTest(name = "should return properly framed document with id based on Id-namespace and resource "
-                              + "identifier. Instance type:{0}")
-    @MethodSource("publicationInstanceProvider")
-    void shouldReturnDocumentWithIdBasedOnIdNameSpaceAndResourceIdentifier(Class<?> publicationInstance)
-        throws JsonProcessingException, BadRequestException {
+  @ParameterizedTest(
+      name =
+          "should return properly framed document with id based on Id-namespace and resource "
+              + "identifier. Instance type:{0}")
+  @MethodSource("publicationInstanceProvider")
+  void shouldReturnDocumentWithIdBasedOnIdNameSpaceAndResourceIdentifier(
+      Class<?> publicationInstance) throws JsonProcessingException, BadRequestException {
 
-        var publication = PublicationGenerator.randomPublication(publicationInstance);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var indexDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource));
-        var json = (ObjectNode) objectMapper.readTree(indexDocument.toJsonString());
-        var expectedUri = UriWrapper.fromUri(HOST_URI).addChild(resource.getIdentifier().toString()).getUri();
-        var actualUri = URI.create(json.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
-        assertThat(actualUri, is(equalTo(expectedUri)));
-    }
+    var publication = PublicationGenerator.randomPublication(publicationInstance);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    var indexDocument =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+    var json = (ObjectNode) objectMapper.readTree(indexDocument.toJsonString());
+    var expectedUri =
+        UriWrapper.fromUri(HOST_URI).addChild(resource.getIdentifier().toString()).getUri();
+    var actualUri = URI.create(json.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
+    assertThat(actualUri, is(equalTo(expectedUri)));
+  }
 
-    @Test
-    void shouldReturnIndexDocumentContainingConfirmedSeriesUriFromNsdPublicationChannels()
-        throws JsonProcessingException, BadRequestException {
+  @Test
+  void shouldReturnIndexDocumentContainingConfirmedSeriesUriFromNsdPublicationChannels()
+      throws JsonProcessingException, BadRequestException {
 
-        Publication publication = randomBookWithConfirmedPublisher();
-        Book book = extractBook(publication);
-        Series series = (Series) book.getSeries();
-        URI expectedSeriesUri = series.getId();
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        ExpandedResource actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource));
-        assertThat(actualDocument.getPublicationContextUris(), hasItems(expectedSeriesUri));
-    }
+    Publication publication = randomBookWithConfirmedPublisher();
+    Book book = extractBook(publication);
+    Series series = (Series) book.getSeries();
+    URI expectedSeriesUri = series.getId();
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    ExpandedResource actualDocument =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+    assertThat(actualDocument.getPublicationContextUris(), hasItems(expectedSeriesUri));
+  }
 
-    @Test
-    void shouldReturnIndexDocumentContainingReturnsJournalUriFromNsdPublicationChannels()
-        throws JsonProcessingException, BadRequestException {
+  @Test
+  void shouldReturnIndexDocumentContainingReturnsJournalUriFromNsdPublicationChannels()
+      throws JsonProcessingException, BadRequestException {
 
-        Publication publication = randomJournalArticleWithConfirmedJournal();
-        Journal journal = (Journal) publication.getEntityDescription().getReference().getPublicationContext();
-        URI expectedJournalUri = journal.getId();
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        ExpandedResource actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource));
-        assertThat(actualDocument.getPublicationContextUris(), contains(expectedJournalUri));
-    }
+    Publication publication = randomJournalArticleWithConfirmedJournal();
+    Journal journal =
+        (Journal) publication.getEntityDescription().getReference().getPublicationContext();
+    URI expectedJournalUri = journal.getId();
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    ExpandedResource actualDocument =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+    assertThat(actualDocument.getPublicationContextUris(), contains(expectedJournalUri));
+  }
 
-    @Test
-    void shouldReturnFundingSourceAsObjectWhenExternalUriFailsToLoad() throws JsonProcessingException,
-                                                                           BadRequestException {
-        var publication = randomPublication();
-        var unconfirmedFunding = (UnconfirmedFunding) new FundingBuilder()
-                                                      .withSource(URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR"))
-                                                      .withIdentifier("249994")
-                                                      .build();
-        publication.setFundings(Set.of(unconfirmedFunding));
+  @Test
+  void shouldReturnFundingSourceAsObjectWhenExternalUriFailsToLoad()
+      throws JsonProcessingException, BadRequestException {
+    var publication = randomPublication();
+    var unconfirmedFunding =
+        (UnconfirmedFunding)
+            new FundingBuilder()
+                .withSource(
+                    URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR"))
+                .withIdentifier("249994")
+                .build();
+    publication.setFundings(Set.of(unconfirmedFunding));
 
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
 
-        var uriRetriever = FakeUriRetriever.newInstance();
+    var uriRetriever = FakeUriRetriever.newInstance();
 
-        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+    FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
 
-        uriRetriever.registerResponse(unconfirmedFunding.getSource(),
-                                      404,
-                                      APPLICATION_JSON_LD,
-                                      "Not Found");
+    uriRetriever.registerResponse(
+        unconfirmedFunding.getSource(), 404, APPLICATION_JSON_LD, "Not Found");
 
-        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient,
-                                               Resource.fromPublication(resource))
-                                   .asJsonNode();
+    var expandedResource =
+        fromPublication(
+                uriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
 
-        var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
+    var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
 
-        assertTrue(fundingSource.isContainerNode(),
-                   "Expected funding source to be a object, but got: " + fundingSource);
-        assertEquals("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR",
-                     fundingSource.at(JsonPointer.compile("/id")).asText());
+    assertTrue(
+        fundingSource.isContainerNode(),
+        "Expected funding source to be a object, but got: " + fundingSource);
+    assertEquals(
+        "https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR",
+        fundingSource.at(JsonPointer.compile("/id")).asText());
 
-        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
-        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/identifier")).isMissingNode());
-    }
+    assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+    assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/identifier")).isMissingNode());
+  }
 
-    @Test
-    void shouldReturnFundingSourceAsObjectWhenFundingSourceLacksLabels() throws JsonProcessingException,
-                                                                              BadRequestException {
-        var publication = randomPublication();
-        var source = URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR");
-        var unconfirmedFunding = (UnconfirmedFunding) new FundingBuilder()
-                                                          .withSource(source)
-                                                          .withIdentifier("249994")
-                                                          .build();
-        publication.setFundings(Set.of(unconfirmedFunding));
+  @Test
+  void shouldReturnFundingSourceAsObjectWhenFundingSourceLacksLabels()
+      throws JsonProcessingException, BadRequestException {
+    var publication = randomPublication();
+    var source = URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR");
+    var unconfirmedFunding =
+        (UnconfirmedFunding)
+            new FundingBuilder().withSource(source).withIdentifier("249994").build();
+    publication.setFundings(Set.of(unconfirmedFunding));
 
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
 
-        var uriRetriever = FakeUriRetriever.newInstance();
+    var uriRetriever = FakeUriRetriever.newInstance();
 
-        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+    FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
 
-        uriRetriever.registerResponse(source,
-                                      SC_OK,
-                                      APPLICATION_JSON_LD,
-                                      """
-                                        {
-                                          "type" : "FundingSource",
-                                          "identifier" : "NFR",
-                                          "@context" : {
-                                            "@vocab" : "https://nva.sikt.no/ontology/publication#",
-                                            "id" : "@id",
-                                            "type" : "@type",
-                                            "labels" : {
-                                              "@id" : "label",
-                                              "@container" : "@language"
-                                            }
-                                          }
-                                        }
-                                        """);
-
-        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient,
-                                               Resource.fromPublication(resource))
-                                   .asJsonNode();
-
-        var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
-
-        assertTrue(fundingSource.isContainerNode(),
-                   "Expected funding source to be a object, but got: " + fundingSource);
-        assertEquals("https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR",
-                     fundingSource.at(JsonPointer.compile("/id")).asText());
-
-        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
-        assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/identifier")).isMissingNode());
-    }
-
-    @Test
-    void shouldReturnFundingSourceAsObjectWhenLackingIdentifier() throws JsonProcessingException,
-                                                                         BadRequestException {
-        var publication = randomPublication();
-        var source = URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/OTHER");
-        var unconfirmedFunding = createMinimumUnconfirmedFunding(source);
-        publication.setFundings(Set.of(unconfirmedFunding));
-
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-
-        var uriRetriever = FakeUriRetriever.newInstance();
-        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
-
-        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient,
-                                               Resource.fromPublication(resource))
-                                   .asJsonNode();
-
-        var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
-        var expectedFundingSource = """
-            {
-              "id": "%s",
-              "type": "FundingSource",
-              "identifier": "NFR",
-              "labels": {
-                "en": "Research Council of Norway (RCN)",
-                "nb": "Norges forskningsråd"
-              }
+    uriRetriever.registerResponse(
+        source,
+        SC_OK,
+        APPLICATION_JSON_LD,
+        """
+        {
+          "type" : "FundingSource",
+          "identifier" : "NFR",
+          "@context" : {
+            "@vocab" : "https://nva.sikt.no/ontology/publication#",
+            "id" : "@id",
+            "type" : "@type",
+            "labels" : {
+              "@id" : "label",
+              "@container" : "@language"
             }
-            """.formatted(source);
-        var expected = JsonUtils.dtoObjectMapper.readTree(expectedFundingSource);
-        assertEquals(expected, fundingSource);
-    }
+          }
+        }
+        """);
 
-    private static UnconfirmedFunding createMinimumUnconfirmedFunding(URI source) {
-        return (UnconfirmedFunding) new FundingBuilder()
-                                        .withSource(source)
-                                        .build();
-    }
+    var expandedResource =
+        fromPublication(
+                uriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
 
-    @Test
-    void shouldExpandFundingSourcesEvenWithDuplicateUnconfirmedFundingSources() throws JsonProcessingException,
-                                                                                BadRequestException {
-        var publication = randomPublication();
-        var source = randomUri();
-        var identifier = randomUri();
-        var duplicateFunding = (UnconfirmedFunding) new FundingBuilder()
-                                                        .withSource(source)
-                                                        .withIdentifier(identifier.toString())
-                                                        .build();
-        var duplicateFunding2 = (UnconfirmedFunding) new FundingBuilder()
-          .withSource(source)
-          .withIdentifier(identifier.toString()).withActiveFrom(Instant.now())
-          .build();
-        publication.setFundings(Set.of(duplicateFunding, duplicateFunding2));
+    var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
 
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        var uriRetriever = FakeUriRetriever.newInstance();
-        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+    assertTrue(
+        fundingSource.isContainerNode(),
+        "Expected funding source to be a object, but got: " + fundingSource);
+    assertEquals(
+        "https://api.test.nva.aws.unit.no/cristin/funding-sources/NFR",
+        fundingSource.at(JsonPointer.compile("/id")).asText());
 
-        var expandedResource = fromPublication(uriRetriever, resourceService, sqsClient,
-                                               Resource.fromPublication(resource)).asJsonNode();
-        var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
+    assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/type")).isMissingNode());
+    assertFalse(expandedResource.at(JsonPointer.compile("/fundings/0/identifier")).isMissingNode());
+  }
 
-        assertFalse(fundingSource.isTextual(),
-            "Funding source should be expanded to object, but remained as string: " + fundingSource);
-        assertEquals(source.toString(), fundingSource.at(JsonPointer.compile("/id")).asText());
-    }
+  @Test
+  void shouldReturnFundingSourceAsObjectWhenLackingIdentifier()
+      throws JsonProcessingException, BadRequestException {
+    var publication = randomPublication();
+    var source = URI.create("https://api.test.nva.aws.unit.no/cristin/funding-sources/OTHER");
+    var unconfirmedFunding = createMinimumUnconfirmedFunding(source);
+    publication.setFundings(Set.of(unconfirmedFunding));
 
-    @Test
-    void shouldReturnIndexDocumentWithConfirmedSeriesIdWhenBookIsPartOfSeriesFoundInNsd()
-        throws JsonProcessingException, BadRequestException {
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
 
-        Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        ExpandedResource actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource));
-        Book book = extractBook(publication);
-        Series confirmedSeries = (Series) book.getSeries();
-        URI expectedSeriesId = confirmedSeries.getId();
-        Publisher publisher = (Publisher) book.getPublisher();
-        URI expectedPublisherId = publisher.getId();
-        assertThat(actualDocument.getPublicationContextUris(),
-                   containsInAnyOrder(expectedSeriesId, expectedPublisherId));
-    }
+    var uriRetriever = FakeUriRetriever.newInstance();
+    FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
 
-    @Test
-    void shouldReturnIndexDocumentWithConfirmedJournalIdWhenPublicationIsPublishedInConfirmedJournal()
-        throws JsonProcessingException, BadRequestException {
+    var expandedResource =
+        fromPublication(
+                uriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
 
-        Publication publication = PublicationGenerator.randomPublication(FeatureArticle.class);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        ExpandedResource actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource));
-        Journal journal = extractJournal(resource);
-        URI expectedJournalId = journal.getId();
-        assertThat(actualDocument.getPublicationContextUris(), containsInAnyOrder(expectedJournalId));
-    }
+    var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
+    var expectedFundingSource =
+        """
+        {
+          "id": "%s",
+          "type": "FundingSource",
+          "identifier": "NFR",
+          "labels": {
+            "en": "Research Council of Norway (RCN)",
+            "nb": "Norges forskningsråd"
+          }
+        }
+        """
+            .formatted(source);
+    var expected = JsonUtils.dtoObjectMapper.readTree(expectedFundingSource);
+    assertEquals(expected, fundingSource);
+  }
 
-    @Test
-    void shouldReturnIndexDocumentWithOriginalPublicationContextType()
-        throws JsonProcessingException, BadRequestException {
-        var publication = PublicationGenerator.randomPublication(FeatureArticle.class);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var journal = extractJournal(resource);
-        fakeUriRetriever.registerResponse(journal.getId(), 200, APPLICATION_JSON_LD,
-                                          FakeUriResponse.createSeries(journal.getId()));
-        var actualDocument = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource));
-        var expectedJournalType = journal.getClass().getSimpleName();
-        var actualJournalType = actualDocument.asJsonNode().at(CONTEXT_TYPE_JSON_PTR).textValue();
-        assertEquals(expectedJournalType, actualJournalType);
-    }
+  private static UnconfirmedFunding createMinimumUnconfirmedFunding(URI source) {
+    return (UnconfirmedFunding) new FundingBuilder().withSource(source).build();
+  }
 
-    @Test
-    void shouldReturnExpandedResourceWithAnthologyPublicationChannelUrisWhenPublicationIsAcademicChapter()
-        throws JsonProcessingException, NotFoundException, BadRequestException {
-        var publication = PublicationGenerator.randomPublication(AcademicChapter.class);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var parentUri = (Anthology) resource.getEntityDescription().getReference().getPublicationContext();
-        var bookAnthology = resourceService.getPublicationByIdentifier(SortableIdentifier.fromUri(parentUri.getId()));
-        var expectedPublicationChannelIds = getPublicationContextUris(extractBook(bookAnthology));
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource));
-        var expandedResourceJsonNode = expandedResource.asJsonNode();
-        var actualPublicationChannelUris = extractActualPublicationChannelUris(expandedResourceJsonNode);
-        assertThat(actualPublicationChannelUris, containsInAnyOrder(expectedPublicationChannelIds.toArray()));
-    }
+  @Test
+  void shouldExpandFundingSourcesEvenWithDuplicateUnconfirmedFundingSources()
+      throws JsonProcessingException, BadRequestException {
+    var publication = randomPublication();
+    var source = randomUri();
+    var identifier = randomUri();
+    var duplicateFunding =
+        (UnconfirmedFunding)
+            new FundingBuilder().withSource(source).withIdentifier(identifier.toString()).build();
+    var duplicateFunding2 =
+        (UnconfirmedFunding)
+            new FundingBuilder()
+                .withSource(source)
+                .withIdentifier(identifier.toString())
+                .withActiveFrom(Instant.now())
+                .build();
+    publication.setFundings(Set.of(duplicateFunding, duplicateFunding2));
 
-    @Test
-    void shouldReturnExpandedResourceWithAnthologyInstanceType()
-        throws JsonProcessingException, NotFoundException, BadRequestException {
-        var publication = PublicationGenerator.randomPublication(AcademicChapter.class);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var parentUri = (Anthology) resource.getEntityDescription().getReference().getPublicationContext();
-        var bookAnthology = resourceService.getPublicationByIdentifier(SortableIdentifier.fromUri(parentUri.getId()));
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource));
-        var expandedResourceJsonNode = expandedResource.asJsonNode();
-        var anthologyInstanceType = expandedResourceJsonNode.get("entityDescription").get("reference").get(
-            "publicationContext").get("entityDescription").get("reference").get("publicationInstance").get("type").textValue();
-        assertThat(anthologyInstanceType,
-                   is(equalTo(bookAnthology.getEntityDescription().getReference().getPublicationInstance().getInstanceType())));
-    }
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    var uriRetriever = FakeUriRetriever.newInstance();
+    FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
 
-    @Test
-    void shouldNotFailWhenThereIsNoPublicationContext() throws JsonProcessingException, BadRequestException {
+    var expandedResource =
+        fromPublication(
+                uriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .asJsonNode();
+    var fundingSource = expandedResource.at(JsonPointer.compile("/fundings/0/source"));
 
-        Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        var uriRetriever = FakeUriRetriever.newInstance();
-        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
-        resource.getEntityDescription().getReference().setPublicationContext(null);
-        assertThat(fromPublication(uriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)), is(not(nullValue())));
-    }
+    assertFalse(
+        fundingSource.isTextual(),
+        "Funding source should be expanded to object, but remained as string: " + fundingSource);
+    assertEquals(source.toString(), fundingSource.at(JsonPointer.compile("/id")).asText());
+  }
 
-    @Test
-    void shouldNotFailWhenThereIsNoPublicationInstance() throws JsonProcessingException, BadRequestException {
+  @Test
+  void shouldReturnIndexDocumentWithConfirmedSeriesIdWhenBookIsPartOfSeriesFoundInNsd()
+      throws JsonProcessingException, BadRequestException {
 
-        Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        var uriRetriever = FakeUriRetriever.newInstance();
-        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
-        resource.getEntityDescription().getReference().setPublicationInstance(null);
-        assertThat(fromPublication(uriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)), is(not(nullValue())));
-    }
+    Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    ExpandedResource actualDocument =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+    Book book = extractBook(publication);
+    Series confirmedSeries = (Series) book.getSeries();
+    URI expectedSeriesId = confirmedSeries.getId();
+    Publisher publisher = (Publisher) book.getPublisher();
+    URI expectedPublisherId = publisher.getId();
+    assertThat(
+        actualDocument.getPublicationContextUris(),
+        containsInAnyOrder(expectedSeriesId, expectedPublisherId));
+  }
 
-    @Test
-    void shouldNotFailWhenThereIsNoMainTitle() throws JsonProcessingException, BadRequestException {
+  @Test
+  void shouldReturnIndexDocumentWithConfirmedJournalIdWhenPublicationIsPublishedInConfirmedJournal()
+      throws JsonProcessingException, BadRequestException {
 
-        Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        resource.getEntityDescription().setMainTitle(null);
-        assertThat(fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)), is(not(nullValue())));
-    }
+    Publication publication = PublicationGenerator.randomPublication(FeatureArticle.class);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    ExpandedResource actualDocument =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+    Journal journal = extractJournal(resource);
+    URI expectedJournalId = journal.getId();
+    assertThat(actualDocument.getPublicationContextUris(), containsInAnyOrder(expectedJournalId));
+  }
 
-    @Test
-    void shouldNotFailWhenInputContainsAffiliationsThatAreIncomplete() throws BadRequestException {
-        var publication = createPublicationWithEmptyAffiliations();
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        assertDoesNotThrow(() -> fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)));
-    }
+  @Test
+  void shouldReturnIndexDocumentWithOriginalPublicationContextType()
+      throws JsonProcessingException, BadRequestException {
+    var publication = PublicationGenerator.randomPublication(FeatureArticle.class);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    var journal = extractJournal(resource);
+    fakeUriRetriever.registerResponse(
+        journal.getId(), 200, APPLICATION_JSON_LD, FakeUriResponse.createSeries(journal.getId()));
+    var actualDocument =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+    var expectedJournalType = journal.getClass().getSimpleName();
+    var actualJournalType = actualDocument.asJsonNode().at(CONTEXT_TYPE_JSON_PTR).textValue();
+    assertEquals(expectedJournalType, actualJournalType);
+  }
 
-    @Test
-    void shouldNotExpandDoiWhenIdUsedElsewhere() throws IOException, BadRequestException {
-        var bookAnthology = bookAnthologyWithDoiReferencedInAssociatedLink();
-        var resource = Resource.fromPublication(bookAnthology)
-                           .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource));
+  @Test
+  void
+      shouldReturnExpandedResourceWithAnthologyPublicationChannelUrisWhenPublicationIsAcademicChapter()
+          throws JsonProcessingException, NotFoundException, BadRequestException {
+    var publication = PublicationGenerator.randomPublication(AcademicChapter.class);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    var parentUri =
+        (Anthology) resource.getEntityDescription().getReference().getPublicationContext();
+    var bookAnthology =
+        resourceService.getPublicationByIdentifier(SortableIdentifier.fromUri(parentUri.getId()));
+    var expectedPublicationChannelIds = getPublicationContextUris(extractBook(bookAnthology));
+    var expandedResource =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+    var expandedResourceJsonNode = expandedResource.asJsonNode();
+    var actualPublicationChannelUris =
+        extractActualPublicationChannelUris(expandedResourceJsonNode);
+    assertThat(
+        actualPublicationChannelUris, containsInAnyOrder(expectedPublicationChannelIds.toArray()));
+  }
 
-        var actualDoi = expandedResource.getAllFields().get("doi");
+  @Test
+  void shouldReturnExpandedResourceWithAnthologyInstanceType()
+      throws JsonProcessingException, NotFoundException, BadRequestException {
+    var publication = PublicationGenerator.randomPublication(AcademicChapter.class);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    var parentUri =
+        (Anthology) resource.getEntityDescription().getReference().getPublicationContext();
+    var bookAnthology =
+        resourceService.getPublicationByIdentifier(SortableIdentifier.fromUri(parentUri.getId()));
+    var expandedResource =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+    var expandedResourceJsonNode = expandedResource.asJsonNode();
+    var anthologyInstanceType =
+        expandedResourceJsonNode
+            .get("entityDescription")
+            .get("reference")
+            .get("publicationContext")
+            .get("entityDescription")
+            .get("reference")
+            .get("publicationInstance")
+            .get("type")
+            .textValue();
+    assertThat(
+        anthologyInstanceType,
+        is(
+            equalTo(
+                bookAnthology
+                    .getEntityDescription()
+                    .getReference()
+                    .getPublicationInstance()
+                    .getInstanceType())));
+  }
 
-        assertThat(actualDoi,
-                   allOf(Matchers.instanceOf(String.class), is((equalTo(bookAnthology.getDoi().toString())))));
-    }
+  @Test
+  void shouldNotFailWhenThereIsNoPublicationContext()
+      throws JsonProcessingException, BadRequestException {
 
-    @Test
-    void shouldNotExpandHandleWhenIdUsedElsewhere() throws IOException, BadRequestException {
-        var bookAnthology = bookAnthologyWithHandleReferencedInAssociatedLink();
-        var resource = Resource.fromPublication(bookAnthology)
-                           .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+    Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    var uriRetriever = FakeUriRetriever.newInstance();
+    FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+    resource.getEntityDescription().getReference().setPublicationContext(null);
+    assertThat(
+        fromPublication(
+            uriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)),
+        is(not(nullValue())));
+  }
 
-        var actualHandle = expandedResource.getAllFields().get("handle");
+  @Test
+  void shouldNotFailWhenThereIsNoPublicationInstance()
+      throws JsonProcessingException, BadRequestException {
 
-        assertThat(actualHandle,
-                   allOf(Matchers.instanceOf(String.class), is((equalTo(resource.getHandle().toString())))));
-    }
+    Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    var uriRetriever = FakeUriRetriever.newInstance();
+    FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+    resource.getEntityDescription().getReference().setPublicationInstance(null);
+    assertThat(
+        fromPublication(
+            uriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)),
+        is(not(nullValue())));
+  }
 
-    @Test
-    void shouldNotExpandLinkWhenIdUsedElsewhere() throws IOException, BadRequestException {
-        var bookAnthology = bookAnthologyWithLinkReferencedInAssociatedLink();
-        var resource = Resource.fromPublication(bookAnthology)
-                           .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource));
+  @Test
+  void shouldNotFailWhenThereIsNoMainTitle() throws JsonProcessingException, BadRequestException {
 
-        var actualLink = expandedResource.getAllFields().get("link");
+    Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    resource.getEntityDescription().setMainTitle(null);
+    assertThat(
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)),
+        is(not(nullValue())));
+  }
 
-        assertThat(actualLink,
-                   allOf(Matchers.instanceOf(String.class), is((equalTo(resource.getLink().toString())))));
-    }
+  @Test
+  void shouldNotFailWhenInputContainsAffiliationsThatAreIncomplete() throws BadRequestException {
+    var publication = createPublicationWithEmptyAffiliations();
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    assertDoesNotThrow(
+        () ->
+            fromPublication(
+                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)));
+  }
 
-    @Test
-    void shouldNotExpandDuplicateOfWhenParentPublicationExistsInGraph() throws BadRequestException, IOException {
-        var academicChapter = PublicationGenerator.randomPublication(AcademicChapter.class);
-        var chapterResource = Resource.fromPublication(academicChapter)
-                                  .persistNew(resourceService, UserInstance.fromPublication(academicChapter));
-        FakeUriResponse.setupFakeForType(chapterResource, fakeUriRetriever, resourceService, false);
+  @Test
+  void shouldNotExpandDoiWhenIdUsedElsewhere() throws IOException, BadRequestException {
+    var bookAnthology = bookAnthologyWithDoiReferencedInAssociatedLink();
+    var resource =
+        Resource.fromPublication(bookAnthology)
+            .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    var expandedResource =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
 
-        var anthologyUri = ((Anthology) chapterResource.getEntityDescription()
-                                            .getReference()
-                                            .getPublicationContext()).getId();
-        chapterResource.setDuplicateOf(anthologyUri);
-        resourceService.updateResource(Resource.fromPublication(chapterResource),
-                                        UserInstance.fromPublication(chapterResource));
+    var actualDoi = expandedResource.getAllFields().get("doi");
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
-                                               Resource.fromPublication(chapterResource)
-                                                   .fetch(resourceService)
-                                                   .orElseThrow());
+    assertThat(
+        actualDoi,
+        allOf(Matchers.instanceOf(String.class), is((equalTo(bookAnthology.getDoi().toString())))));
+  }
 
-        var actualDuplicateOf = expandedResource.getAllFields().get("duplicateOf");
+  @Test
+  void shouldNotExpandHandleWhenIdUsedElsewhere() throws IOException, BadRequestException {
+    var bookAnthology = bookAnthologyWithHandleReferencedInAssociatedLink();
+    var resource =
+        Resource.fromPublication(bookAnthology)
+            .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    var expandedResource =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
 
-        assertThat(actualDuplicateOf,
-                   allOf(Matchers.instanceOf(String.class), is(equalTo(anthologyUri.toString()))));
-    }
+    var actualHandle = expandedResource.getAllFields().get("handle");
 
-    @Test
-    void shouldReturnExpandedResourceWithAnthologyPublicationChannelLevelWhenPublicationIsAcademicChapter()
-        throws IOException, BadRequestException {
-        var academicChapter = PublicationGenerator.randomPublication(AcademicChapter.class);
-        var publication = Resource.fromPublication(academicChapter)
-                           .persistNew(resourceService, UserInstance.fromPublication(academicChapter));
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(publication).fetch(resourceService).orElseThrow());
-        var expandedResourceJsonNode = expandedResource.asJsonNode();
-        var actualSeriesLevel = expandedResourceJsonNode.at(SERIES_LEVEL_JSON_PTR).textValue();
-        var actualPublisherLevel = expandedResourceJsonNode.at(PUBLISHER_LEVEL_JSON_PTR).textValue();
-        assertThat(actualSeriesLevel, is(not(nullValue())));
-        assertThat(actualPublisherLevel, is(not(nullValue())));
-    }
+    assertThat(
+        actualHandle,
+        allOf(Matchers.instanceOf(String.class), is((equalTo(resource.getHandle().toString())))));
+  }
 
-    @Test
-    void shouldUseApiVersionWhenLookingUpOrganizations() throws JsonProcessingException, BadRequestException {
-        var publication = PublicationGenerator.randomPublication();
-        var resource = Resource.fromPublication(publication)
-                           .persistNew(resourceService, UserInstance.fromPublication(publication));
-        var uriRetriever = FakeUriRetriever.newInstance();
-        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
-        var versionedType = MediaType.parse("application/ld+json; version=2023-05-26");
-        resource.getEntityDescription().getContributors().stream()
-            .map(Contributor::getAffiliations)
-            .flatMap(i -> i.stream().map(Organization.class::cast).map(Organization::getId))
-            .forEach(uri -> {
-                var responseBody = """
-                    {
-                      "@context": "https://bibsysdev.github.io/src/organization-context.json",
-                      "id": "%s",
-                      "type": "Organization",
-                      "labels": {
-                        "en": "Happy duck"
-                      }
-                    }""".formatted(uri);
-                uriRetriever.registerResponse(uri,
-                                              200,
-                                              versionedType,
-                                              responseBody);
+  @Test
+  void shouldNotExpandLinkWhenIdUsedElsewhere() throws IOException, BadRequestException {
+    var bookAnthology = bookAnthologyWithLinkReferencedInAssociatedLink();
+    var resource =
+        Resource.fromPublication(bookAnthology)
+            .persistNew(resourceService, UserInstance.fromPublication(bookAnthology));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+    var expandedResource =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+
+    var actualLink = expandedResource.getAllFields().get("link");
+
+    assertThat(
+        actualLink,
+        allOf(Matchers.instanceOf(String.class), is((equalTo(resource.getLink().toString())))));
+  }
+
+  @Test
+  void shouldNotExpandDuplicateOfWhenParentPublicationExistsInGraph()
+      throws BadRequestException, IOException {
+    var academicChapter = PublicationGenerator.randomPublication(AcademicChapter.class);
+    var chapterResource =
+        Resource.fromPublication(academicChapter)
+            .persistNew(resourceService, UserInstance.fromPublication(academicChapter));
+    FakeUriResponse.setupFakeForType(chapterResource, fakeUriRetriever, resourceService, false);
+
+    var anthologyUri =
+        ((Anthology) chapterResource.getEntityDescription().getReference().getPublicationContext())
+            .getId();
+    chapterResource.setDuplicateOf(anthologyUri);
+    resourceService.updateResource(
+        Resource.fromPublication(chapterResource), UserInstance.fromPublication(chapterResource));
+
+    var expandedResource =
+        fromPublication(
+            fakeUriRetriever,
+            resourceService,
+            sqsClient,
+            Resource.fromPublication(chapterResource).fetch(resourceService).orElseThrow());
+
+    var actualDuplicateOf = expandedResource.getAllFields().get("duplicateOf");
+
+    assertThat(
+        actualDuplicateOf,
+        allOf(Matchers.instanceOf(String.class), is(equalTo(anthologyUri.toString()))));
+  }
+
+  @Test
+  void
+      shouldReturnExpandedResourceWithAnthologyPublicationChannelLevelWhenPublicationIsAcademicChapter()
+          throws IOException, BadRequestException {
+    var academicChapter = PublicationGenerator.randomPublication(AcademicChapter.class);
+    var publication =
+        Resource.fromPublication(academicChapter)
+            .persistNew(resourceService, UserInstance.fromPublication(academicChapter));
+    FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
+    var expandedResource =
+        fromPublication(
+            fakeUriRetriever,
+            resourceService,
+            sqsClient,
+            Resource.fromPublication(publication).fetch(resourceService).orElseThrow());
+    var expandedResourceJsonNode = expandedResource.asJsonNode();
+    var actualSeriesLevel = expandedResourceJsonNode.at(SERIES_LEVEL_JSON_PTR).textValue();
+    var actualPublisherLevel = expandedResourceJsonNode.at(PUBLISHER_LEVEL_JSON_PTR).textValue();
+    assertThat(actualSeriesLevel, is(not(nullValue())));
+    assertThat(actualPublisherLevel, is(not(nullValue())));
+  }
+
+  @Test
+  void shouldUseApiVersionWhenLookingUpOrganizations()
+      throws JsonProcessingException, BadRequestException {
+    var publication = PublicationGenerator.randomPublication();
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    var uriRetriever = FakeUriRetriever.newInstance();
+    FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+    var versionedType = MediaType.parse("application/ld+json; version=2023-05-26");
+    resource.getEntityDescription().getContributors().stream()
+        .map(Contributor::getAffiliations)
+        .flatMap(i -> i.stream().map(Organization.class::cast).map(Organization::getId))
+        .forEach(
+            uri -> {
+              var responseBody =
+                  """
+                  {
+                    "@context": "https://bibsysdev.github.io/src/organization-context.json",
+                    "id": "%s",
+                    "type": "Organization",
+                    "labels": {
+                      "en": "Happy duck"
+                    }
+                  }\
+                  """
+                      .formatted(uri);
+              uriRetriever.registerResponse(uri, 200, versionedType, responseBody);
             });
 
-        var actual = fromPublication(uriRetriever, resourceService, sqsClient
-            , Resource.fromPublication(resource)).toJsonString();
-        assertThat(actual, containsString("Happy duck"));
+    var actual =
+        fromPublication(
+                uriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
+            .toJsonString();
+    assertThat(actual, containsString("Happy duck"));
+  }
+
+  @Test
+  void shouldNotFailWithUnconfirmedFunding() throws BadRequestException {
+    var publication = randomPublication();
+    var unconfirmedFunding =
+        (UnconfirmedFunding) new FundingBuilder().withIdentifier("249994").build();
+    publication.setFundings(Set.of(unconfirmedFunding));
+
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+
+    var uriRetriever = FakeUriRetriever.newInstance();
+
+    FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
+
+    uriRetriever.registerResponse(
+        unconfirmedFunding.getSource(), 404, APPLICATION_JSON_LD, "Not Found");
+
+    assertDoesNotThrow(
+        () ->
+            fromPublication(
+                uriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)));
+  }
+
+  @Test
+  void shouldIncludeRelatedResourcesInExpandedDocument() throws IOException, BadRequestException {
+    var publication =
+        Resource.fromPublication(bookAnthologyWithDoiReferencedInAssociatedLink())
+            .persistNew(resourceService, UserInstance.create(randomString(), randomUri()));
+    var chapter = randomChapterWithAnthology(publication.getIdentifier());
+    FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
+
+    var expandedResource =
+        fromPublication(
+            fakeUriRetriever,
+            resourceService,
+            sqsClient,
+            Resource.fromPublication(publication).fetch(resourceService).orElseThrow());
+
+    assertEquals(
+        expandedResource.asJsonNode().get("childPublications").get(0).asText(),
+        chapter.getIdentifier().toString());
+  }
+
+  private Publication randomChapterWithAnthology(SortableIdentifier anthologyIdentifier)
+      throws BadRequestException {
+    var chapter = buildRandomPublicationFromInstance(AcademicChapter.class);
+    var uri =
+        UriWrapper.fromUri(randomUri())
+            .addChild("publication")
+            .addChild(anthologyIdentifier.toString())
+            .getUri();
+    chapter
+        .getEntityDescription()
+        .getReference()
+        .setPublicationContext(new Anthology.Builder().withId(uri).build());
+    chapter.setStatus(PUBLISHED);
+    return Resource.fromPublication(chapter)
+        .persistNew(
+            resourceService,
+            UserInstance.createExternalUser(
+                chapter.getResourceOwner(), randomUri(), ThirdPartySystem.OTHER));
+  }
+
+  private static Contributor contributorWithOneAffiliation(Organization contributor1org) {
+    return new Contributor.Builder()
+        .withIdentity(new Identity.Builder().withName(randomString()).build())
+        .withRole(new RoleType(Role.ACTOR))
+        .withSequence(randomInteger(10000))
+        .withAffiliations(List.of(contributor1org))
+        .build();
+  }
+
+  private static Contributor contributorWithSequence(int sequence) {
+    return new Contributor.Builder()
+        .withIdentity(new Identity.Builder().withName(randomString()).build())
+        .withSequence(sequence)
+        .build();
+  }
+
+  private static JsonNode getTopLevel(ArrayNode topLevelNodes, String topLevelOrgId) {
+    return stream(topLevelNodes.spliterator(), false)
+        .filter(node -> node.at(JSON_PTR_ID).textValue().contains(topLevelOrgId))
+        .findFirst()
+        .orElse(null);
+  }
+
+  private static void assertHasExpectedFundings(
+      URI sourceUri0, URI sourceUri1, ObjectNode framedResultNode) {
+    final var extractedSourceId = extractSourceId(framedResultNode);
+    final var fundings = framedResultNode.at(PublicationJsonPointers.FUNDING_SOURCE_POINTER);
+    fundings.forEach(ExpandedResourceTest::assertHasLabels);
+    assertThat(extractedSourceId, hasItems(sourceUri0, sourceUri1));
+  }
+
+  private static void assertHasLabels(JsonNode funding) {
+    assertThat(funding.get("labels"), is(not(nullValue())));
+  }
+
+  private static Set<URI> extractSourceId(ObjectNode framedResultNode) {
+    return framedResultNode
+        .at(PublicationJsonPointers.FUNDING_SOURCE_POINTER)
+        .findValues("source")
+        .stream()
+        .flatMap(node -> node.findValues("id").stream())
+        .map(JsonNode::textValue)
+        .map(URI::create)
+        .collect(Collectors.toSet());
+  }
+
+  private static List<URI> extractActualPublicationChannelUris(
+      ObjectNode expandedResourceJsonNode) {
+    var actualPublisherId =
+        URI.create(expandedResourceJsonNode.at(PUBLISHER_ID_JSON_PTR).textValue());
+    var actualSeriesId = URI.create(expandedResourceJsonNode.at(SERIES_ID_JSON_PTR).textValue());
+    return List.of(actualPublisherId, actualSeriesId);
+  }
+
+  private static Contributor createContributorsWithEmptyAffiliations(Contributor contributor) {
+    return new Contributor.Builder()
+        .withIdentity(contributor.getIdentity())
+        .withAffiliations(List.of(new Organization()))
+        .withRole(contributor.getRole())
+        .withSequence(contributor.getSequence())
+        .withCorrespondingAuthor(contributor.isCorrespondingAuthor())
+        .build();
+  }
+
+  private static Stream<Class<?>> publicationInstanceProvider() {
+    return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
+  }
+
+  private static JsonNode findDeepestNestedSubUnit(JsonNode jsonNode) {
+    if (isNull(jsonNode) || isBlankJsonNode(jsonNode)) {
+      return null;
     }
-
-    @Test
-    void shouldNotFailWithUnconfirmedFunding() throws BadRequestException {
-        var publication = randomPublication();
-        var unconfirmedFunding =
-                (UnconfirmedFunding) new FundingBuilder().withIdentifier("249994").build();
-        publication.setFundings(Set.of(unconfirmedFunding));
-
-        var resource =
-                Resource.fromPublication(publication)
-                        .persistNew(resourceService, UserInstance.fromPublication(publication));
-
-        var uriRetriever = FakeUriRetriever.newInstance();
-
-        FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
-
-        uriRetriever.registerResponse(
-                unconfirmedFunding.getSource(), 404, APPLICATION_JSON_LD, "Not Found");
-
-        assertDoesNotThrow(
-                () -> fromPublication(uriRetriever, resourceService, sqsClient,
-                                      Resource.fromPublication(resource)));
+    while (hasPartHasContent(jsonNode)) {
+      var hasPartArrayNode = (ArrayNode) jsonNode.at(JSON_PTR_HAS_PART);
+      if (hasPartArrayNode.size() == 1) {
+        jsonNode = hasPartArrayNode.get(0);
+      } else {
+        hasPartArrayNode.forEach(node -> findDeepestNestedSubUnit(node.at(JSON_PTR_HAS_PART)));
+      }
     }
+    return jsonNode;
+  }
 
-    @Test
-    void shouldIncludeRelatedResourcesInExpandedDocument() throws IOException, BadRequestException {
-        var publication = Resource.fromPublication(bookAnthologyWithDoiReferencedInAssociatedLink())
-                           .persistNew(resourceService, UserInstance.create(randomString(), randomUri()));
-        var chapter = randomChapterWithAnthology(publication.getIdentifier());
-        FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
+  private static boolean hasPartHasContent(JsonNode jsonNode) {
+    var node = jsonNode.at(JSON_PTR_HAS_PART);
+    return !node.isMissingNode() && node.isArray() && !node.isEmpty();
+  }
 
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
-                                               Resource.fromPublication(publication).fetch(resourceService).orElseThrow());
+  private static boolean isBlankJsonNode(JsonNode jsonNode) {
+    return jsonNode.isMissingNode();
+  }
 
-        assertEquals(expandedResource.asJsonNode().get("childPublications").get(0).asText(),
-                     chapter.getIdentifier().toString());
+  private Publication bookAnthologyWithDoiReferencedInAssociatedLink() {
+    var doi = randomDoi();
+    return PublicationGenerator.randomPublication(BookAnthology.class)
+        .copy()
+        .withDoi(doi)
+        .withAssociatedArtifacts(List.of(new AssociatedLink(doi, null, null, RelationType.SAME_AS)))
+        .build();
+  }
+
+  private Publication bookAnthologyWithHandleReferencedInAssociatedLink() {
+    var handle = randomUri();
+    return PublicationGenerator.randomPublication(BookAnthology.class)
+        .copy()
+        .withHandle(handle)
+        .withAssociatedArtifacts(
+            List.of(new AssociatedLink(handle, null, null, RelationType.SAME_AS)))
+        .build();
+  }
+
+  private Publication bookAnthologyWithLinkReferencedInAssociatedLink() {
+    var link = randomUri();
+    return PublicationGenerator.randomPublication(BookAnthology.class)
+        .copy()
+        .withLink(link)
+        .withAssociatedArtifacts(
+            List.of(new AssociatedLink(link, null, null, RelationType.SAME_AS)))
+        .build();
+  }
+
+  private List<URI> getPublicationContextUris(Book book) {
+    var confirmedSeries = (Series) book.getSeries();
+    var expectedSeriesId = confirmedSeries.getId();
+    var publisher = (Publisher) book.getPublisher();
+    var expectedPublisherId = publisher.getId();
+    return List.of(expectedSeriesId, expectedPublisherId);
+  }
+
+  private Publication createPublicationWithEmptyAffiliations() {
+    var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
+    publication.setStatus(PUBLISHED);
+    var entityDescription = publication.getEntityDescription();
+    var contributors =
+        entityDescription.getContributors().stream()
+            .map(ExpandedResourceTest::createContributorsWithEmptyAffiliations)
+            .toList();
+    entityDescription.setContributors(contributors);
+    return publication;
+  }
+
+  private Journal extractJournal(Publication publication) {
+    return (Journal) publication.getEntityDescription().getReference().getPublicationContext();
+  }
+
+  private Book extractBook(Publication publication) {
+    return (Book) publication.getEntityDescription().getReference().getPublicationContext();
+  }
+
+  private Publication randomBookWithConfirmedPublisher() {
+    return PublicationGenerator.randomPublication(BookMonograph.class);
+  }
+
+  private Publication randomJournalArticleWithConfirmedJournal() {
+    return PublicationGenerator.randomPublication(FeatureArticle.class);
+  }
+
+  private Publication randomPublicationWithoutEntityDescription() {
+    var publication = PublicationGenerator.randomPublication(BookMonograph.class);
+    publication.setEntityDescription(null);
+    return publication;
+  }
+
+  private Contributor randomContributor() {
+    return new Contributor.Builder()
+        .withIdentity(new Identity.Builder().withName(randomString()).build())
+        .withRole(new RoleType(Role.ACTOR))
+        .withSequence(randomInteger(10000))
+        .withAffiliations(List.of(randomOrganization()))
+        .build();
+  }
+
+  private Publication randomBookWithManyContributors() {
+    var publication = PublicationGenerator.randomPublication(BookMonograph.class);
+    var contributions = IntStream.rangeClosed(1, 10).mapToObj(i -> randomContributor()).toList();
+    publication.getEntityDescription().setContributors(contributions);
+    return publication;
+  }
+
+  @Test
+  void shouldOnlyIncludeDirectParentPerSubOrganization() {
+    var framedResult =
+        createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+
+    var topLevelOrganizations = framedResult.at(JSON_PTR_TOP_LEVEL_ORGS);
+
+    for (var organization : topLevelOrganizations) {
+      var id = organization.at(JSON_PTR_ID).asText();
+      var hasPart = organization.at(JSON_PTR_HAS_PART);
+      for (var child : hasPart) {
+        var partOf = child.at(JSON_PTR_PART_OF);
+        assertEquals(1, partOf.size());
+        var parentId = partOf.get(0).at(JSON_PTR_ID).asText();
+        assertEquals(id, parentId);
+      }
     }
+  }
 
-    private Publication randomChapterWithAnthology(SortableIdentifier anthologyIdentifier) throws BadRequestException {
-        var chapter = buildRandomPublicationFromInstance(AcademicChapter.class);
-        var uri = UriWrapper.fromUri(randomUri()).addChild("publication").addChild(anthologyIdentifier.toString()).getUri();
-        chapter.getEntityDescription()
-            .getReference()
-            .setPublicationContext(new Anthology.Builder().withId(uri).build());
-        chapter.setStatus(PUBLISHED);
-        return Resource.fromPublication(chapter)
-            .persistNew(resourceService, UserInstance.createExternalUser(chapter.getResourceOwner(), randomUri(),
-                                                                         ThirdPartySystem.OTHER));
+  @Test
+  void shouldOnlyIncludeDirectParentPerAffiliation() {
+    var framedResult =
+        createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+
+    var contributors = framedResult.at(JSON_PTR_CONTRIBUTORS);
+    for (var contributor : contributors) {
+      var affiliations = contributor.at(JSON_PTR_AFFILIATIONS);
+      for (var affiliation : affiliations) {
+        var partOf = affiliation.at(JSON_PTR_PART_OF);
+        assertEquals(1, partOf.size());
+        var parentId = partOf.get(0).at(JSON_PTR_ID).asText();
+        assertEquals(HARD_CODED_TOP_LEVEL_ORG_URI.toString(), parentId);
+      }
     }
+  }
 
-    private static Contributor contributorWithOneAffiliation(Organization contributor1org) {
-        return new Contributor.Builder().withIdentity(new Identity.Builder().withName(randomString()).build())
-                   .withRole(new RoleType(Role.ACTOR))
-                   .withSequence(randomInteger(10000))
-                   .withAffiliations(List.of(contributor1org))
-                   .build();
+  @Test
+  void shouldNotIncludeChildOrganizationsOfAffiliations() {
+    var framedResult =
+        createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
+
+    var contributors = framedResult.at(JSON_PTR_CONTRIBUTORS);
+    for (var contributor : contributors) {
+      var affiliations = contributor.at(JSON_PTR_AFFILIATIONS);
+      for (var affiliation : affiliations) {
+        var hasPart = affiliation.at(JSON_PTR_HAS_PART);
+        assertTrue(hasPart.isMissingNode());
+      }
     }
+  }
 
-    private static Contributor contributorWithSequence(int sequence) {
-        return new Contributor.Builder().withIdentity(new Identity.Builder().withName(randomString()).build())
-                   .withSequence(sequence)
-                   .build();
+  private ExpandedResource createExpandedResourceWithAffiliation(URI affiliationUri) {
+    var publication = randomPublication(AcademicArticle.class);
+    var affiliation = Organization.fromUri(affiliationUri);
+    var contributor =
+        publication
+            .getEntityDescription()
+            .getContributors()
+            .getFirst()
+            .copy()
+            .withAffiliations(List.of(affiliation))
+            .build();
+
+    publication.getEntityDescription().setContributors(List.of(contributor));
+
+    try {
+      var resource =
+          Resource.fromPublication(publication)
+              .persistNew(resourceService, UserInstance.fromPublication(publication));
+      FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+      return fromPublication(
+          fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
-
-    private static JsonNode getTopLevel(ArrayNode topLevelNodes, String topLevelOrgId) {
-        return stream(topLevelNodes.spliterator(), false)
-                   .filter(node -> node.at(JSON_PTR_ID).textValue().contains(topLevelOrgId))
-                   .findFirst()
-                   .orElse(null);
-    }
-
-    private static void assertHasExpectedFundings(URI sourceUri0, URI sourceUri1, ObjectNode framedResultNode) {
-        final var extractedSourceId = extractSourceId(framedResultNode);
-        final var fundings = framedResultNode.at(PublicationJsonPointers.FUNDING_SOURCE_POINTER);
-        fundings.forEach(ExpandedResourceTest::assertHasLabels);
-        assertThat(extractedSourceId, hasItems(sourceUri0, sourceUri1));
-    }
-
-    private static void assertHasLabels(JsonNode funding) {
-        assertThat(funding.get("labels"), is(not(nullValue())));
-    }
-
-    private static Set<URI> extractSourceId(ObjectNode framedResultNode) {
-        return framedResultNode.at(PublicationJsonPointers.FUNDING_SOURCE_POINTER)
-                   .findValues("source")
-                   .stream()
-                   .flatMap(node -> node.findValues("id").stream())
-                   .map(JsonNode::textValue)
-                   .map(URI::create)
-                   .collect(Collectors.toSet());
-    }
-
-    private static List<URI> extractActualPublicationChannelUris(ObjectNode expandedResourceJsonNode) {
-        var actualPublisherId = URI.create(expandedResourceJsonNode.at(PUBLISHER_ID_JSON_PTR).textValue());
-        var actualSeriesId = URI.create(expandedResourceJsonNode.at(SERIES_ID_JSON_PTR).textValue());
-        return List.of(actualPublisherId, actualSeriesId);
-    }
-
-    private static Contributor createContributorsWithEmptyAffiliations(Contributor contributor) {
-        return new Contributor.Builder().withIdentity(contributor.getIdentity())
-                   .withAffiliations(List.of(new Organization()))
-                   .withRole(contributor.getRole())
-                   .withSequence(contributor.getSequence())
-                   .withCorrespondingAuthor(contributor.isCorrespondingAuthor())
-                   .build();
-    }
-
-    private static Stream<Class<?>> publicationInstanceProvider() {
-        return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
-    }
-
-    private static JsonNode findDeepestNestedSubUnit(JsonNode jsonNode) {
-        if (isNull(jsonNode) || isBlankJsonNode(jsonNode)) {
-            return null;
-        }
-        while (hasPartHasContent(jsonNode)) {
-            var hasPartArrayNode = (ArrayNode) jsonNode.at(JSON_PTR_HAS_PART);
-            if (hasPartArrayNode.size() == 1) {
-                jsonNode = hasPartArrayNode.get(0);
-            } else {
-                hasPartArrayNode.forEach(node -> findDeepestNestedSubUnit(node.at(JSON_PTR_HAS_PART)));
-            }
-        }
-        return jsonNode;
-    }
-
-    private static boolean hasPartHasContent(JsonNode jsonNode) {
-        var node = jsonNode.at(JSON_PTR_HAS_PART);
-        return !node.isMissingNode() && node.isArray() && !node.isEmpty();
-    }
-
-    private static boolean isBlankJsonNode(JsonNode jsonNode) {
-        return jsonNode.isMissingNode();
-    }
-
-    private Publication bookAnthologyWithDoiReferencedInAssociatedLink() {
-        var doi = randomDoi();
-        return PublicationGenerator.randomPublication(BookAnthology.class)
-                   .copy()
-                   .withDoi(doi)
-                   .withAssociatedArtifacts(List.of(new AssociatedLink(doi, null, null, RelationType.SAME_AS)))
-                   .build();
-    }
-
-    private Publication bookAnthologyWithHandleReferencedInAssociatedLink() {
-        var handle = randomUri();
-        return PublicationGenerator.randomPublication(BookAnthology.class)
-                   .copy()
-                   .withHandle(handle)
-                   .withAssociatedArtifacts(List.of(new AssociatedLink(handle, null, null, RelationType.SAME_AS)))
-                   .build();
-    }
-
-    private Publication bookAnthologyWithLinkReferencedInAssociatedLink() {
-        var link = randomUri();
-        return PublicationGenerator.randomPublication(BookAnthology.class)
-                   .copy()
-                   .withLink(link)
-                   .withAssociatedArtifacts(List.of(new AssociatedLink(link, null, null, RelationType.SAME_AS)))
-                   .build();
-    }
-
-    private List<URI> getPublicationContextUris(Book book) {
-        var confirmedSeries = (Series) book.getSeries();
-        var expectedSeriesId = confirmedSeries.getId();
-        var publisher = (Publisher) book.getPublisher();
-        var expectedPublisherId = publisher.getId();
-        return List.of(expectedSeriesId, expectedPublisherId);
-    }
-
-    private Publication createPublicationWithEmptyAffiliations() {
-        var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
-        publication.setStatus(PUBLISHED);
-        var entityDescription = publication.getEntityDescription();
-        var contributors = entityDescription.getContributors()
-                               .stream()
-                               .map(ExpandedResourceTest::createContributorsWithEmptyAffiliations)
-                               .toList();
-        entityDescription.setContributors(contributors);
-        return publication;
-    }
-
-    private Journal extractJournal(Publication publication) {
-        return (Journal) publication.getEntityDescription().getReference().getPublicationContext();
-    }
-
-    private Book extractBook(Publication publication) {
-        return (Book) publication.getEntityDescription().getReference().getPublicationContext();
-    }
-
-    private Publication randomBookWithConfirmedPublisher() {
-        return PublicationGenerator.randomPublication(BookMonograph.class);
-    }
-
-    private Publication randomJournalArticleWithConfirmedJournal() {
-        return PublicationGenerator.randomPublication(FeatureArticle.class);
-    }
-
-    private Publication randomPublicationWithoutEntityDescription() {
-        var publication = PublicationGenerator.randomPublication(BookMonograph.class);
-        publication.setEntityDescription(null);
-        return publication;
-    }
-
-    private Contributor randomContributor() {
-        return new Contributor.Builder().withIdentity(new Identity.Builder().withName(randomString()).build())
-                   .withRole(new RoleType(Role.ACTOR))
-                   .withSequence(randomInteger(10000))
-                   .withAffiliations(List.of(randomOrganization()))
-                   .build();
-    }
-
-    private Publication randomBookWithManyContributors() {
-        var publication = PublicationGenerator.randomPublication(BookMonograph.class);
-        var contributions = IntStream.rangeClosed(1, 10)
-                                .mapToObj(i -> randomContributor())
-                                .toList();
-        publication.getEntityDescription().setContributors(contributions);
-        return publication;
-    }
-
-    @Test
-    void shouldOnlyIncludeDirectParentPerSubOrganization() {
-        var framedResult =
-                createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
-
-        var topLevelOrganizations = framedResult.at(JSON_PTR_TOP_LEVEL_ORGS);
-
-        for (var organization : topLevelOrganizations) {
-            var id = organization.at(JSON_PTR_ID).asText();
-            var hasPart = organization.at(JSON_PTR_HAS_PART);
-            for (var child : hasPart) {
-                var partOf = child.at(JSON_PTR_PART_OF);
-                assertEquals(1, partOf.size());
-                var parentId = partOf.get(0).at(JSON_PTR_ID).asText();
-                assertEquals(id, parentId);
-            }
-        }
-    }
-
-    @Test
-    void shouldOnlyIncludeDirectParentPerAffiliation() {
-        var framedResult =
-                createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
-
-        var contributors = framedResult.at(JSON_PTR_CONTRIBUTORS);
-        for (var contributor : contributors) {
-            var affiliations = contributor.at(JSON_PTR_AFFILIATIONS);
-            for (var affiliation : affiliations) {
-                var partOf = affiliation.at(JSON_PTR_PART_OF);
-                assertEquals(1, partOf.size());
-                var parentId = partOf.get(0).at(JSON_PTR_ID).asText();
-                assertEquals(HARD_CODED_TOP_LEVEL_ORG_URI.toString(), parentId);
-            }
-        }
-    }
-
-    @Test
-    void shouldNotIncludeChildOrganizationsOfAffiliations() {
-        var framedResult =
-                createExpandedResourceWithAffiliation(HARD_CODED_LEVEL_2_ORG_URI).asJsonNode();
-
-        var contributors = framedResult.at(JSON_PTR_CONTRIBUTORS);
-        for (var contributor : contributors) {
-            var affiliations = contributor.at(JSON_PTR_AFFILIATIONS);
-            for (var affiliation : affiliations) {
-                var hasPart = affiliation.at(JSON_PTR_HAS_PART);
-                assertTrue(hasPart.isMissingNode());
-            }
-        }
-    }
-
-    private ExpandedResource createExpandedResourceWithAffiliation(URI affiliationUri) {
-        var publication = randomPublication(AcademicArticle.class);
-        var affiliation = Organization.fromUri(affiliationUri);
-        var contributor =
-                publication
-                        .getEntityDescription()
-                        .getContributors()
-                        .getFirst()
-                        .copy()
-                        .withAffiliations(List.of(affiliation))
-                        .build();
-
-        publication.getEntityDescription().setContributors(List.of(contributor));
-
-        try {
-            var resource =
-                    Resource.fromPublication(publication)
-                            .persistNew(resourceService, UserInstance.fromPublication(publication));
-            FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-            return fromPublication(fakeUriRetriever, resourceService, sqsClient,
-                                   Resource.fromPublication(resource));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+  }
 }

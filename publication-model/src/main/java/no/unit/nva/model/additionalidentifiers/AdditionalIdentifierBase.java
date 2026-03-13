@@ -7,15 +7,16 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-    @JsonSubTypes.Type(name = AdditionalIdentifier.TYPE, value = AdditionalIdentifier.class),
-    @JsonSubTypes.Type(name = HandleIdentifier.TYPE, value = HandleIdentifier.class),
-    @JsonSubTypes.Type(name = ScopusIdentifier.TYPE, value = ScopusIdentifier.class),
-    @JsonSubTypes.Type(name = CristinIdentifier.TYPE, value = CristinIdentifier.class)
+  @JsonSubTypes.Type(name = AdditionalIdentifier.TYPE, value = AdditionalIdentifier.class),
+  @JsonSubTypes.Type(name = HandleIdentifier.TYPE, value = HandleIdentifier.class),
+  @JsonSubTypes.Type(name = ScopusIdentifier.TYPE, value = ScopusIdentifier.class),
+  @JsonSubTypes.Type(name = CristinIdentifier.TYPE, value = CristinIdentifier.class)
 })
 public interface AdditionalIdentifierBase {
-    @JsonProperty("value")
-    String value();
-    @JsonProperty("sourceName")
-    @JsonAlias("source")
-    String sourceName();
+  @JsonProperty("value")
+  String value();
+
+  @JsonProperty("sourceName")
+  @JsonAlias("source")
+  String sourceName();
 }

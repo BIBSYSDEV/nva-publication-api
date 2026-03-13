@@ -13,26 +13,23 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinSource {
 
-    @JsonProperty("kildekode")
-    private String sourceCode;
+  @JsonProperty("kildekode")
+  private String sourceCode;
 
-    @JsonProperty("kildeid")
-    private String sourceIdentifier;
+  @JsonProperty("kildeid")
+  private String sourceIdentifier;
 
-    @JacocoGenerated
-    public CristinSource() {
+  @JacocoGenerated
+  public CristinSource() {}
 
-    }
-
-    @JacocoGenerated
-    public CristinSourceBuilder copy() {
-        return this.toBuilder();
-    }
+  @JacocoGenerated
+  public CristinSourceBuilder copy() {
+    return this.toBuilder();
+  }
 }

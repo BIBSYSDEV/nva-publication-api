@@ -14,19 +14,22 @@ import no.unit.nva.publication.model.business.logentry.TicketLogEntry;
 @JsonTypeName(PublicationLogResponse.TYPE)
 public record PublicationLogResponse(List<LogEntryDto> logEntries) {
 
-    public static final String TYPE = "PublicationLog";
+  public static final String TYPE = "PublicationLog";
 
-    public static PublicationLogResponse fromLogEntries(Collection<LogEntry> logEntries) {
-        var logEntriesDto = logEntries.stream().map(PublicationLogResponse::toLogEntryDto).toList();
-        return new PublicationLogResponse(logEntriesDto);
-    }
+  public static PublicationLogResponse fromLogEntries(Collection<LogEntry> logEntries) {
+    var logEntriesDto = logEntries.stream().map(PublicationLogResponse::toLogEntryDto).toList();
+    return new PublicationLogResponse(logEntriesDto);
+  }
 
-    private static LogEntryDto toLogEntryDto(LogEntry logEntry) {
-        return switch (logEntry) {
-            case PublicationLogEntry publicationLogEntry -> PublicationLogEntryDto.fromLogEntry(publicationLogEntry);
-            case FileLogEntry fileLogEntry -> FileLogEntryDto.fromLogEntry(fileLogEntry);
-            case TicketLogEntry ticketLogEntry -> TicketLogEntryDto.fromLogEntry(ticketLogEntry);
-            default -> throw new IllegalStateException("Unknown logentry: " + logEntry.getClass().getSimpleName());
-        };
-    }
+  private static LogEntryDto toLogEntryDto(LogEntry logEntry) {
+    return switch (logEntry) {
+      case PublicationLogEntry publicationLogEntry ->
+          PublicationLogEntryDto.fromLogEntry(publicationLogEntry);
+      case FileLogEntry fileLogEntry -> FileLogEntryDto.fromLogEntry(fileLogEntry);
+      case TicketLogEntry ticketLogEntry -> TicketLogEntryDto.fromLogEntry(ticketLogEntry);
+      default ->
+          throw new IllegalStateException(
+              "Unknown logentry: " + logEntry.getClass().getSimpleName());
+    };
+  }
 }

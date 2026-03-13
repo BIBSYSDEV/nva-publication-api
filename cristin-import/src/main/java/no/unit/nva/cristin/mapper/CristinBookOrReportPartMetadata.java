@@ -14,48 +14,52 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"antall_sider_totalt", "status_utgitt_av_forlag", "delangivelse", "sprakkode_oversatt_fra"})
+@JsonIgnoreProperties({
+  "antall_sider_totalt",
+  "status_utgitt_av_forlag",
+  "delangivelse",
+  "sprakkode_oversatt_fra"
+})
 public class CristinBookOrReportPartMetadata {
 
-    public static final String PAGES_START = "sidenr_fra";
-    public static final String PAGES_END = "sidenr_til";
-    public static final String PART_OF = "varbeidlopenr_inngar_i";
-    private static final String DOI = "doi";
-    public static final String SUBJECT_FIELD = "fagfelt";
+  public static final String PAGES_START = "sidenr_fra";
+  public static final String PAGES_END = "sidenr_til";
+  public static final String PART_OF = "varbeidlopenr_inngar_i";
+  private static final String DOI = "doi";
+  public static final String SUBJECT_FIELD = "fagfelt";
 
-    @JsonProperty(PAGES_START)
-    private String pagesStart;
-    @JsonProperty(PAGES_END)
-    private String pagesEnd;
+  @JsonProperty(PAGES_START)
+  private String pagesStart;
 
-    @JsonProperty(PART_OF)
-    private String partOf;
+  @JsonProperty(PAGES_END)
+  private String pagesEnd;
 
-    @JsonProperty(DOI)
-    private String doi;
-    @JsonProperty(SUBJECT_FIELD)
-    private CristinSubjectField subjectField;
+  @JsonProperty(PART_OF)
+  private String partOf;
 
-    @JacocoGenerated
-    public CristinBookOrReportPartMetadata() {
+  @JsonProperty(DOI)
+  private String doi;
 
-    }
+  @JsonProperty(SUBJECT_FIELD)
+  private CristinSubjectField subjectField;
 
-    public String getPagesStart() {
-        return pagesStart;
-    }
+  @JacocoGenerated
+  public CristinBookOrReportPartMetadata() {}
 
-    public String getPagesEnd() {
-        return pagesEnd;
-    }
+  public String getPagesStart() {
+    return pagesStart;
+  }
 
-    @JacocoGenerated
-    public CristinBookReportPartBuilder copy() {
-        return this.toBuilder();
-    }
+  public String getPagesEnd() {
+    return pagesEnd;
+  }
+
+  @JacocoGenerated
+  public CristinBookReportPartBuilder copy() {
+    return this.toBuilder();
+  }
 }

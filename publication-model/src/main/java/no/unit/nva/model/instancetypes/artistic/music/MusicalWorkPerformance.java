@@ -7,43 +7,44 @@ import nva.commons.core.JacocoGenerated;
 
 public class MusicalWorkPerformance extends MusicalWork {
 
-    public static final String PREMIERE = "premiere";
+  public static final String PREMIERE = "premiere";
 
-    @JsonProperty(PREMIERE)
-    private final boolean premiere;
+  @JsonProperty(PREMIERE)
+  private final boolean premiere;
 
-    @JsonCreator
-    public MusicalWorkPerformance(@JsonProperty(TITLE) String title,
-                                  @JsonProperty(COMPOSER) String composer,
-                                  @JsonProperty(PREMIERE) boolean premiere) {
-        super(title, composer);
-        this.premiere = premiere;
+  @JsonCreator
+  public MusicalWorkPerformance(
+      @JsonProperty(TITLE) String title,
+      @JsonProperty(COMPOSER) String composer,
+      @JsonProperty(PREMIERE) boolean premiere) {
+    super(title, composer);
+    this.premiere = premiere;
+  }
+
+  public boolean isPremiere() {
+    return premiere;
+  }
+
+  @Override
+  @JacocoGenerated
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), isPremiere());
+  }
+
+  @Override
+  @JacocoGenerated
+  public boolean equals(Object o) {
+
+    if (this == o) {
+      return true;
     }
-
-    public boolean isPremiere() {
-        return premiere;
+    if (!(o instanceof MusicalWorkPerformance)) {
+      return false;
     }
-
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), isPremiere());
+    if (!super.equals(o)) {
+      return false;
     }
-
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof MusicalWorkPerformance)) {
-            return false;
-        }
-        if (!super.equals(o)) {
-            return false;
-        }
-        MusicalWorkPerformance that = (MusicalWorkPerformance) o;
-        return isPremiere() == that.isPremiere();
-    }
+    MusicalWorkPerformance that = (MusicalWorkPerformance) o;
+    return isPremiere() == that.isPremiere();
+  }
 }

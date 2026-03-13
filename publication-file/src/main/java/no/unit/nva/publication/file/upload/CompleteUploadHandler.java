@@ -1,6 +1,7 @@
 package no.unit.nva.publication.file.upload;
 
 import static java.net.HttpURLConnection.HTTP_OK;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -14,39 +15,43 @@ import nva.commons.core.JacocoGenerated;
 
 public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadRequest, File> {
 
-    private final FileService fileService;
-    private final IdentityServiceClient identityServiceClient;
+  private final FileService fileService;
+  private final IdentityServiceClient identityServiceClient;
 
-    @JacocoGenerated
-    public CompleteUploadHandler() {
-        this(FileService.defaultFileService(), IdentityServiceClient.prepare(), new Environment());
-    }
+  @JacocoGenerated
+  public CompleteUploadHandler() {
+    this(FileService.defaultFileService(), IdentityServiceClient.prepare(), new Environment());
+  }
 
-    public CompleteUploadHandler(FileService fileService, IdentityServiceClient identityServiceClient,
-                                 Environment environment) {
-        super(CompleteUploadRequest.class, environment);
-        this.fileService = fileService;
-        this.identityServiceClient = identityServiceClient;
-    }
+  public CompleteUploadHandler(
+      FileService fileService,
+      IdentityServiceClient identityServiceClient,
+      Environment environment) {
+    super(CompleteUploadRequest.class, environment);
+    this.fileService = fileService;
+    this.identityServiceClient = identityServiceClient;
+  }
 
-    @Override
-    protected void validateRequest(CompleteUploadRequest completeUploadRequestBody, RequestInfo requestInfo,
-                                   Context context) throws ApiGatewayException {
-        completeUploadRequestBody.validate();
-    }
+  @Override
+  protected void validateRequest(
+      CompleteUploadRequest completeUploadRequestBody, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
+    completeUploadRequestBody.validate();
+  }
 
-    @Override
-    protected File processInput(CompleteUploadRequest input, RequestInfo requestInfo,
-                                Context context) throws ApiGatewayException {
+  @Override
+  protected File processInput(CompleteUploadRequest input, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
 
-        var resourceIdentifier = RequestUtil.getIdentifier(requestInfo);
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+    var resourceIdentifier = RequestUtil.getIdentifier(requestInfo);
+    var userInstance =
+        RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        return fileService.completeMultipartUpload(resourceIdentifier, input, userInstance);
-    }
+    return fileService.completeMultipartUpload(resourceIdentifier, input, userInstance);
+  }
 
-    @Override
-    protected Integer getSuccessStatusCode(CompleteUploadRequest input, File output) {
-        return HTTP_OK;
-    }
+  @Override
+  protected Integer getSuccessStatusCode(CompleteUploadRequest input, File output) {
+    return HTTP_OK;
+  }
 }

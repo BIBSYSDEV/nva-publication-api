@@ -14,52 +14,52 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
 public class DeletionProcessInitializationHandler
-    extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, ResourceDraftedForDeletionEvent> {
-    
-    private final ResourceService resourceService;
-    
-    @JacocoGenerated
-    public DeletionProcessInitializationHandler() {
-        this(ResourceService.defaultService());
+    extends DestinationsEventBridgeEventHandler<
+        DataEntryUpdateEvent, ResourceDraftedForDeletionEvent> {
+
+  private final ResourceService resourceService;
+
+  @JacocoGenerated
+  public DeletionProcessInitializationHandler() {
+    this(ResourceService.defaultService());
+  }
+
+  public DeletionProcessInitializationHandler(ResourceService resourceService) {
+    super(DataEntryUpdateEvent.class);
+    this.resourceService = resourceService;
+  }
+
+  @Override
+  protected ResourceDraftedForDeletionEvent processInputPayload(
+      DataEntryUpdateEvent input,
+      AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> event,
+      Context context) {
+    Publication publication = toPublication(input.getNewData());
+    if (isDraftForDeletion(publication)) {
+      return toDeletePublicationEvent(publication);
     }
-    
-    public DeletionProcessInitializationHandler(ResourceService resourceService) {
-        super(DataEntryUpdateEvent.class);
-        this.resourceService = resourceService;
+    return null;
+  }
+
+  private boolean isDraftForDeletion(Publication publication) {
+    return publication != null
+        && publication.getStatus().equals(PublicationStatus.DRAFT_FOR_DELETION);
+  }
+
+  private Publication toPublication(Entity dataEntry) {
+    Publication publication = null;
+    if (dataEntry instanceof Resource) {
+      publication = dataEntry.toPublication(resourceService);
     }
-    
-    @Override
-    protected ResourceDraftedForDeletionEvent processInputPayload(
-        DataEntryUpdateEvent input,
-        AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> event,
-        Context context) {
-        Publication publication = toPublication(input.getNewData());
-        if (isDraftForDeletion(publication)) {
-            return toDeletePublicationEvent(publication);
-        }
-        return null;
-    }
-    
-    private boolean isDraftForDeletion(Publication publication) {
-        return publication != null
-               && publication.getStatus().equals(PublicationStatus.DRAFT_FOR_DELETION);
-    }
-    
-    private Publication toPublication(Entity dataEntry) {
-        Publication publication = null;
-        if (dataEntry instanceof Resource) {
-            publication = dataEntry.toPublication(resourceService);
-        }
-        return publication;
-    }
-    
-    private ResourceDraftedForDeletionEvent toDeletePublicationEvent(Publication publication) {
-        return new ResourceDraftedForDeletionEvent(
-            ResourceDraftedForDeletionEvent.EVENT_TOPIC,
-            publication.getIdentifier(),
-            publication.getStatus().getValue(),
-            publication.getDoi(),
-            publication.getPublisher().getId()
-        );
-    }
+    return publication;
+  }
+
+  private ResourceDraftedForDeletionEvent toDeletePublicationEvent(Publication publication) {
+    return new ResourceDraftedForDeletionEvent(
+        ResourceDraftedForDeletionEvent.EVENT_TOPIC,
+        publication.getIdentifier(),
+        publication.getStatus().getValue(),
+        publication.getDoi(),
+        publication.getPublisher().getId());
+  }
 }

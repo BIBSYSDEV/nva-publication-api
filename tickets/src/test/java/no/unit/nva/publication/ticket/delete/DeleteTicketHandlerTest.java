@@ -16,6 +16,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static software.amazon.awssdk.http.HttpStatusCode.FORBIDDEN;
 import static software.amazon.awssdk.http.HttpStatusCode.NOT_FOUND;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -44,108 +45,124 @@ import org.junit.jupiter.api.Test;
 
 class DeleteTicketHandlerTest extends ResourcesLocalTest {
 
-    public static final FakeContext CONTEXT = new FakeContext();
-    private TicketService ticketService;
-    private ResourceService resourceService;
-    private DeleteTicketHandler handler;
-    private ByteArrayOutputStream output;
+  public static final FakeContext CONTEXT = new FakeContext();
+  private TicketService ticketService;
+  private ResourceService resourceService;
+  private DeleteTicketHandler handler;
+  private ByteArrayOutputStream output;
 
-    @BeforeEach
-    public void setup() {
-        super.init();
-        this.output = new ByteArrayOutputStream();
-        this.ticketService = getTicketService();
-        this.resourceService = getResourceService(client);
-        this.handler = new DeleteTicketHandler(ticketService, new Environment());
-    }
+  @BeforeEach
+  public void setup() {
+    super.init();
+    this.output = new ByteArrayOutputStream();
+    this.ticketService = getTicketService();
+    this.resourceService = getResourceService(client);
+    this.handler = new DeleteTicketHandler(ticketService, new Environment());
+  }
 
-    @Test
-    void shouldReturnNotFoundWhenTicketDoesNotExist() throws IOException {
-        var request = deleteRequest(SortableIdentifier.next(), SortableIdentifier.next());
+  @Test
+  void shouldReturnNotFoundWhenTicketDoesNotExist() throws IOException {
+    var request = deleteRequest(SortableIdentifier.next(), SortableIdentifier.next());
 
-        handler.handleRequest(request, output, CONTEXT);
+    handler.handleRequest(request, output, CONTEXT);
 
-        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(NOT_FOUND)));
-    }
+    assertThat(
+        GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(),
+        is(equalTo(NOT_FOUND)));
+  }
 
-    @Test
-    void shouldReturnForbiddenWhenAttemptingToDeleteTicketUserDoesNotOwn() throws IOException, ApiGatewayException {
-        var publication = createPublication();
-        var ticket = createTicket(publication);
-        var request = deleteRequest(publication.getIdentifier(), ticket.getIdentifier());
+  @Test
+  void shouldReturnForbiddenWhenAttemptingToDeleteTicketUserDoesNotOwn()
+      throws IOException, ApiGatewayException {
+    var publication = createPublication();
+    var ticket = createTicket(publication);
+    var request = deleteRequest(publication.getIdentifier(), ticket.getIdentifier());
 
-        handler.handleRequest(request, output, CONTEXT);
+    handler.handleRequest(request, output, CONTEXT);
 
-        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(FORBIDDEN)));
-    }
+    assertThat(
+        GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(),
+        is(equalTo(FORBIDDEN)));
+  }
 
-    @Test
-    void shouldReturnBadGatewayWhenUnexpectedErrorOccurs() throws IOException, ApiGatewayException {
-        var publication = createPublication();
-        var ticket = createTicket(publication);
-        var request = deleteRequestForUser(publication.getIdentifier(), ticket.getIdentifier(),
-                                           ticket.getOwner());
+  @Test
+  void shouldReturnBadGatewayWhenUnexpectedErrorOccurs() throws IOException, ApiGatewayException {
+    var publication = createPublication();
+    var ticket = createTicket(publication);
+    var request =
+        deleteRequestForUser(
+            publication.getIdentifier(), ticket.getIdentifier(), ticket.getOwner());
 
-        new DeleteTicketHandler(ticketServiceThrowingException(), new Environment()).handleRequest(request, output, CONTEXT);
+    new DeleteTicketHandler(ticketServiceThrowingException(), new Environment())
+        .handleRequest(request, output, CONTEXT);
 
-        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
-    }
+    assertThat(
+        GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(),
+        is(equalTo(HTTP_BAD_GATEWAY)));
+  }
 
-    @Test
-    void shouldRemoveTicketSuccessfully() throws IOException, ApiGatewayException {
-        var publication = createPublication();
-        var ticket = createTicket(publication);
-        var request = deleteRequestForUser(publication.getIdentifier(), ticket.getIdentifier(),
-                                           ticket.getOwner());
+  @Test
+  void shouldRemoveTicketSuccessfully() throws IOException, ApiGatewayException {
+    var publication = createPublication();
+    var ticket = createTicket(publication);
+    var request =
+        deleteRequestForUser(
+            publication.getIdentifier(), ticket.getIdentifier(), ticket.getOwner());
 
-        handler.handleRequest(request, output, CONTEXT);
+    handler.handleRequest(request, output, CONTEXT);
 
-        var removedTicket = ticket.fetch(ticketService);
+    var removedTicket = ticket.fetch(ticketService);
 
-        assertThat(removedTicket.getStatus(), is(equalTo(TicketStatus.REMOVED)));
-        assertThat(GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_OK)));
-    }
+    assertThat(removedTicket.getStatus(), is(equalTo(TicketStatus.REMOVED)));
+    assertThat(
+        GatewayResponse.fromOutputStream(output, Void.class).getStatusCode(), is(equalTo(HTTP_OK)));
+  }
 
-    private static Map<String, String> pathParams(SortableIdentifier publicationIdentifier,
-                                                  SortableIdentifier ticketIdentifier) {
-        return Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString(), TICKET_IDENTIFIER,
-                      ticketIdentifier.toString());
-    }
+  private static Map<String, String> pathParams(
+      SortableIdentifier publicationIdentifier, SortableIdentifier ticketIdentifier) {
+    return Map.of(
+        PUBLICATION_IDENTIFIER,
+        publicationIdentifier.toString(),
+        TICKET_IDENTIFIER,
+        ticketIdentifier.toString());
+  }
 
-    private TicketService ticketServiceThrowingException() {
-        ticketService = mock(TicketService.class);
-        doThrow(new RuntimeException()).when(ticketService).updateTicket(any());
-        return ticketService;
-    }
+  private TicketService ticketServiceThrowingException() {
+    ticketService = mock(TicketService.class);
+    doThrow(new RuntimeException()).when(ticketService).updateTicket(any());
+    return ticketService;
+  }
 
-    private TicketEntry createTicket(Publication publication) throws ApiGatewayException {
-        return TicketEntry.createNewTicket(publication, PublishingRequestCase.class, SortableIdentifier::next)
-                   .withOwner(UserInstance.fromPublication(publication).getUsername())
-                   .persistNewTicket(ticketService);
-    }
+  private TicketEntry createTicket(Publication publication) throws ApiGatewayException {
+    return TicketEntry.createNewTicket(
+            publication, PublishingRequestCase.class, SortableIdentifier::next)
+        .withOwner(UserInstance.fromPublication(publication).getUsername())
+        .persistNewTicket(ticketService);
+  }
 
-    private Publication createPublication() throws BadRequestException {
-        var publication = randomPublication();
-        return Resource.fromPublication(publication)
-                   .persistNew(resourceService, UserInstance.fromPublication(publication));
-    }
+  private Publication createPublication() throws BadRequestException {
+    var publication = randomPublication();
+    return Resource.fromPublication(publication)
+        .persistNew(resourceService, UserInstance.fromPublication(publication));
+  }
 
-    private InputStream deleteRequest(SortableIdentifier publicationIdentifier,
-                                      SortableIdentifier ticketIdentifier) throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper).withPathParameters(
-                pathParams(publicationIdentifier, ticketIdentifier))
-                   .withUserName(randomString())
-                   .withCurrentCustomer(randomUri())
-                   .build();
-    }
+  private InputStream deleteRequest(
+      SortableIdentifier publicationIdentifier, SortableIdentifier ticketIdentifier)
+      throws JsonProcessingException {
+    return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+        .withPathParameters(pathParams(publicationIdentifier, ticketIdentifier))
+        .withUserName(randomString())
+        .withCurrentCustomer(randomUri())
+        .build();
+  }
 
-    private InputStream deleteRequestForUser(SortableIdentifier publicationIdentifier,
-                                             SortableIdentifier ticketIdentifier, User user)
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper).withPathParameters(
-                pathParams(publicationIdentifier, ticketIdentifier))
-                   .withUserName(nonNull(user) ? user.toString() : null)
-                   .withCurrentCustomer(randomUri())
-                   .build();
-    }
+  private InputStream deleteRequestForUser(
+      SortableIdentifier publicationIdentifier, SortableIdentifier ticketIdentifier, User user)
+      throws JsonProcessingException {
+    return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
+        .withPathParameters(pathParams(publicationIdentifier, ticketIdentifier))
+        .withUserName(nonNull(user) ? user.toString() : null)
+        .withCurrentCustomer(randomUri())
+        .build();
+  }
 }

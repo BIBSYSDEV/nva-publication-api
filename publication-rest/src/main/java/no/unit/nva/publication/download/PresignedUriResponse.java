@@ -5,6 +5,4 @@ import java.net.URI;
 import java.time.Instant;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public record PresignedUriResponse(String fileIdentifier, URI id, Instant expires, URI alias) {
-
-}
+public record PresignedUriResponse(String fileIdentifier, URI id, Instant expires, URI alias) {}

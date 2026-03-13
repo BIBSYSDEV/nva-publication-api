@@ -11,41 +11,73 @@ import lombok.Getter;
 import lombok.Setter;
 import nva.commons.core.JacocoGenerated;
 
-@Builder(builderClassName = "ScientificPersonBuilder", toBuilder = true, builderMethodName = "builder",
-    buildMethodName = "build", setterPrefix = "with")
+@Builder(
+    builderClassName = "ScientificPersonBuilder",
+    toBuilder = true,
+    builderMethodName = "builder",
+    buildMethodName = "build",
+    setterPrefix = "with")
 @Getter
 @Setter
 @Data
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"rekkefolgenr", "fornavn", "etternavn", "institusjonsnavn", "avdnavn", "undavdnavn",
-    "gruppenavn", "kjonn", "forfattere_sted", "forfatterandel",
-    "forfattere_int", "faktortall_samarbeid_2003", "forfatterandel_2003", "forfattervekt_2003", "nsdstedkode",
-    "institusjonskode", "eierkode", "status_rbo", "forfattere_totalt", "sektorkode", "status_int_samarbeid", "landkode",
-    "landnavn", "landnavn_engelsk", "fodt_aar"})
+@JsonIgnoreProperties({
+  "rekkefolgenr",
+  "fornavn",
+  "etternavn",
+  "institusjonsnavn",
+  "avdnavn",
+  "undavdnavn",
+  "gruppenavn",
+  "kjonn",
+  "forfattere_sted",
+  "forfatterandel",
+  "forfattere_int",
+  "faktortall_samarbeid_2003",
+  "forfatterandel_2003",
+  "forfattervekt_2003",
+  "nsdstedkode",
+  "institusjonskode",
+  "eierkode",
+  "status_rbo",
+  "forfattere_totalt",
+  "sektorkode",
+  "status_int_samarbeid",
+  "landkode",
+  "landnavn",
+  "landnavn_engelsk",
+  "fodt_aar"
+})
 public class ScientificPerson {
 
-    public static final String AFFILIATION_DELIMITER = ".";
-    private static final String RESOURCE_OWNER_FORMAT = "%s@%s";
-    @JsonProperty("personlopenr")
-    private String cristinPersonIdentifier;
-    @JsonProperty("institusjonsnr")
-    private String institutionIdentifier;
-    @JsonProperty("avdnr")
-    private String departmentIdentifier;
-    @JsonProperty("undavdnr")
-    private String subDepartmentIdentifier;
-    @JsonProperty("gruppenr")
-    private String groupIdentifier;
-    @JsonProperty("forfattervekt")
-    private String authorPoints;
-    @JsonProperty("vektingstall")
-    private String publicationPoints;
-    @JsonProperty("faktortall_samarbeid")
-    private String cooperationPoints;
+  public static final String AFFILIATION_DELIMITER = ".";
+  private static final String RESOURCE_OWNER_FORMAT = "%s@%s";
 
-    @JacocoGenerated
-    @JsonCreator
-    private ScientificPerson() {
+  @JsonProperty("personlopenr")
+  private String cristinPersonIdentifier;
 
-    }
+  @JsonProperty("institusjonsnr")
+  private String institutionIdentifier;
+
+  @JsonProperty("avdnr")
+  private String departmentIdentifier;
+
+  @JsonProperty("undavdnr")
+  private String subDepartmentIdentifier;
+
+  @JsonProperty("gruppenr")
+  private String groupIdentifier;
+
+  @JsonProperty("forfattervekt")
+  private String authorPoints;
+
+  @JsonProperty("vektingstall")
+  private String publicationPoints;
+
+  @JsonProperty("faktortall_samarbeid")
+  private String cooperationPoints;
+
+  @JacocoGenerated
+  @JsonCreator
+  private ScientificPerson() {}
 }

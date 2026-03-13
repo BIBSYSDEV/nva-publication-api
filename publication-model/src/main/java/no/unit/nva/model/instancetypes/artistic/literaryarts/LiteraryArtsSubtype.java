@@ -2,58 +2,59 @@ package no.unit.nva.model.instancetypes.artistic.literaryarts;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-import java.util.Objects;
-
 public class LiteraryArtsSubtype {
-    public static final String TYPE_FIELD = "type";
-    public static final String DESCRIPTION_FIELD = "description";
-    @JsonProperty(TYPE_FIELD)
-    private final LiteraryArtsSubtypeEnum type;
+  public static final String TYPE_FIELD = "type";
+  public static final String DESCRIPTION_FIELD = "description";
 
-    public static LiteraryArtsSubtype createOther(String description) {
-        return new LiteraryArtsSubtypeOther(LiteraryArtsSubtypeEnum.OTHER, description);
-    }
+  @JsonProperty(TYPE_FIELD)
+  private final LiteraryArtsSubtypeEnum type;
 
-    @JacocoGenerated
-    @JsonCreator
-    public static LiteraryArtsSubtype fromJson(@JsonProperty(TYPE_FIELD) LiteraryArtsSubtypeEnum type,
-                                               @JsonProperty(DESCRIPTION_FIELD) String description) {
-        if (LiteraryArtsSubtypeEnum.OTHER.equals(type)) {
-            return createOther(description);
-        }
-        return new LiteraryArtsSubtype(type);
-    }
+  public static LiteraryArtsSubtype createOther(String description) {
+    return new LiteraryArtsSubtypeOther(LiteraryArtsSubtypeEnum.OTHER, description);
+  }
 
-    public static LiteraryArtsSubtype create(LiteraryArtsSubtypeEnum type) {
-        return new LiteraryArtsSubtype(type);
+  @JacocoGenerated
+  @JsonCreator
+  public static LiteraryArtsSubtype fromJson(
+      @JsonProperty(TYPE_FIELD) LiteraryArtsSubtypeEnum type,
+      @JsonProperty(DESCRIPTION_FIELD) String description) {
+    if (LiteraryArtsSubtypeEnum.OTHER.equals(type)) {
+      return createOther(description);
     }
+    return new LiteraryArtsSubtype(type);
+  }
 
-    protected LiteraryArtsSubtype(LiteraryArtsSubtypeEnum type) {
-        this.type = type;
-    }
+  public static LiteraryArtsSubtype create(LiteraryArtsSubtypeEnum type) {
+    return new LiteraryArtsSubtype(type);
+  }
 
-    public LiteraryArtsSubtypeEnum getType() {
-        return type;
-    }
+  protected LiteraryArtsSubtype(LiteraryArtsSubtypeEnum type) {
+    this.type = type;
+  }
 
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof LiteraryArtsSubtype)) {
-            return false;
-        }
-        LiteraryArtsSubtype that = (LiteraryArtsSubtype) o;
-        return getType() == that.getType();
-    }
+  public LiteraryArtsSubtypeEnum getType() {
+    return type;
+  }
 
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getType());
+  @Override
+  @JacocoGenerated
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (!(o instanceof LiteraryArtsSubtype)) {
+      return false;
+    }
+    LiteraryArtsSubtype that = (LiteraryArtsSubtype) o;
+    return getType() == that.getType();
+  }
+
+  @Override
+  @JacocoGenerated
+  public int hashCode() {
+    return Objects.hash(getType());
+  }
 }

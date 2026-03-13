@@ -17,30 +17,49 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @Data
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"seqdbh", "arstall_online", "arstall_trykket", "varbeidlopenr", "titteltekst",
-    "varbeidhovedkatkode", "varbeidunderkatkode", "pubidnr_itar", "publikasjonsform", "publikasjonsformnavn",
-    "publiseringskanal", "publiseringskanalnavn", "publiseringskanaltype", "publtypenavn", "issn", "isbn", "merknad",
-    "fagomradekode_npi", "fagomradenavn_npi", "fagfeltkode_npi", "fagfeltnavn_npi", "sprakkode", "spraknavn", "doi"})
+@JsonIgnoreProperties({
+  "seqdbh",
+  "arstall_online",
+  "arstall_trykket",
+  "varbeidlopenr",
+  "titteltekst",
+  "varbeidhovedkatkode",
+  "varbeidunderkatkode",
+  "pubidnr_itar",
+  "publikasjonsform",
+  "publikasjonsformnavn",
+  "publiseringskanal",
+  "publiseringskanalnavn",
+  "publiseringskanaltype",
+  "publtypenavn",
+  "issn",
+  "isbn",
+  "merknad",
+  "fagomradekode_npi",
+  "fagomradenavn_npi",
+  "fagfeltkode_npi",
+  "fagfeltnavn_npi",
+  "sprakkode",
+  "spraknavn",
+  "doi"
+})
 public class ScientificResource {
 
-    @JsonProperty("h_dbh_forskres_forfatter")
-    private List<ScientificPerson> scientificPeople;
-    @JsonProperty("kvalitetsnivakode")
-    private String qualityCode;
-    @JsonProperty("arstall")
-    private String reportedYear;
+  @JsonProperty("h_dbh_forskres_forfatter")
+  private List<ScientificPerson> scientificPeople;
 
-    @JacocoGenerated
-    @JsonCreator
-    private ScientificResource() {
-    }
+  @JsonProperty("kvalitetsnivakode")
+  private String qualityCode;
+
+  @JsonProperty("arstall")
+  private String reportedYear;
+
+  @JacocoGenerated
+  @JsonCreator
+  private ScientificResource() {}
 }
-
-
-

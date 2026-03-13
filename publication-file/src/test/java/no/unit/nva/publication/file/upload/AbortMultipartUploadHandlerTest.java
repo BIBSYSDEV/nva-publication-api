@@ -10,6 +10,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -28,63 +29,68 @@ import org.zalando.problem.Problem;
 
 public class AbortMultipartUploadHandlerTest {
 
-    public static final String SAMPLE_UPLOAD_ID = "uploadId";
-    public static final String SAMPLE_KEY = "key";
-    private AbortMultipartUploadHandler abortMultipartUploadHandler;
-    private ByteArrayOutputStream outputStream;
-    private Context context;
-    private AmazonS3Client s3client;
+  public static final String SAMPLE_UPLOAD_ID = "uploadId";
+  public static final String SAMPLE_KEY = "key";
+  private AbortMultipartUploadHandler abortMultipartUploadHandler;
+  private ByteArrayOutputStream outputStream;
+  private Context context;
+  private AmazonS3Client s3client;
 
-    @BeforeEach
-    void setUp() {
-        s3client = mock(AmazonS3Client.class);
-        abortMultipartUploadHandler = new AbortMultipartUploadHandler(s3client, new Environment());
-        context = mock(Context.class);
-        outputStream = new ByteArrayOutputStream();
-    }
+  @BeforeEach
+  void setUp() {
+    s3client = mock(AmazonS3Client.class);
+    abortMultipartUploadHandler = new AbortMultipartUploadHandler(s3client, new Environment());
+    context = mock(Context.class);
+    outputStream = new ByteArrayOutputStream();
+  }
 
-    @Test
-    void canAbortMultipartUpload() throws IOException {
-        abortMultipartUploadHandler.handleRequest(abortMultipartUploadRequestWithBody(), outputStream, context);
+  @Test
+  void canAbortMultipartUpload() throws IOException {
+    abortMultipartUploadHandler.handleRequest(
+        abortMultipartUploadRequestWithBody(), outputStream, context);
 
-        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+    var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
 
-        assertThat(response, is(notNullValue()));
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
-    }
+    assertThat(response, is(notNullValue()));
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_ACCEPTED)));
+  }
 
-    @Test
-    void abortMultipartUploadWithInvalidInputReturnsBadRequest() throws IOException {
-        abortMultipartUploadHandler.handleRequest(abortMultipartUploadRequestWithoutBody(), outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+  @Test
+  void abortMultipartUploadWithInvalidInputReturnsBadRequest() throws IOException {
+    abortMultipartUploadHandler.handleRequest(
+        abortMultipartUploadRequestWithoutBody(), outputStream, context);
+    var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
 
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
-    }
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
+  }
 
-    @Test
-    void abortMultipartUploadWithS3ErrorReturnsInternalServerError() throws IOException {
-        doThrow(AmazonS3Exception.class).when(s3client).abortMultipartUpload(Mockito.any());
-        abortMultipartUploadHandler.handleRequest(abortMultipartUploadRequestWithBody(), outputStream, context);
+  @Test
+  void abortMultipartUploadWithS3ErrorReturnsInternalServerError() throws IOException {
+    doThrow(AmazonS3Exception.class).when(s3client).abortMultipartUpload(Mockito.any());
+    abortMultipartUploadHandler.handleRequest(
+        abortMultipartUploadRequestWithBody(), outputStream, context);
 
-        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+    var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
 
-        assertThat(response, is(notNullValue()));
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
-        assertThat(response.getBody(), is(notNullValue()));
-    }
+    assertThat(response, is(notNullValue()));
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
+    assertThat(response.getBody(), is(notNullValue()));
+  }
 
-    private InputStream abortMultipartUploadRequestWithBody() throws JsonProcessingException {
-        return new HandlerRequestBuilder<AbortMultipartUploadRequestBody>(dtoObjectMapper).withBody(
-            abortMultipartUploadRequestBody()).build();
-    }
+  private InputStream abortMultipartUploadRequestWithBody() throws JsonProcessingException {
+    return new HandlerRequestBuilder<AbortMultipartUploadRequestBody>(dtoObjectMapper)
+        .withBody(abortMultipartUploadRequestBody())
+        .build();
+  }
 
-    private InputStream abortMultipartUploadRequestWithoutBody()
-        throws com.fasterxml.jackson.core.JsonProcessingException {
-        return new HandlerRequestBuilder<AbortMultipartUploadRequestBody>(dtoObjectMapper).withBody(
-            new AbortMultipartUploadRequestBody(null, null)).build();
-    }
+  private InputStream abortMultipartUploadRequestWithoutBody()
+      throws com.fasterxml.jackson.core.JsonProcessingException {
+    return new HandlerRequestBuilder<AbortMultipartUploadRequestBody>(dtoObjectMapper)
+        .withBody(new AbortMultipartUploadRequestBody(null, null))
+        .build();
+  }
 
-    private AbortMultipartUploadRequestBody abortMultipartUploadRequestBody() {
-        return new AbortMultipartUploadRequestBody(SAMPLE_UPLOAD_ID, SAMPLE_KEY);
-    }
+  private AbortMultipartUploadRequestBody abortMultipartUploadRequestBody() {
+    return new AbortMultipartUploadRequestBody(SAMPLE_UPLOAD_ID, SAMPLE_KEY);
+  }
 }

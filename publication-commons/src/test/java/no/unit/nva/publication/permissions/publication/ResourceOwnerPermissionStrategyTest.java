@@ -9,6 +9,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Named.named;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.stream.Stream;
@@ -33,128 +34,167 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class ResourceOwnerPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
-    //region Non-degree publications
-    @ParameterizedTest(name = "Should allow ResourceOwner {0} operation on own published non-degree resource")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE, names = {"UPDATE", "UNPUBLISH",
-        "DOI_REQUEST_CREATE", "PUBLISHING_REQUEST_CREATE", "SUPPORT_REQUEST_CREATE"})
-    void shouldAllowResourceOwnerOnNonDegree(PublicationOperation operation)
-        throws JsonProcessingException, UnauthorizedException {
+  // region Non-degree publications
+  @ParameterizedTest(
+      name = "Should allow ResourceOwner {0} operation on own published non-degree resource")
+  @EnumSource(
+      value = PublicationOperation.class,
+      mode = Mode.INCLUDE,
+      names = {
+        "UPDATE",
+        "UNPUBLISH",
+        "DOI_REQUEST_CREATE",
+        "PUBLISHING_REQUEST_CREATE",
+        "SUPPORT_REQUEST_CREATE"
+      })
+  void shouldAllowResourceOwnerOnNonDegree(PublicationOperation operation)
+      throws JsonProcessingException, UnauthorizedException {
 
-        var institution = randomUri();
-        var resourceOwner = randomString();
-        var cristinId = randomUri();
+    var institution = randomUri();
+    var resourceOwner = randomString();
+    var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
-        var publication = createNonDegreePublication(resourceOwner, institution);
-        publication.setAssociatedArtifacts(new AssociatedArtifactList());
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+    var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
+    var publication = createNonDegreePublication(resourceOwner, institution);
+    publication.setAssociatedArtifacts(new AssociatedArtifactList());
+    var userInstance =
+        RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertTrue(PublicationPermissions
-                                  .create(Resource.fromPublication(publication), userInstance)
-                                  .allowsAction(operation));
-    }
+    Assertions.assertTrue(
+        PublicationPermissions.create(Resource.fromPublication(publication), userInstance)
+            .allowsAction(operation));
+  }
 
-    @ParameterizedTest(name = "Should deny ResourceOwner {0} operation on own published non-degree resource")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"PARTIAL_UPDATE", "UPDATE",
-        "UNPUBLISH", "DOI_REQUEST_CREATE",
-        "PUBLISHING_REQUEST_CREATE", "SUPPORT_REQUEST_CREATE", "UPLOAD_FILE"})
-    void shouldDenyResourceOwnerOnNonDegree(PublicationOperation operation)
-        throws JsonProcessingException, UnauthorizedException {
+  @ParameterizedTest(
+      name = "Should deny ResourceOwner {0} operation on own published non-degree resource")
+  @EnumSource(
+      value = PublicationOperation.class,
+      mode = Mode.EXCLUDE,
+      names = {
+        "PARTIAL_UPDATE",
+        "UPDATE",
+        "UNPUBLISH",
+        "DOI_REQUEST_CREATE",
+        "PUBLISHING_REQUEST_CREATE",
+        "SUPPORT_REQUEST_CREATE",
+        "UPLOAD_FILE"
+      })
+  void shouldDenyResourceOwnerOnNonDegree(PublicationOperation operation)
+      throws JsonProcessingException, UnauthorizedException {
 
-        var institution = randomUri();
-        var resourceOwner = randomString();
-        var cristinId = randomUri();
+    var institution = randomUri();
+    var resourceOwner = randomString();
+    var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
-        var publication = createNonDegreePublication(resourceOwner, institution);
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+    var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
+    var publication = createNonDegreePublication(resourceOwner, institution);
+    var userInstance =
+        RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertFalse(PublicationPermissions
-                                   .create(Resource.fromPublication(publication), userInstance)
-                                   .allowsAction(operation));
-    }
+    Assertions.assertFalse(
+        PublicationPermissions.create(Resource.fromPublication(publication), userInstance)
+            .allowsAction(operation));
+  }
 
-    @ParameterizedTest(name = "Should deny ResourceOwner unpublish operation on own published non-degree resource "
-        + "when files are approved ({0})")
-    @MethodSource("filesWithApprovedStatus")
-    void shouldDenyResourceOwnerUnpublishWhenFilesAreApproved(List<AssociatedArtifact> fileList)
-        throws JsonProcessingException, UnauthorizedException {
+  @ParameterizedTest(
+      name =
+          "Should deny ResourceOwner unpublish operation on own published non-degree resource "
+              + "when files are approved ({0})")
+  @MethodSource("filesWithApprovedStatus")
+  void shouldDenyResourceOwnerUnpublishWhenFilesAreApproved(List<AssociatedArtifact> fileList)
+      throws JsonProcessingException, UnauthorizedException {
 
-        var institution = randomUri();
-        var resourceOwner = randomString();
-        var cristinId = randomUri();
+    var institution = randomUri();
+    var resourceOwner = randomString();
+    var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
-        var publication =
-            createNonDegreePublication(resourceOwner, institution).copy()
-                .withAssociatedArtifacts(fileList)
-                .build();
+    var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
+    var publication =
+        createNonDegreePublication(resourceOwner, institution)
+            .copy()
+            .withAssociatedArtifacts(fileList)
+            .build();
 
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+    var userInstance =
+        RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertFalse(PublicationPermissions
-                                   .create(Resource.fromPublication(publication), userInstance)
-                                   .allowsAction(PublicationOperation.UNPUBLISH));
-    }
+    Assertions.assertFalse(
+        PublicationPermissions.create(Resource.fromPublication(publication), userInstance)
+            .allowsAction(PublicationOperation.UNPUBLISH));
+  }
 
-    @ParameterizedTest(name = "Should allow ResourceOwner unpublish operation on own published non-degree resource "
-                              + "when files are not approved ({0})")
-    @MethodSource("filesWithNotApprovedStatus")
-    void shouldAllowResourceOwnerUnpublishWhenNoFilesOrUnapproved(List<AssociatedArtifact> fileList)
-        throws JsonProcessingException, UnauthorizedException {
+  @ParameterizedTest(
+      name =
+          "Should allow ResourceOwner unpublish operation on own published non-degree resource "
+              + "when files are not approved ({0})")
+  @MethodSource("filesWithNotApprovedStatus")
+  void shouldAllowResourceOwnerUnpublishWhenNoFilesOrUnapproved(List<AssociatedArtifact> fileList)
+      throws JsonProcessingException, UnauthorizedException {
 
-        var institution = randomUri();
-        var resourceOwner = randomString();
-        var cristinId = randomUri();
+    var institution = randomUri();
+    var resourceOwner = randomString();
+    var cristinId = randomUri();
 
-        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
-        var publication =
-            createNonDegreePublication(resourceOwner, institution).copy()
-                .withAssociatedArtifacts(fileList)
-                .build();
+    var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
+    var publication =
+        createNonDegreePublication(resourceOwner, institution)
+            .copy()
+            .withAssociatedArtifacts(fileList)
+            .build();
 
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+    var userInstance =
+        RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertTrue(PublicationPermissions
-                                   .create(Resource.fromPublication(publication), userInstance)
-                                   .allowsAction(PublicationOperation.UNPUBLISH));
-    }
-    //endregion
+    Assertions.assertTrue(
+        PublicationPermissions.create(Resource.fromPublication(publication), userInstance)
+            .allowsAction(PublicationOperation.UNPUBLISH));
+  }
 
-    //region Degree publications
-    @ParameterizedTest(name = "Should deny ResourceOwner {0} operation on own published degree resource")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"PARTIAL_UPDATE", "UPLOAD_FILE",
-        "DOI_REQUEST_CREATE", "SUPPORT_REQUEST_CREATE", "PUBLISHING_REQUEST_CREATE"})
-    void shouldDenyResourceOwnerOnDegree(PublicationOperation operation)
-        throws JsonProcessingException, UnauthorizedException {
+  // endregion
 
-        var institution = randomUri();
-        var resourceOwner = randomString();
-        var cristinId = randomUri();
+  // region Degree publications
+  @ParameterizedTest(
+      name = "Should deny ResourceOwner {0} operation on own published degree resource")
+  @EnumSource(
+      value = PublicationOperation.class,
+      mode = Mode.EXCLUDE,
+      names = {
+        "PARTIAL_UPDATE",
+        "UPLOAD_FILE",
+        "DOI_REQUEST_CREATE",
+        "SUPPORT_REQUEST_CREATE",
+        "PUBLISHING_REQUEST_CREATE"
+      })
+  void shouldDenyResourceOwnerOnDegree(PublicationOperation operation)
+      throws JsonProcessingException, UnauthorizedException {
 
-        var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
-        var publication = createDegreePhd(resourceOwner, institution);
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+    var institution = randomUri();
+    var resourceOwner = randomString();
+    var cristinId = randomUri();
 
-        Assertions.assertFalse(PublicationPermissions
-                                   .create(Resource.fromPublication(publication), userInstance)
-                                   .allowsAction(operation));
-    }
+    var requestInfo = createUserRequestInfo(resourceOwner, institution, cristinId, randomUri());
+    var publication = createDegreePhd(resourceOwner, institution);
+    var userInstance =
+        RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-    public static Stream<Arguments> filesWithApprovedStatus() {
-        return Stream.of(
-            arguments(named(OpenFile.TYPE, List.of(randomOpenFile())),
-            arguments(named(InternalFile.TYPE, List.of(randomInternalFile()))))
-        );
-    }
+    Assertions.assertFalse(
+        PublicationPermissions.create(Resource.fromPublication(publication), userInstance)
+            .allowsAction(operation));
+  }
 
-    public static Stream<Arguments> filesWithNotApprovedStatus() {
-        return Stream.of(
-            arguments(named("Empty list", List.of())),
-            arguments(named(NullAssociatedArtifact.TYPE_NAME, List.of(new NullAssociatedArtifact()))),
-            arguments(named(AssociatedLink.TYPE_NAME, List.of(randomAssociatedLink()))),
-            arguments(named(PendingOpenFile.TYPE, List.of(randomPendingOpenFile()))),
-            arguments(named(PendingInternalFile.TYPE, List.of(randomPendingInternalFile())))
-        );
-    }
+  public static Stream<Arguments> filesWithApprovedStatus() {
+    return Stream.of(
+        arguments(
+            named(OpenFile.TYPE, List.of(randomOpenFile())),
+            arguments(named(InternalFile.TYPE, List.of(randomInternalFile())))));
+  }
+
+  public static Stream<Arguments> filesWithNotApprovedStatus() {
+    return Stream.of(
+        arguments(named("Empty list", List.of())),
+        arguments(named(NullAssociatedArtifact.TYPE_NAME, List.of(new NullAssociatedArtifact()))),
+        arguments(named(AssociatedLink.TYPE_NAME, List.of(randomAssociatedLink()))),
+        arguments(named(PendingOpenFile.TYPE, List.of(randomPendingOpenFile()))),
+        arguments(named(PendingInternalFile.TYPE, List.of(randomPendingInternalFile()))));
+  }
 }

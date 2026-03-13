@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.util.List;
@@ -22,52 +23,55 @@ import org.junit.jupiter.api.Test;
 
 class ChannelClaimClientTest {
 
-    protected static final String CONTENT_TYPE = "application/json";
-    private ChannelClaimClient channelClaimClient;
-    private UriRetriever uriRetriever;
+  protected static final String CONTENT_TYPE = "application/json";
+  private ChannelClaimClient channelClaimClient;
+  private UriRetriever uriRetriever;
 
-    @BeforeEach
-    void setUp() {
-        this.uriRetriever = mock(UriRetriever.class);
-        this.channelClaimClient = ChannelClaimClient.create(uriRetriever);
-    }
+  @BeforeEach
+  void setUp() {
+    this.uriRetriever = mock(UriRetriever.class);
+    this.channelClaimClient = ChannelClaimClient.create(uriRetriever);
+  }
 
-    @Test
-    void shouldReturnChannelClaimByIdWhenRequested() throws NotFoundException {
-        var channelClaim = randomBackendUri("customer/channel-claim");
-        var expectedChannelClaim = channelClaimWithId(channelClaim);
+  @Test
+  void shouldReturnChannelClaimByIdWhenRequested() throws NotFoundException {
+    var channelClaim = randomBackendUri("customer/channel-claim");
+    var expectedChannelClaim = channelClaimWithId(channelClaim);
 
-        var response = FakeHttpResponse.create(expectedChannelClaim.toJsonString(), 200);
-        when(uriRetriever.fetchResponse(channelClaim, CONTENT_TYPE)).thenReturn(Optional.of(response));
+    var response = FakeHttpResponse.create(expectedChannelClaim.toJsonString(), 200);
+    when(uriRetriever.fetchResponse(channelClaim, CONTENT_TYPE)).thenReturn(Optional.of(response));
 
-        var actual = channelClaimClient.fetchChannelClaim(channelClaim);
+    var actual = channelClaimClient.fetchChannelClaim(channelClaim);
 
-        assertEquals(expectedChannelClaim, actual);
-    }
+    assertEquals(expectedChannelClaim, actual);
+  }
 
-    @Test
-    void shouldThrowNotFoundWhenIdentityServiceRespondsWithNoFoundWhenFetchingChannelClaim() {
-        var channelClaim = randomBackendUri("customer/channel-claim");
+  @Test
+  void shouldThrowNotFoundWhenIdentityServiceRespondsWithNoFoundWhenFetchingChannelClaim() {
+    var channelClaim = randomBackendUri("customer/channel-claim");
 
-        var response = FakeHttpResponse.create(randomString(), 404);
-        when(uriRetriever.fetchResponse(channelClaim, CONTENT_TYPE)).thenReturn(Optional.of(response));
-        assertThrows(NotFoundException.class, () -> channelClaimClient.fetchChannelClaim(channelClaim));
-    }
+    var response = FakeHttpResponse.create(randomString(), 404);
+    when(uriRetriever.fetchResponse(channelClaim, CONTENT_TYPE)).thenReturn(Optional.of(response));
+    assertThrows(NotFoundException.class, () -> channelClaimClient.fetchChannelClaim(channelClaim));
+  }
 
-    @Test
-    void shouldThrowRuntimeExceptionWhenUnhandledExceptionWhenFetchingChannelClaim() {
-        var channelClaim = randomUri();
-        var request = HttpRequest.newBuilder().GET().uri(channelClaim).build();
+  @Test
+  void shouldThrowRuntimeExceptionWhenUnhandledExceptionWhenFetchingChannelClaim() {
+    var channelClaim = randomUri();
+    var request = HttpRequest.newBuilder().GET().uri(channelClaim).build();
 
-        var response = FakeHttpResponse.create(randomString(), 502);
-        when(uriRetriever.fetchResponse(channelClaim, CONTENT_TYPE)).thenReturn(Optional.of(response));
-        assertThrows(RuntimeException.class, () -> channelClaimClient.fetchChannelClaim(channelClaim));
-    }
+    var response = FakeHttpResponse.create(randomString(), 502);
+    when(uriRetriever.fetchResponse(channelClaim, CONTENT_TYPE)).thenReturn(Optional.of(response));
+    assertThrows(RuntimeException.class, () -> channelClaimClient.fetchChannelClaim(channelClaim));
+  }
 
-    private ChannelClaimDto channelClaimWithId(URI channelClaim) {
-        return new ChannelClaimDto(channelClaim, new CustomerSummaryDto(randomUri(), randomUri()),
-                                   new ChannelClaim(channelClaim, new ChannelConstraint(randomString(), randomString(),
-                                                                                        List.of(randomString(),
-                                                                                                randomString()))));
-    }
+  private ChannelClaimDto channelClaimWithId(URI channelClaim) {
+    return new ChannelClaimDto(
+        channelClaim,
+        new CustomerSummaryDto(randomUri(), randomUri()),
+        new ChannelClaim(
+            channelClaim,
+            new ChannelConstraint(
+                randomString(), randomString(), List.of(randomString(), randomString()))));
+  }
 }

@@ -1,6 +1,7 @@
 package no.unit.nva.expansion.utils;
 
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.apicatalog.jsonld.document.JsonDocument;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayInputStream;
@@ -15,22 +16,24 @@ import nva.commons.core.ioutils.IoUtils;
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class SearchIndexFrame {
 
-    public static JsonDocument getFrameWithContext(Path framePath) {
-        return attempt(() -> JsonDocument.of(generateFrameWithContext(framePath))).orElseThrow();
-    }
+  public static JsonDocument getFrameWithContext(Path framePath) {
+    return attempt(() -> JsonDocument.of(generateFrameWithContext(framePath))).orElseThrow();
+  }
 
-    private static InputStream generateFrameWithContext(Path framePath) {
-        var frame = JsonLdFrameUtil.from(IoUtils.stringFromResources(framePath),
-                                         Publication.getJsonLdContext(ExpansionConfig.getApiHost()));
-        return asInputStream(frame);
-    }
+  private static InputStream generateFrameWithContext(Path framePath) {
+    var frame =
+        JsonLdFrameUtil.from(
+            IoUtils.stringFromResources(framePath),
+            Publication.getJsonLdContext(ExpansionConfig.getApiHost()));
+    return asInputStream(frame);
+  }
 
-    private static ByteArrayInputStream asInputStream(JsonNode frame) {
-        return new ByteArrayInputStream(attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsBytes(frame))
-                                            .orElseThrow());
-    }
+  private static ByteArrayInputStream asInputStream(JsonNode frame) {
+    return new ByteArrayInputStream(
+        attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsBytes(frame)).orElseThrow());
+  }
 
-    private SearchIndexFrame() {
-        // NO-OP
-    }
+  private SearchIndexFrame() {
+    // NO-OP
+  }
 }

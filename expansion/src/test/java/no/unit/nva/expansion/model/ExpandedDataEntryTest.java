@@ -21,10 +21,10 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import nva.commons.apigateway.MediaType;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -41,10 +41,10 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportEntityDescription;
-import no.unit.nva.importcandidate.Affiliation;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -78,6 +78,7 @@ import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.publication.uriretriever.FakeUriResponse;
 import no.unit.nva.publication.uriretriever.FakeUriRetriever;
+import nva.commons.apigateway.MediaType;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -93,496 +94,613 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class ExpandedDataEntryTest extends ResourcesLocalTest {
 
-    public static final String TYPE = "type";
-    private static final String API_HOST = new Environment().readEnv("API_HOST");
-    public static final String EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY = "Publication";
-    public static final Book BOOK_SAMPLE = new Book(null, randomString(), new Publisher(randomUri()), List.of(),
-                                                    Revision.UNREVISED);
+  public static final String TYPE = "type";
+  private static final String API_HOST = new Environment().readEnv("API_HOST");
+  public static final String EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY = "Publication";
+  public static final Book BOOK_SAMPLE =
+      new Book(null, randomString(), new Publisher(randomUri()), List.of(), Revision.UNREVISED);
 
-    private ResourceExpansionService resourceExpansionService;
-    private ResourceService resourceService;
-    private TicketService ticketService;
-    private MessageService messageService;
-    private FakeUriRetriever uriRetriever;
-    private FakeSqsClient sqsClient;
+  private ResourceExpansionService resourceExpansionService;
+  private ResourceService resourceService;
+  private TicketService ticketService;
+  private MessageService messageService;
+  private FakeUriRetriever uriRetriever;
+  private FakeSqsClient sqsClient;
 
-    public static Stream<Named<Class<?>>> entryTypes() {
-        return TypeProvider.listSubTypes(ExpandedDataEntry.class);
-    }
+  public static Stream<Named<Class<?>>> entryTypes() {
+    return TypeProvider.listSubTypes(ExpandedDataEntry.class);
+  }
 
-    public static Stream<Class<?>> publicationInstanceProvider() {
-        return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
-    }
+  public static Stream<Class<?>> publicationInstanceProvider() {
+    return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
+  }
 
-    public static Stream<PublicationContext> importCandidateContextTypeProvider()
-        throws InvalidUnconfirmedSeriesException {
-        return Stream.of(BOOK_SAMPLE,
-                         new Report(null, randomString(), null, null, List.of()),
-                         new MediaContributionPeriodical(randomUri()));
-    }
+  public static Stream<PublicationContext> importCandidateContextTypeProvider()
+      throws InvalidUnconfirmedSeriesException {
+    return Stream.of(
+        BOOK_SAMPLE,
+        new Report(null, randomString(), null, null, List.of()),
+        new MediaContributionPeriodical(randomUri()));
+  }
 
-    @BeforeEach
-    public void setup() {
-        super.init();
-        this.resourceService = getResourceService(client);
-        this.messageService = getMessageService();
-        this.ticketService = getTicketService();
-        this.uriRetriever = FakeUriRetriever.newInstance();
-        this.sqsClient = new FakeSqsClient();
-        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, ticketService, uriRetriever,
-                                                                         uriRetriever, sqsClient);
-    }
+  @BeforeEach
+  public void setup() {
+    super.init();
+    this.resourceService = getResourceService(client);
+    this.messageService = getMessageService();
+    this.ticketService = getTicketService();
+    this.uriRetriever = FakeUriRetriever.newInstance();
+    this.sqsClient = new FakeSqsClient();
+    this.resourceExpansionService =
+        new ResourceExpansionServiceImpl(
+            resourceService, ticketService, uriRetriever, uriRetriever, sqsClient);
+  }
 
-    @ParameterizedTest()
-    @MethodSource("importCandidateContextTypeProvider")
-    void shouldExpandImportCandidateSuccessfully(PublicationContext publicationContext) {
-        var importCandidate = randomImportCandidate(publicationContext);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
+  @ParameterizedTest()
+  @MethodSource("importCandidateContextTypeProvider")
+  void shouldExpandImportCandidateSuccessfully(PublicationContext publicationContext) {
+    var importCandidate = randomImportCandidate(publicationContext);
+    FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
 
-        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
-    }
-
-    @Test
-    void shouldExpandFilesApprovalThesisSuccessfully() throws ApiGatewayException {
-        var publication = randomPublicationWithoutDoi(DegreePhd.class);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                                UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(persistedPublication, uriRetriever, resourceService, false);
-        var filesApprovalThesis =
-            (FilesApprovalThesis) FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(persistedPublication),
-                                                             UserInstance.fromPublication(persistedPublication),
-                                                             REGISTRATOR_PUBLISHES_METADATA_ONLY)
-                                      .persistNewTicket(ticketService);
-        var expandedFilesApproval = ExpandedFilesApprovalThesis.createEntry(filesApprovalThesis, resourceService,
-                                                                            resourceExpansionService, ticketService);
-        assertThat(filesApprovalThesis.getIdentifier(), is(equalTo(expandedFilesApproval.identifyExpandedEntry())));
-    }
-
-    @Test
-    void shouldExpandImportCandidateCristinOrgWhenAffiliatedWithNvaCustomer() {
-        final var logger = LogUtils.getTestingAppenderForRootLogger();
-        var importCandidate = randomImportCandidate(BOOK_SAMPLE);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
-        importCandidate.getEntityDescription().contributors().stream()
-            .map(ImportContributor::affiliations)
-                .flatMap(i -> i.stream()
-                                  .map(Affiliation::targetOrganization)
-                              .filter(Organization.class::isInstance)
-                              .map(Organization.class::cast)
-                                  .map(Organization::getId))
-                    .forEach(this::addResponsesForCristinCustomer);
+    var expandedImportCandidate =
         ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-        assertThat(logger.getMessages(), containsString("is nva customer: true"));
-    }
+    assertThat(
+        importCandidate.getIdentifier(),
+        is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+  }
 
-    private void addResponsesForCristinCustomer(URI uri) {
-        uriRetriever.registerResponse(toCristinOrgUri(UriWrapper.fromUri(uri).getLastPathElement()), SC_OK,
-                                      MediaType.ANY_APPLICATION_TYPE,
-                                      FakeUriResponse.createCristinOrganizationResponseForTopLevelOrg(uri));
-        uriRetriever.registerResponse(toFetchCustomerByCristinIdUri(uri), SC_OK,
-                                      MediaType.ANY_APPLICATION_TYPE, "{}");
-    }
+  @Test
+  void shouldExpandFilesApprovalThesisSuccessfully() throws ApiGatewayException {
+    var publication = randomPublicationWithoutDoi(DegreePhd.class);
+    var persistedPublication =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(persistedPublication, uriRetriever, resourceService, false);
+    var filesApprovalThesis =
+        (FilesApprovalThesis)
+            FilesApprovalThesis.createForUserInstitution(
+                    Resource.fromPublication(persistedPublication),
+                    UserInstance.fromPublication(persistedPublication),
+                    REGISTRATOR_PUBLISHES_METADATA_ONLY)
+                .persistNewTicket(ticketService);
+    var expandedFilesApproval =
+        ExpandedFilesApprovalThesis.createEntry(
+            filesApprovalThesis, resourceService,
+            resourceExpansionService, ticketService);
+    assertThat(
+        filesApprovalThesis.getIdentifier(),
+        is(equalTo(expandedFilesApproval.identifyExpandedEntry())));
+  }
 
-    private static URI toFetchCustomerByCristinIdUri(URI topLevelOrganization) {
-        var getCustomerEndpoint = UriWrapper.fromHost(API_HOST).addChild("customer").addChild("cristinId").getUri();
-        return URI.create(
-            getCustomerEndpoint + "/" + URLEncoder.encode(topLevelOrganization.toString(), StandardCharsets.UTF_8));
-    }
+  @Test
+  void shouldExpandImportCandidateCristinOrgWhenAffiliatedWithNvaCustomer() {
+    final var logger = LogUtils.getTestingAppenderForRootLogger();
+    var importCandidate = randomImportCandidate(BOOK_SAMPLE);
+    FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
+    importCandidate.getEntityDescription().contributors().stream()
+        .map(ImportContributor::affiliations)
+        .flatMap(
+            i ->
+                i.stream()
+                    .map(Affiliation::targetOrganization)
+                    .filter(Organization.class::isInstance)
+                    .map(Organization.class::cast)
+                    .map(Organization::getId))
+        .forEach(this::addResponsesForCristinCustomer);
+    ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+    assertThat(logger.getMessages(), containsString("is nva customer: true"));
+  }
 
-    private static URI toCristinOrgUri(String cristinId) {
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild("cristin")
-                   .addChild("organization")
-                   .addQueryParameter("depth", "top")
-                   .addChild(cristinId).getUri();
-    }
+  private void addResponsesForCristinCustomer(URI uri) {
+    uriRetriever.registerResponse(
+        toCristinOrgUri(UriWrapper.fromUri(uri).getLastPathElement()),
+        SC_OK,
+        MediaType.ANY_APPLICATION_TYPE,
+        FakeUriResponse.createCristinOrganizationResponseForTopLevelOrg(uri));
+    uriRetriever.registerResponse(
+        toFetchCustomerByCristinIdUri(uri), SC_OK, MediaType.ANY_APPLICATION_TYPE, "{}");
+  }
 
-    @Test
-    void shouldLogErrorWhenResponseFromChannelRegistryIsNotOk() {
-        final var logger = LogUtils.getTestingAppenderForRootLogger();
-        var importCandidate = randomImportCandidate(BOOK_SAMPLE);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
-        var channelUri =
-            ((Publisher)((Book) importCandidate.getEntityDescription().reference().getPublicationContext())
-                            .getPublisher()).getId();
-        uriRetriever.registerResponse(channelUri, SC_FORBIDDEN, MediaType.ANY_APPLICATION_TYPE, randomString());
+  private static URI toFetchCustomerByCristinIdUri(URI topLevelOrganization) {
+    var getCustomerEndpoint =
+        UriWrapper.fromHost(API_HOST).addChild("customer").addChild("cristinId").getUri();
+    return URI.create(
+        getCustomerEndpoint
+            + "/"
+            + URLEncoder.encode(topLevelOrganization.toString(), StandardCharsets.UTF_8));
+  }
+
+  private static URI toCristinOrgUri(String cristinId) {
+    return UriWrapper.fromHost(API_HOST)
+        .addChild("cristin")
+        .addChild("organization")
+        .addQueryParameter("depth", "top")
+        .addChild(cristinId)
+        .getUri();
+  }
+
+  @Test
+  void shouldLogErrorWhenResponseFromChannelRegistryIsNotOk() {
+    final var logger = LogUtils.getTestingAppenderForRootLogger();
+    var importCandidate = randomImportCandidate(BOOK_SAMPLE);
+    FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
+    var channelUri =
+        ((Publisher)
+                ((Book) importCandidate.getEntityDescription().reference().getPublicationContext())
+                    .getPublisher())
+            .getId();
+    uriRetriever.registerResponse(
+        channelUri, SC_FORBIDDEN, MediaType.ANY_APPLICATION_TYPE, randomString());
+    ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+    assertThat(logger.getMessages(), containsString("Not Ok response from channel registry"));
+  }
+
+  @Test
+  void shouldLogErrorWhenResponseFromChannelRegistryResponseIsNonsense() {
+    final var logger = LogUtils.getTestingAppenderForRootLogger();
+    var importCandidate = randomImportCandidate(BOOK_SAMPLE);
+    FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
+    var channelUri =
+        ((Publisher)
+                ((Book) importCandidate.getEntityDescription().reference().getPublicationContext())
+                    .getPublisher())
+            .getId();
+    uriRetriever.registerResponse(
+        channelUri, SC_OK, MediaType.ANY_APPLICATION_TYPE, randomString());
+    ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+    assertThat(logger.getMessages(), containsString("Failed to parse channel registry response"));
+  }
+
+  @Test
+  void shouldExpandImportCandidateJournalSuccessfullyWhenBadResponseFromChannelRegistry() {
+    final var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
+    var journalId = randomUri();
+    var journalContext = new Journal(journalId);
+    var importCandidate = randomImportCandidate(journalContext);
+    overrideStandardResponseWithNotFoundFromChannelRegistry(importCandidate, journalId);
+    var expandedImportCandidate =
         ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-        assertThat(logger.getMessages(), containsString("Not Ok response from channel registry"));
-    }
+    assertThat(
+        importCandidate.getIdentifier(),
+        is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+    assertThat(
+        expandedImportCandidate.getJournal(), is(equalTo(new ExpandedJournal(journalId, null))));
+    assertThat(logAppender.getMessages(), containsString("Not Ok response from channel registry"));
+  }
 
-    @Test
-    void shouldLogErrorWhenResponseFromChannelRegistryResponseIsNonsense() {
-        final var logger = LogUtils.getTestingAppenderForRootLogger();
-        var importCandidate = randomImportCandidate(BOOK_SAMPLE);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
-        var channelUri =
-            ((Publisher)((Book) importCandidate.getEntityDescription().reference().getPublicationContext())
-                            .getPublisher()).getId();
-        uriRetriever.registerResponse(channelUri, SC_OK, MediaType.ANY_APPLICATION_TYPE, randomString());
+  private void overrideStandardResponseWithNotFoundFromChannelRegistry(
+      ImportCandidate importCandidate, URI journalId) {
+    FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
+    uriRetriever.registerResponse(journalId, SC_NOT_FOUND, MediaType.ANY_APPLICATION_TYPE, "");
+  }
+
+  @Test
+  void shouldExpandJournalSuccessfullyWhenOkResponseFromChannelRegistry() {
+    var journalId = randomUri();
+    var journalContext = new Journal(journalId);
+    var importCandidate = randomImportCandidate(journalContext);
+    FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
+    var expandedImportCandidate =
         ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-        assertThat(logger.getMessages(), containsString("Failed to parse channel registry response"));
+    assertThat(
+        importCandidate.getIdentifier(),
+        is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+    assertThat(expandedImportCandidate.getJournal().name(), is(notNullValue()));
+  }
+
+  @Test
+  void shouldExpandPublisherSuccessfullyWhenBadResponseFromChannelRegistry() {
+    var publisherId = randomUri();
+    var publisher = new Publisher(publisherId);
+    var bookContext = new Book(null, null, publisher, null, null);
+    var importCandidate = randomImportCandidate(bookContext);
+    FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
+    var expandedImportCandidate =
+        ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+    assertThat(
+        importCandidate.getIdentifier(),
+        is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+    assertThat(expandedImportCandidate.getPublisher().name(), is(notNullValue()));
+  }
+
+  @Test
+  void shouldExpandUnconfirmedPublisher() {
+    var publisherName = randomString();
+    var publisher = new UnconfirmedPublisher(publisherName);
+    var bookContext = new Book(null, null, publisher, null, null);
+    var importCandidate = randomImportCandidate(bookContext);
+    var expandedImportCandidate =
+        ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+    assertThat(
+        importCandidate.getIdentifier(),
+        is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+    assertThat(
+        expandedImportCandidate.getPublisher(),
+        is(equalTo(new ExpandedPublisher(null, publisherName))));
+  }
+
+  @Test
+  void shouldSkipExpandingNullPublisher() {
+    var publisher = new NullPublisher();
+    var bookContext = new Book(null, null, publisher, null, null);
+    var importCandidate = randomImportCandidate(bookContext);
+    var expandedImportCandidate =
+        ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+    assertThat(
+        importCandidate.getIdentifier(),
+        is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+
+    assertThat(expandedImportCandidate.getPublisher(), is((nullValue())));
+  }
+
+  @Test
+  void shouldExpandPublisherSuccessfullyWhenOkResponseFromChannelRegistry() {
+    var publisherId = randomUri();
+    var publisher = new Publisher(publisherId);
+    var bookContext = new Book(null, null, publisher, null, null);
+    var importCandidate = randomImportCandidate(bookContext);
+    FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
+    var expandedImportCandidate =
+        ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+    assertThat(
+        importCandidate.getIdentifier(),
+        is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+
+    assertThat(expandedImportCandidate.getPublisher().name(), is(notNullValue()));
+  }
+
+  @Test
+  void shouldLogFailureToParseChannelRegistryResponse() {
+    final var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
+    var journalId = randomUri();
+    var journalContext = new Journal(journalId);
+    var importCandidate = randomImportCandidate(journalContext);
+    FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
+    overrideDefaultFakeResponseToReturnNonsensicalResponse(importCandidate);
+    var expandedImportCandidate =
+        ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+    assertThat(
+        importCandidate.getIdentifier(),
+        is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
+    assertThat(
+        expandedImportCandidate.getJournal(), is(equalTo(new ExpandedJournal(journalId, null))));
+    assertThat(
+        logAppender.getMessages(), containsString("Failed to parse channel registry response"));
+  }
+
+  private void overrideDefaultFakeResponseToReturnNonsensicalResponse(
+      ImportCandidate importCandidate) {
+    var journalUri =
+        ((Journal) importCandidate.getEntityDescription().reference().getPublicationContext())
+            .getId();
+    uriRetriever.registerResponse(
+        journalUri, SC_OK, MediaType.ANY_APPLICATION_TYPE, randomString());
+  }
+
+  @ParameterizedTest(
+      name = "Expanded resource should inherit type from publication for instance type {0}")
+  @MethodSource("publicationInstanceProvider")
+  void
+      expandedResourceShouldHaveTypePublicationInheritingTheTypeFromThePublicationWhenItIsSerialized(
+          Class<?> instanceType) throws JsonProcessingException, BadRequestException {
+
+    var publication = randomPublication(instanceType);
+    var fakeUriRetriever = FakeUriRetriever.newInstance();
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
+
+    var expandedResource =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource));
+    var json = objectMapper.readTree(expandedResource.toJsonString());
+    assertThat(json.get(TYPE).textValue(), is(equalTo(EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY)));
+  }
+
+  @ParameterizedTest(
+      name = "Expanded DOI request should have type DoiRequest for instance type {0}")
+  @MethodSource("publicationInstanceProvider")
+  void expandedDoiRequestShouldHaveTypeDoiRequest(Class<?> instanceType)
+      throws ApiGatewayException {
+    var publication = createPublishedPublicationWithoutDoi(instanceType);
+    FakeUriResponse.setupFakeForType(publication, uriRetriever, resourceService, false);
+    var doiRequest = createDoiRequest(publication);
+    var expandedResource =
+        ExpandedDoiRequest.createEntry(
+            doiRequest, resourceExpansionService, resourceService, ticketService);
+    var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
+    assertThat(json.get(TYPE).textValue(), is(equalTo(ExpandedDoiRequest.TYPE)));
+  }
+
+  @ParameterizedTest(name = "should return identifier using a non serializable method:{0}")
+  @MethodSource("entryTypes")
+  void shouldReturnIdentifierUsingNonSerializableMethod(Class<?> type)
+      throws ApiGatewayException, JsonProcessingException {
+
+    var expandedDataEntry =
+        new ExpandedDataEntryWithAssociatedPublication()
+            .create(
+                type,
+                resourceExpansionService,
+                resourceService,
+                messageService,
+                ticketService,
+                uriRetriever);
+    SortableIdentifier identifier =
+        expandedDataEntry.getExpandedDataEntry().identifyExpandedEntry();
+    SortableIdentifier expectedIdentifier = extractExpectedIdentifier(expandedDataEntry);
+    assertThat(identifier, is(equalTo(expectedIdentifier)));
+  }
+
+  private static ExpandedDoiRequest randomDoiRequest(
+      Publication publication,
+      ResourceExpansionService resourceExpansionService,
+      ResourceService resourceService,
+      MessageService messageService,
+      TicketService ticketService)
+      throws ApiGatewayException {
+    var userInstance = UserInstance.fromPublication(publication);
+    var doiRequest =
+        (DoiRequest)
+            TicketEntry.requestNewTicket(publication, DoiRequest.class)
+                .persistNewTicket(ticketService);
+    messageService.createMessage(doiRequest, userInstance, randomString());
+    return attempt(
+            () ->
+                ExpandedDoiRequest.createEntry(
+                    doiRequest, resourceExpansionService, resourceService, ticketService))
+        .orElseThrow();
+  }
+
+  private static Publication randomPublicationWithoutDoi(Class<?> instanceType) {
+    return randomPublication(instanceType).copy().withDoi(null).build();
+  }
+
+  private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
+    return (DoiRequest)
+        TicketEntry.requestNewTicket(publication, DoiRequest.class).persistNewTicket(ticketService);
+  }
+
+  private Publication createPublishedPublicationWithoutDoi(Class<?> instanceType)
+      throws ApiGatewayException {
+    var publication = randomPublicationWithoutDoi(instanceType);
+    var userInstance = UserInstance.fromPublication(publication);
+    var persistedPublication =
+        Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+    Resource.fromPublication(persistedPublication).publish(resourceService, userInstance);
+    return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+  }
+
+  private SortableIdentifier extractExpectedIdentifier(
+      ExpandedDataEntryWithAssociatedPublication generatedData) {
+
+    ExpandedDataEntry expandedDataEntry = generatedData.getExpandedDataEntry();
+    String identifier = extractIdFromSerializedObject(expandedDataEntry);
+    return new SortableIdentifier(identifier);
+  }
+
+  private String extractIdFromSerializedObject(ExpandedDataEntry entry) {
+    return Try.of(entry)
+        .map(ExpandedDataEntry::toJsonString)
+        .map(objectMapper::readTree)
+        .map(json -> (ObjectNode) json)
+        .map(json -> json.at(ID_JSON_PTR))
+        .map(JsonNode::textValue)
+        .map(UriWrapper::fromUri)
+        .map(UriWrapper::getLastPathElement)
+        .orElseThrow();
+  }
+
+  @Getter
+  private class ExpandedDataEntryWithAssociatedPublication {
+
+    private final ExpandedDataEntry expandedDataEntry;
+
+    public ExpandedDataEntryWithAssociatedPublication(ExpandedDataEntry data) {
+      this.expandedDataEntry = data;
     }
 
-    @Test
-    void shouldExpandImportCandidateJournalSuccessfullyWhenBadResponseFromChannelRegistry() {
-        final var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
-        var journalId = randomUri();
-        var journalContext = new Journal(journalId);
-        var importCandidate = randomImportCandidate(journalContext);
-        overrideStandardResponseWithNotFoundFromChannelRegistry(importCandidate, journalId);
-        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
-        assertThat(expandedImportCandidate.getJournal(), is(equalTo(new ExpandedJournal(journalId, null))));
-        assertThat(logAppender.getMessages(), containsString("Not Ok response from channel registry"));
+    public ExpandedDataEntryWithAssociatedPublication() {
+      this.expandedDataEntry = null;
     }
 
-    private void overrideStandardResponseWithNotFoundFromChannelRegistry(ImportCandidate importCandidate,
-                                                                         URI journalId) {
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
-        uriRetriever.registerResponse(journalId, SC_NOT_FOUND, MediaType.ANY_APPLICATION_TYPE, "");
-    }
-
-    @Test
-    void shouldExpandJournalSuccessfullyWhenOkResponseFromChannelRegistry() {
-        var journalId = randomUri();
-        var journalContext = new Journal(journalId);
-        var importCandidate = randomImportCandidate(journalContext);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
-        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
-        assertThat(expandedImportCandidate.getJournal().name(), is(notNullValue()));
-    }
-
-    @Test
-    void shouldExpandPublisherSuccessfullyWhenBadResponseFromChannelRegistry() {
-        var publisherId = randomUri();
-        var publisher = new Publisher(publisherId);
-        var bookContext = new Book(null, null, publisher, null, null);
-        var importCandidate = randomImportCandidate(bookContext);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
-        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
-        assertThat(expandedImportCandidate.getPublisher().name(), is(notNullValue()));
-    }
-
-    @Test
-    void shouldExpandUnconfirmedPublisher() {
-        var publisherName = randomString();
-        var publisher = new UnconfirmedPublisher(publisherName);
-        var bookContext = new Book(null, null, publisher, null, null);
-        var importCandidate = randomImportCandidate(bookContext);
-        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
-        assertThat(expandedImportCandidate.getPublisher(), is(equalTo(new ExpandedPublisher(null, publisherName))));
-    }
-
-    @Test
-    void shouldSkipExpandingNullPublisher() {
-        var publisher = new NullPublisher();
-        var bookContext = new Book(null, null, publisher, null, null);
-        var importCandidate = randomImportCandidate(bookContext);
-        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
-
-        assertThat(expandedImportCandidate.getPublisher(), is((nullValue())));
-    }
-
-    @Test
-    void shouldExpandPublisherSuccessfullyWhenOkResponseFromChannelRegistry() {
-        var publisherId = randomUri();
-        var publisher = new Publisher(publisherId);
-        var bookContext = new Book(null, null, publisher, null, null);
-        var importCandidate = randomImportCandidate(bookContext);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
-        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
-
-        assertThat(expandedImportCandidate.getPublisher().name(), is(notNullValue()));
-    }
-
-    @Test
-    void shouldLogFailureToParseChannelRegistryResponse() {
-        final var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
-        var journalId = randomUri();
-        var journalContext = new Journal(journalId);
-        var importCandidate = randomImportCandidate(journalContext);
-        FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
-        overrideDefaultFakeResponseToReturnNonsensicalResponse(importCandidate);
-        var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-        assertThat(importCandidate.getIdentifier(), is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
-        assertThat(expandedImportCandidate.getJournal(), is(equalTo(new ExpandedJournal(journalId, null))));
-        assertThat(logAppender.getMessages(), containsString("Failed to parse channel registry response"));
-    }
-
-    private void overrideDefaultFakeResponseToReturnNonsensicalResponse(ImportCandidate importCandidate) {
-        var journalUri =
-            ((Journal) importCandidate.getEntityDescription().reference().getPublicationContext()).getId();
-        uriRetriever.registerResponse(journalUri, SC_OK, MediaType.ANY_APPLICATION_TYPE, randomString());
-    }
-
-    @ParameterizedTest(name = "Expanded resource should inherit type from publication for instance type {0}")
-    @MethodSource("publicationInstanceProvider")
-    void expandedResourceShouldHaveTypePublicationInheritingTheTypeFromThePublicationWhenItIsSerialized(
-        Class<?> instanceType) throws JsonProcessingException, BadRequestException {
-
-        var publication = randomPublication(instanceType);
-        var fakeUriRetriever = FakeUriRetriever.newInstance();
-        var resource = Resource.fromPublication(publication).persistNew(resourceService,
-                                                             UserInstance.fromPublication(publication));
-        FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-
-        var expandedResource = fromPublication(fakeUriRetriever, resourceService, sqsClient,
-                                               Resource.fromPublication(resource));
-        var json = objectMapper.readTree(expandedResource.toJsonString());
-        assertThat(json.get(TYPE).textValue(), is(equalTo(EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY)));
-    }
-
-    @ParameterizedTest(name = "Expanded DOI request should have type DoiRequest for instance type {0}")
-    @MethodSource("publicationInstanceProvider")
-    void expandedDoiRequestShouldHaveTypeDoiRequest(Class<?> instanceType) throws ApiGatewayException {
-        var publication = createPublishedPublicationWithoutDoi(instanceType);
-        FakeUriResponse.setupFakeForType(publication, uriRetriever, resourceService, false);
-        var doiRequest = createDoiRequest(publication);
-        var expandedResource = ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService,
-                                                              ticketService);
-        var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
-        assertThat(json.get(TYPE).textValue(), is(equalTo(ExpandedDoiRequest.TYPE)));
-    }
-
-    @ParameterizedTest(name = "should return identifier using a non serializable method:{0}")
-    @MethodSource("entryTypes")
-    void shouldReturnIdentifierUsingNonSerializableMethod(Class<?> type)
+    public ExpandedDataEntryWithAssociatedPublication create(
+        Class<?> expandedDataEntryClass,
+        ResourceExpansionService expansionService,
+        ResourceService resourceService,
+        MessageService messageService,
+        TicketService ticketService,
+        RawContentRetriever uriRetriever)
         throws ApiGatewayException, JsonProcessingException {
-
-        var expandedDataEntry = new ExpandedDataEntryWithAssociatedPublication().create(type, resourceExpansionService,
-                                                                                  resourceService, messageService,
-                                                                                  ticketService, uriRetriever);
-        SortableIdentifier identifier = expandedDataEntry.getExpandedDataEntry().identifyExpandedEntry();
-        SortableIdentifier expectedIdentifier = extractExpectedIdentifier(expandedDataEntry);
-        assertThat(identifier, is(equalTo(expectedIdentifier)));
+      var publication = createPublication(resourceService);
+      FakeUriResponse.setupFakeForType(
+          publication, (FakeUriRetriever) uriRetriever, resourceService, false);
+      if (expandedDataEntryClass.equals(ExpandedResource.class)) {
+        return createExpandedResource(publication, uriRetriever);
+      } else if (expandedDataEntryClass.equals(ExpandedImportCandidate.class)) {
+        return createExpandedImportCandidate(publication, uriRetriever);
+      } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
+        Resource.fromPublication(publication)
+            .publish(resourceService, UserInstance.fromPublication(publication));
+        var publishedPublication =
+            resourceService.getPublicationByIdentifier(publication.getIdentifier());
+        return new ExpandedDataEntryWithAssociatedPublication(
+            randomDoiRequest(
+                publishedPublication,
+                expansionService,
+                resourceService,
+                messageService,
+                ticketService));
+      } else if (expandedDataEntryClass.equals(ExpandedPublishingRequest.class)) {
+        return new ExpandedDataEntryWithAssociatedPublication(
+            createExpandedPublishingRequest(
+                publication, resourceService, expansionService, ticketService));
+      } else if (expandedDataEntryClass.equals(ExpandedGeneralSupportRequest.class)) {
+        return new ExpandedDataEntryWithAssociatedPublication(
+            createExpandedGeneralSupportRequest(
+                publication, resourceService, expansionService, ticketService));
+      } else if (expandedDataEntryClass.equals(ExpandedUnpublishRequest.class)) {
+        return new ExpandedDataEntryWithAssociatedPublication(
+            createExpandedUnpublishRequest(
+                publication, resourceService, expansionService, ticketService));
+      } else if (expandedDataEntryClass.equals(ExpandedFilesApprovalThesis.class)) {
+        return new ExpandedDataEntryWithAssociatedPublication(
+            createExpandedFilesApprovalThesis(
+                publication, resourceService, expansionService, ticketService));
+      } else {
+        throw new UnsupportedOperationException();
+      }
     }
 
-    private static ExpandedDoiRequest randomDoiRequest(Publication publication,
-                                                       ResourceExpansionService resourceExpansionService,
-                                                       ResourceService resourceService, MessageService messageService,
-                                                       TicketService ticketService) throws ApiGatewayException {
-        var userInstance = UserInstance.fromPublication(publication);
-        var doiRequest = (DoiRequest) TicketEntry.requestNewTicket(publication, DoiRequest.class)
-                                          .persistNewTicket(ticketService);
-        messageService.createMessage(doiRequest, userInstance, randomString());
-        return attempt(() -> ExpandedDoiRequest.createEntry(doiRequest, resourceExpansionService, resourceService,
-                                                            ticketService)).orElseThrow();
+    private static ExpandedDataEntry createExpandedGeneralSupportRequest(
+        Publication publication,
+        ResourceService resourceService,
+        ResourceExpansionService expansionService,
+        TicketService ticketService)
+        throws NotFoundException, JsonProcessingException {
+      var userInstance = UserInstance.fromPublication(publication);
+      var request =
+          GeneralSupportRequest.create(Resource.fromPublication(publication), userInstance);
+      return ExpandedGeneralSupportRequest.create(
+          request, resourceService, expansionService, ticketService);
     }
 
-    private static Publication randomPublicationWithoutDoi(Class<?> instanceType) {
-        return randomPublication(instanceType).copy().withDoi(null).build();
+    private ExpandedDataEntryWithAssociatedPublication createExpandedImportCandidate(
+        Publication publication, RawContentRetriever uriRetriever) {
+      var importCandidate = createImportCandidateFromPublication(publication);
+      var authorizedBackendClient = mock(AuthorizedBackendUriRetriever.class);
+      when(authorizedBackendClient.getRawContent(any(), any()))
+          .thenReturn(
+              Optional.of(
+                  new CristinOrganization(
+                          randomUri(),
+                          randomUri(),
+                          randomString(),
+                          List.of(
+                              new CristinOrganization(
+                                  randomUri(),
+                                  randomUri(),
+                                  randomString(),
+                                  List.of(),
+                                  randomString(),
+                                  Map.of())),
+                          randomString(),
+                          Map.of())
+                      .toJsonString()));
+      var expandedImportCandidate =
+          ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
+      return new ExpandedDataEntryWithAssociatedPublication(expandedImportCandidate);
     }
 
-    private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
-        return (DoiRequest) TicketEntry.requestNewTicket(publication, DoiRequest.class).persistNewTicket(ticketService);
+    private ImportCandidate createImportCandidateFromPublication(Publication publication) {
+      return new ImportCandidate.Builder()
+          .withIdentifier(publication.getIdentifier())
+          .withCreatedDate(publication.getCreatedDate())
+          .withModifiedDate(publication.getModifiedDate())
+          .withAssociatedArtifacts(publication.getAssociatedArtifacts())
+          .withEntityDescription(toImportEntityDescription(publication))
+          .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
+          .build();
     }
 
-    private Publication createPublishedPublicationWithoutDoi(Class<?> instanceType) throws ApiGatewayException {
-        var publication = randomPublicationWithoutDoi(instanceType);
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-        Resource.fromPublication(persistedPublication).publish(resourceService, userInstance);
-        return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+    private static ImportEntityDescription toImportEntityDescription(Publication publication) {
+      var entityDescription = publication.getEntityDescription();
+      return new ImportEntityDescription(
+          entityDescription.getMainTitle(),
+          entityDescription.getLanguage(),
+          entityDescription.getPublicationDate(),
+          entityDescription.getContributors().stream()
+              .map(ExpandedDataEntryWithAssociatedPublication::toImportContributor)
+              .toList(),
+          entityDescription.getAbstract(),
+          entityDescription.getAlternativeAbstracts(),
+          entityDescription.getTags(),
+          entityDescription.getDescription(),
+          entityDescription.getReference());
     }
 
-    private SortableIdentifier extractExpectedIdentifier(ExpandedDataEntryWithAssociatedPublication generatedData) {
-
-        ExpandedDataEntry expandedDataEntry = generatedData.getExpandedDataEntry();
-        String identifier = extractIdFromSerializedObject(expandedDataEntry);
-        return new SortableIdentifier(identifier);
+    private static ImportContributor toImportContributor(Contributor contributor) {
+      return new ImportContributor(
+          contributor.getIdentity(),
+          contributor.getAffiliations().stream()
+              .map(corporation -> new Affiliation(corporation, null))
+              .toList(),
+          contributor.getRole(),
+          contributor.getSequence(),
+          contributor.isCorrespondingAuthor());
     }
 
-    private String extractIdFromSerializedObject(ExpandedDataEntry entry) {
-        return Try.of(entry)
-                   .map(ExpandedDataEntry::toJsonString)
-                   .map(objectMapper::readTree)
-                   .map(json -> (ObjectNode) json)
-                   .map(json -> json.at(ID_JSON_PTR))
-                   .map(JsonNode::textValue)
-                   .map(UriWrapper::fromUri)
-                   .map(UriWrapper::getLastPathElement)
-                   .orElseThrow();
+    private static ExpandedDataEntry createExpandedUnpublishRequest(
+        Publication publication,
+        ResourceService resourceService,
+        ResourceExpansionService expansionService,
+        TicketService ticketService)
+        throws NotFoundException, JsonProcessingException {
+      var request = (UnpublishRequest) UnpublishRequest.fromPublication(publication);
+      return ExpandedUnpublishRequest.create(
+          request, resourceService, expansionService, ticketService);
     }
 
-    @Getter
-    private class ExpandedDataEntryWithAssociatedPublication {
-
-        private final ExpandedDataEntry expandedDataEntry;
-
-        public ExpandedDataEntryWithAssociatedPublication(ExpandedDataEntry data) {
-            this.expandedDataEntry = data;
-        }
-
-        public ExpandedDataEntryWithAssociatedPublication() {
-            this.expandedDataEntry = null;
-        }
-
-        public ExpandedDataEntryWithAssociatedPublication create(Class<?> expandedDataEntryClass,
-                                                                        ResourceExpansionService expansionService,
-                                                                        ResourceService resourceService,
-                                                                        MessageService messageService,
-                                                                        TicketService ticketService,
-                                                                        RawContentRetriever uriRetriever)
-            throws ApiGatewayException, JsonProcessingException {
-            var publication = createPublication(resourceService);
-            FakeUriResponse.setupFakeForType(publication, (FakeUriRetriever) uriRetriever, resourceService, false);
-            if (expandedDataEntryClass.equals(ExpandedResource.class)) {
-                return createExpandedResource(publication, uriRetriever);
-            } else if (expandedDataEntryClass.equals(ExpandedImportCandidate.class)) {
-                return createExpandedImportCandidate(publication, uriRetriever);
-            } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
-                Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
-                var publishedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
-                return new ExpandedDataEntryWithAssociatedPublication(
-                    randomDoiRequest(publishedPublication, expansionService, resourceService, messageService,
-                                     ticketService));
-            } else if (expandedDataEntryClass.equals(ExpandedPublishingRequest.class)) {
-                return new ExpandedDataEntryWithAssociatedPublication(
-                    createExpandedPublishingRequest(publication, resourceService, expansionService,
-                                                    ticketService));
-            } else if (expandedDataEntryClass.equals(ExpandedGeneralSupportRequest.class)) {
-                return new ExpandedDataEntryWithAssociatedPublication(
-                    createExpandedGeneralSupportRequest(publication, resourceService, expansionService,
-                                                        ticketService));
-            } else if (expandedDataEntryClass.equals(ExpandedUnpublishRequest.class)) {
-                return new ExpandedDataEntryWithAssociatedPublication(
-                    createExpandedUnpublishRequest(publication, resourceService, expansionService,
-                                                   ticketService));
-            } else if (expandedDataEntryClass.equals(ExpandedFilesApprovalThesis.class)) {
-                return new ExpandedDataEntryWithAssociatedPublication(
-                    createExpandedFilesApprovalThesis(publication, resourceService, expansionService,
-                                                   ticketService));
-            } else {
-                throw new UnsupportedOperationException();
-            }
-        }
-
-        private static ExpandedDataEntry createExpandedGeneralSupportRequest(Publication publication,
-                                                                             ResourceService resourceService,
-                                                                             ResourceExpansionService expansionService,
-                                                                             TicketService ticketService)
-            throws NotFoundException, JsonProcessingException {
-            var userInstance = UserInstance.fromPublication(publication);
-            var request = GeneralSupportRequest.create(Resource.fromPublication(publication), userInstance);
-            return ExpandedGeneralSupportRequest.create(request, resourceService, expansionService,
-                                                        ticketService);
-        }
-
-
-        private ExpandedDataEntryWithAssociatedPublication createExpandedImportCandidate(
-            Publication publication, RawContentRetriever uriRetriever) {
-            var importCandidate = createImportCandidateFromPublication(publication);
-            var authorizedBackendClient = mock(AuthorizedBackendUriRetriever.class);
-            when(authorizedBackendClient.getRawContent(any(), any())).thenReturn(Optional.of(
-                new CristinOrganization(randomUri(), randomUri(), randomString(),
-                                        List.of(new CristinOrganization(randomUri(),
-                                                                        randomUri(),
-                                                                        randomString(),
-                                                                        List.of(),
-                                                                        randomString(),
-                                                                        Map.of())),
-                                        randomString(), Map.of()).toJsonString()));
-            var expandedImportCandidate = ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-            return new ExpandedDataEntryWithAssociatedPublication(expandedImportCandidate);
-        }
-
-        private ImportCandidate createImportCandidateFromPublication(Publication publication) {
-            return new ImportCandidate.Builder()
-                       .withIdentifier(publication.getIdentifier())
-                       .withCreatedDate(publication.getCreatedDate())
-                       .withModifiedDate(publication.getModifiedDate())
-                       .withAssociatedArtifacts(publication.getAssociatedArtifacts())
-                       .withEntityDescription(toImportEntityDescription(publication))
-                       .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
-                       .build();
-        }
-
-        private static ImportEntityDescription toImportEntityDescription(Publication publication) {
-            var entityDescription = publication.getEntityDescription();
-            return new ImportEntityDescription(entityDescription.getMainTitle(),
-                                               entityDescription.getLanguage(),
-                                               entityDescription.getPublicationDate(),
-                                               entityDescription.getContributors().stream()
-                                                   .map(ExpandedDataEntryWithAssociatedPublication::toImportContributor)
-                                                   .toList(),
-                                               entityDescription.getAbstract(),
-                                               entityDescription.getAlternativeAbstracts(),
-                                               entityDescription.getTags(),
-                                               entityDescription.getDescription(),
-                                               entityDescription.getReference());
-        }
-
-        private static ImportContributor toImportContributor(Contributor contributor) {
-            return new ImportContributor(contributor.getIdentity(),
-                                         contributor.getAffiliations().stream().map(corporation -> new Affiliation(corporation, null)).toList(),
-                                         contributor.getRole(), contributor.getSequence(), contributor.isCorrespondingAuthor());
-        }
-
-        private static ExpandedDataEntry createExpandedUnpublishRequest(Publication publication,
-                                                                        ResourceService resourceService,
-                                                                        ResourceExpansionService expansionService,
-                                                                        TicketService ticketService)
-            throws NotFoundException, JsonProcessingException {
-            var request = (UnpublishRequest) UnpublishRequest.fromPublication(publication);
-            return ExpandedUnpublishRequest.create(request, resourceService, expansionService,
-                                                   ticketService);
-        }
-
-        private static ExpandedDataEntry createExpandedFilesApprovalThesis(Publication publication,
-                                                                        ResourceService resourceService,
-                                                                        ResourceExpansionService expansionService,
-                                                                        TicketService ticketService)
-            throws NotFoundException, JsonProcessingException {
-            var filesApprovalThesis = FilesApprovalThesis.createForUserInstitution(
-                Resource.fromPublication(publication), UserInstance.fromPublication(publication),
-                REGISTRATOR_PUBLISHES_METADATA_ONLY
-            );
-            return ExpandedFilesApprovalThesis.create(filesApprovalThesis, resourceService, expansionService,
-                                                      ticketService);
-        }
-
-        private static Publication createPublication(ResourceService resourceService) throws BadRequestException {
-            var publication = randomPublicationWithoutDoi(DegreePhd.class);
-            publication = Resource.fromPublication(publication)
-                              .persistNew(resourceService, UserInstance.fromPublication(publication));
-            return publication;
-        }
-
-        private ExpandedDataEntryWithAssociatedPublication createExpandedResource(
-            Publication publication,
-            RawContentRetriever uriRetriever) {
-            ExpandedResource expandedResource =
-                attempt(() -> fromPublication(uriRetriever, resourceService, sqsClient,
-                                              Resource.fromPublication(publication))).orElseThrow();
-            return new ExpandedDataEntryWithAssociatedPublication(expandedResource);
-        }
-
-        private static ExpandedDataEntry createExpandedPublishingRequest(Publication publication,
-                                                                         ResourceService resourceService,
-                                                                         ResourceExpansionService expansionService,
-                                                                         TicketService ticketService)
-            throws NotFoundException, JsonProcessingException {
-            PublishingRequestCase requestCase = createPublishingRequestCase(publication);
-            return ExpandedPublishingRequest.create(requestCase, resourceService, expansionService,
-                                                    ticketService);
-        }
-
-        private static PublishingRequestCase createPublishingRequestCase(Publication publication) {
-            var requestCase = new PublishingRequestCase();
-            requestCase.setIdentifier(SortableIdentifier.next());
-            requestCase.setStatus(TicketStatus.PENDING);
-            requestCase.setModifiedDate(Instant.now());
-            requestCase.setCreatedDate(Instant.now());
-            requestCase.setCustomerId(publication.getPublisher().getId());
-            requestCase.setResourceIdentifier(publication.getIdentifier());
-            requestCase.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
-            return requestCase;
-        }
+    private static ExpandedDataEntry createExpandedFilesApprovalThesis(
+        Publication publication,
+        ResourceService resourceService,
+        ResourceExpansionService expansionService,
+        TicketService ticketService)
+        throws NotFoundException, JsonProcessingException {
+      var filesApprovalThesis =
+          FilesApprovalThesis.createForUserInstitution(
+              Resource.fromPublication(publication),
+              UserInstance.fromPublication(publication),
+              REGISTRATOR_PUBLISHES_METADATA_ONLY);
+      return ExpandedFilesApprovalThesis.create(
+          filesApprovalThesis, resourceService, expansionService, ticketService);
     }
+
+    private static Publication createPublication(ResourceService resourceService)
+        throws BadRequestException {
+      var publication = randomPublicationWithoutDoi(DegreePhd.class);
+      publication =
+          Resource.fromPublication(publication)
+              .persistNew(resourceService, UserInstance.fromPublication(publication));
+      return publication;
+    }
+
+    private ExpandedDataEntryWithAssociatedPublication createExpandedResource(
+        Publication publication, RawContentRetriever uriRetriever) {
+      ExpandedResource expandedResource =
+          attempt(
+                  () ->
+                      fromPublication(
+                          uriRetriever,
+                          resourceService,
+                          sqsClient,
+                          Resource.fromPublication(publication)))
+              .orElseThrow();
+      return new ExpandedDataEntryWithAssociatedPublication(expandedResource);
+    }
+
+    private static ExpandedDataEntry createExpandedPublishingRequest(
+        Publication publication,
+        ResourceService resourceService,
+        ResourceExpansionService expansionService,
+        TicketService ticketService)
+        throws NotFoundException, JsonProcessingException {
+      PublishingRequestCase requestCase = createPublishingRequestCase(publication);
+      return ExpandedPublishingRequest.create(
+          requestCase, resourceService, expansionService, ticketService);
+    }
+
+    private static PublishingRequestCase createPublishingRequestCase(Publication publication) {
+      var requestCase = new PublishingRequestCase();
+      requestCase.setIdentifier(SortableIdentifier.next());
+      requestCase.setStatus(TicketStatus.PENDING);
+      requestCase.setModifiedDate(Instant.now());
+      requestCase.setCreatedDate(Instant.now());
+      requestCase.setCustomerId(publication.getPublisher().getId());
+      requestCase.setResourceIdentifier(publication.getIdentifier());
+      requestCase.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
+      return requestCase;
+    }
+  }
 }

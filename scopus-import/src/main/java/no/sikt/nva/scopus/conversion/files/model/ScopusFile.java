@@ -1,6 +1,7 @@
 package no.sikt.nva.scopus.conversion.files.model;
 
 import static java.util.Objects.nonNull;
+
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -13,119 +14,141 @@ import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails.Source;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import org.apache.tika.io.TikaInputStream;
 
-public record ScopusFile(UUID identifier, String name, URI downloadFileUrl, TikaInputStream content, long size,
-                         String mimeType, URI license, PublisherVersion publisherVersion, Instant embargo) {
+public record ScopusFile(
+    UUID identifier,
+    String name,
+    URI downloadFileUrl,
+    TikaInputStream content,
+    long size,
+    String mimeType,
+    URI license,
+    PublisherVersion publisherVersion,
+    Instant embargo) {
 
-    private static final int ZERO_LENGTH_CONTENT = 0;
-    private static final List<String> UNSUPPORTED_MIME_TYPES = List.of("text/html", "application/octet-stream");
+  private static final int ZERO_LENGTH_CONTENT = 0;
+  private static final List<String> UNSUPPORTED_MIME_TYPES =
+      List.of("text/html", "application/octet-stream");
 
-    public static Builder builder() {
-        return new Builder();
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public Builder copy() {
+    return new Builder()
+        .withPublisherVersion(this.publisherVersion)
+        .withEmbargo(this.embargo)
+        .withLicense(this.license)
+        .withName(this.name)
+        .withDownloadFileUrl(this.downloadFileUrl)
+        .withIdentifier(this.identifier)
+        .withSize(this.size)
+        .withContent(this.content)
+        .withMimeType(this.mimeType);
+  }
+
+  public boolean isValid() {
+    return hasValidMimeType() && hasContent();
+  }
+
+  private boolean hasContent() {
+    return size() != ZERO_LENGTH_CONTENT;
+  }
+
+  public AssociatedArtifact toFile() {
+    var fileBuilder =
+        File.builder()
+            .withIdentifier(identifier)
+            .withName(name)
+            .withMimeType(mimeType)
+            .withSize(size)
+            .withUploadDetails(createUploadDetails())
+            .withPublisherVersion(publisherVersion)
+            .withEmbargoDate(embargo);
+    return nonNull(license)
+        ? fileBuilder.withLicense(license).buildOpenFile()
+        : fileBuilder.buildInternalFile();
+  }
+
+  public boolean hasValidMimeType() {
+    return Optional.ofNullable(mimeType)
+        .map(mimeType -> !UNSUPPORTED_MIME_TYPES.contains(mimeType))
+        .orElse(false);
+  }
+
+  private ImportUploadDetails createUploadDetails() {
+    return new ImportUploadDetails(Source.SCOPUS, null, Instant.now());
+  }
+
+  public static final class Builder {
+
+    private UUID identifier;
+    private String name;
+    private URI downloadFileUrl;
+    private TikaInputStream content;
+    private long size;
+    private String contentType;
+    private URI license;
+    private Instant embargo;
+    private PublisherVersion publisherVersion;
+
+    private Builder() {}
+
+    public Builder withIdentifier(UUID identifier) {
+      this.identifier = identifier;
+      return this;
     }
 
-    public Builder copy() {
-        return new Builder().withPublisherVersion(this.publisherVersion)
-                   .withEmbargo(this.embargo)
-                   .withLicense(this.license)
-                   .withName(this.name)
-                   .withDownloadFileUrl(this.downloadFileUrl)
-                   .withIdentifier(this.identifier)
-                   .withSize(this.size)
-                   .withContent(this.content)
-                   .withMimeType(this.mimeType);
+    public Builder withName(String name) {
+      this.name = name;
+      return this;
     }
 
-    public boolean isValid() {
-        return hasValidMimeType() && hasContent();
+    public Builder withDownloadFileUrl(URI downloadFileUrl) {
+      this.downloadFileUrl = downloadFileUrl;
+      return this;
     }
 
-    private boolean hasContent() {
-        return size() != ZERO_LENGTH_CONTENT;
+    public Builder withContent(TikaInputStream content) {
+      this.content = content;
+      return this;
     }
 
-    public AssociatedArtifact toFile() {
-        var fileBuilder = File.builder()
-                              .withIdentifier(identifier)
-                              .withName(name)
-                              .withMimeType(mimeType)
-                              .withSize(size)
-                              .withUploadDetails(createUploadDetails())
-                              .withPublisherVersion(publisherVersion)
-                              .withEmbargoDate(embargo);
-        return nonNull(license) ? fileBuilder.withLicense(license).buildOpenFile() : fileBuilder.buildInternalFile();
+    public Builder withSize(long size) {
+      this.size = size;
+      return this;
     }
 
-    public boolean hasValidMimeType() {
-        return Optional.ofNullable(mimeType).map(mimeType -> !UNSUPPORTED_MIME_TYPES.contains(mimeType)).orElse(false);
+    public Builder withMimeType(String contentType) {
+      this.contentType = contentType;
+      return this;
     }
 
-    private ImportUploadDetails createUploadDetails() {
-        return new ImportUploadDetails(Source.SCOPUS, null, Instant.now());
+    public Builder withLicense(URI license) {
+      this.license = license;
+      return this;
     }
 
-    public static final class Builder {
-
-        private UUID identifier;
-        private String name;
-        private URI downloadFileUrl;
-        private TikaInputStream content;
-        private long size;
-        private String contentType;
-        private URI license;
-        private Instant embargo;
-        private PublisherVersion publisherVersion;
-
-        private Builder() {
-        }
-
-        public Builder withIdentifier(UUID identifier) {
-            this.identifier = identifier;
-            return this;
-        }
-
-        public Builder withName(String name) {
-            this.name = name;
-            return this;
-        }
-
-        public Builder withDownloadFileUrl(URI downloadFileUrl) {
-            this.downloadFileUrl = downloadFileUrl;
-            return this;
-        }
-
-        public Builder withContent(TikaInputStream content) {
-            this.content = content;
-            return this;
-        }
-
-        public Builder withSize(long size) {
-            this.size = size;
-            return this;
-        }
-
-        public Builder withMimeType(String contentType) {
-            this.contentType = contentType;
-            return this;
-        }
-
-        public Builder withLicense(URI license) {
-            this.license = license;
-            return this;
-        }
-
-        public Builder withPublisherVersion(PublisherVersion publisherVersion) {
-            this.publisherVersion = publisherVersion;
-            return this;
-        }
-
-        public Builder withEmbargo(Instant embargo) {
-            this.embargo = embargo;
-            return this;
-        }
-
-        public ScopusFile build() {
-            return new ScopusFile(identifier, name, downloadFileUrl, content, size, contentType, license,
-                                  publisherVersion, embargo);
-        }
+    public Builder withPublisherVersion(PublisherVersion publisherVersion) {
+      this.publisherVersion = publisherVersion;
+      return this;
     }
+
+    public Builder withEmbargo(Instant embargo) {
+      this.embargo = embargo;
+      return this;
+    }
+
+    public ScopusFile build() {
+      return new ScopusFile(
+          identifier,
+          name,
+          downloadFileUrl,
+          content,
+          size,
+          contentType,
+          license,
+          publisherVersion,
+          embargo);
+    }
+  }
 }

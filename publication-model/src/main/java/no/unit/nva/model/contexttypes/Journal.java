@@ -11,7 +11,6 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
-
 import no.unit.nva.model.contexttypes.utils.MigrateSerialPublicationUtil;
 import no.unit.nva.model.exceptions.InvalidSeriesException;
 import nva.commons.core.JacocoGenerated;
@@ -19,47 +18,47 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Journal implements Periodical {
 
-    private final URI id;
+  private final URI id;
 
-    @JsonCreator
-    public Journal(@JsonProperty("id") URI id) {
-        validate(id);
-        this.id = MigrateSerialPublicationUtil.migratePath(id);
-    }
+  @JsonCreator
+  public Journal(@JsonProperty("id") URI id) {
+    validate(id);
+    this.id = MigrateSerialPublicationUtil.migratePath(id);
+  }
 
-    public URI getId() {
-        return id;
-    }
+  public URI getId() {
+    return id;
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getId());
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(getId());
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof Journal)) {
-            return false;
-        }
-        Journal journal = (Journal) o;
-        return Objects.equals(getId(), journal.getId());
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (!(o instanceof Journal)) {
+      return false;
+    }
+    Journal journal = (Journal) o;
+    return Objects.equals(getId(), journal.getId());
+  }
 
-    private static void validate(URI id) {
-        var stringOfUri = id.toString();
-        if (isNull(stringOfUri) || stringOfUri.isBlank()) {
-            throw new InvalidSeriesException(stringOfUri);
-        }
+  private static void validate(URI id) {
+    var stringOfUri = id.toString();
+    if (isNull(stringOfUri) || stringOfUri.isBlank()) {
+      throw new InvalidSeriesException(stringOfUri);
     }
+  }
 
-    @JsonIgnore
-    @Override
-    public Set<URI> extractPublicationContextUris() {
-        return nonNull(id) ? Collections.singleton(id) : Collections.emptySet();
-    }
+  @JsonIgnore
+  @Override
+  public Set<URI> extractPublicationContextUris() {
+    return nonNull(id) ? Collections.singleton(id) : Collections.emptySet();
+  }
 }

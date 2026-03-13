@@ -1,6 +1,7 @@
 package no.sikt.nva.scopus.conversion;
 
 import static java.util.Collections.emptyList;
+
 import jakarta.xml.bind.JAXBElement;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -28,167 +29,183 @@ import no.unit.nva.model.pages.Range;
 
 public class PublicationInstanceCreator {
 
-    public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE =
-        "Unsupported citation type %s, cannot convert eid %s";
-    public static final String MISSING_CITATION_TYPE_MESSAGE =
-        "Missing citation type, cannot convert eid %s";
-    private final DocTp docTp;
-    private final PublicationContext publicationContext;
+  public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE =
+      "Unsupported citation type %s, cannot convert eid %s";
+  public static final String MISSING_CITATION_TYPE_MESSAGE =
+      "Missing citation type, cannot convert eid %s";
+  private final DocTp docTp;
+  private final PublicationContext publicationContext;
 
-    public PublicationInstanceCreator(DocTp docTp, PublicationContext publicationContext) {
-        this.docTp = docTp;
-        this.publicationContext = publicationContext;
-    }
+  public PublicationInstanceCreator(DocTp docTp, PublicationContext publicationContext) {
+    this.docTp = docTp;
+    this.publicationContext = publicationContext;
+  }
 
-    public PublicationInstance<? extends Pages> getPublicationInstance() {
-        var citationTypeCode = getCitationTypeCode();
-        return citationTypeCode.isPresent()
-                   ? citationTypeCode.flatMap(this::convertCitationTypeCodeToPublicationInstance)
-                         .orElseThrow(() -> getUnsupportedCitationTypeException(citationTypeCode.get()))
-                   : missingCitationTypeException();
-    }
+  public PublicationInstance<? extends Pages> getPublicationInstance() {
+    var citationTypeCode = getCitationTypeCode();
+    return citationTypeCode.isPresent()
+        ? citationTypeCode
+            .flatMap(this::convertCitationTypeCodeToPublicationInstance)
+            .orElseThrow(() -> getUnsupportedCitationTypeException(citationTypeCode.get()))
+        : missingCitationTypeException();
+  }
 
-    private UnsupportedCitationTypeException getUnsupportedCitationTypeException(CitationtypeAtt citationtypeAtt) {
-        return new UnsupportedCitationTypeException(
-            String.format(UNSUPPORTED_CITATION_TYPE_MESSAGE, citationtypeAtt.value(), docTp.getMeta().getEid()));
-    }
+  private UnsupportedCitationTypeException getUnsupportedCitationTypeException(
+      CitationtypeAtt citationtypeAtt) {
+    return new UnsupportedCitationTypeException(
+        String.format(
+            UNSUPPORTED_CITATION_TYPE_MESSAGE, citationtypeAtt.value(), docTp.getMeta().getEid()));
+  }
 
-    private PublicationInstance<? extends Pages> missingCitationTypeException() {
-        throw new UnsupportedCitationTypeException(
-            String.format(MISSING_CITATION_TYPE_MESSAGE, docTp.getMeta().getEid()));
-    }
+  private PublicationInstance<? extends Pages> missingCitationTypeException() {
+    throw new UnsupportedCitationTypeException(
+        String.format(MISSING_CITATION_TYPE_MESSAGE, docTp.getMeta().getEid()));
+  }
 
-    /*
-    See enum explanation in "SCOPUS CUSTOM DATA DOCUMENTATION", copy can be found at
-    https://isikt.sharepoint.com/:b:/s/Dovre/EQGVGp2Xn-RDvDi8zg3XFlQB6vo95nGLbINztJcXjStG5w?e=O9wQwB
-     */
-    private Optional<PublicationInstance<? extends Pages>> convertCitationTypeCodeToPublicationInstance(
-        CitationtypeAtt citationtypeAtt) {
-        switch (citationtypeAtt) {
-            case AR:
-                return Optional.of(generateJournalArticle());
-            case BK:
-                return Optional.of(new AcademicMonograph(null));
-            case CH:
-                return Optional.of(generateChapterArticle());
-            case CP:
-                if (isJournal()) {
-                    return Optional.of(generateJournalArticle());
-                } else {
-                    return Optional.of(generateChapterArticle());
-                }
-            case ED:
-                return Optional.of(new JournalLeader(extractVolume().orElse(null),
-                                                     extractIssue().orElse(null),
-                                                     extractArticleNumber().orElse(null),
-                                                     extractPages().orElse(null)));
-            case ER:
-                return Optional.of(new JournalCorrigendum(extractVolume().orElse(null),
-                                                          extractIssue().orElse(null),
-                                                          extractArticleNumber().orElse(null),
-                                                          extractPages().orElse(null),
-                                                          null));
-            case LE:
-            case NO:
-                return Optional.of(new JournalLetter(extractVolume().orElse(null),
-                                                     extractIssue().orElse(null),
-                                                     extractArticleNumber().orElse(null),
-                                                     extractPages().orElse(null)));
-            case RE:
-            case SH:
-                return Optional.of(new AcademicLiteratureReview(extractPages().orElse(null),
-                                                                extractVolume().orElse(null),
-                                                                extractIssue().orElse(null),
-                                                                extractArticleNumber().orElse(null)));
-            default:
-                return Optional.empty();
+  /*
+  See enum explanation in "SCOPUS CUSTOM DATA DOCUMENTATION", copy can be found at
+  https://isikt.sharepoint.com/:b:/s/Dovre/EQGVGp2Xn-RDvDi8zg3XFlQB6vo95nGLbINztJcXjStG5w?e=O9wQwB
+   */
+  private Optional<PublicationInstance<? extends Pages>>
+      convertCitationTypeCodeToPublicationInstance(CitationtypeAtt citationtypeAtt) {
+    switch (citationtypeAtt) {
+      case AR:
+        return Optional.of(generateJournalArticle());
+      case BK:
+        return Optional.of(new AcademicMonograph(null));
+      case CH:
+        return Optional.of(generateChapterArticle());
+      case CP:
+        if (isJournal()) {
+          return Optional.of(generateJournalArticle());
+        } else {
+          return Optional.of(generateChapterArticle());
         }
+      case ED:
+        return Optional.of(
+            new JournalLeader(
+                extractVolume().orElse(null),
+                extractIssue().orElse(null),
+                extractArticleNumber().orElse(null),
+                extractPages().orElse(null)));
+      case ER:
+        return Optional.of(
+            new JournalCorrigendum(
+                extractVolume().orElse(null),
+                extractIssue().orElse(null),
+                extractArticleNumber().orElse(null),
+                extractPages().orElse(null),
+                null));
+      case LE:
+      case NO:
+        return Optional.of(
+            new JournalLetter(
+                extractVolume().orElse(null),
+                extractIssue().orElse(null),
+                extractArticleNumber().orElse(null),
+                extractPages().orElse(null)));
+      case RE:
+      case SH:
+        return Optional.of(
+            new AcademicLiteratureReview(
+                extractPages().orElse(null),
+                extractVolume().orElse(null),
+                extractIssue().orElse(null),
+                extractArticleNumber().orElse(null)));
+      default:
+        return Optional.empty();
     }
+  }
 
-    private AcademicArticle generateJournalArticle() {
-        return new AcademicArticle(extractPages().orElse(null), extractVolume().orElse(null),
-                                   extractIssue().orElse(null),
-                                   extractArticleNumber().orElse(null));
-    }
+  private AcademicArticle generateJournalArticle() {
+    return new AcademicArticle(
+        extractPages().orElse(null),
+        extractVolume().orElse(null),
+        extractIssue().orElse(null),
+        extractArticleNumber().orElse(null));
+  }
 
-    private AcademicChapter generateChapterArticle() {
-        return new AcademicChapter(extractPages().orElse(null));
-    }
+  private AcademicChapter generateChapterArticle() {
+    return new AcademicChapter(extractPages().orElse(null));
+  }
 
-    private Optional<Range> extractPages() {
-        return getVolisspagTpStream()
-                   .filter(this::isPageRange)
-                   .map(this::extractPageRange)
-                   .findAny().orElse(Optional.empty());
-    }
+  private Optional<Range> extractPages() {
+    return getVolisspagTpStream()
+        .filter(this::isPageRange)
+        .map(this::extractPageRange)
+        .findAny()
+        .orElse(Optional.empty());
+  }
 
-    private Stream<JAXBElement<?>> getVolisspagTpStream() {
-        return Optional.ofNullable(getSourceTp().getVolisspag())
-                   .map(VolisspagTp::getContent)
-                   .orElse(emptyList())
-                   .stream();
-    }
+  private Stream<JAXBElement<?>> getVolisspagTpStream() {
+    return Optional.ofNullable(getSourceTp().getVolisspag())
+        .map(VolisspagTp::getContent)
+        .orElse(emptyList())
+        .stream();
+  }
 
-    private Optional<String> extractVolume() {
-        return getVolisspagTpStream()
-                   .filter(this::isVolumeIssue)
-                   .map(this::extractVolumeValue)
-                   .findAny().orElse(Optional.empty());
-    }
+  private Optional<String> extractVolume() {
+    return getVolisspagTpStream()
+        .filter(this::isVolumeIssue)
+        .map(this::extractVolumeValue)
+        .findAny()
+        .orElse(Optional.empty());
+  }
 
-    private Optional<String> extractIssue() {
-        return getVolisspagTpStream()
-                   .filter(this::isVolumeIssue)
-                   .map(this::extractIssueValue)
-                   .findAny().orElse(Optional.empty());
-    }
+  private Optional<String> extractIssue() {
+    return getVolisspagTpStream()
+        .filter(this::isVolumeIssue)
+        .map(this::extractIssueValue)
+        .findAny()
+        .orElse(Optional.empty());
+  }
 
-    private Optional<String> extractArticleNumber() {
-        return Optional.ofNullable(getSourceTp().getArticleNumber());
-    }
+  private Optional<String> extractArticleNumber() {
+    return Optional.ofNullable(getSourceTp().getArticleNumber());
+  }
 
-    private boolean isVolumeIssue(JAXBElement<?> content) {
-        return content.getValue() instanceof VolissTp;
-    }
+  private boolean isVolumeIssue(JAXBElement<?> content) {
+    return content.getValue() instanceof VolissTp;
+  }
 
-    private Optional<String> extractVolumeValue(JAXBElement<?> content) {
-        return Optional.ofNullable(((VolissTp) content.getValue()).getVolume());
-    }
+  private Optional<String> extractVolumeValue(JAXBElement<?> content) {
+    return Optional.ofNullable(((VolissTp) content.getValue()).getVolume());
+  }
 
-    private Optional<String> extractIssueValue(JAXBElement<?> content) {
-        return Optional.ofNullable(((VolissTp) content.getValue()).getIssue());
-    }
+  private Optional<String> extractIssueValue(JAXBElement<?> content) {
+    return Optional.ofNullable(((VolissTp) content.getValue()).getIssue());
+  }
 
-    private boolean isPageRange(JAXBElement<?> content) {
-        return content.getValue() instanceof PagerangeTp;
-    }
+  private boolean isPageRange(JAXBElement<?> content) {
+    return content.getValue() instanceof PagerangeTp;
+  }
 
-    private Optional<Range> extractPageRange(JAXBElement<?> content) {
-        return Optional.of(new Range(((PagerangeTp) content.getValue()).getFirst(),
-                                     ((PagerangeTp) content.getValue()).getLast()));
-    }
+  private Optional<Range> extractPageRange(JAXBElement<?> content) {
+    return Optional.of(
+        new Range(
+            ((PagerangeTp) content.getValue()).getFirst(),
+            ((PagerangeTp) content.getValue()).getLast()));
+  }
 
-    private SourceTp getSourceTp() {
-        return docTp.getItem()
-                   .getItem()
-                   .getBibrecord()
-                   .getHead()
-                   .getSource();
-    }
+  private SourceTp getSourceTp() {
+    return docTp.getItem().getItem().getBibrecord().getHead().getSource();
+  }
 
-    private boolean isJournal() {
-        return publicationContext instanceof Journal || publicationContext instanceof UnconfirmedJournal;
-    }
+  private boolean isJournal() {
+    return publicationContext instanceof Journal
+        || publicationContext instanceof UnconfirmedJournal;
+  }
 
-    private Optional<CitationtypeAtt> getCitationTypeCode() {
-        return docTp.getItem()
-                   .getItem()
-                   .getBibrecord()
-                   .getHead()
-                   .getCitationInfo()
-                   .getCitationType()
-                   .stream()
-                   .findFirst()
-                   .map(CitationTypeTp::getCode);
-    }
+  private Optional<CitationtypeAtt> getCitationTypeCode() {
+    return docTp
+        .getItem()
+        .getItem()
+        .getBibrecord()
+        .getHead()
+        .getCitationInfo()
+        .getCitationType()
+        .stream()
+        .findFirst()
+        .map(CitationTypeTp::getCode);
+  }
 }

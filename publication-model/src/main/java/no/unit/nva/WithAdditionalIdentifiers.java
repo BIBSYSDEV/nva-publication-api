@@ -5,7 +5,7 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 
 public interface WithAdditionalIdentifiers {
 
-    Set<AdditionalIdentifierBase> getAdditionalIdentifiers();
+  Set<AdditionalIdentifierBase> getAdditionalIdentifiers();
 
-    void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers);
+  void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers);
 }

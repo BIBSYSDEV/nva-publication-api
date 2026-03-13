@@ -5,6 +5,5 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 
 public interface PublisherExpansionService {
 
-    ExpandedPublisher createExpandedPublisher(PublishingHouse publishingHouse);
-
+  ExpandedPublisher createExpandedPublisher(PublishingHouse publishingHouse);
 }

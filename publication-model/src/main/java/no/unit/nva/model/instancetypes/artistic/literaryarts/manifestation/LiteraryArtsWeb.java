@@ -3,64 +3,70 @@ package no.unit.nva.model.instancetypes.artistic.literaryarts.manifestation;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.net.URI;
+import java.util.Objects;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublisherInInstance;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import nva.commons.core.JacocoGenerated;
 
-import java.net.URI;
-import java.util.Objects;
-
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class LiteraryArtsWeb implements LiteraryArtsManifestation, PublisherInInstance {
-    public static final String PUBLICATION_DATE_FIELD = "publicationDate";
-    public static final String PUBLISHER_FIELD = "publisher";
-    public static final String ID_FIELD = "id";
-    @JsonProperty(ID_FIELD) private final URI id;
-    @JsonProperty(PUBLISHER_FIELD) private final PublishingHouse publisher;
-    @JsonProperty(PUBLICATION_DATE_FIELD) private final PublicationDate publicationDate;
+  public static final String PUBLICATION_DATE_FIELD = "publicationDate";
+  public static final String PUBLISHER_FIELD = "publisher";
+  public static final String ID_FIELD = "id";
 
-    @JsonCreator
-    public LiteraryArtsWeb(@JsonProperty(ID_FIELD) URI id,
-                           @JsonProperty(PUBLISHER_FIELD) PublishingHouse publisher,
-                           @JsonProperty(PUBLICATION_DATE_FIELD) PublicationDate publicationDate) {
-        this.id = id;
-        this.publisher = publisher;
-        this.publicationDate = publicationDate;
-    }
+  @JsonProperty(ID_FIELD)
+  private final URI id;
 
-    @Override
-    public PublicationDate getPublicationDate() {
-        return publicationDate;
-    }
+  @JsonProperty(PUBLISHER_FIELD)
+  private final PublishingHouse publisher;
 
-    public URI getId() {
-        return id;
-    }
+  @JsonProperty(PUBLICATION_DATE_FIELD)
+  private final PublicationDate publicationDate;
 
-    @Override
-    public PublishingHouse getPublisher() {
-        return publisher;
-    }
+  @JsonCreator
+  public LiteraryArtsWeb(
+      @JsonProperty(ID_FIELD) URI id,
+      @JsonProperty(PUBLISHER_FIELD) PublishingHouse publisher,
+      @JsonProperty(PUBLICATION_DATE_FIELD) PublicationDate publicationDate) {
+    this.id = id;
+    this.publisher = publisher;
+    this.publicationDate = publicationDate;
+  }
 
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof LiteraryArtsWeb)) {
-            return false;
-        }
-        LiteraryArtsWeb that = (LiteraryArtsWeb) o;
-        return Objects.equals(getId(), that.getId())
-                && Objects.equals(getPublisher(), that.getPublisher())
-                && Objects.equals(getPublicationDate(), that.getPublicationDate());
-    }
+  @Override
+  public PublicationDate getPublicationDate() {
+    return publicationDate;
+  }
 
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getId(), getPublisher(), getPublicationDate());
+  public URI getId() {
+    return id;
+  }
+
+  @Override
+  public PublishingHouse getPublisher() {
+    return publisher;
+  }
+
+  @Override
+  @JacocoGenerated
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (!(o instanceof LiteraryArtsWeb)) {
+      return false;
+    }
+    LiteraryArtsWeb that = (LiteraryArtsWeb) o;
+    return Objects.equals(getId(), that.getId())
+        && Objects.equals(getPublisher(), that.getPublisher())
+        && Objects.equals(getPublicationDate(), that.getPublicationDate());
+  }
+
+  @Override
+  @JacocoGenerated
+  public int hashCode() {
+    return Objects.hash(getId(), getPublisher(), getPublicationDate());
+  }
 }

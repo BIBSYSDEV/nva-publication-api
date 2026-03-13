@@ -16,28 +16,28 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"hendelsestypenavn", "hendelsestypenavn_engelsk",
-    "hendelsestypenavn_nynorsk"})
+@JsonIgnoreProperties({
+  "hendelsestypenavn",
+  "hendelsestypenavn_engelsk",
+  "hendelsestypenavn_nynorsk"
+})
 public class MuseumEventCategory {
 
-    private static final String EXHIBITION = "UTSTILLING";
-    private static final Set<String> SUPPORTED_MUSEUM_TYPES = Set.of(EXHIBITION);
+  private static final String EXHIBITION = "UTSTILLING";
+  private static final Set<String> SUPPORTED_MUSEUM_TYPES = Set.of(EXHIBITION);
 
-    @JsonProperty("hendelsestypekode")
-    private String eventCode;
+  @JsonProperty("hendelsestypekode")
+  private String eventCode;
 
-    @JacocoGenerated
-    public MuseumEventCategory() {
+  @JacocoGenerated
+  public MuseumEventCategory() {}
 
-    }
-
-    @JsonIgnore
-    public boolean isMuseumExhibition() {
-        return SUPPORTED_MUSEUM_TYPES.contains(eventCode);
-    }
+  @JsonIgnore
+  public boolean isMuseumExhibition() {
+    return SUPPORTED_MUSEUM_TYPES.contains(eventCode);
+  }
 }

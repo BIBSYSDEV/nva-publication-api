@@ -12,27 +12,29 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeName(CustomerRightsRetentionStrategy.TYPE_NAME)
 public final class CustomerRightsRetentionStrategy extends AbstractRightsRetentionStrategy {
 
-    public static final String TYPE_NAME = "CustomerRightsRetentionStrategy";
+  public static final String TYPE_NAME = "CustomerRightsRetentionStrategy";
 
-    @JsonCreator
-    private CustomerRightsRetentionStrategy(
-        @JsonProperty(FIELD_NAME_CONFIGURED_TYPE) RightsRetentionStrategyConfiguration configuredType) {
-        super(configuredType);
-    }
+  @JsonCreator
+  private CustomerRightsRetentionStrategy(
+      @JsonProperty(FIELD_NAME_CONFIGURED_TYPE)
+          RightsRetentionStrategyConfiguration configuredType) {
+    super(configuredType);
+  }
 
-    public static CustomerRightsRetentionStrategy create(RightsRetentionStrategyConfiguration configuredType) {
-        return new CustomerRightsRetentionStrategy(configuredType);
-    }
+  public static CustomerRightsRetentionStrategy create(
+      RightsRetentionStrategyConfiguration configuredType) {
+    return new CustomerRightsRetentionStrategy(configuredType);
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof CustomerRightsRetentionStrategy && super.equals(o);
-    }
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    return o instanceof CustomerRightsRetentionStrategy && super.equals(o);
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(CustomerRightsRetentionStrategy.class.getName(), super.hashCode());
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(CustomerRightsRetentionStrategy.class.getName(), super.hashCode());
+  }
 }

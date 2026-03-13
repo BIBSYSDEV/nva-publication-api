@@ -5,6 +5,7 @@ import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersiste
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import java.util.List;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -26,44 +27,49 @@ import org.junit.jupiter.api.Test;
 
 class TicketResolverTest extends TicketTestLocal {
 
-    private TicketResolver ticketResolver;
-    private ResourceService resourceService;
+  private TicketResolver ticketResolver;
+  private ResourceService resourceService;
 
-    @BeforeEach
-    public void setup() {
-        super.init();
-        resourceService = getResourceService(client);
-        ticketResolver = new TicketResolver(resourceService, getTicketService());
-    }
+  @BeforeEach
+  public void setup() {
+    super.init();
+    resourceService = getResourceService(client);
+    ticketResolver = new TicketResolver(resourceService, getTicketService());
+  }
 
-    @Test
-    void shouldThrowForbiddenExceptionWhenCreatingPublishingRequest() throws ApiGatewayException {
-        var publication = createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
-        var requestUtils = createRequestUtils(publication);
+  @Test
+  void shouldThrowForbiddenExceptionWhenCreatingPublishingRequest() throws ApiGatewayException {
+    var publication = createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+    var requestUtils = createRequestUtils(publication);
 
-        assertThrows(ForbiddenException.class,
-                     () -> ticketResolver.resolveAndPersistTicket(PublishingRequestDto.empty(), requestUtils));
-    }
+    assertThrows(
+        ForbiddenException.class,
+        () -> ticketResolver.resolveAndPersistTicket(PublishingRequestDto.empty(), requestUtils));
+  }
 
-    @Test
-    void shouldThrowForbiddenExceptionWhenCreatingFilesApprovalThesis() throws ApiGatewayException {
-        var publication = createPersistedDegreePublication(PublicationStatus.PUBLISHED, resourceService);
-        var requestUtils = createRequestUtils(publication);
-        var ticket = FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(publication),
-                                                                  UserInstance.fromPublication(publication),
-                                                                  PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        assertThrows(ForbiddenException.class,
-                     () -> ticketResolver.resolveAndPersistTicket(FilesApprovalThesisDto.fromTicket(ticket, List.of(),
-                                                                                                    List.of(),
-                                                                                                    mock(
-                                                                                                        TicketPermissions.class)),
-                                                                  requestUtils));
-    }
+  @Test
+  void shouldThrowForbiddenExceptionWhenCreatingFilesApprovalThesis() throws ApiGatewayException {
+    var publication =
+        createPersistedDegreePublication(PublicationStatus.PUBLISHED, resourceService);
+    var requestUtils = createRequestUtils(publication);
+    var ticket =
+        FilesApprovalThesis.createForUserInstitution(
+            Resource.fromPublication(publication),
+            UserInstance.fromPublication(publication),
+            PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
+    assertThrows(
+        ForbiddenException.class,
+        () ->
+            ticketResolver.resolveAndPersistTicket(
+                FilesApprovalThesisDto.fromTicket(
+                    ticket, List.of(), List.of(), mock(TicketPermissions.class)),
+                requestUtils));
+  }
 
-    private RequestUtils createRequestUtils(Publication publication) throws NotFoundException {
-        var requestUtils = mock(RequestUtils.class);
-        when(requestUtils.publicationIdentifier()).thenReturn(publication.getIdentifier());
-        when(requestUtils.toUserInstance()).thenReturn(UserInstance.fromPublication(publication));
-        return requestUtils;
-    }
+  private RequestUtils createRequestUtils(Publication publication) throws NotFoundException {
+    var requestUtils = mock(RequestUtils.class);
+    when(requestUtils.publicationIdentifier()).thenReturn(publication.getIdentifier());
+    when(requestUtils.toUserInstance()).thenReturn(UserInstance.fromPublication(publication));
+    return requestUtils;
+  }
 }

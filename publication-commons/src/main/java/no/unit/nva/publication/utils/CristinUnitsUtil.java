@@ -7,12 +7,13 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public interface CristinUnitsUtil {
 
-    String CRISTIN_UNITS_S3_URI_ENV = "CRISTIN_UNITS_S3_URI";
+  String CRISTIN_UNITS_S3_URI_ENV = "CRISTIN_UNITS_S3_URI";
 
-    URI getTopLevel(URI unitId);
+  URI getTopLevel(URI unitId);
 
-    @JacocoGenerated
-    static CristinUnitsUtil defaultInstance() {
-        return new CristinUnitsUtilImpl(S3Client.create(), new Environment().readEnv(CRISTIN_UNITS_S3_URI_ENV));
-    }
+  @JacocoGenerated
+  static CristinUnitsUtil defaultInstance() {
+    return new CristinUnitsUtilImpl(
+        S3Client.create(), new Environment().readEnv(CRISTIN_UNITS_S3_URI_ENV));
+  }
 }

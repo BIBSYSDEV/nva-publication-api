@@ -6,19 +6,19 @@ import no.unit.nva.model.Publication;
 
 public class BrageTestRecord {
 
-    private final NvaBrageMigrationDataGenerator.Builder generatorBuilder;
-    private final Publication existingPublication;
+  private final NvaBrageMigrationDataGenerator.Builder generatorBuilder;
+  private final Publication existingPublication;
 
-    public Builder getGeneratorBuilder() {
-        return generatorBuilder;
-    }
+  public Builder getGeneratorBuilder() {
+    return generatorBuilder;
+  }
 
-    public Publication getExistingPublication() {
-        return existingPublication;
-    }
+  public Publication getExistingPublication() {
+    return existingPublication;
+  }
 
-    public BrageTestRecord(Builder generatorBuilder, Publication existingPublication) {
-        this.generatorBuilder = generatorBuilder;
-        this.existingPublication = existingPublication;
-    }
+  public BrageTestRecord(Builder generatorBuilder, Publication existingPublication) {
+    this.generatorBuilder = generatorBuilder;
+    this.existingPublication = existingPublication;
+  }
 }

@@ -9,21 +9,21 @@ import org.junit.jupiter.api.Test;
 
 class DataCompressorTest {
 
-    @Test
-    void shouldNotLooseAnyDateWhenCompressingAndUncompressing() {
-        var publication = randomPublication();
-        var publicationDao = new ResourceDao(Resource.fromPublication(publication));
-        var compressedPublicationDao = DataCompressor.compressDaoData(publicationDao);
-        var decompressPublicationDao = DataCompressor.decompressDao(compressedPublicationDao, ResourceDao.class);
-        var publicationFromDao = decompressPublicationDao.getResource().toPublication();
+  @Test
+  void shouldNotLooseAnyDateWhenCompressingAndUncompressing() {
+    var publication = randomPublication();
+    var publicationDao = new ResourceDao(Resource.fromPublication(publication));
+    var compressedPublicationDao = DataCompressor.compressDaoData(publicationDao);
+    var decompressPublicationDao =
+        DataCompressor.decompressDao(compressedPublicationDao, ResourceDao.class);
+    var publicationFromDao = decompressPublicationDao.getResource().toPublication();
 
-        assertEquals(publication, publicationFromDao);
-    }
+    assertEquals(publication, publicationFromDao);
+  }
 
-
-    @Test
-    void failedJsonSerializationShouldThrowException() {
-        var badDao = new ResourceDao();
-        assertThrows(IllegalArgumentException.class, () -> DataCompressor.compressDaoData(badDao));
-    }
+  @Test
+  void failedJsonSerializationShouldThrowException() {
+    var badDao = new ResourceDao();
+    assertThrows(IllegalArgumentException.class, () -> DataCompressor.compressDaoData(badDao));
+  }
 }

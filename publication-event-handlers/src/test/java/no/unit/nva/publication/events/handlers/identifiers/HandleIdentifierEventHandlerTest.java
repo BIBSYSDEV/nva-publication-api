@@ -17,22 +17,22 @@ import static org.junit.jupiter.params.provider.EnumSource.Mode.INCLUDE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
-import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
-import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.HandleIdentifier;
 import no.unit.nva.model.additionalidentifiers.SourceName;
@@ -66,201 +66,208 @@ import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRespon
 
 public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
 
-    private static final Context CONTEXT = new FakeContext();
+  private static final Context CONTEXT = new FakeContext();
 
-    public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
-    private static final String RESPONSE_BODY = "{\"handle\": \"https://test.handle.net/123/456\"}";
-    public static final int BAD_REQUEST = 400;
-    public static final String API_NVA_TEST_DOMAIN = "localhost";
-    public static final String HANDLE_BASE_PATH = "handle";
-    private ResourceService resourceService;
-    private HandleIdentifierEventHandler handler;
-    private S3Driver s3Driver;
-    private HttpClient httpClient;
+  public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
+  private static final String RESPONSE_BODY = "{\"handle\": \"https://test.handle.net/123/456\"}";
+  public static final int BAD_REQUEST = 400;
+  public static final String API_NVA_TEST_DOMAIN = "localhost";
+  public static final String HANDLE_BASE_PATH = "handle";
+  private ResourceService resourceService;
+  private HandleIdentifierEventHandler handler;
+  private S3Driver s3Driver;
+  private HttpClient httpClient;
 
-    @BeforeEach
-    public void setup() throws IOException, InterruptedException {
-        super.init();
-        resourceService = getResourceService(client);
-        var s3Client = new FakeS3Client();
-        s3Driver = new S3Driver(s3Client, randomString());
-        var environment = mock(Environment.class);
-        when(environment.readEnv("API_DOMAIN")).thenReturn(API_NVA_TEST_DOMAIN);
-        when(environment.readEnv("HANDLE_BASE_PATH")).thenReturn(HANDLE_BASE_PATH);
-        when(environment.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("testSecret");
-        when(environment.readEnv("BACKEND_CLIENT_AUTH_URL")).thenReturn("cognitoTestUrl");
-        when(environment.readEnv("NVA_FRONTEND_DOMAIN")).thenReturn("nvatest.no");
-        httpClient = mock(HttpClient.class);
-        mockHttpToReturnJwtThenResponse(FakeHttpResponse.create(RESPONSE_BODY, HTTP_CREATED));
-        var secretManager = mock(SecretsManagerClient.class);
-        when(secretManager.getSecretValue((GetSecretValueRequest) any())).thenReturn(
+  @BeforeEach
+  public void setup() throws IOException, InterruptedException {
+    super.init();
+    resourceService = getResourceService(client);
+    var s3Client = new FakeS3Client();
+    s3Driver = new S3Driver(s3Client, randomString());
+    var environment = mock(Environment.class);
+    when(environment.readEnv("API_DOMAIN")).thenReturn(API_NVA_TEST_DOMAIN);
+    when(environment.readEnv("HANDLE_BASE_PATH")).thenReturn(HANDLE_BASE_PATH);
+    when(environment.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("testSecret");
+    when(environment.readEnv("BACKEND_CLIENT_AUTH_URL")).thenReturn("cognitoTestUrl");
+    when(environment.readEnv("NVA_FRONTEND_DOMAIN")).thenReturn("nvatest.no");
+    httpClient = mock(HttpClient.class);
+    mockHttpToReturnJwtThenResponse(FakeHttpResponse.create(RESPONSE_BODY, HTTP_CREATED));
+    var secretManager = mock(SecretsManagerClient.class);
+    when(secretManager.getSecretValue((GetSecretValueRequest) any()))
+        .thenReturn(
             GetSecretValueResponse.builder()
                 .secretString(new BackendClientCredentials("id", "secret").toString())
                 .build());
-        handler = new HandleIdentifierEventHandler(resourceService, s3Client, environment, httpClient, secretManager);
+    handler =
+        new HandleIdentifierEventHandler(
+            resourceService, s3Client, environment, httpClient, secretManager);
+  }
+
+  private void mockHttpToReturnJwtThenResponse(FakeHttpResponse<Object> secondResponse)
+      throws IOException, InterruptedException {
+    when(httpClient.send(any(), any()))
+        .thenReturn(FakeHttpResponse.create(tokenResponse(), HTTP_CREATED))
+        .thenReturn(secondResponse);
+  }
+
+  private String tokenResponse() {
+    return """
+    {
+    "access_token": "%s"
     }
+    """
+        .formatted(JwtTestToken.randomToken());
+  }
 
-    private void mockHttpToReturnJwtThenResponse(FakeHttpResponse<Object> secondResponse)
-        throws IOException, InterruptedException {
-        when(httpClient.send(any(), any()))
-            .thenReturn(FakeHttpResponse.create(tokenResponse(), HTTP_CREATED))
-            .thenReturn(secondResponse);
-    }
+  @ParameterizedTest
+  @EnumSource(
+      value = PublicationStatus.class,
+      mode = INCLUDE,
+      names = {"PUBLISHED", "PUBLISHED_METADATA"})
+  void shouldCreateHandlesForPublicationIfMissing(PublicationStatus status)
+      throws IOException, BadRequestException, NotFoundException {
+    var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
+    var newImage = oldImage.copy().withStatus(status).build();
 
-    private String tokenResponse() {
-        return """
-            {
-            "access_token": "%s"
-            }
-            """.formatted(JwtTestToken.randomToken());
-    }
+    var request = emulateSqsWrappedEvent(oldImage, newImage);
+    handler.handleRequest(request, CONTEXT);
 
-    @ParameterizedTest
-    @EnumSource(
-        value = PublicationStatus.class,
-        mode = INCLUDE,
-        names = {"PUBLISHED", "PUBLISHED_METADATA"})
-    void shouldCreateHandlesForPublicationIfMissing(PublicationStatus status)
-        throws IOException, BadRequestException, NotFoundException {
-        var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
-        var newImage = oldImage.copy().withStatus(status).build();
+    var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
+    assertThat(updatedPublication.getAdditionalIdentifiers().size(), is(equalTo(2)));
+  }
 
-        var request = emulateSqsWrappedEvent(oldImage, newImage);
-        handler.handleRequest(request, CONTEXT);
+  private SQSEvent emulateSqsWrappedEvent(Publication oldImage, Publication newImage)
+      throws IOException {
+    var blobUri = createSampleBlob(oldImage, newImage);
+    var eventBridgeObject =
+        EventBridgeEventBuilder.sampleEventObject(
+            AwsEventBridgeDetail.newBuilder()
+                .withResponsePayload(new EventReference(RESOURCE_UPDATE_EVENT_TOPIC, blobUri))
+                .build());
+    var sqsEvent = new SQSEvent();
+    var sqsMessage = new SQSEvent.SQSMessage();
+    sqsMessage.setBody(eventBridgeObject.toJsonString());
+    sqsEvent.setRecords(List.of(sqsMessage));
+    return sqsEvent;
+  }
 
-        var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
-        assertThat(updatedPublication.getAdditionalIdentifiers().size(), is(equalTo(2)));
-    }
+  @ParameterizedTest
+  @EnumSource(
+      value = PublicationStatus.class,
+      mode = INCLUDE,
+      names = {"PUBLISHED", "PUBLISHED_METADATA"})
+  void shouldNotCreateHandlesForPublicationIfAlreadyExisting(PublicationStatus status)
+      throws IOException, BadRequestException, NotFoundException {
+    var oldImage = createUnpublishedPublication();
+    var additionalIdentifiers = oldImage.getAdditionalIdentifiers();
+    var newImage = oldImage.copy().withStatus(status).build();
 
-    private SQSEvent emulateSqsWrappedEvent(Publication oldImage, Publication newImage) throws IOException {
-        var blobUri = createSampleBlob(oldImage, newImage);
-        var eventBridgeObject =
-            EventBridgeEventBuilder.sampleEventObject(AwsEventBridgeDetail.newBuilder()
-                                                          .withResponsePayload(
-                                                              new EventReference(RESOURCE_UPDATE_EVENT_TOPIC, blobUri))
-                                                          .build());
-        var sqsEvent = new SQSEvent();
-        var sqsMessage = new SQSEvent.SQSMessage();
-        sqsMessage.setBody(eventBridgeObject.toJsonString());
-        sqsEvent.setRecords(List.of(sqsMessage));
-        return sqsEvent;
-    }
+    var request = emulateSqsWrappedEvent(oldImage, newImage);
+    handler.handleRequest(request, CONTEXT);
 
-    @ParameterizedTest
-    @EnumSource(
-        value = PublicationStatus.class,
-        mode = INCLUDE,
-        names = {"PUBLISHED", "PUBLISHED_METADATA"})
-    void shouldNotCreateHandlesForPublicationIfAlreadyExisting(PublicationStatus status)
-        throws IOException, BadRequestException, NotFoundException {
-        var oldImage = createUnpublishedPublication();
-        var additionalIdentifiers = oldImage.getAdditionalIdentifiers();
-        var newImage = oldImage.copy().withStatus(status).build();
+    var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
+    assertThat(updatedPublication.getAdditionalIdentifiers(), is(equalTo(additionalIdentifiers)));
+  }
 
-        var request = emulateSqsWrappedEvent(oldImage, newImage);
-        handler.handleRequest(request, CONTEXT);
+  @ParameterizedTest
+  @EnumSource(
+      value = PublicationStatus.class,
+      mode = INCLUDE,
+      names = {"PUBLISHED", "PUBLISHED_METADATA"})
+  void shouldNotCreateHandlesForPublicationIfLegacyHandleAlreadyExist(PublicationStatus status)
+      throws IOException, BadRequestException, NotFoundException {
+    var handle = new AdditionalIdentifier(HANDLE_BASE_PATH, "https://test.handle.net/123/456");
+    var cristinId = new CristinIdentifier(SourceName.fromCristin("nva"), "123456");
+    var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(Set.of(handle, cristinId));
+    var newImage = oldImage.copy().withStatus(status).build();
 
-        var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
-        assertThat(updatedPublication.getAdditionalIdentifiers(), is(equalTo(additionalIdentifiers)));
-    }
+    var request = emulateSqsWrappedEvent(oldImage, newImage);
+    handler.handleRequest(request, CONTEXT);
 
-    @ParameterizedTest
-    @EnumSource(
-        value = PublicationStatus.class,
-        mode = INCLUDE,
-        names = {"PUBLISHED", "PUBLISHED_METADATA"})
-    void shouldNotCreateHandlesForPublicationIfLegacyHandleAlreadyExist(PublicationStatus status)
-        throws IOException, BadRequestException, NotFoundException {
-        var handle = new AdditionalIdentifier(HANDLE_BASE_PATH, "https://test.handle.net/123/456");
-        var cristinId = new CristinIdentifier(SourceName.fromCristin("nva"), "123456");
-        var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(
-            Set.of(handle, cristinId));
-        var newImage = oldImage.copy().withStatus(status).build();
+    var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
+    assertThat(updatedPublication.getAdditionalIdentifiers(), hasItems(handle, cristinId));
+  }
 
-        var request = emulateSqsWrappedEvent(oldImage, newImage);
-        handler.handleRequest(request, CONTEXT);
+  @ParameterizedTest
+  @EnumSource(
+      value = PublicationStatus.class,
+      mode = EXCLUDE,
+      names = {"PUBLISHED", "PUBLISHED_METADATA"})
+  void shouldNotCreateHandlesForUnpublishedPublication(PublicationStatus status)
+      throws IOException, BadRequestException, NotFoundException {
+    var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
+    var newImage = oldImage.copy().withStatus(status).build();
 
-        var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
-        assertThat(updatedPublication.getAdditionalIdentifiers(), hasItems(handle, cristinId));
-    }
+    var request = emulateSqsWrappedEvent(oldImage, newImage);
+    handler.handleRequest(request, CONTEXT);
 
-    @ParameterizedTest
-    @EnumSource(
-        value = PublicationStatus.class,
-        mode = EXCLUDE,
-        names = {"PUBLISHED", "PUBLISHED_METADATA"})
-    void shouldNotCreateHandlesForUnpublishedPublication(PublicationStatus status)
-        throws IOException, BadRequestException, NotFoundException {
-        var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
-        var newImage = oldImage.copy().withStatus(status).build();
+    var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
+    assertThat(
+        updatedPublication.getAdditionalIdentifiers(),
+        not(contains(instanceOf(AdditionalIdentifier.class))));
+    assertThat(
+        updatedPublication.getAdditionalIdentifiers(),
+        not(contains(instanceOf(HandleIdentifier.class))));
+  }
 
-        var request = emulateSqsWrappedEvent(oldImage, newImage);
-        handler.handleRequest(request, CONTEXT);
+  @Test
+  void shouldThrowOnAPIFailure() throws IOException, BadRequestException, InterruptedException {
+    final var logger = LogUtils.getTestingAppenderForRootLogger();
+    var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
+    var newImage = oldImage.copy().withStatus(PublicationStatus.PUBLISHED).build();
 
-        var updatedPublication = resourceService.getPublicationByIdentifier(newImage.getIdentifier());
-        assertThat(updatedPublication.getAdditionalIdentifiers(), not(contains(instanceOf(AdditionalIdentifier.class))));
-        assertThat(updatedPublication.getAdditionalIdentifiers(), not(contains(instanceOf(HandleIdentifier.class))));
-    }
+    mockHttpToReturnJwtThenResponse(FakeHttpResponse.create("some error message", BAD_REQUEST));
 
-    @Test
-    void shouldThrowOnAPIFailure()
-        throws IOException, BadRequestException, InterruptedException {
-        final var logger = LogUtils.getTestingAppenderForRootLogger();
-        var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
-        var newImage = oldImage.copy().withStatus(PublicationStatus.PUBLISHED).build();
+    var request = emulateSqsWrappedEvent(oldImage, newImage);
+    assertThrows(RuntimeException.class, () -> handler.handleRequest(request, CONTEXT));
+    assertThat(logger.getMessages(), containsString("Error response from server: 400"));
+  }
 
-        mockHttpToReturnJwtThenResponse(
-            FakeHttpResponse.create("some error message", BAD_REQUEST));
+  @Test
+  void shouldSkipEventWhenNewDataIsNull()
+      throws IOException, BadRequestException, NotFoundException {
+    var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
 
-        var request = emulateSqsWrappedEvent(oldImage, newImage);
-        assertThrows(RuntimeException.class, () -> handler.handleRequest(request, CONTEXT));
-        assertThat(logger.getMessages(), containsString("Error response from server: 400"));
-    }
+    var request = emulateSqsWrappedEvent(oldImage, null);
+    handler.handleRequest(request, CONTEXT);
 
-    @Test
-    void shouldSkipEventWhenNewDataIsNull() throws IOException, BadRequestException, NotFoundException {
-        var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
+    var publication = resourceService.getPublicationByIdentifier(oldImage.getIdentifier());
+    assertThat(publication.getAdditionalIdentifiers().size(), is(equalTo(1)));
+  }
 
-        var request = emulateSqsWrappedEvent(oldImage, null);
-        handler.handleRequest(request, CONTEXT);
+  private URI createSampleBlob(Object oldImage, Object newImage) throws IOException {
+    var oldImageResource = crateDataEntry(oldImage);
+    var newImageResource = crateDataEntry(newImage);
+    var dataEntryUpdateEvent =
+        new DataEntryUpdateEvent(
+            OperationType.MODIFY.toString(), oldImageResource, newImageResource);
+    var filePath = UnixPath.of(UUID.randomUUID().toString());
+    return s3Driver.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
+  }
 
-        var publication = resourceService.getPublicationByIdentifier(oldImage.getIdentifier());
-        assertThat(publication.getAdditionalIdentifiers().size(), is(equalTo(1)));
-    }
+  private Entity crateDataEntry(Object image) {
 
-    private URI createSampleBlob(Object oldImage, Object newImage) throws IOException {
-        var oldImageResource = crateDataEntry(oldImage);
-        var newImageResource = crateDataEntry(newImage);
-        var dataEntryUpdateEvent =
-                new DataEntryUpdateEvent(
-                        OperationType.MODIFY.toString(), oldImageResource, newImageResource);
-        var filePath = UnixPath.of(UUID.randomUUID().toString());
-        return s3Driver.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
-    }
+    return switch (image) {
+      case Publication publication -> Resource.fromPublication(publication);
+      case DoiRequest doiRequest -> doiRequest;
+      case Message message -> message;
+      case null, default -> null;
+    };
+  }
 
-    private Entity crateDataEntry(Object image) {
+  private Publication createUnpublishedPublication() throws BadRequestException {
+    var publication = randomPublication();
+    publication.setStatus(PublicationStatus.UNPUBLISHED);
+    return Resource.fromPublication(publication)
+        .persistNew(resourceService, UserInstance.fromPublication(publication));
+  }
 
-        return switch (image) {
-            case Publication publication -> Resource.fromPublication(publication);
-            case DoiRequest doiRequest -> doiRequest;
-            case Message message -> message;
-            case null, default -> null;
-        };
-    }
-
-    private Publication createUnpublishedPublication() throws BadRequestException {
-        var publication = randomPublication();
-        publication.setStatus(PublicationStatus.UNPUBLISHED);
-        return Resource.fromPublication(publication).persistNew(resourceService,
-                                                                UserInstance.fromPublication(publication));
-    }
-
-    private Publication createUnpublishedPublicationWithAdditionalIdentifiers(
-        Set<AdditionalIdentifierBase> additionalIdentifiers) throws BadRequestException {
-        var publication = randomPublication();
-        publication.setStatus(PublicationStatus.UNPUBLISHED);
-        publication.setAdditionalIdentifiers(additionalIdentifiers);
-        return Resource.fromPublication(publication).persistNew(resourceService,
-                                                                UserInstance.fromPublication(publication));
-    }
+  private Publication createUnpublishedPublicationWithAdditionalIdentifiers(
+      Set<AdditionalIdentifierBase> additionalIdentifiers) throws BadRequestException {
+    var publication = randomPublication();
+    publication.setStatus(PublicationStatus.UNPUBLISHED);
+    publication.setAdditionalIdentifiers(additionalIdentifiers);
+    return Resource.fromPublication(publication)
+        .persistNew(resourceService, UserInstance.fromPublication(publication));
+  }
 }

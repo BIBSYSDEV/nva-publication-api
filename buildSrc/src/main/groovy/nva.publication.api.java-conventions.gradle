@@ -19,11 +19,19 @@ dependencies {
 tasks.named('test') {
     environment("API_HOST", "localhost")
     useJUnitPlatform {
-        excludeTags  = [ "RemoteTest", "integrationTest", "KarateTest" ]
+        excludeTags  = [
+            "RemoteTest",
+            "integrationTest",
+            "KarateTest"
+        ]
     }
     failFast = false
     testLogging {
-        events = [ 'skipped', 'passed', 'failed' ]
+        events = [
+            'skipped',
+            'passed',
+            'failed'
+        ]
         showCauses = true
         exceptionFormat = "full"
     }

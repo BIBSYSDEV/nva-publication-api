@@ -12,6 +12,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.lenient;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -40,55 +41,55 @@ import org.zalando.problem.Problem;
 @WireMockTest(httpsEnabled = true)
 public class FetchImportCandidateHandlerTest extends ResourcesLocalTest {
 
-    public static final String IDENTIFIER = "importCandidateIdentifier";
-    private ByteArrayOutputStream output;
-    private final Context context = new FakeContext();
-    private ResourceService resourceService;
-    private FetchImportCandidateHandler handler;
+  public static final String IDENTIFIER = "importCandidateIdentifier";
+  private ByteArrayOutputStream output;
+  private final Context context = new FakeContext();
+  private ResourceService resourceService;
+  private FetchImportCandidateHandler handler;
 
-    @BeforeEach
-    public void setUp(@Mock Environment environment) {
-        super.init();
-        lenient().when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        lenient().when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
-        resourceService = getResourceService(client);
-        output = new ByteArrayOutputStream();
-        handler = new FetchImportCandidateHandler(resourceService, new Environment());
-    }
+  @BeforeEach
+  public void setUp(@Mock Environment environment) {
+    super.init();
+    lenient().when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
+    lenient().when(environment.readEnv(ENV_NAME_NVA_FRONTEND_DOMAIN)).thenReturn("localhost");
+    resourceService = getResourceService(client);
+    output = new ByteArrayOutputStream();
+    handler = new FetchImportCandidateHandler(resourceService, new Environment());
+  }
 
-    @Test
-    void shouldReturnImportCandidateSuccessfullyWhenImportCandidateIsInDatabase()
-        throws NotFoundException, IOException {
-        var importCandidate = createPersistedImportCandidate();
-        var request = createRequest(importCandidate.getIdentifier());
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
-        var responseImportCandidate = response.getBodyObject(ImportCandidate.class);
-        assertThat(importCandidate, is(equalTo(responseImportCandidate)));
-    }
+  @Test
+  void shouldReturnImportCandidateSuccessfullyWhenImportCandidateIsInDatabase()
+      throws NotFoundException, IOException {
+    var importCandidate = createPersistedImportCandidate();
+    var request = createRequest(importCandidate.getIdentifier());
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
+    var responseImportCandidate = response.getBodyObject(ImportCandidate.class);
+    assertThat(importCandidate, is(equalTo(responseImportCandidate)));
+  }
 
-    @Test
-    void shouldReturnNotFoundWhenImportCandidateDoesNotExist() throws IOException {
-        var request = createRequest(SortableIdentifier.next());
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        var detail = response.getBodyObject(Problem.class).getDetail();
+  @Test
+  void shouldReturnNotFoundWhenImportCandidateDoesNotExist() throws IOException {
+    var request = createRequest(SortableIdentifier.next());
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    var detail = response.getBodyObject(Problem.class).getDetail();
 
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
-        assertThat(detail, containsString(IMPORT_CANDIDATE_NOT_FOUND_MESSAGE));
-    }
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+    assertThat(detail, containsString(IMPORT_CANDIDATE_NOT_FOUND_MESSAGE));
+  }
 
-    private InputStream createRequest(SortableIdentifier identifier) throws JsonProcessingException {
-        var pathParameters = Map.of(IDENTIFIER, identifier.toString());
-        var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-        return new HandlerRequestBuilder<InputStream>(restApiMapper)
-                   .withHeaders(headers)
-                   .withPathParameters(pathParameters)
-                   .build();
-    }
+  private InputStream createRequest(SortableIdentifier identifier) throws JsonProcessingException {
+    var pathParameters = Map.of(IDENTIFIER, identifier.toString());
+    var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+    return new HandlerRequestBuilder<InputStream>(restApiMapper)
+        .withHeaders(headers)
+        .withPathParameters(pathParameters)
+        .build();
+  }
 
-    private ImportCandidate createPersistedImportCandidate() throws NotFoundException {
-        var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
-        return resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-    }
+  private ImportCandidate createPersistedImportCandidate() throws NotFoundException {
+    var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
+    return resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+  }
 }
