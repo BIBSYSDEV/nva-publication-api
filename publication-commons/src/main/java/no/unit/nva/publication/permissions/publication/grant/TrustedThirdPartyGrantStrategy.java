@@ -24,14 +24,7 @@ public final class TrustedThirdPartyGrantStrategy extends PublicationStrategyBas
                  READ_HIDDEN_FILES,
                  UPLOAD_FILE -> canModify();
             case DELETE -> canModify() && isDraft();
-            case REPUBLISH,
-                 DOI_REQUEST_CREATE,
-                 DOI_REQUEST_APPROVE,
-                 PUBLISHING_REQUEST_CREATE,
-                 APPROVE_FILES,
-                 SUPPORT_REQUEST_CREATE,
-                 SUPPORT_REQUEST_APPROVE,
-                 ADD_ADDITIONAL_IDENTIFIERS -> false;
+            default -> false;
         };
     }
 

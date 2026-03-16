@@ -2754,6 +2754,35 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldAllowSendingExistingAndNewIdentifiersTogetherAndMergeThem()
+        throws IOException, ApiGatewayException {
+        var existingIdentifier = new AdditionalIdentifier("existing-source", "existing-value");
+        var publicationWithIdentifiers = randomNonDegreePublicationWithPublisher().copy()
+                                             .withAdditionalIdentifiers(Set.of(existingIdentifier))
+                                             .build();
+        var userInstance = UserInstance.fromPublication(publicationWithIdentifiers);
+        var savedPublication = Resource.fromPublication(publicationWithIdentifiers)
+                                   .persistNew(resourceService, userInstance);
+
+        var newIdentifier = new AdditionalIdentifier("new-source", "new-value");
+        var publicationUpdate = savedPublication.copy()
+                                    .withAdditionalIdentifiers(Set.of(existingIdentifier, newIdentifier))
+                                    .build();
+
+        var event = importerUpdatesPublication(publicationUpdate, customerId,
+                                               savedPublication.getResourceOwner().getOwnerAffiliation(),
+                                               MANAGE_IMPORT, MANAGE_RESOURCES_STANDARD);
+
+        updatePublicationHandler.handleRequest(event, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
+        var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
+        assertThat(body.getAdditionalIdentifiers(), hasItem(existingIdentifier));
+        assertThat(body.getAdditionalIdentifiers(), hasItem(newIdentifier));
+    }
+
+    @Test
     void shouldNotRequireManageImportWhenNoNewAdditionalIdentifiersSent()
         throws IOException, ApiGatewayException {
         var savedPublication = createAndPersistNonDegreePublication();
@@ -2769,6 +2798,29 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
 
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
+    }
+
+    @Test
+    void shouldPreserveExistingAdditionalIdentifiersWhenUpdatingWithoutNewOnes()
+        throws IOException, ApiGatewayException {
+        var existingIdentifier = new AdditionalIdentifier("existing-source", "existing-value");
+        var publicationWithIdentifiers = randomNonDegreePublicationWithPublisher().copy()
+                                             .withAdditionalIdentifiers(Set.of(existingIdentifier))
+                                             .build();
+        var userInstance = UserInstance.fromPublication(publicationWithIdentifiers);
+        var savedPublication = Resource.fromPublication(publicationWithIdentifiers)
+                                   .persistNew(resourceService, userInstance);
+
+        var publicationUpdate = updateTitle(savedPublication);
+
+        var event = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+
+        updatePublicationHandler.handleRequest(event, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
+        var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
+        assertThat(body.getAdditionalIdentifiers(), hasItem(existingIdentifier));
     }
 
     private InputStream importerUpdatesPublication(Publication publication, URI customerId,
