@@ -19,9 +19,9 @@ public final class ImporterGrantStrategy extends PublicationStrategyBase impleme
             return false;
         }
 
-        return switch (permission) {
-            case ADD_ADDITIONAL_IDENTIFIERS -> hasAccessRight(MANAGE_IMPORT);
-            default -> false;
-        };
+        if (permission == PublicationOperation.ADD_ADDITIONAL_IDENTIFIERS) {
+            return hasAccessRight(MANAGE_IMPORT);
+        }
+        return false;
     }
 }
