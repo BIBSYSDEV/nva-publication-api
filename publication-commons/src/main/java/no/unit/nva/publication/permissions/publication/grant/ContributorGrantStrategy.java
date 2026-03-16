@@ -34,7 +34,8 @@ public final class ContributorGrantStrategy extends PublicationStrategyBase impl
                  TERMINATE,
                  DELETE,
                  READ_HIDDEN_FILES,
-                 APPROVE_FILES -> false;
+                 APPROVE_FILES,
+                 ADD_ADDITIONAL_IDENTIFIERS -> false;
         };
     }
 

@@ -21,7 +21,8 @@ public enum PublicationOperation {
     APPROVE_FILES("approve-files"),
     SUPPORT_REQUEST_CREATE("support-request-create"),
     SUPPORT_REQUEST_APPROVE("support-request-approve"),
-    UPLOAD_FILE("upload-file");
+    UPLOAD_FILE("upload-file"),
+    ADD_ADDITIONAL_IDENTIFIERS("add-additional-identifiers");
 
     public static final String ERROR_MESSAGE_TEMPLATE = "%s not a valid AllowedOperation, expected one of: %s";
     public static final String DELIMITER = ", ";

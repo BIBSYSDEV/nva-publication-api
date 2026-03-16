@@ -45,6 +45,7 @@ import static no.unit.nva.testutils.HandlerRequestBuilder.SCOPE_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.apigateway.AccessRight.MANAGE_IMPORT;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DOI;
 import static nva.commons.apigateway.AccessRight.MANAGE_NVI_CANDIDATES;
@@ -120,6 +121,7 @@ import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.CuratingInstitution;
@@ -2460,10 +2462,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .build();
     }
 
-    private URI randomCustomerId() {
-        return UriWrapper.fromHost(ENVIRONMENT.readEnv(API_HOST_KEY)).addChild("customer").addChild(randomUUID().toString()).getUri();
-    }
-
     private InputStream contributorUpdatesPublicationWithoutHavingRights(Publication publicationUpdate)
         throws JsonProcessingException {
         var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
@@ -2681,6 +2679,110 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                    .withAccessRights(customerId, MANAGE_PUBLISHING_REQUESTS, MANAGE_DOI, SUPPORT,
                                      MANAGE_RESOURCES_STANDARD)
                    .withTopLevelCristinOrgId(randomUri())
+                   .withPersonCristinId(randomUri())
+                   .build();
+    }
+
+    @Test
+    void shouldAllowUserWithManageImportToAddAdditionalIdentifiers()
+        throws IOException, ApiGatewayException {
+        var savedPublication = createAndPersistNonDegreePublication();
+        var newIdentifier = new AdditionalIdentifier("test-source", "test-value-123");
+        var publicationUpdate = savedPublication.copy()
+                                    .withAdditionalIdentifiers(Set.of(newIdentifier))
+                                    .build();
+
+        var event = importerUpdatesPublication(publicationUpdate, customerId,
+                                               savedPublication.getResourceOwner().getOwnerAffiliation(),
+                                               MANAGE_IMPORT, MANAGE_RESOURCES_STANDARD);
+
+        updatePublicationHandler.handleRequest(event, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
+
+        var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
+        assertThat(body.getAdditionalIdentifiers(), hasItem(newIdentifier));
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenUserWithoutManageImportSendsAdditionalIdentifiers()
+        throws IOException, ApiGatewayException {
+        var savedPublication = createAndPersistNonDegreePublication();
+        var newIdentifier = new AdditionalIdentifier("test-source", "test-value-123");
+        var publicationUpdate = savedPublication.copy()
+                                    .withAdditionalIdentifiers(Set.of(newIdentifier))
+                                    .build();
+
+        var event = importerUpdatesPublication(publicationUpdate, customerId,
+                                               savedPublication.getResourceOwner().getOwnerAffiliation(),
+                                               MANAGE_RESOURCES_STANDARD);
+
+        updatePublicationHandler.handleRequest(event, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_UNAUTHORIZED)));
+    }
+
+    @Test
+    void shouldMergeAdditionalIdentifiersWithExistingOnes()
+        throws IOException, ApiGatewayException {
+        var existingIdentifier = new AdditionalIdentifier("existing-source", "existing-value");
+        var publicationWithIdentifiers = randomNonDegreePublicationWithPublisher().copy()
+                                             .withAdditionalIdentifiers(Set.of(existingIdentifier))
+                                             .build();
+        var userInstance = UserInstance.fromPublication(publicationWithIdentifiers);
+        var savedPublication = Resource.fromPublication(publicationWithIdentifiers)
+                                   .persistNew(resourceService, userInstance);
+
+        var newIdentifier = new AdditionalIdentifier("new-source", "new-value");
+        var publicationUpdate = savedPublication.copy()
+                                    .withAdditionalIdentifiers(Set.of(newIdentifier))
+                                    .build();
+
+        var event = importerUpdatesPublication(publicationUpdate, customerId,
+                                               savedPublication.getResourceOwner().getOwnerAffiliation(),
+                                               MANAGE_IMPORT, MANAGE_RESOURCES_STANDARD);
+
+        updatePublicationHandler.handleRequest(event, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
+        var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
+        assertThat(body.getAdditionalIdentifiers(), hasItem(existingIdentifier));
+        assertThat(body.getAdditionalIdentifiers(), hasItem(newIdentifier));
+    }
+
+    @Test
+    void shouldNotRequireManageImportWhenNoNewAdditionalIdentifiersSent()
+        throws IOException, ApiGatewayException {
+        var savedPublication = createAndPersistNonDegreePublication();
+        var publicationUpdate = updateTitle(savedPublication);
+
+        var event = curatorWithAccessRightsUpdatesPublication(publicationUpdate, customerId,
+                                                              savedPublication.getResourceOwner()
+                                                                  .getOwnerAffiliation(),
+                                                              MANAGE_RESOURCES_STANDARD,
+                                                              MANAGE_PUBLISHING_REQUESTS);
+
+        updatePublicationHandler.handleRequest(event, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
+
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_OK)));
+    }
+
+    private InputStream importerUpdatesPublication(Publication publication, URI customerId,
+                                                   URI topLevelCristinOrgId,
+                                                   AccessRight... accessRights)
+        throws JsonProcessingException {
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString());
+        return new HandlerRequestBuilder<Publication>(restApiMapper)
+                   .withUserName(randomString())
+                   .withPathParameters(pathParameters)
+                   .withCurrentCustomer(customerId)
+                   .withBody(publication)
+                   .withAccessRights(customerId, accessRights)
+                   .withTopLevelCristinOrgId(topLevelCristinOrgId)
                    .withPersonCristinId(randomUri())
                    .build();
     }

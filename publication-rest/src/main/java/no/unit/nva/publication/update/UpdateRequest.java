@@ -13,7 +13,7 @@ public interface UpdateRequest {
 
     AssociatedArtifactList getAssociatedArtifacts();
 
-    void authorize(PublicationPermissions permissions) throws UnauthorizedException;
+    void authorize(PublicationPermissions permissions, Resource existingResource) throws UnauthorizedException;
 
     SortableIdentifier getIdentifier();
 }

@@ -30,7 +30,8 @@ public final class TrustedThirdPartyGrantStrategy extends PublicationStrategyBas
                  PUBLISHING_REQUEST_CREATE,
                  APPROVE_FILES,
                  SUPPORT_REQUEST_CREATE,
-                 SUPPORT_REQUEST_APPROVE -> false;
+                 SUPPORT_REQUEST_APPROVE,
+                 ADD_ADDITIONAL_IDENTIFIERS -> false;
         };
     }
 
