@@ -17,7 +17,7 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 class ImporterPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
     private static List<AccessRight> getAccessRightsForImporter() {
-        return List.of(AccessRight.MANAGE_IMPORT, AccessRight.MANAGE_RESOURCES_STANDARD);
+        return List.of(AccessRight.MANAGE_IMPORT, AccessRight.MANAGE_RESOURCES_ALL);
     }
 
     @ParameterizedTest(name = "Should allow importer {0} operation on resources belonging to the institution")

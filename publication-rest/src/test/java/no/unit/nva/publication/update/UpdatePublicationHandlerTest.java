@@ -2694,7 +2694,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var event = importerUpdatesPublication(publicationUpdate, customerId,
                                                savedPublication.getResourceOwner().getOwnerAffiliation(),
-                                               MANAGE_IMPORT, MANAGE_RESOURCES_STANDARD);
+                                               MANAGE_IMPORT, MANAGE_RESOURCES_ALL);
 
         updatePublicationHandler.handleRequest(event, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
@@ -2716,7 +2716,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var event = importerUpdatesPublication(publicationUpdate, customerId,
                                                savedPublication.getResourceOwner().getOwnerAffiliation(),
-                                               MANAGE_RESOURCES_STANDARD);
+                                               MANAGE_RESOURCES_ALL);
 
         updatePublicationHandler.handleRequest(event, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -2742,7 +2742,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var event = importerUpdatesPublication(publicationUpdate, customerId,
                                                savedPublication.getResourceOwner().getOwnerAffiliation(),
-                                               MANAGE_IMPORT, MANAGE_RESOURCES_STANDARD);
+                                               MANAGE_IMPORT, MANAGE_RESOURCES_ALL);
 
         updatePublicationHandler.handleRequest(event, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
@@ -2771,7 +2771,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         var event = importerUpdatesPublication(publicationUpdate, customerId,
                                                savedPublication.getResourceOwner().getOwnerAffiliation(),
-                                               MANAGE_IMPORT, MANAGE_RESOURCES_STANDARD);
+                                               MANAGE_IMPORT, MANAGE_RESOURCES_ALL);
 
         updatePublicationHandler.handleRequest(event, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
