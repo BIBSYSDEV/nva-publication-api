@@ -15,10 +15,6 @@ public final class ImporterGrantStrategy extends PublicationStrategyBase impleme
 
     @Override
     public boolean allowsAction(PublicationOperation permission) {
-        if (!userRelatesToPublication()) {
-            return false;
-        }
-
         if (permission == PublicationOperation.ADD_ADDITIONAL_IDENTIFIERS) {
             return hasAccessRight(MANAGE_IMPORT);
         }

@@ -87,10 +87,10 @@ class ImporterPermissionStrategyTest extends PublicationPermissionStrategyTest {
                                    .allowsAction(operation));
     }
 
-    @ParameterizedTest(name = "Should deny importer {0} when user is not related to publication")
+    @ParameterizedTest(name = "Should allow importer {0} even when user is at different institution")
     @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
         names = {"ADD_ADDITIONAL_IDENTIFIERS"})
-    void shouldDenyImporterNotRelatedToPublication(PublicationOperation operation)
+    void shouldAllowImporterAtDifferentInstitution(PublicationOperation operation)
         throws JsonProcessingException, UnauthorizedException {
 
         var importerUsername = randomString();
@@ -102,8 +102,8 @@ class ImporterPermissionStrategyTest extends PublicationPermissionStrategyTest {
                                                 cristinId, randomUri());
         var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        Assertions.assertFalse(PublicationPermissions
-                                   .create(Resource.fromPublication(publication), userInstance)
-                                   .allowsAction(operation));
+        Assertions.assertTrue(PublicationPermissions
+                                  .create(Resource.fromPublication(publication), userInstance)
+                                  .allowsAction(operation));
     }
 }
