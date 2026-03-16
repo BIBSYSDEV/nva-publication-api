@@ -224,17 +224,18 @@ public class UpdatePublicationRequest
                && Objects.equals(importDetails, that.importDetails);
     }
 
+    private boolean hasAdditionalIdentifiers() {
+        return nonNull(additionalIdentifiers) && !additionalIdentifiers.isEmpty();
+    }
+
     private boolean hasNewAdditionalIdentifiers(Resource existingResource) {
-        if (isNull(additionalIdentifiers) || additionalIdentifiers.isEmpty()) {
-            return false;
-        }
-        var existingIdentifiers = existingResource.getAdditionalIdentifiers();
-        return !existingIdentifiers.containsAll(additionalIdentifiers);
+        return hasAdditionalIdentifiers()
+               && !existingResource.getAdditionalIdentifiers().containsAll(additionalIdentifiers);
     }
 
     private Set<AdditionalIdentifierBase> mergeAdditionalIdentifiers(
         Set<AdditionalIdentifierBase> existingIdentifiers) {
-        if (isNull(additionalIdentifiers) || additionalIdentifiers.isEmpty()) {
+        if (!hasAdditionalIdentifiers()) {
             return existingIdentifiers;
         }
         var merged = new HashSet<>(existingIdentifiers);
