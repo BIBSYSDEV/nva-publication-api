@@ -8,6 +8,7 @@ plugins {
 spotless {
     if (plugins.hasPlugin('java')) {
         java {
+            targetExclude('build/generated/**')
             toggleOffOn() // Ignores sections between `spotless:off` / `spotless:on`
             googleJavaFormat().reflowLongStrings().formatJavadoc(true).reorderImports(true)
         }
