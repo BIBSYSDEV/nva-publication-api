@@ -39,14 +39,13 @@ spotless {
         prettier().config(['printWidth': 120])
         endWithNewline()
     }
-    enforceCheck = false // Temporarily disable checking during build until the project is reformatted
 }
 
 // Reformat project before build
-//tasks.named('build').configure {
-//    dependsOn('spotlessApply')
-//}
-//
-//tasks.named('test').configure {
-//    dependsOn('spotlessApply')
-//}
+tasks.named('build').configure {
+    dependsOn('spotlessApply')
+}
+
+tasks.named('test').configure {
+    dependsOn('spotlessApply')
+}
