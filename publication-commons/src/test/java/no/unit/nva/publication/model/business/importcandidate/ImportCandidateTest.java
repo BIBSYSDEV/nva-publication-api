@@ -7,6 +7,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
@@ -23,36 +24,39 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class ImportCandidateTest {
 
-    public static Stream<Arguments> importStatuses() {
-        return Stream.of(Arguments.of(ImportStatusFactory.createImported(randomString(), SortableIdentifier.next())),
-                Arguments.of(ImportStatusFactory.createNotApplicable(randomPerson(), randomString())));
-    }
+  public static Stream<Arguments> importStatuses() {
+    return Stream.of(
+        Arguments.of(ImportStatusFactory.createImported(randomString(), SortableIdentifier.next())),
+        Arguments.of(ImportStatusFactory.createNotApplicable(randomPerson(), randomString())));
+  }
 
-    private static Username randomPerson() {
-        return new Username(randomString());
-    }
+  private static Username randomPerson() {
+    return new Username(randomString());
+  }
 
-    @Test
-    void shouldDoRoundTripWithoutLosingData() throws JsonProcessingException {
-        var randomImportCandidate = randomImportCandidate();
-        var json = randomImportCandidate.toString();
-        var regeneratedImportCandidate = JsonUtils.dtoObjectMapper.readValue(json, ImportCandidate.class);
-        assertThat(regeneratedImportCandidate, is(equalTo(regeneratedImportCandidate)));
-    }
+  @Test
+  void shouldDoRoundTripWithoutLosingData() throws JsonProcessingException {
+    var randomImportCandidate = randomImportCandidate();
+    var json = randomImportCandidate.toString();
+    var regeneratedImportCandidate =
+        JsonUtils.dtoObjectMapper.readValue(json, ImportCandidate.class);
+    assertThat(regeneratedImportCandidate, is(equalTo(regeneratedImportCandidate)));
+  }
 
-    @ParameterizedTest
-    @DisplayName("should be possible to swap imported status to other status")
-    @MethodSource("importStatuses")
-    void shouldBePossibleToTransitionLegalImportStatus(ImportStatus importStatus) {
-        var randomImportCandidate = randomImportCandidate();
-        randomImportCandidate.setImportStatus(importStatus);
-        assertThat(randomImportCandidate.getImportStatus(), is(equalTo(importStatus)));
-    }
+  @ParameterizedTest
+  @DisplayName("should be possible to swap imported status to other status")
+  @MethodSource("importStatuses")
+  void shouldBePossibleToTransitionLegalImportStatus(ImportStatus importStatus) {
+    var randomImportCandidate = randomImportCandidate();
+    randomImportCandidate.setImportStatus(importStatus);
+    assertThat(randomImportCandidate.getImportStatus(), is(equalTo(importStatus)));
+  }
 
-    @Test
-    void shouldCopy() {
-        var randomImportCandidate = randomImportCandidate();
-        var copy = randomImportCandidate.copy().withAssociatedArtifacts(randomAssociatedArtifacts()).build();
-        assertThat(randomImportCandidate, is(not(equalTo(copy))));
-    }
+  @Test
+  void shouldCopy() {
+    var randomImportCandidate = randomImportCandidate();
+    var copy =
+        randomImportCandidate.copy().withAssociatedArtifacts(randomAssociatedArtifacts()).build();
+    assertThat(randomImportCandidate, is(not(equalTo(copy))));
+  }
 }

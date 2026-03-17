@@ -17,6 +17,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomFinalizedFiles;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomNonFinalizedFiles;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+
 import cucumber.permissions.PermissionsRole;
 import cucumber.permissions.enums.ChannelClaimConfig;
 import cucumber.permissions.enums.PublicationFileConfig;
@@ -61,270 +62,287 @@ import nva.commons.apigateway.AccessRight;
 
 public class PublicationScenarioContext {
 
-    public static final URI CREATING_INSTITUTION = randomUri();
-    public static final URI CURATING_INSTITUTION = randomUri();
-    public static final URI NON_CURATING_INSTITUTION = randomUri();
-    public static final String USER_NAME = randomString();
-    private static final URI USER_CRISTIN_ID = randomUri();
-    private static final List<String> DEGREE_SCOPE = List.of("DegreeLicentiate",
-                                                             "DegreeBachelor",
-                                                             "DegreeMaster",
-                                                             "DegreePhd",
-                                                             "ArtisticDegreePhd",
-                                                             "OtherStudentWork");
-    private static final String INSPERA = "inspera";
+  public static final URI CREATING_INSTITUTION = randomUri();
+  public static final URI CURATING_INSTITUTION = randomUri();
+  public static final URI NON_CURATING_INSTITUTION = randomUri();
+  public static final String USER_NAME = randomString();
+  private static final URI USER_CRISTIN_ID = randomUri();
+  private static final List<String> DEGREE_SCOPE =
+      List.of(
+          "DegreeLicentiate",
+          "DegreeBachelor",
+          "DegreeMaster",
+          "DegreePhd",
+          "ArtisticDegreePhd",
+          "OtherStudentWork");
+  private static final String INSPERA = "inspera";
 
-    private PublicationTypeConfig publicationTypeConfig = PublicationTypeConfig.PUBLICATION;
-    private boolean isImportedDegree;
-    private PublicationStatus publicationStatus = PublicationStatus.PUBLISHED;
-    private PublicationFileConfig publicationFileConfig = PublicationFileConfig.NO_FILES;
-    private ChannelClaimConfig channelClaimConfig = ChannelClaimConfig.NON_CLAIMED;
-    private ChannelPolicy channelClaimPublishingPolicy;
-    private ChannelPolicy channelClaimEditingPolicy;
-    private Set<PermissionsRole> roles = new HashSet<>();
-    private UserInstitutionConfig userInstitutionConfig = BELONGS_TO_NON_CURATING_INSTITUTION;
-    private PublicationOperation operation;
+  private PublicationTypeConfig publicationTypeConfig = PublicationTypeConfig.PUBLICATION;
+  private boolean isImportedDegree;
+  private PublicationStatus publicationStatus = PublicationStatus.PUBLISHED;
+  private PublicationFileConfig publicationFileConfig = PublicationFileConfig.NO_FILES;
+  private ChannelClaimConfig channelClaimConfig = ChannelClaimConfig.NON_CLAIMED;
+  private ChannelPolicy channelClaimPublishingPolicy;
+  private ChannelPolicy channelClaimEditingPolicy;
+  private Set<PermissionsRole> roles = new HashSet<>();
+  private UserInstitutionConfig userInstitutionConfig = BELONGS_TO_NON_CURATING_INSTITUTION;
+  private PublicationOperation operation;
 
-    public PublicationTypeConfig getPublicationTypeConfig() {
-        return publicationTypeConfig;
+  public PublicationTypeConfig getPublicationTypeConfig() {
+    return publicationTypeConfig;
+  }
+
+  public void setPublicationTypeConfig(PublicationTypeConfig publicationTypeConfig) {
+    this.publicationTypeConfig = publicationTypeConfig;
+  }
+
+  public boolean isImportedDegree() {
+    return isImportedDegree;
+  }
+
+  public void setIsImportedDegree(boolean importedDegree) {
+    isImportedDegree = importedDegree;
+  }
+
+  public PublicationStatus getPublicationStatus() {
+    return publicationStatus;
+  }
+
+  public PublicationFileConfig getPublicationFileConfig() {
+    return publicationFileConfig;
+  }
+
+  public void setPublicationFileConfig(PublicationFileConfig publicationFileConfig) {
+    this.publicationFileConfig = publicationFileConfig;
+  }
+
+  public void setPublicationStatus(PublicationStatus status) {
+    this.publicationStatus = status;
+  }
+
+  public ChannelClaimConfig getChannelClaimConfig() {
+    return channelClaimConfig;
+  }
+
+  public void setChannelClaimConfig(ChannelClaimConfig channelClaimConfig) {
+    this.channelClaimConfig = channelClaimConfig;
+  }
+
+  public ChannelPolicy getChannelClaimPublishingPolicy() {
+    return nonNull(channelClaimPublishingPolicy)
+        ? channelClaimPublishingPolicy
+        : ChannelPolicy.EVERYONE;
+  }
+
+  public void setChannelClaimPublishingPolicy(ChannelPolicy channelClaimPublishingPolicy) {
+    this.channelClaimPublishingPolicy = channelClaimPublishingPolicy;
+  }
+
+  public ChannelPolicy getChannelClaimEditingPolicy() {
+    return nonNull(channelClaimEditingPolicy)
+        ? channelClaimEditingPolicy
+        : ChannelPolicy.OWNER_ONLY;
+  }
+
+  public void setChannelClaimEditingPolicy(ChannelPolicy channelClaimEditingPolicy) {
+    this.channelClaimEditingPolicy = channelClaimEditingPolicy;
+  }
+
+  public Set<PermissionsRole> getRoles() {
+    return roles;
+  }
+
+  public void setRoles(Set<PermissionsRole> roles) {
+    this.roles = roles;
+  }
+
+  public UserInstitutionConfig getUserInstitutionConfig() {
+    return userInstitutionConfig;
+  }
+
+  public void setUserInstitutionConfig(UserInstitutionConfig userInstitutionConfig) {
+    this.userInstitutionConfig = userInstitutionConfig;
+  }
+
+  public PublicationOperation getOperation() {
+    return operation;
+  }
+
+  public void setOperation(PublicationOperation operation) {
+    this.operation = operation;
+  }
+
+  public PublicationPermissions getPublicationPermissions() {
+    var resource = createResource();
+    var userInstance = getUserInstance();
+
+    return new PublicationPermissions(resource, userInstance);
+  }
+
+  public Resource createResource() {
+    var publication =
+        PublicationTypeConfig.DEGREE.equals(getPublicationTypeConfig())
+            ? randomDegreePublication()
+            : randomNonDegreePublication();
+    var resource = Resource.fromPublication(publication);
+
+    return resource
+        .copy()
+        .withStatus(getPublicationStatus())
+        .withPublisher(Organization.fromUri(CREATING_INSTITUTION))
+        .withResourceOwner(createOwner())
+        .withCuratingInstitutions(createCuratingInstitutions())
+        .withPublicationChannels(generatePublicationChannelsForPublisher(resource))
+        .withEntityDescription(createEntityDescription(resource))
+        .withAdditionalIdentifiers(addAdditionalIdentifiers(resource))
+        .withAssociatedArtifactsList(createAssociatedArtifacts())
+        .build();
+  }
+
+  // TODO: Edit so it is only instantiated once
+  public UserInstance getUserInstance() {
+    if (roles.contains(UNAUTHENTICATED)) {
+      return null;
+    }
+    if (roles.contains(AUTHENTICATED_BUT_NO_ACCESS)) {
+      return UserInstance.create(
+          USER_NAME,
+          NON_CURATING_INSTITUTION,
+          USER_CRISTIN_ID,
+          List.of(),
+          NON_CURATING_INSTITUTION);
+    }
+    if (roles.contains(RELATED_EXTERNAL_CLIENT)) {
+      return UserInstance.createExternalUser(
+          new ResourceOwner(new Username(USER_NAME), CREATING_INSTITUTION),
+          CREATING_INSTITUTION,
+          ThirdPartySystem.OTHER);
+    }
+    if (roles.contains(NOT_RELATED_EXTERNAL_CLIENT)) {
+      return UserInstance.createExternalUser(
+          new ResourceOwner(new Username(USER_NAME), NON_CURATING_INSTITUTION),
+          NON_CURATING_INSTITUTION,
+          ThirdPartySystem.OTHER);
     }
 
-    public void setPublicationTypeConfig(
-        PublicationTypeConfig publicationTypeConfig) {
-        this.publicationTypeConfig = publicationTypeConfig;
-    }
-
-    public boolean isImportedDegree() {
-        return isImportedDegree;
-    }
-
-    public void setIsImportedDegree(boolean importedDegree) {
-        isImportedDegree = importedDegree;
-    }
-
-    public PublicationStatus getPublicationStatus() {
-        return publicationStatus;
-    }
-
-    public PublicationFileConfig getPublicationFileConfig() {
-        return publicationFileConfig;
-    }
-
-    public void setPublicationFileConfig(PublicationFileConfig publicationFileConfig) {
-        this.publicationFileConfig = publicationFileConfig;
-    }
-
-    public void setPublicationStatus(PublicationStatus status) {
-        this.publicationStatus = status;
-    }
-
-    public ChannelClaimConfig getChannelClaimConfig() {
-        return channelClaimConfig;
-    }
-
-    public void setChannelClaimConfig(ChannelClaimConfig channelClaimConfig) {
-        this.channelClaimConfig = channelClaimConfig;
-    }
-
-    public ChannelPolicy getChannelClaimPublishingPolicy() {
-        return nonNull(channelClaimPublishingPolicy) ? channelClaimPublishingPolicy : ChannelPolicy.EVERYONE;
-    }
-
-    public void setChannelClaimPublishingPolicy(
-        ChannelPolicy channelClaimPublishingPolicy) {
-        this.channelClaimPublishingPolicy = channelClaimPublishingPolicy;
-    }
-
-    public ChannelPolicy getChannelClaimEditingPolicy() {
-        return nonNull(channelClaimEditingPolicy) ? channelClaimEditingPolicy : ChannelPolicy.OWNER_ONLY;
-    }
-
-    public void setChannelClaimEditingPolicy(
-        ChannelPolicy channelClaimEditingPolicy) {
-        this.channelClaimEditingPolicy = channelClaimEditingPolicy;
-    }
-
-    public Set<PermissionsRole> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Set<PermissionsRole> roles) {
-        this.roles = roles;
-    }
-
-    public UserInstitutionConfig getUserInstitutionConfig() {
-        return userInstitutionConfig;
-    }
-
-    public void setUserInstitutionConfig(
-        UserInstitutionConfig userInstitutionConfig) {
-        this.userInstitutionConfig = userInstitutionConfig;
-    }
-
-    public PublicationOperation getOperation() {
-        return operation;
-    }
-
-    public void setOperation(PublicationOperation operation) {
-        this.operation = operation;
-    }
-
-    public PublicationPermissions getPublicationPermissions() {
-        var resource = createResource();
-        var userInstance = getUserInstance();
-
-        return new PublicationPermissions(resource, userInstance);
-    }
-
-    public Resource createResource() {
-        var publication = PublicationTypeConfig.DEGREE.equals(getPublicationTypeConfig())
-                              ? randomDegreePublication()
-                              : randomNonDegreePublication();
-        var resource = Resource.fromPublication(publication);
-
-        return resource.copy()
-                   .withStatus(getPublicationStatus())
-                   .withPublisher(Organization.fromUri(CREATING_INSTITUTION))
-                   .withResourceOwner(createOwner())
-                   .withCuratingInstitutions(createCuratingInstitutions())
-                   .withPublicationChannels(generatePublicationChannelsForPublisher(resource))
-                   .withEntityDescription(createEntityDescription(resource))
-                   .withAdditionalIdentifiers(addAdditionalIdentifiers(resource))
-                   .withAssociatedArtifactsList(createAssociatedArtifacts())
-                   .build();
-    }
-
-    // TODO: Edit so it is only instantiated once
-    public UserInstance getUserInstance() {
-        if (roles.contains(UNAUTHENTICATED)) {
-            return null;
-        }
-        if (roles.contains(AUTHENTICATED_BUT_NO_ACCESS)) {
-            return UserInstance.create(USER_NAME, NON_CURATING_INSTITUTION, USER_CRISTIN_ID, List.of(),
-                                       NON_CURATING_INSTITUTION);
-        }
-        if (roles.contains(RELATED_EXTERNAL_CLIENT)) {
-            return UserInstance.createExternalUser(
-                new ResourceOwner(new Username(USER_NAME), CREATING_INSTITUTION), CREATING_INSTITUTION, ThirdPartySystem.OTHER);
-        }
-        if (roles.contains(NOT_RELATED_EXTERNAL_CLIENT)) {
-            return UserInstance.createExternalUser(
-                new ResourceOwner(new Username(USER_NAME), NON_CURATING_INSTITUTION), NON_CURATING_INSTITUTION, ThirdPartySystem.OTHER);
-        }
-
-        var accessRights = getAccessRights(getRoles()).stream().toList();
-        var userInstitution = switch (getUserInstitutionConfig()) {
-            case BELONGS_TO_CREATING_INSTITUTION -> CREATING_INSTITUTION;
-            case BELONGS_TO_CURATING_INSTITUTION -> CURATING_INSTITUTION;
-            case BELONGS_TO_NON_CURATING_INSTITUTION -> NON_CURATING_INSTITUTION;
+    var accessRights = getAccessRights(getRoles()).stream().toList();
+    var userInstitution =
+        switch (getUserInstitutionConfig()) {
+          case BELONGS_TO_CREATING_INSTITUTION -> CREATING_INSTITUTION;
+          case BELONGS_TO_CURATING_INSTITUTION -> CURATING_INSTITUTION;
+          case BELONGS_TO_NON_CURATING_INSTITUTION -> NON_CURATING_INSTITUTION;
         };
-        return UserInstance.create(USER_NAME, randomUri(), USER_CRISTIN_ID, accessRights, userInstitution);
+    return UserInstance.create(
+        USER_NAME, randomUri(), USER_CRISTIN_ID, accessRights, userInstitution);
+  }
+
+  private HashSet<CuratingInstitution> createCuratingInstitutions() {
+    var curatingInstitutions = new HashSet<CuratingInstitution>();
+    curatingInstitutions.add(new CuratingInstitution(CREATING_INSTITUTION, Set.of()));
+
+    if (BELONGS_TO_CURATING_INSTITUTION.equals(getUserInstitutionConfig())) {
+      curatingInstitutions.add(new CuratingInstitution(CURATING_INSTITUTION, Set.of()));
     }
 
-    private HashSet<CuratingInstitution> createCuratingInstitutions() {
-        var curatingInstitutions = new HashSet<CuratingInstitution>();
-        curatingInstitutions.add(new CuratingInstitution(CREATING_INSTITUTION, Set.of()));
+    return curatingInstitutions;
+  }
 
-        if (BELONGS_TO_CURATING_INSTITUTION.equals(getUserInstitutionConfig())) {
-            curatingInstitutions.add(new CuratingInstitution(CURATING_INSTITUTION, Set.of()));
-        }
+  private static HashSet<AccessRight> getAccessRights(Set<PermissionsRole> roles) {
+    return roleToAccessRightsMap.entrySet().stream()
+        .filter(entry -> roles.contains(entry.getKey()))
+        .map(Map.Entry::getValue)
+        .flatMap(Collection::stream)
+        .collect(Collectors.toCollection(HashSet::new));
+  }
 
-        return curatingInstitutions;
+  private Owner createOwner() {
+    var userIsPublicationCreator = getRoles().contains(CREATOR) && nonNull(getUserInstance());
+    return userIsPublicationCreator
+        ? new Owner(
+            new User(getUserInstance().getUsername()), getUserInstance().getTopLevelOrgCristinId())
+        : new Owner(new User(randomString()), CREATING_INSTITUTION);
+  }
+
+  private List<Contributor> createContributors() {
+    var contributors = new ArrayList<Contributor>();
+
+    var userIsContributor = getRoles().contains(CONTRIBUTOR) && nonNull(getUserInstance());
+    if (userIsContributor) {
+      var identity =
+          new Identity.Builder()
+              .withId(getUserInstance().getPersonCristinId())
+              .withName(getUserInstance().getUsername())
+              .build();
+      var affiliation = Organization.fromUri(getUserInstance().getTopLevelOrgCristinId());
+      contributors.add(
+          new Contributor.Builder()
+              .withAffiliations(List.of(affiliation))
+              .withIdentity(identity)
+              .withRole(new RoleType(Role.CREATOR))
+              .build());
     }
 
-    private static HashSet<AccessRight> getAccessRights(Set<PermissionsRole> roles) {
-        return roleToAccessRightsMap.entrySet().stream()
-                   .filter(entry -> roles.contains(entry.getKey()))
-                   .map(Map.Entry::getValue)
-                   .flatMap(Collection::stream)
-                   .collect(Collectors.toCollection(HashSet::new));
+    return contributors;
+  }
+
+  private EntityDescription createEntityDescription(Resource resource) {
+    return resource.getEntityDescription().copy().withContributors(createContributors()).build();
+  }
+
+  private Set<AdditionalIdentifierBase> addAdditionalIdentifiers(Resource resource) {
+    var additionalIdentifiers = new HashSet<>(resource.getAdditionalIdentifiers());
+    if (isImportedDegree()) {
+      additionalIdentifiers.add(new AdditionalIdentifier(INSPERA, randomString()));
+    }
+    return additionalIdentifiers;
+  }
+
+  private AssociatedArtifactList createAssociatedArtifacts() {
+    return switch (getPublicationFileConfig()) {
+      case NO_FILES -> AssociatedArtifactList.empty();
+      case NON_FINALIZED_FILES -> new AssociatedArtifactList(randomNonFinalizedFiles());
+      case FINALIZED_FILES -> new AssociatedArtifactList(randomFinalizedFiles());
+    };
+  }
+
+  private List<PublicationChannel> generatePublicationChannelsForPublisher(Resource resource) {
+    if (isNull(getUserInstance())) {
+      return List.of();
     }
 
-    private Owner createOwner() {
-        var userIsPublicationCreator = getRoles().contains(CREATOR) && nonNull(getUserInstance());
-        return userIsPublicationCreator
-                   ? new Owner(new User(getUserInstance().getUsername()), getUserInstance().getTopLevelOrgCristinId())
-                   : new Owner(new User(randomString()), CREATING_INSTITUTION);
+    if (ChannelClaimConfig.CLAIMED_BY_USERS_INSTITUTION.equals(getChannelClaimConfig())) {
+      return List.of(
+          createChannelClaimForPublisher(
+              resource.getIdentifier(), getUserInstance().getTopLevelOrgCristinId()));
     }
 
-    private List<Contributor> createContributors() {
-        var contributors = new ArrayList<Contributor>();
-
-        var userIsContributor = getRoles().contains(CONTRIBUTOR) && nonNull(getUserInstance());
-        if (userIsContributor) {
-            var identity = new Identity.Builder()
-                               .withId(getUserInstance().getPersonCristinId())
-                               .withName(getUserInstance().getUsername())
-                               .build();
-            var affiliation = Organization.fromUri(getUserInstance().getTopLevelOrgCristinId());
-            contributors.add(new Contributor.Builder()
-                                 .withAffiliations(List.of(affiliation))
-                                 .withIdentity(identity)
-                                 .withRole(new RoleType(Role.CREATOR))
-                                 .build());
-        }
-
-        return contributors;
+    if (ChannelClaimConfig.CLAIMED_BY_NOT_USERS_INSTITUTION.equals(getChannelClaimConfig())) {
+      var claimedBy =
+          getUserInstance().getTopLevelOrgCristinId() != NON_CURATING_INSTITUTION
+              ? NON_CURATING_INSTITUTION
+              : CURATING_INSTITUTION;
+      return List.of(createChannelClaimForPublisher(resource.getIdentifier(), claimedBy));
     }
 
-    private EntityDescription createEntityDescription(Resource resource) {
-        return resource.getEntityDescription().copy()
-                   .withContributors(createContributors())
-                   .build();
-    }
+    return List.of();
+  }
 
-    private Set<AdditionalIdentifierBase> addAdditionalIdentifiers(Resource resource) {
-        var additionalIdentifiers = new HashSet<>(resource.getAdditionalIdentifiers());
-        if (isImportedDegree()) {
-            additionalIdentifiers.add(new AdditionalIdentifier(INSPERA, randomString()));
-        }
-        return additionalIdentifiers;
-    }
+  private PublicationChannel createChannelClaimForPublisher(
+      SortableIdentifier resourceIdentifier, URI organizationId) {
+    return new ClaimedPublicationChannel(
+        randomUri(),
+        organizationId,
+        organizationId,
+        createConstraint(),
+        ChannelType.PUBLISHER,
+        SortableIdentifier.next(),
+        resourceIdentifier,
+        Instant.now(),
+        Instant.now());
+  }
 
-    private AssociatedArtifactList createAssociatedArtifacts() {
-        return switch (getPublicationFileConfig()) {
-            case NO_FILES -> AssociatedArtifactList.empty();
-            case NON_FINALIZED_FILES -> new AssociatedArtifactList(randomNonFinalizedFiles());
-            case FINALIZED_FILES -> new AssociatedArtifactList(randomFinalizedFiles());
-        };
-    }
-
-    private List<PublicationChannel> generatePublicationChannelsForPublisher(Resource resource) {
-        if (isNull(getUserInstance())) {
-            return List.of();
-        }
-
-        if (ChannelClaimConfig.CLAIMED_BY_USERS_INSTITUTION.equals(getChannelClaimConfig())) {
-            return List.of(
-                createChannelClaimForPublisher(resource.getIdentifier(), getUserInstance().getTopLevelOrgCristinId()));
-        }
-
-        if (ChannelClaimConfig.CLAIMED_BY_NOT_USERS_INSTITUTION.equals(getChannelClaimConfig())) {
-            var claimedBy = getUserInstance().getTopLevelOrgCristinId() != NON_CURATING_INSTITUTION
-                                ? NON_CURATING_INSTITUTION
-                                : CURATING_INSTITUTION;
-            return List.of(createChannelClaimForPublisher(resource.getIdentifier(), claimedBy));
-        }
-
-        return List.of();
-    }
-
-    private PublicationChannel createChannelClaimForPublisher(SortableIdentifier resourceIdentifier,
-                                                              URI organizationId) {
-        return new ClaimedPublicationChannel(randomUri(),
-                                             organizationId,
-                                             organizationId,
-                                             createConstraint(),
-                                             ChannelType.PUBLISHER,
-                                             SortableIdentifier.next(),
-                                             resourceIdentifier,
-                                             Instant.now(),
-                                             Instant.now());
-    }
-
-    private Constraint createConstraint() {
-        return new Constraint(getChannelClaimPublishingPolicy(),
-                              getChannelClaimEditingPolicy(),
-                              DEGREE_SCOPE);
-    }
+  private Constraint createConstraint() {
+    return new Constraint(
+        getChannelClaimPublishingPolicy(), getChannelClaimEditingPolicy(), DEGREE_SCOPE);
+  }
 }

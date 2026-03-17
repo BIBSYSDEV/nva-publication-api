@@ -7,24 +7,24 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FileDenyStrategy;
 import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
-public class DegreeEmbargoWriteDeleteDenyStrategy extends FileStrategyBase implements FileDenyStrategy {
+public class DegreeEmbargoWriteDeleteDenyStrategy extends FileStrategyBase
+    implements FileDenyStrategy {
 
-    public DegreeEmbargoWriteDeleteDenyStrategy(FileEntry file,
-                                                UserInstance userInstance,
-                                                Resource resource) {
-        super(file, userInstance, resource);
+  public DegreeEmbargoWriteDeleteDenyStrategy(
+      FileEntry file, UserInstance userInstance, Resource resource) {
+    super(file, userInstance, resource);
+  }
+
+  @Override
+  public boolean deniesAction(FileOperation permission) {
+    if (currentUserIsFileOwner() && !fileIsFinalized()) {
+      return false;
     }
 
-    @Override
-    public boolean deniesAction(FileOperation permission) {
-        if (currentUserIsFileOwner() && !fileIsFinalized()) {
-            return false;
-        }
+    return resourceIsDegree() && fileHasEmbargo() && isWriteOrDelete(permission) && isDeniedUser();
+  }
 
-        return resourceIsDegree() && fileHasEmbargo() && isWriteOrDelete(permission) && isDeniedUser();
-    }
-
-    private boolean isDeniedUser() {
-        return !(currentUserIsDegreeEmbargoFileCuratorForGivenFile() || isExternalClientWithRelation());
-    }
+  private boolean isDeniedUser() {
+    return !(currentUserIsDegreeEmbargoFileCuratorForGivenFile() || isExternalClientWithRelation());
+  }
 }

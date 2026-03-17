@@ -11,21 +11,22 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 
 public final class ImportCandidateEnricher {
 
-    private ImportCandidateEnricher() {
-    }
+  private ImportCandidateEnricher() {}
 
-    public static Resource createResourceToImport(RequestInfo requestInfo,
-                                                  CreatePublicationRequest request,
-                                                  ImportCandidate databaseVersion) throws UnauthorizedException {
-        var userInstance = UserInstance.fromRequestInfo(requestInfo);
+  public static Resource createResourceToImport(
+      RequestInfo requestInfo, CreatePublicationRequest request, ImportCandidate databaseVersion)
+      throws UnauthorizedException {
+    var userInstance = UserInstance.fromRequestInfo(requestInfo);
 
-        var resource = ImportCandidateToResourceConverter.convert(databaseVersion);
+    var resource = ImportCandidateToResourceConverter.convert(databaseVersion);
 
-        return resource.copy()
-            .withEntityDescription(request.getEntityDescription())
-            .withAssociatedArtifactsList(request.getAssociatedArtifacts())
-            .withPublisher(Organization.fromUri(userInstance.getCustomerId()))
-            .withResourceOwner(new Owner(userInstance.getUsername(), userInstance.getTopLevelOrgCristinId()))
-            .build();
-    }
+    return resource
+        .copy()
+        .withEntityDescription(request.getEntityDescription())
+        .withAssociatedArtifactsList(request.getAssociatedArtifacts())
+        .withPublisher(Organization.fromUri(userInstance.getCustomerId()))
+        .withResourceOwner(
+            new Owner(userInstance.getUsername(), userInstance.getTopLevelOrgCristinId()))
+        .build();
+  }
 }

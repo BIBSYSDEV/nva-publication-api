@@ -2,6 +2,7 @@ package no.unit.nva.publication.create.pia;
 
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static no.unit.nva.publication.create.pia.PiaUpdateRequest.toPiaRequest;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -17,76 +18,77 @@ import org.slf4j.LoggerFactory;
 
 public class PiaClient {
 
-    private static final Logger logger = LoggerFactory.getLogger(PiaClient.class);
+  private static final Logger logger = LoggerFactory.getLogger(PiaClient.class);
 
-    private static final String USERNAME_PASSWORD_DELIMITER = ":";
+  private static final String USERNAME_PASSWORD_DELIMITER = ":";
 
-    private static final String BASIC_AUTHORIZATION = "Basic %s";
+  private static final String BASIC_AUTHORIZATION = "Basic %s";
 
-    private static final String AUTHORIZATION = "Authorization";
-    private static final String HTTPS_SCHEME = "https://";
-    private static final String SENTRALIMPORT = "sentralimport";
-    private static final String AUTHORS = "authors";
-    private final URI piaUri;
-    private final HttpClient httpClient;
-    private final String authorization;
+  private static final String AUTHORIZATION = "Authorization";
+  private static final String HTTPS_SCHEME = "https://";
+  private static final String SENTRALIMPORT = "sentralimport";
+  private static final String AUTHORS = "authors";
+  private final URI piaUri;
+  private final HttpClient httpClient;
+  private final String authorization;
 
-    public PiaClient(PiaClientConfig config) {
-        this.piaUri = UriWrapper.fromUri(HTTPS_SCHEME + config.piaHost())
-                          .addChild(SENTRALIMPORT)
-                          .addChild(AUTHORS)
-                          .getUri();
-        this.httpClient = config.client();
-        this.authorization = createAuthorization(config.secretsReader(),
-                                                 config.piaUsernameKey(),
-                                                 config.piaPasswordKey(),
-                                                 config.piaSecretsNameEnvKey());
+  public PiaClient(PiaClientConfig config) {
+    this.piaUri =
+        UriWrapper.fromUri(HTTPS_SCHEME + config.piaHost())
+            .addChild(SENTRALIMPORT)
+            .addChild(AUTHORS)
+            .getUri();
+    this.httpClient = config.client();
+    this.authorization =
+        createAuthorization(
+            config.secretsReader(),
+            config.piaUsernameKey(),
+            config.piaPasswordKey(),
+            config.piaSecretsNameEnvKey());
+  }
+
+  public void updateContributor(List<Contributor> contributors, String scopusId) {
+    if (!contributors.isEmpty()) {
+      var payload = createPayload(contributors, scopusId);
+      var request = createRequest(payload.toString());
+      sendRequest(request);
     }
+  }
 
-    public void updateContributor(List<Contributor> contributors, String scopusId) {
-        if (!contributors.isEmpty()) {
-            var payload = createPayload(contributors, scopusId);
-            var request = createRequest(payload.toString());
-            sendRequest(request);
-        }
-    }
+  private static String createAuthorization(
+      SecretsReader secretsReader,
+      String piaUsernameKeyName,
+      String piaPasswordKeyName,
+      String piaSecretsName) {
+    var piaUserName = secretsReader.fetchSecret(piaSecretsName, piaUsernameKeyName);
+    var piaPassword = secretsReader.fetchSecret(piaSecretsName, piaPasswordKeyName);
+    var loginPassword = piaUserName + USERNAME_PASSWORD_DELIMITER + piaPassword;
+    return String.format(
+        BASIC_AUTHORIZATION, Base64.getEncoder().encodeToString(loginPassword.getBytes()));
+  }
 
-    private static String createAuthorization(SecretsReader secretsReader,
-                                              String piaUsernameKeyName,
-                                              String piaPasswordKeyName,
-                                              String piaSecretsName) {
-        var piaUserName = secretsReader.fetchSecret(piaSecretsName, piaUsernameKeyName);
-        var piaPassword = secretsReader.fetchSecret(piaSecretsName, piaPasswordKeyName);
-        var loginPassword = piaUserName + USERNAME_PASSWORD_DELIMITER + piaPassword;
-        return String.format(BASIC_AUTHORIZATION, Base64.getEncoder().encodeToString(loginPassword.getBytes()));
+  @SuppressWarnings("PMD.DoNotUseThreads")
+  private void sendRequest(HttpRequest request) {
+    try {
+      var response = httpClient.send(request, BodyHandlers.ofString());
+      if (response.statusCode() != HTTP_CREATED) {
+        logger.error("Updating PIA failed: {}", response);
+      }
+    } catch (Exception e) {
+      Thread.currentThread().interrupt();
+      logger.error("Updating PIA failed with exception: ", e);
     }
+  }
 
-    @SuppressWarnings("PMD.DoNotUseThreads")
-    private void sendRequest(HttpRequest request) {
-        try {
-            var response = httpClient.send(request, BodyHandlers.ofString());
-            if (response.statusCode() != HTTP_CREATED) {
-                logger.error("Updating PIA failed: {}", response);
-            }
-        } catch (Exception e) {
-            Thread.currentThread().interrupt();
-            logger.error("Updating PIA failed with exception: ", e);
-        }
-    }
+  private HttpRequest createRequest(String jsonPayload) {
+    return HttpRequest.newBuilder()
+        .header(AUTHORIZATION, authorization)
+        .POST(BodyPublishers.ofString(jsonPayload))
+        .uri(piaUri)
+        .build();
+  }
 
-    private HttpRequest createRequest(String jsonPayload) {
-        return HttpRequest
-                   .newBuilder()
-                   .header(AUTHORIZATION, authorization)
-                   .POST(BodyPublishers.ofString(jsonPayload))
-                   .uri(piaUri)
-                   .build();
-    }
-
-    private List<PiaUpdateRequest> createPayload(List<Contributor> contributors, String scopusId) {
-        return contributors
-                   .stream()
-                   .map(contributor -> toPiaRequest(contributor, scopusId))
-                   .toList();
-    }
+  private List<PiaUpdateRequest> createPayload(List<Contributor> contributors, String scopusId) {
+    return contributors.stream().map(contributor -> toPiaRequest(contributor, scopusId)).toList();
+  }
 }

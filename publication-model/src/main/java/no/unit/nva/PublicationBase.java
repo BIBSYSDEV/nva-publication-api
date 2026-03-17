@@ -1,4 +1,3 @@
 package no.unit.nva;
 
-public interface PublicationBase {
-}
+public interface PublicationBase {}

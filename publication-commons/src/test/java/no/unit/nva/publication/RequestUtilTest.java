@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Map;
@@ -42,199 +43,201 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class RequestUtilTest {
-    
-    public static final String VALUE = "value";
-    public static final String AUTHORIZER = "authorizer";
-    public static final String CLAIMS = "claims";
-    
-    public static final String INJECT_NVA_USERNAME_CLAIM = "custom:nvaUsername";
-    public static final String INJECT_ISSUER_CLAIM = "iss";
-    public static final String INJECT_CLIENT_ID_CLAIM = "client_id";
-    private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
-    private static final String SCOPES_THIRD_PARTY_PUBLICATION_READ = "https://api.nva.unit.no/scopes/third-party/publication-read";
 
+  public static final String VALUE = "value";
+  public static final String AUTHORIZER = "authorizer";
+  public static final String CLAIMS = "claims";
 
-    @ParameterizedTest
-    @MethodSource("provideIdentifiersForTesting")
-    void shouldReturnCorrectIdentifierWhenIdentifierIsSet(String pathParameterKey,
-                                                          Function<RequestInfo, SortableIdentifier> identifierGetter) {
-        var uuid = SortableIdentifier.next();
-        var requestInfo = getRequestInfo();
-        requestInfo.setPathParameters(Map.of(pathParameterKey, uuid.toString()));
+  public static final String INJECT_NVA_USERNAME_CLAIM = "custom:nvaUsername";
+  public static final String INJECT_ISSUER_CLAIM = "iss";
+  public static final String INJECT_CLIENT_ID_CLAIM = "client_id";
+  private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
+  private static final String SCOPES_THIRD_PARTY_PUBLICATION_READ =
+      "https://api.nva.unit.no/scopes/third-party/publication-read";
 
-        var identifier = identifierGetter.apply(requestInfo);
+  @ParameterizedTest
+  @MethodSource("provideIdentifiersForTesting")
+  void shouldReturnCorrectIdentifierWhenIdentifierIsSet(
+      String pathParameterKey, Function<RequestInfo, SortableIdentifier> identifierGetter) {
+    var uuid = SortableIdentifier.next();
+    var requestInfo = getRequestInfo();
+    requestInfo.setPathParameters(Map.of(pathParameterKey, uuid.toString()));
 
-        assertEquals(uuid, identifier);
-    }
+    var identifier = identifierGetter.apply(requestInfo);
 
-    private static RequestInfo getRequestInfo() {
-        return attempt(() -> RequestInfo.fromString("{}")).orElseThrow();
-    }
+    assertEquals(uuid, identifier);
+  }
 
-    private static Stream<Arguments> provideIdentifiersForTesting() {
-        return Stream.of(
-            Arguments.of(PUBLICATION_IDENTIFIER,
-                         (Function<RequestInfo, SortableIdentifier>) req -> attempt(() -> getIdentifier(req))
-                                                                                .orElseThrow()),
-            Arguments.of(IMPORT_CANDIDATE_IDENTIFIER,
-                         (Function<RequestInfo, SortableIdentifier>) req ->
-                                                                         attempt(() ->
-                                                                                     getImportCandidateIdentifier(req))
-                                                                             .orElseThrow())
-        );
-    }
+  private static RequestInfo getRequestInfo() {
+    return attempt(() -> RequestInfo.fromString("{}")).orElseThrow();
+  }
 
-    @Test
-    void canGetFileIdentifierFromRequest() throws ApiGatewayException {
-        var uuid = randomUUID();
-        var requestInfo = getRequestInfo();
-        requestInfo.setPathParameters(Map.of(FILE_IDENTIFIER, uuid.toString()));
+  private static Stream<Arguments> provideIdentifiersForTesting() {
+    return Stream.of(
+        Arguments.of(
+            PUBLICATION_IDENTIFIER,
+            (Function<RequestInfo, SortableIdentifier>)
+                req -> attempt(() -> getIdentifier(req)).orElseThrow()),
+        Arguments.of(
+            IMPORT_CANDIDATE_IDENTIFIER,
+            (Function<RequestInfo, SortableIdentifier>)
+                req -> attempt(() -> getImportCandidateIdentifier(req)).orElseThrow()));
+  }
 
-        var identifier = getFileIdentifier(requestInfo);
+  @Test
+  void canGetFileIdentifierFromRequest() throws ApiGatewayException {
+    var uuid = randomUUID();
+    var requestInfo = getRequestInfo();
+    requestInfo.setPathParameters(Map.of(FILE_IDENTIFIER, uuid.toString()));
 
-        assertEquals(uuid, identifier);
-    }
+    var identifier = getFileIdentifier(requestInfo);
 
-    @Test
-    void canGetFileEntryIdentifierFromRequest() throws ApiGatewayException {
-        var sortableIdentifier = SortableIdentifier.next();
-        var requestInfo = getRequestInfo();
-        requestInfo.setPathParameters(Map.of(FILE_IDENTIFIER, sortableIdentifier.toString()));
+    assertEquals(uuid, identifier);
+  }
 
-        var identifier = getFileEntryIdentifier(requestInfo);
+  @Test
+  void canGetFileEntryIdentifierFromRequest() throws ApiGatewayException {
+    var sortableIdentifier = SortableIdentifier.next();
+    var requestInfo = getRequestInfo();
+    requestInfo.setPathParameters(Map.of(FILE_IDENTIFIER, sortableIdentifier.toString()));
 
-        assertEquals(sortableIdentifier, identifier);
-    }
-    
-    @Test
-    void getIdentifierOnInvalidRequestThrowsException() {
-        var requestInfo = getRequestInfo();
-        assertThrows(BadRequestException.class, () -> getIdentifier(requestInfo));
-        assertThrows(BadRequestException.class, () -> getImportCandidateIdentifier(requestInfo));
-        assertThrows(BadRequestException.class, () -> getFileIdentifier(requestInfo));
-        assertThrows(BadRequestException.class, () -> getFileEntryIdentifier(requestInfo));
-    }
-    
-    @Test
-    void canGetOwnerFromRequest() throws Exception {
-        var requestInfo = getRequestInfo();
-        requestInfo.setRequestContext(getRequestContextForClaim(INJECT_NVA_USERNAME_CLAIM, VALUE));
-        
-        String owner = getOwner(requestInfo);
-        
-        assertEquals(VALUE, owner);
-    }
-    
-    @Test
-    void getOwnerThrowsUnauthorizedExceptionWhenOwnerCannotBeRetrieved() {
-        var requestInfo = getRequestInfo();
-        assertThrows(UnauthorizedException.class, () -> getOwner(requestInfo));
-    }
+    var identifier = getFileEntryIdentifier(requestInfo);
 
-    @Test
-    void createExternalUserInstanceReturnsNonNullValue()
-        throws NotFoundException, JsonProcessingException, UnauthorizedException {
-        var requestInfo = getRequestInfo();
-        requestInfo.setRequestContext(getRequestContextForClaim(Map.of(
-            INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER,
-            INJECT_CLIENT_ID_CLAIM, "clientId",
-            SCOPE_CLAIM, SCOPES_THIRD_PARTY_PUBLICATION_READ
-        )));
+    assertEquals(sortableIdentifier, identifier);
+  }
 
-        var getExternalClientResponse = mock(GetExternalClientResponse.class);
-        var identityServiceClient = mock(IdentityServiceClient.class);
-        when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
+  @Test
+  void getIdentifierOnInvalidRequestThrowsException() {
+    var requestInfo = getRequestInfo();
+    assertThrows(BadRequestException.class, () -> getIdentifier(requestInfo));
+    assertThrows(BadRequestException.class, () -> getImportCandidateIdentifier(requestInfo));
+    assertThrows(BadRequestException.class, () -> getFileIdentifier(requestInfo));
+    assertThrows(BadRequestException.class, () -> getFileEntryIdentifier(requestInfo));
+  }
 
-        var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        assertNotNull(userInstance);
-    }
+  @Test
+  void canGetOwnerFromRequest() throws Exception {
+    var requestInfo = getRequestInfo();
+    requestInfo.setRequestContext(getRequestContextForClaim(INJECT_NVA_USERNAME_CLAIM, VALUE));
 
-    @Test
-    void createExternalUserReturnsThirdPartySystemWhenProvided()
-        throws NotFoundException, JsonProcessingException, UnauthorizedException {
-        var requestInfo = getRequestInfo();
-        requestInfo.setRequestContext(getRequestContextForClaim(Map.of(
-            INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER,
-            INJECT_CLIENT_ID_CLAIM, "clientId",
-            SCOPE_CLAIM, SCOPES_THIRD_PARTY_PUBLICATION_READ
-        )));
-        requestInfo.setHeaders(Map.of("System", "Inspera"));
+    String owner = getOwner(requestInfo);
 
-        var getExternalClientResponse = mock(GetExternalClientResponse.class);
-        var identityServiceClient = mock(IdentityServiceClient.class);
-        when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
+    assertEquals(VALUE, owner);
+  }
 
-        var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
+  @Test
+  void getOwnerThrowsUnauthorizedExceptionWhenOwnerCannotBeRetrieved() {
+    var requestInfo = getRequestInfo();
+    assertThrows(UnauthorizedException.class, () -> getOwner(requestInfo));
+  }
 
-        assertEquals(INSPERA, userInstance.getThirdPartySystem().orElseThrow());
-    }
+  @Test
+  void createExternalUserInstanceReturnsNonNullValue()
+      throws NotFoundException, JsonProcessingException, UnauthorizedException {
+    var requestInfo = getRequestInfo();
+    requestInfo.setRequestContext(
+        getRequestContextForClaim(
+            Map.of(
+                INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER,
+                INJECT_CLIENT_ID_CLAIM, "clientId",
+                SCOPE_CLAIM, SCOPES_THIRD_PARTY_PUBLICATION_READ)));
 
-    @Test
-    void createExternalUserInstanceThrowsUnauthorizedWhenClientIdIsMissing()
-        throws NotFoundException, JsonProcessingException {
-        var requestInfo = getRequestInfo();
-        requestInfo.setRequestContext(getRequestContextForClaim(Map.of(
-            INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER,
-            SCOPE_CLAIM, SCOPES_THIRD_PARTY_PUBLICATION_READ
-        )));
+    var getExternalClientResponse = mock(GetExternalClientResponse.class);
+    var identityServiceClient = mock(IdentityServiceClient.class);
+    when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
 
-        var getExternalClientResponse = mock(GetExternalClientResponse.class);
-        var identityServiceClient = mock(IdentityServiceClient.class);
-        when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
+    var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
+    assertNotNull(userInstance);
+  }
 
-        assertThrows(UnauthorizedException.class, () -> createUserInstanceFromRequest(requestInfo,
-                                                                                      identityServiceClient));
-    }
+  @Test
+  void createExternalUserReturnsThirdPartySystemWhenProvided()
+      throws NotFoundException, JsonProcessingException, UnauthorizedException {
+    var requestInfo = getRequestInfo();
+    requestInfo.setRequestContext(
+        getRequestContextForClaim(
+            Map.of(
+                INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER,
+                INJECT_CLIENT_ID_CLAIM, "clientId",
+                SCOPE_CLAIM, SCOPES_THIRD_PARTY_PUBLICATION_READ)));
+    requestInfo.setHeaders(Map.of("System", "Inspera"));
 
-    @Test
-    void createInternalUserInstanceReturnsValidData() throws ApiGatewayException {
+    var getExternalClientResponse = mock(GetExternalClientResponse.class);
+    var identityServiceClient = mock(IdentityServiceClient.class);
+    when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
 
-        var username = RandomDataGenerator.randomString();
-        var customer = randomUri();
+    var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        RequestInfo requestInfo = mock(RequestInfo.class);
-        when(requestInfo.getCurrentCustomer()).thenReturn(customer);
-        when(requestInfo.getUserName()).thenReturn(username);
+    assertEquals(INSPERA, userInstance.getThirdPartySystem().orElseThrow());
+  }
 
-        var identityServiceClient = mock(IdentityServiceClient.class);
+  @Test
+  void createExternalUserInstanceThrowsUnauthorizedWhenClientIdIsMissing()
+      throws NotFoundException, JsonProcessingException {
+    var requestInfo = getRequestInfo();
+    requestInfo.setRequestContext(
+        getRequestContextForClaim(
+            Map.of(
+                INJECT_ISSUER_CLAIM, EXTERNAL_ISSUER,
+                SCOPE_CLAIM, SCOPES_THIRD_PARTY_PUBLICATION_READ)));
 
-        var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        assertEquals(username, userInstance.getUsername());
-        assertEquals(customer, userInstance.getCustomerId());
-    }
+    var getExternalClientResponse = mock(GetExternalClientResponse.class);
+    var identityServiceClient = mock(IdentityServiceClient.class);
+    when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
 
-    @Test
-    void shouldReturnIfMatchHeaderValueWhenPresent() {
-        var requestInfo = getRequestInfo();
-        var eTag = SortableIdentifier.next().toString();
-        requestInfo.setHeaders(Map.of("If-Match", eTag));
+    assertThrows(
+        UnauthorizedException.class,
+        () -> createUserInstanceFromRequest(requestInfo, identityServiceClient));
+  }
 
-        var result = RequestUtil.getETagValueFromIfMatchHeader(requestInfo);
+  @Test
+  void createInternalUserInstanceReturnsValidData() throws ApiGatewayException {
 
-        assertEquals(eTag, result.orElseThrow());
-    }
+    var username = RandomDataGenerator.randomString();
+    var customer = randomUri();
 
-    @Test
-    void shouldReturnIfNoneMatchHeaderValueWhenPresent() {
-        var requestInfo = getRequestInfo();
-        var eTag = SortableIdentifier.next().toString();
-        requestInfo.setHeaders(Map.of("If-None-Match", eTag));
+    RequestInfo requestInfo = mock(RequestInfo.class);
+    when(requestInfo.getCurrentCustomer()).thenReturn(customer);
+    when(requestInfo.getUserName()).thenReturn(username);
 
-        var result = RequestUtil.getETagValueFromIfNoneMatchHeader(requestInfo);
+    var identityServiceClient = mock(IdentityServiceClient.class);
 
-        assertEquals(eTag, result.orElseThrow());
-    }
-    
-    private JsonNode getRequestContextForClaim(String key, String value) throws JsonProcessingException {
-        return getRequestContextForClaim(Map.of(key, value));
-    }
-    
-    private JsonNode getRequestContextForClaim(Map<String, String> claimKeyValuePairs) throws JsonProcessingException {
-        Map<String, Map<String, Map<String, String>>> map = Map.of(
-            AUTHORIZER, Map.of(
-                CLAIMS, claimKeyValuePairs
-            )
-        );
-        return dtoObjectMapper.readTree(dtoObjectMapper.writeValueAsString(map));
-    }
+    var userInstance = createUserInstanceFromRequest(requestInfo, identityServiceClient);
+    assertEquals(username, userInstance.getUsername());
+    assertEquals(customer, userInstance.getCustomerId());
+  }
+
+  @Test
+  void shouldReturnIfMatchHeaderValueWhenPresent() {
+    var requestInfo = getRequestInfo();
+    var eTag = SortableIdentifier.next().toString();
+    requestInfo.setHeaders(Map.of("If-Match", eTag));
+
+    var result = RequestUtil.getETagValueFromIfMatchHeader(requestInfo);
+
+    assertEquals(eTag, result.orElseThrow());
+  }
+
+  @Test
+  void shouldReturnIfNoneMatchHeaderValueWhenPresent() {
+    var requestInfo = getRequestInfo();
+    var eTag = SortableIdentifier.next().toString();
+    requestInfo.setHeaders(Map.of("If-None-Match", eTag));
+
+    var result = RequestUtil.getETagValueFromIfNoneMatchHeader(requestInfo);
+
+    assertEquals(eTag, result.orElseThrow());
+  }
+
+  private JsonNode getRequestContextForClaim(String key, String value)
+      throws JsonProcessingException {
+    return getRequestContextForClaim(Map.of(key, value));
+  }
+
+  private JsonNode getRequestContextForClaim(Map<String, String> claimKeyValuePairs)
+      throws JsonProcessingException {
+    Map<String, Map<String, Map<String, String>>> map =
+        Map.of(AUTHORIZER, Map.of(CLAIMS, claimKeyValuePairs));
+    return dtoObjectMapper.readTree(dtoObjectMapper.writeValueAsString(map));
+  }
 }

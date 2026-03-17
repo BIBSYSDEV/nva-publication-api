@@ -4,5 +4,5 @@ import java.net.URI;
 
 public interface PublicationChannel {
 
-    URI getId();
+  URI getId();
 }

@@ -32,8 +32,10 @@ public class ResourceFilterMatcher implements EntityFilterMatcher {
       return true;
     }
     return Optional.ofNullable(resource.getStatus())
-        .map(status -> filter.statuses().stream()
-            .anyMatch(filterStatus -> filterStatus.equalsIgnoreCase(status.toString())))
+        .map(
+            status ->
+                filter.statuses().stream()
+                    .anyMatch(filterStatus -> filterStatus.equalsIgnoreCase(status.toString())))
         .orElse(false);
   }
 

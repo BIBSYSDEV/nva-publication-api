@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -23,89 +24,95 @@ import nva.commons.core.paths.UriWrapper;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @Data
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"brukernavn_opprettet", "dato_opprettet", "brukernavn_siste_endring",
-    "dato_siste_endring", "status_bekreftet_arkivsporsmal",
-    "brukernavn_avlvrt_arkivsystem", "dato_avlvrt_arkivsystem", "status_fulgt_medf_reg",
-    "brukernavn_svart_medforf_reg", "dato_svart_medforf_regel", "person_kontrollert"})
+@JsonIgnoreProperties({
+  "brukernavn_opprettet",
+  "dato_opprettet",
+  "brukernavn_siste_endring",
+  "dato_siste_endring",
+  "status_bekreftet_arkivsporsmal",
+  "brukernavn_avlvrt_arkivsystem",
+  "dato_avlvrt_arkivsystem",
+  "status_fulgt_medf_reg",
+  "brukernavn_svart_medforf_reg",
+  "dato_svart_medforf_regel",
+  "person_kontrollert"
+})
 public class CristinLocale {
 
-    public static final String OWNER_CODE_FIELD = "eierkode";
-    public static final String INSTITUTION_IDENTIFIER_FIELD = "institusjonsnr";
-    public static final String DEPARTMENT_IDENTIFIER_FIELD = "avdnr";
-    public static final String SUB_DEPARTMENT_IDENTIFIER_FIELD = "undavdnr";
-    public static final String GROUP_IDENTIFIER_FIELD = "gruppenr";
-    public static final String AFFILIATION_DELIMITER = ".";
-    public static final String CRISTIN = "cristin";
-    public static final String ORGANIZATION = "organization";
-    private static final String RESOURCE_OWNER_FORMAT = "%s@%s";
-    public static final String CONTROLLED_BY_FIELD = "brukernavn_kontrollert";
-    public static final String DATE_CONTROLLED_FIELD = "dato_kontrollert";
-    public static final String CONTROL_STATUS_FIELD = "status_kontrollert";
-    public static final String CONTROLLED_BY_USER_FIELD = "person_kontrollert";
-    @JsonProperty(OWNER_CODE_FIELD)
-    private String ownerCode;
+  public static final String OWNER_CODE_FIELD = "eierkode";
+  public static final String INSTITUTION_IDENTIFIER_FIELD = "institusjonsnr";
+  public static final String DEPARTMENT_IDENTIFIER_FIELD = "avdnr";
+  public static final String SUB_DEPARTMENT_IDENTIFIER_FIELD = "undavdnr";
+  public static final String GROUP_IDENTIFIER_FIELD = "gruppenr";
+  public static final String AFFILIATION_DELIMITER = ".";
+  public static final String CRISTIN = "cristin";
+  public static final String ORGANIZATION = "organization";
+  private static final String RESOURCE_OWNER_FORMAT = "%s@%s";
+  public static final String CONTROLLED_BY_FIELD = "brukernavn_kontrollert";
+  public static final String DATE_CONTROLLED_FIELD = "dato_kontrollert";
+  public static final String CONTROL_STATUS_FIELD = "status_kontrollert";
+  public static final String CONTROLLED_BY_USER_FIELD = "person_kontrollert";
 
-    @JsonProperty(INSTITUTION_IDENTIFIER_FIELD)
-    private String institutionIdentifier;
+  @JsonProperty(OWNER_CODE_FIELD)
+  private String ownerCode;
 
-    @JsonProperty(DEPARTMENT_IDENTIFIER_FIELD)
-    private String departmentIdentifier;
+  @JsonProperty(INSTITUTION_IDENTIFIER_FIELD)
+  private String institutionIdentifier;
 
-    @JsonProperty(SUB_DEPARTMENT_IDENTIFIER_FIELD)
-    private String subDepartmentIdentifier;
+  @JsonProperty(DEPARTMENT_IDENTIFIER_FIELD)
+  private String departmentIdentifier;
 
-    @JsonProperty(GROUP_IDENTIFIER_FIELD)
-    private String groupIdentifier;
+  @JsonProperty(SUB_DEPARTMENT_IDENTIFIER_FIELD)
+  private String subDepartmentIdentifier;
 
-    @JsonProperty(CONTROLLED_BY_FIELD)
-    private String controlledBy;
+  @JsonProperty(GROUP_IDENTIFIER_FIELD)
+  private String groupIdentifier;
 
-    @JsonProperty(DATE_CONTROLLED_FIELD)
-    private LocalDate dateControlled;
+  @JsonProperty(CONTROLLED_BY_FIELD)
+  private String controlledBy;
 
-    @JsonProperty(CONTROL_STATUS_FIELD)
-    private String controlStatus;
-    @JsonProperty(CONTROLLED_BY_USER_FIELD)
-    private CristinUser controlledByUser;
+  @JsonProperty(DATE_CONTROLLED_FIELD)
+  private LocalDate dateControlled;
 
+  @JsonProperty(CONTROL_STATUS_FIELD)
+  private String controlStatus;
 
-    @JacocoGenerated
-    @JsonCreator
-    public CristinLocale() {
+  @JsonProperty(CONTROLLED_BY_USER_FIELD)
+  private CristinUser controlledByUser;
 
-    }
+  @JacocoGenerated
+  @JsonCreator
+  public CristinLocale() {}
 
-    public ResourceOwner toResourceOwner() {
-        return new ResourceOwner(new Username(extractOwner()), extractOwnerAffiliation());
-    }
+  public ResourceOwner toResourceOwner() {
+    return new ResourceOwner(new Username(extractOwner()), extractOwnerAffiliation());
+  }
 
-    private URI extractOwnerAffiliation() {
-        return UriWrapper.fromUri(NVA_API_DOMAIN)
-                   .addChild(CRISTIN)
-                   .addChild(ORGANIZATION)
-                   .addChild(completeAffiliation())
-                   .getUri();
-    }
+  private URI extractOwnerAffiliation() {
+    return UriWrapper.fromUri(NVA_API_DOMAIN)
+        .addChild(CRISTIN)
+        .addChild(ORGANIZATION)
+        .addChild(completeAffiliation())
+        .getUri();
+  }
 
-    private String completeAffiliation() {
-        return institutionIdentifier
-               + AFFILIATION_DELIMITER
-               + departmentIdentifier
-               + AFFILIATION_DELIMITER
-               + subDepartmentIdentifier
-               + AFFILIATION_DELIMITER
-               + groupIdentifier;
-    }
+  private String completeAffiliation() {
+    return institutionIdentifier
+        + AFFILIATION_DELIMITER
+        + departmentIdentifier
+        + AFFILIATION_DELIMITER
+        + subDepartmentIdentifier
+        + AFFILIATION_DELIMITER
+        + groupIdentifier;
+  }
 
-    private String extractOwner() {
-        return String.format(RESOURCE_OWNER_FORMAT,
-                             ownerCode.toLowerCase(Locale.ROOT),
-                             completeAffiliation());
-    }
+  private String extractOwner() {
+    return String.format(
+        RESOURCE_OWNER_FORMAT, ownerCode.toLowerCase(Locale.ROOT), completeAffiliation());
+  }
 }

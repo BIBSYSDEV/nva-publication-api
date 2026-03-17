@@ -10,33 +10,31 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Named;
 
 public final class TypeProvider {
-    
-    private TypeProvider() {
-    
+
+  private TypeProvider() {}
+
+  public static Stream<Named<Class<?>>> listSubTypes(Class<?> type) {
+    var types = fetchDirectSubtypes(type);
+    var result = new HashSet<Named<Class<?>>>();
+    var nestedTypes = new ArrayDeque<Type>(types);
+    while (!nestedTypes.isEmpty()) {
+      var currentType = nestedTypes.pop();
+      if (isTypeWithSubtypes(currentType)) {
+        var subTypes = fetchDirectSubtypes(currentType.value());
+        nestedTypes.addAll(subTypes);
+      } else {
+        result.add(Named.of(currentType.name(), currentType.value()));
+      }
     }
-    
-    public static Stream<Named<Class<?>>> listSubTypes(Class<?> type) {
-        var types = fetchDirectSubtypes(type);
-        var result = new HashSet<Named<Class<?>>>();
-        var nestedTypes = new ArrayDeque<Type>(types);
-        while (!nestedTypes.isEmpty()) {
-            var currentType = nestedTypes.pop();
-            if (isTypeWithSubtypes(currentType)) {
-                var subTypes = fetchDirectSubtypes(currentType.value());
-                nestedTypes.addAll(subTypes);
-            } else {
-                result.add(Named.of(currentType.name(), currentType.value()));
-            }
-        }
-        return result.stream();
-    }
-    
-    private static boolean isTypeWithSubtypes(Type type) {
-        return type.value().getAnnotationsByType(JsonSubTypes.class).length > 0;
-    }
-    
-    private static List<Type> fetchDirectSubtypes(Class<?> type) {
-        var annotations = type.getAnnotationsByType(JsonSubTypes.class);
-        return Arrays.asList(annotations[0].value());
-    }
+    return result.stream();
+  }
+
+  private static boolean isTypeWithSubtypes(Type type) {
+    return type.value().getAnnotationsByType(JsonSubTypes.class).length > 0;
+  }
+
+  private static List<Type> fetchDirectSubtypes(Class<?> type) {
+    var annotations = type.getAnnotationsByType(JsonSubTypes.class);
+    return Arrays.asList(annotations[0].value());
+  }
 }

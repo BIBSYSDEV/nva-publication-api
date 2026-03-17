@@ -14,6 +14,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -33,148 +34,165 @@ import org.junit.jupiter.api.Test;
 @WireMockTest(httpsEnabled = true)
 class CristinConnectionTest {
 
-    private CristinConnection cristinConnection;
+  private CristinConnection cristinConnection;
 
-    @BeforeEach
-    void init(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        var httpClient = WiremockHttpClient.create();
-        var environment = mock(Environment.class);
-        when(environment.readEnv("API_HOST")).thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", ""));
-        cristinConnection = new CristinConnection(httpClient, environment);
-    }
+  @BeforeEach
+  void init(WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var httpClient = WiremockHttpClient.create();
+    var environment = mock(Environment.class);
+    when(environment.readEnv("API_HOST"))
+        .thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", ""));
+    cristinConnection = new CristinConnection(httpClient, environment);
+  }
 
-    @Test
-    void shouldLogErrorIfCristinProxyRespondsWithErrorCodeForPerson(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        var appender = LogUtils.getTestingAppender(CristinConnection.class);
-        var randomPersonUri = getRandomPersonUri(wireMockRuntimeInfo);
-        mockCristinPersonBadRequest();
-        var actualPerson = cristinConnection.getCristinPersonByCristinId(randomPersonUri);
-        assertThat(actualPerson.isEmpty(), is((true)));
-        assertThat(appender.getMessages(), containsString("Could not fetch cristin person"));
-    }
+  @Test
+  void shouldLogErrorIfCristinProxyRespondsWithErrorCodeForPerson(
+      WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var appender = LogUtils.getTestingAppender(CristinConnection.class);
+    var randomPersonUri = getRandomPersonUri(wireMockRuntimeInfo);
+    mockCristinPersonBadRequest();
+    var actualPerson = cristinConnection.getCristinPersonByCristinId(randomPersonUri);
+    assertThat(actualPerson.isEmpty(), is((true)));
+    assertThat(appender.getMessages(), containsString("Could not fetch cristin person"));
+  }
 
-    @Test
-    void shouldLogErrorIfCristinProxyRespondsWithErrorCodeForOrganization(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        var appender = LogUtils.getTestingAppender(CristinConnection.class);
-        var randomOrganizationUri = getRandomOrganizationUri(wireMockRuntimeInfo);
-        mockCristinOrganizationBadRequest();
-        var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(randomOrganizationUri);
-        assertThat(actualOrganization, is(nullValue()));
-        assertThat(appender.getMessages(), containsString("Could not fetch cristin organization"));
-    }
+  @Test
+  void shouldLogErrorIfCristinProxyRespondsWithErrorCodeForOrganization(
+      WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var appender = LogUtils.getTestingAppender(CristinConnection.class);
+    var randomOrganizationUri = getRandomOrganizationUri(wireMockRuntimeInfo);
+    mockCristinOrganizationBadRequest();
+    var actualOrganization =
+        cristinConnection.fetchCristinOrganizationByCristinId(randomOrganizationUri);
+    assertThat(actualOrganization, is(nullValue()));
+    assertThat(appender.getMessages(), containsString("Could not fetch cristin organization"));
+  }
 
-    @Test
-    void shouldReturnPersonIfCristinProxyRespondsWithPersonResponse(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        var randomPersonUri = getRandomPersonUri(wireMockRuntimeInfo);
-        var expectedPerson = createExpectedPerson(randomPersonUri);
-        mockCristinPerson(randomPersonUri, expectedPerson.toJsonString());
-        var actualPerson = cristinConnection.getCristinPersonByCristinId(randomPersonUri);
-        assertThat(actualPerson.isPresent(), is(equalTo(true)));
-        assertThat(actualPerson.get(), is(equalTo(expectedPerson)));
-    }
+  @Test
+  void shouldReturnPersonIfCristinProxyRespondsWithPersonResponse(
+      WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var randomPersonUri = getRandomPersonUri(wireMockRuntimeInfo);
+    var expectedPerson = createExpectedPerson(randomPersonUri);
+    mockCristinPerson(randomPersonUri, expectedPerson.toJsonString());
+    var actualPerson = cristinConnection.getCristinPersonByCristinId(randomPersonUri);
+    assertThat(actualPerson.isPresent(), is(equalTo(true)));
+    assertThat(actualPerson.get(), is(equalTo(expectedPerson)));
+  }
 
-    @Test
-    void shouldReturnPeronFetchedByOrcId() {
-        var orcId = randomString();
-        mockCristinPersonByOrcId(orcId);
-        var actualPerson = cristinConnection.getCristinPersonByOrcId(orcId);
-        assertThat(actualPerson.isPresent(), is(equalTo(true)));
-    }
+  @Test
+  void shouldReturnPeronFetchedByOrcId() {
+    var orcId = randomString();
+    mockCristinPersonByOrcId(orcId);
+    var actualPerson = cristinConnection.getCristinPersonByOrcId(orcId);
+    assertThat(actualPerson.isPresent(), is(equalTo(true)));
+  }
 
-    @Test
-    void shouldReturnSearchOrganizationResponseWhenSearchingByOrganizationName() {
-        var organizationName = randomString();
-        mockCristinSearchOrganizationResponse(organizationName);
-        var searchResponse = cristinConnection.searchCristinOrganization(organizationName);
+  @Test
+  void shouldReturnSearchOrganizationResponseWhenSearchingByOrganizationName() {
+    var organizationName = randomString();
+    mockCristinSearchOrganizationResponse(organizationName);
+    var searchResponse = cristinConnection.searchCristinOrganization(organizationName);
 
-        assertThat(searchResponse.isPresent(), is(equalTo(true)));
-    }
+    assertThat(searchResponse.isPresent(), is(equalTo(true)));
+  }
 
-    private void mockCristinSearchOrganizationResponse(String organizationName) {
-        stubFor(
-            WireMock.get(urlEqualTo("/cristin/organization?query=" + organizationName))
-                .willReturn(aResponse().withBody(
-                    CristinGenerator.generateSearchCristinOrganizationResponse(organizationName).toString())
-                                .withStatus(HttpURLConnection.HTTP_OK)));
-    }
+  private void mockCristinSearchOrganizationResponse(String organizationName) {
+    stubFor(
+        WireMock.get(urlEqualTo("/cristin/organization?query=" + organizationName))
+            .willReturn(
+                aResponse()
+                    .withBody(
+                        CristinGenerator.generateSearchCristinOrganizationResponse(organizationName)
+                            .toString())
+                    .withStatus(HttpURLConnection.HTTP_OK)));
+  }
 
-    private void mockCristinPersonByOrcId(String orcId) {
-        stubFor(
-            WireMock.get(urlPathEqualTo("/cristin/person/" + orcId))
-                .willReturn(aResponse()
-                                .withBody(CristinGenerator.generateCristinPerson(randomUri(), randomString(),
-                                                                                 randomString()).toString())
-                                .withStatus(HttpURLConnection.HTTP_OK)));
-    }
+  private void mockCristinPersonByOrcId(String orcId) {
+    stubFor(
+        WireMock.get(urlPathEqualTo("/cristin/person/" + orcId))
+            .willReturn(
+                aResponse()
+                    .withBody(
+                        CristinGenerator.generateCristinPerson(
+                                randomUri(), randomString(), randomString())
+                            .toString())
+                    .withStatus(HttpURLConnection.HTTP_OK)));
+  }
 
-    @Test
-    void shouldReturnOrganizationIfCristinProxyRespondsWithOrganization(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        var randomOrganizationId = getRandomOrganizationUri(wireMockRuntimeInfo);
-        var expectedOrganization = createExpectedOrganization(randomOrganizationId);
-        mockCristinOrganization(randomOrganizationId, expectedOrganization.toJsonString());
-        var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(randomOrganizationId);
-        assertThat(actualOrganization, is(equalTo(expectedOrganization)));
-    }
+  @Test
+  void shouldReturnOrganizationIfCristinProxyRespondsWithOrganization(
+      WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var randomOrganizationId = getRandomOrganizationUri(wireMockRuntimeInfo);
+    var expectedOrganization = createExpectedOrganization(randomOrganizationId);
+    mockCristinOrganization(randomOrganizationId, expectedOrganization.toJsonString());
+    var actualOrganization =
+        cristinConnection.fetchCristinOrganizationByCristinId(randomOrganizationId);
+    assertThat(actualOrganization, is(equalTo(expectedOrganization)));
+  }
 
-    @Test
-    void shouldReturnOptionalEmptyWhenCristinIdIsNull() {
-        URI cristinId = null;
-        var actualPerson = cristinConnection.getCristinPersonByCristinId(cristinId);
-        assertThat(actualPerson.isEmpty(), is(equalTo(true)));
-    }
+  @Test
+  void shouldReturnOptionalEmptyWhenCristinIdIsNull() {
+    URI cristinId = null;
+    var actualPerson = cristinConnection.getCristinPersonByCristinId(cristinId);
+    assertThat(actualPerson.isEmpty(), is(equalTo(true)));
+  }
 
-    @Test
-    void shouldReturnNullWhenCristinIdIsNull() {
-        URI cristinId = null;
-        var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(cristinId);
-        assertThat(actualOrganization, is(nullValue()));
-    }
+  @Test
+  void shouldReturnNullWhenCristinIdIsNull() {
+    URI cristinId = null;
+    var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(cristinId);
+    assertThat(actualOrganization, is(nullValue()));
+  }
 
-    private static URI getRandomPersonUri(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        var baseUri = wireMockRuntimeInfo.getHttpsBaseUrl();
-        return UriWrapper.fromUri(baseUri)
-                   .addChild("cristin")
-                   .addChild("person")
-                   .addChild(randomString())
-                   .getUri();
-    }
+  private static URI getRandomPersonUri(WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var baseUri = wireMockRuntimeInfo.getHttpsBaseUrl();
+    return UriWrapper.fromUri(baseUri)
+        .addChild("cristin")
+        .addChild("person")
+        .addChild(randomString())
+        .getUri();
+  }
 
-    private CristinOrganization createExpectedOrganization(URI organizationId) {
-        return new CristinOrganization(organizationId, randomUri(), randomString(), List.of(), randomString(), null);
-    }
+  private CristinOrganization createExpectedOrganization(URI organizationId) {
+    return new CristinOrganization(
+        organizationId, randomUri(), randomString(), List.of(), randomString(), null);
+  }
 
-    private CristinPerson createExpectedPerson(URI personId) {
-        return new CristinPerson.Builder().withId(personId).build();
-    }
+  private CristinPerson createExpectedPerson(URI personId) {
+    return new CristinPerson.Builder().withId(personId).build();
+  }
 
-    private URI getRandomOrganizationUri(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        var baseUri = wireMockRuntimeInfo.getHttpsBaseUrl();
+  private URI getRandomOrganizationUri(WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var baseUri = wireMockRuntimeInfo.getHttpsBaseUrl();
 
-        return UriWrapper.fromUri(baseUri)
-                   .addChild("cristin")
-                   .addChild("organization")
-                   .addChild(randomString())
-                   .getUri();
-    }
+    return UriWrapper.fromUri(baseUri)
+        .addChild("cristin")
+        .addChild("organization")
+        .addChild(randomString())
+        .getUri();
+  }
 
-    private void mockCristinPerson(URI cristinPersonId, String response) {
-        stubFor(
-            WireMock.get(urlPathEqualTo(cristinPersonId.getPath()))
-                .willReturn(aResponse().withBody(response).withStatus(HttpURLConnection.HTTP_OK)));
-    }
+  private void mockCristinPerson(URI cristinPersonId, String response) {
+    stubFor(
+        WireMock.get(urlPathEqualTo(cristinPersonId.getPath()))
+            .willReturn(aResponse().withBody(response).withStatus(HttpURLConnection.HTTP_OK)));
+  }
 
-    private void mockCristinOrganization(URI cristinId, String organization) {
-        stubFor(WireMock.get(urlPathEqualTo(cristinId.getPath()))
-                    .willReturn(aResponse().withBody(organization).withStatus(HttpURLConnection.HTTP_OK)));
-    }
+  private void mockCristinOrganization(URI cristinId, String organization) {
+    stubFor(
+        WireMock.get(urlPathEqualTo(cristinId.getPath()))
+            .willReturn(aResponse().withBody(organization).withStatus(HttpURLConnection.HTTP_OK)));
+  }
 
-    private void mockCristinPersonBadRequest() {
-        stubFor(WireMock.get(urlMatching("/cristin/person/.*"))
-                    .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
-    }
+  private void mockCristinPersonBadRequest() {
+    stubFor(
+        WireMock.get(urlMatching("/cristin/person/.*"))
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
+  }
 
-    private void mockCristinOrganizationBadRequest() {
-        stubFor(WireMock.get(urlMatching("/cristin/organization/.*"))
-                    .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
-    }
+  private void mockCristinOrganizationBadRequest() {
+    stubFor(
+        WireMock.get(urlMatching("/cristin/organization/.*"))
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
+  }
 }

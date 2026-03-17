@@ -12,34 +12,40 @@ import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 
-public record CreatedResourceEvent(Instant date, User user, URI institution, SortableIdentifier identifier,
-                                   ImportSource importSource)
+public record CreatedResourceEvent(
+    Instant date,
+    User user,
+    URI institution,
+    SortableIdentifier identifier,
+    ImportSource importSource)
     implements ResourceEvent {
 
-    public static CreatedResourceEvent create(UserInstance userInstance, Instant date) {
-        return new CreatedResourceEvent(date, userInstance.getUser(), userInstance.getTopLevelOrgCristinId(),
-                                        SortableIdentifier.next(), userInstance.isExternalClient()
-                                                                       ? getImportSource(userInstance)
-                                                                       : null);
-    }
+  public static CreatedResourceEvent create(UserInstance userInstance, Instant date) {
+    return new CreatedResourceEvent(
+        date,
+        userInstance.getUser(),
+        userInstance.getTopLevelOrgCristinId(),
+        SortableIdentifier.next(),
+        userInstance.isExternalClient() ? getImportSource(userInstance) : null);
+  }
 
-    private static ImportSource getImportSource(UserInstance userInstance) {
-        return userInstance.getThirdPartySystem()
-                   .map(ThirdPartySystem::toSource)
-                   .map(ImportSource::fromSource)
-                   .orElse(ImportSource.fromSource(Source.OTHER));
+  private static ImportSource getImportSource(UserInstance userInstance) {
+    return userInstance
+        .getThirdPartySystem()
+        .map(ThirdPartySystem::toSource)
+        .map(ImportSource::fromSource)
+        .orElse(ImportSource.fromSource(Source.OTHER));
+  }
 
-    }
-
-    @Override
-    public PublicationLogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogAgent user) {
-        return PublicationLogEntry.builder()
-                   .withResourceIdentifier(resourceIdentifier)
-                   .withIdentifier(identifier)
-                   .withTopic(LogTopic.PUBLICATION_CREATED)
-                   .withTimestamp(date)
-                   .withImportSource(importSource)
-                   .withPerformedBy(user)
-                   .build();
-    }
+  @Override
+  public PublicationLogEntry toLogEntry(SortableIdentifier resourceIdentifier, LogAgent user) {
+    return PublicationLogEntry.builder()
+        .withResourceIdentifier(resourceIdentifier)
+        .withIdentifier(identifier)
+        .withTopic(LogTopic.PUBLICATION_CREATED)
+        .withTimestamp(date)
+        .withImportSource(importSource)
+        .withPerformedBy(user)
+        .build();
+  }
 }

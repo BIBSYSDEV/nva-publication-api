@@ -12,28 +12,29 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeName(NullRightsRetentionStrategy.TYPE_NAME)
 public final class NullRightsRetentionStrategy extends AbstractRightsRetentionStrategy {
 
-    public static final String TYPE_NAME = "NullRightsRetentionStrategy";
+  public static final String TYPE_NAME = "NullRightsRetentionStrategy";
 
-    @JsonCreator
-    private NullRightsRetentionStrategy(
-        @JsonProperty(FIELD_NAME_CONFIGURED_TYPE) RightsRetentionStrategyConfiguration configuredType) {
-        super(configuredType);
-    }
+  @JsonCreator
+  private NullRightsRetentionStrategy(
+      @JsonProperty(FIELD_NAME_CONFIGURED_TYPE)
+          RightsRetentionStrategyConfiguration configuredType) {
+    super(configuredType);
+  }
 
-    public static NullRightsRetentionStrategy create(RightsRetentionStrategyConfiguration configuredType) {
-        return new NullRightsRetentionStrategy(configuredType);
-    }
+  public static NullRightsRetentionStrategy create(
+      RightsRetentionStrategyConfiguration configuredType) {
+    return new NullRightsRetentionStrategy(configuredType);
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(NullRightsRetentionStrategy.class.getName(), super.hashCode());
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(NullRightsRetentionStrategy.class.getName(), super.hashCode());
+  }
 
-    }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof NullRightsRetentionStrategy && super.equals(o);
-    }
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    return o instanceof NullRightsRetentionStrategy && super.equals(o);
+  }
 }

@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
@@ -43,136 +44,152 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
 
-    private static final Context CONTEXT = Mockito.mock(Context.class);
-    private ByteArrayOutputStream outputStream;
-    private ResourceService resourceService;
-    private TicketService ticketService;
-    private MessageService messageService;
-    private FakeSqsClient queueClient;
-    private RecoveryBatchScanHandler recoveryBatchScanHandler;
+  private static final Context CONTEXT = Mockito.mock(Context.class);
+  private ByteArrayOutputStream outputStream;
+  private ResourceService resourceService;
+  private TicketService ticketService;
+  private MessageService messageService;
+  private FakeSqsClient queueClient;
+  private RecoveryBatchScanHandler recoveryBatchScanHandler;
 
-    @Override
-    @BeforeEach
-    public void init() {
-        super.init();
-        outputStream = new ByteArrayOutputStream();
-        resourceService = getResourceService(client);
-        ticketService = getTicketService();
-        messageService = getMessageService();
-        queueClient = new FakeSqsClient();
-        recoveryBatchScanHandler = new RecoveryBatchScanHandler(resourceService, ticketService, messageService,
-                                                                queueClient);
-    }
+  @Override
+  @BeforeEach
+  public void init() {
+    super.init();
+    outputStream = new ByteArrayOutputStream();
+    resourceService = getResourceService(client);
+    ticketService = getTicketService();
+    messageService = getMessageService();
+    queueClient = new FakeSqsClient();
+    recoveryBatchScanHandler =
+        new RecoveryBatchScanHandler(resourceService, ticketService, messageService, queueClient);
+  }
 
-    @Test
-    void shouldUpdateResourceVersionByReadingQueueMessageContainingResourceIdentifierWhenResourceIsPublication()
-        throws IOException, NotFoundException {
-        var publication = persistedPublication();
-        var resourceVersion = Resource.fromPublication(publication).toDao().getVersion();
-        putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource");
-        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
+  @Test
+  void
+      shouldUpdateResourceVersionByReadingQueueMessageContainingResourceIdentifierWhenResourceIsPublication()
+          throws IOException, NotFoundException {
+    var publication = persistedPublication();
+    var resourceVersion = Resource.fromPublication(publication).toDao().getVersion();
+    putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource");
+    recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 
-        var refreshedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        var resourceVersionAfterRefresh = Resource.fromPublication(refreshedPublication).toDao().getVersion();
+    var refreshedPublication =
+        resourceService.getPublicationByIdentifier(publication.getIdentifier());
+    var resourceVersionAfterRefresh =
+        Resource.fromPublication(refreshedPublication).toDao().getVersion();
 
-        assertThat(resourceVersionAfterRefresh, is(not(equalTo(resourceVersion))));
-    }
+    assertThat(resourceVersionAfterRefresh, is(not(equalTo(resourceVersion))));
+  }
 
-    @Test
-    void shouldUpdateResourceVersionByReadingQueueMessageContainingResourceIdentifierWhenResourceIsTicket()
-        throws IOException, ApiGatewayException {
-        var publication = persistedPublication();
-        var ticket =
-            GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
-                .withOwner(UserInstance.fromPublication(publication).getUsername())
-                .persistNewTicket(ticketService);
-        var ticketVersion = ticket.toDao().getVersion();
-        putMessageOnRecoveryQueue(ticket.getIdentifier(), "Ticket");
-        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
+  @Test
+  void
+      shouldUpdateResourceVersionByReadingQueueMessageContainingResourceIdentifierWhenResourceIsTicket()
+          throws IOException, ApiGatewayException {
+    var publication = persistedPublication();
+    var ticket =
+        GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
+            .withOwner(UserInstance.fromPublication(publication).getUsername())
+            .persistNewTicket(ticketService);
+    var ticketVersion = ticket.toDao().getVersion();
+    putMessageOnRecoveryQueue(ticket.getIdentifier(), "Ticket");
+    recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 
-        var refreshedTicket = ticketService.fetchTicket(ticket);
-        var resourceVersionAfterRefresh = refreshedTicket.toDao().getVersion();
+    var refreshedTicket = ticketService.fetchTicket(ticket);
+    var resourceVersionAfterRefresh = refreshedTicket.toDao().getVersion();
 
-        assertThat(resourceVersionAfterRefresh, is(not(equalTo(ticketVersion))));
-    }
+    assertThat(resourceVersionAfterRefresh, is(not(equalTo(ticketVersion))));
+  }
 
-    @Test
-    void shouldUpdateResourceVersionByReadingQueueMessageContainingResourceIdentifierWhenResourceIsMessage()
-        throws IOException, ApiGatewayException {
-        var publication = persistedPublication();
-        var ticket =
-            GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
-                .withOwner(UserInstance.fromPublication(publication).getUsername())
-                .persistNewTicket(ticketService);
-        var message = messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
-        var messageVersion = message.toDao().getVersion();
-        putMessageOnRecoveryQueue(message.getIdentifier(), "Message");
-        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
+  @Test
+  void
+      shouldUpdateResourceVersionByReadingQueueMessageContainingResourceIdentifierWhenResourceIsMessage()
+          throws IOException, ApiGatewayException {
+    var publication = persistedPublication();
+    var ticket =
+        GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
+            .withOwner(UserInstance.fromPublication(publication).getUsername())
+            .persistNewTicket(ticketService);
+    var message =
+        messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
+    var messageVersion = message.toDao().getVersion();
+    putMessageOnRecoveryQueue(message.getIdentifier(), "Message");
+    recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 
-        var refreshedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
-        var resourceVersionAfterRefresh = refreshedMessage.toDao().getVersion();
+    var refreshedMessage =
+        messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
+    var resourceVersionAfterRefresh = refreshedMessage.toDao().getVersion();
 
-        assertThat(resourceVersionAfterRefresh, is(not(equalTo(messageVersion))));
-    }
+    assertThat(resourceVersionAfterRefresh, is(not(equalTo(messageVersion))));
+  }
 
-    @Test
-    void shouldUpdateResourceVersionByReadingQueueMessageContainingFileEntryIdentifier()
-        throws IOException {
-        var publication = persistedPublication();
-        var fileEntry = FileEntry.create(randomOpenFile(), publication.getIdentifier(),
-                                         UserInstance.fromPublication(publication));
-        fileEntry.persist(resourceService, UserInstance.fromPublication(publication));
-        putMessageOnRecoveryQueue(fileEntry.getIdentifier(), FILE);
-        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
+  @Test
+  void shouldUpdateResourceVersionByReadingQueueMessageContainingFileEntryIdentifier()
+      throws IOException {
+    var publication = persistedPublication();
+    var fileEntry =
+        FileEntry.create(
+            randomOpenFile(),
+            publication.getIdentifier(),
+            UserInstance.fromPublication(publication));
+    fileEntry.persist(resourceService, UserInstance.fromPublication(publication));
+    putMessageOnRecoveryQueue(fileEntry.getIdentifier(), FILE);
+    recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 
-        var refreshedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
+    var refreshedFileEntry = fileEntry.fetch(resourceService).orElseThrow();
 
-        assertThat(refreshedFileEntry.toDao().getVersion(),
-                   is(not(equalTo(fileEntry.toDao().getVersion()))));
-    }
+    assertThat(
+        refreshedFileEntry.toDao().getVersion(), is(not(equalTo(fileEntry.toDao().getVersion()))));
+  }
 
-    @Test
-    void shouldRemoveMessageFromQueueAfterItHasBeenRefreshed() throws IOException {
-        var publication = persistedPublication();
-        putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource");
-        recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
+  @Test
+  void shouldRemoveMessageFromQueueAfterItHasBeenRefreshed() throws IOException {
+    var publication = persistedPublication();
+    putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource");
+    recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
 
-        assertTrue(queueClient.getDeliveredMessages().isEmpty());
-    }
+    assertTrue(queueClient.getDeliveredMessages().isEmpty());
+  }
 
-    @Test
-    void shouldReadNumberOfMessagesRequested() throws IOException {
-        var numberOfMessages = 5;
-        var publications = IntStream.range(0, numberOfMessages)
-                               .mapToObj(i -> persistedPublication())
-                               .toList();
-        publications.forEach(publication -> putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource"));
-        var messagesCount = 2;
-        recoveryBatchScanHandler.handleRequest(createEvent(messagesCount), outputStream, CONTEXT);
-        assertEquals(numberOfMessages - messagesCount, queueClient.getDeliveredMessages().size());
-    }
+  @Test
+  void shouldReadNumberOfMessagesRequested() throws IOException {
+    var numberOfMessages = 5;
+    var publications =
+        IntStream.range(0, numberOfMessages).mapToObj(i -> persistedPublication()).toList();
+    publications.forEach(
+        publication -> putMessageOnRecoveryQueue(publication.getIdentifier(), "Resource"));
+    var messagesCount = 2;
+    recoveryBatchScanHandler.handleRequest(createEvent(messagesCount), outputStream, CONTEXT);
+    assertEquals(numberOfMessages - messagesCount, queueClient.getDeliveredMessages().size());
+  }
 
-    private static InputStream createEvent(Integer messagesCount) throws JsonProcessingException {
-        var jsonString = JsonUtils.dtoObjectMapper.writeValueAsString(new RecoveryRequest(messagesCount));
-        return IoUtils.stringToStream(jsonString);
-    }
+  private static InputStream createEvent(Integer messagesCount) throws JsonProcessingException {
+    var jsonString =
+        JsonUtils.dtoObjectMapper.writeValueAsString(new RecoveryRequest(messagesCount));
+    return IoUtils.stringToStream(jsonString);
+  }
 
-    //TODO: Implement recovery for other entity types than publication
+  // TODO: Implement recovery for other entity types than publication
 
-    private static MessageAttributeValue messageAttribute(String value) {
-        return MessageAttributeValue.builder().stringValue(value).dataType("String").build();
-    }
+  private static MessageAttributeValue messageAttribute(String value) {
+    return MessageAttributeValue.builder().stringValue(value).dataType("String").build();
+  }
 
-    private void putMessageOnRecoveryQueue(SortableIdentifier identifier, String type) {
-        var id = Map.of(
+  private void putMessageOnRecoveryQueue(SortableIdentifier identifier, String type) {
+    var id =
+        Map.of(
             "id", messageAttribute(identifier.toString()),
             "type", messageAttribute(type));
-        queueClient.sendMessage(SendMessageRequest.builder().queueUrl(randomString()).messageAttributes(id).build());
-    }
+    queueClient.sendMessage(
+        SendMessageRequest.builder().queueUrl(randomString()).messageAttributes(id).build());
+  }
 
-    private Publication persistedPublication() {
-        var publication = randomPublication();
-        return attempt(() -> resourceService.createPublication(UserInstance.fromPublication(publication),
-                                                               publication)).orElseThrow();
-    }
+  private Publication persistedPublication() {
+    var publication = randomPublication();
+    return attempt(
+            () ->
+                resourceService.createPublication(
+                    UserInstance.fromPublication(publication), publication))
+        .orElseThrow();
+  }
 }

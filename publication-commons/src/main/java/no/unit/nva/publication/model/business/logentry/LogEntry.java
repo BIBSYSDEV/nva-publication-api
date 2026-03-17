@@ -7,20 +7,24 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.service.impl.ResourceService;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(names = {PublicationLogEntry.TYPE, "LogEntry"}, value = PublicationLogEntry.class),
-    @JsonSubTypes.Type(name = FileLogEntry.TYPE, value = FileLogEntry.class),
-    @JsonSubTypes.Type(name = TicketLogEntry.TYPE, value = TicketLogEntry.class)})
+@JsonSubTypes({
+  @JsonSubTypes.Type(
+      names = {PublicationLogEntry.TYPE, "LogEntry"},
+      value = PublicationLogEntry.class),
+  @JsonSubTypes.Type(name = FileLogEntry.TYPE, value = FileLogEntry.class),
+  @JsonSubTypes.Type(name = TicketLogEntry.TYPE, value = TicketLogEntry.class)
+})
 public interface LogEntry {
 
-    SortableIdentifier identifier();
+  SortableIdentifier identifier();
 
-    SortableIdentifier resourceIdentifier();
+  SortableIdentifier resourceIdentifier();
 
-    LogTopic topic();
+  LogTopic topic();
 
-    Instant timestamp();
+  Instant timestamp();
 
-    LogAgent performedBy();
+  LogAgent performedBy();
 
-    void persist(ResourceService resourceService);
+  void persist(ResourceService resourceService);
 }

@@ -14,27 +14,24 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"formidlingskanal", "kanalnavn", "tidsskrift"})
 public class CristinMediaContribution {
 
-    @JsonProperty("mediumtype")
-    private CristinMediumType cristinMediumType;
+  @JsonProperty("mediumtype")
+  private CristinMediumType cristinMediumType;
 
-    @JsonProperty("mediumstednavn")
-    private String mediaPlaceName;
+  @JsonProperty("mediumstednavn")
+  private String mediaPlaceName;
 
-    @JacocoGenerated
-    public CristinMediaContribution() {
+  @JacocoGenerated
+  public CristinMediaContribution() {}
 
-    }
-
-    @JacocoGenerated
-    public CristinMediaContributionBuilder copy() {
-        return this.toBuilder();
-    }
+  @JacocoGenerated
+  public CristinMediaContributionBuilder copy() {
+    return this.toBuilder();
+  }
 }

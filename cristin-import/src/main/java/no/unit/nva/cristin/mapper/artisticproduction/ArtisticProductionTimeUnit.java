@@ -16,38 +16,26 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PUBLIC)
 @JsonIgnoreProperties({"tidsenhetnavn", "tidsenhetnavn_nynorsk", "tidsenhetnavn_engelsk"})
-
-
 public class ArtisticProductionTimeUnit {
 
+  // The only time codes that exist in the dataset are minutes or weeks.
+  @JsonIgnore public static final String MINUTE = "MINUTT";
+  @JsonIgnore public static final String UKE = "UKE";
+  @JsonIgnore public static final String NULL = null;
 
-    //The only time codes that exist in the dataset are minutes or weeks.
-    @JsonIgnore
-    public static final String MINUTE = "MINUTT";
-    @JsonIgnore
-    public static final String UKE = "UKE";
-    @JsonIgnore
-    public static final String NULL = null;
+  @JsonProperty("tidsenhetkode")
+  private String timeUnitCode;
 
-    @JsonProperty("tidsenhetkode")
-    private String timeUnitCode;
+  @JacocoGenerated
+  public ArtisticProductionTimeUnit() {}
 
-    @JacocoGenerated
-    public ArtisticProductionTimeUnit() {
-
-    }
-
-    @JsonIgnore
-    public boolean timeUnitIsInMinutes() {
-        return MINUTE.equalsIgnoreCase(timeUnitCode.toUpperCase(Locale.ROOT));
-    }
-
-
-
+  @JsonIgnore
+  public boolean timeUnitIsInMinutes() {
+    return MINUTE.equalsIgnoreCase(timeUnitCode.toUpperCase(Locale.ROOT));
+  }
 }

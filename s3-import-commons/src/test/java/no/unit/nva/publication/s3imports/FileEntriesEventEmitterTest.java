@@ -22,6 +22,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.amazon.ion.IonReader;
 import com.amazon.ion.IonWriter;
 import com.amazon.ion.system.IonReaderBuilder;
@@ -62,498 +63,536 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 class FileEntriesEventEmitterTest {
 
-    public static final String UNEXPECTED_TOPIC = "unexpected detail type";
-    private static final Context CONTEXT = null;
-    private static final String SOME_BUCKETNAME = "someBucketname";
+  public static final String UNEXPECTED_TOPIC = "unexpected detail type";
+  private static final Context CONTEXT = null;
+  private static final String SOME_BUCKETNAME = "someBucketname";
 
-    public static final String UNEXPECTED_TOPIC1 = "Unexpected topic";
-    private S3Client s3Client;
+  public static final String UNEXPECTED_TOPIC1 = "Unexpected topic";
+  private S3Client s3Client;
 
-    private FileEntriesEventEmitter handler;
-    private ByteArrayOutputStream outputStream;
-    private S3Driver s3Driver;
+  private FileEntriesEventEmitter handler;
+  private ByteArrayOutputStream outputStream;
+  private S3Driver s3Driver;
 
-    private FakeAmazonSQS amazonSQS;
+  private FakeAmazonSQS amazonSQS;
 
-    @BeforeEach
-    public void init() {
-        s3Client = new FakeS3Client();
-        amazonSQS = new FakeAmazonSQS();
-        s3Driver = new S3Driver(s3Client, "notimportant");
+  @BeforeEach
+  public void init() {
+    s3Client = new FakeS3Client();
+    amazonSQS = new FakeAmazonSQS();
+    s3Driver = new S3Driver(s3Client, "notimportant");
 
-        handler = newHandler();
-        outputStream = new ByteArrayOutputStream();
-    }
-    
-    @Test
-    void handlerSavesErrorReportOutsideInputFolderSoThatErrorReportWillNotBecomeInputInSubsequentImport()
-        throws IOException {
-        var amazonSqsThrowingException = amazonSqsThatThrowsException();
-        handler = new FileEntriesEventEmitter(s3Client, amazonSqsThrowingException);
-        var fileUri = s3Driver.insertFile(randomPath(), SampleObject.random().toJsonString());
-        var inputEvent = toInputStream(createInputEventForFile(fileUri));
-        handler.handleRequest(inputEvent, outputStream, CONTEXT);
-        var s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
-        var files = s3Driver.listAllFiles(ERRORS_FOLDER);
-        assertThat(files, is(not(empty())));
-    }
+    handler = newHandler();
+    outputStream = new ByteArrayOutputStream();
+  }
 
-    @Test
-    void shouldSendMessageToSqsWithMessagesContainingReferencesPointingToNewEventBodyWhenInputContainsSingleJsonObject()
-        throws IOException {
-        var sampleObject = SampleObject.random();
-        var fileContents = sampleObject.toJsonString();
-        var fileUri = s3Driver.insertFile(randomPath(), fileContents);
-        var input = toInputStream(createInputEventForFile(fileUri));
-        var handler = newHandler();
-        handler.handleRequest(input, outputStream, CONTEXT);
-        List<SampleObject> eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
+  @Test
+  void
+      handlerSavesErrorReportOutsideInputFolderSoThatErrorReportWillNotBecomeInputInSubsequentImport()
+          throws IOException {
+    var amazonSqsThrowingException = amazonSqsThatThrowsException();
+    handler = new FileEntriesEventEmitter(s3Client, amazonSqsThrowingException);
+    var fileUri = s3Driver.insertFile(randomPath(), SampleObject.random().toJsonString());
+    var inputEvent = toInputStream(createInputEventForFile(fileUri));
+    handler.handleRequest(inputEvent, outputStream, CONTEXT);
+    var s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
+    var files = s3Driver.listAllFiles(ERRORS_FOLDER);
+    assertThat(files, is(not(empty())));
+  }
 
-        assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(sampleObject));
-    }
+  @Test
+  void
+      shouldSendMessageToSqsWithMessagesContainingReferencesPointingToNewEventBodyWhenInputContainsSingleJsonObject()
+          throws IOException {
+    var sampleObject = SampleObject.random();
+    var fileContents = sampleObject.toJsonString();
+    var fileUri = s3Driver.insertFile(randomPath(), fileContents);
+    var input = toInputStream(createInputEventForFile(fileUri));
+    var handler = newHandler();
+    handler.handleRequest(input, outputStream, CONTEXT);
+    List<SampleObject> eventBodiesOfEmittedEventReferences =
+        collectBodiesOfEmittedEventReferences();
 
-    @Test
-    void shouldGenerateSqsMessagesWithBodyContainingAnEntryOfTheInputFileAndReferenceToTheInputFile()
-        throws IOException {
-        var fileContents = SampleObject.random();
-        var fileToBeRead = s3Driver.insertFile(randomPath(), fileContents.toJsonString());
-        var input = toInputStream(createInputEventForFile(fileToBeRead));
-        var handler = newHandler();
-        handler.handleRequest(input, outputStream, CONTEXT);
-        var bodyOfEmittedEvent = amazonSQS.getMessageBodies().stream()
-                                     .map(EventReference::fromJson)
-                                     .map(EventReference::getUri)
-                                     .map(eventBodyUri -> s3Driver.readEvent(eventBodyUri))
-                                     .map(json -> FileContentsEvent.fromJson(json, SampleObject.class))
-                                     .collect(SingletonCollector.collect());
-        assertThat(bodyOfEmittedEvent.getFileUri(), is(equalTo(fileToBeRead)));
-    }
+    assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(sampleObject));
+  }
 
-    @Test
-    void shouldSendMessagePointingToNewEventBodiesWhenInputContainsManySingleIndependentJsonObjects()
-        throws IOException {
-        var firstObject = SampleObject.random();
-        var secondObject = SampleObject.random();
-        var fileContents = firstObject.toJsonString() + System.lineSeparator() + secondObject.toJsonString();
-        var fileUri = s3Driver.insertFile(randomPath(), fileContents);
-        var input = toInputStream(createInputEventForFile(fileUri));
-        var handler = newHandler();
-        handler.handleRequest(input, outputStream, CONTEXT);
-        List<SampleObject> eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
-        assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(firstObject, secondObject));
-    }
+  @Test
+  void shouldGenerateSqsMessagesWithBodyContainingAnEntryOfTheInputFileAndReferenceToTheInputFile()
+      throws IOException {
+    var fileContents = SampleObject.random();
+    var fileToBeRead = s3Driver.insertFile(randomPath(), fileContents.toJsonString());
+    var input = toInputStream(createInputEventForFile(fileToBeRead));
+    var handler = newHandler();
+    handler.handleRequest(input, outputStream, CONTEXT);
+    var bodyOfEmittedEvent =
+        amazonSQS.getMessageBodies().stream()
+            .map(EventReference::fromJson)
+            .map(EventReference::getUri)
+            .map(eventBodyUri -> s3Driver.readEvent(eventBodyUri))
+            .map(json -> FileContentsEvent.fromJson(json, SampleObject.class))
+            .collect(SingletonCollector.collect());
+    assertThat(bodyOfEmittedEvent.getFileUri(), is(equalTo(fileToBeRead)));
+  }
 
-    @Test
-    void shouldSendSqsMessagePointingToFilesWithSingleResourcesWhenFileUriExistsAndContainsDataAsJsonArray()
-        throws IOException {
-        var firstObject = SampleObject.random();
-        var secondObject = SampleObject.random();
-        var objectList = List.of(firstObject, secondObject);
-        var fileContents = JsonUtils.dtoObjectMapper.writeValueAsString(objectList);
-        var fileUri = s3Driver.insertFile(randomPath(), fileContents);
-        var input = toInputStream(createInputEventForFile(fileUri));
-        var handler = newHandler();
-        handler.handleRequest(input, outputStream, CONTEXT);
-        var eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
+  @Test
+  void shouldSendMessagePointingToNewEventBodiesWhenInputContainsManySingleIndependentJsonObjects()
+      throws IOException {
+    var firstObject = SampleObject.random();
+    var secondObject = SampleObject.random();
+    var fileContents =
+        firstObject.toJsonString() + System.lineSeparator() + secondObject.toJsonString();
+    var fileUri = s3Driver.insertFile(randomPath(), fileContents);
+    var input = toInputStream(createInputEventForFile(fileUri));
+    var handler = newHandler();
+    handler.handleRequest(input, outputStream, CONTEXT);
+    List<SampleObject> eventBodiesOfEmittedEventReferences =
+        collectBodiesOfEmittedEventReferences();
+    assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(firstObject, secondObject));
+  }
 
-        assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(firstObject, secondObject));
-    }
+  @Test
+  void
+      shouldSendSqsMessagePointingToFilesWithSingleResourcesWhenFileUriExistsAndContainsDataAsJsonArray()
+          throws IOException {
+    var firstObject = SampleObject.random();
+    var secondObject = SampleObject.random();
+    var objectList = List.of(firstObject, secondObject);
+    var fileContents = JsonUtils.dtoObjectMapper.writeValueAsString(objectList);
+    var fileUri = s3Driver.insertFile(randomPath(), fileContents);
+    var input = toInputStream(createInputEventForFile(fileUri));
+    var handler = newHandler();
+    handler.handleRequest(input, outputStream, CONTEXT);
+    var eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
 
-    @Test
-    void shouldSendMessagesPointingToEventBodiesWhenFileUriExistsAndContainsDataAsIndependentIonObjects()
-        throws IOException {
-        var firstObject = SampleObject.random();
-        var secondObject = SampleObject.random();
-        var fileContents = createNewIonObjectsList(firstObject, secondObject);
-        var fileUri = s3Driver.insertFile(randomPath(), fileContents);
-        var input = toInputStream(createInputEventForFile(fileUri));
-        var handler = newHandler();
-        handler.handleRequest(input, outputStream, CONTEXT);
-        var eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
+    assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(firstObject, secondObject));
+  }
 
-        assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(firstObject, secondObject));
-    }
+  @Test
+  void
+      shouldSendMessagesPointingToEventBodiesWhenFileUriExistsAndContainsDataAsIndependentIonObjects()
+          throws IOException {
+    var firstObject = SampleObject.random();
+    var secondObject = SampleObject.random();
+    var fileContents = createNewIonObjectsList(firstObject, secondObject);
+    var fileUri = s3Driver.insertFile(randomPath(), fileContents);
+    var input = toInputStream(createInputEventForFile(fileUri));
+    var handler = newHandler();
+    handler.handleRequest(input, outputStream, CONTEXT);
+    var eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
 
-    @Test
-    void shouldSendMessagesPointingToEventBodiesWhenFileUriExistsAndContainsDataAsIonArray()
-        throws IOException {
-        var firstObject = SampleObject.random();
-        var secondObject = SampleObject.random();
-        var fileContents = createNewIonArray(firstObject, secondObject);
-        var fileUri = s3Driver.insertFile(randomPath(), fileContents);
-        var input = toInputStream(createInputEventForFile(fileUri));
-        var handler = newHandler();
-        handler.handleRequest(input, outputStream, CONTEXT);
-        var eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
+    assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(firstObject, secondObject));
+  }
 
-        assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(firstObject, secondObject));
-    }
+  @Test
+  void shouldSendMessagesPointingToEventBodiesWhenFileUriExistsAndContainsDataAsIonArray()
+      throws IOException {
+    var firstObject = SampleObject.random();
+    var secondObject = SampleObject.random();
+    var fileContents = createNewIonArray(firstObject, secondObject);
+    var fileUri = s3Driver.insertFile(randomPath(), fileContents);
+    var input = toInputStream(createInputEventForFile(fileUri));
+    var handler = newHandler();
+    handler.handleRequest(input, outputStream, CONTEXT);
+    var eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
 
-    @Test
-    void shouldSendMessageToCorrectQueue() throws IOException {
-        var sampleObject = SampleObject.random();
-        var fileUri = s3Driver.insertFile(randomPath(), sampleObject.toJsonString());
-        var input = toInputStream(createInputEventForFile(fileUri));
-        var handler = newHandler();
+    assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(firstObject, secondObject));
+  }
 
-        handler.handleRequest(input, outputStream, CONTEXT);
-        var emitedEventTopics = emittedEvents(amazonSQS)
-                                    .map(EventReference::getTopic)
-                                    .collect(Collectors.toSet());
-        assertThat(emitedEventTopics, hasSize(1));
-        var actualEmittedTopic = emitedEventTopics.stream().collect(SingletonCollector.collect());
-        assertThat(actualEmittedTopic, is(equalTo(FILE_CONTENTS_EMISSION_EVENT_TOPIC)));
-    }
-    
-    @Test
-    void shouldAcceptEventsWithTopicEqualToFilenameEmissionTopic() throws IOException {
-        var sampleObject = SampleObject.random();
-        var fileUri = s3Driver.insertFile(randomPath(), sampleObject.toJsonString());
-        var inputEvent = createInputEventForFile(fileUri);
-        assertThat(inputEvent.getDetail().getTopic(), is(equalTo(FILENAME_EMISSION_EVENT_TOPIC)));
-        assertDoesNotThrow(() -> handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT));
-    }
-    
-    @Test
-    void handlerThrowsExceptionWhenInputDoesNotHaveTheExpectedTopic() throws IOException {
-        var sampleObject = SampleObject.random();
-        var fileUri = s3Driver.insertFile(randomPath(), sampleObject.toJsonString());
-        var invalidEventReference = new EventReference(UNEXPECTED_TOPIC,
-                                                       SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
-                                                       fileUri);
-        var invalidInputEvent = new AwsEventBridgeEvent<EventReference>();
-        invalidInputEvent.setDetail(invalidEventReference);
-        
-        assertThat(invalidEventReference.getTopic(), is(not(equalTo(FILENAME_EMISSION_EVENT_TOPIC))));
-        Executable action = () -> handler.handleRequest(toInputStream(invalidInputEvent), outputStream, CONTEXT);
-        assertThrows(IllegalArgumentException.class, action);
-    }
+  @Test
+  void shouldSendMessageToCorrectQueue() throws IOException {
+    var sampleObject = SampleObject.random();
+    var fileUri = s3Driver.insertFile(randomPath(), sampleObject.toJsonString());
+    var input = toInputStream(createInputEventForFile(fileUri));
+    var handler = newHandler();
 
-    @Test
-    void handlerThrowsExceptionWhenInputDoesNotHaveTheExpectedSubtopic() throws IOException {
-        var sampleObject = SampleObject.random();
-        var fileUri = s3Driver.insertFile(randomPath(), sampleObject.toJsonString());
-        var invalidEventReference = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
-                                                       UNEXPECTED_TOPIC1,
-                                                       fileUri);
-        var invalidInputEvent = new AwsEventBridgeEvent<EventReference>();
-        invalidInputEvent.setDetail(invalidEventReference);
-        Executable action = () -> handler.handleRequest(toInputStream(invalidInputEvent), outputStream, CONTEXT);
-        assertThrows(IllegalArgumentException.class, action);
-    }
+    handler.handleRequest(input, outputStream, CONTEXT);
+    var emitedEventTopics =
+        emittedEvents(amazonSQS).map(EventReference::getTopic).collect(Collectors.toSet());
+    assertThat(emitedEventTopics, hasSize(1));
+    var actualEmittedTopic = emitedEventTopics.stream().collect(SingletonCollector.collect());
+    assertThat(actualEmittedTopic, is(equalTo(FILE_CONTENTS_EMISSION_EVENT_TOPIC)));
+  }
 
-    @Test
-    void shouldSendMessageWithTheSameTimestampWhichIsEqualToTimestampAcquiredByInputEvent() throws IOException {
-        var sampleObject = SampleObject.random();
-        var fileUri = s3Driver.insertFile(randomPath(), sampleObject.toJsonString());
-        var eventReference = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
-                                                SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
-                                                fileUri);
-        var inputEvent = new AwsEventBridgeEvent<EventReference>();
-        inputEvent.setDetail(eventReference);
+  @Test
+  void shouldAcceptEventsWithTopicEqualToFilenameEmissionTopic() throws IOException {
+    var sampleObject = SampleObject.random();
+    var fileUri = s3Driver.insertFile(randomPath(), sampleObject.toJsonString());
+    var inputEvent = createInputEventForFile(fileUri);
+    assertThat(inputEvent.getDetail().getTopic(), is(equalTo(FILENAME_EMISSION_EVENT_TOPIC)));
+    assertDoesNotThrow(
+        () -> handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT));
+  }
 
-        handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
-        var actualTimeStamp = collectTimestampFromEmittedObjects();
-        assertThat(actualTimeStamp, is(equalTo(eventReference.getTimestamp())));
-    }
-    
-    @Test
-    void handlerSavesErrorReportInS3WithPathImitatingTheInputPath() throws IOException {
-        var amazonSqsThrowingException = amazonSqsThatThrowsException();
-        handler = new FileEntriesEventEmitter(s3Client, amazonSqsThrowingException);
-        var filePath = randomPath();
-        var fileUri = s3Driver.insertFile(filePath, SampleObject.random().toJsonString());
-        var inputEvent = createInputEventForFile(fileUri);
+  @Test
+  void handlerThrowsExceptionWhenInputDoesNotHaveTheExpectedTopic() throws IOException {
+    var sampleObject = SampleObject.random();
+    var fileUri = s3Driver.insertFile(randomPath(), sampleObject.toJsonString());
+    var invalidEventReference =
+        new EventReference(
+            UNEXPECTED_TOPIC, SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER, fileUri);
+    var invalidInputEvent = new AwsEventBridgeEvent<EventReference>();
+    invalidInputEvent.setDetail(invalidEventReference);
 
-        handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
-        var filename = filePath.getLastPathElement();
-        var folderContainingInputFilename = filePath.getParent().orElseThrow();
-        var errorFileFolder = ERRORS_FOLDER
-                                  .addChild(timestampToString(inputEvent.getDetail().getTimestamp()))
-                                  .addChild(folderContainingInputFilename);
-        var expectedErrorFileLocation = errorFileFolder
-                                            .addChild(filename + FILE_EXTENSION_ERROR)
-                                            .toString();
-        var s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
-        assertDoesNotThrow(() -> s3Driver.getFile(UnixPath.of(expectedErrorFileLocation)));
-    }
-    
-    @Test
-    void handlerThrowsExceptionWhenInputUriIsNotAnExistingFile() {
-        var nonExistingFile = randomUri();
-        var input = toInputStream(createInputEventForFile(nonExistingFile));
-        Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
-        assertThat(exception.getMessage(), containsString(nonExistingFile.toString()));
-    }
-    
-    @Test
-    void shouldSaveErrorReportForNonExistingFileInPathImitatingTheInputFileUri() {
-        var nonExistingFile = UriWrapper.fromUri(randomUri()).addChild(randomString()).getUri();
-        var filename = UriWrapper.fromUri(nonExistingFile).getLastPathElement();
-        var parent = UriWrapper.fromUri(nonExistingFile).getParent().map(UriWrapper::getPath).orElseThrow();
-        var inputEvent = createInputEventForFile(nonExistingFile);
-        Executable action = () -> handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
-        var exception = assertThrows(RuntimeException.class, action);
-        var expectedErrorFileLocation = ERRORS_FOLDER
-                                            .addChild(timestampToString(inputEvent.getDetail().getTimestamp()))
-                                            .addChild(parent)
-                                            .addChild(filename + FILE_EXTENSION_ERROR)
-                                            .toString();
-        var s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
-        var actualErrorFile = s3Driver.getFile(UnixPath.of(expectedErrorFileLocation));
-        assertThat(actualErrorFile, is(containsString(exception.getMessage())));
-    }
-    
-    @Test
-    void shouldSaveErrorReportContainingTheEventReferenceThatFailedToBeEmitted()
-        throws IOException {
-        var amazonSqsThrowingException =  amazonSqsThatFailsToSendMessages();
-        handler = new FileEntriesEventEmitter(s3Client, amazonSqsThrowingException);
-        var contents = SampleObject.random();
-        var filePath = randomPath();
-        var fileUri = s3Driver.insertFile(filePath, contents.toJsonString());
-        var inputEvent = createInputEventForFile(fileUri);
-        handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
+    assertThat(invalidEventReference.getTopic(), is(not(equalTo(FILENAME_EMISSION_EVENT_TOPIC))));
+    Executable action =
+        () -> handler.handleRequest(toInputStream(invalidInputEvent), outputStream, CONTEXT);
+    assertThrows(IllegalArgumentException.class, action);
+  }
 
-        var expectedErrorFileLocation = ERRORS_FOLDER
-                                            .addChild(timestampToString(inputEvent.getDetail().getTimestamp()))
-                                            .addChild(filePath.getParent().orElseThrow())
-                                            .addChild(filePath.getLastPathElement() + FILE_EXTENSION_ERROR)
-                                            .toString();
+  @Test
+  void handlerThrowsExceptionWhenInputDoesNotHaveTheExpectedSubtopic() throws IOException {
+    var sampleObject = SampleObject.random();
+    var fileUri = s3Driver.insertFile(randomPath(), sampleObject.toJsonString());
+    var invalidEventReference =
+        new EventReference(FILENAME_EMISSION_EVENT_TOPIC, UNEXPECTED_TOPIC1, fileUri);
+    var invalidInputEvent = new AwsEventBridgeEvent<EventReference>();
+    invalidInputEvent.setDetail(invalidEventReference);
+    Executable action =
+        () -> handler.handleRequest(toInputStream(invalidInputEvent), outputStream, CONTEXT);
+    assertThrows(IllegalArgumentException.class, action);
+  }
 
-        var actualErrorFile = s3Driver.getFile(UnixPath.of(expectedErrorFileLocation));
-        var putResult = parseOutPut(outputStream);
-        assertThat(actualErrorFile, containsString(putResult.getFailures().get(0).toJsonString()));
-    }
-    
-    @Test
-    void shouldSaveErrorReportImitatingInputFilePathWhenFailsToEmitTheWholeFileContents() throws IOException {
-        amazonSQS = amazonSqsThatThrowsException();
-        handler = new FileEntriesEventEmitter(s3Client, amazonSQS);
-        var filPath = randomPath();
-        var fileUri = s3Driver.insertFile(filPath, SampleObject.random().toJsonString());
+  @Test
+  void shouldSendMessageWithTheSameTimestampWhichIsEqualToTimestampAcquiredByInputEvent()
+      throws IOException {
+    var sampleObject = SampleObject.random();
+    var fileUri = s3Driver.insertFile(randomPath(), sampleObject.toJsonString());
+    var eventReference =
+        new EventReference(
+            FILENAME_EMISSION_EVENT_TOPIC,
+            SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
+            fileUri);
+    var inputEvent = new AwsEventBridgeEvent<EventReference>();
+    inputEvent.setDetail(eventReference);
 
-        var inputEvent = createInputEventForFile(fileUri);
-        handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
+    handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
+    var actualTimeStamp = collectTimestampFromEmittedObjects();
+    assertThat(actualTimeStamp, is(equalTo(eventReference.getTimestamp())));
+  }
 
-        var expectedErrorFileLocation = ERRORS_FOLDER
-                                            .addChild(timestampToString(inputEvent.getDetail().getTimestamp()))
-                                            .addChild(filPath.getParent().orElseThrow())
-                                            .addChild(filPath.getLastPathElement() + FILE_EXTENSION_ERROR)
-                                            .toString();
-        var s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
-        assertDoesNotThrow(() -> s3Driver.getFile(UnixPath.of(expectedErrorFileLocation)));
-    }
-    
-    @Test
-    void shouldOrganizeErrorReportsByTheTimeImportStarted() throws IOException {
-        amazonSQS = amazonSqsThatThrowsException();
-        handler = new FileEntriesEventEmitter(s3Client, amazonSQS);
-        var contents = SampleObject.random();
-        var filePath = randomPath();
-        var fileUri = s3Driver.insertFile(filePath, contents.toJsonString());
-        var inputEvent = createInputEventForFile(fileUri);
-        handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
+  @Test
+  void handlerSavesErrorReportInS3WithPathImitatingTheInputPath() throws IOException {
+    var amazonSqsThrowingException = amazonSqsThatThrowsException();
+    handler = new FileEntriesEventEmitter(s3Client, amazonSqsThrowingException);
+    var filePath = randomPath();
+    var fileUri = s3Driver.insertFile(filePath, SampleObject.random().toJsonString());
+    var inputEvent = createInputEventForFile(fileUri);
 
-        var expectedFolderStructure = ERRORS_FOLDER
-                                          .addChild(timestampToString(inputEvent.getDetail().getTimestamp()));
-        var errorReports = s3Driver.listAllFiles(expectedFolderStructure);
-        assertThat(errorReports, is(not(empty())));
-    }
-    
-    @Test
-    void shouldNotCreateErrorReportWhenNoErrorsOccur() throws IOException {
-        var sampleContent = SampleObject.random().toJsonString();
-        var fileUri = s3Driver.insertEvent(randomPath(), sampleContent);
-        var event = toInputStream(createInputEventForFile(fileUri));
-        handler.handleRequest(event, outputStream, CONTEXT);
-        
-        var errorFiles = s3Driver.listAllFiles(ERRORS_FOLDER);
-        assertThat(errorFiles, is(empty()));
-    }
+    handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
+    var filename = filePath.getLastPathElement();
+    var folderContainingInputFilename = filePath.getParent().orElseThrow();
+    var errorFileFolder =
+        ERRORS_FOLDER
+            .addChild(timestampToString(inputEvent.getDetail().getTimestamp()))
+            .addChild(folderContainingInputFilename);
+    var expectedErrorFileLocation =
+        errorFileFolder.addChild(filename + FILE_EXTENSION_ERROR).toString();
+    var s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
+    assertDoesNotThrow(() -> s3Driver.getFile(UnixPath.of(expectedErrorFileLocation)));
+  }
 
-    @Test
-    void shouldSendMessageWithSubtopicEqualToInputImportRequestSubtopic() throws IOException {
-        var sampleEntry = SampleObject.random().toJsonString();
-        var fileUri = s3Driver.insertFile(randomPath(), sampleEntry);
-        var inputEvent = createInputEventForFile(fileUri);
-        handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
-        var actualSubtopic = amazonSQS.getMessageBodies().stream()
-                                 .map(EventReference::fromJson)
-                                 .map(EventReference::getSubtopic)
-                                 .collect(SingletonCollector.collect());
+  @Test
+  void handlerThrowsExceptionWhenInputUriIsNotAnExistingFile() {
+    var nonExistingFile = randomUri();
+    var input = toInputStream(createInputEventForFile(nonExistingFile));
+    Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
+    RuntimeException exception = assertThrows(RuntimeException.class, action);
+    assertThat(exception.getMessage(), containsString(nonExistingFile.toString()));
+  }
 
-        assertThat(actualSubtopic, is(equalTo(inputEvent.getDetail().getSubtopic())));
-    }
+  @Test
+  void shouldSaveErrorReportForNonExistingFileInPathImitatingTheInputFileUri() {
+    var nonExistingFile = UriWrapper.fromUri(randomUri()).addChild(randomString()).getUri();
+    var filename = UriWrapper.fromUri(nonExistingFile).getLastPathElement();
+    var parent =
+        UriWrapper.fromUri(nonExistingFile).getParent().map(UriWrapper::getPath).orElseThrow();
+    var inputEvent = createInputEventForFile(nonExistingFile);
+    Executable action =
+        () -> handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
+    var exception = assertThrows(RuntimeException.class, action);
+    var expectedErrorFileLocation =
+        ERRORS_FOLDER
+            .addChild(timestampToString(inputEvent.getDetail().getTimestamp()))
+            .addChild(parent)
+            .addChild(filename + FILE_EXTENSION_ERROR)
+            .toString();
+    var s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
+    var actualErrorFile = s3Driver.getFile(UnixPath.of(expectedErrorFileLocation));
+    assertThat(actualErrorFile, is(containsString(exception.getMessage())));
+  }
 
-    @Test
-    void shouldSendMessageWithNviPatchSubtopicAndSqsMessageShouldContainNviEntryS3location() throws IOException {
-        var sampleEntry = SampleObject.random().toJsonString();
-        var fileUri = s3Driver.insertFile(randomPath(), sampleEntry);
-        var inputEvent = createInputEventForFileWithSubtopic(fileUri, SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER);
-        handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
+  @Test
+  void shouldSaveErrorReportContainingTheEventReferenceThatFailedToBeEmitted() throws IOException {
+    var amazonSqsThrowingException = amazonSqsThatFailsToSendMessages();
+    handler = new FileEntriesEventEmitter(s3Client, amazonSqsThrowingException);
+    var contents = SampleObject.random();
+    var filePath = randomPath();
+    var fileUri = s3Driver.insertFile(filePath, contents.toJsonString());
+    var inputEvent = createInputEventForFile(fileUri);
+    handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
 
-        var eventReferences = amazonSQS.getMessageBodies().stream()
-                       .map(EventReference::fromJson).collect(Collectors.toSet());
+    var expectedErrorFileLocation =
+        ERRORS_FOLDER
+            .addChild(timestampToString(inputEvent.getDetail().getTimestamp()))
+            .addChild(filePath.getParent().orElseThrow())
+            .addChild(filePath.getLastPathElement() + FILE_EXTENSION_ERROR)
+            .toString();
 
-        assertThat(eventReferences.iterator().next().getUri(), is(equalTo(fileUri)));
-        assertThat(eventReferences.iterator().next().getSubtopic(), is(equalTo(inputEvent.getDetail().getSubtopic())));
-    }
+    var actualErrorFile = s3Driver.getFile(UnixPath.of(expectedErrorFileLocation));
+    var putResult = parseOutPut(outputStream);
+    assertThat(actualErrorFile, containsString(putResult.getFailures().get(0).toJsonString()));
+  }
 
-    @Test
-    void shouldSendMessageWithBragePatchSubtopicAndSqsMessageShouldContainNviEntryS3location() throws IOException {
-        var sampleEntry = SampleObject.random().toJsonString();
-        var fileUri = s3Driver.insertFile(randomPath(), sampleEntry);
-        var inputEvent = createInputEventForFileWithSubtopic(fileUri,
-                                                             SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER);
-        handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
+  @Test
+  void shouldSaveErrorReportImitatingInputFilePathWhenFailsToEmitTheWholeFileContents()
+      throws IOException {
+    amazonSQS = amazonSqsThatThrowsException();
+    handler = new FileEntriesEventEmitter(s3Client, amazonSQS);
+    var filPath = randomPath();
+    var fileUri = s3Driver.insertFile(filPath, SampleObject.random().toJsonString());
 
-        var eventReferences = amazonSQS.getMessageBodies().stream()
-                                  .map(EventReference::fromJson).collect(Collectors.toSet());
+    var inputEvent = createInputEventForFile(fileUri);
+    handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
 
-        assertThat(eventReferences.iterator().next().getUri(), is(equalTo(fileUri)));
-        assertThat(eventReferences.iterator().next().getSubtopic(), is(equalTo(inputEvent.getDetail().getSubtopic())));
-    }
+    var expectedErrorFileLocation =
+        ERRORS_FOLDER
+            .addChild(timestampToString(inputEvent.getDetail().getTimestamp()))
+            .addChild(filPath.getParent().orElseThrow())
+            .addChild(filPath.getLastPathElement() + FILE_EXTENSION_ERROR)
+            .toString();
+    var s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
+    assertDoesNotThrow(() -> s3Driver.getFile(UnixPath.of(expectedErrorFileLocation)));
+  }
 
-    private AwsEventBridgeEvent<EventReference> createInputEventForFileWithSubtopic(URI fileUri, String subtopic) {
-        var eventReference = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
-                                                subtopic,
-                                                fileUri,
-                                                Instant.now());
-        var request = new AwsEventBridgeEvent<EventReference>();
-        request.setDetail(eventReference);
-        return request;
-    }
+  @Test
+  void shouldOrganizeErrorReportsByTheTimeImportStarted() throws IOException {
+    amazonSQS = amazonSqsThatThrowsException();
+    handler = new FileEntriesEventEmitter(s3Client, amazonSQS);
+    var contents = SampleObject.random();
+    var filePath = randomPath();
+    var fileUri = s3Driver.insertFile(filePath, contents.toJsonString());
+    var inputEvent = createInputEventForFile(fileUri);
+    handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
 
-    @Test
-    void shouldSendMessagesWithLowerCasedJsonKeyNames() throws IOException {
-        var input = IoUtils.stringFromResources(Path.of("bundle.txt"));
-        var fileUri = s3Driver.insertFile(randomPath(), input);
-        var inputEvent = createInputEventForFile(fileUri);
-        handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
-        var contentBodyOfEmittedEvent = amazonSQS.getMessageBodies().stream()
-                                            .map(EventReference::fromJson)
-                                            .map(EventReference::getUri)
-                                            .map(eventBodyUri -> s3Driver.readEvent(eventBodyUri))
-                                            .map(json -> FileContentsEvent.fromJson(json, JsonNode.class))
-                                            .map(FileContentsEvent::getContents)
-                                            .collect(Collectors.toList());
-        assertThatContentBodyOfEmittedEventsFieldNamesAreAllLowerCase(contentBodyOfEmittedEvent);
-    }
+    var expectedFolderStructure =
+        ERRORS_FOLDER.addChild(timestampToString(inputEvent.getDetail().getTimestamp()));
+    var errorReports = s3Driver.listAllFiles(expectedFolderStructure);
+    assertThat(errorReports, is(not(empty())));
+  }
 
-    private static PutSqsMessageResult parseOutPut(ByteArrayOutputStream outputStream) {
-        var output = outputStream.toString(StandardCharsets.UTF_8);
-        return attempt(() -> JsonUtils.dtoObjectMapper.readValue(output, PutSqsMessageResult.class)).orElseThrow();
-    }
+  @Test
+  void shouldNotCreateErrorReportWhenNoErrorsOccur() throws IOException {
+    var sampleContent = SampleObject.random().toJsonString();
+    var fileUri = s3Driver.insertEvent(randomPath(), sampleContent);
+    var event = toInputStream(createInputEventForFile(fileUri));
+    handler.handleRequest(event, outputStream, CONTEXT);
 
-    private static String createNewIonObjectsList(SampleObject... sampleObjects) {
-        return Arrays.stream(sampleObjects)
-                   .map(attempt(s3ImportsMapper::writeValueAsString))
-                   .map(attempt -> attempt.map(FileEntriesEventEmitterTest::jsonToIon))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.joining(System.lineSeparator()));
-    }
+    var errorFiles = s3Driver.listAllFiles(ERRORS_FOLDER);
+    assertThat(errorFiles, is(empty()));
+  }
 
-    private static String createNewIonArray(SampleObject... sampleObjects) throws IOException {
-        String jsonString = s3ImportsMapper.writeValueAsString(sampleObjects);
-        return jsonToIon(jsonString);
-    }
-    
-    private static String jsonToIon(String jsonString) throws IOException {
-        IonReader reader = IonReaderBuilder.standard().build(jsonString);
-        StringBuilder stringAppender = new StringBuilder();
-        IonWriter writer = IonTextWriterBuilder.standard().build(stringAppender);
-        writer.writeValues(reader);
-        return stringAppender.toString();
-    }
+  @Test
+  void shouldSendMessageWithSubtopicEqualToInputImportRequestSubtopic() throws IOException {
+    var sampleEntry = SampleObject.random().toJsonString();
+    var fileUri = s3Driver.insertFile(randomPath(), sampleEntry);
+    var inputEvent = createInputEventForFile(fileUri);
+    handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
+    var actualSubtopic =
+        amazonSQS.getMessageBodies().stream()
+            .map(EventReference::fromJson)
+            .map(EventReference::getSubtopic)
+            .collect(SingletonCollector.collect());
 
-    private void assertThatContentBodyOfEmittedEventsFieldNamesAreAllLowerCase(List<JsonNode> contents) {
-        contents.forEach(this::assertThatFieldNamesAreLowerCase);
-    }
+    assertThat(actualSubtopic, is(equalTo(inputEvent.getDetail().getSubtopic())));
+  }
 
-    private void assertThatFieldNamesAreLowerCase(JsonNode content) {
-        content.fieldNames().forEachRemaining(name -> assertThat(name, is(equalTo(name.toLowerCase(Locale.ROOT)))));
-        content.elements().forEachRemaining(this::assertThatFieldNamesAreLowerCase);
-    }
+  @Test
+  void shouldSendMessageWithNviPatchSubtopicAndSqsMessageShouldContainNviEntryS3location()
+      throws IOException {
+    var sampleEntry = SampleObject.random().toJsonString();
+    var fileUri = s3Driver.insertFile(randomPath(), sampleEntry);
+    var inputEvent =
+        createInputEventForFileWithSubtopic(
+            fileUri, SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER);
+    handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
 
-    private UnixPath randomPath() {
-        return UnixPath.of(randomString(), randomString());
-    }
+    var eventReferences =
+        amazonSQS.getMessageBodies().stream()
+            .map(EventReference::fromJson)
+            .collect(Collectors.toSet());
 
-    private List<SampleObject> collectBodiesOfEmittedEventReferences() {
-        var s3Driver = new S3Driver(s3Client, "ignored");
-        return amazonSQS.getMessageBodies().stream()
-                   .map(EventReference::fromJson)
-                   .map(EventReference::getUri)
-                   .map(s3Driver::readEvent)
-                   .map(json -> FileContentsEvent.fromJson(json, SampleObject.class))
-                   .map(FileContentsEvent::getContents)
-                   .collect(Collectors.toList());
-    }
+    assertThat(eventReferences.iterator().next().getUri(), is(equalTo(fileUri)));
+    assertThat(
+        eventReferences.iterator().next().getSubtopic(),
+        is(equalTo(inputEvent.getDetail().getSubtopic())));
+  }
 
-    private FakeAmazonSQS amazonSqsThatThrowsException() {
-        return new FakeAmazonSQS() {
-            @Override
-            public SendMessageBatchResult sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {
+  @Test
+  void shouldSendMessageWithBragePatchSubtopicAndSqsMessageShouldContainNviEntryS3location()
+      throws IOException {
+    var sampleEntry = SampleObject.random().toJsonString();
+    var fileUri = s3Driver.insertFile(randomPath(), sampleEntry);
+    var inputEvent =
+        createInputEventForFileWithSubtopic(
+            fileUri, SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER);
+    handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
 
-                throw new UnsupportedOperationException("Total failure");
-            }
-        };
-    }
+    var eventReferences =
+        amazonSQS.getMessageBodies().stream()
+            .map(EventReference::fromJson)
+            .collect(Collectors.toSet());
 
-    private FakeAmazonSQS amazonSqsThatFailsToSendMessages() {
-        return new FakeAmazonSQS() {
-            @Override
-            public SendMessageBatchResult sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {
-                var result = new SendMessageBatchResult();
-                result.setFailed(
-                    sendMessageBatchRequest.getEntries().stream().map(entry -> createFailedResult(entry)).collect(
-                        Collectors.toList()));
-                result.setSuccessful(List.of());
-                return result;
-            }
-        };
-    }
+    assertThat(eventReferences.iterator().next().getUri(), is(equalTo(fileUri)));
+    assertThat(
+        eventReferences.iterator().next().getSubtopic(),
+        is(equalTo(inputEvent.getDetail().getSubtopic())));
+  }
 
-    private BatchResultErrorEntry createFailedResult(SendMessageBatchRequestEntry entry) {
-        var resultEntry = new BatchResultErrorEntry();
-        resultEntry.setId(entry.getId());
-        resultEntry.setMessage("Failed miserably");
-        return resultEntry;
-    }
+  private AwsEventBridgeEvent<EventReference> createInputEventForFileWithSubtopic(
+      URI fileUri, String subtopic) {
+    var eventReference =
+        new EventReference(FILENAME_EMISSION_EVENT_TOPIC, subtopic, fileUri, Instant.now());
+    var request = new AwsEventBridgeEvent<EventReference>();
+    request.setDetail(eventReference);
+    return request;
+  }
 
-    private FileEntriesEventEmitter newHandler() {
-        return new FileEntriesEventEmitter(s3Client, amazonSQS);
-    }
+  @Test
+  void shouldSendMessagesWithLowerCasedJsonKeyNames() throws IOException {
+    var input = IoUtils.stringFromResources(Path.of("bundle.txt"));
+    var fileUri = s3Driver.insertFile(randomPath(), input);
+    var inputEvent = createInputEventForFile(fileUri);
+    handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
+    var contentBodyOfEmittedEvent =
+        amazonSQS.getMessageBodies().stream()
+            .map(EventReference::fromJson)
+            .map(EventReference::getUri)
+            .map(eventBodyUri -> s3Driver.readEvent(eventBodyUri))
+            .map(json -> FileContentsEvent.fromJson(json, JsonNode.class))
+            .map(FileContentsEvent::getContents)
+            .collect(Collectors.toList());
+    assertThatContentBodyOfEmittedEventsFieldNamesAreAllLowerCase(contentBodyOfEmittedEvent);
+  }
 
-    private AwsEventBridgeEvent<EventReference> createInputEventForFile(URI fileUri) {
-        var eventReference = new EventReference(FILENAME_EMISSION_EVENT_TOPIC,
-                                                SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
-                                                fileUri,
-                                                Instant.now());
-        var request = new AwsEventBridgeEvent<EventReference>();
+  private static PutSqsMessageResult parseOutPut(ByteArrayOutputStream outputStream) {
+    var output = outputStream.toString(StandardCharsets.UTF_8);
+    return attempt(() -> JsonUtils.dtoObjectMapper.readValue(output, PutSqsMessageResult.class))
+        .orElseThrow();
+  }
 
-        request.setDetail(eventReference);
-        return request;
-    }
+  private static String createNewIonObjectsList(SampleObject... sampleObjects) {
+    return Arrays.stream(sampleObjects)
+        .map(attempt(s3ImportsMapper::writeValueAsString))
+        .map(attempt -> attempt.map(FileEntriesEventEmitterTest::jsonToIon))
+        .map(Try::orElseThrow)
+        .collect(Collectors.joining(System.lineSeparator()));
+  }
 
-    //
-    private Stream<EventReference> emittedEvents(
-        FakeAmazonSQS fakeAmazonSQS) {
-        return fakeAmazonSQS.getMessageBodies().stream()
-                   .map(EventReference::fromJson);
-    }
+  private static String createNewIonArray(SampleObject... sampleObjects) throws IOException {
+    String jsonString = s3ImportsMapper.writeValueAsString(sampleObjects);
+    return jsonToIon(jsonString);
+  }
 
-    private Instant collectTimestampFromEmittedObjects() {
-        return emittedEvents(amazonSQS)
-                   .map(EventReference::getTimestamp)
-                   .collect(SingletonCollector.collect());
-    }
+  private static String jsonToIon(String jsonString) throws IOException {
+    IonReader reader = IonReaderBuilder.standard().build(jsonString);
+    StringBuilder stringAppender = new StringBuilder();
+    IonWriter writer = IonTextWriterBuilder.standard().build(stringAppender);
+    writer.writeValues(reader);
+    return stringAppender.toString();
+  }
 
-    private InputStream toInputStream(AwsEventBridgeEvent<EventReference> request) {
-        return attempt(() -> s3ImportsMapper.writeValueAsString(request))
-                   .map(IoUtils::stringToStream)
-                   .orElseThrow();
-    }
+  private void assertThatContentBodyOfEmittedEventsFieldNamesAreAllLowerCase(
+      List<JsonNode> contents) {
+    contents.forEach(this::assertThatFieldNamesAreLowerCase);
+  }
+
+  private void assertThatFieldNamesAreLowerCase(JsonNode content) {
+    content
+        .fieldNames()
+        .forEachRemaining(name -> assertThat(name, is(equalTo(name.toLowerCase(Locale.ROOT)))));
+    content.elements().forEachRemaining(this::assertThatFieldNamesAreLowerCase);
+  }
+
+  private UnixPath randomPath() {
+    return UnixPath.of(randomString(), randomString());
+  }
+
+  private List<SampleObject> collectBodiesOfEmittedEventReferences() {
+    var s3Driver = new S3Driver(s3Client, "ignored");
+    return amazonSQS.getMessageBodies().stream()
+        .map(EventReference::fromJson)
+        .map(EventReference::getUri)
+        .map(s3Driver::readEvent)
+        .map(json -> FileContentsEvent.fromJson(json, SampleObject.class))
+        .map(FileContentsEvent::getContents)
+        .collect(Collectors.toList());
+  }
+
+  private FakeAmazonSQS amazonSqsThatThrowsException() {
+    return new FakeAmazonSQS() {
+      @Override
+      public SendMessageBatchResult sendMessageBatch(
+          SendMessageBatchRequest sendMessageBatchRequest) {
+
+        throw new UnsupportedOperationException("Total failure");
+      }
+    };
+  }
+
+  private FakeAmazonSQS amazonSqsThatFailsToSendMessages() {
+    return new FakeAmazonSQS() {
+      @Override
+      public SendMessageBatchResult sendMessageBatch(
+          SendMessageBatchRequest sendMessageBatchRequest) {
+        var result = new SendMessageBatchResult();
+        result.setFailed(
+            sendMessageBatchRequest.getEntries().stream()
+                .map(entry -> createFailedResult(entry))
+                .collect(Collectors.toList()));
+        result.setSuccessful(List.of());
+        return result;
+      }
+    };
+  }
+
+  private BatchResultErrorEntry createFailedResult(SendMessageBatchRequestEntry entry) {
+    var resultEntry = new BatchResultErrorEntry();
+    resultEntry.setId(entry.getId());
+    resultEntry.setMessage("Failed miserably");
+    return resultEntry;
+  }
+
+  private FileEntriesEventEmitter newHandler() {
+    return new FileEntriesEventEmitter(s3Client, amazonSQS);
+  }
+
+  private AwsEventBridgeEvent<EventReference> createInputEventForFile(URI fileUri) {
+    var eventReference =
+        new EventReference(
+            FILENAME_EMISSION_EVENT_TOPIC,
+            SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
+            fileUri,
+            Instant.now());
+    var request = new AwsEventBridgeEvent<EventReference>();
+
+    request.setDetail(eventReference);
+    return request;
+  }
+
+  //
+  private Stream<EventReference> emittedEvents(FakeAmazonSQS fakeAmazonSQS) {
+    return fakeAmazonSQS.getMessageBodies().stream().map(EventReference::fromJson);
+  }
+
+  private Instant collectTimestampFromEmittedObjects() {
+    return emittedEvents(amazonSQS)
+        .map(EventReference::getTimestamp)
+        .collect(SingletonCollector.collect());
+  }
+
+  private InputStream toInputStream(AwsEventBridgeEvent<EventReference> request) {
+    return attempt(() -> s3ImportsMapper.writeValueAsString(request))
+        .map(IoUtils::stringToStream)
+        .orElseThrow();
+  }
 }

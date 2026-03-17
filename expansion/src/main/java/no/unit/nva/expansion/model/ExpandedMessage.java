@@ -20,294 +20,305 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeName(ExpandedMessage.TYPE)
 public class ExpandedMessage implements JsonSerializable, ExpandedDataEntry {
 
-    public static final String TYPE = "Message";
-    public static final String TEXT_JSON_NAME = "text";
-    public static final String IDENTIFIER_JSON_NAME = "identifier";
-    public static final String SENDER_JSON_NAME = "sender";
-    public static final String OWNER_JSON_NAME = "owner";
-    public static final String CREATED_DATE = "createdDate";
-    public static final String CUSTOMER_ID_JSON_NAME = "customerId";
-    public static final String RESOURCE_IDENTIFIER_JSON_NAME = "resourceIdentifier";
-    public static final String TICKET_IDENTIFIER_JSON_NAME = "ticketIdentifier";
-    public static final String CREATED_TIME = "createdTime";
-    public static final String MODIFIED_TIME = "modifiedTime";
-    public static final String MODIFIED_DATE = "modifiedDate";
-    public static final String RESOURCE_TITLE = "resourceTitle";
-    public static final String STATUS = "status";
-    @JsonProperty(IDENTIFIER_JSON_NAME)
-    private SortableIdentifier identifier;
-    @JsonProperty(OWNER_JSON_NAME)
-    private User owner;
-    @JsonProperty(CUSTOMER_ID_JSON_NAME)
-    private URI customerId;
-    @JsonProperty(SENDER_JSON_NAME)
-    private ExpandedPerson sender;
-    @JsonProperty(RESOURCE_IDENTIFIER_JSON_NAME)
-    private SortableIdentifier resourceIdentifier;
-    @JsonProperty(TICKET_IDENTIFIER_JSON_NAME)
-    private SortableIdentifier ticketIdentifier;
-    @JsonProperty(TEXT_JSON_NAME)
-    private String text;
-    //TODO: remove alias after migration
-    @JsonAlias(CREATED_TIME)
-    @JsonProperty(CREATED_DATE)
-    private Instant createdDate;
-    //TODO: remove alias after migration
-    @JsonAlias(MODIFIED_TIME)
-    @JsonProperty(MODIFIED_DATE)
-    private Instant modifiedDate;
-    @JsonProperty(RESOURCE_TITLE)
-    private String resourceTitle;
-    @JsonProperty(STATUS)
-    private MessageStatus status;
+  public static final String TYPE = "Message";
+  public static final String TEXT_JSON_NAME = "text";
+  public static final String IDENTIFIER_JSON_NAME = "identifier";
+  public static final String SENDER_JSON_NAME = "sender";
+  public static final String OWNER_JSON_NAME = "owner";
+  public static final String CREATED_DATE = "createdDate";
+  public static final String CUSTOMER_ID_JSON_NAME = "customerId";
+  public static final String RESOURCE_IDENTIFIER_JSON_NAME = "resourceIdentifier";
+  public static final String TICKET_IDENTIFIER_JSON_NAME = "ticketIdentifier";
+  public static final String CREATED_TIME = "createdTime";
+  public static final String MODIFIED_TIME = "modifiedTime";
+  public static final String MODIFIED_DATE = "modifiedDate";
+  public static final String RESOURCE_TITLE = "resourceTitle";
+  public static final String STATUS = "status";
 
-    @JacocoGenerated
-    public ExpandedMessage() {
-        // NO-OP
+  @JsonProperty(IDENTIFIER_JSON_NAME)
+  private SortableIdentifier identifier;
+
+  @JsonProperty(OWNER_JSON_NAME)
+  private User owner;
+
+  @JsonProperty(CUSTOMER_ID_JSON_NAME)
+  private URI customerId;
+
+  @JsonProperty(SENDER_JSON_NAME)
+  private ExpandedPerson sender;
+
+  @JsonProperty(RESOURCE_IDENTIFIER_JSON_NAME)
+  private SortableIdentifier resourceIdentifier;
+
+  @JsonProperty(TICKET_IDENTIFIER_JSON_NAME)
+  private SortableIdentifier ticketIdentifier;
+
+  @JsonProperty(TEXT_JSON_NAME)
+  private String text;
+
+  // TODO: remove alias after migration
+  @JsonAlias(CREATED_TIME)
+  @JsonProperty(CREATED_DATE)
+  private Instant createdDate;
+
+  // TODO: remove alias after migration
+  @JsonAlias(MODIFIED_TIME)
+  @JsonProperty(MODIFIED_DATE)
+  private Instant modifiedDate;
+
+  @JsonProperty(RESOURCE_TITLE)
+  private String resourceTitle;
+
+  @JsonProperty(STATUS)
+  private MessageStatus status;
+
+  @JacocoGenerated
+  public ExpandedMessage() {
+    // NO-OP
+  }
+
+  public static ExpandedMessage createEntry(
+      Message message, ResourceExpansionService expansionService) {
+    return builder()
+        .withCreatedDate(message.getCreatedDate())
+        .withCustomerId(message.getCustomerId())
+        .withIdentifier(message.getIdentifier())
+        .withResourceIdentifier(message.getResourceIdentifier())
+        .withOwner(message.getOwner())
+        .withSender(expansionService.expandPerson(message.getSender()))
+        .withText(message.getText())
+        .withResourceTitle(message.getResourceTitle())
+        .withModifiedDate(message.getModifiedDate())
+        .withTicketIdentifier(message.getTicketIdentifier())
+        .withStatus(message.getStatus())
+        .build();
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public SortableIdentifier getIdentifier() {
+    return identifier;
+  }
+
+  public void setIdentifier(SortableIdentifier identifier) {
+    this.identifier = identifier;
+  }
+
+  public User getOwner() {
+    return owner;
+  }
+
+  public void setOwner(User owner) {
+    this.owner = owner;
+  }
+
+  public MessageStatus getStatus() {
+    return status;
+  }
+
+  @JacocoGenerated
+  @Override
+  public SortableIdentifier identifyExpandedEntry() {
+    return identifier;
+  }
+
+  private void setStatus(MessageStatus status) {
+    this.status = status;
+  }
+
+  public URI getCustomerId() {
+    return customerId;
+  }
+
+  public void setCustomerId(URI customerId) {
+    this.customerId = customerId;
+  }
+
+  public ExpandedPerson getSender() {
+    return sender;
+  }
+
+  public void setSender(ExpandedPerson sender) {
+    this.sender = sender;
+  }
+
+  public SortableIdentifier getResourceIdentifier() {
+    return resourceIdentifier;
+  }
+
+  public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
+    this.resourceIdentifier = resourceIdentifier;
+  }
+
+  public SortableIdentifier getTicketIdentifier() {
+    return ticketIdentifier;
+  }
+
+  public void setTicketIdentifier(SortableIdentifier ticketIdentifier) {
+    this.ticketIdentifier = ticketIdentifier;
+  }
+
+  public String getText() {
+    return text;
+  }
+
+  public void setText(String text) {
+    this.text = text;
+  }
+
+  public Instant getCreatedDate() {
+    return createdDate;
+  }
+
+  public void setCreatedDate(Instant createdDate) {
+    this.createdDate = createdDate;
+  }
+
+  public Instant getModifiedDate() {
+    return modifiedDate;
+  }
+
+  public void setModifiedDate(Instant modifiedDate) {
+    this.modifiedDate = modifiedDate;
+  }
+
+  public String getResourceTitle() {
+    return resourceTitle;
+  }
+
+  public void setResourceTitle(String resourceTitle) {
+    this.resourceTitle = resourceTitle;
+  }
+
+  public Message toMessage() {
+    return Message.builder()
+        .withCreatedDate(this.getCreatedDate())
+        .withCustomerId(this.getCustomerId())
+        .withIdentifier(this.getIdentifier())
+        .withResourceIdentifier(getResourceIdentifier())
+        .withOwner(this.getOwner())
+        .withSender(this.getSender().username())
+        .withText(this.getText())
+        .withResourceTitle(this.getResourceTitle())
+        .withModifiedDate(this.getModifiedDate())
+        .withTicketIdentifier(this.getTicketIdentifier())
+        .withStatus(this.getStatus())
+        .build();
+  }
+
+  @Override
+  @JacocoGenerated
+  public String toString() {
+    return toJsonString();
+  }
+
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    ExpandedMessage that = (ExpandedMessage) o;
+    return Objects.equals(getIdentifier(), that.getIdentifier())
+        && Objects.equals(getOwner(), that.getOwner())
+        && Objects.equals(getCustomerId(), that.getCustomerId())
+        && Objects.equals(getSender(), that.getSender())
+        && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+        && Objects.equals(getTicketIdentifier(), that.getTicketIdentifier())
+        && Objects.equals(getText(), that.getText())
+        && Objects.equals(getCreatedDate(), that.getCreatedDate())
+        && Objects.equals(getModifiedDate(), that.getModifiedDate())
+        && Objects.equals(getResourceTitle(), that.getResourceTitle())
+        && Objects.equals(getStatus(), that.getStatus());
+  }
+
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        getIdentifier(),
+        getOwner(),
+        getCustomerId(),
+        getSender(),
+        getResourceIdentifier(),
+        getTicketIdentifier(),
+        getText(),
+        getCreatedDate(),
+        getModifiedDate(),
+        getResourceTitle(),
+        getStatus());
+  }
+
+  public static final class Builder {
+
+    private final ExpandedMessage message;
+
+    private Builder() {
+      message = new ExpandedMessage();
     }
 
-    public static ExpandedMessage createEntry(Message message,
-                                              ResourceExpansionService expansionService) {
-        return builder()
-                .withCreatedDate(message.getCreatedDate())
-                .withCustomerId(message.getCustomerId())
-                .withIdentifier(message.getIdentifier())
-                .withResourceIdentifier(message.getResourceIdentifier())
-                .withOwner(message.getOwner())
-                .withSender(expansionService.expandPerson(message.getSender()))
-                .withText(message.getText())
-                .withResourceTitle(message.getResourceTitle())
-                .withModifiedDate(message.getModifiedDate())
-                .withTicketIdentifier(message.getTicketIdentifier())
-                .withStatus(message.getStatus())
-                .build();
-
+    public Builder withIdentifier(SortableIdentifier identifier) {
+      message.setIdentifier(identifier);
+      return this;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public Builder withOwner(User owner) {
+      message.setOwner(owner);
+      return this;
     }
 
-    public SortableIdentifier getIdentifier() {
-        return identifier;
+    public Builder withCustomerId(URI customerId) {
+      message.setCustomerId(customerId);
+      return this;
     }
 
-    public void setIdentifier(SortableIdentifier identifier) {
-        this.identifier = identifier;
+    public Builder withSender(ExpandedPerson sender) {
+      message.setSender(sender);
+      return this;
     }
 
-    public User getOwner() {
-        return owner;
+    public Builder withResourceIdentifier(SortableIdentifier resourceIdentifier) {
+      message.setResourceIdentifier(resourceIdentifier);
+      return this;
     }
 
-    public void setOwner(User owner) {
-        this.owner = owner;
+    public Builder withTicketIdentifier(SortableIdentifier ticketIdentifier) {
+      message.setTicketIdentifier(ticketIdentifier);
+      return this;
     }
 
-    public MessageStatus getStatus() {
-        return status;
+    public Builder withText(String text) {
+      message.setText(text);
+      return this;
     }
 
-    @JacocoGenerated
-    @Override
-    public SortableIdentifier identifyExpandedEntry() {
-        return identifier;
+    public Builder withCreatedDate(Instant createdDate) {
+      message.setCreatedDate(createdDate);
+      return this;
     }
 
-    private void setStatus(MessageStatus status) {
-        this.status = status;
+    public Builder withModifiedDate(Instant modifiedDate) {
+      message.setModifiedDate(modifiedDate);
+      return this;
     }
 
-    public URI getCustomerId() {
-        return customerId;
+    public Builder withResourceTitle(String resourceTitle) {
+      message.setResourceTitle(resourceTitle);
+      return this;
     }
 
-    public void setCustomerId(URI customerId) {
-        this.customerId = customerId;
+    public ExpandedMessage build() {
+      return message;
     }
 
-    public ExpandedPerson getSender() {
-        return sender;
+    public Builder withStatus(MessageStatus status) {
+      message.setStatus(status);
+      return this;
     }
-
-    public void setSender(ExpandedPerson sender) {
-        this.sender = sender;
-    }
-
-    public SortableIdentifier getResourceIdentifier() {
-        return resourceIdentifier;
-    }
-
-    public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
-        this.resourceIdentifier = resourceIdentifier;
-    }
-
-    public SortableIdentifier getTicketIdentifier() {
-        return ticketIdentifier;
-    }
-
-    public void setTicketIdentifier(SortableIdentifier ticketIdentifier) {
-        this.ticketIdentifier = ticketIdentifier;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public Instant getCreatedDate() {
-        return createdDate;
-    }
-
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    public Instant getModifiedDate() {
-        return modifiedDate;
-    }
-
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
-    }
-
-    public String getResourceTitle() {
-        return resourceTitle;
-    }
-
-    public void setResourceTitle(String resourceTitle) {
-        this.resourceTitle = resourceTitle;
-    }
-
-    public Message toMessage() {
-        return Message.builder()
-                .withCreatedDate(this.getCreatedDate())
-                .withCustomerId(this.getCustomerId())
-                .withIdentifier(this.getIdentifier())
-                .withResourceIdentifier(getResourceIdentifier())
-                .withOwner(this.getOwner())
-                .withSender(this.getSender().username())
-                .withText(this.getText())
-                .withResourceTitle(this.getResourceTitle())
-                .withModifiedDate(this.getModifiedDate())
-                .withTicketIdentifier(this.getTicketIdentifier())
-                .withStatus(this.getStatus())
-                .build();
-    }
-
-    @Override
-    @JacocoGenerated
-    public String toString() {
-        return toJsonString();
-    }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        ExpandedMessage that = (ExpandedMessage) o;
-        return Objects.equals(getIdentifier(), that.getIdentifier())
-                && Objects.equals(getOwner(), that.getOwner())
-                && Objects.equals(getCustomerId(), that.getCustomerId())
-                && Objects.equals(getSender(), that.getSender())
-                && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
-                && Objects.equals(getTicketIdentifier(), that.getTicketIdentifier())
-                && Objects.equals(getText(), that.getText())
-                && Objects.equals(getCreatedDate(), that.getCreatedDate())
-                && Objects.equals(getModifiedDate(), that.getModifiedDate())
-                && Objects.equals(getResourceTitle(), that.getResourceTitle())
-                && Objects.equals(getStatus(), that.getStatus());
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getIdentifier(),
-                getOwner(),
-                getCustomerId(),
-                getSender(),
-                getResourceIdentifier(),
-                getTicketIdentifier(),
-                getText(),
-                getCreatedDate(),
-                getModifiedDate(),
-                getResourceTitle(),
-                getStatus());
-    }
-
-    public static final class Builder {
-
-        private final ExpandedMessage message;
-
-        private Builder() {
-            message = new ExpandedMessage();
-        }
-
-        public Builder withIdentifier(SortableIdentifier identifier) {
-            message.setIdentifier(identifier);
-            return this;
-        }
-
-        public Builder withOwner(User owner) {
-            message.setOwner(owner);
-            return this;
-        }
-
-        public Builder withCustomerId(URI customerId) {
-            message.setCustomerId(customerId);
-            return this;
-        }
-
-        public Builder withSender(ExpandedPerson sender) {
-            message.setSender(sender);
-            return this;
-        }
-
-        public Builder withResourceIdentifier(SortableIdentifier resourceIdentifier) {
-            message.setResourceIdentifier(resourceIdentifier);
-            return this;
-        }
-
-        public Builder withTicketIdentifier(SortableIdentifier ticketIdentifier) {
-            message.setTicketIdentifier(ticketIdentifier);
-            return this;
-        }
-
-        public Builder withText(String text) {
-            message.setText(text);
-            return this;
-        }
-
-        public Builder withCreatedDate(Instant createdDate) {
-            message.setCreatedDate(createdDate);
-            return this;
-        }
-
-        public Builder withModifiedDate(Instant modifiedDate) {
-            message.setModifiedDate(modifiedDate);
-            return this;
-        }
-
-        public Builder withResourceTitle(String resourceTitle) {
-            message.setResourceTitle(resourceTitle);
-            return this;
-        }
-
-        public ExpandedMessage build() {
-            return message;
-        }
-
-        public Builder withStatus(MessageStatus status) {
-            message.setStatus(status);
-            return this;
-        }
-    }
+  }
 }

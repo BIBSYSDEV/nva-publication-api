@@ -8,17 +8,19 @@ import nva.commons.core.JacocoGenerated;
 @XmlType(name = "qualifier")
 @XmlEnum
 public enum Qualifier {
+  @XmlEnumValue("uri")
+  URI("uri"),
+  @XmlEnumValue("abstract")
+  ABSTRACT("abstract");
 
-    @XmlEnumValue("uri") URI("uri"), @XmlEnumValue("abstract") ABSTRACT("abstract");
+  private final String value;
 
-    private final String value;
+  Qualifier(String value) {
+    this.value = value;
+  }
 
-    Qualifier(String value) {
-        this.value = value;
-    }
-
-    @JacocoGenerated
-    public String getValue() {
-        return value;
-    }
+  @JacocoGenerated
+  public String getValue() {
+    return value;
+  }
 }

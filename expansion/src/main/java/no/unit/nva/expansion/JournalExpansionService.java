@@ -5,7 +5,5 @@ import no.unit.nva.model.contexttypes.Journal;
 
 public interface JournalExpansionService {
 
-
-    ExpandedJournal expandJournal(Journal journal);
-
+  ExpandedJournal expandJournal(Journal journal);
 }

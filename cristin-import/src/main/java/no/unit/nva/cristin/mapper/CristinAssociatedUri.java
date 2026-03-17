@@ -18,38 +18,35 @@ import org.apache.commons.validator.routines.UrlValidator;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PUBLIC)
 @JsonIgnoreProperties({"sprakkode"})
 public class CristinAssociatedUri {
 
-    private static final String ARCHIVE = "ARKIV";
+  private static final String ARCHIVE = "ARKIV";
 
-    @JsonProperty("urltypekode")
-    private String urlType;
+  @JsonProperty("urltypekode")
+  private String urlType;
 
-    @JsonProperty("url")
-    private String url;
+  @JsonProperty("url")
+  private String url;
 
-    @JacocoGenerated
-    public CristinAssociatedUri() {
+  @JacocoGenerated
+  public CristinAssociatedUri() {}
 
-    }
+  public URI toURI() {
+    return UriWrapper.fromUri(url.trim()).getUri();
+  }
 
-    public URI toURI() {
-        return UriWrapper.fromUri(url.trim()).getUri();
-    }
+  @JsonIgnore
+  public boolean isValidUri() {
+    return UrlValidator.getInstance().isValid(url.trim());
+  }
 
-    @JsonIgnore
-    public boolean isValidUri() {
-        return UrlValidator.getInstance().isValid(url.trim());
-    }
-
-    @JsonIgnore
-    public boolean isArchive() {
-        return ARCHIVE.equalsIgnoreCase(getUrlType());
-    }
+  @JsonIgnore
+  public boolean isArchive() {
+    return ARCHIVE.equalsIgnoreCase(getUrlType());
+  }
 }

@@ -7,39 +7,39 @@ import nva.commons.core.JacocoGenerated;
 
 public class MusicMediaSubtypeOther extends MusicMediaSubtype {
 
-    private final String description;
+  private final String description;
 
-    @JsonCreator
-    public MusicMediaSubtypeOther(@JsonProperty(TYPE_FIELD) MusicMediaType type,
-                                  @JsonProperty() String description) {
-        super(type);
+  @JsonCreator
+  public MusicMediaSubtypeOther(
+      @JsonProperty(TYPE_FIELD) MusicMediaType type, @JsonProperty() String description) {
+    super(type);
 
-        this.description = description;
+    this.description = description;
+  }
+
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), getDescription());
+  }
+
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), getDescription());
+    if (o == null || getClass() != o.getClass()) {
+      return false;
     }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        if (!super.equals(o)) {
-            return false;
-        }
-        MusicMediaSubtypeOther that = (MusicMediaSubtypeOther) o;
-        return Objects.equals(getDescription(), that.getDescription());
+    if (!super.equals(o)) {
+      return false;
     }
+    MusicMediaSubtypeOther that = (MusicMediaSubtypeOther) o;
+    return Objects.equals(getDescription(), that.getDescription());
+  }
 
-    public String getDescription() {
-        return description;
-    }
+  public String getDescription() {
+    return description;
+  }
 }

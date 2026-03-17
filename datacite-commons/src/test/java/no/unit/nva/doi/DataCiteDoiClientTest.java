@@ -16,6 +16,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.net.URI;
@@ -35,111 +36,118 @@ import org.junit.jupiter.api.function.Executable;
 
 class DataCiteDoiClientTest {
 
-    private static final String ACCESS_TOKEN_RESPONSE_BODY =
-        """
-           {
-           "access_token" : "%s"
-           }
-        """.formatted(JwtTestToken.randomToken());
-    private static final String HOST = "localhost";
+  private static final String ACCESS_TOKEN_RESPONSE_BODY =
+      """
+         {
+         "access_token" : "%s"
+         }
+      """
+          .formatted(JwtTestToken.randomToken());
+  private static final String HOST = "localhost";
 
-    private FakeSecretsManagerClient secretsManagerClient;
-    private DataCiteDoiClient dataCiteDoiClient;
+  private FakeSecretsManagerClient secretsManagerClient;
+  private DataCiteDoiClient dataCiteDoiClient;
 
-    @BeforeEach
-    void setup() {
-        secretsManagerClient = new FakeSecretsManagerClient();
-        var credentials = new BackendClientCredentials("id", "secret");
-        secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
-        dataCiteDoiClient = new DataCiteDoiClient(HttpClient.newHttpClient(), secretsManagerClient, HOST);
-    }
+  @BeforeEach
+  void setup() {
+    secretsManagerClient = new FakeSecretsManagerClient();
+    var credentials = new BackendClientCredentials("id", "secret");
+    secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
+    dataCiteDoiClient =
+        new DataCiteDoiClient(HttpClient.newHttpClient(), secretsManagerClient, HOST);
+  }
 
-    @Test
-    void shouldThrowExceptionWhenDoiRegistrarEndpointIsNotReachable() {
-        var publication = PublicationGenerator.randomPublication();
-        var customer = publication.getPublisher().getId();
-        Executable executable = () -> dataCiteDoiClient.createFindableDoi(customer, publication);
-        assertThrows(RuntimeException.class, executable);
-    }
+  @Test
+  void shouldThrowExceptionWhenDoiRegistrarEndpointIsNotReachable() {
+    var publication = PublicationGenerator.randomPublication();
+    var customer = publication.getPublisher().getId();
+    Executable executable = () -> dataCiteDoiClient.createFindableDoi(customer, publication);
+    assertThrows(RuntimeException.class, executable);
+  }
 
-    @Test
-    void shouldReturnDoiResponseWhenPostIsSuccessful() throws JsonProcessingException {
-        var doi = RandomDataGenerator.randomDoi();
-        var publication = PublicationGenerator.randomPublication();
-        var doiClient = getDataCiteDoiClient(doi);
-        var customer = publication.getPublisher().getId();
-        var actualDoi = doiClient.createFindableDoi(customer, publication);
-        assertThat(actualDoi, is(equalTo(doi)));
-    }
+  @Test
+  void shouldReturnDoiResponseWhenPostIsSuccessful() throws JsonProcessingException {
+    var doi = RandomDataGenerator.randomDoi();
+    var publication = PublicationGenerator.randomPublication();
+    var doiClient = getDataCiteDoiClient(doi);
+    var customer = publication.getPublisher().getId();
+    var actualDoi = doiClient.createFindableDoi(customer, publication);
+    assertThat(actualDoi, is(equalTo(doi)));
+  }
 
-    @Test
-    void shouldThrowExceptionWhenBadResponseFromDoiClient() {
-        var publication = PublicationGenerator.randomPublication();
-        var httpClient = new FakeHttpClient<>(tokenResponse(), deleteDoiBadResponse());
-        var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, HOST);
-        var requestingCustomer = publication.getPublisher().getId();
-        Executable executable = () -> doiClient.deleteDraftDoi(requestingCustomer, publication);
-        assertThrows(RuntimeException.class, executable);
-    }
+  @Test
+  void shouldThrowExceptionWhenBadResponseFromDoiClient() {
+    var publication = PublicationGenerator.randomPublication();
+    var httpClient = new FakeHttpClient<>(tokenResponse(), deleteDoiBadResponse());
+    var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, HOST);
+    var requestingCustomer = publication.getPublisher().getId();
+    Executable executable = () -> doiClient.deleteDraftDoi(requestingCustomer, publication);
+    assertThrows(RuntimeException.class, executable);
+  }
 
-    @Test
-    void shouldThrowExceptionWhenBadMethodFromDoiClient() {
-        var publication = PublicationGenerator.randomPublication();
-        var httpClient = new FakeHttpClient<>(tokenResponse(), deleteDoiBadMethodResponse());
-        var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, HOST);
-        var requestingCustomer = publication.getPublisher().getId();
-        Executable executable = () -> doiClient.deleteDraftDoi(requestingCustomer, publication);
-        assertThrows(RuntimeException.class, executable);
-    }
+  @Test
+  void shouldThrowExceptionWhenBadMethodFromDoiClient() {
+    var publication = PublicationGenerator.randomPublication();
+    var httpClient = new FakeHttpClient<>(tokenResponse(), deleteDoiBadMethodResponse());
+    var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient, HOST);
+    var requestingCustomer = publication.getPublisher().getId();
+    Executable executable = () -> doiClient.deleteDraftDoi(requestingCustomer, publication);
+    assertThrows(RuntimeException.class, executable);
+  }
 
-    @Test
-    void shouldReturnStatusCodeAcceptedOnSuccessfulDeleteDoi() throws IOException, InterruptedException {
-        var publication = PublicationGenerator.randomPublication();
-        var doiClient = dataciteClientReturning(HTTP_ACCEPTED);
-        var requestingCustomer = publication.getPublisher().getId();
-        doiClient.deleteDraftDoi(requestingCustomer, publication);
-        verify(doiClient, times(1)).deleteDraftDoi(requestingCustomer, publication);
-    }
+  @Test
+  void shouldReturnStatusCodeAcceptedOnSuccessfulDeleteDoi()
+      throws IOException, InterruptedException {
+    var publication = PublicationGenerator.randomPublication();
+    var doiClient = dataciteClientReturning(HTTP_ACCEPTED);
+    var requestingCustomer = publication.getPublisher().getId();
+    doiClient.deleteDraftDoi(requestingCustomer, publication);
+    verify(doiClient, times(1)).deleteDraftDoi(requestingCustomer, publication);
+  }
 
-    @Test
-    void shouldThrowWhenFailingValidateResponseOnDeleteDoi() throws IOException, InterruptedException {
-        var publication = PublicationGenerator.randomPublication();
-        var doiClient = dataciteClientReturning(HTTP_CONFLICT);
-        var requestingCustomer = publication.getPublisher().getId();
-        Executable executable = () -> doiClient.deleteDraftDoi(requestingCustomer, publication);
-        assertThrows(RuntimeException.class, executable);
-    }
+  @Test
+  void shouldThrowWhenFailingValidateResponseOnDeleteDoi()
+      throws IOException, InterruptedException {
+    var publication = PublicationGenerator.randomPublication();
+    var doiClient = dataciteClientReturning(HTTP_CONFLICT);
+    var requestingCustomer = publication.getPublisher().getId();
+    Executable executable = () -> doiClient.deleteDraftDoi(requestingCustomer, publication);
+    assertThrows(RuntimeException.class, executable);
+  }
 
-    private DataCiteDoiClient dataciteClientReturning(int httpConflict)
-        throws IOException, InterruptedException {
-        var httpClient = mock(HttpClient.class);
-        when(httpClient.send(any(), any())).thenReturn(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK))
-            .thenReturn(FakeHttpResponse.create(null, httpConflict));
-        return spy(new DataCiteDoiClient(httpClient, secretsManagerClient, HOST));
-    }
+  private DataCiteDoiClient dataciteClientReturning(int httpConflict)
+      throws IOException, InterruptedException {
+    var httpClient = mock(HttpClient.class);
+    when(httpClient.send(any(), any()))
+        .thenReturn(FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK))
+        .thenReturn(FakeHttpResponse.create(null, httpConflict));
+    return spy(new DataCiteDoiClient(httpClient, secretsManagerClient, HOST));
+  }
 
-    private DataCiteDoiClient getDataCiteDoiClient(URI doi) throws JsonProcessingException {
-        var httpClient = new FakeHttpClient<>(tokenResponse(), findableDoiResponse(doi));
-        return new DataCiteDoiClient(httpClient, secretsManagerClient, HOST);
-    }
+  private DataCiteDoiClient getDataCiteDoiClient(URI doi) throws JsonProcessingException {
+    var httpClient = new FakeHttpClient<>(tokenResponse(), findableDoiResponse(doi));
+    return new DataCiteDoiClient(httpClient, secretsManagerClient, HOST);
+  }
 
-    private static String createResponse(String expectedDoiPrefix) throws JsonProcessingException {
-        return JsonUtils.dtoObjectMapper.writeValueAsString(new DoiResponse(URI.create(expectedDoiPrefix)));
-    }
+  private static String createResponse(String expectedDoiPrefix) throws JsonProcessingException {
+    return JsonUtils.dtoObjectMapper.writeValueAsString(
+        new DoiResponse(URI.create(expectedDoiPrefix)));
+  }
 
-    private static FakeHttpResponse<String> tokenResponse() {
-        return FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK);
-    }
+  private static FakeHttpResponse<String> tokenResponse() {
+    return FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK);
+  }
 
-    private FakeHttpResponse<String> deleteDoiBadResponse() {
-        return FakeHttpResponse.create(null, HTTP_BAD_GATEWAY);
-    }
+  private FakeHttpResponse<String> deleteDoiBadResponse() {
+    return FakeHttpResponse.create(null, HTTP_BAD_GATEWAY);
+  }
 
-    private FakeHttpResponse<String> deleteDoiBadMethodResponse() {
-        return FakeHttpResponse.create(null, HTTP_BAD_METHOD);
-    }
+  private FakeHttpResponse<String> deleteDoiBadMethodResponse() {
+    return FakeHttpResponse.create(null, HTTP_BAD_METHOD);
+  }
 
-    private FakeHttpResponse<String> findableDoiResponse(URI expectedDoi) throws JsonProcessingException {
-        return FakeHttpResponse.create(createResponse(expectedDoi.toString()), HTTP_CREATED);
-    }
+  private FakeHttpResponse<String> findableDoiResponse(URI expectedDoi)
+      throws JsonProcessingException {
+    return FakeHttpResponse.create(createResponse(expectedDoi.toString()), HTTP_CREATED);
+  }
 }

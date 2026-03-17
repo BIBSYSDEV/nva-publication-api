@@ -5,5 +5,5 @@ import no.unit.nva.publication.model.business.Entity;
 
 public interface EntityExpansionResolver {
 
-    Optional<Entity> resolveEntityToExpand(Entity oldEntity, Entity newEntity);
+  Optional<Entity> resolveEntityToExpand(Entity oldEntity, Entity newEntity);
 }

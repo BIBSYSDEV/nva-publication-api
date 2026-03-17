@@ -1,7 +1,7 @@
 package no.unit.nva.model.contexttypes;
 
 public interface SerialPublication {
-    String getOnlineIssn();
+  String getOnlineIssn();
 
-    String getPrintIssn();
+  String getPrintIssn();
 }

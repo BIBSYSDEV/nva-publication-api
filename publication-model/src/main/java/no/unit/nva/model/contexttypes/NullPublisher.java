@@ -6,29 +6,28 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class NullPublisher implements PublishingHouse {
-    private static final int STATIC_VALUE_FOR_HASH_CODE = 56;
+  private static final int STATIC_VALUE_FOR_HASH_CODE = 56;
 
-    @JsonCreator
-    public NullPublisher() {
-    }
+  @JsonCreator
+  public NullPublisher() {}
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return STATIC_VALUE_FOR_HASH_CODE;
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return STATIC_VALUE_FOR_HASH_CODE;
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        return o instanceof NullPublisher;
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    return o instanceof NullPublisher;
+  }
 
-    @Override
-    public boolean isValid() {
-        return true;
-    }
+  @Override
+  public boolean isValid() {
+    return true;
+  }
 }

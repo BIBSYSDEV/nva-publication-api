@@ -9,6 +9,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
@@ -34,91 +35,94 @@ import org.junit.jupiter.api.Test;
 
 public class UpdateImportStatusHandlerTest extends ResourcesLocalTest {
 
-    public static final String IDENTIFIER = "importCandidateIdentifier";
-    public static final String TABLE_NAME = "import-candidates";
-    private static final Context CONTEXT = new FakeContext();
-    private ByteArrayOutputStream output;
-    private ResourceService importCandidateService;
-    private UpdateImportStatusHandler handler;
+  public static final String IDENTIFIER = "importCandidateIdentifier";
+  public static final String TABLE_NAME = "import-candidates";
+  private static final Context CONTEXT = new FakeContext();
+  private ByteArrayOutputStream output;
+  private ResourceService importCandidateService;
+  private UpdateImportStatusHandler handler;
 
-    @BeforeEach
-    public void setUp() {
-        super.init(TABLE_NAME);
-        output = new ByteArrayOutputStream();
-        importCandidateService = getResourceService(client, TABLE_NAME);
-        handler = new UpdateImportStatusHandler(importCandidateService, new Environment());
-    }
+  @BeforeEach
+  public void setUp() {
+    super.init(TABLE_NAME);
+    output = new ByteArrayOutputStream();
+    importCandidateService = getResourceService(client, TABLE_NAME);
+    handler = new UpdateImportStatusHandler(importCandidateService, new Environment());
+  }
 
-    @Test
-    void shouldReturnUnauthorizedIfUserHasNoAccessRights() throws IOException, NotFoundException {
-        var importCandidate = createPersistedImportCandidate();
-        var request = requestWithoutAccessRight(importCandidate, notApplicableImportStatus());
-        handler.handleRequest(request, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
+  @Test
+  void shouldReturnUnauthorizedIfUserHasNoAccessRights() throws IOException, NotFoundException {
+    var importCandidate = createPersistedImportCandidate();
+    var request = requestWithoutAccessRight(importCandidate, notApplicableImportStatus());
+    handler.handleRequest(request, output, CONTEXT);
+    var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
 
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
-    }
+    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
+  }
 
-    @Test
-    void shouldReturnNotFoundWhenAttemptingToUpdateStatusOnNonExistingImportCandidate() throws IOException {
-        var importCandidate = randomImportCandidate();
-        var request = request(importCandidate, notApplicableImportStatus(), AccessRight.MANAGE_IMPORT);
-        handler.handleRequest(request, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
+  @Test
+  void shouldReturnNotFoundWhenAttemptingToUpdateStatusOnNonExistingImportCandidate()
+      throws IOException {
+    var importCandidate = randomImportCandidate();
+    var request = request(importCandidate, notApplicableImportStatus(), AccessRight.MANAGE_IMPORT);
+    handler.handleRequest(request, output, CONTEXT);
+    var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
 
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_NOT_FOUND)));
-    }
+    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_NOT_FOUND)));
+  }
 
-    @Test
-    void shouldUpdateImportStatusSuccessfully() throws NotFoundException, IOException {
-        var importCandidate = createPersistedImportCandidate();
-        var request = request(importCandidate, notApplicableImportStatus(), AccessRight.MANAGE_IMPORT);
-        handler.handleRequest(request, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
-        var updatedImportCandidate = importCandidateService
-                                         .getImportCandidateByIdentifier(importCandidate.getIdentifier());
+  @Test
+  void shouldUpdateImportStatusSuccessfully() throws NotFoundException, IOException {
+    var importCandidate = createPersistedImportCandidate();
+    var request = request(importCandidate, notApplicableImportStatus(), AccessRight.MANAGE_IMPORT);
+    handler.handleRequest(request, output, CONTEXT);
+    var response = GatewayResponse.fromOutputStream(output, ImportCandidate.class);
+    var updatedImportCandidate =
+        importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
 
-        assertThat(updatedImportCandidate.getImportStatus().modifiedDate(), is(not(nullValue())));
-        assertThat(updatedImportCandidate.getImportStatus().setBy(), is(not(nullValue())));
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
-    }
+    assertThat(updatedImportCandidate.getImportStatus().modifiedDate(), is(not(nullValue())));
+    assertThat(updatedImportCandidate.getImportStatus().setBy(), is(not(nullValue())));
+    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
+  }
 
-    private static ImportStatus notApplicableImportStatus() {
-        return ImportStatusFactory.createNotApplicable(new Username(randomString()), null);
-    }
+  private static ImportStatus notApplicableImportStatus() {
+    return ImportStatusFactory.createNotApplicable(new Username(randomString()), null);
+  }
 
-    private InputStream request(ImportCandidate importCandidate, ImportStatus importStatus, AccessRight accessRight)
-        throws JsonProcessingException {
-        Map<String, String> pathParameters = Map.of(IDENTIFIER, importCandidate.getIdentifier().toString());
-        return new HandlerRequestBuilder<ImportStatusDto>(restApiMapper)
-                   .withUserName(randomString())
-                   .withCurrentCustomer(randomUri())
-                   .withBody(toImportStatusDto(importStatus))
-                   .withAccessRights(randomUri(), accessRight)
-                   .withPathParameters(pathParameters)
-                   .build();
-    }
+  private InputStream request(
+      ImportCandidate importCandidate, ImportStatus importStatus, AccessRight accessRight)
+      throws JsonProcessingException {
+    Map<String, String> pathParameters =
+        Map.of(IDENTIFIER, importCandidate.getIdentifier().toString());
+    return new HandlerRequestBuilder<ImportStatusDto>(restApiMapper)
+        .withUserName(randomString())
+        .withCurrentCustomer(randomUri())
+        .withBody(toImportStatusDto(importStatus))
+        .withAccessRights(randomUri(), accessRight)
+        .withPathParameters(pathParameters)
+        .build();
+  }
 
-    private InputStream requestWithoutAccessRight(ImportCandidate importCandidate, ImportStatus importStatus)
-        throws JsonProcessingException {
-        Map<String, String> pathParameters = Map.of(IDENTIFIER, importCandidate.getIdentifier().toString());
-        return new HandlerRequestBuilder<ImportStatusDto>(restApiMapper)
-                   .withUserName(randomString())
-                   .withCurrentCustomer(randomUri())
-                   .withBody(toImportStatusDto(importStatus))
-                   .withPathParameters(pathParameters)
-                   .build();
-    }
+  private InputStream requestWithoutAccessRight(
+      ImportCandidate importCandidate, ImportStatus importStatus) throws JsonProcessingException {
+    Map<String, String> pathParameters =
+        Map.of(IDENTIFIER, importCandidate.getIdentifier().toString());
+    return new HandlerRequestBuilder<ImportStatusDto>(restApiMapper)
+        .withUserName(randomString())
+        .withCurrentCustomer(randomUri())
+        .withBody(toImportStatusDto(importStatus))
+        .withPathParameters(pathParameters)
+        .build();
+  }
 
-    private static ImportStatusDto toImportStatusDto(ImportStatus importStatus) {
-        return new ImportStatusDto(importStatus.candidateStatus(),
-                                   importStatus.nvaPublicationId(),
-                                   importStatus.comment());
-    }
+  private static ImportStatusDto toImportStatusDto(ImportStatus importStatus) {
+    return new ImportStatusDto(
+        importStatus.candidateStatus(), importStatus.nvaPublicationId(), importStatus.comment());
+  }
 
-    private ImportCandidate createPersistedImportCandidate() throws NotFoundException {
-        var candidate = randomImportCandidate();
-        var importCandidate = importCandidateService.persistImportCandidate(candidate);
-        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-    }
+  private ImportCandidate createPersistedImportCandidate() throws NotFoundException {
+    var candidate = randomImportCandidate();
+    var importCandidate = importCandidateService.persistImportCandidate(candidate);
+    return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+  }
 }

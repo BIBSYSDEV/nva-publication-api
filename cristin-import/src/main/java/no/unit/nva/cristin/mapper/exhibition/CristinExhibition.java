@@ -27,116 +27,112 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"varbeidlopenr", "utstillingstype"})
 public class CristinExhibition implements DescriptionExtractor {
 
-    private static final String BUDGET_INFORMATION = "Beløp: %s NOK";
-    private static final String AREA_INFORMATION = "Brukt areal: %s m2";
-    private static final String NUMBER_OF_OBJECTS_INFORMATION = "Antall gjenstander: %s";
-    private static final String NUMBER_OF_OWNED_OBJECTS_INFORMATION = "Andel egne gjenstander: %s%%";
-    private static final String NUMBER_OF_VISITORS_INFORMATION = "Antall besøkende: %s";
-    private static final String YES = "J";
+  private static final String BUDGET_INFORMATION = "Beløp: %s NOK";
+  private static final String AREA_INFORMATION = "Brukt areal: %s m2";
+  private static final String NUMBER_OF_OBJECTS_INFORMATION = "Antall gjenstander: %s";
+  private static final String NUMBER_OF_OWNED_OBJECTS_INFORMATION = "Andel egne gjenstander: %s%%";
+  private static final String NUMBER_OF_VISITORS_INFORMATION = "Antall besøkende: %s";
+  private static final String YES = "J";
 
-    @JsonProperty("hendelse")
-    private ExhibitionEvent exhibitionEvent;
+  @JsonProperty("hendelse")
+  private ExhibitionEvent exhibitionEvent;
 
-    @JsonProperty("status_permanent")
-    private String statusPermanent;
+  @JsonProperty("status_permanent")
+  private String statusPermanent;
 
-    @JsonProperty("belop_budsjett")
-    private Double budget;
+  @JsonProperty("belop_budsjett")
+  private Double budget;
 
-    @JsonProperty("tall_brukt_areal")
-    private Double area;
+  @JsonProperty("tall_brukt_areal")
+  private Double area;
 
-    @JsonProperty("tall_andel_egne_gjenstander")
-    private Double percantageOfownedObjectsInExhibit;
+  @JsonProperty("tall_andel_egne_gjenstander")
+  private Double percantageOfownedObjectsInExhibit;
 
-    @JsonProperty("antall_gjenstander")
-    private Integer numberOfObjectsInExhibit;
+  @JsonProperty("antall_gjenstander")
+  private Integer numberOfObjectsInExhibit;
 
-    @JsonProperty("antall_besokende")
-    private Integer numberOfVisitors;
+  @JsonProperty("antall_besokende")
+  private Integer numberOfVisitors;
 
-    @JacocoGenerated
-    public CristinExhibition() {
+  @JacocoGenerated
+  public CristinExhibition() {}
 
+  public ExhibitionProductionSubtype extractExhibitionSubtype() {
+    return new ExhibitionProductionSubtype(determineExhibitionSubtypeEnum());
+  }
+
+  public ExhibitionProduction toExhibitionProduction() {
+    if (!isExhibitionCategory()) {
+      throw new CristinMuseumCategoryException(getCategory());
     }
+    return new ExhibitionProduction(extractExhibitionSubtype(), extractExhibitionManifestation());
+  }
 
-    public ExhibitionProductionSubtype extractExhibitionSubtype() {
-        return new ExhibitionProductionSubtype(determineExhibitionSubtypeEnum());
-    }
+  @JsonIgnore
+  public String getDescription() {
+    var streams =
+        Stream.of(
+            exhibitionEvent.getDescription(),
+            createInformativeDescription(BUDGET_INFORMATION, budget),
+            createInformativeDescription(AREA_INFORMATION, area),
+            createInformativeDescription(NUMBER_OF_OBJECTS_INFORMATION, numberOfObjectsInExhibit),
+            createInformativeDescription(
+                NUMBER_OF_OWNED_OBJECTS_INFORMATION, percantageOfownedObjectsInExhibit),
+            createInformativeDescription(NUMBER_OF_VISITORS_INFORMATION, numberOfVisitors));
+    return extractDescription(streams);
+  }
 
-    public ExhibitionProduction toExhibitionProduction() {
-        if (!isExhibitionCategory()) {
-            throw new CristinMuseumCategoryException(getCategory());
-        }
-        return new ExhibitionProduction(extractExhibitionSubtype(), extractExhibitionManifestation());
-    }
+  @JsonIgnore
+  private String getCategory() {
+    return exhibitionEvent.getMuseumEventCategory().getEventCode();
+  }
 
-    @JsonIgnore
-    public String getDescription() {
-        var streams = Stream.of(exhibitionEvent.getDescription(),
-                                createInformativeDescription(BUDGET_INFORMATION, budget),
-                                createInformativeDescription(AREA_INFORMATION, area),
-                                createInformativeDescription(NUMBER_OF_OBJECTS_INFORMATION,
-                                                             numberOfObjectsInExhibit),
-                                createInformativeDescription(NUMBER_OF_OWNED_OBJECTS_INFORMATION,
-                                                             percantageOfownedObjectsInExhibit),
-                                createInformativeDescription(NUMBER_OF_VISITORS_INFORMATION,
-                                                             numberOfVisitors)
-        );
-        return extractDescription(streams);
-    }
+  @JsonIgnore
+  private boolean isExhibitionCategory() {
+    return exhibitionEvent.getMuseumEventCategory().isMuseumExhibition();
+  }
 
-    @JsonIgnore
-    private String getCategory() {
-        return exhibitionEvent.getMuseumEventCategory().getEventCode();
-    }
+  private List<ExhibitionProductionManifestation> extractExhibitionManifestation() {
+    return List.of(extractExhibitionBasic());
+  }
 
-    @JsonIgnore
-    private boolean isExhibitionCategory() {
-        return exhibitionEvent.getMuseumEventCategory().isMuseumExhibition();
-    }
+  private ExhibitionBasic extractExhibitionBasic() {
+    return new ExhibitionBasic(extractOrganisation(), extractPlace(), extractPeriod());
+  }
 
-    private List<ExhibitionProductionManifestation> extractExhibitionManifestation() {
-        return List.of(extractExhibitionBasic());
-    }
+  private UnconfirmedOrganization extractOrganisation() {
+    return exhibitionEvent.extractOrganisation();
+  }
 
-    private ExhibitionBasic extractExhibitionBasic() {
-        return new ExhibitionBasic(extractOrganisation(), extractPlace(), extractPeriod());
-    }
+  private UnconfirmedPlace extractPlace() {
+    return exhibitionEvent.extractPlace();
+  }
 
-    private UnconfirmedOrganization extractOrganisation() {
-        return exhibitionEvent.extractOrganisation();
-    }
+  private Period extractPeriod() {
+    return exhibitionEvent.toPeriod();
+  }
 
-    private UnconfirmedPlace extractPlace() {
-        return exhibitionEvent.extractPlace();
-    }
+  private ExhibitionProductionSubtypeEnum determineExhibitionSubtypeEnum() {
+    return isPermanent()
+        ? ExhibitionProductionSubtypeEnum.BASIC_EXHIBITION
+        : ExhibitionProductionSubtypeEnum.TEMPORARY_EXHIBITION;
+  }
 
-    private Period extractPeriod() {
-        return exhibitionEvent.toPeriod();
-    }
+  @JsonIgnore
+  private boolean isPermanent() {
+    return permanentStatusIsTrue() || exhibitionEvent.isInfiniteEvent();
+  }
 
-    private ExhibitionProductionSubtypeEnum determineExhibitionSubtypeEnum() {
-        return isPermanent()
-                   ? ExhibitionProductionSubtypeEnum.BASIC_EXHIBITION
-                   : ExhibitionProductionSubtypeEnum.TEMPORARY_EXHIBITION;
-    }
-
-    @JsonIgnore
-    private boolean isPermanent() {
-        return permanentStatusIsTrue() || exhibitionEvent.isInfiniteEvent();
-    }
-
-    @JsonIgnore
-    private boolean permanentStatusIsTrue() {
-        return YES.equals(statusPermanent);
-    }
+  @JsonIgnore
+  private boolean permanentStatusIsTrue() {
+    return YES.equals(statusPermanent);
+  }
 }

@@ -10,56 +10,58 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Venue implements WithSequence {
-    public static final String PLACE = "place";
-    public static final String DATE = "date";
+  public static final String PLACE = "place";
+  public static final String DATE = "date";
 
-    @JsonProperty(PLACE)
-    private final Place place;
-    @JsonProperty(SEQUENCE_FIELD)
-    private final int sequence;
-    @JsonProperty(DATE)
-    private final Time date;
+  @JsonProperty(PLACE)
+  private final Place place;
 
-    public Venue(@JsonProperty(PLACE) Place place,
-                 @JsonProperty(DATE) Time date,
-                 @JsonProperty(SEQUENCE_FIELD) int sequence) {
-        this.place = place;
-        this.date = date;
-        this.sequence = sequence;
+  @JsonProperty(SEQUENCE_FIELD)
+  private final int sequence;
+
+  @JsonProperty(DATE)
+  private final Time date;
+
+  public Venue(
+      @JsonProperty(PLACE) Place place,
+      @JsonProperty(DATE) Time date,
+      @JsonProperty(SEQUENCE_FIELD) int sequence) {
+    this.place = place;
+    this.date = date;
+    this.sequence = sequence;
+  }
+
+  public Place getPlace() {
+    return place;
+  }
+
+  public Time getDate() {
+    return date;
+  }
+
+  @Override
+  public int getSequence() {
+    return sequence;
+  }
+
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
-
-    public Place getPlace() {
-        return place;
+    if (!(o instanceof Venue)) {
+      return false;
     }
+    Venue venue = (Venue) o;
+    return getSequence() == venue.getSequence()
+        && Objects.equals(getPlace(), venue.getPlace())
+        && Objects.equals(getDate(), venue.getDate());
+  }
 
-
-    public Time getDate() {
-        return date;
-    }
-
-    @Override
-    public int getSequence() {
-        return sequence;
-    }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof Venue)) {
-            return false;
-        }
-        Venue venue = (Venue) o;
-        return getSequence() == venue.getSequence()
-                && Objects.equals(getPlace(), venue.getPlace())
-                && Objects.equals(getDate(), venue.getDate());
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getPlace(), getSequence(), getDate());
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(getPlace(), getSequence(), getDate());
+  }
 }

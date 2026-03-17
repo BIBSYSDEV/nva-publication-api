@@ -8,30 +8,36 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.storage.PublicationChannelDao;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(name = ClaimedPublicationChannel.TYPE, value = ClaimedPublicationChannel.class),
-    @JsonSubTypes.Type(name = NonClaimedPublicationChannel.TYPE, value = NonClaimedPublicationChannel.class)})
+@JsonSubTypes({
+  @JsonSubTypes.Type(
+      name = ClaimedPublicationChannel.TYPE,
+      value = ClaimedPublicationChannel.class),
+  @JsonSubTypes.Type(
+      name = NonClaimedPublicationChannel.TYPE,
+      value = NonClaimedPublicationChannel.class)
+})
 public sealed interface PublicationChannel extends Entity
     permits ClaimedPublicationChannel, NonClaimedPublicationChannel {
 
-    String RESOURCE_IDENTIFIER_FIELD = "resourceIdentifier";
-    String CREATED_DATE_FIELD = "createdDate";
-    String MODIFIED_DATE_FIELD = "modifiedDate";
-    String ORGANIZATION_ID_FIELD = "organizationId";
-    String CONSTRAINT_FIELD = "constraint";
-    String CHANNEL_TYPE_FIELD = "channelType";
-    String IDENTIFIER_FIELD = "identifier";
-    String ID_FIELD = "id";
-    String CUSTOMER_ID_FIELD = "customerId";
+  String RESOURCE_IDENTIFIER_FIELD = "resourceIdentifier";
+  String CREATED_DATE_FIELD = "createdDate";
+  String MODIFIED_DATE_FIELD = "modifiedDate";
+  String ORGANIZATION_ID_FIELD = "organizationId";
+  String CONSTRAINT_FIELD = "constraint";
+  String CHANNEL_TYPE_FIELD = "channelType";
+  String IDENTIFIER_FIELD = "identifier";
+  String ID_FIELD = "id";
+  String CUSTOMER_ID_FIELD = "customerId";
 
-    URI getId();
+  URI getId();
 
-    @Override
-    SortableIdentifier getIdentifier();
+  @Override
+  SortableIdentifier getIdentifier();
 
-    SortableIdentifier getResourceIdentifier();
+  SortableIdentifier getResourceIdentifier();
 
-    ChannelType getChannelType();
+  ChannelType getChannelType();
 
-    @Override
-    PublicationChannelDao toDao();
+  @Override
+  PublicationChannelDao toDao();
 }

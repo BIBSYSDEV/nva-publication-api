@@ -1,34 +1,36 @@
 package no.sikt.nva.brage.migration.merger.publicationcontextmerger;
 
 import static java.util.Objects.nonNull;
+
+import no.sikt.nva.brage.migration.record.Record;
 import no.unit.nva.model.Revision;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
-import no.sikt.nva.brage.migration.record.Record;
 import nva.commons.core.JacocoGenerated;
 
 public class BookMerger extends PublicationContextMerger {
 
-    @JacocoGenerated
-    public BookMerger(Record record) {
-        super(record);
-    }
+  @JacocoGenerated
+  public BookMerger(Record record) {
+    super(record);
+  }
 
-    public Book merge(Book book, PublicationContext publicationContext) {
-        if (publicationContext instanceof Book newBook) {
-            return new Book.BookBuilder().withIsbnList(getIsbnList(book.getIsbnList(), newBook.getIsbnList()))
-                       .withSeries(getSeries(book.getSeries(), newBook.getSeries()))
-                       .withPublisher(getPublisher(book.getPublisher(), newBook.getPublisher()))
-                       .withSeriesNumber(getNonNullValue(book.getSeriesNumber(), newBook.getSeriesNumber()))
-                       .withRevision(getRevision(book, newBook))
-                       .withIsbnList(getIsbnList(book.getIsbnList(), newBook.getIsbnList()))
-                       .build();
-        } else {
-            return book;
-        }
+  public Book merge(Book book, PublicationContext publicationContext) {
+    if (publicationContext instanceof Book newBook) {
+      return new Book.BookBuilder()
+          .withIsbnList(getIsbnList(book.getIsbnList(), newBook.getIsbnList()))
+          .withSeries(getSeries(book.getSeries(), newBook.getSeries()))
+          .withPublisher(getPublisher(book.getPublisher(), newBook.getPublisher()))
+          .withSeriesNumber(getNonNullValue(book.getSeriesNumber(), newBook.getSeriesNumber()))
+          .withRevision(getRevision(book, newBook))
+          .withIsbnList(getIsbnList(book.getIsbnList(), newBook.getIsbnList()))
+          .build();
+    } else {
+      return book;
     }
+  }
 
-    private static Revision getRevision(Book oldBook, Book newBook) {
-        return nonNull(oldBook.getRevision()) ? oldBook.getRevision() : newBook.getRevision();
-    }
+  private static Revision getRevision(Book oldBook, Book newBook) {
+    return nonNull(oldBook.getRevision()) ? oldBook.getRevision() : newBook.getRevision();
+  }
 }

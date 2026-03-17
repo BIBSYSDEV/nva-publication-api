@@ -9,7 +9,8 @@ import no.unit.nva.model.Username;
 
 @JsonTypeName(UserUploadDetails.TYPE)
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public record UserUploadDetails(Username uploadedBy, Instant uploadedDate) implements UploadDetails, JsonSerializable {
+public record UserUploadDetails(Username uploadedBy, Instant uploadedDate)
+    implements UploadDetails, JsonSerializable {
 
-    public static final String TYPE = "UserUploadDetails";
+  public static final String TYPE = "UserUploadDetails";
 }

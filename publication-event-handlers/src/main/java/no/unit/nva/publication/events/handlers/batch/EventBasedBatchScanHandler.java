@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.batch;
 
 import static no.unit.nva.publication.events.handlers.ConfigurationForPushingDirectlyToEventBridge.EVENT_BUS_NAME;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -18,56 +19,54 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest, Void> {
 
-    public static final String DETAIL_TYPE = "NO_DETAIL_TYPE";
-    private final ResourceService resourceService;
-    private final EventBridgeClient eventBridgeClient;
-    private final Logger logger = LoggerFactory.getLogger(EventBasedBatchScanHandler.class);
+  public static final String DETAIL_TYPE = "NO_DETAIL_TYPE";
+  private final ResourceService resourceService;
+  private final EventBridgeClient eventBridgeClient;
+  private final Logger logger = LoggerFactory.getLogger(EventBasedBatchScanHandler.class);
 
-    @JacocoGenerated
-    public EventBasedBatchScanHandler() {
-        this(ResourceService.defaultService(), defaultEventBridgeClient());
-    }
+  @JacocoGenerated
+  public EventBasedBatchScanHandler() {
+    this(ResourceService.defaultService(), defaultEventBridgeClient());
+  }
 
-    public EventBasedBatchScanHandler(ResourceService resourceService,
-                                      EventBridgeClient eventBridgeClient) {
-        super(ScanDatabaseRequest.class);
-        this.resourceService = resourceService;
-        this.eventBridgeClient = eventBridgeClient;
-    }
+  public EventBasedBatchScanHandler(
+      ResourceService resourceService, EventBridgeClient eventBridgeClient) {
+    super(ScanDatabaseRequest.class);
+    this.resourceService = resourceService;
+    this.eventBridgeClient = eventBridgeClient;
+  }
 
-    @Override
-    protected Void processInput(ScanDatabaseRequest input, AwsEventBridgeEvent<ScanDatabaseRequest> event,
-                                Context context) {
-        logger.info("Query starting point: {}", input.getStartMarker());
-        var result = resourceService.scanResources(input.getPageSize(), input.getStartMarker(), input.getTypes());
-        resourceService.refreshResources(result.getDatabaseEntries());
-        if (result.isTruncated()) {
-            sendEventToInvokeNewRefreshRowVersionExecution(input, context, result);
-        }
-        return null;
+  @Override
+  protected Void processInput(
+      ScanDatabaseRequest input, AwsEventBridgeEvent<ScanDatabaseRequest> event, Context context) {
+    logger.info("Query starting point: {}", input.getStartMarker());
+    var result =
+        resourceService.scanResources(
+            input.getPageSize(), input.getStartMarker(), input.getTypes());
+    resourceService.refreshResources(result.getDatabaseEntries());
+    if (result.isTruncated()) {
+      sendEventToInvokeNewRefreshRowVersionExecution(input, context, result);
     }
+    return null;
+  }
 
-    @JacocoGenerated
-    private static EventBridgeClient defaultEventBridgeClient() {
-        return EventBridgeClient.builder()
-                   .httpClientBuilder(UrlConnectionHttpClient.builder())
-                   .build();
-    }
+  @JacocoGenerated
+  private static EventBridgeClient defaultEventBridgeClient() {
+    return EventBridgeClient.builder().httpClientBuilder(UrlConnectionHttpClient.builder()).build();
+  }
 
-    private void sendEventToInvokeNewRefreshRowVersionExecution(ScanDatabaseRequest input,
-                                                                Context context,
-                                                                ListingResult<Entity> result) {
-        PutEventsRequestEntry newEvent = input
-                                             .newScanDatabaseRequest(result.getStartMarker())
-                                             .createNewEventEntry(EVENT_BUS_NAME, DETAIL_TYPE,
-                                                                  context.getInvokedFunctionArn());
-        sendEvent(newEvent);
-    }
+  private void sendEventToInvokeNewRefreshRowVersionExecution(
+      ScanDatabaseRequest input, Context context, ListingResult<Entity> result) {
+    PutEventsRequestEntry newEvent =
+        input
+            .newScanDatabaseRequest(result.getStartMarker())
+            .createNewEventEntry(EVENT_BUS_NAME, DETAIL_TYPE, context.getInvokedFunctionArn());
+    sendEvent(newEvent);
+  }
 
-    private void sendEvent(PutEventsRequestEntry putEventRequestEntry) {
-        PutEventsRequest putEventRequest = PutEventsRequest.builder()
-                                               .entries(putEventRequestEntry)
-                                               .build();
-        eventBridgeClient.putEvents(putEventRequest);
-    }
+  private void sendEvent(PutEventsRequestEntry putEventRequestEntry) {
+    PutEventsRequest putEventRequest =
+        PutEventsRequest.builder().entries(putEventRequestEntry).build();
+    eventBridgeClient.putEvents(putEventRequest);
+  }
 }

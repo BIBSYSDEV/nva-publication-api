@@ -42,6 +42,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -128,772 +129,891 @@ import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 @ExtendWith(MockitoExtension.class)
 class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest {
 
-    public static final String SOME_SECRETS_KEY_NAME = "some-secrets-key-name";
-    public static final String SOME_USERNAME_KEY = "some-username-key";
-    public static final String SOME_PIA_PASSWORD_KEY = "some-pia-password-key";
-    public static final String SOME_PERSISTED_BUCKET = "some-persisted-bucket";
-    public static final String SOME_CANDIDATE_BUCKET = "some-candidate-bucket";
-    public static final String IMPORT_CANDIDATES_TABLE = "import-candidates-table";
-    public static final String ACCEPT = "Accept";
-    private static final String PUBLICATIONS_TABLE = new Environment().readEnv("TABLE_NAME");
-    private ByteArrayOutputStream output;
-    private Context context;
-    private ResourceService importCandidateService;
-    private ResourceService publicationService;
-    private TicketService ticketService;
-    private ApprovalAssignmentServiceForImportCandidateFiles approvalService;
-    private CreatePublicationFromImportCandidateHandler handler;
-    private S3Client s3Client;
+  public static final String SOME_SECRETS_KEY_NAME = "some-secrets-key-name";
+  public static final String SOME_USERNAME_KEY = "some-username-key";
+  public static final String SOME_PIA_PASSWORD_KEY = "some-pia-password-key";
+  public static final String SOME_PERSISTED_BUCKET = "some-persisted-bucket";
+  public static final String SOME_CANDIDATE_BUCKET = "some-candidate-bucket";
+  public static final String IMPORT_CANDIDATES_TABLE = "import-candidates-table";
+  public static final String ACCEPT = "Accept";
+  private static final String PUBLICATIONS_TABLE = new Environment().readEnv("TABLE_NAME");
+  private ByteArrayOutputStream output;
+  private Context context;
+  private ResourceService importCandidateService;
+  private ResourceService publicationService;
+  private TicketService ticketService;
+  private ApprovalAssignmentServiceForImportCandidateFiles approvalService;
+  private CreatePublicationFromImportCandidateHandler handler;
+  private S3Client s3Client;
 
-    private ImportCandidateHandlerConfigs configs;
-    private PiaClientConfig piaClientConfig;
+  private ImportCandidateHandlerConfigs configs;
+  private PiaClientConfig piaClientConfig;
 
-    @BeforeEach
-    public void setUp(@Mock Context context, @Mock S3Client s3Client,
-                      WireMockRuntimeInfo wireMockRuntimeInfo) throws ApprovalAssignmentException {
-        this.s3Client = s3Client;
-        super.init(IMPORT_CANDIDATES_TABLE, PUBLICATIONS_TABLE);
-        importCandidateService = getResourceService(client, IMPORT_CANDIDATES_TABLE);
-        publicationService = getResourceService(client, PUBLICATIONS_TABLE);
-        this.ticketService = getTicketService();
-        this.context = context;
-        output = new ByteArrayOutputStream();
-        piaClientConfig = createPiaConfig(wireMockRuntimeInfo);
-        configs = new ImportCandidateHandlerConfigs(SOME_PERSISTED_BUCKET,
-                                                    SOME_CANDIDATE_BUCKET,
-                                                    importCandidateService,
-                                                    publicationService,
-                                                    ticketService,
-                                                    s3Client,
-                                                    piaClientConfig);
-        this.approvalService = mock(ApprovalAssignmentServiceForImportCandidateFiles.class);
-        lenient().when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
-            .thenReturn(AssignmentServiceResult.noApprovalNeeded(randomCustomer(randomUri(), true)));
-        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService, approvalService);
-        mockPostAuidWriting();
-    }
+  @BeforeEach
+  public void setUp(
+      @Mock Context context, @Mock S3Client s3Client, WireMockRuntimeInfo wireMockRuntimeInfo)
+      throws ApprovalAssignmentException {
+    this.s3Client = s3Client;
+    super.init(IMPORT_CANDIDATES_TABLE, PUBLICATIONS_TABLE);
+    importCandidateService = getResourceService(client, IMPORT_CANDIDATES_TABLE);
+    publicationService = getResourceService(client, PUBLICATIONS_TABLE);
+    this.ticketService = getTicketService();
+    this.context = context;
+    output = new ByteArrayOutputStream();
+    piaClientConfig = createPiaConfig(wireMockRuntimeInfo);
+    configs =
+        new ImportCandidateHandlerConfigs(
+            SOME_PERSISTED_BUCKET,
+            SOME_CANDIDATE_BUCKET,
+            importCandidateService,
+            publicationService,
+            ticketService,
+            s3Client,
+            piaClientConfig);
+    this.approvalService = mock(ApprovalAssignmentServiceForImportCandidateFiles.class);
+    lenient()
+        .when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
+        .thenReturn(AssignmentServiceResult.noApprovalNeeded(randomCustomer(randomUri(), true)));
+    handler =
+        new CreatePublicationFromImportCandidateHandler(
+            configs, new Environment(), ticketService, approvalService);
+    mockPostAuidWriting();
+  }
 
-    @Test
-    void shouldReturnPublicationResponseWhenPublicationHasBeenCreated() throws NotFoundException, IOException {
-        var importCandidate = createPersistedImportCandidate();
-        var request = createRequest(importCandidate);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
-        var updatedImportCandidate = importCandidateService.getImportCandidateByIdentifier(
-            importCandidate.getIdentifier());
+  @Test
+  void shouldReturnPublicationResponseWhenPublicationHasBeenCreated()
+      throws NotFoundException, IOException {
+    var importCandidate = createPersistedImportCandidate();
+    var request = createRequest(importCandidate);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+    var publication =
+        publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
+    var updatedImportCandidate =
+        importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
 
-        assertThat(updatedImportCandidate.getImportStatus().candidateStatus(),
-                   is(equalTo(CandidateStatus.IMPORTED)));
-        assertThat(publication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-    }
+    assertThat(
+        updatedImportCandidate.getImportStatus().candidateStatus(),
+        is(equalTo(CandidateStatus.IMPORTED)));
+    assertThat(publication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+  }
 
-    @Test
-    void shouldCreatePublicationWithValuesFromRequestBodyAndNotPersistedImportCandidate()
-        throws NotFoundException, IOException {
-        var persistedImportCandidate = createPersistedImportCandidate();
-        var importCandidateRequestBody = persistedImportCandidate.copy().withAssociatedArtifacts(List.of()).build();
-        var request = createRequest(importCandidateRequestBody);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
-        var updatedImportCandidate = importCandidateService
-                                         .getImportCandidateByIdentifier(persistedImportCandidate.getIdentifier());
+  @Test
+  void shouldCreatePublicationWithValuesFromRequestBodyAndNotPersistedImportCandidate()
+      throws NotFoundException, IOException {
+    var persistedImportCandidate = createPersistedImportCandidate();
+    var importCandidateRequestBody =
+        persistedImportCandidate.copy().withAssociatedArtifacts(List.of()).build();
+    var request = createRequest(importCandidateRequestBody);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+    var publication =
+        publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
+    var updatedImportCandidate =
+        importCandidateService.getImportCandidateByIdentifier(
+            persistedImportCandidate.getIdentifier());
 
-        assertThat(updatedImportCandidate.getAssociatedArtifacts(), is(equalTo(persistedImportCandidate.getAssociatedArtifacts())));
-        assertThat(publication.getAssociatedArtifacts(), is(equalTo(importCandidateRequestBody.getAssociatedArtifacts())));
-    }
+    assertThat(
+        updatedImportCandidate.getAssociatedArtifacts(),
+        is(equalTo(persistedImportCandidate.getAssociatedArtifacts())));
+    assertThat(
+        publication.getAssociatedArtifacts(),
+        is(equalTo(importCandidateRequestBody.getAssociatedArtifacts())));
+  }
 
-    @Test
-    void shouldCopyAssociatedResourceFiles() throws NotFoundException, IOException {
-        var importCandidate = createPersistedImportCandidate();
-        var request = createRequest(importCandidate);
-        var artifactId = ((File) importCandidate.getAssociatedArtifacts().stream().findFirst().orElseThrow()).getIdentifier()
-                             .toString();
+  @Test
+  void shouldCopyAssociatedResourceFiles() throws NotFoundException, IOException {
+    var importCandidate = createPersistedImportCandidate();
+    var request = createRequest(importCandidate);
+    var artifactId =
+        ((File) importCandidate.getAssociatedArtifacts().stream().findFirst().orElseThrow())
+            .getIdentifier()
+            .toString();
 
-        handler.handleRequest(request, output, context);
+    handler.handleRequest(request, output, context);
 
-        verify(s3Client, atLeastOnce()).copyObject(
+    verify(s3Client, atLeastOnce())
+        .copyObject(
             CopyObjectRequest.builder()
                 .sourceBucket(SOME_CANDIDATE_BUCKET)
                 .sourceKey(artifactId)
                 .destinationBucket(SOME_PERSISTED_BUCKET)
                 .destinationKey(artifactId)
                 .build());
-    }
+  }
 
-    @Test
-    void shouldReturnBadGatewayAndNotUpdateBothResourcesWhenPublicationPersistenceFails(
-        @Mock ResourceService resourceService)
-        throws IOException, ApiGatewayException {
+  @Test
+  void shouldReturnBadGatewayAndNotUpdateBothResourcesWhenPublicationPersistenceFails(
+      @Mock ResourceService resourceService) throws IOException, ApiGatewayException {
 
-        publicationService = resourceService;
-        configs = new ImportCandidateHandlerConfigs(SOME_PERSISTED_BUCKET,
-                                                    SOME_CANDIDATE_BUCKET,
-                                                    importCandidateService,
-                                                    publicationService,
-                                                    ticketService,
-                                                    s3Client,
-                                                    piaClientConfig);
-        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService,
-                                                                  approvalService);
-        when(publicationService.importResource(any(), any(), any())).thenThrow(
-            new TransactionFailedException(new Exception()));
-        var importCandidate = createPersistedImportCandidate();
-        var request = createRequest(importCandidate);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        var notUpdatedImportCandidate = importCandidateService.getImportCandidateByIdentifier(
-            importCandidate.getIdentifier());
+    publicationService = resourceService;
+    configs =
+        new ImportCandidateHandlerConfigs(
+            SOME_PERSISTED_BUCKET,
+            SOME_CANDIDATE_BUCKET,
+            importCandidateService,
+            publicationService,
+            ticketService,
+            s3Client,
+            piaClientConfig);
+    handler =
+        new CreatePublicationFromImportCandidateHandler(
+            configs, new Environment(), ticketService, approvalService);
+    when(publicationService.importResource(any(), any(), any()))
+        .thenThrow(new TransactionFailedException(new Exception()));
+    var importCandidate = createPersistedImportCandidate();
+    var request = createRequest(importCandidate);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    var notUpdatedImportCandidate =
+        importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
 
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
-        assertThat(notUpdatedImportCandidate.getImportStatus().candidateStatus(),
-                   is(equalTo(CandidateStatus.NOT_IMPORTED)));
-        assertThat(response.getBodyObject(Problem.class).getDetail(), containsString(IMPORT_PROCESS_WENT_WRONG));
-    }
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
+    assertThat(
+        notUpdatedImportCandidate.getImportStatus().candidateStatus(),
+        is(equalTo(CandidateStatus.NOT_IMPORTED)));
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(),
+        containsString(IMPORT_PROCESS_WENT_WRONG));
+  }
 
-    @Test
-    void shouldReturnBadGatewayWhenImportCandidatePersistenceFails(@Mock ResourceService resourceService)
-        throws IOException, ApiGatewayException {
-        var importCandidate = createPersistedImportCandidate();
-        final var request = createRequest(importCandidate);
+  @Test
+  void shouldReturnBadGatewayWhenImportCandidatePersistenceFails(
+      @Mock ResourceService resourceService) throws IOException, ApiGatewayException {
+    var importCandidate = createPersistedImportCandidate();
+    final var request = createRequest(importCandidate);
 
-        importCandidateService = resourceService;
-        configs = new ImportCandidateHandlerConfigs(SOME_PERSISTED_BUCKET,
-                                                    SOME_CANDIDATE_BUCKET,
-                                                    importCandidateService,
-                                                    publicationService,
-                                                    ticketService,
-                                                    s3Client,
-                                                    piaClientConfig
-        );
-        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService,
-                                                                  approvalService);
-        when(importCandidateService.getImportCandidateByIdentifier(any())).thenReturn(importCandidate);
-        when(importCandidateService.updateImportStatus(any(), any()))
-            .thenThrow(new TransactionFailedException(new Exception()));
+    importCandidateService = resourceService;
+    configs =
+        new ImportCandidateHandlerConfigs(
+            SOME_PERSISTED_BUCKET,
+            SOME_CANDIDATE_BUCKET,
+            importCandidateService,
+            publicationService,
+            ticketService,
+            s3Client,
+            piaClientConfig);
+    handler =
+        new CreatePublicationFromImportCandidateHandler(
+            configs, new Environment(), ticketService, approvalService);
+    when(importCandidateService.getImportCandidateByIdentifier(any())).thenReturn(importCandidate);
+    when(importCandidateService.updateImportStatus(any(), any()))
+        .thenThrow(new TransactionFailedException(new Exception()));
 
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
-    }
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
+  }
 
-    @Test
-    void shouldReturnNotFoundWhenImportCandidateIsDoesNotExist()
-        throws IOException {
-        var importCandidate = randomImportCandidate();
-        var request = createRequest(importCandidate);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+  @Test
+  void shouldReturnNotFoundWhenImportCandidateIsDoesNotExist() throws IOException {
+    var importCandidate = randomImportCandidate();
+    var request = createRequest(importCandidate);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
-    }
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
+  }
 
-    @Test
-    void shouldReturnUnauthorizedWhenUserHasNoValidAccessRights() throws NotFoundException, IOException {
-        var importCandidate = createPersistedImportCandidate();
-        var request = createRequestWithoutAccessRights(importCandidate);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+  @Test
+  void shouldReturnUnauthorizedWhenUserHasNoValidAccessRights()
+      throws NotFoundException, IOException {
+    var importCandidate = createPersistedImportCandidate();
+    var request = createRequestWithoutAccessRights(importCandidate);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
-    }
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
+  }
 
-    @Test
-    void shouldReturnBadGatewayWhenRollbackFails(@Mock ResourceService resourceService)
-        throws NotFoundException, IOException {
-        var importCandidate = createPersistedImportCandidate();
-        final var request = createRequest(importCandidate);
-        publicationService = resourceService;
-        importCandidateService = resourceService;
-        configs = new ImportCandidateHandlerConfigs(SOME_PERSISTED_BUCKET,
-                                                    SOME_CANDIDATE_BUCKET,
-                                                    importCandidateService,
-                                                    publicationService,
-                                                    ticketService,
-                                                    s3Client,
-                                                    piaClientConfig);
-        handler = new CreatePublicationFromImportCandidateHandler(configs, new Environment(), ticketService,
-                                                                  approvalService);
-        when(importCandidateService.getImportCandidateByIdentifier(any())).thenReturn(importCandidate);
-        when(importCandidateService.updateImportStatus(any(), any()))
-            .thenCallRealMethod()
-            .thenThrow(new NotFoundException(""));
+  @Test
+  void shouldReturnBadGatewayWhenRollbackFails(@Mock ResourceService resourceService)
+      throws NotFoundException, IOException {
+    var importCandidate = createPersistedImportCandidate();
+    final var request = createRequest(importCandidate);
+    publicationService = resourceService;
+    importCandidateService = resourceService;
+    configs =
+        new ImportCandidateHandlerConfigs(
+            SOME_PERSISTED_BUCKET,
+            SOME_CANDIDATE_BUCKET,
+            importCandidateService,
+            publicationService,
+            ticketService,
+            s3Client,
+            piaClientConfig);
+    handler =
+        new CreatePublicationFromImportCandidateHandler(
+            configs, new Environment(), ticketService, approvalService);
+    when(importCandidateService.getImportCandidateByIdentifier(any())).thenReturn(importCandidate);
+    when(importCandidateService.updateImportStatus(any(), any()))
+        .thenCallRealMethod()
+        .thenThrow(new NotFoundException(""));
 
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
-        assertThat(response.getBodyObject(Problem.class).getDetail(), containsString(ROLLBACK_WENT_WRONG_MESSAGE));
-    }
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(),
+        containsString(ROLLBACK_WENT_WRONG_MESSAGE));
+  }
 
-    @Test
-    void shouldReturnBadRequestWhenImportCandidateHasStatusImported() throws IOException,
-                                                                             NotFoundException {
-        var importCandidate = createImportedPersistedImportCandidate();
-        var request = createRequest(importCandidate);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+  @Test
+  void shouldReturnBadRequestWhenImportCandidateHasStatusImported()
+      throws IOException, NotFoundException {
+    var importCandidate = createImportedPersistedImportCandidate();
+    var request = createRequest(importCandidate);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
-        assertThat(response.getBodyObject(Problem.class).getDetail(),
-                   containsString(RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE));
-    }
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(),
+        containsString(RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE));
+  }
 
-    @Test
-    void shouldReturnBadRequestWhenImportCandidateIsMissingScopusIdentifier() throws IOException,
-                                                                                     NotFoundException {
-        var importCandidate = randomImportCandidateWithoutScopusId();
-        var request = createRequest(importCandidate);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+  @Test
+  void shouldReturnBadRequestWhenImportCandidateIsMissingScopusIdentifier()
+      throws IOException, NotFoundException {
+    var importCandidate = randomImportCandidateWithoutScopusId();
+    var request = createRequest(importCandidate);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
-        assertThat(response.getBodyObject(Problem.class).getDetail(),
-                   containsString(RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE));
-    }
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(),
+        containsString(RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE));
+  }
 
-    @Test
-    void shouldCreateNvaResourceBasedOnUserInput() throws NotFoundException, IOException {
-        var importCandidate = createPersistedImportCandidate();
-        var userInputContributor = randomContributorWithId(randomUri());
-        var userInput = importCandidateWithContributors(importCandidate, userInputContributor);
-        var request = createRequest(userInput, importCandidate.getIdentifier());
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
+  @Test
+  void shouldCreateNvaResourceBasedOnUserInput() throws NotFoundException, IOException {
+    var importCandidate = createPersistedImportCandidate();
+    var userInputContributor = randomContributorWithId(randomUri());
+    var userInput = importCandidateWithContributors(importCandidate, userInputContributor);
+    var request = createRequest(userInput, importCandidate.getIdentifier());
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+    var publication =
+        publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
 
-        var expectedContributor = new Contributor.Builder()
-                                      .withCorrespondingAuthor(userInputContributor.isCorrespondingAuthor())
-                                      .withSequence(1)
-                                      .withIdentity(userInputContributor.getIdentity())
-                                      .withAffiliations(userInputContributor.getAffiliations())
-                                      .withRole(userInputContributor.getRole())
-                                      .build();
-        assertEquals(expectedContributor, publication.getEntityDescription().getContributors().getFirst());
-    }
+    var expectedContributor =
+        new Contributor.Builder()
+            .withCorrespondingAuthor(userInputContributor.isCorrespondingAuthor())
+            .withSequence(1)
+            .withIdentity(userInputContributor.getIdentity())
+            .withAffiliations(userInputContributor.getAffiliations())
+            .withRole(userInputContributor.getRole())
+            .build();
+    assertEquals(
+        expectedContributor, publication.getEntityDescription().getContributors().getFirst());
+  }
 
-    private CreatePublicationRequest importCandidateWithContributors(ImportCandidate importCandidate,
-                                                            Contributor... userInputContributor) {
-        var currentEntityDescription = importCandidate.getEntityDescription();
-        var entityDescription = convertToEntityDescription(userInputContributor, currentEntityDescription);
-        var createPublicationRequest = createPublicationRequestFromImportCandidate(importCandidate);
-        createPublicationRequest.setEntityDescription(entityDescription);
-        return createPublicationRequest;
-    }
+  private CreatePublicationRequest importCandidateWithContributors(
+      ImportCandidate importCandidate, Contributor... userInputContributor) {
+    var currentEntityDescription = importCandidate.getEntityDescription();
+    var entityDescription =
+        convertToEntityDescription(userInputContributor, currentEntityDescription);
+    var createPublicationRequest = createPublicationRequestFromImportCandidate(importCandidate);
+    createPublicationRequest.setEntityDescription(entityDescription);
+    return createPublicationRequest;
+  }
 
-    private static EntityDescription convertToEntityDescription(Contributor[] userInputContributor,
-                                              ImportEntityDescription currentEntityDescription) {
-        return new EntityDescription.Builder()
-                   .withMainTitle(currentEntityDescription.mainTitle())
-                   .withLanguage(currentEntityDescription.language())
-                   .withPublicationDate(currentEntityDescription.publicationDate())
-                   .withContributors(Arrays.asList(userInputContributor))
-                   .withAbstract(currentEntityDescription.mainAbstract())
-                   .withAlternativeAbstracts(currentEntityDescription.alternativeAbstracts())
-                   .withTags(currentEntityDescription.tags().stream().toList())
-                   .withDescription(currentEntityDescription.description())
-                   .withReference(currentEntityDescription.reference())
-                   .build();
-    }
+  private static EntityDescription convertToEntityDescription(
+      Contributor[] userInputContributor, ImportEntityDescription currentEntityDescription) {
+    return new EntityDescription.Builder()
+        .withMainTitle(currentEntityDescription.mainTitle())
+        .withLanguage(currentEntityDescription.language())
+        .withPublicationDate(currentEntityDescription.publicationDate())
+        .withContributors(Arrays.asList(userInputContributor))
+        .withAbstract(currentEntityDescription.mainAbstract())
+        .withAlternativeAbstracts(currentEntityDescription.alternativeAbstracts())
+        .withTags(currentEntityDescription.tags().stream().toList())
+        .withDescription(currentEntityDescription.description())
+        .withReference(currentEntityDescription.reference())
+        .build();
+  }
 
-    @Test
-    void shouldOnlyCopyFilesThatWhereKeptByImporter() throws NotFoundException, IOException {
-        var fileKeptByImporter = randomInternalFile();
-        var fileNotKeptByImporter = randomInternalFile();
-        var fileAddedByImporter = randomInternalFile();
-        var importCandidateAssociatedArtifactList = new AssociatedArtifactList(fileKeptByImporter,
-                                                                               fileNotKeptByImporter);
-        var importCandidate = createPersistedImportCandidate(importCandidateAssociatedArtifactList);
-        var userInput = importCandidate
-                            .copy()
-                            .withAssociatedArtifacts(
-                                new AssociatedArtifactList(fileKeptByImporter, fileAddedByImporter))
-                            .build();
-        var request = createRequest(userInput);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var resource = publicationService.getResourceByIdentifier(getBodyObject(response).getIdentifier());
-        assertTrue(resource.getFileByIdentifier(fileKeptByImporter.getIdentifier()).isPresent());
-        assertTrue(resource.getFileByIdentifier(fileAddedByImporter.getIdentifier()).isPresent());
-        assertTrue(resource.getFileByIdentifier(fileNotKeptByImporter.getIdentifier()).isEmpty());
-        verify(s3Client, atLeastOnce()).copyObject(
+  @Test
+  void shouldOnlyCopyFilesThatWhereKeptByImporter() throws NotFoundException, IOException {
+    var fileKeptByImporter = randomInternalFile();
+    var fileNotKeptByImporter = randomInternalFile();
+    var fileAddedByImporter = randomInternalFile();
+    var importCandidateAssociatedArtifactList =
+        new AssociatedArtifactList(fileKeptByImporter, fileNotKeptByImporter);
+    var importCandidate = createPersistedImportCandidate(importCandidateAssociatedArtifactList);
+    var userInput =
+        importCandidate
+            .copy()
+            .withAssociatedArtifacts(
+                new AssociatedArtifactList(fileKeptByImporter, fileAddedByImporter))
+            .build();
+    var request = createRequest(userInput);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+    var resource =
+        publicationService.getResourceByIdentifier(getBodyObject(response).getIdentifier());
+    assertTrue(resource.getFileByIdentifier(fileKeptByImporter.getIdentifier()).isPresent());
+    assertTrue(resource.getFileByIdentifier(fileAddedByImporter.getIdentifier()).isPresent());
+    assertTrue(resource.getFileByIdentifier(fileNotKeptByImporter.getIdentifier()).isEmpty());
+    verify(s3Client, atLeastOnce())
+        .copyObject(
             CopyObjectRequest.builder()
                 .sourceBucket(SOME_CANDIDATE_BUCKET)
                 .sourceKey(fileKeptByImporter.getIdentifier().toString())
                 .destinationBucket(SOME_PERSISTED_BUCKET)
                 .destinationKey(fileKeptByImporter.getIdentifier().toString())
                 .build());
-        verify(s3Client, never()).copyObject(
+    verify(s3Client, never())
+        .copyObject(
             CopyObjectRequest.builder()
                 .sourceBucket(SOME_CANDIDATE_BUCKET)
                 .sourceKey(fileNotKeptByImporter.getIdentifier().toString())
                 .destinationBucket(SOME_PERSISTED_BUCKET)
                 .destinationKey(fileNotKeptByImporter.getIdentifier().toString())
                 .build());
-    }
+  }
 
-    @Test
-    void shouldThrowBadRequestExceptionWhenTryingToImportCandideWithoutTitle()
-        throws NotFoundException, IOException {
-        var importCandidate = createPersistedImportCandidate();
-        var userInput = importCandidate.copy()
-                            .withEntityDescription(
-                                randomImportEntityDescriptionWithoutMainTitle(List.of(randomImportContributor())))
-                            .build();
-        var request = createRequest(userInput);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+  @Test
+  void shouldThrowBadRequestExceptionWhenTryingToImportCandideWithoutTitle()
+      throws NotFoundException, IOException {
+    var importCandidate = createPersistedImportCandidate();
+    var userInput =
+        importCandidate
+            .copy()
+            .withEntityDescription(
+                randomImportEntityDescriptionWithoutMainTitle(List.of(randomImportContributor())))
+            .build();
+    var request = createRequest(userInput);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
-        assertThat(response.getBodyObject(Problem.class).getDetail(),
-                   containsString(RESOURCE_IS_NOT_PUBLISHABLE));
-    }
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(),
+        containsString(RESOURCE_IS_NOT_PUBLISHABLE));
+  }
 
-    @Test
-    void publishedDateShouldBeSetToTimeWhenPublicationEntersDatabase() throws NotFoundException,
-                                                                             IOException {
-        var importCandidate = createPersistedImportCandidate();
-        var request = createRequest(importCandidate);
-        final var start = Instant.now();
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var publication = publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
-        assertThat(publication.getCreatedDate(), is(equalTo(publication.getPublishedDate())));
-        assertThat(publication.getCreatedDate(), is(equalTo(publication.getModifiedDate())));
-        assertThat(publication.getCreatedDate(), is(greaterThan(start)));
-    }
+  @Test
+  void publishedDateShouldBeSetToTimeWhenPublicationEntersDatabase()
+      throws NotFoundException, IOException {
+    var importCandidate = createPersistedImportCandidate();
+    var request = createRequest(importCandidate);
+    final var start = Instant.now();
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+    var publication =
+        publicationService.getPublicationByIdentifier(getBodyObject(response).getIdentifier());
+    assertThat(publication.getCreatedDate(), is(equalTo(publication.getPublishedDate())));
+    assertThat(publication.getCreatedDate(), is(equalTo(publication.getModifiedDate())));
+    assertThat(publication.getCreatedDate(), is(greaterThan(start)));
+  }
 
-    @Test
-    void shouldWriteToPiaWhenCristinIdHasBeenUpdatedByUser() throws NotFoundException, IOException {
-        var auid = randomString();
-        var contributorWithAuid = createImportContributorWithAuid(auid, 1);
-        var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
-        var cristinId = randomUri();
-        var contributorUpdatedWithCristinId = updateContributorWithCristinId(toContributor(contributorWithAuid), cristinId);
-        var userInput = importCandidateWithContributors(importCandidate, contributorUpdatedWithCristinId);
-        var request = createRequest(userInput, importCandidate.getIdentifier());
-        var expectedBody = List.of(PiaUpdateRequest.toPiaRequest(contributorUpdatedWithCristinId,
-                                                                 extractScopusId(importCandidate)));
-        handler.handleRequest(request, output, context);
-        WireMock.verify(postRequestedFor(urlEqualTo("/sentralimport/authors"))
-                            .withRequestBody(WireMock.equalTo(expectedBody.toString())));
-    }
+  @Test
+  void shouldWriteToPiaWhenCristinIdHasBeenUpdatedByUser() throws NotFoundException, IOException {
+    var auid = randomString();
+    var contributorWithAuid = createImportContributorWithAuid(auid, 1);
+    var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
+    var cristinId = randomUri();
+    var contributorUpdatedWithCristinId =
+        updateContributorWithCristinId(toContributor(contributorWithAuid), cristinId);
+    var userInput =
+        importCandidateWithContributors(importCandidate, contributorUpdatedWithCristinId);
+    var request = createRequest(userInput, importCandidate.getIdentifier());
+    var expectedBody =
+        List.of(
+            PiaUpdateRequest.toPiaRequest(
+                contributorUpdatedWithCristinId, extractScopusId(importCandidate)));
+    handler.handleRequest(request, output, context);
+    WireMock.verify(
+        postRequestedFor(urlEqualTo("/sentralimport/authors"))
+            .withRequestBody(WireMock.equalTo(expectedBody.toString())));
+  }
 
-    @Test
-    void shouldWriteToPiaWhenPiaHostHasNoScheme(WireMockRuntimeInfo wireMockRuntimeInfo)
-        throws NotFoundException, IOException {
-        var piaHostWithoutScheme = wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", "");
-        var configWithHostOnly = new PiaClientConfig(piaHostWithoutScheme,
-                                                      SOME_USERNAME_KEY,
-                                                      SOME_PIA_PASSWORD_KEY,
-                                                      SOME_SECRETS_KEY_NAME,
-                                                      WiremockHttpClient.create(),
-                                                      setupPiaSecrets());
-        var handlerWithHostOnly = new CreatePublicationFromImportCandidateHandler(
-            new ImportCandidateHandlerConfigs(SOME_PERSISTED_BUCKET, SOME_CANDIDATE_BUCKET,
-                                              importCandidateService, publicationService,
-                                              ticketService, s3Client, configWithHostOnly),
-            new Environment(), ticketService, approvalService);
+  @Test
+  void shouldWriteToPiaWhenPiaHostHasNoScheme(WireMockRuntimeInfo wireMockRuntimeInfo)
+      throws NotFoundException, IOException {
+    var piaHostWithoutScheme = wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", "");
+    var configWithHostOnly =
+        new PiaClientConfig(
+            piaHostWithoutScheme,
+            SOME_USERNAME_KEY,
+            SOME_PIA_PASSWORD_KEY,
+            SOME_SECRETS_KEY_NAME,
+            WiremockHttpClient.create(),
+            setupPiaSecrets());
+    var handlerWithHostOnly =
+        new CreatePublicationFromImportCandidateHandler(
+            new ImportCandidateHandlerConfigs(
+                SOME_PERSISTED_BUCKET,
+                SOME_CANDIDATE_BUCKET,
+                importCandidateService,
+                publicationService,
+                ticketService,
+                s3Client,
+                configWithHostOnly),
+            new Environment(),
+            ticketService,
+            approvalService);
 
-        var auid = randomString();
-        var contributorWithAuid = createImportContributorWithAuid(auid, 1);
-        var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
-        var cristinId = randomUri();
-        var contributorUpdatedWithCristinId = updateContributorWithCristinId(
-            toContributor(contributorWithAuid), cristinId);
-        var userInput = importCandidateWithContributors(importCandidate, contributorUpdatedWithCristinId);
-        var request = createRequest(userInput, importCandidate.getIdentifier());
+    var auid = randomString();
+    var contributorWithAuid = createImportContributorWithAuid(auid, 1);
+    var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
+    var cristinId = randomUri();
+    var contributorUpdatedWithCristinId =
+        updateContributorWithCristinId(toContributor(contributorWithAuid), cristinId);
+    var userInput =
+        importCandidateWithContributors(importCandidate, contributorUpdatedWithCristinId);
+    var request = createRequest(userInput, importCandidate.getIdentifier());
 
-        var testOutput = new ByteArrayOutputStream();
-        handlerWithHostOnly.handleRequest(request, testOutput, context);
+    var testOutput = new ByteArrayOutputStream();
+    handlerWithHostOnly.handleRequest(request, testOutput, context);
 
-        var response = GatewayResponse.fromOutputStream(testOutput, PublicationResponse.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-    }
+    var response = GatewayResponse.fromOutputStream(testOutput, PublicationResponse.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+  }
 
-    @Test
-    void shouldWriteToPiaWithSeveralContributorsAtOnce() throws NotFoundException, IOException {
-        var auid1 = randomString();
-        var contributorWithAuid1 = createImportContributorWithAuid(auid1, 1);
-        var auid2 = randomString();
-        var contributorWithAuid2 = createImportContributorWithAuid(auid2, 2);
-        var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid1,
-                                                                     contributorWithAuid2));
-        var cristinId1 = randomUri();
-        var cristinId2 = randomUri();
-        var contributorUpdatedWithCristinId1 = updateContributorWithCristinId(toContributor(contributorWithAuid1),
-                                                                              cristinId1);
-        var contributorUpdatedWithCristinId2 = updateContributorWithCristinId(toContributor(contributorWithAuid2),
-                                                                              cristinId2);
-        var userInput = importCandidateWithContributors(importCandidate, contributorUpdatedWithCristinId1, contributorUpdatedWithCristinId2);
-        var request = createRequest(userInput, importCandidate.getIdentifier());
-        handler.handleRequest(request, output, context);
-        var expectedNumberOfTimesPostRequestIsSent = 1;
-        var expectedBody = List.of(PiaUpdateRequest.toPiaRequest(contributorUpdatedWithCristinId1,
-                                                                 extractScopusId(importCandidate)),
-                                   PiaUpdateRequest.toPiaRequest(contributorUpdatedWithCristinId2,
-                                                                 extractScopusId(importCandidate)));
-        WireMock.verify(expectedNumberOfTimesPostRequestIsSent,
-                        postRequestedFor(urlEqualTo("/sentralimport/authors"))
-                            .withRequestBody(WireMock.equalTo(expectedBody.toString())));
-    }
+  @Test
+  void shouldWriteToPiaWithSeveralContributorsAtOnce() throws NotFoundException, IOException {
+    var auid1 = randomString();
+    var contributorWithAuid1 = createImportContributorWithAuid(auid1, 1);
+    var auid2 = randomString();
+    var contributorWithAuid2 = createImportContributorWithAuid(auid2, 2);
+    var importCandidate =
+        createPersistedImportCandidate(List.of(contributorWithAuid1, contributorWithAuid2));
+    var cristinId1 = randomUri();
+    var cristinId2 = randomUri();
+    var contributorUpdatedWithCristinId1 =
+        updateContributorWithCristinId(toContributor(contributorWithAuid1), cristinId1);
+    var contributorUpdatedWithCristinId2 =
+        updateContributorWithCristinId(toContributor(contributorWithAuid2), cristinId2);
+    var userInput =
+        importCandidateWithContributors(
+            importCandidate, contributorUpdatedWithCristinId1, contributorUpdatedWithCristinId2);
+    var request = createRequest(userInput, importCandidate.getIdentifier());
+    handler.handleRequest(request, output, context);
+    var expectedNumberOfTimesPostRequestIsSent = 1;
+    var expectedBody =
+        List.of(
+            PiaUpdateRequest.toPiaRequest(
+                contributorUpdatedWithCristinId1, extractScopusId(importCandidate)),
+            PiaUpdateRequest.toPiaRequest(
+                contributorUpdatedWithCristinId2, extractScopusId(importCandidate)));
+    WireMock.verify(
+        expectedNumberOfTimesPostRequestIsSent,
+        postRequestedFor(urlEqualTo("/sentralimport/authors"))
+            .withRequestBody(WireMock.equalTo(expectedBody.toString())));
+  }
 
-    @Test
-    void shouldContinueImportingEvenWhenPiaRestRespondsWithErrorCodes()
-        throws NotFoundException, IOException {
-        var auid = randomString();
-        var contributorWithAuid = createImportContributorWithAuid(auid, 1);
-        var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
-        var cristinId = randomUri();
-        var contributorUpdatedWithCristinId = updateContributorWithCristinId(toContributor(contributorWithAuid),
-                                                                             cristinId);
-        var userInput = importCandidateWithContributors(importCandidate, contributorUpdatedWithCristinId);
-        var request = createRequest(userInput, importCandidate.getIdentifier());
-        mockBadRequestResponseFromPia();
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
-    }
+  @Test
+  void shouldContinueImportingEvenWhenPiaRestRespondsWithErrorCodes()
+      throws NotFoundException, IOException {
+    var auid = randomString();
+    var contributorWithAuid = createImportContributorWithAuid(auid, 1);
+    var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
+    var cristinId = randomUri();
+    var contributorUpdatedWithCristinId =
+        updateContributorWithCristinId(toContributor(contributorWithAuid), cristinId);
+    var userInput =
+        importCandidateWithContributors(importCandidate, contributorUpdatedWithCristinId);
+    var request = createRequest(userInput, importCandidate.getIdentifier());
+    mockBadRequestResponseFromPia();
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
+  }
 
-    @Test
-    void shouldSetResourceEventWhenCreatingPublicationFromImportingCandidate() throws IOException, NotFoundException {
-        var importCandidate = createPersistedImportCandidate();
-        var request = createRequest(importCandidate);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var resource = Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
-                              .fetch(publicationService)
-                              .orElseThrow();
+  @Test
+  void shouldSetResourceEventWhenCreatingPublicationFromImportingCandidate()
+      throws IOException, NotFoundException {
+    var importCandidate = createPersistedImportCandidate();
+    var request = createRequest(importCandidate);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+    var resource =
+        Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
+            .fetch(publicationService)
+            .orElseThrow();
 
-        var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
+    var resourceEvent = (ImportedResourceEvent) resource.getResourceEvent();
 
-        assertEquals(Source.SCOPUS, resourceEvent.importSource().getSource());
-    }
+    assertEquals(Source.SCOPUS, resourceEvent.importSource().getSource());
+  }
 
-    @Test
-    void shouldPersistPublishingRequestWhenImportingCandidateWithFilesAndCustomerRequiresApproval()
-        throws IOException, ApprovalAssignmentException {
-        var candidate = randomImportCandidate();
-        var file = randomOpenFile();
-        candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
-        var customerRequiringApproval = randomUri();
-        candidate.setAssociatedCustomers(List.of(customerRequiringApproval));
-        var importCandidate = importCandidateService.persistImportCandidate(candidate);
-        var request = createRequest(importCandidate);
+  @Test
+  void shouldPersistPublishingRequestWhenImportingCandidateWithFilesAndCustomerRequiresApproval()
+      throws IOException, ApprovalAssignmentException {
+    var candidate = randomImportCandidate();
+    var file = randomOpenFile();
+    candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
+    var customerRequiringApproval = randomUri();
+    candidate.setAssociatedCustomers(List.of(customerRequiringApproval));
+    var importCandidate = importCandidateService.persistImportCandidate(candidate);
+    var request = createRequest(importCandidate);
 
-        when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
-            .thenReturn(AssignmentServiceResult.customerFound(new CustomerContributorPair(randomCustomer(customerRequiringApproval, false), randomContributorWithId(randomUri()))));
+    when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
+        .thenReturn(
+            AssignmentServiceResult.customerFound(
+                new CustomerContributorPair(
+                    randomCustomer(customerRequiringApproval, false),
+                    randomContributorWithId(randomUri()))));
 
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var resource = Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
-                           .fetch(publicationService)
-                           .orElseThrow();
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+    var resource =
+        Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
+            .fetch(publicationService)
+            .orElseThrow();
 
-        var publishingRequest =
-            (PublishingRequestCase) publicationService.fetchAllTicketsForResource(resource).findFirst().orElseThrow();
+    var publishingRequest =
+        (PublishingRequestCase)
+            publicationService.fetchAllTicketsForResource(resource).findFirst().orElseThrow();
 
-        var fileFromApproval = publishingRequest.getFilesForApproval().stream().findFirst().orElseThrow();
+    var fileFromApproval =
+        publishingRequest.getFilesForApproval().stream().findFirst().orElseThrow();
 
-        assertThat(fileFromApproval.getIdentifier(), is(equalTo(file.getIdentifier())));
-        assertInstanceOf(PendingOpenFile.class, fileFromApproval);
-        assertInstanceOf(PendingOpenFile.class, resource.getFileByIdentifier(file.getIdentifier()).orElseThrow());
-    }
+    assertThat(fileFromApproval.getIdentifier(), is(equalTo(file.getIdentifier())));
+    assertInstanceOf(PendingOpenFile.class, fileFromApproval);
+    assertInstanceOf(
+        PendingOpenFile.class, resource.getFileByIdentifier(file.getIdentifier()).orElseThrow());
+  }
 
-    @Test
-    void shouldSetFileOwnerToCustomerOwningTicketWhenCustomerRequiresApproval()
-        throws IOException, ApprovalAssignmentException {
-        var candidate = randomImportCandidate();
-        var file = randomOpenFile();
-        candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
-        var customerRequiringApproval = randomUri();
-        candidate.setAssociatedCustomers(List.of(customerRequiringApproval));
-        var importCandidate = importCandidateService.persistImportCandidate(candidate);
-        var request = createRequest(importCandidate);
+  @Test
+  void shouldSetFileOwnerToCustomerOwningTicketWhenCustomerRequiresApproval()
+      throws IOException, ApprovalAssignmentException {
+    var candidate = randomImportCandidate();
+    var file = randomOpenFile();
+    candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
+    var customerRequiringApproval = randomUri();
+    candidate.setAssociatedCustomers(List.of(customerRequiringApproval));
+    var importCandidate = importCandidateService.persistImportCandidate(candidate);
+    var request = createRequest(importCandidate);
 
-        var customerDto = randomCustomer(customerRequiringApproval, false);
-        when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
-            .thenReturn(AssignmentServiceResult.customerFound(new CustomerContributorPair(customerDto, randomContributorWithId(randomUri()))));
+    var customerDto = randomCustomer(customerRequiringApproval, false);
+    when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
+        .thenReturn(
+            AssignmentServiceResult.customerFound(
+                new CustomerContributorPair(customerDto, randomContributorWithId(randomUri()))));
 
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var resource = Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
-                           .fetch(publicationService)
-                           .orElseThrow();
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+    var resource =
+        Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
+            .fetch(publicationService)
+            .orElseThrow();
 
-        var publishingRequest = (PublishingRequestCase) publicationService.fetchAllTicketsForResource(resource).findFirst().orElseThrow();
+    var publishingRequest =
+        (PublishingRequestCase)
+            publicationService.fetchAllTicketsForResource(resource).findFirst().orElseThrow();
 
-        assertEquals(customerDto.cristinId(), publishingRequest.getOwnerAffiliation());
-        resource.getFileEntries().forEach(fileEntry -> {
-            assertEquals(customerDto.cristinId(), fileEntry.getOwnerAffiliation());
-        });
-    }
+    assertEquals(customerDto.cristinId(), publishingRequest.getOwnerAffiliation());
+    resource
+        .getFileEntries()
+        .forEach(
+            fileEntry -> {
+              assertEquals(customerDto.cristinId(), fileEntry.getOwnerAffiliation());
+            });
+  }
 
-    @Test
-    void shouldImportFileAsInternalFileWhenImportingCandidateWithFilesAndNoneOfCustomerRequiresApproval()
-        throws IOException, ApprovalAssignmentException {
-        var candidate = randomImportCandidate();
-        var file = randomOpenFile();
-        candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
-        var customerAllowingPublishing = randomUri();
-        candidate.setAssociatedCustomers(List.of(customerAllowingPublishing));
-        var importCandidate = importCandidateService.persistImportCandidate(candidate);
-        var request = createRequest(importCandidate);
+  @Test
+  void
+      shouldImportFileAsInternalFileWhenImportingCandidateWithFilesAndNoneOfCustomerRequiresApproval()
+          throws IOException, ApprovalAssignmentException {
+    var candidate = randomImportCandidate();
+    var file = randomOpenFile();
+    candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
+    var customerAllowingPublishing = randomUri();
+    candidate.setAssociatedCustomers(List.of(customerAllowingPublishing));
+    var importCandidate = importCandidateService.persistImportCandidate(candidate);
+    var request = createRequest(importCandidate);
 
-        when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
-            .thenReturn(AssignmentServiceResult.noApprovalNeeded(randomCustomer(customerAllowingPublishing, true)));
+    when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
+        .thenReturn(
+            AssignmentServiceResult.noApprovalNeeded(
+                randomCustomer(customerAllowingPublishing, true)));
 
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var resource = Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
-                           .fetch(publicationService)
-                           .orElseThrow();
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+    var resource =
+        Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
+            .fetch(publicationService)
+            .orElseThrow();
 
-        assertTrue(publicationService.fetchAllTicketsForResource(resource).toList().isEmpty());
-        assertInstanceOf(InternalFile.class, resource.getFileByIdentifier(file.getIdentifier()).orElseThrow());
-    }
+    assertTrue(publicationService.fetchAllTicketsForResource(resource).toList().isEmpty());
+    assertInstanceOf(
+        InternalFile.class, resource.getFileByIdentifier(file.getIdentifier()).orElseThrow());
+  }
 
-    @Test
-    void shouldSetCustomerAsFileOwnerWhenCustomerDoesNotRequiresApproval()
-        throws IOException, ApprovalAssignmentException {
-        var candidate = randomImportCandidate();
-        var file = randomOpenFile();
-        candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
-        var customerAllowingPublishing = randomUri();
-        candidate.setAssociatedCustomers(List.of(customerAllowingPublishing));
-        var importCandidate = importCandidateService.persistImportCandidate(candidate);
-        var request = createRequest(importCandidate);
+  @Test
+  void shouldSetCustomerAsFileOwnerWhenCustomerDoesNotRequiresApproval()
+      throws IOException, ApprovalAssignmentException {
+    var candidate = randomImportCandidate();
+    var file = randomOpenFile();
+    candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
+    var customerAllowingPublishing = randomUri();
+    candidate.setAssociatedCustomers(List.of(customerAllowingPublishing));
+    var importCandidate = importCandidateService.persistImportCandidate(candidate);
+    var request = createRequest(importCandidate);
 
-        var customerDto = randomCustomer(customerAllowingPublishing, true);
-        when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
-            .thenReturn(AssignmentServiceResult.noApprovalNeeded(customerDto));
+    var customerDto = randomCustomer(customerAllowingPublishing, true);
+    when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
+        .thenReturn(AssignmentServiceResult.noApprovalNeeded(customerDto));
 
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
-        var resource = Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
-                           .fetch(publicationService)
-                           .orElseThrow();
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+    var resource =
+        Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
+            .fetch(publicationService)
+            .orElseThrow();
 
-        resource.getFileEntries().forEach(fileEntry -> {
-            assertEquals(customerDto.cristinId(), fileEntry.getOwnerAffiliation());
-        });
-    }
+    resource
+        .getFileEntries()
+        .forEach(
+            fileEntry -> {
+              assertEquals(customerDto.cristinId(), fileEntry.getOwnerAffiliation());
+            });
+  }
 
-    @Test
-    void shouldImportFileAsPendingInternalFileWhenImportingImportCandidateWithInternalFileAndCustomerRequiresApproval()
-        throws IOException, ApprovalAssignmentException {
-        var file = randomInternalFile();
-        var request = createImportCandidateRequestWithFile(file);
+  @Test
+  void
+      shouldImportFileAsPendingInternalFileWhenImportingImportCandidateWithInternalFileAndCustomerRequiresApproval()
+          throws IOException, ApprovalAssignmentException {
+    var file = randomInternalFile();
+    var request = createImportCandidateRequestWithFile(file);
 
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, PublicationResponse.class);
 
-        var resource = Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
-                           .fetch(publicationService)
-                           .orElseThrow();
+    var resource =
+        Resource.resourceQueryObject(getBodyObject(response).getIdentifier())
+            .fetch(publicationService)
+            .orElseThrow();
 
-        assertInstanceOf(PendingInternalFile.class, resource.getFileByIdentifier(file.getIdentifier()).orElseThrow());
-    }
+    assertInstanceOf(
+        PendingInternalFile.class,
+        resource.getFileByIdentifier(file.getIdentifier()).orElseThrow());
+  }
 
-    private InputStream createImportCandidateRequestWithFile(File file) throws JsonProcessingException, ApprovalAssignmentException {
-        var candidate = randomImportCandidate();
-        candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
-        var customerRequiringApproval = randomUri();
-        candidate.setAssociatedCustomers(List.of(customerRequiringApproval));
-        var importCandidate = importCandidateService.persistImportCandidate(candidate);
-        var request = createRequest(importCandidate);
+  private InputStream createImportCandidateRequestWithFile(File file)
+      throws JsonProcessingException, ApprovalAssignmentException {
+    var candidate = randomImportCandidate();
+    candidate.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
+    var customerRequiringApproval = randomUri();
+    candidate.setAssociatedCustomers(List.of(customerRequiringApproval));
+    var importCandidate = importCandidateService.persistImportCandidate(candidate);
+    var request = createRequest(importCandidate);
 
-        var customerDto = randomCustomer(customerRequiringApproval, false);
-        when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
-            .thenReturn(AssignmentServiceResult.customerFound(new CustomerContributorPair(customerDto, randomContributorWithId(randomUri()))));
-        return request;
-    }
+    var customerDto = randomCustomer(customerRequiringApproval, false);
+    when(approvalService.determineCustomerResponsibleForApproval(any(), any()))
+        .thenReturn(
+            AssignmentServiceResult.customerFound(
+                new CustomerContributorPair(customerDto, randomContributorWithId(randomUri()))));
+    return request;
+  }
 
-    private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
-        throws JsonProcessingException {
-        return response.getBodyObject(PublicationResponse.class);
-    }
+  private static PublicationResponse getBodyObject(GatewayResponse<PublicationResponse> response)
+      throws JsonProcessingException {
+    return response.getBodyObject(PublicationResponse.class);
+  }
 
-    private String extractScopusId(ImportCandidate importCandidate) {
-        return
-            importCandidate.getAdditionalIdentifiers()
-                .stream()
-                .filter(ScopusIdentifier.class::isInstance)
-                .map(ScopusIdentifier.class::cast)
-                .map(ScopusIdentifier::value)
-                .findFirst()
-                .orElseThrow();
-    }
+  private String extractScopusId(ImportCandidate importCandidate) {
+    return importCandidate.getAdditionalIdentifiers().stream()
+        .filter(ScopusIdentifier.class::isInstance)
+        .map(ScopusIdentifier.class::cast)
+        .map(ScopusIdentifier::value)
+        .findFirst()
+        .orElseThrow();
+  }
 
-    private PiaClientConfig createPiaConfig(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        return new PiaClientConfig(wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", ""),
-                                   SOME_USERNAME_KEY,
-                                   SOME_PIA_PASSWORD_KEY,
-                                   SOME_SECRETS_KEY_NAME,
-                                   WiremockHttpClient.create(),
-                                   setupPiaSecrets());
-    }
+  private PiaClientConfig createPiaConfig(WireMockRuntimeInfo wireMockRuntimeInfo) {
+    return new PiaClientConfig(
+        wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", ""),
+        SOME_USERNAME_KEY,
+        SOME_PIA_PASSWORD_KEY,
+        SOME_SECRETS_KEY_NAME,
+        WiremockHttpClient.create(),
+        setupPiaSecrets());
+  }
 
-    private SecretsReader setupPiaSecrets() {
-        var fakeSecretsManagerClient = new FakeSecretsManagerClient();
-        fakeSecretsManagerClient.putSecret(SOME_SECRETS_KEY_NAME, SOME_USERNAME_KEY, randomString());
-        fakeSecretsManagerClient.putSecret(SOME_SECRETS_KEY_NAME, SOME_PIA_PASSWORD_KEY, randomString());
-        return new SecretsReader(fakeSecretsManagerClient);
-    }
+  private SecretsReader setupPiaSecrets() {
+    var fakeSecretsManagerClient = new FakeSecretsManagerClient();
+    fakeSecretsManagerClient.putSecret(SOME_SECRETS_KEY_NAME, SOME_USERNAME_KEY, randomString());
+    fakeSecretsManagerClient.putSecret(
+        SOME_SECRETS_KEY_NAME, SOME_PIA_PASSWORD_KEY, randomString());
+    return new SecretsReader(fakeSecretsManagerClient);
+  }
 
-    private void mockBadRequestResponseFromPia() {
-        stubFor(WireMock.post(urlMatching("/sentralimport/authors"))
-                    .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_INTERNAL_ERROR)));
-    }
+  private void mockBadRequestResponseFromPia() {
+    stubFor(
+        WireMock.post(urlMatching("/sentralimport/authors"))
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_INTERNAL_ERROR)));
+  }
 
-    private void mockPostAuidWriting() {
-        stubFor(WireMock.post(urlMatching("/sentralimport/authors"))
-                    .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_CREATED)));
-    }
+  private void mockPostAuidWriting() {
+    stubFor(
+        WireMock.post(urlMatching("/sentralimport/authors"))
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_CREATED)));
+  }
 
-    private Contributor updateContributorWithCristinId(Contributor contributorWithAuid, URI cristinId) {
-        var identityWithCristinId = new Identity.Builder()
-                                        .withId(cristinId)
-                                        .withAdditionalIdentifiers(contributorWithAuid.getIdentity()
-                                                                       .getAdditionalIdentifiers())
-                                        .withName(randomString())
-                                        .build();
-        return new Contributor(identityWithCristinId, emptyList(), new RoleType(Role.CREATOR),
-                                     contributorWithAuid.getSequence(), false);
-    }
+  private Contributor updateContributorWithCristinId(
+      Contributor contributorWithAuid, URI cristinId) {
+    var identityWithCristinId =
+        new Identity.Builder()
+            .withId(cristinId)
+            .withAdditionalIdentifiers(contributorWithAuid.getIdentity().getAdditionalIdentifiers())
+            .withName(randomString())
+            .build();
+    return new Contributor(
+        identityWithCristinId,
+        emptyList(),
+        new RoleType(Role.CREATOR),
+        contributorWithAuid.getSequence(),
+        false);
+  }
 
-    private ImportContributor createImportContributorWithAuid(String auid, int sequence) {
-        return new ImportContributor(identityWithAuid(auid), emptyList(), new RoleType(Role.CREATOR),
-                                     sequence, false);
-    }
+  private ImportContributor createImportContributorWithAuid(String auid, int sequence) {
+    return new ImportContributor(
+        identityWithAuid(auid), emptyList(), new RoleType(Role.CREATOR), sequence, false);
+  }
 
-    private Identity identityWithAuid(String auid) {
-        return new Identity.Builder()
-                   .withName(randomString())
-                   .withAdditionalIdentifiers(List.of(additionalIdentifierFromAuid(auid)))
-                   .build();
-    }
+  private Identity identityWithAuid(String auid) {
+    return new Identity.Builder()
+        .withName(randomString())
+        .withAdditionalIdentifiers(List.of(additionalIdentifierFromAuid(auid)))
+        .build();
+  }
 
-    private AdditionalIdentifier additionalIdentifierFromAuid(String auid) {
-        return new AdditionalIdentifier("scopus-auid", auid);
-    }
+  private AdditionalIdentifier additionalIdentifierFromAuid(String auid) {
+    return new AdditionalIdentifier("scopus-auid", auid);
+  }
 
-    private OpenFile randomFile() {
-        return new OpenFile(UUID.randomUUID(),
-                                 randomString(),
-                                 "pdf",
-                                 12312L,
-                                 null,
-                                 PublisherVersion.ACCEPTED_VERSION,
-                                 null,
-                                 null,
-                                 null,
-                                 null,
-                                 new UserUploadDetails(randomPerson(), null));
-    }
+  private OpenFile randomFile() {
+    return new OpenFile(
+        UUID.randomUUID(),
+        randomString(),
+        "pdf",
+        12312L,
+        null,
+        PublisherVersion.ACCEPTED_VERSION,
+        null,
+        null,
+        null,
+        null,
+        new UserUploadDetails(randomPerson(), null));
+  }
 
-    private ImportCandidate randomImportCandidateWithoutScopusId() throws NotFoundException {
-        var candidate = randomImportCandidate();
-        candidate.setAdditionalIdentifiers(Set.of());
-        var importCandidate = importCandidateService.persistImportCandidate(candidate);
-        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-    }
+  private ImportCandidate randomImportCandidateWithoutScopusId() throws NotFoundException {
+    var candidate = randomImportCandidate();
+    candidate.setAdditionalIdentifiers(Set.of());
+    var importCandidate = importCandidateService.persistImportCandidate(candidate);
+    return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+  }
 
-    private ImportCandidate createImportedPersistedImportCandidate() throws NotFoundException {
-        var candidate = randomImportCandidate();
-        candidate.setImportStatus(ImportStatusFactory.createImported(randomString(), SortableIdentifier.next()));
-        var importCandidate = importCandidateService.persistImportCandidate(candidate);
-        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-    }
+  private ImportCandidate createImportedPersistedImportCandidate() throws NotFoundException {
+    var candidate = randomImportCandidate();
+    candidate.setImportStatus(
+        ImportStatusFactory.createImported(randomString(), SortableIdentifier.next()));
+    var importCandidate = importCandidateService.persistImportCandidate(candidate);
+    return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+  }
 
-    private ImportCandidate createPersistedImportCandidate(List<ImportContributor> contributors)
-        throws NotFoundException {
-        var candidate = ImportCandidateGenerator.randomImportCandidate(contributors);
-        var importCandidate = importCandidateService.persistImportCandidate(candidate);
-        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-    }
+  private ImportCandidate createPersistedImportCandidate(List<ImportContributor> contributors)
+      throws NotFoundException {
+    var candidate = ImportCandidateGenerator.randomImportCandidate(contributors);
+    var importCandidate = importCandidateService.persistImportCandidate(candidate);
+    return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+  }
 
-    private ImportCandidate createPersistedImportCandidate() throws NotFoundException {
-        var candidate = randomImportCandidate();
-        var importCandidate = importCandidateService.persistImportCandidate(candidate);
-        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-    }
+  private ImportCandidate createPersistedImportCandidate() throws NotFoundException {
+    var candidate = randomImportCandidate();
+    var importCandidate = importCandidateService.persistImportCandidate(candidate);
+    return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+  }
 
-    private ImportCandidate createPersistedImportCandidate(AssociatedArtifactList associatedArtifacts)
-        throws NotFoundException {
-        var candidate = randomImportCandidate();
-        candidate.setAssociatedArtifacts(associatedArtifacts);
-        var importCandidate = importCandidateService.persistImportCandidate(candidate);
-        return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
-    }
+  private ImportCandidate createPersistedImportCandidate(AssociatedArtifactList associatedArtifacts)
+      throws NotFoundException {
+    var candidate = randomImportCandidate();
+    candidate.setAssociatedArtifacts(associatedArtifacts);
+    var importCandidate = importCandidateService.persistImportCandidate(candidate);
+    return importCandidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+  }
 
-    private Username randomPerson() {
-        return new Username(randomInteger().toString() + "@" + randomString());
-    }
+  private Username randomPerson() {
+    return new Username(randomInteger().toString() + "@" + randomString());
+  }
 
-    private InputStream createRequestWithoutAccessRights(ImportCandidate importCandidate) throws
-                                                                                          JsonProcessingException {
-        var jsonBody = createPublicationRequestFromImportCandidate(importCandidate);
-        var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-        return new HandlerRequestBuilder<CreatePublicationRequest>(restApiMapper)
-                   .withHeaders(headers)
-                   .withBody(jsonBody)
-                   .withCurrentCustomer(randomUri())
-                   .build();
-    }
+  private InputStream createRequestWithoutAccessRights(ImportCandidate importCandidate)
+      throws JsonProcessingException {
+    var jsonBody = createPublicationRequestFromImportCandidate(importCandidate);
+    var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+    return new HandlerRequestBuilder<CreatePublicationRequest>(restApiMapper)
+        .withHeaders(headers)
+        .withBody(jsonBody)
+        .withCurrentCustomer(randomUri())
+        .build();
+  }
 
-    private InputStream createRequest(ImportCandidate importCandidate) throws JsonProcessingException {
-        var requestBody = createPublicationRequestFromImportCandidate(importCandidate);
-        return createRequest(requestBody, importCandidate.getIdentifier());
-    }
+  private InputStream createRequest(ImportCandidate importCandidate)
+      throws JsonProcessingException {
+    var requestBody = createPublicationRequestFromImportCandidate(importCandidate);
+    return createRequest(requestBody, importCandidate.getIdentifier());
+  }
 
-    private static InputStream createRequest(CreatePublicationRequest requestBody, SortableIdentifier identifier) throws JsonProcessingException {
-        var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-        var user = UserInstance.create(randomString(), randomUri());
-        return new HandlerRequestBuilder<CreatePublicationRequest>(restApiMapper)
-                   .withHeaders(headers)
-                   .withPathParameters(Map.of("importCandidateIdentifier", identifier.toString()))
-                   .withUserName(randomString())
-                   .withBody(requestBody)
-                   .withCurrentCustomer(user.getCustomerId())
-                   .withAccessRights(user.getCustomerId(), AccessRight.MANAGE_IMPORT)
-                   .withTopLevelCristinOrgId(randomUri())
-                   .withPersonCristinId(randomUri())
-                   .build();
-    }
+  private static InputStream createRequest(
+      CreatePublicationRequest requestBody, SortableIdentifier identifier)
+      throws JsonProcessingException {
+    var headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+    var user = UserInstance.create(randomString(), randomUri());
+    return new HandlerRequestBuilder<CreatePublicationRequest>(restApiMapper)
+        .withHeaders(headers)
+        .withPathParameters(Map.of("importCandidateIdentifier", identifier.toString()))
+        .withUserName(randomString())
+        .withBody(requestBody)
+        .withCurrentCustomer(user.getCustomerId())
+        .withAccessRights(user.getCustomerId(), AccessRight.MANAGE_IMPORT)
+        .withTopLevelCristinOrgId(randomUri())
+        .withPersonCristinId(randomUri())
+        .build();
+  }
 
-    private static CreatePublicationRequest createPublicationRequestFromImportCandidate(ImportCandidate importCandidate) {
-        var request = new CreatePublicationRequest();
-        request.setEntityDescription(ImportCandidateToResourceConverter.toEntityDescription(importCandidate));
-        request.setAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers());
-        request.setAssociatedArtifacts(importCandidate.getAssociatedArtifacts());
-        return request;
-    }
+  private static CreatePublicationRequest createPublicationRequestFromImportCandidate(
+      ImportCandidate importCandidate) {
+    var request = new CreatePublicationRequest();
+    request.setEntityDescription(
+        ImportCandidateToResourceConverter.toEntityDescription(importCandidate));
+    request.setAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers());
+    request.setAssociatedArtifacts(importCandidate.getAssociatedArtifacts());
+    return request;
+  }
 
+  private CustomerDto randomCustomer(URI customerId, boolean autoPublishScopusImportFiles) {
+    return new CustomerDto(
+        customerId,
+        UUID.randomUUID(),
+        randomString(),
+        randomString(),
+        randomString(),
+        RandomDataGenerator.randomUri(),
+        PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue(),
+        randomBoolean(),
+        randomBoolean(),
+        randomBoolean(),
+        emptyList(),
+        new CustomerDto.RightsRetentionStrategy(randomString(), RandomDataGenerator.randomUri()),
+        autoPublishScopusImportFiles,
+        randomString());
+  }
 
-    private CustomerDto randomCustomer(URI customerId, boolean autoPublishScopusImportFiles) {
-        return new CustomerDto(customerId,
-                               UUID.randomUUID(),
-                               randomString(),
-                               randomString(),
-                               randomString(),
-                               RandomDataGenerator.randomUri(),
-                               PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue(),
-                               randomBoolean(),
-                               randomBoolean(),
-                               randomBoolean(),
-                               emptyList(),
-                               new CustomerDto.RightsRetentionStrategy(randomString(),
-                                                                       RandomDataGenerator.randomUri()),
-                               autoPublishScopusImportFiles,
-                               randomString());
-    }
-
-    private ImportEntityDescription randomImportEntityDescriptionWithoutMainTitle(List<ImportContributor> contributors) {
-        return new ImportEntityDescription(null, RandomDataGenerator.randomUri(),
-                                           new PublicationDate.Builder().withYear("2020").build(),
-                                           contributors,
-                                           randomString(), Collections.emptyMap(), emptyList(),
-                                           randomString(),
-                                           randomReference(JournalArticle.class));
-    }
+  private ImportEntityDescription randomImportEntityDescriptionWithoutMainTitle(
+      List<ImportContributor> contributors) {
+    return new ImportEntityDescription(
+        null,
+        RandomDataGenerator.randomUri(),
+        new PublicationDate.Builder().withYear("2020").build(),
+        contributors,
+        randomString(),
+        Collections.emptyMap(),
+        emptyList(),
+        randomString(),
+        randomReference(JournalArticle.class));
+  }
 }

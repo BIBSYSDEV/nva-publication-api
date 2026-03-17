@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.mapper.nva;
 
 import static java.util.Objects.nonNull;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,116 +26,123 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class NvaBookLikeBuilder extends CristinMappingModule {
 
-    public static final String CUSTOM_VOLUME_SERIES_DELIMITER = ";";
-    private static final String EMPTY_STRING = null;
-    public static final String MISSING_PUBLISHER = "Missing publisher";
-    public static final String UNCONFIRMED_PUBLISHER = "Unconfirmed publisher";
+  public static final String CUSTOM_VOLUME_SERIES_DELIMITER = ";";
+  private static final String EMPTY_STRING = null;
+  public static final String MISSING_PUBLISHER = "Missing publisher";
+  public static final String UNCONFIRMED_PUBLISHER = "Unconfirmed publisher";
 
-    public NvaBookLikeBuilder(CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper,
-                              S3Client s3Client) {
-        super(cristinObject, channelRegistryMapper, s3Client);
-    }
+  public NvaBookLikeBuilder(
+      CristinObject cristinObject, ChannelRegistryMapper channelRegistryMapper, S3Client s3Client) {
+    super(cristinObject, channelRegistryMapper, s3Client);
+  }
 
-    protected String constructSeriesNumber() {
-        var volume = extractBookOrReportMetadata()
-                            .map(CristinBookOrReportMetadata::getVolume)
-                            .filter(StringUtils::isNotBlank)
-                            .orElse(EMPTY_STRING);
-        var issue = extractBookOrReportMetadata()
-                           .map(CristinBookOrReportMetadata::getIssue)
-                           .filter(StringUtils::isNotBlank)
-                           .orElse(null);
+  protected String constructSeriesNumber() {
+    var volume =
+        extractBookOrReportMetadata()
+            .map(CristinBookOrReportMetadata::getVolume)
+            .filter(StringUtils::isNotBlank)
+            .orElse(EMPTY_STRING);
+    var issue =
+        extractBookOrReportMetadata()
+            .map(CristinBookOrReportMetadata::getIssue)
+            .filter(StringUtils::isNotBlank)
+            .orElse(null);
 
-        return Stream.of(volume, issue).filter(Objects::nonNull)
-                   .collect(Collectors.joining(CUSTOM_VOLUME_SERIES_DELIMITER));
-    }
+    return Stream.of(volume, issue)
+        .filter(Objects::nonNull)
+        .collect(Collectors.joining(CUSTOM_VOLUME_SERIES_DELIMITER));
+  }
 
-    protected BookSeries buildSeries() {
-        return new NvaBookSeriesBuilder(cristinObject, channelRegistryMapper, s3Client)
-                   .createBookSeries();
-    }
+  protected BookSeries buildSeries() {
+    return new NvaBookSeriesBuilder(cristinObject, channelRegistryMapper, s3Client)
+        .createBookSeries();
+  }
 
-    protected List<String> createIsbnList() {
-        return extractIsbn().stream().collect(Collectors.toList());
-    }
+  protected List<String> createIsbnList() {
+    return extractIsbn().stream().collect(Collectors.toList());
+  }
 
-    protected PublishingHouse buildPublisher() {
-        return createConfirmedPublisherIfPublisherReferenceHasNsdCode()
-                   .orElseGet(this::createUnconfirmedPublisher);
-    }
+  protected PublishingHouse buildPublisher() {
+    return createConfirmedPublisherIfPublisherReferenceHasNsdCode()
+        .orElseGet(this::createUnconfirmedPublisher);
+  }
 
-    private Optional<CristinBookOrReportMetadata> extractBookOrReportMetadata() {
-        return Optional.of(cristinObject)
-                   .map(CristinObject::getBookOrReportMetadata);
-    }
+  private Optional<CristinBookOrReportMetadata> extractBookOrReportMetadata() {
+    return Optional.of(cristinObject).map(CristinObject::getBookOrReportMetadata);
+  }
 
-    private Optional<PublishingHouse> createConfirmedPublisherIfPublisherReferenceHasNsdCode() {
-        var nsdCode = extractPublishersNsdCode().orElse(null);
-        var nsd = new PublishingChannelEntryResolver(nsdCode, extractYearReportedInNvi(), extractPublisherNames(),
-                                                     List.of(),
-                                                     channelRegistryMapper,
-                                                     s3Client,
-                                                     cristinObject.getId());
-        var publisherUri = nsd.getPublisherUri();
-        return nonNull(publisherUri) ? Optional.of(new Publisher(publisherUri)) : Optional.empty();
-    }
+  private Optional<PublishingHouse> createConfirmedPublisherIfPublisherReferenceHasNsdCode() {
+    var nsdCode = extractPublishersNsdCode().orElse(null);
+    var nsd =
+        new PublishingChannelEntryResolver(
+            nsdCode,
+            extractYearReportedInNvi(),
+            extractPublisherNames(),
+            List.of(),
+            channelRegistryMapper,
+            s3Client,
+            cristinObject.getId());
+    var publisherUri = nsd.getPublisherUri();
+    return nonNull(publisherUri) ? Optional.of(new Publisher(publisherUri)) : Optional.empty();
+  }
 
-    private List<String> extractPublisherNames() {
-        return Stream.of(extractPublisherNameFromAlternativeField(),
-                         extractPublisherNameFromPrimaryField().orElse(null))
-                   .filter(Objects::nonNull)
-                   .toList();
-    }
+  private List<String> extractPublisherNames() {
+    return Stream.of(
+            extractPublisherNameFromAlternativeField(),
+            extractPublisherNameFromPrimaryField().orElse(null))
+        .filter(Objects::nonNull)
+        .toList();
+  }
 
-    private Optional<Integer> extractPublishersNsdCode() {
-        return extractBookOrReportMetadata()
-                   .map(CristinBookOrReportMetadata::getCristinPublisher)
-                   .map(CristinPublisher::getNsdCode);
-    }
+  private Optional<Integer> extractPublishersNsdCode() {
+    return extractBookOrReportMetadata()
+        .map(CristinBookOrReportMetadata::getCristinPublisher)
+        .map(CristinPublisher::getNsdCode);
+  }
 
-    private PublishingHouse createUnconfirmedPublisher() {
-        var publisherName = extractUnconfirmedPublisherName();
-        return nonNull(publisherName) ? createUnconfirmedPublisher(publisherName) : new NullPublisher();
-    }
+  private PublishingHouse createUnconfirmedPublisher() {
+    var publisherName = extractUnconfirmedPublisherName();
+    return nonNull(publisherName) ? createUnconfirmedPublisher(publisherName) : new NullPublisher();
+  }
 
-    private UnconfirmedPublisher createUnconfirmedPublisher(String publisherName) {
-        ErrorReport.exceptionName(UnconfirmedPublisherException.name())
-            .withBody(publisherName)
-            .withCristinId(cristinObject.getId())
-            .persist(s3Client);
-        return new UnconfirmedPublisher(publisherName);
-    }
+  private UnconfirmedPublisher createUnconfirmedPublisher(String publisherName) {
+    ErrorReport.exceptionName(UnconfirmedPublisherException.name())
+        .withBody(publisherName)
+        .withCristinId(cristinObject.getId())
+        .persist(s3Client);
+    return new UnconfirmedPublisher(publisherName);
+  }
 
-    private String extractUnconfirmedPublisherName() {
-        var publisherName = extractPublisherNameFromPrimaryField()
-                                   .orElseGet(this::extractPublisherNameFromAlternativeField);
-        return Optional.ofNullable(publisherName)
-                   .orElse(persistReportForNoPublisherException());
-    }
+  private String extractUnconfirmedPublisherName() {
+    var publisherName =
+        extractPublisherNameFromPrimaryField()
+            .orElseGet(this::extractPublisherNameFromAlternativeField);
+    return Optional.ofNullable(publisherName).orElse(persistReportForNoPublisherException());
+  }
 
-    private String persistReportForNoPublisherException() {
-        ErrorReport.exceptionName(NoPublisherException.name())
-            .withBody(MISSING_PUBLISHER)
-            .withCristinId(cristinObject.getId())
-            .persist(s3Client);
-        return null;
-    }
+  private String persistReportForNoPublisherException() {
+    ErrorReport.exceptionName(NoPublisherException.name())
+        .withBody(MISSING_PUBLISHER)
+        .withCristinId(cristinObject.getId())
+        .persist(s3Client);
+    return null;
+  }
 
-    private Optional<String> extractPublisherNameFromPrimaryField() {
-        return extractBookOrReportMetadata()
-                   .map(CristinBookOrReportMetadata::getCristinPublisher)
-                   .map(CristinPublisher::getPublisherName);
-    }
+  private Optional<String> extractPublisherNameFromPrimaryField() {
+    return extractBookOrReportMetadata()
+        .map(CristinBookOrReportMetadata::getCristinPublisher)
+        .map(CristinPublisher::getPublisherName);
+  }
 
-    private String extractPublisherNameFromAlternativeField() {
-        return extractBookOrReportMetadata()
-                   .map(CristinBookOrReportMetadata::getPublisherName)
-                   .orElse(null);
-    }
+  private String extractPublisherNameFromAlternativeField() {
+    return extractBookOrReportMetadata()
+        .map(CristinBookOrReportMetadata::getPublisherName)
+        .orElse(null);
+  }
 
-    protected Revision lookupRevision() {
-        return Optional.ofNullable(cristinObject.getBookOrReportMetadata())
-                   .map(CristinBookOrReportMetadata::convertRevisionStatusToNvaRevision)
-                   .orElse(Revision.UNREVISED);
-    }
+  protected Revision lookupRevision() {
+    return Optional.ofNullable(cristinObject.getBookOrReportMetadata())
+        .map(CristinBookOrReportMetadata::convertRevisionStatusToNvaRevision)
+        .orElse(Revision.UNREVISED);
+  }
 }

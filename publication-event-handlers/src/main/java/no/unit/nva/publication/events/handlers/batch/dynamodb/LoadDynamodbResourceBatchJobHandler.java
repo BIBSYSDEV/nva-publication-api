@@ -5,6 +5,7 @@ import static no.unit.nva.publication.events.handlers.ConfigurationForPushingDir
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
+
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.Collection;
@@ -28,202 +29,245 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
-public class LoadDynamodbResourceBatchJobHandler extends EventHandler<LoadDynamodbRequest, LoadDynamodbResponse> {
+public class LoadDynamodbResourceBatchJobHandler
+    extends EventHandler<LoadDynamodbRequest, LoadDynamodbResponse> {
 
-    private static final Logger logger = LoggerFactory.getLogger(LoadDynamodbResourceBatchJobHandler.class);
-    private static final String WORK_QUEUE_URL_ENV = "WORK_QUEUE_URL";
-    private static final String PROCESSING_ENABLED_ENV = "PROCESSING_ENABLED";
-    private static final String SCAN_PAGE_SIZE_ENV = "SCAN_PAGE_SIZE";
-    private static final String SQS_BATCH_SIZE_ENV = "SQS_BATCH_SIZE";
-    private static final String TOTAL_SEGMENTS_ENV = "TOTAL_SEGMENTS";
-    public static final String DETAIL_TYPE = "PublicationService.DataEntry.LoadDynamodbResourceBatchJob";
+  private static final Logger logger =
+      LoggerFactory.getLogger(LoadDynamodbResourceBatchJobHandler.class);
+  private static final String WORK_QUEUE_URL_ENV = "WORK_QUEUE_URL";
+  private static final String PROCESSING_ENABLED_ENV = "PROCESSING_ENABLED";
+  private static final String SCAN_PAGE_SIZE_ENV = "SCAN_PAGE_SIZE";
+  private static final String SQS_BATCH_SIZE_ENV = "SQS_BATCH_SIZE";
+  private static final String TOTAL_SEGMENTS_ENV = "TOTAL_SEGMENTS";
+  public static final String DETAIL_TYPE =
+      "PublicationService.DataEntry.LoadDynamodbResourceBatchJob";
 
-    private final SqsClient sqsClient;
-    private final EventBridgeClient eventBridgeClient;
-    private final String queueUrl;
-    private final String processingEnabled;
-    private final ResourceService resourceService;
-    private final BatchFilterService batchFilterService;
-    private final int scanPageSize;
-    private final int sqsBatchSize;
-    private final int totalSegments;
+  private final SqsClient sqsClient;
+  private final EventBridgeClient eventBridgeClient;
+  private final String queueUrl;
+  private final String processingEnabled;
+  private final ResourceService resourceService;
+  private final BatchFilterService batchFilterService;
+  private final int scanPageSize;
+  private final int sqsBatchSize;
+  private final int totalSegments;
 
-    @JacocoGenerated
-    public LoadDynamodbResourceBatchJobHandler() {
-        this(SqsClient.create(), defaultEventBridgeClient(), new Environment().readEnv(WORK_QUEUE_URL_ENV),
-             new Environment().readEnv(PROCESSING_ENABLED_ENV), ResourceService.defaultService(),
-             new BatchFilterService(),
-             parseInt(new Environment().readEnv(SCAN_PAGE_SIZE_ENV)),
-             parseInt(new Environment().readEnv(SQS_BATCH_SIZE_ENV)),
-             parseInt(new Environment().readEnv(TOTAL_SEGMENTS_ENV)));
+  @JacocoGenerated
+  public LoadDynamodbResourceBatchJobHandler() {
+    this(
+        SqsClient.create(),
+        defaultEventBridgeClient(),
+        new Environment().readEnv(WORK_QUEUE_URL_ENV),
+        new Environment().readEnv(PROCESSING_ENABLED_ENV),
+        ResourceService.defaultService(),
+        new BatchFilterService(),
+        parseInt(new Environment().readEnv(SCAN_PAGE_SIZE_ENV)),
+        parseInt(new Environment().readEnv(SQS_BATCH_SIZE_ENV)),
+        parseInt(new Environment().readEnv(TOTAL_SEGMENTS_ENV)));
+  }
+
+  public LoadDynamodbResourceBatchJobHandler(
+      SqsClient sqsClient,
+      EventBridgeClient eventBridgeClient,
+      String queueUrl,
+      String processingEnabled,
+      ResourceService resourceService,
+      BatchFilterService batchFilterService,
+      int scanPageSize,
+      int sqsBatchSize,
+      int totalSegments) {
+    super(LoadDynamodbRequest.class);
+    this.resourceService = resourceService;
+    this.batchFilterService = batchFilterService;
+    this.sqsClient = sqsClient;
+    this.eventBridgeClient = eventBridgeClient;
+    this.queueUrl = queueUrl;
+    this.processingEnabled = processingEnabled;
+    this.scanPageSize = scanPageSize;
+    this.sqsBatchSize = sqsBatchSize;
+    this.totalSegments = totalSegments;
+  }
+
+  @Override
+  protected LoadDynamodbResponse processInput(
+      LoadDynamodbRequest input, AwsEventBridgeEvent<LoadDynamodbRequest> event, Context context) {
+    validateInput(input);
+
+    if (!isProcessingEnabled()) {
+      logger.warn(
+          "Processing is disabled via {} environment variable. Stopping execution.",
+          PROCESSING_ENABLED_ENV);
+      return new LoadDynamodbResponse(0, 0, input.jobType());
     }
 
-    public LoadDynamodbResourceBatchJobHandler(SqsClient sqsClient,
-                                               EventBridgeClient eventBridgeClient, String queueUrl,
-                                               String processingEnabled, ResourceService resourceService,
-                                               BatchFilterService batchFilterService,
-                                               int scanPageSize,
-                                               int sqsBatchSize,
-                                               int totalSegments) {
-        super(LoadDynamodbRequest.class);
-        this.resourceService = resourceService;
-        this.batchFilterService = batchFilterService;
-        this.sqsClient = sqsClient;
-        this.eventBridgeClient = eventBridgeClient;
-        this.queueUrl = queueUrl;
-        this.processingEnabled = processingEnabled;
-        this.scanPageSize = scanPageSize;
-        this.sqsBatchSize = sqsBatchSize;
-        this.totalSegments = totalSegments;
+    if (!input.isSegmentedScan()) {
+      return initiateParallelScan(input, context);
     }
 
-    @Override
-    protected LoadDynamodbResponse processInput(LoadDynamodbRequest input,
-                                                AwsEventBridgeEvent<LoadDynamodbRequest> event, Context context) {
-        validateInput(input);
+    return processSegment(input, context);
+  }
 
-        if (!isProcessingEnabled()) {
-            logger.warn("Processing is disabled via {} environment variable. Stopping execution.",
-                        PROCESSING_ENABLED_ENV);
-            return new LoadDynamodbResponse(0, 0, input.jobType());
-        }
+  private LoadDynamodbResponse initiateParallelScan(LoadDynamodbRequest input, Context context) {
+    logger.info(
+        "Initiating parallel scan with {} segments for job type: {}",
+        totalSegments,
+        input.jobType());
 
-        if (!input.isSegmentedScan()) {
-            return initiateParallelScan(input, context);
-        }
+    for (int segment = 0; segment < totalSegments; segment++) {
+      var segmentRequest =
+          new LoadDynamodbRequest(
+              input.jobType(), null, input.types(), segment, totalSegments, input.filter());
 
-        return processSegment(input, context);
+      var segmentEvent =
+          segmentRequest.createNewEventEntry(
+              EVENT_BUS_NAME, DETAIL_TYPE, context.getInvokedFunctionArn());
+      var putEventsRequest = PutEventsRequest.builder().entries(segmentEvent).build();
+      eventBridgeClient.putEvents(putEventsRequest);
+
+      logger.info(
+          "Created segment {} of {} for job type: {}", segment, totalSegments, input.jobType());
     }
 
-    private LoadDynamodbResponse initiateParallelScan(LoadDynamodbRequest input, Context context) {
-        logger.info("Initiating parallel scan with {} segments for job type: {}", totalSegments,
-                    input.jobType());
+    logger.info(
+        "Initiated {} parallel segment scans for job type: {}", totalSegments, input.jobType());
 
-        for (int segment = 0; segment < totalSegments; segment++) {
-            var segmentRequest = new LoadDynamodbRequest(
-                input.jobType(),
-                null,
-                input.types(),
-                segment,
-                totalSegments,
-                input.filter()
-            );
+    return new LoadDynamodbResponse(0, 0, input.jobType());
+  }
 
-            var segmentEvent = segmentRequest.createNewEventEntry(EVENT_BUS_NAME, DETAIL_TYPE,
-                                                                  context.getInvokedFunctionArn());
-            var putEventsRequest = PutEventsRequest.builder().entries(segmentEvent).build();
-            eventBridgeClient.putEvents(putEventsRequest);
+  private LoadDynamodbResponse processSegment(LoadDynamodbRequest input, Context context) {
+    logger.info(
+        "Processing segment {} of {} for job type: {}, starting from marker: {}",
+        input.segment(),
+        input.totalSegments(),
+        input.jobType(),
+        input.startMarker());
 
-            logger.info("Created segment {} of {} for job type: {}", segment, totalSegments, input.jobType());
-        }
+    var scan =
+        resourceService.scanResourcesRaw(
+            scanPageSize,
+            input.startMarker(),
+            input.types(),
+            input.segment(),
+            input.totalSegments());
 
-        logger.info("Initiated {} parallel segment scans for job type: {}", totalSegments, input.jobType());
+    var filteredItems = batchFilterService.applyFilter(scan.items(), input.filter());
+    var workItems = createWorkItems(input.jobType(), filteredItems);
 
-        return new LoadDynamodbResponse(0, 0, input.jobType());
+    var messagesQueued = queueWorkItems(workItems);
+
+    logger.info(
+        "Segment {} scanned {} items, filtered to {} items, queued {} messages",
+        input.segment(),
+        scan.items().size(),
+        workItems.size(),
+        messagesQueued);
+
+    if (scan.isTruncated()) {
+      sendEventForNextBatch(input, scan.nextKey(), context);
+    } else {
+      logger.info(
+          "Completed segment {} of {} for job type: {}",
+          input.segment(),
+          input.totalSegments(),
+          input.jobType());
     }
 
-    private LoadDynamodbResponse processSegment(LoadDynamodbRequest input, Context context) {
-        logger.info("Processing segment {} of {} for job type: {}, starting from marker: {}",
-                    input.segment(), input.totalSegments(), input.jobType(), input.startMarker());
+    return new LoadDynamodbResponse(workItems.size(), messagesQueued, input.jobType());
+  }
 
-        var scan = resourceService.scanResourcesRaw(scanPageSize, input.startMarker(), input.types(),
-                                                    input.segment(), input.totalSegments());
+  private int queueWorkItems(List<BatchWorkItem> workItems) {
+    var batches = CollectionUtils.partition(workItems, sqsBatchSize);
 
-        var filteredItems = batchFilterService.applyFilter(scan.items(), input.filter());
-        var workItems = createWorkItems(input.jobType(), filteredItems);
+    return batches.stream().mapToInt(this::sendBatchToQueue).sum();
+  }
 
-        var messagesQueued = queueWorkItems(workItems);
+  private static List<BatchWorkItem> createWorkItems(
+      String jobType, Collection<Map<String, AttributeValue>> items) {
+    return items.stream()
+        .map(
+            item -> {
+              var dynamoDbKey =
+                  new DynamodbResourceBatchDynamoDbKey(
+                      item.get(PRIMARY_KEY_PARTITION_KEY_NAME).getS(),
+                      item.get(PRIMARY_KEY_SORT_KEY_NAME).getS());
+              return new BatchWorkItem(dynamoDbKey, jobType);
+            })
+        .toList();
+  }
 
-        logger.info("Segment {} scanned {} items, filtered to {} items, queued {} messages",
-                    input.segment(), scan.items().size(), workItems.size(), messagesQueued);
+  private void validateInput(LoadDynamodbRequest input) {
+    var validInput =
+        Optional.ofNullable(input)
+            .filter(request -> StringUtils.isNotBlank(request.jobType()))
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "Missing required field 'jobType'. This lambda requires a jobType to be"
+                            + " specified in the input. Example input: {\"jobType\":"
+                            + " \"REINDEX_RECORD\"}"));
+    BatchFilterValidator.validate(validInput.filter());
+  }
 
-        if (scan.isTruncated()) {
-            sendEventForNextBatch(input, scan.nextKey(), context);
-        } else {
-            logger.info("Completed segment {} of {} for job type: {}", input.segment(), input.totalSegments(),
-                        input.jobType());
-        }
+  private boolean isProcessingEnabled() {
+    return Optional.ofNullable(processingEnabled).map(Boolean::parseBoolean).orElse(true);
+  }
 
-        return new LoadDynamodbResponse(workItems.size(), messagesQueued, input.jobType());
+  private int sendBatchToQueue(List<BatchWorkItem> workItems) {
+    if (workItems.isEmpty()) {
+      return 0;
     }
 
-    private int queueWorkItems(List<BatchWorkItem> workItems) {
-        var batches = CollectionUtils.partition(workItems, sqsBatchSize);
+    try {
+      var entries = workItems.stream().map(this::getSendMessageBatchRequestEntry).toList();
 
-        return batches.stream().mapToInt(this::sendBatchToQueue).sum();
+      var batchRequest =
+          SendMessageBatchRequest.builder().queueUrl(queueUrl).entries(entries).build();
+
+      var response = sqsClient.sendMessageBatch(batchRequest);
+
+      if (!response.failed().isEmpty()) {
+        logger.error("Failed to send {} messages to SQS", response.failed().size());
+        response
+            .failed()
+            .forEach(
+                failure ->
+                    logger.error(
+                        "Failed message ID: {}, Code: {}, Message: {}",
+                        failure.id(),
+                        failure.code(),
+                        failure.message()));
+      }
+
+      return response.successful().size();
+    } catch (Exception e) {
+      logger.error("Failed to send batch of {} items to queue", workItems.size(), e);
+      return 0;
     }
+  }
 
-    private static List<BatchWorkItem> createWorkItems(String jobType,
-                                                       Collection<Map<String, AttributeValue>> items) {
-        return items.stream().map(item -> {
-            var dynamoDbKey = new DynamodbResourceBatchDynamoDbKey(item.get(PRIMARY_KEY_PARTITION_KEY_NAME).getS(),
-                                                                   item.get(PRIMARY_KEY_SORT_KEY_NAME).getS());
-            return new BatchWorkItem(dynamoDbKey, jobType);
-        }).toList();
+  private SendMessageBatchRequestEntry getSendMessageBatchRequestEntry(BatchWorkItem workItem) {
+    try {
+      var messageBody = JsonUtils.dtoObjectMapper.writeValueAsString(workItem);
+      return SendMessageBatchRequestEntry.builder()
+          .id(UUID.randomUUID().toString())
+          .messageBody(messageBody)
+          .build();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to serialize work item", e);
     }
+  }
 
-    private void validateInput(LoadDynamodbRequest input) {
-        var validInput = Optional.ofNullable(input)
-                             .filter(request -> StringUtils.isNotBlank(request.jobType()))
-                             .orElseThrow(() -> new IllegalArgumentException(
-                                 "Missing required field 'jobType'. This lambda requires a jobType to be specified "
-                                 + "in the input. Example input: {\"jobType\": \"REINDEX_RECORD\"}"));
-        BatchFilterValidator.validate(validInput.filter());
-    }
+  private void sendEventForNextBatch(
+      LoadDynamodbRequest input, Map<String, AttributeValue> lastEvaluatedKey, Context context) {
+    var nextRequest = input.withStartMarker(lastEvaluatedKey);
 
-    private boolean isProcessingEnabled() {
-        return Optional.ofNullable(processingEnabled)
-                   .map(Boolean::parseBoolean)
-                   .orElse(true);
-    }
+    var nextEvent =
+        nextRequest.createNewEventEntry(
+            EVENT_BUS_NAME, DETAIL_TYPE, context.getInvokedFunctionArn());
 
-    private int sendBatchToQueue(List<BatchWorkItem> workItems) {
-        if (workItems.isEmpty()) {
-            return 0;
-        }
+    var putEventsRequest = PutEventsRequest.builder().entries(nextEvent).build();
 
-        try {
-            var entries = workItems.stream().map(this::getSendMessageBatchRequestEntry).toList();
-
-            var batchRequest = SendMessageBatchRequest.builder().queueUrl(queueUrl).entries(entries).build();
-
-            var response = sqsClient.sendMessageBatch(batchRequest);
-
-            if (!response.failed().isEmpty()) {
-                logger.error("Failed to send {} messages to SQS", response.failed().size());
-                response.failed()
-                    .forEach(failure -> logger.error("Failed message ID: {}, Code: {}, Message: {}", failure.id(),
-                                                     failure.code(), failure.message()));
-            }
-
-            return response.successful().size();
-        } catch (Exception e) {
-            logger.error("Failed to send batch of {} items to queue", workItems.size(), e);
-            return 0;
-        }
-    }
-
-    private SendMessageBatchRequestEntry getSendMessageBatchRequestEntry(BatchWorkItem workItem) {
-        try {
-            var messageBody = JsonUtils.dtoObjectMapper.writeValueAsString(workItem);
-            return SendMessageBatchRequestEntry.builder()
-                       .id(UUID.randomUUID().toString())
-                       .messageBody(messageBody)
-                       .build();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize work item", e);
-        }
-    }
-
-    private void sendEventForNextBatch(LoadDynamodbRequest input, Map<String, AttributeValue> lastEvaluatedKey,
-                                       Context context) {
-        var nextRequest = input.withStartMarker(lastEvaluatedKey);
-
-        var nextEvent = nextRequest.createNewEventEntry(EVENT_BUS_NAME, DETAIL_TYPE, context.getInvokedFunctionArn());
-
-        var putEventsRequest = PutEventsRequest.builder().entries(nextEvent).build();
-
-        eventBridgeClient.putEvents(putEventsRequest);
-        logger.info("Sent event for next batch processing");
-    }
+    eventBridgeClient.putEvents(putEventsRequest);
+    logger.info("Sent event for next batch processing");
+  }
 }

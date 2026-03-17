@@ -11,5 +11,5 @@ import no.unit.nva.publication.ticket.update.ViewStatus;
 public record UpdateTicketRequest(TicketStatus status, Username assignee, ViewStatus viewStatus)
     implements TicketRequest {
 
-    static final String TYPE = "UpdateTicketRequest";
+  static final String TYPE = "UpdateTicketRequest";
 }

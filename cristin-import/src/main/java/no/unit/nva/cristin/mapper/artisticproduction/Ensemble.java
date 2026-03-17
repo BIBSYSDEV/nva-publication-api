@@ -9,25 +9,21 @@ import lombok.Getter;
 import lombok.Setter;
 import nva.commons.core.JacocoGenerated;
 
-
 @Builder(
     builderClassName = "EnsembleBuilder",
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"ensembletypenavn", "ensembletypenavn_engelsk", "ensembletypenavn_nynorsk"})
 public class Ensemble {
 
-    @JsonProperty("ensembletypekode")
-    private String ensembleType;
+  @JsonProperty("ensembletypekode")
+  private String ensembleType;
 
-    @JacocoGenerated
-    public Ensemble() {
-
-    }
+  @JacocoGenerated
+  public Ensemble() {}
 }

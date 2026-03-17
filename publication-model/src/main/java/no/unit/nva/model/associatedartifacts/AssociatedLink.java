@@ -10,15 +10,15 @@ import java.net.URI;
 public record AssociatedLink(URI id, String name, String description, RelationType relation)
     implements AssociatedArtifact {
 
-    public static final String TYPE_NAME = "AssociatedLink";
+  public static final String TYPE_NAME = "AssociatedLink";
 
-    @Override
-    public String getArtifactType() {
-        return TYPE_NAME;
-    }
+  @Override
+  public String getArtifactType() {
+    return TYPE_NAME;
+  }
 
-    @Override
-    public AssociatedArtifactDto toDto() {
-        return new AssociatedLinkDto(id, name, description, relation);
-    }
+  @Override
+  public AssociatedArtifactDto toDto() {
+    return new AssociatedLinkDto(id, name, description, relation);
+  }
 }

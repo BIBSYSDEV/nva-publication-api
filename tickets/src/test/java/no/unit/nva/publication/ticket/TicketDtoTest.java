@@ -9,6 +9,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.mock;
+
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Set;
@@ -36,72 +37,81 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class TicketDtoTest extends TicketTestLocal {
 
-    public static final Set<String> GENERAL_DTO_FIELDS_TO_IGNORE = Set.of("messages", "workflow",
-                                                                          "availableInstitutions");
-    public static final Set<String> PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE = Set.of("approvedFiles",
-                                                                                     "filesForApproval",
-                                                                                     "allowedOperations");
+  public static final Set<String> GENERAL_DTO_FIELDS_TO_IGNORE =
+      Set.of("messages", "workflow", "availableInstitutions");
+  public static final Set<String> PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE =
+      Set.of("approvedFiles", "filesForApproval", "allowedOperations");
 
-    @BeforeEach
-    public void setup() {
-        super.init();
-    }
+  @BeforeEach
+  public void setup() {
+    super.init();
+  }
 
-    @ParameterizedTest(name = "should accept both date (legacy) and createdDate: {0}")
-    @ValueSource(strings = {"date", "createdDate"})
-    void shouldAcceptBothLegacyDateAndCreatedDate(String field) {
-        var isoDateTime = "2022-12-01T11:07:32.039628Z";
-        var input = JsonUtils.dtoObjectMapper.createObjectNode()
-                        .put("type", MessageDto.TYPE)
-                        .put(field, isoDateTime);
+  @ParameterizedTest(name = "should accept both date (legacy) and createdDate: {0}")
+  @ValueSource(strings = {"date", "createdDate"})
+  void shouldAcceptBothLegacyDateAndCreatedDate(String field) {
+    var isoDateTime = "2022-12-01T11:07:32.039628Z";
+    var input =
+        JsonUtils.dtoObjectMapper
+            .createObjectNode()
+            .put("type", MessageDto.TYPE)
+            .put(field, isoDateTime);
 
-        var result = attempt(() -> JsonUtils.dtoObjectMapper.readValue(input.toString(), MessageDto.class))
-                         .orElseThrow();
+    var result =
+        attempt(() -> JsonUtils.dtoObjectMapper.readValue(input.toString(), MessageDto.class))
+            .orElseThrow();
 
-        assertThat(result.getCreatedDate(), is(equalTo(Instant.parse(isoDateTime))));
-    }
+    assertThat(result.getCreatedDate(), is(equalTo(Instant.parse(isoDateTime))));
+  }
 
-    @ParameterizedTest
-    @ValueSource(classes = {
+  @ParameterizedTest
+  @ValueSource(
+      classes = {
         DoiRequest.class,
         GeneralSupportRequest.class,
         PublishingRequestCase.class,
         UnpublishRequest.class
-    })
-    void shouldSerializeAllFieldsWhenConvertingToTicketDto(Class<? extends TicketEntry> ticketType)
-        throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
-        var ticket = TicketTestUtils.createCompletedTicket(publication, ticketType, ticketService);
-        ticket.setOwnerAffiliation(randomUri());
-        ticket.setAssignee(new Username(randomString()));
+      })
+  void shouldSerializeAllFieldsWhenConvertingToTicketDto(Class<? extends TicketEntry> ticketType)
+      throws ApiGatewayException {
+    var publication =
+        TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+    var ticket = TicketTestUtils.createCompletedTicket(publication, ticketType, ticketService);
+    ticket.setOwnerAffiliation(randomUri());
+    ticket.setAssignee(new Username(randomString()));
 
-        var dto = TicketDto.fromTicket(ticket, Collections.emptySet(), Collections.emptySet(),
-                                       mock(TicketPermissions.class));
-        var ignoredFields =
-            Stream.concat(
-                    GENERAL_DTO_FIELDS_TO_IGNORE.stream(),
-                    PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE.stream())
-                .collect(Collectors.toSet());
-        assertThat(dto, doesNotHaveEmptyValuesIgnoringFields(ignoredFields));
-    }
+    var dto =
+        TicketDto.fromTicket(
+            ticket, Collections.emptySet(), Collections.emptySet(), mock(TicketPermissions.class));
+    var ignoredFields =
+        Stream.concat(
+                GENERAL_DTO_FIELDS_TO_IGNORE.stream(),
+                PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE.stream())
+            .collect(Collectors.toSet());
+    assertThat(dto, doesNotHaveEmptyValuesIgnoringFields(ignoredFields));
+  }
 
-    @Test
-    void shouldSerializeAllFieldsForFileApprovalThesisWhenConvertingToTicketDto()
-        throws ApiGatewayException {
-        var publication = randomPublication(DegreePhd.class);
-        publication = Resource.fromPublication(publication).persistNew(resourceService,
-                                                                       UserInstance.fromPublication(publication));
-        var ticket = TicketTestUtils.createCompletedTicket(publication, FilesApprovalThesis.class, ticketService);
-        ticket.setOwnerAffiliation(randomUri());
-        ticket.setAssignee(new Username(randomString()));
+  @Test
+  void shouldSerializeAllFieldsForFileApprovalThesisWhenConvertingToTicketDto()
+      throws ApiGatewayException {
+    var publication = randomPublication(DegreePhd.class);
+    publication =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    var ticket =
+        TicketTestUtils.createCompletedTicket(
+            publication, FilesApprovalThesis.class, ticketService);
+    ticket.setOwnerAffiliation(randomUri());
+    ticket.setAssignee(new Username(randomString()));
 
-        var dto = TicketDto.fromTicket(ticket, Collections.emptySet(), Collections.emptySet(),
-                                       mock(TicketPermissions.class));
-        var ignoredFields =
-            Stream.concat(
-                    GENERAL_DTO_FIELDS_TO_IGNORE.stream(),
-                    PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE.stream())
-                .collect(Collectors.toSet());
-        assertThat(dto, doesNotHaveEmptyValuesIgnoringFields(ignoredFields));
-    }
+    var dto =
+        TicketDto.fromTicket(
+            ticket, Collections.emptySet(), Collections.emptySet(), mock(TicketPermissions.class));
+    var ignoredFields =
+        Stream.concat(
+                GENERAL_DTO_FIELDS_TO_IGNORE.stream(),
+                PUBLISHING_REQUEST_DTO_FIELDS_TO_IGNORE.stream())
+            .collect(Collectors.toSet());
+    assertThat(dto, doesNotHaveEmptyValuesIgnoringFields(ignoredFields));
+  }
 }

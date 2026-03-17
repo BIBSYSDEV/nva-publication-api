@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model;
 
 import static java.util.Objects.nonNull;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Collections;
 import java.util.List;
@@ -8,27 +9,29 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.JacocoGenerated;
 
-public record SearchResourceApiResponse(int totalHits, List<ResourceWithId> hits) implements JsonSerializable {
+public record SearchResourceApiResponse(int totalHits, List<ResourceWithId> hits)
+    implements JsonSerializable {
 
-    public static final int SINGLE_HIT = 1;
+  public static final int SINGLE_HIT = 1;
 
-    public static SearchResourceApiResponse fromBody(String responseBody) throws JsonProcessingException {
-        return JsonUtils.dtoObjectMapper.readValue(responseBody, SearchResourceApiResponse.class);
-    }
+  public static SearchResourceApiResponse fromBody(String responseBody)
+      throws JsonProcessingException {
+    return JsonUtils.dtoObjectMapper.readValue(responseBody, SearchResourceApiResponse.class);
+  }
 
-    @JacocoGenerated
-    @Override
-    public String toString() {
-        return toJsonString();
-    }
+  @JacocoGenerated
+  @Override
+  public String toString() {
+    return toJsonString();
+  }
 
-    @JacocoGenerated
-    public boolean containsSingleHit() {
-        return this.totalHits == SINGLE_HIT;
-    }
+  @JacocoGenerated
+  public boolean containsSingleHit() {
+    return this.totalHits == SINGLE_HIT;
+  }
 
-    @Override
-    public List<ResourceWithId> hits() {
-        return nonNull(hits) ? hits : Collections.emptyList();
-    }
+  @Override
+  public List<ResourceWithId> hits() {
+    return nonNull(hits) ? hits : Collections.emptyList();
+  }
 }

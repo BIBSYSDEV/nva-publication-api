@@ -1,6 +1,7 @@
 package no.unit.nva.model.contexttypes;
 
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -13,71 +14,76 @@ import nva.commons.core.StringUtils;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class UnconfirmedSeries implements BookSeries {
 
-    public static final String TITLE = "title";
-    public static final String ISSN = "issn";
-    public static final String ONLINE_ISSN = "onlineIssn";
-    @JsonProperty(TITLE)
-    private final String title;
-    @JsonProperty(ISSN)
-    private final String issn;
-    @JsonProperty(ONLINE_ISSN)
-    private final String onlineIssn;
+  public static final String TITLE = "title";
+  public static final String ISSN = "issn";
+  public static final String ONLINE_ISSN = "onlineIssn";
 
-    @JsonCreator
-    public UnconfirmedSeries(@JsonProperty(TITLE) String title,
-                             @JsonProperty(ISSN) String issn,
-                             @JsonProperty(ONLINE_ISSN) String onlineIssn) throws InvalidIssnException {
-        this.title = title;
-        this.issn = validateIssn(issn);
-        this.onlineIssn = validateIssn(onlineIssn);
-    }
+  @JsonProperty(TITLE)
+  private final String title;
 
-    public static UnconfirmedSeries fromTitle(String title) {
-        return attempt(() -> new UnconfirmedSeries(title, null, null)).orElseThrow();
-    }
+  @JsonProperty(ISSN)
+  private final String issn;
 
-    @JacocoGenerated
-    public String getOnlineIssn() {
-        return onlineIssn;
-    }
+  @JsonProperty(ONLINE_ISSN)
+  private final String onlineIssn;
 
-    @JacocoGenerated
-    public String getIssn() {
-        return issn;
-    }
+  @JsonCreator
+  public UnconfirmedSeries(
+      @JsonProperty(TITLE) String title,
+      @JsonProperty(ISSN) String issn,
+      @JsonProperty(ONLINE_ISSN) String onlineIssn)
+      throws InvalidIssnException {
+    this.title = title;
+    this.issn = validateIssn(issn);
+    this.onlineIssn = validateIssn(onlineIssn);
+  }
 
-    @JacocoGenerated
-    public String getTitle() {
-        return title;
-    }
+  public static UnconfirmedSeries fromTitle(String title) {
+    return attempt(() -> new UnconfirmedSeries(title, null, null)).orElseThrow();
+  }
 
-    @Override
-    public boolean isConfirmed() {
-        return false;
-    }
+  @JacocoGenerated
+  public String getOnlineIssn() {
+    return onlineIssn;
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getTitle(), getIssn(), getOnlineIssn());
-    }
+  @JacocoGenerated
+  public String getIssn() {
+    return issn;
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof UnconfirmedSeries)) {
-            return false;
-        }
-        UnconfirmedSeries that = (UnconfirmedSeries) o;
-        return Objects.equals(getTitle(), that.getTitle())
-               && Objects.equals(getIssn(), that.getIssn())
-               && Objects.equals(getOnlineIssn(), that.getOnlineIssn());
-    }
+  @JacocoGenerated
+  public String getTitle() {
+    return title;
+  }
 
-    private String validateIssn(String issn) throws InvalidIssnException {
-        return StringUtils.isBlank(issn) ? null : IssnUtil.checkIssn(issn);
+  @Override
+  public boolean isConfirmed() {
+    return false;
+  }
+
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(getTitle(), getIssn(), getOnlineIssn());
+  }
+
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (!(o instanceof UnconfirmedSeries)) {
+      return false;
+    }
+    UnconfirmedSeries that = (UnconfirmedSeries) o;
+    return Objects.equals(getTitle(), that.getTitle())
+        && Objects.equals(getIssn(), that.getIssn())
+        && Objects.equals(getOnlineIssn(), that.getOnlineIssn());
+  }
+
+  private String validateIssn(String issn) throws InvalidIssnException {
+    return StringUtils.isBlank(issn) ? null : IssnUtil.checkIssn(issn);
+  }
 }

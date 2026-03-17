@@ -13,6 +13,7 @@ import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
@@ -32,76 +33,81 @@ import org.junit.jupiter.api.Test;
 
 class CuratingInstitutionsUtilTest {
 
-    protected static final URI TOP_LEVEL_ORG = URI.create(
-        "https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
+  protected static final URI TOP_LEVEL_ORG =
+      URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
 
-    @Test
-    void shouldReturnCuratingInstitutionForContributorAffiliatedWithCustomer() {
-        var organization = randomUri();
-        var entityDescription = PublicationGenerator.fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES)
-                                    .getEntityDescription()
-                                    .copy()
-                                    .withContributors(List.of(contributorWithOrganization(organization)))
-                                    .build();
-        var util = mock(CristinUnitsUtil.class);
-        var customerService = mock(CustomerService.class);
+  @Test
+  void shouldReturnCuratingInstitutionForContributorAffiliatedWithCustomer() {
+    var organization = randomUri();
+    var entityDescription =
+        PublicationGenerator.fromInstanceClassesExcluding(PROTECTED_DEGREE_INSTANCE_TYPES)
+            .getEntityDescription()
+            .copy()
+            .withContributors(List.of(contributorWithOrganization(organization)))
+            .build();
+    var util = mock(CristinUnitsUtil.class);
+    var customerService = mock(CustomerService.class);
 
-        entityDescription.getContributors().forEach(contributor -> mockTopLevelOrg(contributor, TOP_LEVEL_ORG, util));
-        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(),
-                                                                                                       TOP_LEVEL_ORG))));
+    entityDescription
+        .getContributors()
+        .forEach(contributor -> mockTopLevelOrg(contributor, TOP_LEVEL_ORG, util));
+    when(customerService.fetchCustomers())
+        .thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), TOP_LEVEL_ORG))));
 
-        var list =
-            new CuratingInstitutionsUtil(mock(UriRetriever.class), customerService)
-                .getCuratingInstitutionsCached(entityDescription, util);
+    var list =
+        new CuratingInstitutionsUtil(mock(UriRetriever.class), customerService)
+            .getCuratingInstitutionsCached(entityDescription, util);
 
-        assertEquals(TOP_LEVEL_ORG, list.stream().findFirst().orElseThrow().id());
-    }
+    assertEquals(TOP_LEVEL_ORG, list.stream().findFirst().orElseThrow().id());
+  }
 
-    @Test
-    void shouldFetchCustomerListOnlyOnceWhenInstantiatingCuratingInstitutionUtil() {
-        var customerService = mock(CustomerService.class);
-        when(customerService.fetchCustomers())
-            .thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), TOP_LEVEL_ORG))));
+  @Test
+  void shouldFetchCustomerListOnlyOnceWhenInstantiatingCuratingInstitutionUtil() {
+    var customerService = mock(CustomerService.class);
+    when(customerService.fetchCustomers())
+        .thenReturn(new CustomerList(List.of(new CustomerSummary(randomUri(), TOP_LEVEL_ORG))));
 
-        new CuratingInstitutionsUtil(mock(UriRetriever.class), customerService);
-        new CuratingInstitutionsUtil(mock(UriRetriever.class), customerService);
+    new CuratingInstitutionsUtil(mock(UriRetriever.class), customerService);
+    new CuratingInstitutionsUtil(mock(UriRetriever.class), customerService);
 
-        verify(customerService, atMostOnce()).fetchCustomers();
-    }
+    verify(customerService, atMostOnce()).fetchCustomers();
+  }
 
-    @Test
-    void shouldCreatingCuratingInstitutionsForContributorAtSubunit() {
-        var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
-        var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
-        var customerService = mock(CustomerService.class);
-        var uriRetriever = mock(UriRetriever.class);
-        var curatingInstitutionsUtil = new CuratingInstitutionsUtil(uriRetriever, customerService);
-        when(uriRetriever.getRawContent(eq(orgId), any())).thenReturn(
+  @Test
+  void shouldCreatingCuratingInstitutionsForContributorAtSubunit() {
+    var orgId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0");
+    var topLevelId = URI.create("https://api.dev.nva.aws.unit.no/cristin/organization/20754.0.0.0");
+    var customerService = mock(CustomerService.class);
+    var uriRetriever = mock(UriRetriever.class);
+    var curatingInstitutionsUtil = new CuratingInstitutionsUtil(uriRetriever, customerService);
+    when(uriRetriever.getRawContent(eq(orgId), any()))
+        .thenReturn(
             Optional.of(IoUtils.stringFromResources(Path.of("cristin-orgs/20754.6.0.0.json"))));
-        when(customerService.fetchCustomers()).thenReturn(new CustomerList(List.of(new CustomerSummary(
-            RandomDataGenerator.randomUri(),
-            topLevelId))));
+    when(customerService.fetchCustomers())
+        .thenReturn(
+            new CustomerList(
+                List.of(new CustomerSummary(RandomDataGenerator.randomUri(), topLevelId))));
 
-        var publication = randomPublication();
-        publication.getEntityDescription().setContributors(List.of(contributorWithOrganization(orgId)));
+    var publication = randomPublication();
+    publication.getEntityDescription().setContributors(List.of(contributorWithOrganization(orgId)));
 
-        var curatingInstitutions = curatingInstitutionsUtil.getCuratingInstitutionsOnline(
-            publication.getEntityDescription());
+    var curatingInstitutions =
+        curatingInstitutionsUtil.getCuratingInstitutionsOnline(publication.getEntityDescription());
 
-        assertThat(curatingInstitutions.stream().findFirst().orElseThrow().id(), is(equalTo(topLevelId)));
-    }
+    assertThat(
+        curatingInstitutions.stream().findFirst().orElseThrow().id(), is(equalTo(topLevelId)));
+  }
 
-    private Contributor contributorWithOrganization(URI organization) {
-        var identity = new Identity();
-        return new Contributor(identity, List.of(Organization.fromUri(organization)), null, 0, true);
-    }
+  private Contributor contributorWithOrganization(URI organization) {
+    var identity = new Identity();
+    return new Contributor(identity, List.of(Organization.fromUri(organization)), null, 0, true);
+  }
 
-    private void mockTopLevelOrg(Contributor contributor, URI topLevelOrg, CristinUnitsUtil util) {
-        contributor.getAffiliations()
-            .stream()
-            .filter(Organization.class::isInstance)
-            .map(Organization.class::cast)
-            .map(Organization::getId)
-            .forEach(id -> when(util.getTopLevel(id)).thenReturn(topLevelOrg));
-    }
+  private void mockTopLevelOrg(Contributor contributor, URI topLevelOrg, CristinUnitsUtil util) {
+    contributor.getAffiliations().stream()
+        .filter(Organization.class::isInstance)
+        .map(Organization.class::cast)
+        .map(Organization::getId)
+        .forEach(id -> when(util.getTopLevel(id)).thenReturn(topLevelOrg));
+  }
 }

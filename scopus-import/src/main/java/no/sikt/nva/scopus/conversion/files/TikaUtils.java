@@ -11,15 +11,16 @@ import org.apache.tika.metadata.Metadata;
 @JacocoGenerated
 public class TikaUtils {
 
-    public TikaUtils() {
-    }
+  public TikaUtils() {}
 
-    public TikaInputStream fetch(URI uri) throws IOException {
-        return TikaInputStream.get(uri);
-    }
+  public TikaInputStream fetch(URI uri) throws IOException {
+    return TikaInputStream.get(uri);
+  }
 
-    public String getMimeType(TikaInputStream inputStream) throws IOException {
-        return TikaConfig.getDefaultConfig().getDetector()
-                   .detect(new BufferedInputStream(inputStream), new Metadata()).toString();
-    }
+  public String getMimeType(TikaInputStream inputStream) throws IOException {
+    return TikaConfig.getDefaultConfig()
+        .getDetector()
+        .detect(new BufferedInputStream(inputStream), new Metadata())
+        .toString();
+  }
 }

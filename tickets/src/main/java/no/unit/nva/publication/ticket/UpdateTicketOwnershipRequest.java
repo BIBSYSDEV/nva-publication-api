@@ -7,12 +7,13 @@ import java.util.Optional;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName(UpdateTicketOwnershipRequest.TYPE)
-public record UpdateTicketOwnershipRequest(URI ownerAffiliation, URI responsibilityArea) implements TicketRequest {
+public record UpdateTicketOwnershipRequest(URI ownerAffiliation, URI responsibilityArea)
+    implements TicketRequest {
 
-    public static final String TYPE = "UpdateTicketOwnershipRequest";
+  public static final String TYPE = "UpdateTicketOwnershipRequest";
 
-    @Override
-    public  URI responsibilityArea() {
-        return Optional.ofNullable(responsibilityArea).orElse(ownerAffiliation);
-    }
+  @Override
+  public URI responsibilityArea() {
+    return Optional.ofNullable(responsibilityArea).orElse(ownerAffiliation);
+  }
 }

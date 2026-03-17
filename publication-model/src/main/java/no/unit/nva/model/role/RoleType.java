@@ -7,52 +7,53 @@ import nva.commons.core.JacocoGenerated;
 
 public class RoleType {
 
-    public static final String TYPE_FIELD = "type";
-    public static final String DESCRIPTION_FIELD = "description";
-    @JsonProperty(TYPE_FIELD)
-    private final Role type;
+  public static final String TYPE_FIELD = "type";
+  public static final String DESCRIPTION_FIELD = "description";
 
-    @JsonCreator
-    public RoleType(@JsonProperty(TYPE_FIELD) Role type) {
-        this.type = type;
-    }
+  @JsonProperty(TYPE_FIELD)
+  private final Role type;
 
-    public RoleType createOther(@JsonProperty(DESCRIPTION_FIELD) String description) {
-        return new RoleTypeOther(Role.OTHER, description);
-    }
+  @JsonCreator
+  public RoleType(@JsonProperty(TYPE_FIELD) Role type) {
+    this.type = type;
+  }
 
-    @JsonCreator
-    public RoleType fromJson(@JsonProperty(TYPE_FIELD) Role type,
-                             @JsonProperty(DESCRIPTION_FIELD) String description) {
-        return Role.OTHER.equals(type) ? createOther(description) : new RoleType(type);
-    }
+  public RoleType createOther(@JsonProperty(DESCRIPTION_FIELD) String description) {
+    return new RoleTypeOther(Role.OTHER, description);
+  }
 
-    @Deprecated
-    @JsonCreator
-    public RoleType create(Role type) {
-        return new RoleType(type);
-    }
+  @JsonCreator
+  public RoleType fromJson(
+      @JsonProperty(TYPE_FIELD) Role type, @JsonProperty(DESCRIPTION_FIELD) String description) {
+    return Role.OTHER.equals(type) ? createOther(description) : new RoleType(type);
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getType());
-    }
+  @Deprecated
+  @JsonCreator
+  public RoleType create(Role type) {
+    return new RoleType(type);
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof RoleType)) {
-            return false;
-        }
-        RoleType roleType = (RoleType) o;
-        return getType() == roleType.getType();
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(getType());
+  }
 
-    public Role getType() {
-        return type;
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (!(o instanceof RoleType)) {
+      return false;
+    }
+    RoleType roleType = (RoleType) o;
+    return getType() == roleType.getType();
+  }
+
+  public Role getType() {
+    return type;
+  }
 }

@@ -1,5 +1,3 @@
 package no.unit.nva.importcandidate;
 
-public interface ScopusOrganization {
-
-}
+public interface ScopusOrganization {}

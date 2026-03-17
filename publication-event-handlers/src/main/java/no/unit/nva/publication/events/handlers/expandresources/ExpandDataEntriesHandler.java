@@ -7,6 +7,7 @@ import static no.unit.nva.publication.queue.RecoveryEntry.MESSAGE;
 import static no.unit.nva.publication.queue.RecoveryEntry.RESOURCE;
 import static no.unit.nva.publication.queue.RecoveryEntry.TICKET;
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.Optional;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
@@ -39,156 +40,176 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 @SuppressWarnings("PMD.CouplingBetweenObjects")
-public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
+public class ExpandDataEntriesHandler
+    extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
-    private static final String EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC = "PublicationService.ExpandedEntry.Persisted";
-    private static final String EMPTY_EVENT_TOPIC = "Event.Empty";
-    private static final Environment ENVIRONMENT = new Environment();
-    private static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
-    private static final String BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
-    private static final String BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
-    private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
-    private static final String SENT_TO_RECOVERY_QUEUE_MESSAGE = "DateEntry has been sent to recovery queue: {}";
-    private static final String EXPANSION_FAILED_MESSAGE_TEMPLATE = "Expansion failed for %s";
-    private final QueueClient sqsClient;
-    private final S3Driver s3DriverEventsBucket;
-    private final EntityExpansionResolverRegistry entityExpansionResolverRegistry;
-    private final PersistedResourcesService persistedResourcesService;
-    private final ResourceExpansionService resourceExpansionService;
+  private static final String EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC =
+      "PublicationService.ExpandedEntry.Persisted";
+  private static final String EMPTY_EVENT_TOPIC = "Event.Empty";
+  private static final Environment ENVIRONMENT = new Environment();
+  private static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
+  private static final String BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
+  private static final String BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
+  private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
+  private static final String SENT_TO_RECOVERY_QUEUE_MESSAGE =
+      "DateEntry has been sent to recovery queue: {}";
+  private static final String EXPANSION_FAILED_MESSAGE_TEMPLATE = "Expansion failed for %s";
+  private final QueueClient sqsClient;
+  private final S3Driver s3DriverEventsBucket;
+  private final EntityExpansionResolverRegistry entityExpansionResolverRegistry;
+  private final PersistedResourcesService persistedResourcesService;
+  private final ResourceExpansionService resourceExpansionService;
 
-    @JacocoGenerated
-    public ExpandDataEntriesHandler() {
-        this(ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE),
-             new S3Driver(EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET),
-             defaultResourceExpansionService());
+  @JacocoGenerated
+  public ExpandDataEntriesHandler() {
+    this(
+        ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE),
+        new S3Driver(EVENTS_BUCKET),
+        new S3Driver(PERSISTED_ENTRIES_BUCKET),
+        defaultResourceExpansionService());
+  }
+
+  public ExpandDataEntriesHandler(
+      QueueClient sqsClient, S3Client s3Client, ResourceExpansionService resourceExpansionService) {
+    this(
+        sqsClient,
+        new S3Driver(s3Client, EVENTS_BUCKET),
+        new S3Driver(s3Client, PERSISTED_ENTRIES_BUCKET),
+        resourceExpansionService);
+  }
+
+  private ExpandDataEntriesHandler(
+      QueueClient sqsClient,
+      S3Driver s3DriverEventsBucket,
+      S3Driver s3DriverPersistedResourcesBucket,
+      ResourceExpansionService resourceExpansionService) {
+    super(EventReference.class);
+    this.sqsClient = sqsClient;
+    this.s3DriverEventsBucket = s3DriverEventsBucket;
+    this.resourceExpansionService = resourceExpansionService;
+    this.persistedResourcesService =
+        new PersistedResourcesService(s3DriverPersistedResourcesBucket);
+    this.entityExpansionResolverRegistry = initializeEntityExpansionStrategyRegistry();
+  }
+
+  private EntityExpansionResolverRegistry initializeEntityExpansionStrategyRegistry() {
+    var registry = new EntityExpansionResolverRegistry();
+
+    registry.register(Resource.class, new ResourceExpansionResolver());
+    registry.register(TicketEntry.class, new TicketExpansionResolver());
+    registry.register(Message.class, new MessageExpansionResolver());
+    registry.register(FileEntry.class, new FileEntryExpansionResolver());
+
+    return registry;
+  }
+
+  @Override
+  protected EventReference processInputPayload(
+      EventReference input,
+      AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
+      Context context) {
+    var dataEntryUpdateEvent = readDataEntryUpdateEventFromS3(input);
+    logger.info(
+        "Handling update event with action={} and topic={}",
+        dataEntryUpdateEvent.getAction(),
+        dataEntryUpdateEvent.getTopic());
+    return attempt(() -> processDataEntryUpdateEvent(dataEntryUpdateEvent))
+        .orElse(failure -> persistRecoveryMessage(failure, dataEntryUpdateEvent));
+  }
+
+  private static SortableIdentifier getIdentifier(DataEntryUpdateEvent dataEntryUpdateEvent) {
+    return Optional.ofNullable(dataEntryUpdateEvent.getOldData())
+        .map(Entity::getIdentifier)
+        .orElseGet(() -> dataEntryUpdateEvent.getNewData().getIdentifier());
+  }
+
+  @JacocoGenerated
+  private static ResourceExpansionService defaultResourceExpansionService() {
+    var uriRetriever = new UriRetriever();
+    var authorizedUriRetriever =
+        new AuthorizedBackendUriRetriever(
+            ENVIRONMENT.readEnv(BACKEND_CLIENT_AUTH_URL),
+            ENVIRONMENT.readEnv(BACKEND_CLIENT_SECRET_NAME));
+    return new ResourceExpansionServiceImpl(
+        defaultResourceService(),
+        TicketService.defaultService(),
+        authorizedUriRetriever,
+        uriRetriever,
+        ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE));
+  }
+
+  @JacocoGenerated
+  private static ResourceService defaultResourceService() {
+    return ResourceService.defaultService();
+  }
+
+  private EventReference persistRecoveryMessage(
+      Failure<EventReference> failure, DataEntryUpdateEvent dataEntryUpdateEvent) {
+    var identifier = getIdentifier(dataEntryUpdateEvent);
+    var message = String.format(EXPANSION_FAILED_MESSAGE_TEMPLATE, identifier);
+    logger.error(message, failure.getException());
+    RecoveryEntry.create(findType(dataEntryUpdateEvent), identifier)
+        .withException(failure.getException())
+        .persist(sqsClient);
+    logger.error(SENT_TO_RECOVERY_QUEUE_MESSAGE, identifier);
+    return null;
+  }
+
+  private static String findType(DataEntryUpdateEvent dataEntryUpdateEvent) {
+    var entity =
+        Optional.ofNullable(dataEntryUpdateEvent.getOldData())
+            .orElseGet(dataEntryUpdateEvent::getNewData);
+    return switch (entity) {
+      case Resource resource -> RESOURCE;
+      case TicketEntry ticket -> TICKET;
+      case Message message -> MESSAGE;
+      case FileEntry fileEntry -> FILE;
+      default -> throw new IllegalStateException("Unexpected value: " + entity);
+    };
+  }
+
+  private EventReference processDataEntryUpdateEvent(DataEntryUpdateEvent dataEntryUpdateEvent) {
+    var entityToExpand =
+        entityExpansionResolverRegistry.resolveEntityToExpand(
+            dataEntryUpdateEvent.getOldData(), dataEntryUpdateEvent.getNewData());
+
+    if (entityToExpand.isEmpty()) {
+      logger.info("No expansion based on update of entity!");
+      return emptyEvent();
     }
 
-    public ExpandDataEntriesHandler(QueueClient sqsClient, S3Client s3Client,
-                                    ResourceExpansionService resourceExpansionService) {
-        this(sqsClient, new S3Driver(s3Client, EVENTS_BUCKET), new S3Driver(s3Client, PERSISTED_ENTRIES_BUCKET),
-             resourceExpansionService);
-    }
+    var expandedEntity = expandEntityOrThrow(entityToExpand.get());
 
-    private ExpandDataEntriesHandler(QueueClient sqsClient, S3Driver s3DriverEventsBucket,
-                                     S3Driver s3DriverPersistedResourcesBucket,
-                                     ResourceExpansionService resourceExpansionService) {
-        super(EventReference.class);
-        this.sqsClient = sqsClient;
-        this.s3DriverEventsBucket = s3DriverEventsBucket;
-        this.resourceExpansionService = resourceExpansionService;
-        this.persistedResourcesService = new PersistedResourcesService(s3DriverPersistedResourcesBucket);
-        this.entityExpansionResolverRegistry = initializeEntityExpansionStrategyRegistry();
-    }
+    return expandedEntity
+        .map(this::createEnrichedEventReference)
+        .orElseGet(() -> logAndProvideEmptyEvent(entityToExpand.get()));
+  }
 
-    private EntityExpansionResolverRegistry initializeEntityExpansionStrategyRegistry() {
-        var registry = new EntityExpansionResolverRegistry();
+  private EventReference logAndProvideEmptyEvent(Entity entity) {
+    logger.info("No expansion based on update of entity {}", entity.getIdentifier());
+    return emptyEvent();
+  }
 
-        registry.register(Resource.class, new ResourceExpansionResolver());
-        registry.register(TicketEntry.class, new TicketExpansionResolver());
-        registry.register(Message.class, new MessageExpansionResolver());
-        registry.register(FileEntry.class, new FileEntryExpansionResolver());
+  private Optional<ExpandedDataEntry> expandEntityOrThrow(Entity entity) {
+    return attempt(() -> resourceExpansionService.expandEntry(entity, true))
+        .orElseThrow(
+            failure ->
+                new EntityExpansionException("Failed to expand " + entity, failure.getException()));
+  }
 
-        return registry;
-    }
+  private EventReference createEnrichedEventReference(ExpandedDataEntry expandedDataEntry) {
+    return Optional.of(persistedResourcesService.persist(expandedDataEntry))
+        .map(uri -> new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri))
+        .orElseThrow();
+  }
 
-    @Override
-    protected EventReference processInputPayload(EventReference input,
-                                                 AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
-                                                 Context context) {
-        var dataEntryUpdateEvent = readDataEntryUpdateEventFromS3(input);
-        logger.info(
-                "Handling update event with action={} and topic={}",
-                dataEntryUpdateEvent.getAction(),
-                dataEntryUpdateEvent.getTopic());
-        return attempt(() -> processDataEntryUpdateEvent(dataEntryUpdateEvent))
-                   .orElse(failure -> persistRecoveryMessage(failure, dataEntryUpdateEvent));
-    }
+  private DataEntryUpdateEvent readDataEntryUpdateEventFromS3(EventReference input) {
+    logger.info("Reading update event from S3 for input: {}", input.toJsonString());
+    var dataEntryUpdateEventAsString = s3DriverEventsBucket.readEvent(input.getUri());
+    return DataEntryUpdateEvent.fromJson(dataEntryUpdateEventAsString);
+  }
 
-    private static SortableIdentifier getIdentifier(DataEntryUpdateEvent dataEntryUpdateEvent) {
-        return Optional.ofNullable(dataEntryUpdateEvent.getOldData())
-                   .map(Entity::getIdentifier)
-                   .orElseGet(() -> dataEntryUpdateEvent.getNewData().getIdentifier());
-    }
-
-    @JacocoGenerated
-    private static ResourceExpansionService defaultResourceExpansionService() {
-        var uriRetriever = new UriRetriever();
-        var authorizedUriRetriever = new AuthorizedBackendUriRetriever(ENVIRONMENT.readEnv(BACKEND_CLIENT_AUTH_URL),
-                                                                       ENVIRONMENT.readEnv(BACKEND_CLIENT_SECRET_NAME));
-        return new ResourceExpansionServiceImpl(defaultResourceService(), TicketService.defaultService(),
-                                                authorizedUriRetriever, uriRetriever,
-                                                ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE));
-    }
-
-    @JacocoGenerated
-    private static ResourceService defaultResourceService() {
-        return ResourceService.defaultService();
-    }
-
-    private EventReference persistRecoveryMessage(Failure<EventReference> failure,
-                                                  DataEntryUpdateEvent dataEntryUpdateEvent) {
-        var identifier = getIdentifier(dataEntryUpdateEvent);
-        var message = String.format(EXPANSION_FAILED_MESSAGE_TEMPLATE, identifier);
-        logger.error(message, failure.getException());
-        RecoveryEntry.create(findType(dataEntryUpdateEvent), identifier)
-            .withException(failure.getException())
-            .persist(sqsClient);
-        logger.error(SENT_TO_RECOVERY_QUEUE_MESSAGE, identifier);
-        return null;
-    }
-
-    private static String findType(DataEntryUpdateEvent dataEntryUpdateEvent) {
-        var entity = Optional.ofNullable(dataEntryUpdateEvent.getOldData()).orElseGet(dataEntryUpdateEvent::getNewData);
-        return switch (entity) {
-            case Resource resource -> RESOURCE;
-            case TicketEntry ticket -> TICKET;
-            case Message message -> MESSAGE;
-            case FileEntry fileEntry -> FILE;
-            default -> throw new IllegalStateException("Unexpected value: " + entity);
-        };
-    }
-
-    private EventReference processDataEntryUpdateEvent(DataEntryUpdateEvent dataEntryUpdateEvent) {
-        var entityToExpand = entityExpansionResolverRegistry
-                                 .resolveEntityToExpand(dataEntryUpdateEvent.getOldData(),
-                                                        dataEntryUpdateEvent.getNewData());
-
-        if (entityToExpand.isEmpty()) {
-            logger.info("No expansion based on update of entity!");
-            return emptyEvent();
-        }
-
-        var expandedEntity = expandEntityOrThrow(entityToExpand.get());
-
-        return expandedEntity
-                   .map(this::createEnrichedEventReference)
-                   .orElseGet(() -> logAndProvideEmptyEvent(entityToExpand.get()));
-    }
-
-    private EventReference logAndProvideEmptyEvent(Entity entity) {
-        logger.info("No expansion based on update of entity {}", entity.getIdentifier());
-        return emptyEvent();
-    }
-
-    private Optional<ExpandedDataEntry> expandEntityOrThrow(Entity entity) {
-        return attempt(() -> resourceExpansionService.expandEntry(entity, true))
-                   .orElseThrow(
-                       failure -> new EntityExpansionException("Failed to expand " + entity, failure.getException()));
-    }
-
-    private EventReference createEnrichedEventReference(ExpandedDataEntry expandedDataEntry) {
-        return Optional.of(persistedResourcesService.persist(expandedDataEntry))
-                   .map(uri -> new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri))
-                   .orElseThrow();
-    }
-
-    private DataEntryUpdateEvent readDataEntryUpdateEventFromS3(EventReference input) {
-        logger.info("Reading update event from S3 for input: {}", input.toJsonString());
-        var dataEntryUpdateEventAsString = s3DriverEventsBucket.readEvent(input.getUri());
-        return DataEntryUpdateEvent.fromJson(dataEntryUpdateEventAsString);
-    }
-
-    private EventReference emptyEvent() {
-        return new EventReference(EMPTY_EVENT_TOPIC, null);
-    }
+  private EventReference emptyEvent() {
+    return new EventReference(EMPTY_EVENT_TOPIC, null);
+  }
 }

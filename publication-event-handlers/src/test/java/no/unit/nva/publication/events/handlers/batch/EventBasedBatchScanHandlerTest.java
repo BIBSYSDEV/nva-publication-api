@@ -21,6 +21,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -63,276 +64,312 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
-    public static final int LARGE_PAGE = 100;
-    public static final int ONE_ENTRY_PER_EVENT = 1;
-    public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
-    public static final String OUTPUT_EVENT_TOPIC = "OUTPUT_EVENT_TOPIC";
-    public static final String TOPIC = new Environment().readEnv(OUTPUT_EVENT_TOPIC);
-    private static final String RESOURCES_TABLE_NAME = new Environment().readEnv("TABLE_NAME");
-    private EventBasedBatchScanHandler handler;
-    private ByteArrayOutputStream output;
-    private FakeContext context;
-    private FakeEventBridgeClient eventBridgeClient;
-    private ResourceService resourceService;
-    private TicketService ticketService;
-    private AmazonDynamoDB dynamoDbClient;
+  public static final int LARGE_PAGE = 100;
+  public static final int ONE_ENTRY_PER_EVENT = 1;
+  public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
+  public static final String OUTPUT_EVENT_TOPIC = "OUTPUT_EVENT_TOPIC";
+  public static final String TOPIC = new Environment().readEnv(OUTPUT_EVENT_TOPIC);
+  private static final String RESOURCES_TABLE_NAME = new Environment().readEnv("TABLE_NAME");
+  private EventBasedBatchScanHandler handler;
+  private ByteArrayOutputStream output;
+  private FakeContext context;
+  private FakeEventBridgeClient eventBridgeClient;
+  private ResourceService resourceService;
+  private TicketService ticketService;
+  private AmazonDynamoDB dynamoDbClient;
 
-    @Override
-    @BeforeEach
-    public void init() {
-        super.init();
+  @Override
+  @BeforeEach
+  public void init() {
+    super.init();
 
-        this.output = new ByteArrayOutputStream();
-        this.context = mockContent();
-        this.eventBridgeClient = new FakeEventBridgeClient();
-        dynamoDbClient = super.client;
-        this.resourceService = spy(getResourceService(client));
-        this.ticketService = getTicketService();
-        this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient);
+    this.output = new ByteArrayOutputStream();
+    this.context = mockContent();
+    this.eventBridgeClient = new FakeEventBridgeClient();
+    dynamoDbClient = super.client;
+    this.resourceService = spy(getResourceService(client));
+    this.ticketService = getTicketService();
+    this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient);
+  }
+
+  // TODO: Enable after migration
+  @Test
+  @Disabled
+  void shouldUpdateDataEntriesWhenValidRequestIsReceived()
+      throws ApiGatewayException, JsonProcessingException {
+    Publication createdPublication = createPublication(randomPublication());
+    Resource initialResource =
+        resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
+    var originalDao =
+        new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+    handler.handleRequest(createInitialScanRequest(LARGE_PAGE), output, context);
+    var updatedResource =
+        resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
+    var updatedDao =
+        new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+
+    assertEquals(
+        JsonUtils.dtoObjectMapper.writeValueAsString(initialResource),
+        JsonUtils.dtoObjectMapper.writeValueAsString(updatedResource));
+    assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
+  }
+
+  @Test
+  void shouldUpdateDataEntriesWithGivenTypeWhenRequestContainsType() throws ApiGatewayException {
+    var createdPublication = createPublication(randomPublication());
+    var initialResource =
+        resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
+    var originalDao =
+        new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+    var originalTicket =
+        TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+            .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
+            .persistNewTicket(ticketService);
+    var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+
+    handler.handleRequest(
+        eventToInputStream(
+            ScanDatabaseRequest.builder()
+                .withPageSize(LARGE_PAGE)
+                .withStartMarker(START_FROM_BEGINNING)
+                .withTopic(TOPIC)
+                .withTypes(List.of(KeyField.RESOURCE))
+                .build()),
+        output,
+        context);
+    var updatedDao =
+        new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+    var updatedTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+
+    assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
+    assertThat(updatedTicketDao.getVersion(), is(equalTo(originalTicketDao.getVersion())));
+  }
+
+  @Test
+  void shouldUpdateTicketsWhenRequestContainsTicketKeyFieldOnly() throws ApiGatewayException {
+    var createdPublication = createPublication(randomPublication());
+    var initialResource =
+        resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
+    var originalDao =
+        new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+    var originalTicket =
+        TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+            .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
+            .persistNewTicket(ticketService);
+    var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+
+    handler.handleRequest(
+        eventToInputStream(
+            ScanDatabaseRequest.builder()
+                .withPageSize(LARGE_PAGE)
+                .withStartMarker(START_FROM_BEGINNING)
+                .withTopic(TOPIC)
+                .withTypes(List.of(KeyField.TICKET))
+                .build()),
+        output,
+        context);
+    var updatedDao =
+        new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+    var updatedTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+
+    assertThat(updatedTicketDao.getVersion(), is(not(equalTo(originalTicketDao.getVersion()))));
+    assertThat(updatedDao.getVersion(), is(equalTo(originalDao.getVersion())));
+  }
+
+  @Test
+  void shouldUpdateDataEntriesDefaultTypesWhenRequestDoesNotContainType()
+      throws ApiGatewayException {
+    var createdPublication = createPublication(randomPublication());
+    var initialResource =
+        resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
+    var originalDao =
+        new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+    var originalTicket =
+        TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
+            .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
+            .persistNewTicket(ticketService);
+    var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+
+    handler.handleRequest(
+        eventToInputStream(
+            ScanDatabaseRequest.builder()
+                .withPageSize(LARGE_PAGE)
+                .withStartMarker(START_FROM_BEGINNING)
+                .withTopic(TOPIC)
+                .build()),
+        output,
+        context);
+    var updatedDao =
+        new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+    var updatedTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+
+    assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
+    assertThat(updatedTicketDao.getVersion(), is(not(equalTo(originalTicketDao.getVersion()))));
+  }
+
+  @Test
+  void shouldEmitNewScanEventWhenDatabaseScanningIsNotComplete() throws ApiGatewayException {
+    createRandomResources(2);
+    handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
+    var emittedEvent = consumeLatestEmittedEvent();
+    assertThat(emittedEvent.getStartMarker(), is(not(nullValue())));
+  }
+
+  @Test
+  void shouldNotSendScanEventWhenDatabaseScanningIsComplete() throws ApiGatewayException {
+    createRandomResources(2);
+    handler.handleRequest(createInitialScanRequest(LARGE_PAGE), output, context);
+    assertThat(eventBridgeClient.getRequestEntries(), is(empty()));
+  }
+
+  @Test
+  void shouldStartScanningFromSuppliedStartMarkerWhenStartMakerIsNotNull()
+      throws ApiGatewayException {
+    createRandomResources(5);
+    handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
+
+    var expectedStaringPointForNextEvent = getLatestEmittedStartingPoint();
+    var secondScanRequest =
+        ScanDatabaseRequest.builder()
+            .withPageSize(ONE_ENTRY_PER_EVENT)
+            .withStartMarker(expectedStaringPointForNextEvent)
+            .withTopic(TOPIC)
+            .build();
+    handler.handleRequest(eventToInputStream(secondScanRequest), output, context);
+
+    var startingPointsCapturer = ArgumentCaptor.forClass(Map.class);
+    verify(resourceService, atLeastOnce())
+        .scanResources(anyInt(), startingPointsCapturer.capture(), any());
+    var scanStartingPointSentToTheService = startingPointsCapturer.getValue();
+
+    assertThat(scanStartingPointSentToTheService, is(equalTo(expectedStaringPointForNextEvent)));
+  }
+
+  @Test
+  void shouldNotGoIntoInfiniteLoop() throws ApiGatewayException {
+    createRandomResources(20);
+    pushInitialEntryInEventBridge(
+        ScanDatabaseRequest.builder()
+            .withPageSize(ONE_ENTRY_PER_EVENT)
+            .withStartMarker(START_FROM_BEGINNING)
+            .withTopic(TOPIC)
+            .build());
+    while (thereAreMoreEventsInEventBridge()) {
+      var currentRequest = consumeLatestEmittedEvent();
+      handler.handleRequest(eventToInputStream(currentRequest), output, context);
     }
+    assertThat(eventBridgeClient.getRequestEntries(), is(empty()));
+  }
 
-    //TODO: Enable after migration
-    @Test
-    @Disabled
-    void shouldUpdateDataEntriesWhenValidRequestIsReceived()
-        throws ApiGatewayException, JsonProcessingException {
-        Publication createdPublication = createPublication(randomPublication());
-        Resource initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
-        var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        handler.handleRequest(createInitialScanRequest(LARGE_PAGE), output, context);
-        var updatedResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
-        var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
+  @Test
+  void shouldLogFailureWhenExceptionIsThrown() {
+    final var logger = LogUtils.getTestingAppenderForRootLogger();
+    var expectedExceptionMessage = randomString();
+    var spiedResourceService = resourceService;
+    doThrow(new RuntimeException(expectedExceptionMessage))
+        .when(spiedResourceService)
+        .scanResources(anyInt(), any(), any());
 
-        assertEquals(JsonUtils.dtoObjectMapper.writeValueAsString(initialResource),
-                     JsonUtils.dtoObjectMapper.writeValueAsString(updatedResource));
-        assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
+    handler = new EventBasedBatchScanHandler(spiedResourceService, eventBridgeClient);
+    Executable action =
+        () -> handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
+    assertThrows(RuntimeException.class, action);
+    assertThat(logger.getMessages(), containsString(expectedExceptionMessage));
+  }
+
+  @Test
+  void shouldConsumeLogEnryWithoutFailing() throws BadRequestException, NotFoundException {
+    var publication = randomPublication();
+    var persistedPublication =
+        resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+    persistLogEntry(persistedPublication);
+
+    assertDoesNotThrow(
+        () ->
+            handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context));
+  }
+
+  private void persistLogEntry(Publication persistedPublication) throws NotFoundException {
+    Resource.resourceQueryObject(persistedPublication.getIdentifier())
+        .fetch(resourceService)
+        .orElseThrow()
+        .getResourceEvent()
+        .toLogEntry(persistedPublication.getIdentifier(), randomLogUser())
+        .persist(resourceService);
+  }
+
+  private static LogUser randomLogUser() {
+    return new LogUser(
+        randomString(),
+        randomUri(),
+        randomString(),
+        randomString(),
+        randomString(),
+        randomString(),
+        new LogOrganization(randomUri(), randomString(), Map.of()));
+  }
+
+  private TicketDao fetchTicketDao(SortableIdentifier identifier) throws NotFoundException {
+    var queryObject = TicketEntry.createQueryObject(identifier);
+    var queryResult = queryObject.fetchByIdentifier(dynamoDbClient, RESOURCES_TABLE_NAME);
+    return (TicketDao) queryResult;
+  }
+
+  private void createRandomResources(int numberOfResources) throws ApiGatewayException {
+    for (int i = 0; i < numberOfResources; i++) {
+      createPublication(randomPublication());
     }
+  }
 
-    @Test
-    void shouldUpdateDataEntriesWithGivenTypeWhenRequestContainsType()
-        throws ApiGatewayException {
-        var createdPublication = createPublication(randomPublication());
-        var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
-        var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
-                                 .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
-                                 .persistNewTicket(ticketService);
-        var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+  private Publication createPublication(Publication publication) throws ApiGatewayException {
+    var userInstance = UserInstance.fromPublication(publication);
+    return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+  }
 
-        handler.handleRequest(eventToInputStream(ScanDatabaseRequest.builder()
-                                                     .withPageSize(LARGE_PAGE)
-                                                     .withStartMarker(START_FROM_BEGINNING)
-                                                     .withTopic(TOPIC)
-                                                     .withTypes(List.of(KeyField.RESOURCE))
-                                                     .build()), output, context);
-        var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var updatedTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+  private FakeContext mockContent() {
+    return new FakeContext() {
+      @Override
+      public String getInvokedFunctionArn() {
+        return randomString();
+      }
+    };
+  }
 
-        assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
-        assertThat(updatedTicketDao.getVersion(), is(equalTo(originalTicketDao.getVersion())));
-    }
+  private void pushInitialEntryInEventBridge(ScanDatabaseRequest initialRequest) {
+    var entry = PutEventsRequestEntry.builder().detail(initialRequest.toJsonString()).build();
+    eventBridgeClient.getRequestEntries().add(entry);
+  }
 
-    @Test
-    void shouldUpdateTicketsWhenRequestContainsTicketKeyFieldOnly()
-        throws ApiGatewayException {
-        var createdPublication = createPublication(randomPublication());
-        var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
-        var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
-                                 .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
-                                 .persistNewTicket(ticketService);
-        var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+  private boolean thereAreMoreEventsInEventBridge() {
+    return !eventBridgeClient.getRequestEntries().isEmpty();
+  }
 
-        handler.handleRequest(eventToInputStream(ScanDatabaseRequest.builder()
-                                                     .withPageSize(LARGE_PAGE)
-                                                     .withStartMarker(START_FROM_BEGINNING)
-                                                     .withTopic(TOPIC)
-                                                     .withTypes(List.of(KeyField.TICKET))
-                                                     .build()), output, context);
-        var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var updatedTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+  private Map<String, AttributeValue> getLatestEmittedStartingPoint() {
+    return consumeLatestEmittedEvent().getStartMarker();
+  }
 
-        assertThat(updatedTicketDao.getVersion(), is(not(equalTo(originalTicketDao.getVersion()))));
-        assertThat(updatedDao.getVersion(), is(equalTo(originalDao.getVersion())));
-    }
+  private ScanDatabaseRequest consumeLatestEmittedEvent() {
+    var allRequests = eventBridgeClient.getRequestEntries();
+    var latest = allRequests.removeLast();
+    return attempt(() -> ScanDatabaseRequest.fromJson(latest.detail())).orElseThrow();
+  }
 
-    @Test
-    void shouldUpdateDataEntriesDefaultTypesWhenRequestDoesNotContainType()
-        throws ApiGatewayException {
-        var createdPublication = createPublication(randomPublication());
-        var initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
-        var originalDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var originalTicket = TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
-                                 .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
-                                 .persistNewTicket(ticketService);
-        var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
+  private InputStream createInitialScanRequest(int pageSize) {
+    return eventToInputStream(
+        ScanDatabaseRequest.builder()
+            .withPageSize(pageSize)
+            .withStartMarker(START_FROM_BEGINNING)
+            .withTopic(TOPIC)
+            .build());
+  }
 
-        handler.handleRequest(eventToInputStream(ScanDatabaseRequest.builder()
-                                                     .withPageSize(LARGE_PAGE)
-                                                     .withStartMarker(START_FROM_BEGINNING)
-                                                     .withTopic(TOPIC)
-                                                     .build()), output, context);
-        var updatedDao = new ResourceDao(initialResource).fetchByIdentifier(client, RESOURCES_TABLE_NAME);
-        var updatedTicketDao = fetchTicketDao(originalTicket.getIdentifier());
-
-        assertThat(updatedDao.getVersion(), is(not(equalTo(originalDao.getVersion()))));
-        assertThat(updatedTicketDao.getVersion(), is(not(equalTo(originalTicketDao.getVersion()))));
-    }
-
-    @Test
-    void shouldEmitNewScanEventWhenDatabaseScanningIsNotComplete() throws ApiGatewayException {
-        createRandomResources(2);
-        handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
-        var emittedEvent = consumeLatestEmittedEvent();
-        assertThat(emittedEvent.getStartMarker(), is(not(nullValue())));
-    }
-
-    @Test
-    void shouldNotSendScanEventWhenDatabaseScanningIsComplete()
-        throws ApiGatewayException {
-        createRandomResources(2);
-        handler.handleRequest(createInitialScanRequest(LARGE_PAGE), output, context);
-        assertThat(eventBridgeClient.getRequestEntries(), is(empty()));
-    }
-
-    @Test
-    void shouldStartScanningFromSuppliedStartMarkerWhenStartMakerIsNotNull()
-        throws ApiGatewayException {
-        createRandomResources(5);
-        handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
-
-        var expectedStaringPointForNextEvent = getLatestEmittedStartingPoint();
-        var secondScanRequest = ScanDatabaseRequest.builder()
-                                    .withPageSize(ONE_ENTRY_PER_EVENT)
-                                    .withStartMarker(expectedStaringPointForNextEvent)
-                                    .withTopic(TOPIC)
-                                    .build();
-        handler.handleRequest(eventToInputStream(secondScanRequest), output, context);
-
-        var startingPointsCapturer = ArgumentCaptor.forClass(Map.class);
-        verify(resourceService, atLeastOnce()).scanResources(anyInt(), startingPointsCapturer.capture(), any());
-        var scanStartingPointSentToTheService = startingPointsCapturer.getValue();
-
-        assertThat(scanStartingPointSentToTheService, is(equalTo(expectedStaringPointForNextEvent)));
-    }
-
-    @Test
-    void shouldNotGoIntoInfiniteLoop() throws ApiGatewayException {
-        createRandomResources(20);
-        pushInitialEntryInEventBridge(ScanDatabaseRequest.builder()
-                                          .withPageSize(ONE_ENTRY_PER_EVENT)
-                                          .withStartMarker(START_FROM_BEGINNING)
-                                          .withTopic(TOPIC)
-                                          .build());
-        while (thereAreMoreEventsInEventBridge()) {
-            var currentRequest = consumeLatestEmittedEvent();
-            handler.handleRequest(eventToInputStream(currentRequest), output, context);
-        }
-        assertThat(eventBridgeClient.getRequestEntries(), is(empty()));
-    }
-
-    @Test
-    void shouldLogFailureWhenExceptionIsThrown() {
-        final var logger = LogUtils.getTestingAppenderForRootLogger();
-        var expectedExceptionMessage = randomString();
-        var spiedResourceService = resourceService;
-        doThrow(new RuntimeException(expectedExceptionMessage)).when(spiedResourceService)
-            .scanResources(anyInt(), any(), any());
-
-        handler = new EventBasedBatchScanHandler(spiedResourceService, eventBridgeClient);
-        Executable action = () -> handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
-        assertThrows(RuntimeException.class, action);
-        assertThat(logger.getMessages(), containsString(expectedExceptionMessage));
-    }
-
-    @Test
-    void shouldConsumeLogEnryWithoutFailing() throws BadRequestException, NotFoundException {
-        var publication = randomPublication();
-        var persistedPublication = resourceService.createPublication(UserInstance.fromPublication(publication),
-                                                                 publication);
-        persistLogEntry(persistedPublication);
-
-        assertDoesNotThrow(() -> handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context));
-
-    }
-
-    private void persistLogEntry(Publication persistedPublication) throws NotFoundException {
-        Resource.resourceQueryObject(persistedPublication.getIdentifier())
-            .fetch(resourceService)
-            .orElseThrow()
-            .getResourceEvent()
-            .toLogEntry(persistedPublication.getIdentifier(), randomLogUser())
-            .persist(resourceService);
-    }
-
-    private static LogUser randomLogUser() {
-        return new LogUser(randomString(),
-                           randomUri(), randomString(), randomString(), randomString(), randomString(),
-                           new LogOrganization(randomUri(), randomString(), Map.of()));
-    }
-
-    private TicketDao fetchTicketDao(SortableIdentifier identifier) throws NotFoundException {
-        var queryObject = TicketEntry.createQueryObject(identifier);
-        var queryResult = queryObject.fetchByIdentifier(dynamoDbClient, RESOURCES_TABLE_NAME);
-        return (TicketDao) queryResult;
-    }
-
-    private void createRandomResources(int numberOfResources) throws ApiGatewayException {
-        for (int i = 0; i < numberOfResources; i++) {
-            createPublication(randomPublication());
-        }
-    }
-
-    private Publication createPublication(Publication publication) throws ApiGatewayException {
-        var userInstance = UserInstance.fromPublication(publication);
-        return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-    }
-
-    private FakeContext mockContent() {
-        return new FakeContext() {
-            @Override
-            public String getInvokedFunctionArn() {
-                return randomString();
-            }
-        };
-    }
-
-    private void pushInitialEntryInEventBridge(ScanDatabaseRequest initialRequest) {
-        var entry = PutEventsRequestEntry.builder()
-                        .detail(initialRequest.toJsonString())
-                        .build();
-        eventBridgeClient.getRequestEntries().add(entry);
-    }
-
-    private boolean thereAreMoreEventsInEventBridge() {
-        return !eventBridgeClient.getRequestEntries().isEmpty();
-    }
-
-    private Map<String, AttributeValue> getLatestEmittedStartingPoint() {
-        return consumeLatestEmittedEvent().getStartMarker();
-    }
-
-    private ScanDatabaseRequest consumeLatestEmittedEvent() {
-        var allRequests = eventBridgeClient.getRequestEntries();
-        var latest = allRequests.removeLast();
-        return attempt(() -> ScanDatabaseRequest.fromJson(latest.detail())).orElseThrow();
-    }
-
-    private InputStream createInitialScanRequest(int pageSize) {
-        return eventToInputStream(ScanDatabaseRequest.builder()
-                                      .withPageSize(pageSize)
-                                      .withStartMarker(START_FROM_BEGINNING)
-                                      .withTopic(TOPIC)
-                                      .build());
-    }
-
-    private InputStream eventToInputStream(ScanDatabaseRequest scanDatabaseRequest) {
-        var event = new AwsEventBridgeEvent<ScanDatabaseRequest>();
-        event.setAccount(randomString());
-        event.setVersion(randomString());
-        event.setSource(randomString());
-        event.setRegion(randomElement(Region.regions()));
-        event.setDetail(scanDatabaseRequest);
-        return IoUtils.stringToStream(event.toJsonString());
-    }
+  private InputStream eventToInputStream(ScanDatabaseRequest scanDatabaseRequest) {
+    var event = new AwsEventBridgeEvent<ScanDatabaseRequest>();
+    event.setAccount(randomString());
+    event.setVersion(randomString());
+    event.setSource(randomString());
+    event.setRegion(randomElement(Region.regions()));
+    event.setDetail(scanDatabaseRequest);
+    return IoUtils.stringToStream(event.toJsonString());
+  }
 }

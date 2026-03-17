@@ -2,6 +2,7 @@ package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
@@ -21,136 +22,129 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(MessageDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class MessageDao extends Dao
-    implements DynamoEntryByIdentifier, JoinWithResource {
-    
-    public static final String TYPE = "Message";
-    private static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX = "z";
+public class MessageDao extends Dao implements DynamoEntryByIdentifier, JoinWithResource {
 
-    private static final String TICKET_IDENTIFIER_FIELD_NAME = "ticketIdentifier";
+  public static final String TYPE = "Message";
+  private static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX = "z";
 
-    @JsonProperty(TICKET_IDENTIFIER_FIELD_NAME)
-    private SortableIdentifier ticketIdentifier;
+  private static final String TICKET_IDENTIFIER_FIELD_NAME = "ticketIdentifier";
 
-    public MessageDao() {
-        super();
-    }
-    
-    public MessageDao(Message message) {
-        super(message);
-        this.setIdentifier(message.getIdentifier());
-        this.ticketIdentifier = message.getTicketIdentifier();
-    }
-    
-    public static MessageDao queryObject(UserInstance owner, SortableIdentifier identifier) {
-        Message message = Message.builder()
-                              .withOwner(owner.getUser())
-                              .withCustomerId(owner.getCustomerId())
-                              .withIdentifier(identifier)
-                              .build();
-        return new MessageDao(message);
-    }
-    
-    public static MessageDao listMessagesAndResourcesForUser(UserInstance owner) {
-        Message message = Message.builder()
-                              .withCustomerId(owner.getCustomerId())
-                              .withOwner(owner.getUser())
-                              .build();
-        return new MessageDao(message);
-    }
-    
-    public static String joinByResourceOrderedContainedType() {
-        return JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + TYPE;
-    }
-    
-    @Override
-    public String indexingType() {
-        return TYPE;
-    }
-    
-    @Override
-    public URI getCustomerId() {
-        return getData().getCustomerId();
-    }
-    
-    @Override
-    public TransactWriteItemsRequest createInsertionTransactionRequest() {
-        
-        var uniqueIdentifierEntry = new IdentifierEntry(this.getIdentifier().toString());
-        var messageEntry = transactionItem(this);
-        var identityEntry = transactionItem(uniqueIdentifierEntry);
-        return new TransactWriteItemsRequest()
-                   .withTransactItems(messageEntry, identityEntry);
-    }
-    
-    @JacocoGenerated
-    @Override
-    public void updateExistingEntry(AmazonDynamoDB client) {
-        try {
-            client.putItem(this.createPutItemRequest());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+  @JsonProperty(TICKET_IDENTIFIER_FIELD_NAME)
+  private SortableIdentifier ticketIdentifier;
 
-    private PutItemRequest createPutItemRequest() {
-        return new PutItemRequest()
-                   .withTableName(RESOURCES_TABLE_NAME)
-                   .withItem(toDynamoFormat());
-    }
+  public MessageDao() {
+    super();
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getData());
-    }
-    
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof MessageDao)) {
-            return false;
-        }
-        MessageDao that = (MessageDao) o;
-        return Objects.equals(getData(), that.getData());
-    }
+  public MessageDao(Message message) {
+    super(message);
+    this.setIdentifier(message.getIdentifier());
+    this.ticketIdentifier = message.getTicketIdentifier();
+  }
 
-    public SortableIdentifier getTicketIdentifier() {
-        return ticketIdentifier;
-    }
+  public static MessageDao queryObject(UserInstance owner, SortableIdentifier identifier) {
+    Message message =
+        Message.builder()
+            .withOwner(owner.getUser())
+            .withCustomerId(owner.getCustomerId())
+            .withIdentifier(identifier)
+            .build();
+    return new MessageDao(message);
+  }
 
-    public void setTicketIdentifier(SortableIdentifier ticketIdentifier) {
-        this.ticketIdentifier = ticketIdentifier;
-    }
+  public static MessageDao listMessagesAndResourcesForUser(UserInstance owner) {
+    Message message =
+        Message.builder().withCustomerId(owner.getCustomerId()).withOwner(owner.getUser()).build();
+    return new MessageDao(message);
+  }
 
-    @Override
-    protected User getOwner() {
-        return getData().getOwner();
-    }
-    
-    @JsonIgnore
-    public Message getMessage() {
-        return (Message) getData();
-    }
-    
-    @Override
-    public String joinByResourceOrderedType() {
-        return joinByResourceOrderedContainedType();
-    }
+  public static String joinByResourceOrderedContainedType() {
+    return JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + TYPE;
+  }
 
-    @Override
-    public SortableIdentifier getResourceIdentifier() {
-        return ((Message) getData()).getResourceIdentifier();
-    }
+  @Override
+  public String indexingType() {
+    return TYPE;
+  }
 
-    private static TransactWriteItem transactionItem(DynamoEntry dynamoEntry) {
-        var put = new Put()
-                      .withTableName(RESOURCES_TABLE_NAME)
-                      .withItem(dynamoEntry.toDynamoFormat());
-        
-        return new TransactWriteItem().withPut(put);
+  @Override
+  public URI getCustomerId() {
+    return getData().getCustomerId();
+  }
+
+  @Override
+  public TransactWriteItemsRequest createInsertionTransactionRequest() {
+
+    var uniqueIdentifierEntry = new IdentifierEntry(this.getIdentifier().toString());
+    var messageEntry = transactionItem(this);
+    var identityEntry = transactionItem(uniqueIdentifierEntry);
+    return new TransactWriteItemsRequest().withTransactItems(messageEntry, identityEntry);
+  }
+
+  @JacocoGenerated
+  @Override
+  public void updateExistingEntry(AmazonDynamoDB client) {
+    try {
+      client.putItem(this.createPutItemRequest());
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
+  }
+
+  private PutItemRequest createPutItemRequest() {
+    return new PutItemRequest().withTableName(RESOURCES_TABLE_NAME).withItem(toDynamoFormat());
+  }
+
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(getData());
+  }
+
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof MessageDao)) {
+      return false;
+    }
+    MessageDao that = (MessageDao) o;
+    return Objects.equals(getData(), that.getData());
+  }
+
+  public SortableIdentifier getTicketIdentifier() {
+    return ticketIdentifier;
+  }
+
+  public void setTicketIdentifier(SortableIdentifier ticketIdentifier) {
+    this.ticketIdentifier = ticketIdentifier;
+  }
+
+  @Override
+  protected User getOwner() {
+    return getData().getOwner();
+  }
+
+  @JsonIgnore
+  public Message getMessage() {
+    return (Message) getData();
+  }
+
+  @Override
+  public String joinByResourceOrderedType() {
+    return joinByResourceOrderedContainedType();
+  }
+
+  @Override
+  public SortableIdentifier getResourceIdentifier() {
+    return ((Message) getData()).getResourceIdentifier();
+  }
+
+  private static TransactWriteItem transactionItem(DynamoEntry dynamoEntry) {
+    var put = new Put().withTableName(RESOURCES_TABLE_NAME).withItem(dynamoEntry.toDynamoFormat());
+
+    return new TransactWriteItem().withPut(put);
+  }
 }

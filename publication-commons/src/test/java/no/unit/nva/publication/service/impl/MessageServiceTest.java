@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
@@ -43,181 +44,208 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class MessageServiceTest extends ResourcesLocalTest {
-    
-    public static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2007-12-03T10:15:30.00Z");
-    public static final Instant MESSAGE_CREATION_TIME = PUBLICATION_CREATION_TIME.plus(Period.ofDays(2));
-    public static final Instant SECOND_MESSAGE_CREATION_TIME = MESSAGE_CREATION_TIME.plus(Period.ofDays(2));
-    public static final Instant THIRD_MESSAGE_CREATION_TIME = SECOND_MESSAGE_CREATION_TIME.plus(Period.ofDays(2));
-    private MessageService messageService;
-    private ResourceService resourceService;
-    private UserInstance owner;
-    private TicketService ticketService;
 
-    @BeforeEach
-    public void initialize() {
-        super.init();
-        var clock = mockClock();
-        messageService = getMessageService();
-        resourceService = getResourceService(client);
-        ticketService = getTicketService();
-        owner = TestingUtils.randomUserInstance();
-    }
+  public static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2007-12-03T10:15:30.00Z");
+  public static final Instant MESSAGE_CREATION_TIME =
+      PUBLICATION_CREATION_TIME.plus(Period.ofDays(2));
+  public static final Instant SECOND_MESSAGE_CREATION_TIME =
+      MESSAGE_CREATION_TIME.plus(Period.ofDays(2));
+  public static final Instant THIRD_MESSAGE_CREATION_TIME =
+      SECOND_MESSAGE_CREATION_TIME.plus(Period.ofDays(2));
+  private MessageService messageService;
+  private ResourceService resourceService;
+  private UserInstance owner;
+  private TicketService ticketService;
 
+  @BeforeEach
+  public void initialize() {
+    super.init();
+    var clock = mockClock();
+    messageService = getMessageService();
+    resourceService = getResourceService(client);
+    ticketService = getTicketService();
+    owner = TestingUtils.randomUserInstance();
+  }
 
-    @DisplayName("should persist message with reference to a ticket")
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldPersistMessageWithReferenceToATicket(Class<? extends TicketEntry> ticketType, PublicationStatus status)
-        throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var message = publicationOwnerSendsMessage(ticket, randomString());
-        var persistedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
-        assertThat(persistedMessage.getTicketIdentifier(), is(equalTo(ticket.getIdentifier())));
-        assertThat(persistedMessage.getText(), is(equalTo(message.getText())));
-    }
+  @DisplayName("should persist message with reference to a ticket")
+  @ParameterizedTest
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+  void shouldPersistMessageWithReferenceToATicket(
+      Class<? extends TicketEntry> ticketType, PublicationStatus status)
+      throws ApiGatewayException {
+    var publication =
+        TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
+    var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+    var message = publicationOwnerSendsMessage(ticket, randomString());
+    var persistedMessage =
+        messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
+    assertThat(persistedMessage.getTicketIdentifier(), is(equalTo(ticket.getIdentifier())));
+    assertThat(persistedMessage.getText(), is(equalTo(message.getText())));
+  }
 
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldMarkTicketAsUnreadForEveryoneExceptSenderWhenMessageIsCreated(Class<? extends TicketEntry> ticketType,
-                                                                             PublicationStatus status)
-        throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var persistedMessage = messageService.createMessage(ticket, owner, randomString());
-        var retrievedMessage = messageService.getMessage(owner, persistedMessage.getIdentifier());
-        assertThat(retrievedMessage.getSender(), is(equalTo(owner.getUser())));
-    }
+  @ParameterizedTest
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+  void shouldMarkTicketAsUnreadForEveryoneExceptSenderWhenMessageIsCreated(
+      Class<? extends TicketEntry> ticketType, PublicationStatus status)
+      throws ApiGatewayException {
+    var publication =
+        TicketTestUtils.createPersistedPublicationWithOwner(status, owner, resourceService);
+    var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+    var persistedMessage = messageService.createMessage(ticket, owner, randomString());
+    var retrievedMessage = messageService.getMessage(owner, persistedMessage.getIdentifier());
+    assertThat(retrievedMessage.getSender(), is(equalTo(owner.getUser())));
+  }
 
-    @Test
-    void shouldNotDeleteMessageForMessageOwnerWhenMessageOwnerIsNotMessageSender() throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+  @Test
+  void shouldNotDeleteMessageForMessageOwnerWhenMessageOwnerIsNotMessageSender()
+      throws ApiGatewayException {
+    var publication =
+        TicketTestUtils.createPersistedPublicationWithOwner(
             PublicationStatus.PUBLISHED, owner, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
+    var ticket =
+        TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
 
-        var sender = UserInstance.create(randomString(), owner.getCustomerId());
-        var persistedMessage = messageService.createMessage(ticket, sender, randomString());
+    var sender = UserInstance.create(randomString(), owner.getCustomerId());
+    var persistedMessage = messageService.createMessage(ticket, sender, randomString());
 
-        assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(owner, persistedMessage));
-    }
+    assertThrows(
+        UnauthorizedException.class, () -> messageService.deleteMessage(owner, persistedMessage));
+  }
 
-    @Test
-    void shouldDeleteMessageForMessageSender() throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+  @Test
+  void shouldDeleteMessageForMessageSender() throws ApiGatewayException {
+    var publication =
+        TicketTestUtils.createPersistedPublicationWithOwner(
             PublicationStatus.PUBLISHED, owner, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
+    var ticket =
+        TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
 
-        var sender = UserInstance.create(randomString(), owner.getCustomerId());
-        var persistedMessage = messageService.createMessage(ticket, sender, randomString());
-        messageService.deleteMessage(sender, persistedMessage);
-        var deletedMessage = messageService.getMessage(owner, persistedMessage.getIdentifier());
+    var sender = UserInstance.create(randomString(), owner.getCustomerId());
+    var persistedMessage = messageService.createMessage(ticket, sender, randomString());
+    messageService.deleteMessage(sender, persistedMessage);
+    var deletedMessage = messageService.getMessage(owner, persistedMessage.getIdentifier());
 
-        assertThat(deletedMessage.getStatus(), is(equalTo(MessageStatus.DELETED)));
-    }
+    assertThat(deletedMessage.getStatus(), is(equalTo(MessageStatus.DELETED)));
+  }
 
-    @Test
-    void shouldRefreshMessageByUpdatingVersion()
-        throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+  @Test
+  void shouldRefreshMessageByUpdatingVersion() throws ApiGatewayException {
+    var publication =
+        TicketTestUtils.createPersistedPublicationWithOwner(
             PublicationStatus.PUBLISHED, owner, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
-        var persistedMessage = messageService.createMessage(ticket, owner, randomString());
-        var version = persistedMessage.toDao().getVersion();
-        messageService.refresh(persistedMessage.getIdentifier());
+    var ticket =
+        TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
+    var persistedMessage = messageService.createMessage(ticket, owner, randomString());
+    var version = persistedMessage.toDao().getVersion();
+    messageService.refresh(persistedMessage.getIdentifier());
 
-        var updatedMessage = messageService.getMessageByIdentifier(persistedMessage.getIdentifier()).orElseThrow();
-        var updatedVersion = updatedMessage.toDao().getVersion();
+    var updatedMessage =
+        messageService.getMessageByIdentifier(persistedMessage.getIdentifier()).orElseThrow();
+    var updatedVersion = updatedMessage.toDao().getVersion();
 
-        assertThat(persistedMessage, is(equalTo(updatedMessage)));
-        assertThat(updatedVersion, is(not(equalTo(version))));
-    }
+    assertThat(persistedMessage, is(equalTo(updatedMessage)));
+    assertThat(updatedVersion, is(not(equalTo(version))));
+  }
 
-    @Test
-    void shouldThrowUnauthorizedWhenAttemptingToDeleteMessageUserDoesNotOwn()
-        throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+  @Test
+  void shouldThrowUnauthorizedWhenAttemptingToDeleteMessageUserDoesNotOwn()
+      throws ApiGatewayException {
+    var publication =
+        TicketTestUtils.createPersistedPublicationWithOwner(
             PublicationStatus.PUBLISHED, owner, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
-        var persistedMessage = messageService.createMessage(ticket, owner, randomString());
+    var ticket =
+        TicketTestUtils.createPersistedTicket(publication, DoiRequest.class, ticketService);
+    var persistedMessage = messageService.createMessage(ticket, owner, randomString());
 
-        assertThrows(UnauthorizedException.class,
-                     () -> messageService.deleteMessage(randomUserInstance(), persistedMessage));
-    }
+    assertThrows(
+        UnauthorizedException.class,
+        () -> messageService.deleteMessage(randomUserInstance(), persistedMessage));
+  }
 
-    @ParameterizedTest
-    @MethodSource("ticketTypeAccessRightsProvider")
-    void shouldAllowCuratorToDeleteMessageWhenTicketHasCorrectType(Class<? extends TicketEntry> ticketType,
-                                                                   AccessRight accessRight) throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+  @ParameterizedTest
+  @MethodSource("ticketTypeAccessRightsProvider")
+  void shouldAllowCuratorToDeleteMessageWhenTicketHasCorrectType(
+      Class<? extends TicketEntry> ticketType, AccessRight accessRight) throws ApiGatewayException {
+    var publication =
+        TicketTestUtils.createPersistedPublicationWithOwner(
             PublicationStatus.PUBLISHED, owner, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var persistedMessage = messageService.createMessage(ticket, owner, randomString());
-        var curator = randomUserInstance(accessRight, owner.getCustomerId());
+    var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+    var persistedMessage = messageService.createMessage(ticket, owner, randomString());
+    var curator = randomUserInstance(accessRight, owner.getCustomerId());
 
-        assertDoesNotThrow(() -> messageService.deleteMessage(curator, persistedMessage));
-    }
+    assertDoesNotThrow(() -> messageService.deleteMessage(curator, persistedMessage));
+  }
 
-    @ParameterizedTest
-    @MethodSource("ticketTypeAccessRightsProvider")
-    void shouldNotAllowWrongTypeOfCuratorToDeleteMessage(Class<? extends TicketEntry> ticketType,
-                                                         AccessRight accessRight) throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+  @ParameterizedTest
+  @MethodSource("ticketTypeAccessRightsProvider")
+  void shouldNotAllowWrongTypeOfCuratorToDeleteMessage(
+      Class<? extends TicketEntry> ticketType, AccessRight accessRight) throws ApiGatewayException {
+    var publication =
+        TicketTestUtils.createPersistedPublicationWithOwner(
             PublicationStatus.PUBLISHED, owner, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var persistedMessage = messageService.createMessage(ticket, owner, randomString());
+    var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+    var persistedMessage = messageService.createMessage(ticket, owner, randomString());
 
-        var curatorAccessRights = Stream.of(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS, SUPPORT)
-                                      .filter(ar -> !ar.equals(accessRight))
-                                      .toList();
+    var curatorAccessRights =
+        Stream.of(MANAGE_DOI, MANAGE_PUBLISHING_REQUESTS, SUPPORT)
+            .filter(ar -> !ar.equals(accessRight))
+            .toList();
 
-        for (AccessRight ar : curatorAccessRights) {
-            var curator = randomUserInstance(ar, owner.getCustomerId());
-            assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(curator, persistedMessage));
-        }
+    for (AccessRight ar : curatorAccessRights) {
+      var curator = randomUserInstance(ar, owner.getCustomerId());
+      assertThrows(
+          UnauthorizedException.class,
+          () -> messageService.deleteMessage(curator, persistedMessage));
     }
+  }
 
-    @ParameterizedTest
-    @MethodSource("ticketTypeAccessRightsProvider")
-    void shouldNotAllowCuratorFromAnotherInstitutionToDeleteMessage(Class<? extends TicketEntry> ticketType,
-                                                                    AccessRight accessRight)
-        throws ApiGatewayException {
-        var publication = TicketTestUtils.createPersistedPublicationWithOwner(
+  @ParameterizedTest
+  @MethodSource("ticketTypeAccessRightsProvider")
+  void shouldNotAllowCuratorFromAnotherInstitutionToDeleteMessage(
+      Class<? extends TicketEntry> ticketType, AccessRight accessRight) throws ApiGatewayException {
+    var publication =
+        TicketTestUtils.createPersistedPublicationWithOwner(
             PublicationStatus.PUBLISHED, owner, resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        var persistedMessage = messageService.createMessage(ticket, owner, randomString());
-        var curatorFromRandomInstitution = randomUserInstance(accessRight, randomUri());
+    var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+    var persistedMessage = messageService.createMessage(ticket, owner, randomString());
+    var curatorFromRandomInstitution = randomUserInstance(accessRight, randomUri());
 
-        assertThrows(UnauthorizedException.class, () -> messageService.deleteMessage(curatorFromRandomInstitution,
-                                                                                     persistedMessage));
-    }
+    assertThrows(
+        UnauthorizedException.class,
+        () -> messageService.deleteMessage(curatorFromRandomInstitution, persistedMessage));
+  }
 
-    private UserInstance randomUserInstance() {
-        return UserInstance.create(new User(randomString()), randomUri());
-    }
+  private UserInstance randomUserInstance() {
+    return UserInstance.create(new User(randomString()), randomUri());
+  }
 
-    private UserInstance randomUserInstance(AccessRight accessRight, URI customerId) {
-        return UserInstance.create(randomString(), customerId, randomUri(), List.of(accessRight), randomUri());
-    }
+  private UserInstance randomUserInstance(AccessRight accessRight, URI customerId) {
+    return UserInstance.create(
+        randomString(), customerId, randomUri(), List.of(accessRight), randomUri());
+  }
 
-    private Message publicationOwnerSendsMessage(TicketEntry ticket, String messageText) {
-        var userInfo = UserInstance.fromTicket(ticket);
-        return messageService.createMessage(ticket, userInfo, messageText);
-    }
-    
-    private Clock mockClock() {
-        var clock = mock(Clock.class);
-        when(clock.instant())
-            .thenReturn(PUBLICATION_CREATION_TIME)
-            .thenReturn(MESSAGE_CREATION_TIME)
-            .thenReturn(SECOND_MESSAGE_CREATION_TIME)
-            .thenReturn(THIRD_MESSAGE_CREATION_TIME);
-        return clock;
-    }
+  private Message publicationOwnerSendsMessage(TicketEntry ticket, String messageText) {
+    var userInfo = UserInstance.fromTicket(ticket);
+    return messageService.createMessage(ticket, userInfo, messageText);
+  }
 
-    public static Stream<Arguments> ticketTypeAccessRightsProvider() {
-        return Stream.of(Arguments.of(DoiRequest.class, MANAGE_DOI),
-                         Arguments.of(PublishingRequestCase.class, MANAGE_PUBLISHING_REQUESTS),
-                         Arguments.of(UnpublishRequest.class, MANAGE_PUBLISHING_REQUESTS),
-                         Arguments.of(GeneralSupportRequest.class, SUPPORT));
-    }
+  private Clock mockClock() {
+    var clock = mock(Clock.class);
+    when(clock.instant())
+        .thenReturn(PUBLICATION_CREATION_TIME)
+        .thenReturn(MESSAGE_CREATION_TIME)
+        .thenReturn(SECOND_MESSAGE_CREATION_TIME)
+        .thenReturn(THIRD_MESSAGE_CREATION_TIME);
+    return clock;
+  }
+
+  public static Stream<Arguments> ticketTypeAccessRightsProvider() {
+    return Stream.of(
+        Arguments.of(DoiRequest.class, MANAGE_DOI),
+        Arguments.of(PublishingRequestCase.class, MANAGE_PUBLISHING_REQUESTS),
+        Arguments.of(UnpublishRequest.class, MANAGE_PUBLISHING_REQUESTS),
+        Arguments.of(GeneralSupportRequest.class, SUPPORT));
+  }
 }

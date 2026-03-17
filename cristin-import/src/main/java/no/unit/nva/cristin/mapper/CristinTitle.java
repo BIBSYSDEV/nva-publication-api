@@ -13,34 +13,35 @@ import lombok.Setter;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinTitle {
 
-    public static final String TITLE = "titteltekst";
-    public static final String LANGUAGE_CODE = "sprakkode";
-    public static final String ABSTRACT = "sammendragtekst";
-    public static final String ORIGINAL_TITLE = "J"; //probably means "Ja"
-    public static final String NOT_ORIGINAL_TITLE = "N"; //probably means "Nei"
-    public static final String STATUS_ORIGINAL = "status_original";
+  public static final String TITLE = "titteltekst";
+  public static final String LANGUAGE_CODE = "sprakkode";
+  public static final String ABSTRACT = "sammendragtekst";
+  public static final String ORIGINAL_TITLE = "J"; // probably means "Ja"
+  public static final String NOT_ORIGINAL_TITLE = "N"; // probably means "Nei"
+  public static final String STATUS_ORIGINAL = "status_original";
 
-    @JsonProperty(LANGUAGE_CODE)
-    private String languagecode;
-    @JsonProperty(TITLE)
-    private String title;
-    @JsonProperty(STATUS_ORIGINAL)
-    private String statusOriginal;
-    @JsonProperty(ABSTRACT)
-    private String abstractText;
+  @JsonProperty(LANGUAGE_CODE)
+  private String languagecode;
 
-    public CristinTitle() {
-    }
+  @JsonProperty(TITLE)
+  private String title;
 
-    @JsonIgnore
-    public boolean isMainTitle() {
-        return ORIGINAL_TITLE.equalsIgnoreCase(statusOriginal);
-    }
+  @JsonProperty(STATUS_ORIGINAL)
+  private String statusOriginal;
+
+  @JsonProperty(ABSTRACT)
+  private String abstractText;
+
+  public CristinTitle() {}
+
+  @JsonIgnore
+  public boolean isMainTitle() {
+    return ORIGINAL_TITLE.equalsIgnoreCase(statusOriginal);
+  }
 }

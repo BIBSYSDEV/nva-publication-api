@@ -4,6 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.CristinImportConfig.cristinEntryMapper;
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,137 +25,159 @@ import no.unit.nva.cristin.mapper.exhibition.CristinExhibition;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-// This list should be emptied by either mapping the field to an NVA field or asking the Cristin people (Daniel)
+// This list should be emptied by either mapping the field to an NVA field or asking the Cristin
+// people (Daniel)
 // to remove it from the exports
-@JsonIgnoreProperties({"brukernavn_opprettet", "peerreviewed",
-    "brukernavn_siste_endring", "publiseringstatuskode", "merknadtekst_godkjenning",
-    "arkivpost", "pubidnr", "eierkode_siste_endring",
-    "varbeid_vdisiplin", "arkivfil", "dbh_forskres_kontroll"})
+@JsonIgnoreProperties({
+  "brukernavn_opprettet",
+  "peerreviewed",
+  "brukernavn_siste_endring",
+  "publiseringstatuskode",
+  "merknadtekst_godkjenning",
+  "arkivpost",
+  "pubidnr",
+  "eierkode_siste_endring",
+  "varbeid_vdisiplin",
+  "arkivfil",
+  "dbh_forskres_kontroll"
+})
 @SuppressWarnings({"PMD.TooManyFields", "PMD.CouplingBetweenObjects"})
 public class CristinObject implements JsonSerializable {
 
-    public static final String PUBLICATION_OWNER_FIELD = "publicationOwner";
-    public static final String MAIN_CATEGORY_FIELD = "varbeidhovedkatkode";
-    public static final String SECONDARY_CATEGORY_FIELD = "varbeidunderkatkode";
-    public static final String IDENTIFIER_ORIGIN = "Cristin";
-    public static final String BOOK_OR_REPORT_METADATA = "type_bok_rapport";
+  public static final String PUBLICATION_OWNER_FIELD = "publicationOwner";
+  public static final String MAIN_CATEGORY_FIELD = "varbeidhovedkatkode";
+  public static final String SECONDARY_CATEGORY_FIELD = "varbeidunderkatkode";
+  public static final String IDENTIFIER_ORIGIN = "Cristin";
+  public static final String BOOK_OR_REPORT_METADATA = "type_bok_rapport";
 
-    @JsonProperty("id")
-    private Integer id;
-    @JsonProperty("arstall")
-    private Integer publicationYear;
-    @JsonProperty("dato_opprettet")
-    private LocalDate entryCreationDate;
+  @JsonProperty("id")
+  private Integer id;
 
-    @JsonProperty("dato_utgitt")
-    private LocalDate entryPublishedDate;
+  @JsonProperty("arstall")
+  private Integer publicationYear;
 
-    @JsonProperty("dato_siste_endring")
-    private LocalDate entryLastModifiedDate;
-    @JsonProperty("arstall_rapportert")
-    private Integer yearReported;
-    @JsonProperty("varbeid_sprak")
-    private List<CristinTitle> cristinTitles;
-    @JsonProperty(MAIN_CATEGORY_FIELD)
-    private CristinMainCategory mainCategory;
-    @JsonProperty(SECONDARY_CATEGORY_FIELD)
-    private CristinSecondaryCategory secondaryCategory;
-    @JsonProperty("varbeid_person")
-    private List<CristinContributor> contributors;
-    @JsonProperty("presentasjon_varbeid")
-    private List<CristinPresentationalWork> presentationalWork;
-    @JsonProperty("varbeid_emneord")
-    private List<CristinTags> tags;
-    @JsonProperty("varbeid_hrcs_klassifisering")
-    private List<CristinHrcsCategoriesAndActivities> hrcsCategoriesAndActivities;
-    @JsonProperty(BOOK_OR_REPORT_METADATA)
-    private CristinBookOrReportMetadata bookOrReportMetadata;
-    @JsonProperty("type_bok_rapport_del")
-    private CristinBookOrReportPartMetadata bookOrReportPartMetadata;
-    @JsonProperty("type_tidsskriftpublikasjon")
-    private CristinJournalPublication journalPublication;
-    @JsonProperty("type_foredrag_poster")
-    private CristinLectureOrPosterMetaData lectureOrPosterMetaData;
+  @JsonProperty("dato_opprettet")
+  private LocalDate entryCreationDate;
 
-    @JsonProperty("type_mediebidrag")
-    private CristinMediaContribution mediaContribution;
+  @JsonProperty("dato_utgitt")
+  private LocalDate entryPublishedDate;
 
-    @JsonProperty("varbeid_kilde")
-    private List<CristinSource> cristinSources;
+  @JsonProperty("dato_siste_endring")
+  private LocalDate entryLastModifiedDate;
 
-    @JsonProperty("eierkode_opprettet")
-    private String ownerCodeCreated;
+  @JsonProperty("arstall_rapportert")
+  private Integer yearReported;
 
-    @JsonProperty("vitenskapeligarbeid_lokal")
-    private List<CristinLocale> cristinLocales;
+  @JsonProperty("varbeid_sprak")
+  private List<CristinTitle> cristinTitles;
 
-    @JsonProperty("h_dbh_forskres_publikasjon")
-    private List<ScientificResource> scientificResources;
+  @JsonProperty(MAIN_CATEGORY_FIELD)
+  private CristinMainCategory mainCategory;
 
-    @JsonProperty("institusjonsnr_opprettet")
-    private String institutionIdentifierCreated;
+  @JsonProperty(SECONDARY_CATEGORY_FIELD)
+  private CristinSecondaryCategory secondaryCategory;
 
-    @JsonProperty("avdnr_opprettet")
-    private String departmentIdentifierCreated;
+  @JsonProperty("varbeid_person")
+  private List<CristinContributor> contributors;
 
-    @JsonProperty("undavdnr_opprettet")
-    private String subDepartmendIdentifierCreated;
+  @JsonProperty("presentasjon_varbeid")
+  private List<CristinPresentationalWork> presentationalWork;
 
-    @JsonProperty("gruppenr_opprettet")
-    private String groupIdentifierCreated;
+  @JsonProperty("varbeid_emneord")
+  private List<CristinTags> tags;
 
-    @JsonProperty("kildekode")
-    private String sourceCode;
+  @JsonProperty("varbeid_hrcs_klassifisering")
+  private List<CristinHrcsCategoriesAndActivities> hrcsCategoriesAndActivities;
 
-    @JsonProperty("kildepostid")
-    private String sourceRecordIdentifier;
+  @JsonProperty(BOOK_OR_REPORT_METADATA)
+  private CristinBookOrReportMetadata bookOrReportMetadata;
 
-    @JsonProperty("finansiering_varbeid")
-    private List<CristinGrant> cristinGrants;
+  @JsonProperty("type_bok_rapport_del")
+  private CristinBookOrReportPartMetadata bookOrReportPartMetadata;
 
-    @JsonProperty("varbeid_url")
-    private List<CristinAssociatedUri> cristinAssociatedUris;
+  @JsonProperty("type_tidsskriftpublikasjon")
+  private CristinJournalPublication journalPublication;
 
-    @JsonProperty("type_kunstneriskproduksjon")
-    private CristinArtisticProduction cristinArtisticProduction;
+  @JsonProperty("type_foredrag_poster")
+  private CristinLectureOrPosterMetaData lectureOrPosterMetaData;
 
-    @JsonProperty("type_produkt")
-    private CristinProduct cristinProduct;
+  @JsonProperty("type_mediebidrag")
+  private CristinMediaContribution mediaContribution;
 
-    private String publicationOwner;
+  @JsonProperty("varbeid_kilde")
+  private List<CristinSource> cristinSources;
 
-    @JsonProperty("merknadtekst")
-    private String note;
+  @JsonProperty("eierkode_opprettet")
+  private String ownerCodeCreated;
 
-    @JsonProperty("type_utstilling")
-    private CristinExhibition cristinExhibition;
+  @JsonProperty("vitenskapeligarbeid_lokal")
+  private List<CristinLocale> cristinLocales;
 
-    public CristinObject() {
-    }
+  @JsonProperty("h_dbh_forskres_publikasjon")
+  private List<ScientificResource> scientificResources;
 
-    public static CristinObject fromJson(JsonNode json) {
-        return attempt(() -> cristinEntryMapper.convertValue(json, CristinObject.class)).orElseThrow();
-    }
+  @JsonProperty("institusjonsnr_opprettet")
+  private String institutionIdentifierCreated;
 
-    public CristinObjectBuilder copy() {
-        return this.toBuilder();
-    }
+  @JsonProperty("avdnr_opprettet")
+  private String departmentIdentifierCreated;
 
-    public void hardcodePublicationOwner(String publicationsOwner) {
-        this.setPublicationOwner(publicationsOwner);
-    }
+  @JsonProperty("undavdnr_opprettet")
+  private String subDepartmendIdentifierCreated;
 
-    @JsonProperty("peerreviewed")
-    public boolean isPeerReviewed() {
-        return nonNull(yearReported);
-    }
+  @JsonProperty("gruppenr_opprettet")
+  private String groupIdentifierCreated;
 
-    public List<CristinAssociatedUri> getCristinAssociatedUris() {
-        return nonNull(cristinAssociatedUris) ? cristinAssociatedUris : emptyList();
-    }
+  @JsonProperty("kildekode")
+  private String sourceCode;
+
+  @JsonProperty("kildepostid")
+  private String sourceRecordIdentifier;
+
+  @JsonProperty("finansiering_varbeid")
+  private List<CristinGrant> cristinGrants;
+
+  @JsonProperty("varbeid_url")
+  private List<CristinAssociatedUri> cristinAssociatedUris;
+
+  @JsonProperty("type_kunstneriskproduksjon")
+  private CristinArtisticProduction cristinArtisticProduction;
+
+  @JsonProperty("type_produkt")
+  private CristinProduct cristinProduct;
+
+  private String publicationOwner;
+
+  @JsonProperty("merknadtekst")
+  private String note;
+
+  @JsonProperty("type_utstilling")
+  private CristinExhibition cristinExhibition;
+
+  public CristinObject() {}
+
+  public static CristinObject fromJson(JsonNode json) {
+    return attempt(() -> cristinEntryMapper.convertValue(json, CristinObject.class)).orElseThrow();
+  }
+
+  public CristinObjectBuilder copy() {
+    return this.toBuilder();
+  }
+
+  public void hardcodePublicationOwner(String publicationsOwner) {
+    this.setPublicationOwner(publicationsOwner);
+  }
+
+  @JsonProperty("peerreviewed")
+  public boolean isPeerReviewed() {
+    return nonNull(yearReported);
+  }
+
+  public List<CristinAssociatedUri> getCristinAssociatedUris() {
+    return nonNull(cristinAssociatedUris) ? cristinAssociatedUris : emptyList();
+  }
 }

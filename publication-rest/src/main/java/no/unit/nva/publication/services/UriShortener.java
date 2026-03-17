@@ -5,6 +5,5 @@ import java.time.Instant;
 
 public interface UriShortener {
 
-    URI shorten(URI longUri, String basePath, Instant expirationDate);
-
+  URI shorten(URI longUri, String basePath, Instant expirationDate);
 }

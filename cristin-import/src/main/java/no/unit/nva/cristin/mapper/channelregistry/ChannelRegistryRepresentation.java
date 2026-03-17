@@ -10,12 +10,12 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ChannelRegistryRepresentation {
 
-    @CsvBindByName(column = "GammelID")
-    private Integer nsdCode;
+  @CsvBindByName(column = "GammelID")
+  private Integer nsdCode;
 
-    @CsvBindByName(column = "NyID")
-    private String pid;
+  @CsvBindByName(column = "NyID")
+  private String pid;
 
-    @CsvBindByName(column = "Type")
-    private String type;
+  @CsvBindByName(column = "Type")
+  private String type;
 }

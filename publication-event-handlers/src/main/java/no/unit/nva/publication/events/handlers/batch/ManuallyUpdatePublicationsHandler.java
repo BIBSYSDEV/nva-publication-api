@@ -13,28 +13,30 @@ import nva.commons.core.JacocoGenerated;
 
 public class ManuallyUpdatePublicationsHandler implements RequestStreamHandler {
 
-    private final SearchService searchService;
-    private final ResourceService resourceService;
-    private final Environment environment;
+  private final SearchService searchService;
+  private final ResourceService resourceService;
+  private final Environment environment;
 
-    @JacocoGenerated
-    public ManuallyUpdatePublicationsHandler() {
-        this.resourceService = ResourceService.defaultService();
-        this.searchService = SearchService.create(new UriRetriever(), resourceService);
-        this.environment = new Environment();
-    }
+  @JacocoGenerated
+  public ManuallyUpdatePublicationsHandler() {
+    this.resourceService = ResourceService.defaultService();
+    this.searchService = SearchService.create(new UriRetriever(), resourceService);
+    this.environment = new Environment();
+  }
 
-    public ManuallyUpdatePublicationsHandler(SearchService searchService, ResourceService resourceService,
-                                             Environment environment) {
-        this.searchService = searchService;
-        this.resourceService = resourceService;
-        this.environment = environment;
-    }
+  public ManuallyUpdatePublicationsHandler(
+      SearchService searchService, ResourceService resourceService, Environment environment) {
+    this.searchService = searchService;
+    this.resourceService = resourceService;
+    this.environment = environment;
+  }
 
-    @Override
-    public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
-        var request = ManuallyUpdatePublicationsRequest.fromInputStream(inputStream);
-        var publications = searchService.searchPublicationsByParam(request.searchParams());
-        ManuallyUpdatePublicationUtil.create(resourceService, environment).update(publications, request);
-    }
+  @Override
+  public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context)
+      throws IOException {
+    var request = ManuallyUpdatePublicationsRequest.fromInputStream(inputStream);
+    var publications = searchService.searchPublicationsByParam(request.searchParams());
+    ManuallyUpdatePublicationUtil.create(resourceService, environment)
+        .update(publications, request);
+  }
 }

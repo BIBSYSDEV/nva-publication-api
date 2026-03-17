@@ -8,13 +8,13 @@ import nva.commons.core.paths.UriWrapper;
 
 public record ResourceWithId(URI id) implements JsonSerializable {
 
-    public SortableIdentifier getIdentifier() {
-        return new SortableIdentifier(UriWrapper.fromUri(id).getLastPathElement());
-    }
+  public SortableIdentifier getIdentifier() {
+    return new SortableIdentifier(UriWrapper.fromUri(id).getLastPathElement());
+  }
 
-    @JacocoGenerated
-    @Override
-    public String toString() {
-        return toJsonString();
-    }
+  @JacocoGenerated
+  @Override
+  public String toString() {
+    return toJsonString();
+  }
 }

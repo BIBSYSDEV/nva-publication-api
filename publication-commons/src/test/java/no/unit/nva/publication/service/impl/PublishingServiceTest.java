@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,295 +57,379 @@ import org.junit.jupiter.api.Test;
 
 class PublishingServiceTest extends ResourcesLocalTest {
 
-    protected static final String OWNER_ONLY = "OwnerOnly";
-    protected static final String EVERYONE = "Everyone";
-    private ResourceService resourceService;
-    private IdentityServiceClient identityServiceClient;
-    private PublishingService publishingService;
+  protected static final String OWNER_ONLY = "OwnerOnly";
+  protected static final String EVERYONE = "Everyone";
+  private ResourceService resourceService;
+  private IdentityServiceClient identityServiceClient;
+  private PublishingService publishingService;
 
-    @BeforeEach
-    void setUp() throws NotFoundException {
-        super.init();
-        this.resourceService = getResourceService(client);
-        var ticketService = getTicketService();
-        this.identityServiceClient = mock(IdentityServiceClient.class);
-        when(identityServiceClient.getCustomerById(any())).thenReturn(customerWithWorkflow(
-            REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue()));
-        this.publishingService = new PublishingService(resourceService, ticketService, identityServiceClient);
-    }
+  @BeforeEach
+  void setUp() throws NotFoundException {
+    super.init();
+    this.resourceService = getResourceService(client);
+    var ticketService = getTicketService();
+    this.identityServiceClient = mock(IdentityServiceClient.class);
+    when(identityServiceClient.getCustomerById(any()))
+        .thenReturn(customerWithWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue()));
+    this.publishingService =
+        new PublishingService(resourceService, ticketService, identityServiceClient);
+  }
 
-    @Test
-    void shouldPublishResourceWhenPublicationIsPublishable() throws ApiGatewayException {
-        var publication = randomPublication(JournalArticle.class).copy()
-                              .withStatus(PublicationStatus.DRAFT)
-                              .withAssociatedArtifacts(List.of())
-                              .build();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+  @Test
+  void shouldPublishResourceWhenPublicationIsPublishable() throws ApiGatewayException {
+    var publication =
+        randomPublication(JournalArticle.class)
+            .copy()
+            .withStatus(PublicationStatus.DRAFT)
+            .withAssociatedArtifacts(List.of())
+            .build();
+    var userInstance = UserInstance.fromPublication(publication);
+    var persistedPublication =
+        Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
-        publishingService.publishResource(persistedPublication.getIdentifier(), userInstance);
+    publishingService.publishResource(persistedPublication.getIdentifier(), userInstance);
 
-        var publishedPublication = Resource.fromPublication(persistedPublication).fetch(resourceService);
+    var publishedPublication =
+        Resource.fromPublication(persistedPublication).fetch(resourceService);
 
-        assertEquals(PUBLISHED, publishedPublication.orElseThrow().getStatus());
-    }
+    assertEquals(PUBLISHED, publishedPublication.orElseThrow().getStatus());
+  }
 
-    @Test
-    void shouldThrowForbiddenExceptionWhenUserHasNoPermissionToPublishPublication() throws ApiGatewayException {
-        var publication = Resource.fromPublication(randomPublication())
-                              .persistNew(resourceService, UserInstance.create(randomString(), randomUri()));
+  @Test
+  void shouldThrowForbiddenExceptionWhenUserHasNoPermissionToPublishPublication()
+      throws ApiGatewayException {
+    var publication =
+        Resource.fromPublication(randomPublication())
+            .persistNew(resourceService, UserInstance.create(randomString(), randomUri()));
 
-        var randomUserInstance = UserInstance.create(randomString(), randomUri());
-        assertThrows(ForbiddenException.class,
-                     () -> publishingService.publishResource(publication.getIdentifier(), randomUserInstance));
-    }
+    var randomUserInstance = UserInstance.create(randomString(), randomUri());
+    assertThrows(
+        ForbiddenException.class,
+        () -> publishingService.publishResource(publication.getIdentifier(), randomUserInstance));
+  }
 
-    @Test
-    void shouldThrowForbiddenExceptionWhenPublicationToPublishHasChannelClaimedByAnotherCustomerAndIsInScopeWhereOwnerOnlyCanPublish()
-        throws ApiGatewayException {
-        var instanceType = DegreeBachelor.class;
-        var publication = randomPublication(instanceType).copy()
-                              .withStatus(PublicationStatus.DRAFT)
-                              .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
-                              .build();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+  @Test
+  void
+      shouldThrowForbiddenExceptionWhenPublicationToPublishHasChannelClaimedByAnotherCustomerAndIsInScopeWhereOwnerOnlyCanPublish()
+          throws ApiGatewayException {
+    var instanceType = DegreeBachelor.class;
+    var publication =
+        randomPublication(instanceType)
+            .copy()
+            .withStatus(PublicationStatus.DRAFT)
+            .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
+            .build();
+    var userInstance = UserInstance.fromPublication(publication);
+    var persistedPublication =
+        Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
-        when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaim(randomUri(),
-                                                                                   randomUri(), getPublisherChannelClaimId(persistedPublication),
-                                                                                   OWNER_ONLY,
-                                                                                   instanceType.getSimpleName()));
-        assertThrows(ForbiddenException.class,
-                     () -> publishingService.publishResource(persistedPublication.getIdentifier(), userInstance));
-    }
+    when(identityServiceClient.getChannelClaim(any()))
+        .thenReturn(
+            channelClaim(
+                randomUri(),
+                randomUri(),
+                getPublisherChannelClaimId(persistedPublication),
+                OWNER_ONLY,
+                instanceType.getSimpleName()));
+    assertThrows(
+        ForbiddenException.class,
+        () ->
+            publishingService.publishResource(persistedPublication.getIdentifier(), userInstance));
+  }
 
-    @Test
-    void shouldPublishPublicationWhenPublicationToPublishHasChannelClaimedByUserCustomerAndIsInScopeWhereOwnerOnlyCanPublish()
-        throws ApiGatewayException {
-        var instanceType = DegreeBachelor.class;
-        var publication = randomPublication(instanceType).copy()
-                              .withStatus(PublicationStatus.DRAFT)
-                              .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
-                              .build();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+  @Test
+  void
+      shouldPublishPublicationWhenPublicationToPublishHasChannelClaimedByUserCustomerAndIsInScopeWhereOwnerOnlyCanPublish()
+          throws ApiGatewayException {
+    var instanceType = DegreeBachelor.class;
+    var publication =
+        randomPublication(instanceType)
+            .copy()
+            .withStatus(PublicationStatus.DRAFT)
+            .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
+            .build();
+    var userInstance = UserInstance.fromPublication(publication);
+    var persistedPublication =
+        Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
-        when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaim(userInstance.getCustomerId(),
-                                                                                   userInstance.getTopLevelOrgCristinId(),
-                                                                                   getPublisherChannelClaimId(persistedPublication),
-                                                                                   OWNER_ONLY,
-                                                                                   instanceType.getSimpleName()));
+    when(identityServiceClient.getChannelClaim(any()))
+        .thenReturn(
+            channelClaim(
+                userInstance.getCustomerId(),
+                userInstance.getTopLevelOrgCristinId(),
+                getPublisherChannelClaimId(persistedPublication),
+                OWNER_ONLY,
+                instanceType.getSimpleName()));
 
-        publishingService.publishResource(persistedPublication.getIdentifier(), userInstance);
+    publishingService.publishResource(persistedPublication.getIdentifier(), userInstance);
 
-        var publishedPublication = Resource.fromPublication(persistedPublication).fetch(resourceService);
+    var publishedPublication =
+        Resource.fromPublication(persistedPublication).fetch(resourceService);
 
-        assertEquals(PUBLISHED, publishedPublication.orElseThrow().getStatus());
-    }
+    assertEquals(PUBLISHED, publishedPublication.orElseThrow().getStatus());
+  }
 
-    @Test
-    void shouldPublishPublicationWhenPublicationToPublishHasNonClaimedPublisher()
-        throws ApiGatewayException {
-        var instanceType = DegreeBachelor.class;
-        var publication = randomPublication(instanceType).copy()
-                              .withStatus(PublicationStatus.DRAFT)
-                              .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
-                              .build();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+  @Test
+  void shouldPublishPublicationWhenPublicationToPublishHasNonClaimedPublisher()
+      throws ApiGatewayException {
+    var instanceType = DegreeBachelor.class;
+    var publication =
+        randomPublication(instanceType)
+            .copy()
+            .withStatus(PublicationStatus.DRAFT)
+            .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
+            .build();
+    var userInstance = UserInstance.fromPublication(publication);
+    var persistedPublication =
+        Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
-        when(identityServiceClient.getChannelClaim(any())).thenThrow(new NotFoundException("Not found"));
+    when(identityServiceClient.getChannelClaim(any()))
+        .thenThrow(new NotFoundException("Not found"));
 
-        publishingService.publishResource(persistedPublication.getIdentifier(), userInstance);
+    publishingService.publishResource(persistedPublication.getIdentifier(), userInstance);
 
-        var publishedPublication = Resource.fromPublication(persistedPublication).fetch(resourceService);
+    var publishedPublication =
+        Resource.fromPublication(persistedPublication).fetch(resourceService);
 
-        assertEquals(PUBLISHED, publishedPublication.orElseThrow().getStatus());
-    }
+    assertEquals(PUBLISHED, publishedPublication.orElseThrow().getStatus());
+  }
 
-    @Test
-    void shouldPublishPublicationWhenPublicationToPublishHasClaimedPublisherButInstanceTypeIsOutOfScope()
-        throws ApiGatewayException {
-        var instanceType = DegreeBachelor.class;
-        var publication = randomPublication(instanceType).copy()
-                              .withStatus(PublicationStatus.DRAFT)
-                              .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
-                              .build();
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+  @Test
+  void
+      shouldPublishPublicationWhenPublicationToPublishHasClaimedPublisherButInstanceTypeIsOutOfScope()
+          throws ApiGatewayException {
+    var instanceType = DegreeBachelor.class;
+    var publication =
+        randomPublication(instanceType)
+            .copy()
+            .withStatus(PublicationStatus.DRAFT)
+            .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
+            .build();
+    var userInstance = UserInstance.fromPublication(publication);
+    var persistedPublication =
+        Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
-        when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaim(randomUri(),
-                                                                                   randomUri(), getPublisherChannelClaimId(persistedPublication),
-                                                                                   EVERYONE,
-                                                                                   DegreeMaster.class.getSimpleName()));
+    when(identityServiceClient.getChannelClaim(any()))
+        .thenReturn(
+            channelClaim(
+                randomUri(),
+                randomUri(),
+                getPublisherChannelClaimId(persistedPublication),
+                EVERYONE,
+                DegreeMaster.class.getSimpleName()));
 
-        publishingService.publishResource(persistedPublication.getIdentifier(), userInstance);
+    publishingService.publishResource(persistedPublication.getIdentifier(), userInstance);
 
-        var publishedPublication = Resource.fromPublication(persistedPublication).fetch(resourceService);
+    var publishedPublication =
+        Resource.fromPublication(persistedPublication).fetch(resourceService);
 
-        assertEquals(PUBLISHED, publishedPublication.orElseThrow().getStatus());
-    }
+    assertEquals(PUBLISHED, publishedPublication.orElseThrow().getStatus());
+  }
 
-    @Test
-    void shouldThrowNotFoundExceptionWhenPublishingNonExistingPublication() {
-        var publication = randomPublication();
+  @Test
+  void shouldThrowNotFoundExceptionWhenPublishingNonExistingPublication() {
+    var publication = randomPublication();
 
-        assertThrows(NotFoundException.class, () -> publishingService.publishResource(publication.getIdentifier(),
-                                                                                      UserInstance.create(
-                                                                                          randomString(),
-                                                                                          randomUri())));
-    }
+    assertThrows(
+        NotFoundException.class,
+        () ->
+            publishingService.publishResource(
+                publication.getIdentifier(), UserInstance.create(randomString(), randomUri())));
+  }
 
-    @Test
-    void shouldPersistPublishingRequestWhenPublicationToPublishHasPendingFiles() throws ApiGatewayException {
-        var publication = randomPublication(JournalArticle.class).copy()
-                              .withStatus(PublicationStatus.DRAFT)
-                              .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
-                              .build();
-        var userInstance = UserInstance.fromPublication(publication);
-        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+  @Test
+  void shouldPersistPublishingRequestWhenPublicationToPublishHasPendingFiles()
+      throws ApiGatewayException {
+    var publication =
+        randomPublication(JournalArticle.class)
+            .copy()
+            .withStatus(PublicationStatus.DRAFT)
+            .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
+            .build();
+    var userInstance = UserInstance.fromPublication(publication);
+    publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
-        publishingService.publishResource(publication.getIdentifier(), userInstance);
+    publishingService.publishResource(publication.getIdentifier(), userInstance);
 
-        var ticket = getAllFileApprovals(publication).findFirst();
+    var ticket = getAllFileApprovals(publication).findFirst();
 
-        assertInstanceOf(PublishingRequestCase.class, ticket.orElseThrow());
-    }
+    assertInstanceOf(PublishingRequestCase.class, ticket.orElseThrow());
+  }
 
-    @Test
-    void shouldNotPersistPublishingRequestWhenPublicationToPublishHasNoPendingFiles() throws ApiGatewayException {
-        var publication = randomPublication(DataSet.class).copy()
-                              .withStatus(PublicationStatus.DRAFT)
-                              .withAssociatedArtifacts(List.of())
-                              .build();
-        var userInstance = UserInstance.fromPublication(publication);
-        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+  @Test
+  void shouldNotPersistPublishingRequestWhenPublicationToPublishHasNoPendingFiles()
+      throws ApiGatewayException {
+    var publication =
+        randomPublication(DataSet.class)
+            .copy()
+            .withStatus(PublicationStatus.DRAFT)
+            .withAssociatedArtifacts(List.of())
+            .build();
+    var userInstance = UserInstance.fromPublication(publication);
+    publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
-        publishingService.publishResource(publication.getIdentifier(), userInstance);
+    publishingService.publishResource(publication.getIdentifier(), userInstance);
 
-        var tickets = getAllFileApprovals(publication).toList();
+    var tickets = getAllFileApprovals(publication).toList();
 
-        assertTrue(tickets.isEmpty());
-    }
+    assertTrue(tickets.isEmpty());
+  }
 
-    private Stream<TicketEntry> getAllFileApprovals(Publication publication) {
-        return resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication))
-                   .filter(FilesApprovalEntry.class::isInstance);
-    }
+  private Stream<TicketEntry> getAllFileApprovals(Publication publication) {
+    return resourceService
+        .fetchAllTicketsForResource(Resource.fromPublication(publication))
+        .filter(FilesApprovalEntry.class::isInstance);
+  }
 
-    @Test
-    void shouldPersistFilesApprovalThesisForUserInstitutionWhenPublicationToPublishHasPendingFilesAndIsDegreeAndPublisherIsOwnedByUserInstitution()
-        throws ApiGatewayException {
-        var instanceType = DegreeBachelor.class;
-        var publication = randomPublication(instanceType).copy()
-                              .withStatus(PublicationStatus.DRAFT)
-                              .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
-                              .build();
-        var userInstance = UserInstance.fromPublication(publication);
-        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+  @Test
+  void
+      shouldPersistFilesApprovalThesisForUserInstitutionWhenPublicationToPublishHasPendingFilesAndIsDegreeAndPublisherIsOwnedByUserInstitution()
+          throws ApiGatewayException {
+    var instanceType = DegreeBachelor.class;
+    var publication =
+        randomPublication(instanceType)
+            .copy()
+            .withStatus(PublicationStatus.DRAFT)
+            .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
+            .build();
+    var userInstance = UserInstance.fromPublication(publication);
+    publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
-        when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaim(userInstance.getCustomerId(),
-                                                                                   userInstance.getTopLevelOrgCristinId(), getPublisherChannelClaimId(publication),
-                                                                                   EVERYONE,
-                                                                                   instanceType.getSimpleName()));
-        publishingService.publishResource(publication.getIdentifier(), userInstance);
+    when(identityServiceClient.getChannelClaim(any()))
+        .thenReturn(
+            channelClaim(
+                userInstance.getCustomerId(),
+                userInstance.getTopLevelOrgCristinId(),
+                getPublisherChannelClaimId(publication),
+                EVERYONE,
+                instanceType.getSimpleName()));
+    publishingService.publishResource(publication.getIdentifier(), userInstance);
 
-        var ticket = (FilesApprovalThesis) getAllFileApprovals(publication).findFirst().orElseThrow();
+    var ticket = (FilesApprovalThesis) getAllFileApprovals(publication).findFirst().orElseThrow();
 
-        assertEquals(ticket.getOwnerAffiliation(), userInstance.getTopLevelOrgCristinId());
-        assertEquals(ticket.getResponsibilityArea(), userInstance.getPersonAffiliation());
-    }
+    assertEquals(ticket.getOwnerAffiliation(), userInstance.getTopLevelOrgCristinId());
+    assertEquals(ticket.getResponsibilityArea(), userInstance.getPersonAffiliation());
+  }
 
-    @Test
-    void shouldPersistFilesApprovalThesisForChannelClaimInstitutionWhenPublicationToPublishHasPendingFilesAndIsDegreeAndPublisherIsOwnedByOtherInstitution()
-        throws ApiGatewayException {
-        var instanceType = DegreeBachelor.class;
-        var publication = randomPublication(instanceType).copy()
-                              .withStatus(PublicationStatus.DRAFT)
-                              .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
-                              .build();
-        var userInstance = UserInstance.fromPublication(publication);
-        publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+  @Test
+  void
+      shouldPersistFilesApprovalThesisForChannelClaimInstitutionWhenPublicationToPublishHasPendingFilesAndIsDegreeAndPublisherIsOwnedByOtherInstitution()
+          throws ApiGatewayException {
+    var instanceType = DegreeBachelor.class;
+    var publication =
+        randomPublication(instanceType)
+            .copy()
+            .withStatus(PublicationStatus.DRAFT)
+            .withAssociatedArtifacts(List.of(randomPendingOpenFile()))
+            .build();
+    var userInstance = UserInstance.fromPublication(publication);
+    publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
-        var channelClaimOwner = randomUri();
-        when(identityServiceClient.getChannelClaim(any())).thenReturn(channelClaim(randomUri(),
-                                                                                   channelClaimOwner,
-                                                                                   getPublisherChannelClaimId(publication), EVERYONE, instanceType.getSimpleName()));
-        publishingService.publishResource(publication.getIdentifier(), userInstance);
+    var channelClaimOwner = randomUri();
+    when(identityServiceClient.getChannelClaim(any()))
+        .thenReturn(
+            channelClaim(
+                randomUri(),
+                channelClaimOwner,
+                getPublisherChannelClaimId(publication),
+                EVERYONE,
+                instanceType.getSimpleName()));
+    publishingService.publishResource(publication.getIdentifier(), userInstance);
 
-        var ticket = (FilesApprovalThesis) getAllFileApprovals(publication).findFirst().orElseThrow();
+    var ticket = (FilesApprovalThesis) getAllFileApprovals(publication).findFirst().orElseThrow();
 
-        assertEquals(ticket.getReceivingOrganizationDetails().topLevelOrganizationId(), channelClaimOwner);
-        assertEquals(ticket.getReceivingOrganizationDetails().subOrganizationId(), channelClaimOwner);
-    }
+    assertEquals(
+        ticket.getReceivingOrganizationDetails().topLevelOrganizationId(), channelClaimOwner);
+    assertEquals(ticket.getReceivingOrganizationDetails().subOrganizationId(), channelClaimOwner);
+  }
 
-    @Test
-    void shouldPersistDoiRequestWhenPublishingPublicationWithDoi() throws ApiGatewayException {
-        var resource = persistResource(Resource.fromPublication(randomNonDegreePublication().copy().withStatus(DRAFT).build()));
-        var userInstance = UserInstance.fromPublication(resource.toPublication());
+  @Test
+  void shouldPersistDoiRequestWhenPublishingPublicationWithDoi() throws ApiGatewayException {
+    var resource =
+        persistResource(
+            Resource.fromPublication(
+                randomNonDegreePublication().copy().withStatus(DRAFT).build()));
+    var userInstance = UserInstance.fromPublication(resource.toPublication());
 
-        publishingService.publishResource(resource.getIdentifier(), userInstance);
+    publishingService.publishResource(resource.getIdentifier(), userInstance);
 
-        var doiRequest = getPersistedDoiRequest(resource);
+    var doiRequest = getPersistedDoiRequest(resource);
 
-        assertTrue(doiRequest.isPresent());
-    }
+    assertTrue(doiRequest.isPresent());
+  }
 
-    @Test
-    void shouldPersistDoiRequestWithPublicationStatusPublishedWhenPublishingPublicationWithDoi()
-        throws ApiGatewayException {
-        var resource = persistResource(Resource.fromPublication(randomNonDegreePublication().copy().withStatus(DRAFT).build()));
-        var userInstance = UserInstance.fromPublication(resource.toPublication());
+  @Test
+  void shouldPersistDoiRequestWithPublicationStatusPublishedWhenPublishingPublicationWithDoi()
+      throws ApiGatewayException {
+    var resource =
+        persistResource(
+            Resource.fromPublication(
+                randomNonDegreePublication().copy().withStatus(DRAFT).build()));
+    var userInstance = UserInstance.fromPublication(resource.toPublication());
 
-        publishingService.publishResource(resource.getIdentifier(), userInstance);
+    publishingService.publishResource(resource.getIdentifier(), userInstance);
 
-        var doiRequest = getPersistedDoiRequest(resource).orElseThrow();
+    var doiRequest = getPersistedDoiRequest(resource).orElseThrow();
 
-        assertEquals(PublicationStatus.PUBLISHED, doiRequest.getResourceStatus());
-    }
+    assertEquals(PublicationStatus.PUBLISHED, doiRequest.getResourceStatus());
+  }
 
-    @Test
-    void shouldNotPersistDoiRequestWhenPublishingPublicationAlreadyPublishedPublication() throws ApiGatewayException {
-        var resource =
-            persistResource(Resource.fromPublication(randomNonDegreePublication().copy().withStatus(PUBLISHED).build()));
-        var userInstance = UserInstance.fromPublication(resource.toPublication());
+  @Test
+  void shouldNotPersistDoiRequestWhenPublishingPublicationAlreadyPublishedPublication()
+      throws ApiGatewayException {
+    var resource =
+        persistResource(
+            Resource.fromPublication(
+                randomNonDegreePublication().copy().withStatus(PUBLISHED).build()));
+    var userInstance = UserInstance.fromPublication(resource.toPublication());
 
-        publishingService.publishResource(resource.getIdentifier(), userInstance);
+    publishingService.publishResource(resource.getIdentifier(), userInstance);
 
-        var doiRequest = getPersistedDoiRequest(resource);
+    var doiRequest = getPersistedDoiRequest(resource);
 
-        assertTrue(doiRequest.isEmpty());
-    }
+    assertTrue(doiRequest.isEmpty());
+  }
 
-    private Optional<DoiRequest> getPersistedDoiRequest(Resource resource) {
-        return resourceService.fetchAllTicketsForResource(resource)
-                   .filter(DoiRequest.class::isInstance)
-                   .map(DoiRequest.class::cast)
-                   .findFirst();
-    }
+  private Optional<DoiRequest> getPersistedDoiRequest(Resource resource) {
+    return resourceService
+        .fetchAllTicketsForResource(resource)
+        .filter(DoiRequest.class::isInstance)
+        .map(DoiRequest.class::cast)
+        .findFirst();
+  }
 
-    private URI getPublisherChannelClaimId(Publication publication) {
-        var degree = (Degree) publication.getEntityDescription().getReference().getPublicationContext();
-        var publisher = (Publisher) degree.getPublisher();
-        return UriWrapper.fromUri(publisher.getId())
-                   .replacePathElementByIndexFromEnd(0, StringUtils.EMPTY_STRING)
-                   .getUri();
-    }
+  private URI getPublisherChannelClaimId(Publication publication) {
+    var degree = (Degree) publication.getEntityDescription().getReference().getPublicationContext();
+    var publisher = (Publisher) degree.getPublisher();
+    return UriWrapper.fromUri(publisher.getId())
+        .replacePathElementByIndexFromEnd(0, StringUtils.EMPTY_STRING)
+        .getUri();
+  }
 
-    private ChannelClaimDto channelClaim(URI customerId, URI topLevelOrgCristinId, URI id, String publishingPolicy,
-                                         String... scope) {
-        return new ChannelClaimDto(randomUri(), new CustomerSummaryDto(customerId, topLevelOrgCristinId),
-                                   new ChannelClaim(id, new ChannelConstraint(publishingPolicy, randomString(),
-                                                                              Arrays.asList(scope))));
-    }
+  private ChannelClaimDto channelClaim(
+      URI customerId, URI topLevelOrgCristinId, URI id, String publishingPolicy, String... scope) {
+    return new ChannelClaimDto(
+        randomUri(),
+        new CustomerSummaryDto(customerId, topLevelOrgCristinId),
+        new ChannelClaim(
+            id, new ChannelConstraint(publishingPolicy, randomString(), Arrays.asList(scope))));
+  }
 
-    private CustomerDto customerWithWorkflow(String workflow) {
-        return new CustomerDto(RandomDataGenerator.randomUri(), UUID.randomUUID(), randomString(), randomString(),
-                               randomString(), RandomDataGenerator.randomUri(),
-                               workflow, randomBoolean(),
-                               randomBoolean(), randomBoolean(), Collections.emptyList(),
-                               new CustomerDto.RightsRetentionStrategy(randomString(),
-                                                                       RandomDataGenerator.randomUri()), randomBoolean(),
-                               randomString());
-    }
+  private CustomerDto customerWithWorkflow(String workflow) {
+    return new CustomerDto(
+        RandomDataGenerator.randomUri(),
+        UUID.randomUUID(),
+        randomString(),
+        randomString(),
+        randomString(),
+        RandomDataGenerator.randomUri(),
+        workflow,
+        randomBoolean(),
+        randomBoolean(),
+        randomBoolean(),
+        Collections.emptyList(),
+        new CustomerDto.RightsRetentionStrategy(randomString(), RandomDataGenerator.randomUri()),
+        randomBoolean(),
+        randomString());
+  }
 }

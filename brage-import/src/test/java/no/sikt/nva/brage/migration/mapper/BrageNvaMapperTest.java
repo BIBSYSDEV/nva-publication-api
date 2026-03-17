@@ -9,6 +9,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
+
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -41,181 +42,221 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 class BrageNvaMapperTest {
 
-    private static final String API_HOST = new Environment().readEnv("API_HOST");
-    public static final String NPOLAR_SHORT_NAME = "NPI";
-    public static final S3Client s3Client = mock(S3Client.class);
+  private static final String API_HOST = new Environment().readEnv("API_HOST");
+  public static final String NPOLAR_SHORT_NAME = "NPI";
+  public static final S3Client s3Client = mock(S3Client.class);
 
-    @Test
-    void shouldMapContentFileWithBundleTypeLicenseToAdministrativeAgreement()
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var licenseContentFile = createRandomContentFileWithBundleType(BundleType.LICENSE);
-        var generator =  new NvaBrageMigrationDataGenerator.Builder()
-                             .withType(new Type(List.of(), NvaType.CHAPTER.getValue()))
-                             .withResourceContent(new ResourceContent(List.of(licenseContentFile)))
-                             .build();
-        var file = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client).getAssociatedArtifacts().getFirst();
+  @Test
+  void shouldMapContentFileWithBundleTypeLicenseToAdministrativeAgreement()
+      throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    var licenseContentFile = createRandomContentFileWithBundleType(BundleType.LICENSE);
+    var generator =
+        new NvaBrageMigrationDataGenerator.Builder()
+            .withType(new Type(List.of(), NvaType.CHAPTER.getValue()))
+            .withResourceContent(new ResourceContent(List.of(licenseContentFile)))
+            .build();
+    var file =
+        BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client)
+            .getAssociatedArtifacts()
+            .getFirst();
 
-        assertThat(file, is(instanceOf(HiddenFile.class)));
-    }
+    assertThat(file, is(instanceOf(HiddenFile.class)));
+  }
 
-    @Test
-    void shouldMapContentFileWithBundleTypeIgnoredToAdministrativeAgreement()
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var licenseContentFile = createRandomContentFileWithBundleType(BundleType.IGNORED);
-        var generator =  new NvaBrageMigrationDataGenerator.Builder()
-                             .withType(new Type(List.of(), NvaType.CHAPTER.getValue()))
-                             .withResourceContent(new ResourceContent(List.of(licenseContentFile)))
-                             .build();
-        var file = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client).getAssociatedArtifacts().getFirst();
+  @Test
+  void shouldMapContentFileWithBundleTypeIgnoredToAdministrativeAgreement()
+      throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    var licenseContentFile = createRandomContentFileWithBundleType(BundleType.IGNORED);
+    var generator =
+        new NvaBrageMigrationDataGenerator.Builder()
+            .withType(new Type(List.of(), NvaType.CHAPTER.getValue()))
+            .withResourceContent(new ResourceContent(List.of(licenseContentFile)))
+            .build();
+    var file =
+        BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client)
+            .getAssociatedArtifacts()
+            .getFirst();
 
-        assertThat(file, is(instanceOf(HiddenFile.class)));
-    }
+    assertThat(file, is(instanceOf(HiddenFile.class)));
+  }
 
-    @Test
-    void shouldCreateDegreePhdWithRelatedDocumentsWithSequenceNumberAsTheOrderDocumentsAppearInBrageRecord()
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var generator =  new NvaBrageMigrationDataGenerator.Builder()
-                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
-                             .withHasPart(List.of("1", "2"))
-                             .build();
-        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
-        var degreePhd = (DegreePhd) publication.getEntityDescription().getReference().getPublicationInstance();
-        var expectedRelatedDocuments = Set.of(new UnconfirmedDocument("1", 1),
-                                              new UnconfirmedDocument("2", 2));
-        assertThat(degreePhd.getRelated(), is(equalTo(expectedRelatedDocuments)));
-    }
+  @Test
+  void
+      shouldCreateDegreePhdWithRelatedDocumentsWithSequenceNumberAsTheOrderDocumentsAppearInBrageRecord()
+          throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    var generator =
+        new NvaBrageMigrationDataGenerator.Builder()
+            .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+            .withHasPart(List.of("1", "2"))
+            .build();
+    var publication =
+        BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
+    var degreePhd =
+        (DegreePhd) publication.getEntityDescription().getReference().getPublicationInstance();
+    var expectedRelatedDocuments =
+        Set.of(new UnconfirmedDocument("1", 1), new UnconfirmedDocument("2", 2));
+    assertThat(degreePhd.getRelated(), is(equalTo(expectedRelatedDocuments)));
+  }
 
-    @Test
-    void shouldMapFirstAlternativeAbstractAsAbstractAndAllOthersAsAlternativeAbstracts()
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var firstAbstract = randomString();
-        var secondAbstract = randomString();
-        var thirdAbstract = randomString();
-        var generator =  new NvaBrageMigrationDataGenerator.Builder()
-                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
-                             .withAbstracts(List.of(firstAbstract, secondAbstract, thirdAbstract))
-                             .build();
-        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
-        assertThat(publication.getEntityDescription().getAbstract(), is(equalTo(firstAbstract)));
-        assertThat(publication.getEntityDescription().getAlternativeAbstracts().get("und"),
-                   is(equalTo(secondAbstract + "\n\n" + thirdAbstract)));
-    }
+  @Test
+  void shouldMapFirstAlternativeAbstractAsAbstractAndAllOthersAsAlternativeAbstracts()
+      throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    var firstAbstract = randomString();
+    var secondAbstract = randomString();
+    var thirdAbstract = randomString();
+    var generator =
+        new NvaBrageMigrationDataGenerator.Builder()
+            .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+            .withAbstracts(List.of(firstAbstract, secondAbstract, thirdAbstract))
+            .build();
+    var publication =
+        BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
+    assertThat(publication.getEntityDescription().getAbstract(), is(equalTo(firstAbstract)));
+    assertThat(
+        publication.getEntityDescription().getAlternativeAbstracts().get("und"),
+        is(equalTo(secondAbstract + "\n\n" + thirdAbstract)));
+  }
 
-    @Test
-    void shouldNotCreateAlternativeAbstractsWhenSingleAbstractInBrage()
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var generator =  new NvaBrageMigrationDataGenerator.Builder()
-                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
-                             .withAbstracts(List.of(randomString()))
-                             .build();
-        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
-        assertThat(publication.getEntityDescription().getAlternativeAbstracts(), is(anEmptyMap()));
-    }
+  @Test
+  void shouldNotCreateAlternativeAbstractsWhenSingleAbstractInBrage()
+      throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    var generator =
+        new NvaBrageMigrationDataGenerator.Builder()
+            .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+            .withAbstracts(List.of(randomString()))
+            .build();
+    var publication =
+        BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
+    assertThat(publication.getEntityDescription().getAlternativeAbstracts(), is(anEmptyMap()));
+  }
 
-    @Test
-    void shouldCreatePublicationWithContributorWithOrcIdWhenBrageContributorHasOrcid()
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var contributor = randomContributorWithOrcId();
-        var generator =  new NvaBrageMigrationDataGenerator.Builder()
-                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
-                             .withContributor(contributor)
-                             .build();
-        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
-        var actualContributor = publication.getEntityDescription().getContributors().getFirst();
+  @Test
+  void shouldCreatePublicationWithContributorWithOrcIdWhenBrageContributorHasOrcid()
+      throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    var contributor = randomContributorWithOrcId();
+    var generator =
+        new NvaBrageMigrationDataGenerator.Builder()
+            .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+            .withContributor(contributor)
+            .build();
+    var publication =
+        BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
+    var actualContributor = publication.getEntityDescription().getContributors().getFirst();
 
-        assertEquals(contributor.getIdentity().getOrcId().toString(),
-                     actualContributor.getIdentity().getOrcId());
-    }
+    assertEquals(
+        contributor.getIdentity().getOrcId().toString(),
+        actualContributor.getIdentity().getOrcId());
+  }
 
-    @Test
-    void shouldImportFileFromBrageWithImportUploadDetailWithArchiveAsInstitutionShortName()
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var generator =  new NvaBrageMigrationDataGenerator.Builder()
-                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
-                             .withCustomer(new Customer("npolar", randomUri()))
-                             .withResourceContent(new ResourceContent(List.of(createRandomContentFileWithBundleType(BundleType.ORIGINAL))))
-                             .build();
-        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
-        var file = getFirstFile(publication);
-        var importUploadDetail = (ImportUploadDetails) file.getUploadDetails();
-        assertEquals(importUploadDetail.archive(), NPOLAR_SHORT_NAME);
-    }
+  @Test
+  void shouldImportFileFromBrageWithImportUploadDetailWithArchiveAsInstitutionShortName()
+      throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    var generator =
+        new NvaBrageMigrationDataGenerator.Builder()
+            .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+            .withCustomer(new Customer("npolar", randomUri()))
+            .withResourceContent(
+                new ResourceContent(
+                    List.of(createRandomContentFileWithBundleType(BundleType.ORIGINAL))))
+            .build();
+    var publication =
+        BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
+    var file = getFirstFile(publication);
+    var importUploadDetail = (ImportUploadDetails) file.getUploadDetails();
+    assertEquals(importUploadDetail.archive(), NPOLAR_SHORT_NAME);
+  }
 
-    @Test
-    void shouldMapInsperaAndWiseflowIdentifierToAdditionalIdentifiers()
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var wiseflowIdentifier = randomString();
-        var insperaIdentifier = randomString();
-        var generator =  new NvaBrageMigrationDataGenerator.Builder()
-                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
-                             .withInsperaIdentifier(insperaIdentifier)
-                             .withWiseflowIdentifier(wiseflowIdentifier)
-                             .build();
-        var publication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
-        var wiseflowAdditionalIdentifier = getAdditionalIdentifier(publication, "wiseflow");
-        var insperaAdditionalIdentifier = getAdditionalIdentifier(publication, "inspera");
+  @Test
+  void shouldMapInsperaAndWiseflowIdentifierToAdditionalIdentifiers()
+      throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    var wiseflowIdentifier = randomString();
+    var insperaIdentifier = randomString();
+    var generator =
+        new NvaBrageMigrationDataGenerator.Builder()
+            .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+            .withInsperaIdentifier(insperaIdentifier)
+            .withWiseflowIdentifier(wiseflowIdentifier)
+            .build();
+    var publication =
+        BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
+    var wiseflowAdditionalIdentifier = getAdditionalIdentifier(publication, "wiseflow");
+    var insperaAdditionalIdentifier = getAdditionalIdentifier(publication, "inspera");
 
-        assertEquals(wiseflowIdentifier, wiseflowAdditionalIdentifier.value());
-        assertEquals(insperaIdentifier, insperaAdditionalIdentifier.value());
-    }
+    assertEquals(wiseflowIdentifier, wiseflowAdditionalIdentifier.value());
+    assertEquals(insperaIdentifier, insperaAdditionalIdentifier.value());
+  }
 
-    @Test
-    void shouldMapRightsHolderToFileLegalNoteWhenAccessCodeIsNotPresent()
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var rightsHolder = randomString();
-        var licenseContentFile = createRandomContentFileWithBundleType(BundleType.ORIGINAL);
-        var generator =  new NvaBrageMigrationDataGenerator.Builder()
-                             .withRightsHolder(rightsHolder)
-                             .withType(new Type(List.of(), NvaType.CHAPTER.getValue()))
-                             .withResourceContent(new ResourceContent(List.of(licenseContentFile)))
-                             .build();
-        var file = (File) BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client).getAssociatedArtifacts().getFirst();
+  @Test
+  void shouldMapRightsHolderToFileLegalNoteWhenAccessCodeIsNotPresent()
+      throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    var rightsHolder = randomString();
+    var licenseContentFile = createRandomContentFileWithBundleType(BundleType.ORIGINAL);
+    var generator =
+        new NvaBrageMigrationDataGenerator.Builder()
+            .withRightsHolder(rightsHolder)
+            .withType(new Type(List.of(), NvaType.CHAPTER.getValue()))
+            .withResourceContent(new ResourceContent(List.of(licenseContentFile)))
+            .build();
+    var file =
+        (File)
+            BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client)
+                .getAssociatedArtifacts()
+                .getFirst();
 
-        assertEquals(rightsHolder, file.getLegalNote());
-    }
+    assertEquals(rightsHolder, file.getLegalNote());
+  }
 
-    @Test
-    void shouldMapPartOfSeriesToUnconfirmedSeriesWhenDegree()
-        throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        var publication = new no.sikt.nva.brage.migration.record.Publication();
-        var seriesTitle = randomString();
-        publication.setPartOfSeries(new PartOfSeries(seriesTitle, randomString()));
-        var generator =  new NvaBrageMigrationDataGenerator.Builder()
-                             .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
-                             .withPublication(publication)
-                             .build();
-        var nvaPublication = BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
-        var publicationContext = (Degree) nvaPublication.getEntityDescription().getReference().getPublicationContext();
-        var series = (UnconfirmedSeries) publicationContext.getSeries();
+  @Test
+  void shouldMapPartOfSeriesToUnconfirmedSeriesWhenDegree()
+      throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    var publication = new no.sikt.nva.brage.migration.record.Publication();
+    var seriesTitle = randomString();
+    publication.setPartOfSeries(new PartOfSeries(seriesTitle, randomString()));
+    var generator =
+        new NvaBrageMigrationDataGenerator.Builder()
+            .withType(new Type(List.of(), NvaType.DOCTORAL_THESIS.getValue()))
+            .withPublication(publication)
+            .build();
+    var nvaPublication =
+        BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
+    var publicationContext =
+        (Degree) nvaPublication.getEntityDescription().getReference().getPublicationContext();
+    var series = (UnconfirmedSeries) publicationContext.getSeries();
 
-        assertEquals(seriesTitle, series.getTitle());
-    }
+    assertEquals(seriesTitle, series.getTitle());
+  }
 
-    private static no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase getAdditionalIdentifier(
-        Publication publication, String source) {
-        return publication.getAdditionalIdentifiers().stream()
-                   .filter(identifier -> identifier.sourceName().equals(source))
-                   .findFirst()
-                   .orElseThrow();
-    }
+  private static no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase
+      getAdditionalIdentifier(Publication publication, String source) {
+    return publication.getAdditionalIdentifiers().stream()
+        .filter(identifier -> identifier.sourceName().equals(source))
+        .findFirst()
+        .orElseThrow();
+  }
 
-    private static File getFirstFile(Publication publication) {
-        return publication.getAssociatedArtifacts().stream()
-                   .filter(File.class::isInstance)
-                   .map(File.class::cast)
-                   .findFirst()
-                   .orElseThrow();
-    }
+  private static File getFirstFile(Publication publication) {
+    return publication.getAssociatedArtifacts().stream()
+        .filter(File.class::isInstance)
+        .map(File.class::cast)
+        .findFirst()
+        .orElseThrow();
+  }
 
-    private static Contributor randomContributorWithOrcId() {
-        return new Contributor(new Identity(randomString(), randomString(), randomUri()),
-                               "ACTOR",
-                               randomString(), List.of());
-    }
+  private static Contributor randomContributorWithOrcId() {
+    return new Contributor(
+        new Identity(randomString(), randomString(), randomUri()),
+        "ACTOR",
+        randomString(),
+        List.of());
+  }
 
-    private ContentFile createRandomContentFileWithBundleType(BundleType bundleType) {
-        return new ContentFile(randomString(), bundleType, randomString(), UUID.randomUUID(),
-                               new License(randomString(), new NvaLicense(randomUri())),
-                               null);
-    }
+  private ContentFile createRandomContentFileWithBundleType(BundleType bundleType) {
+    return new ContentFile(
+        randomString(),
+        bundleType,
+        randomString(),
+        UUID.randomUUID(),
+        new License(randomString(), new NvaLicense(randomUri())),
+        null);
+  }
 }

@@ -10,18 +10,24 @@ import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogAgent;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(FileUploadedEvent.class), @JsonSubTypes.Type(FileApprovedEvent.class),
-    @JsonSubTypes.Type(FileRejectedEvent.class), @JsonSubTypes.Type(FileDeletedEvent.class),
-    @JsonSubTypes.Type(FileImportedEvent.class), @JsonSubTypes.Type(FileRetractedEvent.class),
-    @JsonSubTypes.Type(FileHiddenEvent.class), @JsonSubTypes.Type(FileTypeUpdatedEvent.class),
-    @JsonSubTypes.Type(FileTypeUpdatedByImportEvent.class)})
+@JsonSubTypes({
+  @JsonSubTypes.Type(FileUploadedEvent.class),
+  @JsonSubTypes.Type(FileApprovedEvent.class),
+  @JsonSubTypes.Type(FileRejectedEvent.class),
+  @JsonSubTypes.Type(FileDeletedEvent.class),
+  @JsonSubTypes.Type(FileImportedEvent.class),
+  @JsonSubTypes.Type(FileRetractedEvent.class),
+  @JsonSubTypes.Type(FileHiddenEvent.class),
+  @JsonSubTypes.Type(FileTypeUpdatedEvent.class),
+  @JsonSubTypes.Type(FileTypeUpdatedByImportEvent.class)
+})
 public interface FileEvent {
 
-    Instant date();
+  Instant date();
 
-    User user();
+  User user();
 
-    SortableIdentifier identifier();
+  SortableIdentifier identifier();
 
-    FileLogEntry toLogEntry(FileEntry fileEntry, LogAgent user);
+  FileLogEntry toLogEntry(FileEntry fileEntry, LogAgent user);
 }

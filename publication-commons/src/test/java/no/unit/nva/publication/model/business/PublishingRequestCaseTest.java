@@ -7,21 +7,22 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsSame.sameInstance;
+
 import org.junit.jupiter.api.Test;
 
 class PublishingRequestCaseTest {
 
-    @Test
-    void shouldReturnCopyWithoutInformationLoss() {
-        var original = createSample(randomElement(TicketStatus.values()));
-        var copy = original.copy();
-        assertThat(copy, is(equalTo(original)));
-        assertThat(copy, is(not(sameInstance(original))));
-    }
+  @Test
+  void shouldReturnCopyWithoutInformationLoss() {
+    var original = createSample(randomElement(TicketStatus.values()));
+    var copy = original.copy();
+    assertThat(copy, is(equalTo(original)));
+    assertThat(copy, is(not(sameInstance(original))));
+  }
 
-    private PublishingRequestCase createSample(TicketStatus status) {
-        var sample = randomPublishingRequest();
-        sample.setStatus(status);
-        return sample;
-    }
+  private PublishingRequestCase createSample(TicketStatus status) {
+    var sample = randomPublishingRequest();
+    sample.setStatus(status);
+    return sample;
+  }
 }

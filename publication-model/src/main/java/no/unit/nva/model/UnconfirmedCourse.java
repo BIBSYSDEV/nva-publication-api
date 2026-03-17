@@ -5,6 +5,4 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public record UnconfirmedCourse(String code) implements Course {
-
-}
+public record UnconfirmedCourse(String code) implements Course {}

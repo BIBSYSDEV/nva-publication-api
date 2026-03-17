@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.log;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.Optional;
 import no.unit.nva.clients.IdentityServiceClient;
@@ -20,47 +21,56 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class PersistLogEntryEventHandler extends DestinationsEventBridgeEventHandler<EventReference, Void> {
+public class PersistLogEntryEventHandler
+    extends DestinationsEventBridgeEventHandler<EventReference, Void> {
 
-    public static final Logger logger = LoggerFactory.getLogger(PersistLogEntryEventHandler.class);
-    private final S3Client s3Client;
-    private final LogEntryService logEntryService;
+  public static final Logger logger = LoggerFactory.getLogger(PersistLogEntryEventHandler.class);
+  private final S3Client s3Client;
+  private final LogEntryService logEntryService;
 
-    @JacocoGenerated
-    public PersistLogEntryEventHandler() {
-        this(S3Driver.defaultS3Client().build(), ResourceService.defaultService(), IdentityServiceClient.prepare(),
-             CristinClient.defaultClient());
-    }
+  @JacocoGenerated
+  public PersistLogEntryEventHandler() {
+    this(
+        S3Driver.defaultS3Client().build(),
+        ResourceService.defaultService(),
+        IdentityServiceClient.prepare(),
+        CristinClient.defaultClient());
+  }
 
-    protected PersistLogEntryEventHandler(S3Client s3Client, ResourceService resourceService,
-                                          IdentityServiceClient identityServiceClient, CristinClient cristinClient) {
-        super(EventReference.class);
-        this.s3Client = s3Client;
-        this.logEntryService = new LogEntryService(resourceService, identityServiceClient, cristinClient);
-    }
+  protected PersistLogEntryEventHandler(
+      S3Client s3Client,
+      ResourceService resourceService,
+      IdentityServiceClient identityServiceClient,
+      CristinClient cristinClient) {
+    super(EventReference.class);
+    this.s3Client = s3Client;
+    this.logEntryService =
+        new LogEntryService(resourceService, identityServiceClient, cristinClient);
+  }
 
-    @Override
-    protected Void processInputPayload(EventReference eventReference,
-                                       AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> awsEventBridgeEvent,
-                                       Context context) {
+  @Override
+  protected Void processInputPayload(
+      EventReference eventReference,
+      AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> awsEventBridgeEvent,
+      Context context) {
 
-        readNewImage(eventReference).ifPresent(this::persistLogEntry);
+    readNewImage(eventReference).ifPresent(this::persistLogEntry);
 
-        return null;
-    }
+    return null;
+  }
 
-    private void persistLogEntry(Entity entity) {
-        logEntryService.persistLogEntry(entity);
-    }
+  private void persistLogEntry(Entity entity) {
+    logEntryService.persistLogEntry(entity);
+  }
 
-    private Optional<Entity> readNewImage(EventReference eventReference) {
-        return attempt(() -> fetchDynamoDbStreamRecord(eventReference))
-                   .map(DataEntryUpdateEvent::fromJson)
-                   .map(DataEntryUpdateEvent::getNewData)
-                   .toOptional();
-    }
+  private Optional<Entity> readNewImage(EventReference eventReference) {
+    return attempt(() -> fetchDynamoDbStreamRecord(eventReference))
+        .map(DataEntryUpdateEvent::fromJson)
+        .map(DataEntryUpdateEvent::getNewData)
+        .toOptional();
+  }
 
-    private String fetchDynamoDbStreamRecord(EventReference eventReference) {
-        return new S3Driver(s3Client, EVENTS_BUCKET).readEvent(eventReference.getUri());
-    }
+  private String fetchDynamoDbStreamRecord(EventReference eventReference) {
+    return new S3Driver(s3Client, EVENTS_BUCKET).readEvent(eventReference.getUri());
+  }
 }

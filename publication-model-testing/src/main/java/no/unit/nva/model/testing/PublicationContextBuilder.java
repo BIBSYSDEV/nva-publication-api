@@ -12,6 +12,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
+
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -55,228 +56,240 @@ import nva.commons.core.JacocoGenerated;
 @SuppressWarnings({"PMD.CouplingBetweenObjects", "PMD.NcssCount"})
 public class PublicationContextBuilder {
 
-    private static final Random RANDOM = new Random();
-    protected static final List<String> CHANNEL_TYPES_SUB_PATH = List.of(
-        "publisher", "serial-publication");
+  private static final Random RANDOM = new Random();
+  protected static final List<String> CHANNEL_TYPES_SUB_PATH =
+      List.of("publisher", "serial-publication");
 
-    public static PublicationContext randomPublicationContext(Class<?> publicationInstance) {
-        String className = publicationInstance.getSimpleName();
-        switch (className) {
-            case "Architecture":
-            case "ArtisticDesign":
-            case "MovingPicture":
-            case "PerformingArts":
-            case "MusicPerformance":
-            case "VisualArts":
-            case "LiteraryArts":
-            case "OtherArtisticOutput":
-                return randomArtistic();
-            case "JournalIssue":
-            case "ConferenceAbstract":
-            case "FeatureArticle":
-            case "JournalCorrigendum":
-            case "JournalArticle":
-            case "AcademicArticle":
-            case "AcademicLiteratureReview":
-            case "CaseReport":
-            case "StudyProtocol":
-            case "ProfessionalArticle":
-            case "PopularScienceArticle":
-            case "JournalInterview":
-            case "JournalLetter":
-            case "JournalLeader":
-            case "JournalReview":
-                return randomJournal();
-            case "AcademicMonograph":
-            case "AcademicCommentary":
-            case "Encyclopedia":
-            case "ExhibitionCatalog":
-            case "NonFictionMonograph":
-            case "PopularScienceMonograph":
-            case "Textbook":
-            case "BookAnthology":
-            case "BookAbstracts":
-            case "BookMonograph":
-            case "OtherStudentWork":
-                return attempt(PublicationContextBuilder::randomBook).orElseThrow();
-            case "DegreeBachelor":
-            case "DegreeMaster":
-            case "DegreePhd":
-            case "ArtisticDegreePhd":
-            case "DegreeLicentiate":
-                return attempt(PublicationContextBuilder::randomDegree).orElseThrow();
-            case "ChapterArticle":
-            case "AcademicChapter":
-            case "NonFictionChapter":
-            case "PopularScienceChapter":
-            case "TextbookChapter":
-            case "EncyclopediaChapter":
-            case "Introduction":
-            case "ExhibitionCatalogChapter":
-            case "ChapterConferenceAbstract":
-            case "ChapterInReport":
-                return randomChapter();
-            case "ReportBasic":
-            case "ReportPolicy":
-            case "ReportResearch":
-            case "ReportWorkingPaper":
-            case "ReportBookOfAbstract":
-            case "ConferenceReport":
-                return attempt(PublicationContextBuilder::randomReport).orElseThrow();
-            case "ConferenceLecture":
-            case "ConferencePoster":
-            case "Lecture":
-            case "OtherPresentation":
-                return randomPresentation();
-            case "MediaFeatureArticle":
-            case "MediaReaderOpinion":
-                return randomMediaContributionPeriodical();
-            case "MediaBlogPost":
-            case "MediaInterview":
-            case "MediaParticipationInRadioOrTv":
-            case "MediaPodcast":
-                return randomMediaContribution();
-            case "DataManagementPlan":
-            case "DataSet":
-                return randomResearchData();
-            case "Map":
-                return randomGeographicalContent();
-            case "ExhibitionProduction":
-                return randomExhibition();
-            default:
-                throw new UnsupportedOperationException("Publication instance not supported: " + className);
-        }
+  public static PublicationContext randomPublicationContext(Class<?> publicationInstance) {
+    String className = publicationInstance.getSimpleName();
+    switch (className) {
+      case "Architecture":
+      case "ArtisticDesign":
+      case "MovingPicture":
+      case "PerformingArts":
+      case "MusicPerformance":
+      case "VisualArts":
+      case "LiteraryArts":
+      case "OtherArtisticOutput":
+        return randomArtistic();
+      case "JournalIssue":
+      case "ConferenceAbstract":
+      case "FeatureArticle":
+      case "JournalCorrigendum":
+      case "JournalArticle":
+      case "AcademicArticle":
+      case "AcademicLiteratureReview":
+      case "CaseReport":
+      case "StudyProtocol":
+      case "ProfessionalArticle":
+      case "PopularScienceArticle":
+      case "JournalInterview":
+      case "JournalLetter":
+      case "JournalLeader":
+      case "JournalReview":
+        return randomJournal();
+      case "AcademicMonograph":
+      case "AcademicCommentary":
+      case "Encyclopedia":
+      case "ExhibitionCatalog":
+      case "NonFictionMonograph":
+      case "PopularScienceMonograph":
+      case "Textbook":
+      case "BookAnthology":
+      case "BookAbstracts":
+      case "BookMonograph":
+      case "OtherStudentWork":
+        return attempt(PublicationContextBuilder::randomBook).orElseThrow();
+      case "DegreeBachelor":
+      case "DegreeMaster":
+      case "DegreePhd":
+      case "ArtisticDegreePhd":
+      case "DegreeLicentiate":
+        return attempt(PublicationContextBuilder::randomDegree).orElseThrow();
+      case "ChapterArticle":
+      case "AcademicChapter":
+      case "NonFictionChapter":
+      case "PopularScienceChapter":
+      case "TextbookChapter":
+      case "EncyclopediaChapter":
+      case "Introduction":
+      case "ExhibitionCatalogChapter":
+      case "ChapterConferenceAbstract":
+      case "ChapterInReport":
+        return randomChapter();
+      case "ReportBasic":
+      case "ReportPolicy":
+      case "ReportResearch":
+      case "ReportWorkingPaper":
+      case "ReportBookOfAbstract":
+      case "ConferenceReport":
+        return attempt(PublicationContextBuilder::randomReport).orElseThrow();
+      case "ConferenceLecture":
+      case "ConferencePoster":
+      case "Lecture":
+      case "OtherPresentation":
+        return randomPresentation();
+      case "MediaFeatureArticle":
+      case "MediaReaderOpinion":
+        return randomMediaContributionPeriodical();
+      case "MediaBlogPost":
+      case "MediaInterview":
+      case "MediaParticipationInRadioOrTv":
+      case "MediaPodcast":
+        return randomMediaContribution();
+      case "DataManagementPlan":
+      case "DataSet":
+        return randomResearchData();
+      case "Map":
+        return randomGeographicalContent();
+      case "ExhibitionProduction":
+        return randomExhibition();
+      default:
+        throw new UnsupportedOperationException("Publication instance not supported: " + className);
     }
+  }
 
-    public static PublishingHouse randomPublishingHouse() {
-        return new Publisher(randomPublicationChannelsUri());
-    }
+  public static PublishingHouse randomPublishingHouse() {
+    return new Publisher(randomPublicationChannelsUri());
+  }
 
-    private static ExhibitionContent randomExhibition() {
-        return new ExhibitionContent();
-    }
+  private static ExhibitionContent randomExhibition() {
+    return new ExhibitionContent();
+  }
 
-    private static GeographicalContent randomGeographicalContent() {
-        return new GeographicalContent(randomPublishingHouse());
-    }
+  private static GeographicalContent randomGeographicalContent() {
+    return new GeographicalContent(randomPublishingHouse());
+  }
 
-    private static ResearchData randomResearchData() {
-        return new ResearchData(randomPublishingHouse());
-    }
+  private static ResearchData randomResearchData() {
+    return new ResearchData(randomPublishingHouse());
+  }
 
-    private static PublicationContext randomMediaContributionPeriodical() {
-        return randomBoolean() ? new MediaContributionPeriodical(randomPublicationChannelsUri())
-                   : attempt(() -> new UnconfirmedMediaContributionPeriodical(randomString(),
-                                                                              randomIssn(),
-                                                                              randomIssn())).orElseThrow();
-    }
+  private static PublicationContext randomMediaContributionPeriodical() {
+    return randomBoolean()
+        ? new MediaContributionPeriodical(randomPublicationChannelsUri())
+        : attempt(
+                () ->
+                    new UnconfirmedMediaContributionPeriodical(
+                        randomString(), randomIssn(), randomIssn()))
+            .orElseThrow();
+  }
 
-    private static MediaContribution randomMediaContribution() {
-        return new MediaContribution.Builder().withMedium(generateRandomMedium())
-                                              .withFormat(generateRandomMediaFormat())
-                                              .withDisseminationChannel(randomString())
-                                              .withPartOf(generateRandomSeriesEpisode())
-                                              .build();
-    }
+  private static MediaContribution randomMediaContribution() {
+    return new MediaContribution.Builder()
+        .withMedium(generateRandomMedium())
+        .withFormat(generateRandomMediaFormat())
+        .withDisseminationChannel(randomString())
+        .withPartOf(generateRandomSeriesEpisode())
+        .build();
+  }
 
-    private static SeriesEpisode generateRandomSeriesEpisode() {
-        return new SeriesEpisode(randomString(), randomString());
-    }
+  private static SeriesEpisode generateRandomSeriesEpisode() {
+    return new SeriesEpisode(randomString(), randomString());
+  }
 
-    private static MediaFormat generateRandomMediaFormat() {
-        return randomElement(MediaFormat.values());
-    }
+  private static MediaFormat generateRandomMediaFormat() {
+    return randomElement(MediaFormat.values());
+  }
 
-    private static MediaSubType generateRandomMedium() {
-        var type = randomElement(MediaSubTypeEnum.values());
-        return MediaSubTypeEnum.OTHER == type ? MediaSubTypeOther.createOther(randomString())
-                   : MediaSubType.create(type);
-    }
+  private static MediaSubType generateRandomMedium() {
+    var type = randomElement(MediaSubTypeEnum.values());
+    return MediaSubTypeEnum.OTHER == type
+        ? MediaSubTypeOther.createOther(randomString())
+        : MediaSubType.create(type);
+  }
 
-    private static Degree randomDegree() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        return new Degree.Builder().withSeriesNumber(randomSeriesNumber())
-                                   .withSeries(randomBookSeries())
-                                   .withIsbnList(randomIsbnList())
-                                   .withPublisher(randomPublishingHouse())
-                                   .withCourse(new UnconfirmedCourse(randomString()))
-                                   .build();
-    }
+  private static Degree randomDegree()
+      throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    return new Degree.Builder()
+        .withSeriesNumber(randomSeriesNumber())
+        .withSeries(randomBookSeries())
+        .withIsbnList(randomIsbnList())
+        .withPublisher(randomPublishingHouse())
+        .withCourse(new UnconfirmedCourse(randomString()))
+        .build();
+  }
 
-    private static Event randomPresentation() {
-        return new Event.Builder().withAgent(randomAgent())
-                                  .withName(randomString())
-                                  .withPlace(randomPlace())
-                                  .withProduct(randomUri())
-                                  .withTime(randomTime())
-                                  .build();
-    }
+  private static Event randomPresentation() {
+    return new Event.Builder()
+        .withAgent(randomAgent())
+        .withName(randomString())
+        .withPlace(randomPlace())
+        .withProduct(randomUri())
+        .withTime(randomTime())
+        .build();
+  }
 
-    private static Time randomTime() {
-        Instant from = randomInstant();
+  private static Time randomTime() {
+    Instant from = randomInstant();
 
-        return Math.random() <= 0.5 ? new no.unit.nva.model.time.Instant(from) : randomPeriod(from);
-    }
+    return Math.random() <= 0.5 ? new no.unit.nva.model.time.Instant(from) : randomPeriod(from);
+  }
 
-    private static Period randomPeriod(Instant from) {
-        Instant to = randomInstant(from);
-        return new Period(from, to);
-    }
+  private static Period randomPeriod(Instant from) {
+    Instant to = randomInstant(from);
+    return new Period(from, to);
+  }
 
-    private static Agent randomAgent() {
-        return new Organization.Builder().withId(randomUri()).build();
-    }
+  private static Agent randomAgent() {
+    return new Organization.Builder().withId(randomUri()).build();
+  }
 
-    private static Report randomReport() throws InvalidIssnException, InvalidUnconfirmedSeriesException {
-        return new Report.Builder().withSeriesNumber(randomSeriesNumber())
-                                   .withSeries(randomBookSeries())
-                                   .withIsbnList(randomIsbnList())
-                                   .withPublisher(randomPublishingHouse())
-                                   .build();
-    }
+  private static Report randomReport()
+      throws InvalidIssnException, InvalidUnconfirmedSeriesException {
+    return new Report.Builder()
+        .withSeriesNumber(randomSeriesNumber())
+        .withSeries(randomBookSeries())
+        .withIsbnList(randomIsbnList())
+        .withPublisher(randomPublishingHouse())
+        .build();
+  }
 
-    private static String randomSeriesNumber() {
-        return randomString();
-    }
+  private static String randomSeriesNumber() {
+    return randomString();
+  }
 
-    private static Anthology randomChapter() {
-        return new Anthology.Builder().withId(randomPublicationId()).build();
-    }
+  private static Anthology randomChapter() {
+    return new Anthology.Builder().withId(randomPublicationId()).build();
+  }
 
-    private static Book randomBook() {
-        return new Book.BookBuilder().withIsbnList(randomIsbnList())
-                                     .withPublisher(randomPublishingHouse())
-                                     .withSeries(randomBookSeries())
-                                     .withSeriesNumber(randomSeriesNumber())
-                                     .withRevision(Revision.values()[RANDOM.nextInt(Revision.values().length)])
-                                     .build();
-    }
+  private static Book randomBook() {
+    return new Book.BookBuilder()
+        .withIsbnList(randomIsbnList())
+        .withPublisher(randomPublishingHouse())
+        .withSeries(randomBookSeries())
+        .withSeriesNumber(randomSeriesNumber())
+        .withRevision(Revision.values()[RANDOM.nextInt(Revision.values().length)])
+        .build();
+  }
 
-    private static Series randomBookSeries() {
-        return new Series(randomPublicationChannelsUri());
-    }
+  private static Series randomBookSeries() {
+    return new Series(randomPublicationChannelsUri());
+  }
 
-    private static List<String> randomIsbnList() {
-        return List.of(randomIsbn13(), randomIsbn10());
-    }
+  private static List<String> randomIsbnList() {
+    return List.of(randomIsbn13(), randomIsbn10());
+  }
 
-    private static Journal randomJournal() {
-        return new Journal(randomPublicationChannelsUri());
-    }
+  private static Journal randomJournal() {
+    return new Journal(randomPublicationChannelsUri());
+  }
 
-    private static URI randomPublicationChannelsUri() {
-        return URI.create("https://api.dev.nva.aws.unit.no/publication-channels-v2/%s/%s/%s".formatted(
-            randomChannelType(), randomUUID(), randomPublicationDate().getYear()));
-    }
+  private static URI randomPublicationChannelsUri() {
+    return URI.create(
+        "https://api.dev.nva.aws.unit.no/publication-channels-v2/%s/%s/%s"
+            .formatted(randomChannelType(), randomUUID(), randomPublicationDate().getYear()));
+  }
 
-    private static String randomChannelType() {
-        return CHANNEL_TYPES_SUB_PATH.get(new Random().nextInt(2));
-    }
+  private static String randomChannelType() {
+    return CHANNEL_TYPES_SUB_PATH.get(new Random().nextInt(2));
+  }
 
-    private static Artistic randomArtistic() {
-        return new Artistic();
-    }
+  private static Artistic randomArtistic() {
+    return new Artistic();
+  }
 
-    private static Place randomPlace() {
-        return new UnconfirmedPlace(randomString(), randomString());
-    }
+  private static Place randomPlace() {
+    return new UnconfirmedPlace(randomString(), randomString());
+  }
 }

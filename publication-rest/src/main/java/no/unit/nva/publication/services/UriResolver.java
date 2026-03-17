@@ -5,5 +5,5 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 
 public interface UriResolver {
 
-    URI resolve(URI alias) throws ApiGatewayException;
+  URI resolve(URI alias) throws ApiGatewayException;
 }

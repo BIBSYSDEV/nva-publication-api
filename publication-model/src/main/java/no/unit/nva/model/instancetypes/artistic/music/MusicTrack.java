@@ -9,41 +9,43 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class MusicTrack extends MusicalWork {
 
-    public static final String EXTENT = "extent";
-    @JsonProperty(EXTENT)
-    private final String extent;
+  public static final String EXTENT = "extent";
 
-    @JsonCreator
-    public MusicTrack(@JsonProperty(TITLE) String title,
-                      @JsonProperty(COMPOSER) String composer,
-                      @JsonProperty(EXTENT) String extent) {
-        super(title, composer);
-        this.extent = extent;
-    }
+  @JsonProperty(EXTENT)
+  private final String extent;
 
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), getExtent());
-    }
+  @JsonCreator
+  public MusicTrack(
+      @JsonProperty(TITLE) String title,
+      @JsonProperty(COMPOSER) String composer,
+      @JsonProperty(EXTENT) String extent) {
+    super(title, composer);
+    this.extent = extent;
+  }
 
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof MusicTrack)) {
-            return false;
-        }
-        if (!super.equals(o)) {
-            return false;
-        }
-        MusicTrack that = (MusicTrack) o;
-        return Objects.equals(getExtent(), that.getExtent());
-    }
+  @Override
+  @JacocoGenerated
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), getExtent());
+  }
 
-    public String getExtent() {
-        return extent;
+  @Override
+  @JacocoGenerated
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (!(o instanceof MusicTrack)) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
+    MusicTrack that = (MusicTrack) o;
+    return Objects.equals(getExtent(), that.getExtent());
+  }
+
+  public String getExtent() {
+    return extent;
+  }
 }

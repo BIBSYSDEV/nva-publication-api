@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -43,196 +44,204 @@ import org.zalando.problem.Problem;
 
 class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
-    public static final String WILDCARD = "*";
-    public static final String SOME_USER = "some_other_user";
-    private static final String EXTERNAL_CLIENT_ID = "external-client-id";
-    public static final String NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
-    private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
-    private static final String COGNITO_AUTHORIZER_URLS = "COGNITO_AUTHORIZER_URLS";
-    private static final String SCOPES_THIRD_PARTY_PUBLICATION_READ = "https://api.nva.unit.no/scopes/third-party/publication-read";
-    private final Context context = new FakeContext();
-    private DeletePublicationHandler handler;
-    private ResourceService publicationService;
-    private IdentityServiceClient identityServiceClient;
-    private Environment environment;
-    private ByteArrayOutputStream outputStream;
-    private GetExternalClientResponse getExternalClientResponse;
+  public static final String WILDCARD = "*";
+  public static final String SOME_USER = "some_other_user";
+  private static final String EXTERNAL_CLIENT_ID = "external-client-id";
+  public static final String NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY =
+      "NVA_PERSISTED_STORAGE_BUCKET_NAME";
+  private static final String EXTERNAL_ISSUER = ENVIRONMENT.readEnv("EXTERNAL_USER_POOL_URI");
+  private static final String COGNITO_AUTHORIZER_URLS = "COGNITO_AUTHORIZER_URLS";
+  private static final String SCOPES_THIRD_PARTY_PUBLICATION_READ =
+      "https://api.nva.unit.no/scopes/third-party/publication-read";
+  private final Context context = new FakeContext();
+  private DeletePublicationHandler handler;
+  private ResourceService publicationService;
+  private IdentityServiceClient identityServiceClient;
+  private Environment environment;
+  private ByteArrayOutputStream outputStream;
+  private GetExternalClientResponse getExternalClientResponse;
 
-    @BeforeEach
-    public void setUp() throws NotFoundException {
-        init();
-        prepareEnvironment();
-        prepareIdentityServiceClient();
-        publicationService = getResourceService(client);
-        handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient);
-        outputStream = new ByteArrayOutputStream();
-    }
+  @BeforeEach
+  public void setUp() throws NotFoundException {
+    init();
+    prepareEnvironment();
+    prepareIdentityServiceClient();
+    publicationService = getResourceService(client);
+    handler = new DeletePublicationHandler(publicationService, environment, identityServiceClient);
+    outputStream = new ByteArrayOutputStream();
+  }
 
-    @Test
-    void handleRequestReturnsAcceptedWhenOnDraftPublication() throws IOException, BadRequestException {
+  @Test
+  void handleRequestReturnsAcceptedWhenOnDraftPublication()
+      throws IOException, BadRequestException {
 
-        var publication = createAndPersistPublication();
+    var publication = createAndPersistPublication();
 
-        InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
-                                      .withHeaders(TestHeaders.getRequestHeaders())
-                                      .withPathParameters(
-                                          singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-                                      .withUserName(publication.getResourceOwner().getOwner().getValue())
-                                      .withCurrentCustomer(publication.getPublisher().getId())
-                                      .build();
+    InputStream inputStream =
+        new HandlerRequestBuilder<Publication>(restApiMapper)
+            .withHeaders(TestHeaders.getRequestHeaders())
+            .withPathParameters(
+                singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+            .withUserName(publication.getResourceOwner().getOwner().getValue())
+            .withCurrentCustomer(publication.getPublisher().getId())
+            .build();
 
-        handler.handleRequest(inputStream, outputStream, context);
+    handler.handleRequest(inputStream, outputStream, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Void.class);
-        assertEquals(SC_ACCEPTED, gatewayResponse.getStatusCode());
-    }
+    var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Void.class);
+    assertEquals(SC_ACCEPTED, gatewayResponse.getStatusCode());
+  }
 
-    @Test
-    void handleRequestReturnsAcceptedWhenOnDraftPublicationAndClientIsExternal() throws IOException,
-                                                                                        BadRequestException {
-        var createdPublication = createAndPersistPublicationWithExternalOwner();
+  @Test
+  void handleRequestReturnsAcceptedWhenOnDraftPublicationAndClientIsExternal()
+      throws IOException, BadRequestException {
+    var createdPublication = createAndPersistPublicationWithExternalOwner();
 
-        InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
-                                      .withHeaders(TestHeaders.getRequestHeaders())
-                                      .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER,
-                                                                       createdPublication.getIdentifier().toString()))
-                                      .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
-                                      .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
-                                      .withScope(SCOPES_THIRD_PARTY_PUBLICATION_READ)
-                                      .build();
+    InputStream inputStream =
+        new HandlerRequestBuilder<Publication>(restApiMapper)
+            .withHeaders(TestHeaders.getRequestHeaders())
+            .withPathParameters(
+                singletonMap(PUBLICATION_IDENTIFIER, createdPublication.getIdentifier().toString()))
+            .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+            .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+            .withScope(SCOPES_THIRD_PARTY_PUBLICATION_READ)
+            .build();
 
-        handler.handleRequest(inputStream, outputStream, context);
+    handler.handleRequest(inputStream, outputStream, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Void.class);
-        assertEquals(SC_ACCEPTED, gatewayResponse.getStatusCode());
-    }
+    var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Void.class);
+    assertEquals(SC_ACCEPTED, gatewayResponse.getStatusCode());
+  }
 
-    @Test
-    void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublication() throws IOException, ApiGatewayException {
-        var createdPublication = createAndPersistPublication();
+  @Test
+  void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublication()
+      throws IOException, ApiGatewayException {
+    var createdPublication = createAndPersistPublication();
 
-        InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
-                                      .withHeaders(TestHeaders.getRequestHeaders())
-                                      .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER,
-                                                                       createdPublication.getIdentifier().toString()))
-                                      .withUserName(SOME_USER)
-                                      .withCurrentCustomer(createdPublication.getPublisher().getId())
-                                      .build();
+    InputStream inputStream =
+        new HandlerRequestBuilder<Publication>(restApiMapper)
+            .withHeaders(TestHeaders.getRequestHeaders())
+            .withPathParameters(
+                singletonMap(PUBLICATION_IDENTIFIER, createdPublication.getIdentifier().toString()))
+            .withUserName(SOME_USER)
+            .withCurrentCustomer(createdPublication.getPublisher().getId())
+            .build();
 
-        handler.handleRequest(inputStream, outputStream, context);
+    handler.handleRequest(inputStream, outputStream, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        // Return BadRequest because Dynamo cannot distinguish between the primary key (containing the user info)
-        // being wrong or the status of the resource not being "DRAFT"
-        assertEquals(SC_UNAUTHORIZED, gatewayResponse.getStatusCode());
-    }
+    var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+    // Return BadRequest because Dynamo cannot distinguish between the primary key (containing the
+    // user info)
+    // being wrong or the status of the resource not being "DRAFT"
+    assertEquals(SC_UNAUTHORIZED, gatewayResponse.getStatusCode());
+  }
 
-    @Test
-    void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublicationAndCalledIsExternalClient()
-        throws IOException, BadRequestException {
-        var createdPublication = createAndPersistPublication();
+  @Test
+  void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublicationAndCalledIsExternalClient()
+      throws IOException, BadRequestException {
+    var createdPublication = createAndPersistPublication();
 
-        InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
-                                      .withHeaders(TestHeaders.getRequestHeaders())
-                                      .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER,
-                                                                       createdPublication.getIdentifier().toString()))
-                                      .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
-                                      .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
-                                      .build();
+    InputStream inputStream =
+        new HandlerRequestBuilder<Publication>(restApiMapper)
+            .withHeaders(TestHeaders.getRequestHeaders())
+            .withPathParameters(
+                singletonMap(PUBLICATION_IDENTIFIER, createdPublication.getIdentifier().toString()))
+            .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+            .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
+            .build();
 
-        handler.handleRequest(inputStream, outputStream, context);
+    handler.handleRequest(inputStream, outputStream, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertEquals(SC_UNAUTHORIZED, gatewayResponse.getStatusCode());
-    }
+    var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+    assertEquals(SC_UNAUTHORIZED, gatewayResponse.getStatusCode());
+  }
 
-    @Test
-    void handleRequestReturnsUnauthorizedWhenCallerIsMissingClientId()
-        throws IOException, NotFoundException, BadRequestException {
-        prepareIdentityServiceClientForNotFound();
-        Publication createdPublication = createAndPersistPublication();
+  @Test
+  void handleRequestReturnsUnauthorizedWhenCallerIsMissingClientId()
+      throws IOException, NotFoundException, BadRequestException {
+    prepareIdentityServiceClientForNotFound();
+    Publication createdPublication = createAndPersistPublication();
 
-        InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
-                                      .withHeaders(TestHeaders.getRequestHeaders())
-                                      .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER,
-                                                                       createdPublication.getIdentifier().toString()))
-                                      .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
-                                      .build();
+    InputStream inputStream =
+        new HandlerRequestBuilder<Publication>(restApiMapper)
+            .withHeaders(TestHeaders.getRequestHeaders())
+            .withPathParameters(
+                singletonMap(PUBLICATION_IDENTIFIER, createdPublication.getIdentifier().toString()))
+            .withAuthorizerClaim(ISS_CLAIM, EXTERNAL_ISSUER)
+            .build();
 
-        handler.handleRequest(inputStream, outputStream, context);
+    handler.handleRequest(inputStream, outputStream, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertEquals(SC_UNAUTHORIZED, gatewayResponse.getStatusCode());
-    }
+    var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+    assertEquals(SC_UNAUTHORIZED, gatewayResponse.getStatusCode());
+  }
 
-    @Test
-    void handleRequestReturnsBadRequestWhenAlreadyMarkedForDeletionPublication()
-        throws IOException, ApiGatewayException {
-        Publication publication = createAndPersistPublication();
-        markForDeletion(publication);
+  @Test
+  void handleRequestReturnsBadRequestWhenAlreadyMarkedForDeletionPublication()
+      throws IOException, ApiGatewayException {
+    Publication publication = createAndPersistPublication();
+    markForDeletion(publication);
 
-        InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
-                                      .withHeaders(TestHeaders.getRequestHeaders())
-                                      .withPathParameters(
-                                          singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
-                                      .withUserName(publication.getResourceOwner().getOwner().getValue())
-                                      .withCurrentCustomer(publication.getPublisher().getId())
-                                      .build();
+    InputStream inputStream =
+        new HandlerRequestBuilder<Publication>(restApiMapper)
+            .withHeaders(TestHeaders.getRequestHeaders())
+            .withPathParameters(
+                singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+            .withUserName(publication.getResourceOwner().getOwner().getValue())
+            .withCurrentCustomer(publication.getPublisher().getId())
+            .build();
 
-        handler.handleRequest(inputStream, outputStream, context);
+    handler.handleRequest(inputStream, outputStream, context);
 
-        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertEquals(HttpStatus.SC_BAD_REQUEST, gatewayResponse.getStatusCode());
-    }
+    var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+    assertEquals(HttpStatus.SC_BAD_REQUEST, gatewayResponse.getStatusCode());
+  }
 
-    private void prepareIdentityServiceClient() throws NotFoundException {
-        identityServiceClient = mock(IdentityServiceClient.class);
+  private void prepareIdentityServiceClient() throws NotFoundException {
+    identityServiceClient = mock(IdentityServiceClient.class);
 
-        getExternalClientResponse = new GetExternalClientResponse(
-            EXTERNAL_CLIENT_ID,
-            "someone@123",
-            randomUri(),
-            randomUri()
-        );
-        when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
-    }
+    getExternalClientResponse =
+        new GetExternalClientResponse(EXTERNAL_CLIENT_ID, "someone@123", randomUri(), randomUri());
+    when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
+  }
 
-    private void prepareIdentityServiceClientForNotFound() throws NotFoundException {
-        identityServiceClient = mock(IdentityServiceClient.class);
-        when(identityServiceClient.getExternalClient(any())).thenThrow(NotFoundException.class);
-    }
+  private void prepareIdentityServiceClientForNotFound() throws NotFoundException {
+    identityServiceClient = mock(IdentityServiceClient.class);
+    when(identityServiceClient.getExternalClient(any())).thenThrow(NotFoundException.class);
+  }
 
-    private void prepareEnvironment() {
-        environment = mock(Environment.class);
-        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
-        when(environment.readEnv(COGNITO_AUTHORIZER_URLS)).thenReturn("http://localhost:3000");
-        when(environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY)).thenReturn(
-            NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY);
-    }
+  private void prepareEnvironment() {
+    environment = mock(Environment.class);
+    when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
+    when(environment.readEnv(COGNITO_AUTHORIZER_URLS)).thenReturn("http://localhost:3000");
+    when(environment.readEnv(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY))
+        .thenReturn(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY);
+  }
 
-    private void markForDeletion(Publication publication) throws ApiGatewayException {
-        UserInstance userInstance = UserInstance.create(publication.getResourceOwner().getOwner().getValue(),
-                                                        publication.getPublisher().getId());
-        publicationService.markPublicationForDeletion(userInstance, publication.getIdentifier());
-    }
+  private void markForDeletion(Publication publication) throws ApiGatewayException {
+    UserInstance userInstance =
+        UserInstance.create(
+            publication.getResourceOwner().getOwner().getValue(),
+            publication.getPublisher().getId());
+    publicationService.markPublicationForDeletion(userInstance, publication.getIdentifier());
+  }
 
-    private Publication createAndPersistPublication() throws BadRequestException {
-        var publication = PublicationGenerator.randomPublication();
-        var userInstance = UserInstance
-                               .create(publication.getResourceOwner().getOwner().getValue(),
-                                       publication.getPublisher().getId());
-        return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
-    }
+  private Publication createAndPersistPublication() throws BadRequestException {
+    var publication = PublicationGenerator.randomPublication();
+    var userInstance =
+        UserInstance.create(
+            publication.getResourceOwner().getOwner().getValue(),
+            publication.getPublisher().getId());
+    return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
+  }
 
-    private Publication createAndPersistPublicationWithExternalOwner() throws BadRequestException {
-        var publication = PublicationGenerator.randomPublication();
-        var owner = new ResourceOwner(
+  private Publication createAndPersistPublicationWithExternalOwner() throws BadRequestException {
+    var publication = PublicationGenerator.randomPublication();
+    var owner =
+        new ResourceOwner(
             new Username(getExternalClientResponse.getActingUser()),
-            getExternalClientResponse.getCristinUrgUri()
-        );
-        var userInstance =
-            UserInstance.create(owner, getExternalClientResponse.getCustomerUri());
-        return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
-    }
-
+            getExternalClientResponse.getCristinUrgUri());
+    var userInstance = UserInstance.create(owner, getExternalClientResponse.getCustomerUri());
+    return Resource.fromPublication(publication).persistNew(publicationService, userInstance);
+  }
 }

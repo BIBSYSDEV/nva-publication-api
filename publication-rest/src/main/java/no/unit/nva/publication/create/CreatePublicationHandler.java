@@ -41,132 +41,148 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 public class CreatePublicationHandler
     extends ValidatingApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
 
-    public static final String LOCATION_TEMPLATE = "%s://%s/publication/%s";
-    public static final String API_SCHEME = "https";
-    public static final String API_HOST = "API_HOST";
-    private static final Logger logger = LoggerFactory.getLogger(CreatePublicationHandler.class);
-    private static final List<String> THESIS_INSTANCE_TYPES = List.of("DegreeBachelor", "DegreeMaster", "DegreePhd",
-                                                                      "ArtisticDegreePhd", "DegreeLicentiate",
-                                                                      "OtherStudentWork");
-    private final ResourceService publicationService;
-    private final String apiHost;
-    private final IdentityServiceClient identityServiceClient;
-    private final SecretsReader secretsReader;
-    private final HttpClient httpClient;
-    private final JavaHttpClientCustomerApiClient customerApiClient;
+  public static final String LOCATION_TEMPLATE = "%s://%s/publication/%s";
+  public static final String API_SCHEME = "https";
+  public static final String API_HOST = "API_HOST";
+  private static final Logger logger = LoggerFactory.getLogger(CreatePublicationHandler.class);
+  private static final List<String> THESIS_INSTANCE_TYPES =
+      List.of(
+          "DegreeBachelor",
+          "DegreeMaster",
+          "DegreePhd",
+          "ArtisticDegreePhd",
+          "DegreeLicentiate",
+          "OtherStudentWork");
+  private final ResourceService publicationService;
+  private final String apiHost;
+  private final IdentityServiceClient identityServiceClient;
+  private final SecretsReader secretsReader;
+  private final HttpClient httpClient;
+  private final JavaHttpClientCustomerApiClient customerApiClient;
 
-    /**
-     * Default constructor for CreatePublicationHandler.
-     */
-    @JacocoGenerated
-    public CreatePublicationHandler() {
-        this(ResourceService.defaultService(),
-             new Environment(),
-             IdentityServiceClient.prepare(),
-             SecretsReader.defaultSecretsManagerClient(),
-             HttpClient.newHttpClient());
+  /** Default constructor for CreatePublicationHandler. */
+  @JacocoGenerated
+  public CreatePublicationHandler() {
+    this(
+        ResourceService.defaultService(),
+        new Environment(),
+        IdentityServiceClient.prepare(),
+        SecretsReader.defaultSecretsManagerClient(),
+        HttpClient.newHttpClient());
+  }
+
+  /**
+   * Constructor for CreatePublicationHandler.
+   *
+   * @param publicationService publicationService
+   * @param environment environment
+   */
+  public CreatePublicationHandler(
+      ResourceService publicationService,
+      Environment environment,
+      IdentityServiceClient identityServiceClient,
+      SecretsManagerClient secretsManagerClient,
+      HttpClient httpClient) {
+    super(CreatePublicationRequest.class, environment);
+    this.publicationService = publicationService;
+    this.apiHost = environment.readEnv(API_HOST);
+    this.identityServiceClient = identityServiceClient;
+    this.secretsReader = new SecretsReader(secretsManagerClient);
+    this.httpClient = httpClient;
+    this.customerApiClient = getJavaHttpClientCustomerApiClient();
+  }
+
+  @Override
+  protected void validateRequest(
+      CreatePublicationRequest createPublicationRequest, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
+    // Do nothing
+  }
+
+  @Override
+  protected PublicationResponse processValidatedInput(
+      CreatePublicationRequest input, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
+    if (isThesisAndHasNoRightsToPublishThesisAndIsNotExternalClient(input, requestInfo)) {
+      throw new ForbiddenException();
     }
+    var newResource =
+        Optional.ofNullable(input)
+            .map(CreatePublicationRequest::toPublication)
+            .map(Resource::fromPublication)
+            .orElseGet(Resource::new);
+    var userInstance =
+        RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+    var customer =
+        fetchCustomerOrFailWithBadGateway(customerApiClient, userInstance.getCustomerId());
 
-    /**
-     * Constructor for CreatePublicationHandler.
-     *
-     * @param publicationService publicationService
-     * @param environment        environment
-     */
-    public CreatePublicationHandler(ResourceService publicationService,
-                                    Environment environment,
-                                    IdentityServiceClient identityServiceClient,
-                                    SecretsManagerClient secretsManagerClient,
-                                    HttpClient httpClient) {
-        super(CreatePublicationRequest.class, environment);
-        this.publicationService = publicationService;
-        this.apiHost = environment.readEnv(API_HOST);
-        this.identityServiceClient = identityServiceClient;
-        this.secretsReader = new SecretsReader(secretsManagerClient);
-        this.httpClient = httpClient;
-        this.customerApiClient = getJavaHttpClientCustomerApiClient();
+    new FileRightsRetentionService(
+            customerApiClient, customer.getRightsRetentionStrategy(), userInstance)
+        .applyRightsRetention(newResource);
+
+    var createdPublication = newResource.persistNew(publicationService, userInstance);
+    setLocationHeader(createdPublication.getIdentifier());
+
+    return PublicationResponseElevatedUser.fromPublication(createdPublication);
+  }
+
+  private JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient() {
+    var backendClientCredentials =
+        secretsReader.fetchClassSecret(
+            environment.readEnv("BACKEND_CLIENT_SECRET_NAME"), BackendClientCredentials.class);
+    var cognitoServerUri = URI.create(environment.readEnv("BACKEND_CLIENT_AUTH_URL"));
+    var cognitoCredentials =
+        new CognitoCredentials(
+            backendClientCredentials::getId, backendClientCredentials::getSecret, cognitoServerUri);
+    var authorizedBackendClient =
+        AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, cognitoCredentials);
+    return new JavaHttpClientCustomerApiClient(authorizedBackendClient);
+  }
+
+  private static Customer fetchCustomerOrFailWithBadGateway(
+      CustomerApiClient customerApiClient, URI customerUri) throws BadGatewayException {
+    try {
+      return customerApiClient.fetch(customerUri);
+    } catch (CustomerNotAvailableException e) {
+      logger.error("Problems fetching customer", e);
+      throw new BadGatewayException("Customer API not responding or not responding as expected!");
     }
+  }
 
-    @Override
-    protected void validateRequest(CreatePublicationRequest createPublicationRequest, RequestInfo requestInfo,
-                                   Context context) throws ApiGatewayException {
-        //Do nothing
-    }
+  @Override
+  protected Integer getSuccessStatusCode(
+      CreatePublicationRequest input, PublicationResponse output) {
+    return HttpStatus.SC_CREATED;
+  }
 
-    @Override
-    protected PublicationResponse processValidatedInput(CreatePublicationRequest input,
-                                                        RequestInfo requestInfo,
-                                                        Context context) throws ApiGatewayException {
-        if (isThesisAndHasNoRightsToPublishThesisAndIsNotExternalClient(input, requestInfo)) {
-            throw new ForbiddenException();
-        }
-        var newResource = Optional.ofNullable(input)
-                                 .map(CreatePublicationRequest::toPublication)
-                                 .map(Resource::fromPublication)
-                                 .orElseGet(Resource::new);
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-        var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, userInstance.getCustomerId());
+  protected URI getLocation(SortableIdentifier identifier) {
+    return URI.create(String.format(LOCATION_TEMPLATE, API_SCHEME, apiHost, identifier));
+  }
 
-        new FileRightsRetentionService(customerApiClient, customer.getRightsRetentionStrategy(), userInstance)
-            .applyRightsRetention(newResource);
+  private void setLocationHeader(SortableIdentifier identifier) {
+    addAdditionalHeaders(() -> Map.of(LOCATION, getLocation(identifier).toString()));
+  }
 
-        var createdPublication = newResource
-                                     .persistNew(publicationService, userInstance);
-        setLocationHeader(createdPublication.getIdentifier());
+  private boolean isThesisAndHasNoRightsToPublishThesisAndIsNotExternalClient(
+      CreatePublicationRequest request, RequestInfo requestInfo) {
 
-        return PublicationResponseElevatedUser.fromPublication(createdPublication);
-    }
+    return isThesis(request)
+        && !requestInfo.userIsAuthorized(MANAGE_DEGREE)
+        && !requestInfo.clientIsThirdParty();
+  }
 
-    private JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient() {
-        var backendClientCredentials = secretsReader.fetchClassSecret(
-            environment.readEnv("BACKEND_CLIENT_SECRET_NAME"),
-            BackendClientCredentials.class);
-        var cognitoServerUri = URI.create(environment.readEnv("BACKEND_CLIENT_AUTH_URL"));
-        var cognitoCredentials = new CognitoCredentials(backendClientCredentials::getId,
-                                                        backendClientCredentials::getSecret,
-                                                        cognitoServerUri);
-        var authorizedBackendClient = AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient,
-                                                                                            cognitoCredentials);
-        return new JavaHttpClientCustomerApiClient(authorizedBackendClient);
-    }
+  private boolean isThesis(CreatePublicationRequest request) {
+    var requestInstanceType =
+        attempt(
+                () ->
+                    request
+                        .getEntityDescription()
+                        .getReference()
+                        .getPublicationInstance()
+                        .getInstanceType())
+            .toOptional();
 
-    private static Customer fetchCustomerOrFailWithBadGateway(CustomerApiClient customerApiClient,
-                                                              URI customerUri) throws BadGatewayException {
-        try {
-            return customerApiClient.fetch(customerUri);
-        } catch (CustomerNotAvailableException e) {
-            logger.error("Problems fetching customer", e);
-            throw new BadGatewayException("Customer API not responding or not responding as expected!");
-        }
-    }
-
-    @Override
-    protected Integer getSuccessStatusCode(CreatePublicationRequest input, PublicationResponse output) {
-        return HttpStatus.SC_CREATED;
-    }
-
-    protected URI getLocation(SortableIdentifier identifier) {
-        return URI.create(String.format(LOCATION_TEMPLATE, API_SCHEME, apiHost, identifier));
-    }
-
-    private void setLocationHeader(SortableIdentifier identifier) {
-        addAdditionalHeaders(() -> Map.of(
-            LOCATION,
-            getLocation(identifier).toString())
-        );
-    }
-
-    private boolean isThesisAndHasNoRightsToPublishThesisAndIsNotExternalClient(CreatePublicationRequest request,
-                                                                                RequestInfo requestInfo) {
-
-        return isThesis(request) && !requestInfo.userIsAuthorized(MANAGE_DEGREE) && !requestInfo.clientIsThirdParty();
-    }
-
-    private boolean isThesis(CreatePublicationRequest request) {
-        var requestInstanceType =
-            attempt(() -> request.getEntityDescription().getReference().getPublicationInstance().getInstanceType())
-                .toOptional();
-
-        return requestInstanceType.isPresent() && THESIS_INSTANCE_TYPES.contains(requestInstanceType.get());
-    }
+    return requestInstanceType.isPresent()
+        && THESIS_INSTANCE_TYPES.contains(requestInstanceType.get());
+  }
 }

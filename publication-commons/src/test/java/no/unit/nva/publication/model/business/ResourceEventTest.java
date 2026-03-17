@@ -4,6 +4,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomResourceOwner
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
 import java.util.stream.Stream;
@@ -26,39 +27,53 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class ResourceEventTest {
 
-    public static Stream<Arguments> stateProvider() {
-        return Stream.of(Arguments.of(
-                             new CreatedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
-                                                      SortableIdentifier.next(), null)),
-                         Arguments.of(new UnpublishedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
-                                                                   SortableIdentifier.next())), Arguments.of(
-                new PublishedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
-                                           SortableIdentifier.next())), Arguments.of(
-                new DeletedResourceEvent(Instant.now(), new User(randomString()), randomUri(),
-                                         SortableIdentifier.next())), Arguments.of(
-                ImportedResourceEvent.fromImportSource(new ImportSource(Source.BRAGE, "A"),
-                                                       UserInstance.create(randomString(), randomUri()),
-                                                       Instant.now())), Arguments.of(
-                DoiReservedEvent.create(UserInstance.create(randomString(), randomUri()), Instant.now())),
-                         Arguments.of(
-                             MergedResourceEvent.fromImportSource(new ImportSource(Source.BRAGE, "A"),
-                                                                  UserInstance.create(randomString(), randomUri()),
-                                                                  Instant.now())),
-                         Arguments.of(
-                             UpdatedResourceEvent.create(UserInstance.create(randomString(), randomUri()),
-                                                         Instant.now())),
-                         Arguments.of(
-                             CreatedResourceEvent.create(UserInstance.createExternalUser(randomResourceOwner(),
-                                                                                                     randomUri(), ThirdPartySystem.OTHER),
-                                                                     Instant.now())));
-    }
+  public static Stream<Arguments> stateProvider() {
+    return Stream.of(
+        Arguments.of(
+            new CreatedResourceEvent(
+                Instant.now(),
+                new User(randomString()),
+                randomUri(),
+                SortableIdentifier.next(),
+                null)),
+        Arguments.of(
+            new UnpublishedResourceEvent(
+                Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next())),
+        Arguments.of(
+            new PublishedResourceEvent(
+                Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next())),
+        Arguments.of(
+            new DeletedResourceEvent(
+                Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next())),
+        Arguments.of(
+            ImportedResourceEvent.fromImportSource(
+                new ImportSource(Source.BRAGE, "A"),
+                UserInstance.create(randomString(), randomUri()),
+                Instant.now())),
+        Arguments.of(
+            DoiReservedEvent.create(
+                UserInstance.create(randomString(), randomUri()), Instant.now())),
+        Arguments.of(
+            MergedResourceEvent.fromImportSource(
+                new ImportSource(Source.BRAGE, "A"),
+                UserInstance.create(randomString(), randomUri()),
+                Instant.now())),
+        Arguments.of(
+            UpdatedResourceEvent.create(
+                UserInstance.create(randomString(), randomUri()), Instant.now())),
+        Arguments.of(
+            CreatedResourceEvent.create(
+                UserInstance.createExternalUser(
+                    randomResourceOwner(), randomUri(), ThirdPartySystem.OTHER),
+                Instant.now())));
+  }
 
-    @ParameterizedTest
-    @MethodSource("stateProvider")
-    void shouldDoRoundTripWithoutLossOfData(ResourceEvent state) throws JsonProcessingException {
-        var json = JsonUtils.dtoObjectMapper.writeValueAsString(state);
-        var roundTrippedState = JsonUtils.dtoObjectMapper.readValue(json, ResourceEvent.class);
+  @ParameterizedTest
+  @MethodSource("stateProvider")
+  void shouldDoRoundTripWithoutLossOfData(ResourceEvent state) throws JsonProcessingException {
+    var json = JsonUtils.dtoObjectMapper.writeValueAsString(state);
+    var roundTrippedState = JsonUtils.dtoObjectMapper.readValue(json, ResourceEvent.class);
 
-        assertEquals(state, roundTrippedState);
-    }
+    assertEquals(state, roundTrippedState);
+  }
 }

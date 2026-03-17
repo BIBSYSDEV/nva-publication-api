@@ -7,16 +7,17 @@ import nva.commons.core.JacocoGenerated;
 
 public class ResearchDataMerger extends PublicationContextMerger {
 
-    @JacocoGenerated
-    public ResearchDataMerger(Record record) {
-        super(record);
-    }
+  @JacocoGenerated
+  public ResearchDataMerger(Record record) {
+    super(record);
+  }
 
-    public ResearchData merge(ResearchData researchData, PublicationContext publicationContext) {
-        if (publicationContext instanceof ResearchData newResearchData) {
-            return new ResearchData(getPublisher(researchData.getPublisher(), newResearchData.getPublisher()));
-        } else {
-            return researchData;
-        }
+  public ResearchData merge(ResearchData researchData, PublicationContext publicationContext) {
+    if (publicationContext instanceof ResearchData newResearchData) {
+      return new ResearchData(
+          getPublisher(researchData.getPublisher(), newResearchData.getPublisher()));
+    } else {
+      return researchData;
     }
+  }
 }
