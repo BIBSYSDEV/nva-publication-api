@@ -191,8 +191,8 @@ public class UpdatePublicationHandler
     private Resource updatePublication(UpdateRequest input, SortableIdentifier identifierInPath,
                                        Resource existingResource, PublicationPermissions permissionStrategy,
                                        UserInstance userInstance) throws ApiGatewayException {
-        validateRequest(identifierInPath, input);
         input.authorize(permissionStrategy, existingResource);
+        validateRequest(identifierInPath, input);
 
         var resourceUpdate = input.generateUpdate(existingResource);
         var customer = fetchCustomerOrFailWithBadGateway(customerApiClient, userInstance.getCustomerId());

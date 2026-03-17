@@ -600,7 +600,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         var randpomPersistedPublication = buildPublication(p -> p
                                                                     .map(a -> setOwnerFromPublication(a, publication))
                                                                     .map(this::persistPublication));
-        var event = ownerUpdatesOwnPublication(randpomPersistedPublication.getIdentifier(), publication);
+        var bodyWithoutNewIdentifiers = publication.copy()
+                                            .withAdditionalIdentifiers(Set.of())
+                                            .build();
+        var event = ownerUpdatesOwnPublication(randpomPersistedPublication.getIdentifier(), bodyWithoutNewIdentifiers);
 
         updatePublicationHandler.handleRequest(event, output, context);
 

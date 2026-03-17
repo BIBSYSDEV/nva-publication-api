@@ -203,7 +203,8 @@ public class UpdatePublicationRequest
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(identifier, entityDescription, associatedArtifacts, subjects, context, importDetails);
+        return Objects.hash(identifier, entityDescription, associatedArtifacts, subjects, context, importDetails,
+                           additionalIdentifiers);
     }
 
     @Override
@@ -221,7 +222,8 @@ public class UpdatePublicationRequest
                && Objects.equals(associatedArtifacts, that.associatedArtifacts)
                && Objects.equals(subjects, that.subjects)
                && Objects.equals(context, that.context)
-               && Objects.equals(importDetails, that.importDetails);
+               && Objects.equals(importDetails, that.importDetails)
+               && Objects.equals(additionalIdentifiers, that.additionalIdentifiers);
     }
 
     private boolean hasAdditionalIdentifiers() {
