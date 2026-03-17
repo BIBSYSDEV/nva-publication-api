@@ -8,13 +8,14 @@ import no.unit.nva.importcandidate.ImportStatus;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @JsonSerialize
-public record ImportStatusDto(CandidateStatus candidateStatus, URI nvaPublicationId, String comment) {
+public record ImportStatusDto(
+    CandidateStatus candidateStatus, URI nvaPublicationId, String comment) {
 
-    public ImportStatus toImportStatus() {
-        return ImportStatus.builder()
-                   .withCandidateStatus(candidateStatus)
-                   .withNvaPublicationId(nvaPublicationId)
-                   .withComment(comment)
-                   .build();
-    }
+  public ImportStatus toImportStatus() {
+    return ImportStatus.builder()
+        .withCandidateStatus(candidateStatus)
+        .withNvaPublicationId(nvaPublicationId)
+        .withComment(comment)
+        .build();
+  }
 }

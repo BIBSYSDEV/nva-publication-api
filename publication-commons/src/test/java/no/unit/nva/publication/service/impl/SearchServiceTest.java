@@ -7,15 +7,14 @@ import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersiste
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import java.net.URI;
 import java.net.http.HttpResponse;
 import java.util.List;
@@ -37,77 +36,82 @@ import org.junit.jupiter.api.Test;
 
 class SearchServiceTest extends ResourcesLocalTest {
 
-    private UriRetriever uriRetriever;
-    private ResourceService resourceService;
-    private SearchService searchService;
+  private UriRetriever uriRetriever;
+  private ResourceService resourceService;
+  private SearchService searchService;
 
-    @BeforeEach
-    public void setUp() {
-        super.init();
-        uriRetriever = mock(UriRetriever.class);
-        resourceService = getResourceService(client);
-        searchService = SearchService.create(uriRetriever, resourceService);
-    }
+  @BeforeEach
+  public void setUp() {
+    super.init();
+    uriRetriever = mock(UriRetriever.class);
+    resourceService = getResourceService(client);
+    searchService = SearchService.create(uriRetriever, resourceService);
+  }
 
-    @Test
-    void shouldReturnResourcesFetchedBySearchApiAndResourceService() throws ApiGatewayException {
-        var publication = createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
-        var searchParams = Map.of(randomString(), randomString());
-        var id = createPublicationId(publication.getIdentifier());
-        var responseBody = new SearchResourceApiResponse(1, List.of(new ResourceWithId(id)));
-        var response = httpResponse(HTTP_OK, responseBody.toJsonString());
-        when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
+  @Test
+  void shouldReturnResourcesFetchedBySearchApiAndResourceService() throws ApiGatewayException {
+    var publication = createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+    var searchParams = Map.of(randomString(), randomString());
+    var id = createPublicationId(publication.getIdentifier());
+    var responseBody = new SearchResourceApiResponse(1, List.of(new ResourceWithId(id)));
+    var response = httpResponse(HTTP_OK, responseBody.toJsonString());
+    when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
 
-        var fetchedPublications = searchService.searchPublicationsByParam(searchParams);
+    var fetchedPublications = searchService.searchPublicationsByParam(searchParams);
 
-        var resource = Resource.fromPublication(publication).fetch(resourceService).orElseThrow();
-        assertThat(fetchedPublications, hasItem(resource));
-    }
+    var resource = Resource.fromPublication(publication).fetch(resourceService).orElseThrow();
+    assertThat(fetchedPublications, hasItem(resource));
+  }
 
-    @Test
-    void shouldFilterOutPublicationsThatDoesNotLongerExist() throws ApiGatewayException {
-        var existingPublication = createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
-        var searchParams = Map.of(randomString(), randomString());
-        var id = createPublicationId(existingPublication.getIdentifier());
-        var responseBody = new SearchResourceApiResponse(1, List.of(new ResourceWithId(id)));
-        var response = httpResponse(HTTP_OK, responseBody.toJsonString());
-        when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
-        resourceService = mock(ResourceService.class);
-        when(resourceService.getPublicationByIdentifier(any())).thenThrow(NotFoundException.class);
+  @Test
+  void shouldFilterOutPublicationsThatDoesNotLongerExist() throws ApiGatewayException {
+    var existingPublication =
+        createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+    var searchParams = Map.of(randomString(), randomString());
+    var id = createPublicationId(existingPublication.getIdentifier());
+    var responseBody = new SearchResourceApiResponse(1, List.of(new ResourceWithId(id)));
+    var response = httpResponse(HTTP_OK, responseBody.toJsonString());
+    when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
+    resourceService = mock(ResourceService.class);
+    when(resourceService.getPublicationByIdentifier(any())).thenThrow(NotFoundException.class);
 
-        var fetchedPublications = SearchService.create(uriRetriever, resourceService).searchPublicationsByParam(searchParams);
+    var fetchedPublications =
+        SearchService.create(uriRetriever, resourceService).searchPublicationsByParam(searchParams);
 
-        assertThat(fetchedPublications, is(emptyIterable()));
-    }
+    assertThat(fetchedPublications, is(emptyIterable()));
+  }
 
-    @Test
-    void shouldThrowExceptionWhenCouldNotParseResponse() {
-        var searchParams = Map.of(randomString(), randomString());
-        var response = httpResponse(HTTP_NOT_FOUND, randomString());
-        when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
+  @Test
+  void shouldThrowExceptionWhenCouldNotParseResponse() {
+    var searchParams = Map.of(randomString(), randomString());
+    var response = httpResponse(HTTP_NOT_FOUND, randomString());
+    when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
 
-        assertThrows(SearchServiceException.class, () -> searchService.searchPublicationsByParam(searchParams));
-    }
+    assertThrows(
+        SearchServiceException.class, () -> searchService.searchPublicationsByParam(searchParams));
+  }
 
-    @Test
-    void shouldThrowExceptionWhenResponseStatusCodeIsNotHttpOk() {
-        var searchParams = Map.of(randomString(), randomString());
-        var responseBody = new SearchResourceApiResponse(1, List.of(
-            new ResourceWithId(createPublicationId(SortableIdentifier.next()))));
-        var response = httpResponse(HTTP_CONFLICT, responseBody.toJsonString());
-        when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
+  @Test
+  void shouldThrowExceptionWhenResponseStatusCodeIsNotHttpOk() {
+    var searchParams = Map.of(randomString(), randomString());
+    var responseBody =
+        new SearchResourceApiResponse(
+            1, List.of(new ResourceWithId(createPublicationId(SortableIdentifier.next()))));
+    var response = httpResponse(HTTP_CONFLICT, responseBody.toJsonString());
+    when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
 
-        assertThrows(SearchServiceException.class, () -> searchService.searchPublicationsByParam(searchParams));
-    }
+    assertThrows(
+        SearchServiceException.class, () -> searchService.searchPublicationsByParam(searchParams));
+  }
 
-    private static URI createPublicationId(SortableIdentifier sortableIdentifier) {
-        return UriWrapper.fromUri(randomUri()).addChild(sortableIdentifier.toString()).getUri();
-    }
+  private static URI createPublicationId(SortableIdentifier sortableIdentifier) {
+    return UriWrapper.fromUri(randomUri()).addChild(sortableIdentifier.toString()).getUri();
+  }
 
-    private HttpResponse<String> httpResponse(int statusCode, String responseBody) {
-        var response = mock(HttpResponse.class);
-        when(response.statusCode()).thenReturn(statusCode);
-        when(response.body()).thenReturn(responseBody);
-        return response;
-    }
+  private HttpResponse<String> httpResponse(int statusCode, String responseBody) {
+    var response = mock(HttpResponse.class);
+    when(response.statusCode()).thenReturn(statusCode);
+    when(response.body()).thenReturn(responseBody);
+    return response;
+  }
 }

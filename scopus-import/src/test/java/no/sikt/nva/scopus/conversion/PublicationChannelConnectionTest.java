@@ -11,6 +11,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import java.net.http.HttpRequest;
 import java.util.List;
 import java.util.Optional;
@@ -24,41 +25,43 @@ import org.junit.jupiter.api.Test;
 
 class PublicationChannelConnectionTest {
 
-    private PublicationChannelConnection publicationChannelConnection;
-    private AuthorizedBackendUriRetriever uriRetriever;
+  private PublicationChannelConnection publicationChannelConnection;
+  private AuthorizedBackendUriRetriever uriRetriever;
 
-    @BeforeEach
-    void setup() {
-        uriRetriever = mock(AuthorizedBackendUriRetriever.class);
-        publicationChannelConnection = new PublicationChannelConnection(uriRetriever);
-    }
+  @BeforeEach
+  void setup() {
+    uriRetriever = mock(AuthorizedBackendUriRetriever.class);
+    publicationChannelConnection = new PublicationChannelConnection(uriRetriever);
+  }
 
-    @Test
-    void shouldDoSingleApiCallWhenSearchingForChannelAndReceivingResponseWithSingleHitOnFirstApiCall() {
-        when(uriRetriever.fetchResponse(any(), any())).thenReturn(
-            Optional.of(FakeHttpResponse.create(responseWithSingleHit(), HTTP_OK)));
+  @Test
+  void
+      shouldDoSingleApiCallWhenSearchingForChannelAndReceivingResponseWithSingleHitOnFirstApiCall() {
+    when(uriRetriever.fetchResponse(any(), any()))
+        .thenReturn(Optional.of(FakeHttpResponse.create(responseWithSingleHit(), HTTP_OK)));
 
-        publicationChannelConnection.fetchSerialPublication(randomString(), randomString(), randomString(),
-                                                            randomInteger());
+    publicationChannelConnection.fetchSerialPublication(
+        randomString(), randomString(), randomString(), randomInteger());
 
-        verify(uriRetriever, times(1)).fetchResponse(any(), any());
-    }
+    verify(uriRetriever, times(1)).fetchResponse(any(), any());
+  }
 
-    @Test
-    void shouldLogWhenChannelRegisterApiIsFailing() {
-        var request = HttpRequest.newBuilder().GET().uri(randomUri()).build();
-        var response = FakeHttpResponse.create(randomString(), HTTP_BAD_GATEWAY);
-        when(uriRetriever.fetchResponse(any(), any())).thenReturn(
-            Optional.of(FakeHttpResponse.create(request, response)));
+  @Test
+  void shouldLogWhenChannelRegisterApiIsFailing() {
+    var request = HttpRequest.newBuilder().GET().uri(randomUri()).build();
+    var response = FakeHttpResponse.create(randomString(), HTTP_BAD_GATEWAY);
+    when(uriRetriever.fetchResponse(any(), any()))
+        .thenReturn(Optional.of(FakeHttpResponse.create(request, response)));
 
-        var appender = LogUtils.getTestingAppender(PublicationChannelConnection.class);
-        publicationChannelConnection.fetchSerialPublication(randomString(), randomString(), randomString(),
-                                                            randomInteger());
+    var appender = LogUtils.getTestingAppender(PublicationChannelConnection.class);
+    publicationChannelConnection.fetchSerialPublication(
+        randomString(), randomString(), randomString(), randomInteger());
 
-        assertTrue(appender.getMessages().contains("Publication channels API responded with 502"));
-    }
+    assertTrue(appender.getMessages().contains("Publication channels API responded with 502"));
+  }
 
-    private static String responseWithSingleHit() {
-        return new PublicationChannelResponse(1, List.of(new PublicationChannelHit(randomUri()))).toJsonString();
-    }
+  private static String responseWithSingleHit() {
+    return new PublicationChannelResponse(1, List.of(new PublicationChannelHit(randomUri())))
+        .toJsonString();
+  }
 }

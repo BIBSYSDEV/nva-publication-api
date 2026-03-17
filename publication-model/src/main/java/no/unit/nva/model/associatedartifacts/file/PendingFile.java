@@ -5,14 +5,14 @@ import java.util.UUID;
 
 public interface PendingFile<A extends File, R extends File> {
 
-    String CANNOT_PUBLISH_FILE_MESSAGE = "Cannot publish a file without a license: %s";
+  String CANNOT_PUBLISH_FILE_MESSAGE = "Cannot publish a file without a license: %s";
 
-    UUID getIdentifier();
+  UUID getIdentifier();
 
-    R reject();
+  R reject();
 
-    A approve();
+  A approve();
 
-    @JsonIgnore
-    boolean isNotApprovable();
+  @JsonIgnore
+  boolean isNotApprovable();
 }

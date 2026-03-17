@@ -13,27 +13,24 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinMediumType {
 
-    @JsonProperty("mediumtypekode")
-    private CristinMediumTypeCode mediumTypeCode;
+  @JsonProperty("mediumtypekode")
+  private CristinMediumTypeCode mediumTypeCode;
 
-    @JsonProperty("mediumtypenavn")
-    private String mediumTypeNameNorwegianBokmaal;
+  @JsonProperty("mediumtypenavn")
+  private String mediumTypeNameNorwegianBokmaal;
 
-    @JsonProperty("mediumtypenavn_engelsk")
-    private String mediumTypeNameEnglish;
+  @JsonProperty("mediumtypenavn_engelsk")
+  private String mediumTypeNameEnglish;
 
-    @JsonProperty("mediumtypenavn_nynorsk")
-    private String mediumTypeNameNorwegianNynorsk;
+  @JsonProperty("mediumtypenavn_nynorsk")
+  private String mediumTypeNameNorwegianNynorsk;
 
-    @JacocoGenerated
-    public CristinMediumType() {
-        
-    }
+  @JacocoGenerated
+  public CristinMediumType() {}
 }

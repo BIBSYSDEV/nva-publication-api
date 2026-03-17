@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -66,230 +67,266 @@ import org.zalando.problem.Problem;
 @WireMockTest(httpsEnabled = true)
 public class ReserveDoiHandlerTest extends ResourcesLocalTest {
 
-    public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
-    public static final String DOI = "doi";
-    public static final String NOT_OWNER = "notOwner";
-    public static final String OWNER = "owner";
-    public static final String NOT_FOUND_MESSAGE = "Could not find resource ";
-    public static final String EXPECTED_BAD_REQUEST_RESPONSE_MESSAGE = "ExpectedResponseMessage";
-    public static final String ACCESS_TOKEN_RESPONSE_BODY = """
-        { "access_token" : "%s"}
-        """.formatted(JwtTestToken.randomToken());
-    private final Environment environment = mock(Environment.class);
-    private Context context;
-    private ByteArrayOutputStream output;
-    private ResourceService resourceService;
-    private FakeSecretsManagerClient secretsManagerClient;
-    private ReserveDoiHandler handler;
+  public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
+  public static final String DOI = "doi";
+  public static final String NOT_OWNER = "notOwner";
+  public static final String OWNER = "owner";
+  public static final String NOT_FOUND_MESSAGE = "Could not find resource ";
+  public static final String EXPECTED_BAD_REQUEST_RESPONSE_MESSAGE = "ExpectedResponseMessage";
+  public static final String ACCESS_TOKEN_RESPONSE_BODY =
+      """
+      { "access_token" : "%s"}
+      """
+          .formatted(JwtTestToken.randomToken());
+  private final Environment environment = mock(Environment.class);
+  private Context context;
+  private ByteArrayOutputStream output;
+  private ResourceService resourceService;
+  private FakeSecretsManagerClient secretsManagerClient;
+  private ReserveDoiHandler handler;
 
-    @BeforeEach
-    public void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) {
-        super.init();
-        secretsManagerClient = new FakeSecretsManagerClient();
-        var credentials = new BackendClientCredentials("id", "secret");
-        secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
-        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        when(environment.readEnv("API_HOST")).thenReturn("localhost");
-        when(environment.readEnv("COGNITO_AUTHORIZER_URLS")).thenReturn("http://localhost:3000");
-        context = new FakeContext();
-        output = new ByteArrayOutputStream();
-        resourceService = getResourceService(client);
-        var reserveDoiClient = new DataCiteDoiClient(WiremockHttpClient.create(), secretsManagerClient,
-                                                     wireMockRuntimeInfo.getHttpsBaseUrl());
-        handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
-    }
+  @BeforeEach
+  public void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) {
+    super.init();
+    secretsManagerClient = new FakeSecretsManagerClient();
+    var credentials = new BackendClientCredentials("id", "secret");
+    secretsManagerClient.putPlainTextSecret("someSecret", credentials.toString());
+    when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
+    when(environment.readEnv("API_HOST")).thenReturn("localhost");
+    when(environment.readEnv("COGNITO_AUTHORIZER_URLS")).thenReturn("http://localhost:3000");
+    context = new FakeContext();
+    output = new ByteArrayOutputStream();
+    resourceService = getResourceService(client);
+    var reserveDoiClient =
+        new DataCiteDoiClient(
+            WiremockHttpClient.create(),
+            secretsManagerClient,
+            wireMockRuntimeInfo.getHttpsBaseUrl());
+    handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
+  }
 
-    @Test
-    void shouldThrowBadMethodExceptionWhenPublicationIsNotADraft() throws ApiGatewayException, IOException {
-        var publication = createPersistedPublishedPublication();
-        var request = generateRequestWithOwner(publication, OWNER);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertEquals(HttpURLConnection.HTTP_BAD_METHOD, response.getStatusCode());
-        assertThat(response.getBodyObject(Problem.class).getDetail(), is(equalTo(NOT_DRAFT_STATUS_ERROR_MESSAGE)));
-    }
+  @Test
+  void shouldThrowBadMethodExceptionWhenPublicationIsNotADraft()
+      throws ApiGatewayException, IOException {
+    var publication = createPersistedPublishedPublication();
+    var request = generateRequestWithOwner(publication, OWNER);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    assertEquals(HttpURLConnection.HTTP_BAD_METHOD, response.getStatusCode());
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(),
+        is(equalTo(NOT_DRAFT_STATUS_ERROR_MESSAGE)));
+  }
 
-    @Test
-    void shouldReturnBadMethodExceptionWhenPublicationAlreadyHasDoi() throws IOException, ApiGatewayException {
-        var publication = createPersistedDraftPublicationWithDoi();
-        var request = generateRequestWithOwner(publication, OWNER);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertEquals(HttpURLConnection.HTTP_BAD_METHOD, response.getStatusCode());
-        assertThat(response.getBodyObject(Problem.class).getDetail(),
-                   is(equalTo(DOI_ALREADY_EXISTS_ERROR_MESSAGE)));
-    }
+  @Test
+  void shouldReturnBadMethodExceptionWhenPublicationAlreadyHasDoi()
+      throws IOException, ApiGatewayException {
+    var publication = createPersistedDraftPublicationWithDoi();
+    var request = generateRequestWithOwner(publication, OWNER);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    assertEquals(HttpURLConnection.HTTP_BAD_METHOD, response.getStatusCode());
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(),
+        is(equalTo(DOI_ALREADY_EXISTS_ERROR_MESSAGE)));
+  }
 
-    @Test
-    void shouldThrowUnauthorizedExceptionWhenUserIsNotAnOwner() throws ApiGatewayException, IOException {
-        var publication = createPersistedDraftPublication();
-        var request = generateRequestWithOwner(publication, NOT_OWNER);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertEquals(HttpURLConnection.HTTP_UNAUTHORIZED, response.getStatusCode());
-        assertThat(response.getBodyObject(Problem.class).getDetail(), is(equalTo(UNSUPPORTED_ROLE_ERROR_MESSAGE)));
-    }
+  @Test
+  void shouldThrowUnauthorizedExceptionWhenUserIsNotAnOwner()
+      throws ApiGatewayException, IOException {
+    var publication = createPersistedDraftPublication();
+    var request = generateRequestWithOwner(publication, NOT_OWNER);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    assertEquals(HttpURLConnection.HTTP_UNAUTHORIZED, response.getStatusCode());
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(),
+        is(equalTo(UNSUPPORTED_ROLE_ERROR_MESSAGE)));
+  }
 
-    @Test
-    void shouldThrowNotFoundExceptionWhenResourceDoesNotExist() throws IOException {
-        var publication = createNotPersistedDraftPublication();
-        var request = generateRequestWithOwner(publication, OWNER);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertEquals(HttpURLConnection.HTTP_NOT_FOUND, response.getStatusCode());
-        assertThat(response.getBodyObject(Problem.class).getDetail(),
-                   is(equalTo(NOT_FOUND_MESSAGE + publication.getIdentifier())));
-    }
+  @Test
+  void shouldThrowNotFoundExceptionWhenResourceDoesNotExist() throws IOException {
+    var publication = createNotPersistedDraftPublication();
+    var request = generateRequestWithOwner(publication, OWNER);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    assertEquals(HttpURLConnection.HTTP_NOT_FOUND, response.getStatusCode());
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(),
+        is(equalTo(NOT_FOUND_MESSAGE + publication.getIdentifier())));
+  }
 
-    @Test
-    void shouldReturnBadResponseWhenBadResponseFromDoiRegistrar()
-        throws ApiGatewayException, IOException {
-        var publication = createPersistedDraftPublication();
-        var request = generateRequestWithOwner(publication, OWNER);
-        mockReserveDoiFailedResponse();
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertEquals(HttpURLConnection.HTTP_BAD_GATEWAY, response.getStatusCode());
-        assertThat(response.getBodyObject(Problem.class).getDetail(), is(equalTo(BAD_RESPONSE_ERROR_MESSAGE)));
-    }
+  @Test
+  void shouldReturnBadResponseWhenBadResponseFromDoiRegistrar()
+      throws ApiGatewayException, IOException {
+    var publication = createPersistedDraftPublication();
+    var request = generateRequestWithOwner(publication, OWNER);
+    mockReserveDoiFailedResponse();
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    assertEquals(HttpURLConnection.HTTP_BAD_GATEWAY, response.getStatusCode());
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(), is(equalTo(BAD_RESPONSE_ERROR_MESSAGE)));
+  }
 
-    @Test
-    void shouldReturnBadResponseFromDataCiteWhenStatusCode500AndOver(WireMockRuntimeInfo wireMockRuntimeInfo)
-        throws ApiGatewayException, IOException {
-        var publication = createPersistedDraftPublication();
-        var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
-        var httpClient = new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_GATEWAY_TIMEOUT));
-        var reserveDoiClient = new DataCiteDoiClient(httpClient,
-                                                     secretsManagerClient,
-                                                     wireMockRuntimeInfo.getHttpsBaseUrl());
-        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
-        var request = generateRequestWithOwner(publication, OWNER);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertEquals(HttpURLConnection.HTTP_BAD_GATEWAY, response.getStatusCode());
-        assertThat(response.getBodyObject(Problem.class).getDetail(), is(equalTo(BAD_RESPONSE_ERROR_MESSAGE)));
-    }
+  @Test
+  void shouldReturnBadResponseFromDataCiteWhenStatusCode500AndOver(
+      WireMockRuntimeInfo wireMockRuntimeInfo) throws ApiGatewayException, IOException {
+    var publication = createPersistedDraftPublication();
+    var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
+    var httpClient =
+        new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_GATEWAY_TIMEOUT));
+    var reserveDoiClient =
+        new DataCiteDoiClient(
+            httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
+    this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
+    var request = generateRequestWithOwner(publication, OWNER);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    assertEquals(HttpURLConnection.HTTP_BAD_GATEWAY, response.getStatusCode());
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(), is(equalTo(BAD_RESPONSE_ERROR_MESSAGE)));
+  }
 
-    @Test
-    void shouldReturnBadResponseFromDataCiteWhenStatusCode400AndOver(WireMockRuntimeInfo wireMockRuntimeInfo)
-        throws ApiGatewayException, IOException {
-        var publication = createPersistedDraftPublication();
-        var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
-        var httpClient = new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_FORBIDDEN));
-        var reserveDoiClient = new DataCiteDoiClient(httpClient,
-                                                     secretsManagerClient,
-                                                     wireMockRuntimeInfo.getHttpsBaseUrl());
-        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
-        var request = generateRequestWithOwner(publication, OWNER);
-        handler.handleRequest(request, output, context);
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertEquals(HttpURLConnection.HTTP_BAD_GATEWAY, response.getStatusCode());
-        assertThat(response.getBodyObject(Problem.class).getDetail(), is(equalTo(BAD_RESPONSE_ERROR_MESSAGE)));
-    }
+  @Test
+  void shouldReturnBadResponseFromDataCiteWhenStatusCode400AndOver(
+      WireMockRuntimeInfo wireMockRuntimeInfo) throws ApiGatewayException, IOException {
+    var publication = createPersistedDraftPublication();
+    var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
+    var httpClient =
+        new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_FORBIDDEN));
+    var reserveDoiClient =
+        new DataCiteDoiClient(
+            httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
+    this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
+    var request = generateRequestWithOwner(publication, OWNER);
+    handler.handleRequest(request, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    assertEquals(HttpURLConnection.HTTP_BAD_GATEWAY, response.getStatusCode());
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(), is(equalTo(BAD_RESPONSE_ERROR_MESSAGE)));
+  }
 
-    @Test
-    void shouldReturnBadResponseWhenResponseFromFromDoiRegistrarIsNotHttpCreated(
-        WireMockRuntimeInfo wireMockRuntimeInfo) throws ApiGatewayException, IOException {
-        var publication = createPersistedDraftPublication();
-        var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
-        var httpClient = new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_USE_PROXY));
-        var reserveDoiClient = new DataCiteDoiClient(httpClient,
-                                                     secretsManagerClient,
-                                                     wireMockRuntimeInfo.getHttpsBaseUrl());
-        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
-        var request = generateRequestWithOwner(publication, OWNER);
-        handler.handleRequest(request, output, context);
+  @Test
+  void shouldReturnBadResponseWhenResponseFromFromDoiRegistrarIsNotHttpCreated(
+      WireMockRuntimeInfo wireMockRuntimeInfo) throws ApiGatewayException, IOException {
+    var publication = createPersistedDraftPublication();
+    var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
+    var httpClient =
+        new FakeHttpClient<>(tokenResponse(), doiBadResponse(expectedDoi, HTTP_USE_PROXY));
+    var reserveDoiClient =
+        new DataCiteDoiClient(
+            httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
+    this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
+    var request = generateRequestWithOwner(publication, OWNER);
+    handler.handleRequest(request, output, context);
 
-        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-        assertEquals(HttpURLConnection.HTTP_BAD_GATEWAY, response.getStatusCode());
-        assertThat(response.getBodyObject(Problem.class).getDetail(), is(equalTo(BAD_RESPONSE_ERROR_MESSAGE)));
-    }
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    assertEquals(HttpURLConnection.HTTP_BAD_GATEWAY, response.getStatusCode());
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(), is(equalTo(BAD_RESPONSE_ERROR_MESSAGE)));
+  }
 
-    @Test
-    void shouldReturnDoiSuccessfully(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException, ApiGatewayException {
-        var publication = createPersistedDraftPublication();
-        var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
-        var httpClient = new FakeHttpClient<>(tokenResponse(), doiResponse(expectedDoi));
-        var reserveDoiClient = new DataCiteDoiClient(httpClient,
-                                                     secretsManagerClient,
-                                                     wireMockRuntimeInfo.getHttpsBaseUrl());
-        this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
-        var request = generateRequestWithOwner(publication, OWNER);
-        handler.handleRequest(request, output, context);
+  @Test
+  void shouldReturnDoiSuccessfully(WireMockRuntimeInfo wireMockRuntimeInfo)
+      throws IOException, ApiGatewayException {
+    var publication = createPersistedDraftPublication();
+    var expectedDoi = URI.create("https://doiHost/10.0000/" + randomString());
+    var httpClient = new FakeHttpClient<>(tokenResponse(), doiResponse(expectedDoi));
+    var reserveDoiClient =
+        new DataCiteDoiClient(
+            httpClient, secretsManagerClient, wireMockRuntimeInfo.getHttpsBaseUrl());
+    this.handler = new ReserveDoiHandler(resourceService, reserveDoiClient, environment);
+    var request = generateRequestWithOwner(publication, OWNER);
+    handler.handleRequest(request, output, context);
 
-        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        assertThat(updatedPublication.getDoi(), is(equalTo(expectedDoi)));
-        var response = GatewayResponse.fromOutputStream(output, DoiResponse.class);
-        assertEquals(HttpURLConnection.HTTP_CREATED, response.getStatusCode());
-        var actualDoi = response.getBodyObject(DoiResponse.class);
-        assertThat(actualDoi.getDoi(), is(equalTo(expectedDoi)));
-    }
+    var updatedPublication =
+        resourceService.getPublicationByIdentifier(publication.getIdentifier());
+    assertThat(updatedPublication.getDoi(), is(equalTo(expectedDoi)));
+    var response = GatewayResponse.fromOutputStream(output, DoiResponse.class);
+    assertEquals(HttpURLConnection.HTTP_CREATED, response.getStatusCode());
+    var actualDoi = response.getBodyObject(DoiResponse.class);
+    assertThat(actualDoi.getDoi(), is(equalTo(expectedDoi)));
+  }
 
-    private static FakeHttpResponse<String> doiBadResponse(URI expectedDoi, int code) throws JsonProcessingException {
-        return FakeHttpResponse.create(createResponse(expectedDoi.toString()), code);
-    }
+  private static FakeHttpResponse<String> doiBadResponse(URI expectedDoi, int code)
+      throws JsonProcessingException {
+    return FakeHttpResponse.create(createResponse(expectedDoi.toString()), code);
+  }
 
-    private static FakeHttpResponse<String> tokenResponse() {
-        return FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK);
-    }
+  private static FakeHttpResponse<String> tokenResponse() {
+    return FakeHttpResponse.create(ACCESS_TOKEN_RESPONSE_BODY, HTTP_OK);
+  }
 
-    private static String createResponse(String expectedDoiPrefix) throws JsonProcessingException {
-        return JsonUtils.dtoObjectMapper.writeValueAsString(new DoiResponse(URI.create(expectedDoiPrefix)));
-    }
+  private static String createResponse(String expectedDoiPrefix) throws JsonProcessingException {
+    return JsonUtils.dtoObjectMapper.writeValueAsString(
+        new DoiResponse(URI.create(expectedDoiPrefix)));
+  }
 
-    private FakeHttpResponse<String> doiResponse(URI expectedDoi) throws JsonProcessingException {
-        return FakeHttpResponse.create(createResponse(expectedDoi.toString()), HTTP_CREATED);
-    }
+  private FakeHttpResponse<String> doiResponse(URI expectedDoi) throws JsonProcessingException {
+    return FakeHttpResponse.create(createResponse(expectedDoi.toString()), HTTP_CREATED);
+  }
 
-    private Publication createPersistedDraftPublicationWithDoi() throws NotFoundException, BadRequestException {
-        var publication = PublicationGenerator.randomPublication();
-        publication.setResourceOwner(new ResourceOwner(new Username(ReserveDoiHandlerTest.OWNER), randomUri()));
-        var userInstance = UserInstance.fromPublication(publication);
-        var publicationIdentifier =
-            Resource.fromPublication(publication).persistNew(resourceService, userInstance).getIdentifier();
-        return resourceService.getPublicationByIdentifier(publicationIdentifier);
-    }
+  private Publication createPersistedDraftPublicationWithDoi()
+      throws NotFoundException, BadRequestException {
+    var publication = PublicationGenerator.randomPublication();
+    publication.setResourceOwner(
+        new ResourceOwner(new Username(ReserveDoiHandlerTest.OWNER), randomUri()));
+    var userInstance = UserInstance.fromPublication(publication);
+    var publicationIdentifier =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, userInstance)
+            .getIdentifier();
+    return resourceService.getPublicationByIdentifier(publicationIdentifier);
+  }
 
-    private Publication createNotPersistedDraftPublication() {
-        var publication = PublicationGenerator.randomPublication();
-        publication.setDoi(null);
-        publication.setResourceOwner(new ResourceOwner(new Username(NOT_OWNER), randomUri()));
-        return publication;
-    }
+  private Publication createNotPersistedDraftPublication() {
+    var publication = PublicationGenerator.randomPublication();
+    publication.setDoi(null);
+    publication.setResourceOwner(new ResourceOwner(new Username(NOT_OWNER), randomUri()));
+    return publication;
+  }
 
-    private Publication createPersistedDraftPublication() throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication();
-        publication.setDoi(null);
-        publication.setResourceOwner(new ResourceOwner(new Username(ReserveDoiHandlerTest.OWNER), randomUri()));
-        var userInstance = UserInstance.fromPublication(publication);
-        return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-    }
+  private Publication createPersistedDraftPublication() throws ApiGatewayException {
+    var publication = PublicationGenerator.randomPublication();
+    publication.setDoi(null);
+    publication.setResourceOwner(
+        new ResourceOwner(new Username(ReserveDoiHandlerTest.OWNER), randomUri()));
+    var userInstance = UserInstance.fromPublication(publication);
+    return Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+  }
 
-    private Publication createPersistedPublishedPublication() throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication();
-        publication.setDoi(null);
-        publication.setResourceOwner(new ResourceOwner(new Username(ReserveDoiHandlerTest.OWNER), randomUri()));
-        var userInstance = UserInstance.fromPublication(publication);
-        var persistedPublication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-        Resource.fromPublication(persistedPublication).publish(resourceService, userInstance);
-        return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
-    }
+  private Publication createPersistedPublishedPublication() throws ApiGatewayException {
+    var publication = PublicationGenerator.randomPublication();
+    publication.setDoi(null);
+    publication.setResourceOwner(
+        new ResourceOwner(new Username(ReserveDoiHandlerTest.OWNER), randomUri()));
+    var userInstance = UserInstance.fromPublication(publication);
+    var persistedPublication =
+        Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+    Resource.fromPublication(persistedPublication).publish(resourceService, userInstance);
+    return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+  }
 
-    private InputStream generateRequestWithOwner(Publication publication, String owner) throws JsonProcessingException {
-        Map<String, String> headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-        Map<String, String> pathParameters = Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString(),
-                                                    DOI, DOI);
-        return new HandlerRequestBuilder<InputStream>(JsonUtils.dtoObjectMapper)
-                   .withHeaders(headers)
-                   .withPathParameters(pathParameters)
-                   .withCurrentCustomer(publication.getPublisher().getId())
-                   .withUserName(owner)
-                   .build();
-    }
+  private InputStream generateRequestWithOwner(Publication publication, String owner)
+      throws JsonProcessingException {
+    Map<String, String> headers = Map.of(ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+    Map<String, String> pathParameters =
+        Map.of(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString(), DOI, DOI);
+    return new HandlerRequestBuilder<InputStream>(JsonUtils.dtoObjectMapper)
+        .withHeaders(headers)
+        .withPathParameters(pathParameters)
+        .withCurrentCustomer(publication.getPublisher().getId())
+        .withUserName(owner)
+        .build();
+  }
 
-    private void mockReserveDoiFailedResponse() {
-        stubFor(post(urlPathEqualTo(RandomDataGenerator.randomUri().getPath()))
-                    .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_FORBIDDEN)
-                                    .withBody(EXPECTED_BAD_REQUEST_RESPONSE_MESSAGE)));
-    }
+  private void mockReserveDoiFailedResponse() {
+    stubFor(
+        post(urlPathEqualTo(RandomDataGenerator.randomUri().getPath()))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpURLConnection.HTTP_FORBIDDEN)
+                    .withBody(EXPECTED_BAD_REQUEST_RESPONSE_MESSAGE)));
+  }
 }

@@ -8,6 +8,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AN
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
@@ -34,107 +35,114 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeName(PublicationChannelDao.TYPE)
 public class PublicationChannelDao extends Dao implements DynamoEntryByIdentifier {
 
-    public static final String TYPE = "PublicationChannel";
-    protected static final String IDENTIFIER = "identifier";
-    protected static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
-    protected static final String DATA = "data";
-    private static final String KEY_PATTERN = "%s:%s";
-    private final SortableIdentifier identifier;
-    private final SortableIdentifier resourceIdentifier;
+  public static final String TYPE = "PublicationChannel";
+  protected static final String IDENTIFIER = "identifier";
+  protected static final String RESOURCE_IDENTIFIER = "resourceIdentifier";
+  protected static final String DATA = "data";
+  private static final String KEY_PATTERN = "%s:%s";
+  private final SortableIdentifier identifier;
+  private final SortableIdentifier resourceIdentifier;
 
-    @JsonCreator
-    public PublicationChannelDao(@JsonProperty(IDENTIFIER) SortableIdentifier identifier,
-                                 @JsonProperty(RESOURCE_IDENTIFIER) SortableIdentifier resourceIdentifier,
-                                 @JsonProperty(DATA) PublicationChannel publicationChannel) {
-        super(publicationChannel);
-        this.identifier = identifier;
-        this.resourceIdentifier = resourceIdentifier;
-    }
+  @JsonCreator
+  public PublicationChannelDao(
+      @JsonProperty(IDENTIFIER) SortableIdentifier identifier,
+      @JsonProperty(RESOURCE_IDENTIFIER) SortableIdentifier resourceIdentifier,
+      @JsonProperty(DATA) PublicationChannel publicationChannel) {
+    super(publicationChannel);
+    this.identifier = identifier;
+    this.resourceIdentifier = resourceIdentifier;
+  }
 
-    public static PublicationChannelDao fromPublicationChannel(PublicationChannel publicationChannel) {
-        var lowerCaseIdentifier = publicationChannel.getIdentifier().toString().toLowerCase(Locale.ROOT);
-        return new PublicationChannelDao(new SortableIdentifier(lowerCaseIdentifier),
-                                         publicationChannel.getResourceIdentifier(),
-                                         publicationChannel);
-    }
+  public static PublicationChannelDao fromPublicationChannel(
+      PublicationChannel publicationChannel) {
+    var lowerCaseIdentifier =
+        publicationChannel.getIdentifier().toString().toLowerCase(Locale.ROOT);
+    return new PublicationChannelDao(
+        new SortableIdentifier(lowerCaseIdentifier),
+        publicationChannel.getResourceIdentifier(),
+        publicationChannel);
+  }
 
-    @Override
-    @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)
-    public String getPrimaryKeyPartitionKey() {
-        return KEY_PATTERN.formatted(TYPE, getIdentifier());
-    }
+  @Override
+  @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)
+  public String getPrimaryKeyPartitionKey() {
+    return KEY_PATTERN.formatted(TYPE, getIdentifier());
+  }
 
-    @Override
-    @JsonProperty(PRIMARY_KEY_SORT_KEY_NAME)
-    public String getPrimaryKeySortKey() {
-        return KEY_PATTERN.formatted(Resource.TYPE, getResourceIdentifier());
-    }
+  @Override
+  @JsonProperty(PRIMARY_KEY_SORT_KEY_NAME)
+  public String getPrimaryKeySortKey() {
+    return KEY_PATTERN.formatted(Resource.TYPE, getResourceIdentifier());
+  }
 
-    //TODO: Remove JacocoGenerated annotation once method is in use
-    @JacocoGenerated
-    @Override
-    public String indexingType() {
-        return TYPE;
-    }
+  // TODO: Remove JacocoGenerated annotation once method is in use
+  @JacocoGenerated
+  @Override
+  public String indexingType() {
+    return TYPE;
+  }
 
-    @JacocoGenerated
-    @Override
-    public URI getCustomerId() {
-        return null;
-    }
+  @JacocoGenerated
+  @Override
+  public URI getCustomerId() {
+    return null;
+  }
 
-    @Override
-    public SortableIdentifier getIdentifier() {
-        return identifier;
-    }
+  @Override
+  public SortableIdentifier getIdentifier() {
+    return identifier;
+  }
 
-    @Override
-    public Map<String, AttributeValue> toDynamoFormat() {
-        return attempt(() -> JsonUtils.dynamoObjectMapper.writeValueAsString(this)).map(Item::fromJSON)
-                   .map(ItemUtils::toAttributeValues)
-                   .orElseThrow();
-    }
+  @Override
+  public Map<String, AttributeValue> toDynamoFormat() {
+    return attempt(() -> JsonUtils.dynamoObjectMapper.writeValueAsString(this))
+        .map(Item::fromJSON)
+        .map(ItemUtils::toAttributeValues)
+        .orElseThrow();
+  }
 
-    //TODO: Remove JacocoGenerated annotation once method is in use
-    @JacocoGenerated
-    @Override
-    public TransactWriteItemsRequest createInsertionTransactionRequest() {
-        return new TransactWriteItemsRequest().withTransactItems(newPutTransactionItem(this));
-    }
+  // TODO: Remove JacocoGenerated annotation once method is in use
+  @JacocoGenerated
+  @Override
+  public TransactWriteItemsRequest createInsertionTransactionRequest() {
+    return new TransactWriteItemsRequest().withTransactItems(newPutTransactionItem(this));
+  }
 
-    @JacocoGenerated
-    @Override
-    public void updateExistingEntry(AmazonDynamoDB client) {
-        throw new UnsupportedOperationException();
-    }
+  @JacocoGenerated
+  @Override
+  public void updateExistingEntry(AmazonDynamoDB client) {
+    throw new UnsupportedOperationException();
+  }
 
-    @JacocoGenerated
-    @Override
-    protected User getOwner() {
-        return null;
-    }
+  @JacocoGenerated
+  @Override
+  protected User getOwner() {
+    return null;
+  }
 
-    public TransactWriteItem toPutNewTransactionItem(String tableName) {
-        var put = new Put().withItem(this.toDynamoFormat())
-                      .withTableName(tableName)
-                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
-        return new TransactWriteItem().withPut(put);
-    }
+  public TransactWriteItem toPutNewTransactionItem(String tableName) {
+    var put =
+        new Put()
+            .withItem(this.toDynamoFormat())
+            .withTableName(tableName)
+            .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+    return new TransactWriteItem().withPut(put);
+  }
 
-    @Override
-    @JsonProperty(BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME)
-    public String getByTypeAndIdentifierPartitionKey() {
-        return KEY_PATTERN.formatted(Resource.TYPE, getResourceIdentifier());
-    }
+  @Override
+  @JsonProperty(BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME)
+  public String getByTypeAndIdentifierPartitionKey() {
+    return KEY_PATTERN.formatted(Resource.TYPE, getResourceIdentifier());
+  }
 
-    @Override
-    @JsonProperty(BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME)
-    public String getByTypeAndIdentifierSortKey() {
-        return KEY_PATTERN.formatted(TYPE, getIdentifier());
-    }
+  @Override
+  @JsonProperty(BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME)
+  public String getByTypeAndIdentifierSortKey() {
+    return KEY_PATTERN.formatted(TYPE, getIdentifier());
+  }
 
-    public SortableIdentifier getResourceIdentifier() {
-        return resourceIdentifier;
-    }
+  public SortableIdentifier getResourceIdentifier() {
+    return resourceIdentifier;
+  }
 }

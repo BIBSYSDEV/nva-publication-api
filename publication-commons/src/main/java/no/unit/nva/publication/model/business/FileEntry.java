@@ -2,6 +2,7 @@ package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -39,321 +40,366 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public final class FileEntry implements Entity, QueryObject<FileEntry> {
 
-    public static final String TYPE = "File";
-    public static final String DO_NOT_USE_THIS_METHOD = "Do not use this method";
-    private final SortableIdentifier resourceIdentifier;
-    private final User owner;
-    private URI ownerAffiliation;
-    private final URI customerId;
-    private final Instant createdDate;
-    private Instant modifiedDate;
-    private File file;
-    private FileEvent fileEvent;
+  public static final String TYPE = "File";
+  public static final String DO_NOT_USE_THIS_METHOD = "Do not use this method";
+  private final SortableIdentifier resourceIdentifier;
+  private final User owner;
+  private URI ownerAffiliation;
+  private final URI customerId;
+  private final Instant createdDate;
+  private Instant modifiedDate;
+  private File file;
+  private FileEvent fileEvent;
 
-    /**
-     * Constructor for FileEntry.
-     * @param resourceIdentifier
-     * @param createdDate
-     * @param modifiedDate
-     * @param owner
-     * @param ownerAffiliation Top level cristin unit id
-     * @param customerId
-     * @param file
-     * @param fileEvent
-     */
-    @JsonCreator
-    private FileEntry(@JsonProperty("resourceIdentifier") SortableIdentifier resourceIdentifier,
-                      @JsonProperty("createdDate") Instant createdDate,
-                      @JsonProperty("modifiedDate") Instant modifiedDate, @JsonProperty("owner") User owner,
-                      @JsonProperty("ownerAffiliation") URI ownerAffiliation,
-                      @JsonProperty("customerId") URI customerId, @JsonProperty("file") File file,
-                      @JsonProperty("fileEvent") FileEvent fileEvent) {
-        this.resourceIdentifier = resourceIdentifier;
-        this.createdDate = createdDate;
-        this.modifiedDate = modifiedDate;
-        this.owner = owner;
-        this.ownerAffiliation = ownerAffiliation;
-        this.customerId = customerId;
-        this.file = file;
-        this.fileEvent = fileEvent;
-    }
+  /**
+   * Constructor for FileEntry.
+   *
+   * @param resourceIdentifier
+   * @param createdDate
+   * @param modifiedDate
+   * @param owner
+   * @param ownerAffiliation Top level cristin unit id
+   * @param customerId
+   * @param file
+   * @param fileEvent
+   */
+  @JsonCreator
+  private FileEntry(
+      @JsonProperty("resourceIdentifier") SortableIdentifier resourceIdentifier,
+      @JsonProperty("createdDate") Instant createdDate,
+      @JsonProperty("modifiedDate") Instant modifiedDate,
+      @JsonProperty("owner") User owner,
+      @JsonProperty("ownerAffiliation") URI ownerAffiliation,
+      @JsonProperty("customerId") URI customerId,
+      @JsonProperty("file") File file,
+      @JsonProperty("fileEvent") FileEvent fileEvent) {
+    this.resourceIdentifier = resourceIdentifier;
+    this.createdDate = createdDate;
+    this.modifiedDate = modifiedDate;
+    this.owner = owner;
+    this.ownerAffiliation = ownerAffiliation;
+    this.customerId = customerId;
+    this.file = file;
+    this.fileEvent = fileEvent;
+  }
 
-    public static FileEntry create(File file, SortableIdentifier resourceIdentifier, UserInstance userInstance) {
-        return new FileEntry(resourceIdentifier, Instant.now(), Instant.now(), userInstance.getUser(),
-                             userInstance.getTopLevelOrgCristinId(), userInstance.getCustomerId(), file, null);
-    }
+  public static FileEntry create(
+      File file, SortableIdentifier resourceIdentifier, UserInstance userInstance) {
+    return new FileEntry(
+        resourceIdentifier,
+        Instant.now(),
+        Instant.now(),
+        userInstance.getUser(),
+        userInstance.getTopLevelOrgCristinId(),
+        userInstance.getCustomerId(),
+        file,
+        null);
+  }
 
-    public static QueryObject<FileEntry> queryObject(UUID fileIdentifier, SortableIdentifier resourceIdentifier) {
-        return new FileEntry(resourceIdentifier, null, null, null, null, null, File.builder()
-                                                                                   .withIdentifier(UUID.fromString(
-                                                                                       fileIdentifier.toString()))
-                                                                                   .buildHiddenFile(), null);
-    }
+  public static QueryObject<FileEntry> queryObject(
+      UUID fileIdentifier, SortableIdentifier resourceIdentifier) {
+    return new FileEntry(
+        resourceIdentifier,
+        null,
+        null,
+        null,
+        null,
+        null,
+        File.builder().withIdentifier(UUID.fromString(fileIdentifier.toString())).buildHiddenFile(),
+        null);
+  }
 
-    public static QueryObject<FileEntry> queryObject(SortableIdentifier identifier) {
-        var uuid = UUID.fromString(identifier.toString());
-        var fileWithIdentifier = File.builder().withIdentifier(uuid).buildHiddenFile();
-        return new FileEntry(null, null, null, null, null, null, fileWithIdentifier, null);
-    }
+  public static QueryObject<FileEntry> queryObject(SortableIdentifier identifier) {
+    var uuid = UUID.fromString(identifier.toString());
+    var fileWithIdentifier = File.builder().withIdentifier(uuid).buildHiddenFile();
+    return new FileEntry(null, null, null, null, null, null, fileWithIdentifier, null);
+  }
 
-    public static FileEntry fromDao(FileDao fileDao) {
-        return (FileEntry) fileDao.getData();
-    }
+  public static FileEntry fromDao(FileDao fileDao) {
+    return (FileEntry) fileDao.getData();
+  }
 
-    public static FileEntry createFromImportSource(File file, SortableIdentifier identifier,
-                                                   UserInstance userInstance, ImportSource importSource) {
-        var fileEntry = create(file, identifier, userInstance);
-        fileEntry.setFileEvent(FileImportedEvent.create(userInstance.getUser(),
-                                                        userInstance.getTopLevelOrgCristinId(), Instant.now(),
-                                                        importSource));
-        return fileEntry;
-    }
+  public static FileEntry createFromImportSource(
+      File file,
+      SortableIdentifier identifier,
+      UserInstance userInstance,
+      ImportSource importSource) {
+    var fileEntry = create(file, identifier, userInstance);
+    fileEntry.setFileEvent(
+        FileImportedEvent.create(
+            userInstance.getUser(),
+            userInstance.getTopLevelOrgCristinId(),
+            Instant.now(),
+            importSource));
+    return fileEntry;
+  }
 
-    public void persist(ResourceService resourceService, UserInstance userInstance) {
-        var now = Instant.now();
-        this.modifiedDate = now;
-        this.setFileEvent(FileUploadedEvent.create(userInstance, now));
-        resourceService.persistFile(this);
-    }
+  public void persist(ResourceService resourceService, UserInstance userInstance) {
+    var now = Instant.now();
+    this.modifiedDate = now;
+    this.setFileEvent(FileUploadedEvent.create(userInstance, now));
+    resourceService.persistFile(this);
+  }
 
-    @Override
-    public Optional<FileEntry> fetch(ResourceService resourceService) {
-        return resourceService.fetchFile(this);
-    }
+  @Override
+  public Optional<FileEntry> fetch(ResourceService resourceService) {
+    return resourceService.fetchFile(this);
+  }
 
-    public SortableIdentifier getResourceIdentifier() {
-        return resourceIdentifier;
-    }
+  public SortableIdentifier getResourceIdentifier() {
+    return resourceIdentifier;
+  }
 
-    @Override
-    public SortableIdentifier getIdentifier() {
-        return new SortableIdentifier(file.getIdentifier().toString());
-    }
+  @Override
+  public SortableIdentifier getIdentifier() {
+    return new SortableIdentifier(file.getIdentifier().toString());
+  }
 
-    @JacocoGenerated
-    @JsonIgnore
-    @Override
-    public void setIdentifier(SortableIdentifier identifier) {
-        throw new UnsupportedOperationException(DO_NOT_USE_THIS_METHOD);
-    }
+  @JacocoGenerated
+  @JsonIgnore
+  @Override
+  public void setIdentifier(SortableIdentifier identifier) {
+    throw new UnsupportedOperationException(DO_NOT_USE_THIS_METHOD);
+  }
 
-    @Override
-    public Publication toPublication(ResourceService resourceService) {
-        return attempt(() -> resourceService.getPublicationByIdentifier(getResourceIdentifier())).orElseThrow();
-    }
+  @Override
+  public Publication toPublication(ResourceService resourceService) {
+    return attempt(() -> resourceService.getPublicationByIdentifier(getResourceIdentifier()))
+        .orElseThrow();
+  }
 
-    @JacocoGenerated
-    @Override
-    public String getType() {
-        return TYPE;
-    }
+  @JacocoGenerated
+  @Override
+  public String getType() {
+    return TYPE;
+  }
 
-    @JacocoGenerated
-    @Override
-    public Instant getCreatedDate() {
-        return createdDate;
-    }
+  @JacocoGenerated
+  @Override
+  public Instant getCreatedDate() {
+    return createdDate;
+  }
 
-    @JacocoGenerated
-    @JsonIgnore
-    @Override
-    public void setCreatedDate(Instant now) {
-        throw new UnsupportedOperationException(DO_NOT_USE_THIS_METHOD);
-    }
+  @JacocoGenerated
+  @JsonIgnore
+  @Override
+  public void setCreatedDate(Instant now) {
+    throw new UnsupportedOperationException(DO_NOT_USE_THIS_METHOD);
+  }
 
-    @Override
-    public Instant getModifiedDate() {
-        return modifiedDate;
-    }
+  @Override
+  public Instant getModifiedDate() {
+    return modifiedDate;
+  }
 
-    @JacocoGenerated
-    @JsonIgnore
-    @Override
-    public void setModifiedDate(Instant now) {
-        throw new UnsupportedOperationException(DO_NOT_USE_THIS_METHOD);
-    }
+  @JacocoGenerated
+  @JsonIgnore
+  @Override
+  public void setModifiedDate(Instant now) {
+    throw new UnsupportedOperationException(DO_NOT_USE_THIS_METHOD);
+  }
 
-    @Override
-    public User getOwner() {
-        return owner;
-    }
+  @Override
+  public User getOwner() {
+    return owner;
+  }
 
-    @Override
-    public URI getCustomerId() {
-        return customerId;
-    }
+  @Override
+  public URI getCustomerId() {
+    return customerId;
+  }
 
-    @Override
-    public FileDao toDao() {
-        return FileDao.fromFileEntry(this);
-    }
+  @Override
+  public FileDao toDao() {
+    return FileDao.fromFileEntry(this);
+  }
 
-    @JacocoGenerated
-    @Override
-    public String getStatusString() {
-        return "NO_STATUS";
-    }
+  @JacocoGenerated
+  @Override
+  public String getStatusString() {
+    return "NO_STATUS";
+  }
 
-    public File getFile() {
-        return file;
-    }
+  public File getFile() {
+    return file;
+  }
 
-    public URI getOwnerAffiliation() {
-        return ownerAffiliation;
-    }
+  public URI getOwnerAffiliation() {
+    return ownerAffiliation;
+  }
 
-    public void softDelete(ResourceService resourceService, User user) {
-        var fileEntry = this.softDelete(user);
-        resourceService.updateFile(fileEntry);
-    }
+  public void softDelete(ResourceService resourceService, User user) {
+    var fileEntry = this.softDelete(user);
+    resourceService.updateFile(fileEntry);
+  }
 
-    public FileEntry softDelete(User user) {
-        var now = Instant.now();
-        this.setFileEvent(FileDeletedEvent.create(user, now));
-        this.modifiedDate = now;
-        return this;
-    }
+  public FileEntry softDelete(User user) {
+    var now = Instant.now();
+    this.setFileEvent(FileDeletedEvent.create(user, now));
+    this.modifiedDate = now;
+    return this;
+  }
 
-    @Override
-    public void delete(ResourceService resourceIdentifier) {
-        resourceIdentifier.deleteFile(this);
-    }
+  @Override
+  public void delete(ResourceService resourceIdentifier) {
+    resourceIdentifier.deleteFile(this);
+  }
 
-    public void update(File file, UserInstance userInstance, ResourceService resourceService) {
-        update(file, userInstance);
-        resourceService.updateFile(this);
-    }
+  public void update(File file, UserInstance userInstance, ResourceService resourceService) {
+    update(file, userInstance);
+    resourceService.updateFile(this);
+  }
 
-    public FileEntry update(File file, UserInstance userInstance) {
-        if (!this.file.canBeConvertedTo(file)) {
-            throw new IllegalStateException("%s cannot be updated to %s"
-                                                .formatted(this.file.getClass().getSimpleName(),
-                                                           file.getClass().getSimpleName()));
-        }
-        if (shouldRetractFile(file)) {
-            this.setFileEvent(FileRetractedEvent.create(userInstance.getUser(), Instant.now()));
-        }
-        if (shouldHideFile(file)) {
-            this.setFileEvent(FileHiddenEvent.create(userInstance.getUser(), Instant.now()));
-        }
-        if (pendingFileTypeIsUpdated(file)) {
-            this.setFileEvent(FileTypeUpdatedEvent.create(userInstance.getUser(), Instant.now()));
-        }
-        if (!file.equals(this.file)) {
-            this.file = this.file.copy()
-                            .withPublisherVersion(file.getPublisherVersion())
-                            .withLicense(file.getLicense())
-                            .withEmbargoDate(file.getEmbargoDate().orElse(null))
-                            .withLegalNote(file.getLegalNote())
-                            .withRightsRetentionStrategy(file.getRightsRetentionStrategy())
-                            .build(file.getClass());
-            this.modifiedDate = Instant.now();
-        }
-        return this;
+  public FileEntry update(File file, UserInstance userInstance) {
+    if (!this.file.canBeConvertedTo(file)) {
+      throw new IllegalStateException(
+          "%s cannot be updated to %s"
+              .formatted(this.file.getClass().getSimpleName(), file.getClass().getSimpleName()));
     }
+    if (shouldRetractFile(file)) {
+      this.setFileEvent(FileRetractedEvent.create(userInstance.getUser(), Instant.now()));
+    }
+    if (shouldHideFile(file)) {
+      this.setFileEvent(FileHiddenEvent.create(userInstance.getUser(), Instant.now()));
+    }
+    if (pendingFileTypeIsUpdated(file)) {
+      this.setFileEvent(FileTypeUpdatedEvent.create(userInstance.getUser(), Instant.now()));
+    }
+    if (!file.equals(this.file)) {
+      this.file =
+          this.file
+              .copy()
+              .withPublisherVersion(file.getPublisherVersion())
+              .withLicense(file.getLicense())
+              .withEmbargoDate(file.getEmbargoDate().orElse(null))
+              .withLegalNote(file.getLegalNote())
+              .withRightsRetentionStrategy(file.getRightsRetentionStrategy())
+              .build(file.getClass());
+      this.modifiedDate = Instant.now();
+    }
+    return this;
+  }
 
-    public void setOwnerAffiliation(URI ownerAffiliation) {
-        this.ownerAffiliation = ownerAffiliation;
-        this.modifiedDate = Instant.now();
-    }
+  public void setOwnerAffiliation(URI ownerAffiliation) {
+    this.ownerAffiliation = ownerAffiliation;
+    this.modifiedDate = Instant.now();
+  }
 
-    public void updateOwnerAffiliation(ResourceService resourceService, URI ownerAffiliation) {
-        setOwnerAffiliation(ownerAffiliation);
-        resourceService.updateFile(this);
-    }
+  public void updateOwnerAffiliation(ResourceService resourceService, URI ownerAffiliation) {
+    setOwnerAffiliation(ownerAffiliation);
+    resourceService.updateFile(this);
+  }
 
-    public FileEntry updateFromImport(File file, UserInstance userInstance, ImportSource importSource) {
-        if (!file.equals(this.file)) {
-            this.setFileEvent(FileTypeUpdatedByImportEvent.create(userInstance.getUser(),
-                                                                  userInstance.getTopLevelOrgCristinId(),
-                                                                  Instant.now(), importSource));
-            this.file = this.file.copy()
-                            .withPublisherVersion(file.getPublisherVersion())
-                            .withLicense(file.getLicense())
-                            .withEmbargoDate(file.getEmbargoDate().orElse(null))
-                            .withLegalNote(file.getLegalNote())
-                            .withRightsRetentionStrategy(file.getRightsRetentionStrategy())
-                            .build(file.getClass());
-            this.modifiedDate = Instant.now();
-        }
-        return this;
+  public FileEntry updateFromImport(
+      File file, UserInstance userInstance, ImportSource importSource) {
+    if (!file.equals(this.file)) {
+      this.setFileEvent(
+          FileTypeUpdatedByImportEvent.create(
+              userInstance.getUser(),
+              userInstance.getTopLevelOrgCristinId(),
+              Instant.now(),
+              importSource));
+      this.file =
+          this.file
+              .copy()
+              .withPublisherVersion(file.getPublisherVersion())
+              .withLicense(file.getLicense())
+              .withEmbargoDate(file.getEmbargoDate().orElse(null))
+              .withLegalNote(file.getLegalNote())
+              .withRightsRetentionStrategy(file.getRightsRetentionStrategy())
+              .build(file.getClass());
+      this.modifiedDate = Instant.now();
     }
+    return this;
+  }
 
-    private boolean pendingFileTypeIsUpdated(File file) {
-        return this.file instanceof PendingFile<?,?>
-               && file instanceof PendingFile<?,?>
-               && !this.file.getArtifactType().equals(file.getArtifactType());
-    }
+  private boolean pendingFileTypeIsUpdated(File file) {
+    return this.file instanceof PendingFile<?, ?>
+        && file instanceof PendingFile<?, ?>
+        && !this.file.getArtifactType().equals(file.getArtifactType());
+  }
 
-    public void importNew(ResourceService resourceService, UserInstance userInstance, ImportSource importSource) {
-        this.modifiedDate = Instant.now();
-        this.setFileEvent(FileImportedEvent.create(userInstance.getUser(), userInstance.getTopLevelOrgCristinId(),
-                                                   Instant.now(), importSource));
-        resourceService.persistFile(this);
-    }
+  public void importNew(
+      ResourceService resourceService, UserInstance userInstance, ImportSource importSource) {
+    this.modifiedDate = Instant.now();
+    this.setFileEvent(
+        FileImportedEvent.create(
+            userInstance.getUser(),
+            userInstance.getTopLevelOrgCristinId(),
+            Instant.now(),
+            importSource));
+    resourceService.persistFile(this);
+  }
 
-    private boolean shouldHideFile(File file) {
-        return !(this.file instanceof HiddenFile) && file instanceof HiddenFile;
-    }
+  private boolean shouldHideFile(File file) {
+    return !(this.file instanceof HiddenFile) && file instanceof HiddenFile;
+  }
 
-    private boolean shouldRetractFile(File file) {
-        return
-            (this.file instanceof OpenFile || this.file instanceof InternalFile || this.file instanceof HiddenFile) &&
-            file instanceof PendingFile<?, ?>;
-    }
+  private boolean shouldRetractFile(File file) {
+    return (this.file instanceof OpenFile
+            || this.file instanceof InternalFile
+            || this.file instanceof HiddenFile)
+        && file instanceof PendingFile<?, ?>;
+  }
 
-    public void approve(ResourceService resourceService, User user) {
-        if (file instanceof PendingFile<?,?> pendingFile) {
-            this.file = pendingFile.approve();
-            var now = Instant.now();
-            this.modifiedDate = now;
-            this.setFileEvent(FileApprovedEvent.create(user, now));
-            resourceService.updateFile(this);
-        }
+  public void approve(ResourceService resourceService, User user) {
+    if (file instanceof PendingFile<?, ?> pendingFile) {
+      this.file = pendingFile.approve();
+      var now = Instant.now();
+      this.modifiedDate = now;
+      this.setFileEvent(FileApprovedEvent.create(user, now));
+      resourceService.updateFile(this);
     }
+  }
 
-    public void reject(ResourceService resourceService, User user) {
-        if (file instanceof PendingFile<?,?> pendingFile) {
-            var now = Instant.now();
-            this.setFileEvent(FileRejectedEvent.create(user, now, file.getArtifactType()));
-            this.modifiedDate = now;
-            this.file = pendingFile.reject();
-            resourceService.updateFile(this);
-        }
+  public void reject(ResourceService resourceService, User user) {
+    if (file instanceof PendingFile<?, ?> pendingFile) {
+      var now = Instant.now();
+      this.setFileEvent(FileRejectedEvent.create(user, now, file.getArtifactType()));
+      this.modifiedDate = now;
+      this.file = pendingFile.reject();
+      resourceService.updateFile(this);
     }
+  }
 
-    @JsonIgnore
-    public boolean hasFileEvent() {
-        return nonNull(getFileEvent());
-    }
+  @JsonIgnore
+  public boolean hasFileEvent() {
+    return nonNull(getFileEvent());
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getResourceIdentifier(), getOwner(), getOwnerAffiliation(), getCustomerId(),
-                            getCreatedDate(), getModifiedDate(), getFile());
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        getResourceIdentifier(),
+        getOwner(),
+        getOwnerAffiliation(),
+        getCustomerId(),
+        getCreatedDate(),
+        getModifiedDate(),
+        getFile());
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof FileEntry fileEntry)) {
-            return false;
-        }
-        return Objects.equals(getResourceIdentifier(), fileEntry.getResourceIdentifier()) &&
-               Objects.equals(getOwner(), fileEntry.getOwner()) &&
-               Objects.equals(getOwnerAffiliation(), fileEntry.getOwnerAffiliation()) &&
-               Objects.equals(getCustomerId(), fileEntry.getCustomerId()) &&
-               Objects.equals(getCreatedDate(), fileEntry.getCreatedDate()) &&
-               Objects.equals(getModifiedDate(), fileEntry.getModifiedDate()) &&
-               Objects.equals(getFile(), fileEntry.getFile());
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof FileEntry fileEntry)) {
+      return false;
     }
+    return Objects.equals(getResourceIdentifier(), fileEntry.getResourceIdentifier())
+        && Objects.equals(getOwner(), fileEntry.getOwner())
+        && Objects.equals(getOwnerAffiliation(), fileEntry.getOwnerAffiliation())
+        && Objects.equals(getCustomerId(), fileEntry.getCustomerId())
+        && Objects.equals(getCreatedDate(), fileEntry.getCreatedDate())
+        && Objects.equals(getModifiedDate(), fileEntry.getModifiedDate())
+        && Objects.equals(getFile(), fileEntry.getFile());
+  }
 
-    public FileEvent getFileEvent() {
-        return fileEvent;
-    }
+  public FileEvent getFileEvent() {
+    return fileEvent;
+  }
 
-    private void setFileEvent(FileEvent fileEvent) {
-        this.fileEvent = fileEvent;
-    }
+  private void setFileEvent(FileEvent fileEvent) {
+    this.fileEvent = fileEvent;
+  }
 }

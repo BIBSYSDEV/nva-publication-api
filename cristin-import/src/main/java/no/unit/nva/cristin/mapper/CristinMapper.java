@@ -14,6 +14,7 @@ import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
 import static nva.commons.core.attempt.Try.attempt;
+
 import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -70,480 +71,511 @@ import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
 import software.amazon.awssdk.services.s3.S3Client;
 
-@SuppressWarnings({"PMD.GodClass",
-    "PMD.CouplingBetweenObjects",
-    "PMD.ForLoopCanBeForeach",
-    "PMD.ReturnEmptyCollectionRatherThanNull"})
+@SuppressWarnings({
+  "PMD.GodClass",
+  "PMD.CouplingBetweenObjects",
+  "PMD.ForLoopCanBeForeach",
+  "PMD.ReturnEmptyCollectionRatherThanNull"
+})
 public class CristinMapper extends CristinMappingModule {
 
+  public static final String CRISTIN_INSTITUTION_CODE = "CRIS";
+  public static final String UNIT_INSTITUTION_CODE = "UNIT";
+  public static final ResourceOwner SIKT_OWNER =
+      new CristinLocale("SIKT", "20754", "0", "0", "0", null, null, null, null).toResourceOwner();
+  private static final String SCOPUS_CASING_ACCEPTED_BY_FRONTEND = "Scopus";
+  private static final String DOMAIN_NAME = new Environment().readEnv("DOMAIN_NAME");
+  private static final Map<String, String> CUSTOMER_MAP =
+      Map.of(
+          "api.sandbox.nva.aws.unit.no",
+          "bb3d0c0c-5065-4623-9b98-5810983c2478",
+          "api.dev.nva.aws.unit.no",
+          "bb3d0c0c-5065-4623-9b98-5810983c2478",
+          "api.test.nva.aws.unit.no",
+          "0baf8fcb-b18d-4c09-88bb-956b4f659103",
+          "api.e2e.nva.aws.unit.no",
+          "bb3d0c0c-5065-4623-9b98-5810983c2478",
+          "api.nva.unit.no",
+          "22139870-8d31-4df9-bc45-14eb68287c4a");
+  public static final String SCOPUS_IDENTIFIER_SOURCE_CODE_FROM_CRISTIN = "scopus";
+  private final CristinUnitsUtil cristinUnitsUtil;
+  private final S3Client s3Client;
+  private final RawContentRetriever uriRetriever;
+  private final CustomerService customerService;
 
-    public static final String CRISTIN_INSTITUTION_CODE = "CRIS";
-    public static final String UNIT_INSTITUTION_CODE = "UNIT";
-    public static final ResourceOwner SIKT_OWNER = new CristinLocale("SIKT", "20754", "0", "0",
-                                                                     "0", null, null, null, null).toResourceOwner();
-    private static final String SCOPUS_CASING_ACCEPTED_BY_FRONTEND = "Scopus";
-    private static final String DOMAIN_NAME = new Environment().readEnv("DOMAIN_NAME");
-    private static final Map<String, String> CUSTOMER_MAP = Map.of("api.sandbox.nva.aws.unit.no",
-                                                                   "bb3d0c0c-5065-4623-9b98-5810983c2478",
-                                                                   "api.dev.nva.aws.unit.no",
-                                                                   "bb3d0c0c-5065-4623-9b98-5810983c2478",
-                                                                   "api.test.nva.aws.unit.no",
-                                                                   "0baf8fcb-b18d-4c09-88bb-956b4f659103",
-                                                                   "api.e2e.nva.aws.unit.no",
-                                                                   "bb3d0c0c-5065-4623-9b98-5810983c2478",
-                                                                   "api.nva.unit.no",
-                                                                   "22139870-8d31-4df9-bc45-14eb68287c4a");
-    public static final String SCOPUS_IDENTIFIER_SOURCE_CODE_FROM_CRISTIN = "scopus";
-    private final CristinUnitsUtil cristinUnitsUtil;
-    private final S3Client s3Client;
-    private final RawContentRetriever uriRetriever;
-    private final CustomerService customerService;
+  public CristinMapper(
+      CristinObject cristinObject,
+      CristinUnitsUtil cristinUnitsUtil,
+      S3Client s3Client,
+      RawContentRetriever uriRetriever,
+      CustomerService customerService) {
+    super(cristinObject, ChannelRegistryMapper.getInstance(), s3Client);
+    this.cristinUnitsUtil = cristinUnitsUtil;
+    this.s3Client = s3Client;
+    this.uriRetriever = uriRetriever;
+    this.customerService = customerService;
+  }
 
-    public CristinMapper(CristinObject cristinObject, CristinUnitsUtil cristinUnitsUtil, S3Client s3Client,
-                         RawContentRetriever uriRetriever, CustomerService customerService) {
-        super(cristinObject, ChannelRegistryMapper.getInstance(), s3Client);
-        this.cristinUnitsUtil = cristinUnitsUtil;
-        this.s3Client = s3Client;
-        this.uriRetriever = uriRetriever;
-        this.customerService = customerService;
+  public static ZoneOffset zoneOffset() {
+    return ZoneOffset.UTC.getRules().getOffset(Instant.now());
+  }
+
+  public Publication generatePublication() {
+    var entityDescription = generateEntityDescription();
+    Publication publication =
+        new Builder()
+            .withHandle(extractHandle())
+            .withAdditionalIdentifiers(extractAdditionalIdentifiers())
+            .withEntityDescription(entityDescription)
+            .withPublisher(extractOrganization())
+            .withResourceOwner(extractResourceOwner())
+            .withStatus(PublicationStatus.PUBLISHED)
+            .withProjects(extractProjects())
+            .withSubjects(generateNvaHrcsCategoriesAndActivities())
+            .withFundings(extractFundings())
+            .withPublicationNotes(extractPublicationNotes())
+            .withCuratingInstitutions(extractCuratingInstitutions(entityDescription))
+            .withAssociatedArtifacts(AssociatedLinkExtractor.extractAssociatedLinks(cristinObject))
+            .build();
+    validateDoesNotHaveEmptyFields(publication);
+    return publication;
+  }
+
+  protected Set<CuratingInstitution> extractCuratingInstitutions(
+      EntityDescription entityDescription) {
+    return new CuratingInstitutionsUtil(uriRetriever, customerService)
+        .getCuratingInstitutionsCached(entityDescription, cristinUnitsUtil);
+  }
+
+  private static Optional<URI> extractArchiveUri(List<CristinAssociatedUri> associatedUris) {
+    return associatedUris.stream()
+        .filter(CristinAssociatedUri::isArchive)
+        .findFirst() // Analysis of the cristin dataset shows that there is either 0 or 1 archive
+        // uri present
+        .filter(CristinAssociatedUri::isValidUri)
+        .map(CristinAssociatedUri::toURI);
+  }
+
+  private static void addContributorNumberIfMissing(List<CristinContributor> cristinContributors) {
+    if (allContributorNumbersAreNullValues(cristinContributors)) {
+      addMissingSequenceNumberToAllContributors(cristinContributors);
+    } else {
+      addMissingSequenceNumbers(cristinContributors);
     }
+  }
 
-    public static ZoneOffset zoneOffset() {
-        return ZoneOffset.UTC.getRules().getOffset(Instant.now());
+  private static void addMissingSequenceNumberToAllContributors(
+      List<CristinContributor> cristinContributors) {
+    for (int i = 0; i < cristinContributors.size(); i++) {
+      cristinContributors.get(i).setContributorOrder(i);
     }
+  }
 
-    public Publication generatePublication() {
-        var entityDescription = generateEntityDescription();
-        Publication publication =
-            new Builder()
-                .withHandle(extractHandle())
-                .withAdditionalIdentifiers(extractAdditionalIdentifiers())
-                .withEntityDescription(entityDescription)
-                .withPublisher(extractOrganization())
-                .withResourceOwner(extractResourceOwner())
-                .withStatus(PublicationStatus.PUBLISHED)
-                .withProjects(extractProjects())
-                .withSubjects(generateNvaHrcsCategoriesAndActivities())
-                .withFundings(extractFundings())
-                .withPublicationNotes(extractPublicationNotes())
-                .withCuratingInstitutions(extractCuratingInstitutions(entityDescription))
-                .withAssociatedArtifacts(AssociatedLinkExtractor.extractAssociatedLinks(cristinObject))
-                .build();
-        validateDoesNotHaveEmptyFields(publication);
-        return publication;
+  private static void addMissingSequenceNumbers(List<CristinContributor> cristinContributors) {
+    for (int i = 0; i < cristinContributors.size(); i++) {
+      if (isNull(cristinContributors.get(i).getContributorOrder())) {
+        cristinContributors
+            .get(i)
+            .setContributorOrder(cristinContributors.get(i - 1).getContributorOrder() + 1);
+      }
     }
+  }
 
-    protected Set<CuratingInstitution> extractCuratingInstitutions(EntityDescription entityDescription) {
-        return new CuratingInstitutionsUtil(uriRetriever, customerService).getCuratingInstitutionsCached(entityDescription,
-                                                                                    cristinUnitsUtil);
-    }
+  private static boolean allContributorNumbersAreNullValues(
+      List<CristinContributor> cristinContributors) {
+    return cristinContributors.stream()
+        .map(CristinContributor::getContributorOrder)
+        .noneMatch(Objects::nonNull);
+  }
 
-    private static Optional<URI> extractArchiveUri(List<CristinAssociatedUri> associatedUris) {
-        return associatedUris
-                   .stream()
-                   .filter(CristinAssociatedUri::isArchive)
-                   .findFirst() // Analysis of the cristin dataset shows that there is either 0 or 1 archive uri present
-                   .filter(CristinAssociatedUri::isValidUri)
-                   .map(CristinAssociatedUri::toURI);
-    }
+  private static List<CristinContributor> sortCristinContributors(
+      List<CristinContributor> cristinContributors) {
+    return cristinContributors.stream()
+        .sorted(Comparator.nullsLast(Comparator.naturalOrder()))
+        .toList();
+  }
 
-    private static void addContributorNumberIfMissing(List<CristinContributor> cristinContributors) {
-        if (allContributorNumbersAreNullValues(cristinContributors)) {
-            addMissingSequenceNumberToAllContributors(cristinContributors);
-        } else {
-            addMissingSequenceNumbers(cristinContributors);
-        }
-    }
+  private static PublicationDate convertToPublicationDate(LocalDate publishedDate) {
+    return new PublicationDate.Builder()
+        .withYear(String.valueOf(publishedDate.getYear()))
+        .withMonth(String.valueOf(publishedDate.getMonthValue()))
+        .withDay(String.valueOf(publishedDate.getDayOfMonth()))
+        .build();
+  }
 
-    private static void addMissingSequenceNumberToAllContributors(List<CristinContributor> cristinContributors) {
-        for (int i = 0; i < cristinContributors.size(); i++) {
-            cristinContributors.get(i).setContributorOrder(i);
-        }
-    }
+  private URI extractHandle() {
+    return Optional.ofNullable(cristinObject.getCristinAssociatedUris())
+        .flatMap(CristinMapper::extractArchiveUri)
+        .map(this::updateHttpScheme)
+        .orElse(null);
+  }
 
-    private static void addMissingSequenceNumbers(List<CristinContributor> cristinContributors) {
-        for (int i = 0; i < cristinContributors.size(); i++) {
-            if (isNull(cristinContributors.get(i).getContributorOrder())) {
-                cristinContributors.get(i)
-                    .setContributorOrder(cristinContributors.get(i - 1).getContributorOrder() + 1);
-            }
-        }
-    }
+  private URI updateHttpScheme(URI uri) {
+    return UriWrapper.fromHost(uri.getHost()).addChild(uri.getPath()).getUri();
+  }
 
-    private static boolean allContributorNumbersAreNullValues(List<CristinContributor> cristinContributors) {
-        return cristinContributors.stream().map(CristinContributor::getContributorOrder).noneMatch(Objects::nonNull);
-    }
+  private List<PublicationNoteBase> extractPublicationNotes() {
+    return hasPublicationNote() ? List.of(new PublicationNote(cristinObject.getNote())) : List.of();
+  }
 
-    private static List<CristinContributor> sortCristinContributors(List<CristinContributor> cristinContributors) {
-        return cristinContributors.stream()
-                   .sorted(Comparator.nullsLast(Comparator.naturalOrder()))
-                   .toList();
-    }
+  private boolean hasPublicationNote() {
+    return StringUtils.isNotBlank(cristinObject.getNote());
+  }
 
-    private static PublicationDate convertToPublicationDate(LocalDate publishedDate) {
-        return new PublicationDate
-                       .Builder()
-                   .withYear(String.valueOf(publishedDate.getYear()))
-                   .withMonth(String.valueOf(publishedDate.getMonthValue()))
-                   .withDay(String.valueOf(publishedDate.getDayOfMonth()))
-                   .build();
+  private ResourceOwner extractResourceOwner() {
+    var cristinLocales = getValidCristinLocales();
+    if (shouldUseOwnerCodeCreated(cristinLocales)) {
+      return CristinLocale.builder()
+          .withOwnerCode(cristinObject.getOwnerCodeCreated())
+          .withInstitutionIdentifier(cristinObject.getInstitutionIdentifierCreated())
+          .withDepartmentIdentifier(cristinObject.getDepartmentIdentifierCreated())
+          .withSubDepartmentIdentifier(cristinObject.getSubDepartmendIdentifierCreated())
+          .withGroupIdentifier(cristinObject.getGroupIdentifierCreated())
+          .build()
+          .toResourceOwner();
     }
+    if (cristinLocalesContainsCristinOwnerCodeCreated(cristinLocales)) {
+      return bestMatchingResourceOwner(cristinLocales);
+    }
+    return Optional.of(cristinLocales)
+        .flatMap(list -> list.stream().findFirst())
+        .map(CristinLocale::toResourceOwner)
+        .orElse(SIKT_OWNER);
+  }
 
-    private URI extractHandle() {
-        return Optional.ofNullable(cristinObject.getCristinAssociatedUris())
-                   .flatMap(CristinMapper::extractArchiveUri)
-                   .map(this::updateHttpScheme)
-                   .orElse(null);
-    }
+  private List<CristinLocale> getValidCristinLocales() {
+    return Optional.ofNullable(cristinObject.getCristinLocales())
+        .map(list -> list.stream().filter(this::doesNotContainInvalidInstitutionCode))
+        .map(Stream::toList)
+        .orElse(List.of());
+  }
 
-    private URI updateHttpScheme(URI uri) {
-        return UriWrapper.fromHost(uri.getHost()).addChild(uri.getPath()).getUri();
-    }
+  private boolean doesNotContainInvalidInstitutionCode(CristinLocale cristinLocale) {
+    return !CRISTIN_INSTITUTION_CODE.equalsIgnoreCase(cristinLocale.getOwnerCode())
+        && !UNIT_INSTITUTION_CODE.equalsIgnoreCase(cristinLocale.getOwnerCode());
+  }
 
-    private List<PublicationNoteBase> extractPublicationNotes() {
-        return hasPublicationNote() ? List.of(new PublicationNote(cristinObject.getNote())) : List.of();
-    }
+  private boolean shouldUseOwnerCodeCreated(List<CristinLocale> cristinLocales) {
+    return cristinLocales.isEmpty()
+        && nonNull(cristinObject.getOwnerCodeCreated())
+        && !CRISTIN_INSTITUTION_CODE.equalsIgnoreCase(cristinObject.getOwnerCodeCreated())
+        && !UNIT_INSTITUTION_CODE.equalsIgnoreCase(cristinObject.getOwnerCodeCreated());
+  }
 
-    private boolean hasPublicationNote() {
-        return StringUtils.isNotBlank(cristinObject.getNote());
-    }
+  private ResourceOwner bestMatchingResourceOwner(List<CristinLocale> cristinLocales) {
+    return cristinLocales.stream()
+        .filter(
+            cristinLocale ->
+                cristinLocale.getOwnerCode().equalsIgnoreCase(cristinObject.getOwnerCodeCreated()))
+        .collect(SingletonCollector.collect())
+        .toResourceOwner();
+  }
 
-    private ResourceOwner extractResourceOwner() {
-        var cristinLocales = getValidCristinLocales();
-        if (shouldUseOwnerCodeCreated(cristinLocales)) {
-            return CristinLocale.builder()
-                       .withOwnerCode(cristinObject.getOwnerCodeCreated())
-                       .withInstitutionIdentifier(cristinObject.getInstitutionIdentifierCreated())
-                       .withDepartmentIdentifier(cristinObject.getDepartmentIdentifierCreated())
-                       .withSubDepartmentIdentifier(cristinObject.getSubDepartmendIdentifierCreated())
-                       .withGroupIdentifier(cristinObject.getGroupIdentifierCreated())
-                       .build().toResourceOwner();
-        }
-        if (cristinLocalesContainsCristinOwnerCodeCreated(cristinLocales)) {
-            return bestMatchingResourceOwner(cristinLocales);
-        }
-        return Optional.of(cristinLocales)
-                   .flatMap(list -> list.stream().findFirst())
-                   .map(CristinLocale::toResourceOwner)
-                   .orElse(SIKT_OWNER);
-    }
+  private boolean cristinLocalesContainsCristinOwnerCodeCreated(
+      List<CristinLocale> cristinLocales) {
+    return nonNull(cristinObject.getOwnerCodeCreated())
+        && cristinLocales.stream()
+            .anyMatch(
+                cristinLocale ->
+                    cristinLocale
+                        .getOwnerCode()
+                        .equalsIgnoreCase(cristinObject.getOwnerCodeCreated()));
+  }
 
-    private List<CristinLocale> getValidCristinLocales() {
-        return Optional.ofNullable(cristinObject.getCristinLocales())
-                   .map(list -> list.stream().filter(this::doesNotContainInvalidInstitutionCode))
-                   .map(Stream::toList)
-                   .orElse(List.of());
-    }
+  private Set<Funding> extractFundings() {
+    return Optional.ofNullable(cristinObject.getCristinGrants())
+        .map(this::mapToNvaFunding)
+        .orElse(null);
+  }
 
-    private boolean doesNotContainInvalidInstitutionCode(CristinLocale cristinLocale) {
-        return !CRISTIN_INSTITUTION_CODE.equalsIgnoreCase(cristinLocale.getOwnerCode())
-               && !UNIT_INSTITUTION_CODE.equalsIgnoreCase(cristinLocale.getOwnerCode());
-    }
+  private Set<Funding> mapToNvaFunding(List<CristinGrant> grants) {
+    return new HashSet<>(grants.stream().map(CristinGrant::toNvaFunding).toList());
+  }
 
-    private boolean shouldUseOwnerCodeCreated(List<CristinLocale> cristinLocales) {
-        return cristinLocales.isEmpty()
-               && nonNull(cristinObject.getOwnerCodeCreated())
-               && !CRISTIN_INSTITUTION_CODE.equalsIgnoreCase(cristinObject.getOwnerCodeCreated())
-               && !UNIT_INSTITUTION_CODE.equalsIgnoreCase(cristinObject.getOwnerCodeCreated());
+  private void validateDoesNotHaveEmptyFields(Publication publication) {
+    try {
+      if (publication.getEntityDescription().getContributors().isEmpty()) {
+        DoesNotHaveEmptyValues.checkForEmptyFields(
+            publication, IGNORE_CONTRIBUTOR_FIELDS_ADDITIONALLY);
+      } else {
+        DoesNotHaveEmptyValues.checkForEmptyFields(
+            publication, IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS);
+      }
+    } catch (Exception error) {
+      ErrorReport.exceptionName(MissingFieldsException.name())
+          .withBody(error.getMessage())
+          .withCristinId(cristinObject.getId())
+          .persist(s3Client);
     }
+  }
 
-    private ResourceOwner bestMatchingResourceOwner(List<CristinLocale> cristinLocales) {
-        return cristinLocales
-                   .stream()
-                   .filter(
-                       cristinLocale ->
-                           cristinLocale.getOwnerCode().equalsIgnoreCase(cristinObject.getOwnerCodeCreated()))
-                   .collect(SingletonCollector.collect())
-                   .toResourceOwner();
+  private List<ResearchProject> extractProjects() {
+    if (cristinObject.getPresentationalWork() == null) {
+      return List.of();
     }
+    return cristinObject.getPresentationalWork().stream()
+        .filter(CristinPresentationalWork::isProject)
+        .map(CristinPresentationalWork::toNvaResearchProject)
+        .toList();
+  }
 
-    private boolean cristinLocalesContainsCristinOwnerCodeCreated(List<CristinLocale> cristinLocales) {
-        return nonNull(cristinObject.getOwnerCodeCreated())
-               && cristinLocales
-                      .stream()
-                      .anyMatch(cristinLocale ->
-                                    cristinLocale.getOwnerCode().equalsIgnoreCase(cristinObject.getOwnerCodeCreated()));
-    }
+  private Organization extractOrganization() {
+    UriWrapper customerId =
+        UriWrapper.fromUri(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, getSiktCustomerId());
+    return new Organization.Builder().withId(customerId.getUri()).build();
+  }
 
-    private Set<Funding> extractFundings() {
-        return Optional.ofNullable(cristinObject.getCristinGrants())
-                   .map(this::mapToNvaFunding).orElse(null);
-    }
+  private String getSiktCustomerId() {
+    return Optional.ofNullable(CUSTOMER_MAP.get(DOMAIN_NAME)).orElseThrow();
+  }
 
-    private Set<Funding> mapToNvaFunding(List<CristinGrant> grants) {
-        return new HashSet<>(grants.stream().map(CristinGrant::toNvaFunding)
-                   .toList());
-    }
+  private EntityDescription generateEntityDescription() {
+    return new EntityDescription.Builder()
+        .withLanguage(extractLanguage())
+        .withMainTitle(extractMainTitle())
+        .withPublicationDate(extractPublicationDate())
+        .withReference(
+            new ReferenceBuilder(cristinObject, channelRegistryMapper, s3Client).buildReference())
+        .withContributors(extractContributors(s3Client))
+        .withNpiSubjectHeading(extractNpiSubjectHeading())
+        .withAbstract(extractAbstract())
+        .withTags(extractTags())
+        .withAlternativeAbstracts(Collections.emptyMap())
+        .withDescription(extractDescription())
+        .build();
+  }
 
-    private void validateDoesNotHaveEmptyFields(Publication publication) {
-        try {
-            if (publication.getEntityDescription().getContributors().isEmpty()) {
-                DoesNotHaveEmptyValues.checkForEmptyFields(publication, IGNORE_CONTRIBUTOR_FIELDS_ADDITIONALLY);
-            } else {
-                DoesNotHaveEmptyValues.checkForEmptyFields(publication, IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS);
-            }
-        } catch (Exception error) {
-            ErrorReport.exceptionName(MissingFieldsException.name())
-                .withBody(error.getMessage())
-                .withCristinId(cristinObject.getId())
-                .persist(s3Client);
-        }
-    }
+  private String extractDescription() {
+    var artisticDescription = getArtisticDescription();
+    var exhibitionDescription = getMuseumExhibitDescription();
+    return Stream.of(artisticDescription, exhibitionDescription)
+        .flatMap(Optional::stream)
+        .reduce(String::concat)
+        .orElse(null);
+  }
 
-    private List<ResearchProject> extractProjects() {
-        if (cristinObject.getPresentationalWork() == null) {
-            return List.of();
-        }
-        return cristinObject.getPresentationalWork()
-                   .stream()
-                   .filter(CristinPresentationalWork::isProject)
-                   .map(CristinPresentationalWork::toNvaResearchProject)
-                   .toList();
-    }
+  private Optional<String> getArtisticDescription() {
+    return Optional.ofNullable(cristinObject.getCristinArtisticProduction())
+        .map(CristinArtisticProduction::getDescription);
+  }
 
-    private Organization extractOrganization() {
-        UriWrapper customerId = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, getSiktCustomerId());
-        return new Organization.Builder().withId(customerId.getUri()).build();
-    }
+  private Optional<String> getMuseumExhibitDescription() {
+    return Optional.ofNullable(cristinObject.getCristinExhibition())
+        .map(CristinExhibition::getDescription);
+  }
 
-    private String getSiktCustomerId() {
-        return Optional.ofNullable(CUSTOMER_MAP.get(DOMAIN_NAME)).orElseThrow();
-    }
+  private List<Contributor> extractContributors(S3Client s3Client) {
+    var contributors = Optional.ofNullable(cristinObject.getContributors());
+    return contributors.isPresent()
+        ? contributorsWithUpdatedSequenceNumbers(
+            contributors.get(), cristinObject.getId(), s3Client)
+        : Collections.emptyList();
+  }
 
-    private EntityDescription generateEntityDescription() {
-        return new EntityDescription.Builder()
-                   .withLanguage(extractLanguage())
-                   .withMainTitle(extractMainTitle())
-                   .withPublicationDate(extractPublicationDate())
-                   .withReference(new ReferenceBuilder(cristinObject, channelRegistryMapper, s3Client).buildReference())
-                   .withContributors(extractContributors(s3Client))
-                   .withNpiSubjectHeading(extractNpiSubjectHeading())
-                   .withAbstract(extractAbstract())
-                   .withTags(extractTags())
-                   .withAlternativeAbstracts(Collections.emptyMap())
-                   .withDescription(extractDescription())
-                   .build();
-    }
+  private List<Contributor> contributorsWithUpdatedSequenceNumbers(
+      List<CristinContributor> cristinContributors, Integer cristinIdentifier, S3Client s3Client) {
+    var sortedContributors = sortCristinContributors(cristinContributors);
+    addContributorNumberIfMissing(sortedContributors);
+    return cristinContributors.stream()
+        .map(
+            cristinContributor ->
+                attempt(() -> cristinContributor.toNvaContributor(cristinIdentifier, s3Client)))
+        .map(Try::orElseThrow)
+        .toList();
+  }
 
-    private String extractDescription() {
-        var artisticDescription = getArtisticDescription();
-        var exhibitionDescription = getMuseumExhibitDescription();
-        return
-            Stream.of(artisticDescription, exhibitionDescription)
-                .flatMap(Optional::stream)
-                .reduce(String::concat)
-                .orElse(null);
+  private List<URI> generateNvaHrcsCategoriesAndActivities() {
+    if (isNull(extractCristinHrcsCategoriesAndActivities())) {
+      return List.of();
     }
+    List<URI> listOfCategoriesAndActivities = new ArrayList<>();
+    listOfCategoriesAndActivities.addAll(extractHrcsCategories());
+    listOfCategoriesAndActivities.addAll(extractHrcsActivities());
+    return listOfCategoriesAndActivities;
+  }
 
-    private Optional<String> getArtisticDescription() {
-        return Optional.ofNullable(cristinObject.getCristinArtisticProduction())
-                   .map(CristinArtisticProduction::getDescription);
-    }
+  private List<CristinHrcsCategoriesAndActivities> extractCristinHrcsCategoriesAndActivities() {
+    return cristinObject.getHrcsCategoriesAndActivities();
+  }
 
-    private Optional<String> getMuseumExhibitDescription() {
-        return Optional.ofNullable(cristinObject.getCristinExhibition()).map(CristinExhibition::getDescription);
-    }
+  private List<URI> extractHrcsCategories() {
+    return extractCristinHrcsCategoriesAndActivities().stream()
+        .map(CristinHrcsCategoriesAndActivities::getCategory)
+        .filter(CristinHrcsCategoriesAndActivities::validateCategory)
+        .map(
+            categoryId ->
+                HRCS_CATEGORY_URI + HRCS_CATEGORIES_MAP.get(categoryId).toLowerCase(Locale.ROOT))
+        .map(URI::create)
+        .toList();
+  }
 
-    private List<Contributor> extractContributors(S3Client s3Client) {
-        var contributors = Optional.ofNullable(cristinObject.getContributors());
-        return contributors.isPresent()
-                   ? contributorsWithUpdatedSequenceNumbers(contributors.get(), cristinObject.getId(), s3Client)
-                   : Collections.emptyList();
-    }
+  private Collection<URI> extractHrcsActivities() {
+    return extractCristinHrcsCategoriesAndActivities().stream()
+        .map(CristinHrcsCategoriesAndActivities::getActivity)
+        .filter(CristinHrcsCategoriesAndActivities::validateActivity)
+        .map(
+            activityId ->
+                HRCS_ACTIVITY_URI + HRCS_ACTIVITIES_MAP.get(activityId).toLowerCase(Locale.ROOT))
+        .map(URI::create)
+        .toList();
+  }
 
-    private List<Contributor> contributorsWithUpdatedSequenceNumbers(List<CristinContributor> cristinContributors,
-                                                                     Integer cristinIdentifier, S3Client s3Client) {
-        var sortedContributors = sortCristinContributors(cristinContributors);
-        addContributorNumberIfMissing(sortedContributors);
-        return cristinContributors.stream()
-                   .map(cristinContributor -> attempt(() -> cristinContributor.toNvaContributor(cristinIdentifier,
-                                                                                                s3Client)))
-                   .map(Try::orElseThrow)
-                   .toList();
-    }
+  private PublicationDate extractPublicationDate() {
+    return Optional.ofNullable(cristinObject.getEntryPublishedDate())
+        .map(CristinMapper::convertToPublicationDate)
+        .orElseGet(this::extractFromPublicationYear);
+  }
 
-    private List<URI> generateNvaHrcsCategoriesAndActivities() {
-        if (isNull(extractCristinHrcsCategoriesAndActivities())) {
-            return List.of();
-        }
-        List<URI> listOfCategoriesAndActivities = new ArrayList<>();
-        listOfCategoriesAndActivities.addAll(extractHrcsCategories());
-        listOfCategoriesAndActivities.addAll(extractHrcsActivities());
-        return listOfCategoriesAndActivities;
-    }
+  private PublicationDate extractFromPublicationYear() {
+    return new PublicationDate.Builder()
+        .withYear(cristinObject.getPublicationYear().toString())
+        .build();
+  }
 
-    private List<CristinHrcsCategoriesAndActivities> extractCristinHrcsCategoriesAndActivities() {
-        return cristinObject.getHrcsCategoriesAndActivities();
-    }
+  private CristinTitle extractCristinMainTitle() {
+    var cristinTitles = cristinObject.getCristinTitles();
+    return cristinTitles.stream()
+        .filter(CristinTitle::isMainTitle)
+        .findFirst()
+        .orElseGet(() -> cristinTitles.stream().findFirst().orElseThrow());
+  }
 
-    private List<URI> extractHrcsCategories() {
-        return extractCristinHrcsCategoriesAndActivities()
-                   .stream()
-                   .map(CristinHrcsCategoriesAndActivities::getCategory)
-                   .filter(CristinHrcsCategoriesAndActivities::validateCategory)
-                   .map(categoryId -> HRCS_CATEGORY_URI + HRCS_CATEGORIES_MAP.get(categoryId).toLowerCase(Locale.ROOT))
-                   .map(URI::create)
-                   .toList();
-    }
+  private String extractMainTitle() {
+    return extractCristinMainTitle().getTitle();
+  }
 
-    private Collection<URI> extractHrcsActivities() {
-        return extractCristinHrcsCategoriesAndActivities()
-                   .stream()
-                   .map(CristinHrcsCategoriesAndActivities::getActivity)
-                   .filter(CristinHrcsCategoriesAndActivities::validateActivity)
-                   .map(activityId -> HRCS_ACTIVITY_URI + HRCS_ACTIVITIES_MAP.get(activityId).toLowerCase(Locale.ROOT))
-                   .map(URI::create)
-                   .toList();
-    }
+  private URI extractLanguage() {
+    var cristinMainTitle = extractCristinMainTitle();
+    return nonNull(cristinMainTitle) && nonNull(cristinMainTitle.getLanguagecode())
+        ? LanguageMapper.toUri(cristinMainTitle.getLanguagecode())
+        : LanguageMapper.LEXVO_URI_UNDEFINED;
+  }
 
-    private PublicationDate extractPublicationDate() {
-        return Optional.ofNullable(cristinObject.getEntryPublishedDate())
-                   .map(CristinMapper::convertToPublicationDate)
-                   .orElseGet(this::extractFromPublicationYear);
+  private Set<AdditionalIdentifierBase> extractAdditionalIdentifiers() {
+    var cristinId =
+        new CristinIdentifier(
+            SourceName.fromCristin(getInstanceName()), cristinObject.getId().toString());
+    var additionalIdentifiers = extractCristinSourceids(cristinObject);
+    additionalIdentifiers.add(cristinId);
+    if (sourceCodeHasBeenMappedAlready(additionalIdentifiers)) {
+      additionalIdentifiers.add(extractAdditionalIdentifierFromSourceCode());
     }
+    return additionalIdentifiers;
+  }
 
-    private PublicationDate extractFromPublicationYear() {
-        return new PublicationDate.Builder()
-                   .withYear(cristinObject.getPublicationYear().toString())
-                   .build();
-    }
+  private boolean sourceCodeHasBeenMappedAlready(
+      Set<AdditionalIdentifierBase> additionalIdentifiers) {
+    return nonNull(cristinObject.getSourceCode())
+        && sourceCodeHasNotBeenMappedAlready(additionalIdentifiers, cristinObject.getSourceCode());
+  }
 
-    private CristinTitle extractCristinMainTitle() {
-        var cristinTitles = cristinObject.getCristinTitles();
-        return cristinTitles.stream().filter(CristinTitle::isMainTitle)
-                   .findFirst()
-                   .orElseGet(() -> cristinTitles.stream().findFirst().orElseThrow());
-    }
+  private String getInstanceName() {
+    return extractResourceOwner().getOwner().getValue().split("@")[0];
+  }
 
-    private String extractMainTitle() {
-        return extractCristinMainTitle().getTitle();
-    }
+  private AdditionalIdentifier extractAdditionalIdentifierFromSourceCode() {
+    return new AdditionalIdentifier(
+        cristinObject.getSourceCode(), cristinObject.getSourceRecordIdentifier());
+  }
 
-    private URI extractLanguage() {
-        var cristinMainTitle = extractCristinMainTitle();
-        return nonNull(cristinMainTitle) && nonNull(cristinMainTitle.getLanguagecode())
-                   ? LanguageMapper.toUri(cristinMainTitle.getLanguagecode())
-                   : LanguageMapper.LEXVO_URI_UNDEFINED;
-    }
+  private boolean sourceCodeHasNotBeenMappedAlready(
+      Set<AdditionalIdentifierBase> additionalIdentifiers, String sourceCode) {
+    return additionalIdentifiers.stream()
+        .noneMatch(
+            additionalIdentifier -> hasIdenticalSourceCode(sourceCode, additionalIdentifier));
+  }
 
-    private Set<AdditionalIdentifierBase> extractAdditionalIdentifiers() {
-        var cristinId =
-            new CristinIdentifier(SourceName.fromCristin(getInstanceName()), cristinObject.getId().toString());
-        var additionalIdentifiers = extractCristinSourceids(cristinObject);
-        additionalIdentifiers.add(cristinId);
-        if (sourceCodeHasBeenMappedAlready(additionalIdentifiers)) {
-            additionalIdentifiers.add(extractAdditionalIdentifierFromSourceCode());
-        }
-        return additionalIdentifiers;
+  private boolean hasIdenticalSourceCode(
+      String sourceCode, AdditionalIdentifierBase additionalIdentifier) {
+    if (scopusIdentifierThatAlreadyHasBeenMapped(sourceCode, additionalIdentifier)) {
+      return true;
+    } else {
+      return additionalIdentifier
+          .sourceName()
+          .toLowerCase(Locale.ROOT)
+          .equals(sourceCode.toLowerCase(Locale.ROOT));
     }
+  }
 
-    private boolean sourceCodeHasBeenMappedAlready(Set<AdditionalIdentifierBase> additionalIdentifiers) {
-        return nonNull(cristinObject.getSourceCode())
-               && sourceCodeHasNotBeenMappedAlready(additionalIdentifiers, cristinObject.getSourceCode());
-    }
+  private static boolean scopusIdentifierThatAlreadyHasBeenMapped(
+      String sourceCode, AdditionalIdentifierBase additionalIdentifier) {
+    return SCOPUS_IDENTIFIER_SOURCE_CODE_FROM_CRISTIN.equals(sourceCode.toLowerCase(Locale.ROOT))
+        && additionalIdentifier instanceof ScopusIdentifier;
+  }
 
-    private String getInstanceName() {
-        return extractResourceOwner().getOwner().getValue().split("@")[0];
+  private Set<AdditionalIdentifierBase> extractCristinSourceids(CristinObject cristinObject) {
+    if (isNull(cristinObject.getCristinSources())) {
+      return new HashSet<>();
     }
+    return cristinObject.getCristinSources().stream()
+        .map(this::mapCristinSourceToAdditionalIdentifier)
+        .collect(Collectors.toSet());
+  }
 
-    private AdditionalIdentifier extractAdditionalIdentifierFromSourceCode() {
-        return new AdditionalIdentifier(cristinObject.getSourceCode(), cristinObject.getSourceRecordIdentifier());
-    }
+  private AdditionalIdentifierBase mapCristinSourceToAdditionalIdentifier(
+      CristinSource cristinSource) {
+    return isScopusIdentifier(cristinSource)
+        ? extractScopusIdentifier(cristinSource)
+        : extractAdditionalIdentifier(cristinSource);
+  }
 
-    private boolean sourceCodeHasNotBeenMappedAlready(Set<AdditionalIdentifierBase> additionalIdentifiers,
-                                                      String sourceCode) {
-        return additionalIdentifiers
-                   .stream()
-                   .noneMatch(additionalIdentifier -> hasIdenticalSourceCode(sourceCode, additionalIdentifier));
-    }
+  private static AdditionalIdentifier extractAdditionalIdentifier(CristinSource cristinSource) {
+    return new AdditionalIdentifier(
+        cristinSource.getSourceCode(), cristinSource.getSourceIdentifier());
+  }
 
-    private boolean hasIdenticalSourceCode(String sourceCode, AdditionalIdentifierBase additionalIdentifier) {
-        if (scopusIdentifierThatAlreadyHasBeenMapped(sourceCode, additionalIdentifier)) {
-            return true;
-        } else {
-            return additionalIdentifier.sourceName().toLowerCase(Locale.ROOT).equals(sourceCode.toLowerCase(Locale.ROOT));
-        }
-    }
+  private ScopusIdentifier extractScopusIdentifier(CristinSource cristinSource) {
+    return new ScopusIdentifier(
+        SourceName.fromCristin(getInstanceName()), cristinSource.getSourceIdentifier());
+  }
 
-    private static boolean scopusIdentifierThatAlreadyHasBeenMapped(String sourceCode,
-                                                                    AdditionalIdentifierBase additionalIdentifier) {
-        return SCOPUS_IDENTIFIER_SOURCE_CODE_FROM_CRISTIN.equals(sourceCode.toLowerCase(Locale.ROOT))
-               && additionalIdentifier instanceof ScopusIdentifier;
-    }
+  private static boolean isScopusIdentifier(CristinSource cristinSource) {
+    return SCOPUS_CASING_ACCEPTED_BY_FRONTEND.equalsIgnoreCase(cristinSource.getSourceCode());
+  }
 
-    private Set<AdditionalIdentifierBase> extractCristinSourceids(CristinObject cristinObject) {
-        if (isNull(cristinObject.getCristinSources())) {
-            return new HashSet<>();
-        }
-        return cristinObject.getCristinSources()
-                   .stream()
-                   .map(this::mapCristinSourceToAdditionalIdentifier)
-                   .collect(
-                       Collectors.toSet());
-    }
+  private String extractNpiSubjectHeading() {
+    return Optional.ofNullable(extractSubjectField())
+        .map(CristinSubjectField::getSubjectFieldCode)
+        .map(String::valueOf)
+        .orElse(null);
+  }
 
-    private AdditionalIdentifierBase mapCristinSourceToAdditionalIdentifier(CristinSource cristinSource) {
-        return isScopusIdentifier(cristinSource)
-                   ? extractScopusIdentifier(cristinSource)
-                   : extractAdditionalIdentifier(cristinSource);
+  private CristinSubjectField extractSubjectField() {
+    if (isBook(cristinObject) || isReport(cristinObject)) {
+      return Optional.ofNullable(extractCristinBookReport())
+          .map(CristinBookOrReportMetadata::getSubjectField)
+          .orElse(null);
     }
+    if (isChapter(cristinObject)) {
+      return Optional.ofNullable(cristinObject.getBookOrReportPartMetadata())
+          .map(CristinBookOrReportPartMetadata::getSubjectField)
+          .orElse(null);
+    } else {
+      return null;
+    }
+  }
 
-    private static AdditionalIdentifier extractAdditionalIdentifier(CristinSource cristinSource) {
-        return new AdditionalIdentifier(cristinSource.getSourceCode(), cristinSource.getSourceIdentifier());
-    }
+  private List<CristinTags> extractCristinTags() {
+    return Optional.ofNullable(cristinObject).map(CristinObject::getTags).orElse(null);
+  }
 
-    private ScopusIdentifier extractScopusIdentifier(CristinSource cristinSource) {
-        return new ScopusIdentifier(SourceName.fromCristin(getInstanceName()), cristinSource.getSourceIdentifier());
-    }
+  private String extractAbstract() {
+    var cristinMainTitle = extractCristinMainTitle();
+    return nonNull(cristinMainTitle) ? cristinMainTitle.getAbstractText() : null;
+  }
 
-    private static boolean isScopusIdentifier(CristinSource cristinSource) {
-        return SCOPUS_CASING_ACCEPTED_BY_FRONTEND.equalsIgnoreCase(cristinSource.getSourceCode());
+  private List<String> extractTags() {
+    var tags = extractCristinTags();
+    if (isNull(tags)) {
+      return List.of();
     }
-
-    private String extractNpiSubjectHeading() {
-        return Optional.ofNullable(extractSubjectField())
-                   .map(CristinSubjectField::getSubjectFieldCode)
-                   .map(String::valueOf)
-                   .orElse(null);
-    }
-
-    private CristinSubjectField extractSubjectField() {
-        if (isBook(cristinObject) || isReport(cristinObject)) {
-            return Optional.ofNullable(extractCristinBookReport())
-                       .map(CristinBookOrReportMetadata::getSubjectField)
-                       .orElse(null);
-        }
-        if (isChapter(cristinObject)) {
-            return Optional.ofNullable(cristinObject.getBookOrReportPartMetadata())
-                       .map(CristinBookOrReportPartMetadata::getSubjectField)
-                       .orElse(null);
-        } else {
-            return null;
-        }
-    }
-
-    private List<CristinTags> extractCristinTags() {
-        return Optional.ofNullable(cristinObject)
-                   .map(CristinObject::getTags)
-                   .orElse(null);
-    }
-
-    private String extractAbstract() {
-        var cristinMainTitle = extractCristinMainTitle();
-        return nonNull(cristinMainTitle) ? cristinMainTitle.getAbstractText() : null;
-    }
-
-    private List<String> extractTags() {
-        var tags = extractCristinTags();
-        if (isNull(tags)) {
-            return List.of();
-        }
-        return tags.stream()
-                   .flatMap(tag -> Stream.of(tag.getBokmal(), tag.getEnglish(), tag.getNynorsk()))
-                   .filter(Objects::nonNull)
-                   .collect(Collectors.toMap(String::trim, Function.identity(), (a, b) -> a, LinkedHashMap::new))
-                   .values()
-                   .stream()
-                   .toList();
-    }
+    return tags.stream()
+        .flatMap(tag -> Stream.of(tag.getBokmal(), tag.getEnglish(), tag.getNynorsk()))
+        .filter(Objects::nonNull)
+        .collect(
+            Collectors.toMap(String::trim, Function.identity(), (a, b) -> a, LinkedHashMap::new))
+        .values()
+        .stream()
+        .toList();
+  }
 }

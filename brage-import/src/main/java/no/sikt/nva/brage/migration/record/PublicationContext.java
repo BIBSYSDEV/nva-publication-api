@@ -6,72 +6,71 @@ import nva.commons.core.JacocoGenerated;
 
 public class PublicationContext {
 
-    private String bragePublisher;
-    private Publisher publisher;
-    private Journal journal;
-    private Series series;
+  private String bragePublisher;
+  private Publisher publisher;
+  private Journal journal;
+  private Series series;
 
-    public PublicationContext() {
-    }
+  public PublicationContext() {}
 
-    @JsonProperty("journal")
-    public Journal getJournal() {
-        return journal;
-    }
+  @JsonProperty("journal")
+  public Journal getJournal() {
+    return journal;
+  }
 
-    @JacocoGenerated
-    public void setJournal(Journal journal) {
-        this.journal = journal;
-    }
+  @JacocoGenerated
+  public void setJournal(Journal journal) {
+    this.journal = journal;
+  }
 
-    @JsonProperty("series")
-    public Series getSeries() {
-        return series;
-    }
+  @JsonProperty("series")
+  public Series getSeries() {
+    return series;
+  }
 
-    @JacocoGenerated
-    public void setSeries(Series series) {
-        this.series = series;
-    }
+  @JacocoGenerated
+  public void setSeries(Series series) {
+    this.series = series;
+  }
 
-    @JsonProperty("bragePublisher")
-    public String getBragePublisher() {
-        return bragePublisher;
-    }
+  @JsonProperty("bragePublisher")
+  public String getBragePublisher() {
+    return bragePublisher;
+  }
 
-    @JacocoGenerated
-    public void setBragePublisher(String bragePublisher) {
-        this.bragePublisher = bragePublisher;
-    }
+  @JacocoGenerated
+  public void setBragePublisher(String bragePublisher) {
+    this.bragePublisher = bragePublisher;
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(bragePublisher, publisher, journal, series);
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(bragePublisher, publisher, journal, series);
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        PublicationContext that = (PublicationContext) o;
-        return Objects.equals(bragePublisher, that.bragePublisher)
-               && Objects.equals(publisher, that.publisher)
-               && Objects.equals(journal, that.journal)
-               && Objects.equals(series, that.series);
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    PublicationContext that = (PublicationContext) o;
+    return Objects.equals(bragePublisher, that.bragePublisher)
+        && Objects.equals(publisher, that.publisher)
+        && Objects.equals(journal, that.journal)
+        && Objects.equals(series, that.series);
+  }
 
-    @JsonProperty("publisher")
-    public Publisher getPublisher() {
-        return publisher;
-    }
+  @JsonProperty("publisher")
+  public Publisher getPublisher() {
+    return publisher;
+  }
 
-    public void setPublisher(Publisher publisher) {
-        this.publisher = publisher;
-    }
+  public void setPublisher(Publisher publisher) {
+    this.publisher = publisher;
+  }
 }

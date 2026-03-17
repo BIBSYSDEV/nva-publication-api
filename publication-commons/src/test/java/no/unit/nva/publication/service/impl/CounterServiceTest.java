@@ -6,6 +6,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Set;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
@@ -20,64 +21,72 @@ import org.junit.jupiter.api.Test;
 
 class CounterServiceTest extends ResourcesLocalTest {
 
-    private CounterService counterService;
-    private ResourceService resourceService;
+  private CounterService counterService;
+  private ResourceService resourceService;
 
-    @Override
-    @BeforeEach
-    public void init() {
-        super.init();
-        resourceService = getResourceService(client);
-        counterService = new CristinIdentifierCounterService(super.client, RESOURCES_TABLE_NAME);
-    }
+  @Override
+  @BeforeEach
+  public void init() {
+    super.init();
+    resourceService = getResourceService(client);
+    counterService = new CristinIdentifierCounterService(super.client, RESOURCES_TABLE_NAME);
+  }
 
-    @Test
-    void shouldIncreaseCounter() {
-        var initialCount = counterService.next();
+  @Test
+  void shouldIncreaseCounter() {
+    var initialCount = counterService.next();
 
-        assertEquals(CounterDao.fromValue(10_000_000), initialCount);
+    assertEquals(CounterDao.fromValue(10_000_000), initialCount);
 
-        var persistedCounter = counterService.next();
+    var persistedCounter = counterService.next();
 
-        assertEquals(CounterDao.fromValue(10_000_001), persistedCounter);
+    assertEquals(CounterDao.fromValue(10_000_001), persistedCounter);
 
-        var fetchedCounter = counterService.fetch();
+    var fetchedCounter = counterService.fetch();
 
-        assertEquals(CounterDao.fromValue(10_000_001), fetchedCounter);
-    }
+    assertEquals(CounterDao.fromValue(10_000_001), fetchedCounter);
+  }
 
-    @Test
-    void shouldCreatePublicationWithSyntheticCristinIdentifier() throws BadRequestException, NotFoundException {
-        var publication = randomPublication().copy().withAdditionalIdentifiers(Set.of()).build();
-        var peristedPublication = persistPublication(publication);
-        var peristedResource = resourceService.getResourceByIdentifier(peristedPublication.getIdentifier());
+  @Test
+  void shouldCreatePublicationWithSyntheticCristinIdentifier()
+      throws BadRequestException, NotFoundException {
+    var publication = randomPublication().copy().withAdditionalIdentifiers(Set.of()).build();
+    var peristedPublication = persistPublication(publication);
+    var peristedResource =
+        resourceService.getResourceByIdentifier(peristedPublication.getIdentifier());
 
-        assertTrue(peristedResource.getCristinIdentifier().isPresent());
-    }
+    assertTrue(peristedResource.getCristinIdentifier().isPresent());
+  }
 
-    @Test
-    void shouldNotCreatePublicationWithSyntheticCristinIdentifierWhenCristinIdentifierAlreadyExists()
-        throws BadRequestException, NotFoundException {
-        var existingCristinIdentifier = randomCristinIdentifier();
-        var publication = randomPublicationWithAdditionalIdentifier(existingCristinIdentifier);
-        var peristedPublication = persistPublication(publication);
-        var peristedResource = resourceService.getResourceByIdentifier(peristedPublication.getIdentifier());
+  @Test
+  void shouldNotCreatePublicationWithSyntheticCristinIdentifierWhenCristinIdentifierAlreadyExists()
+      throws BadRequestException, NotFoundException {
+    var existingCristinIdentifier = randomCristinIdentifier();
+    var publication = randomPublicationWithAdditionalIdentifier(existingCristinIdentifier);
+    var peristedPublication = persistPublication(publication);
+    var peristedResource =
+        resourceService.getResourceByIdentifier(peristedPublication.getIdentifier());
 
-        var additionalIdentifiers = peristedResource.getAdditionalIdentifiers();
+    var additionalIdentifiers = peristedResource.getAdditionalIdentifiers();
 
-        assertThat(additionalIdentifiers, hasSize(1));
-        assertEquals(peristedResource.getCristinIdentifier().orElseThrow(), existingCristinIdentifier);
-    }
+    assertThat(additionalIdentifiers, hasSize(1));
+    assertEquals(peristedResource.getCristinIdentifier().orElseThrow(), existingCristinIdentifier);
+  }
 
-    private static Publication randomPublicationWithAdditionalIdentifier(CristinIdentifier existingCristinIdentifier) {
-        return randomPublication().copy().withAdditionalIdentifiers(Set.of(existingCristinIdentifier)).build();
-    }
+  private static Publication randomPublicationWithAdditionalIdentifier(
+      CristinIdentifier existingCristinIdentifier) {
+    return randomPublication()
+        .copy()
+        .withAdditionalIdentifiers(Set.of(existingCristinIdentifier))
+        .build();
+  }
 
-    private static CristinIdentifier randomCristinIdentifier() {
-        return new CristinIdentifier(SourceName.fromCristin("ntnu"), "123456");
-    }
+  private static CristinIdentifier randomCristinIdentifier() {
+    return new CristinIdentifier(SourceName.fromCristin("ntnu"), "123456");
+  }
 
-    private Publication persistPublication(Publication publication) throws BadRequestException {
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
-    }
+  private Publication persistPublication(Publication publication) throws BadRequestException {
+    return resourceService.createPublication(
+        UserInstance.fromPublication(publication), publication);
+  }
 }

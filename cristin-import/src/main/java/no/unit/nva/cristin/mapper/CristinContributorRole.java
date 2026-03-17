@@ -17,42 +17,44 @@ import no.unit.nva.model.role.RoleType;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinContributorRole {
 
-    @JsonIgnore
-    private static Map<CristinContributorRoleCode, Role> cristinRoleToNvaRoles = Map.ofEntries(
-        new SimpleEntry<>(CristinContributorRoleCode.CREATOR, Role.CREATOR),
-        new SimpleEntry<>(CristinContributorRoleCode.EDITOR, Role.EDITOR),
-        new SimpleEntry<>(CristinContributorRoleCode.SUPERVISOR, Role.SUPERVISOR),
-        new SimpleEntry<>(CristinContributorRoleCode.PROGRAMME_PARTICIPANT, Role.PROGRAMME_PARTICIPANT),
-        new SimpleEntry<>(CristinContributorRoleCode.PROGRAMME_LEADER, Role.PROGRAMME_LEADER),
-        new SimpleEntry<>(CristinContributorRoleCode.RIGHTS_HOLDER, Role.RIGHTS_HOLDER),
-        new SimpleEntry<>(CristinContributorRoleCode.JOURNALIST, Role.JOURNALIST),
-        new SimpleEntry<>(CristinContributorRoleCode.EDITORIAL_BOARD_MEMBER, Role.EDITORIAL_BOARD_MEMBER),
-        new SimpleEntry<>(CristinContributorRoleCode.INTERVIEW_SUBJECT, Role.INTERVIEW_SUBJECT),
-        new SimpleEntry<>(CristinContributorRoleCode.ACADEMIC_COORDINATOR, Role.ACADEMIC_COORDINATOR),
-        new SimpleEntry<>(CristinContributorRoleCode.ARTIST, Role.ARTIST),
-        new SimpleEntry<>(CristinContributorRoleCode.ARCHITECT, Role.ARCHITECT),
-        new SimpleEntry<>(CristinContributorRoleCode.COMPOSER, Role.COMPOSER),
-        new SimpleEntry<>(CristinContributorRoleCode.CONDUCTOR, Role.CONDUCTOR),
-        new SimpleEntry<>(CristinContributorRoleCode.CONTRIBUTOR, Role.OTHER),
-        new SimpleEntry<>(CristinContributorRoleCode.CURATOR, Role.CURATOR),
-        new SimpleEntry<>(CristinContributorRoleCode.ORGANIZER, Role.ORGANIZER),
-        new SimpleEntry<>(CristinContributorRoleCode.PERFORMER, Role.ARTIST),
-        new SimpleEntry<>(CristinContributorRoleCode.TRANSLATOR, Role.TRANSLATOR_ADAPTER));
+  @JsonIgnore
+  private static Map<CristinContributorRoleCode, Role> cristinRoleToNvaRoles =
+      Map.ofEntries(
+          new SimpleEntry<>(CristinContributorRoleCode.CREATOR, Role.CREATOR),
+          new SimpleEntry<>(CristinContributorRoleCode.EDITOR, Role.EDITOR),
+          new SimpleEntry<>(CristinContributorRoleCode.SUPERVISOR, Role.SUPERVISOR),
+          new SimpleEntry<>(
+              CristinContributorRoleCode.PROGRAMME_PARTICIPANT, Role.PROGRAMME_PARTICIPANT),
+          new SimpleEntry<>(CristinContributorRoleCode.PROGRAMME_LEADER, Role.PROGRAMME_LEADER),
+          new SimpleEntry<>(CristinContributorRoleCode.RIGHTS_HOLDER, Role.RIGHTS_HOLDER),
+          new SimpleEntry<>(CristinContributorRoleCode.JOURNALIST, Role.JOURNALIST),
+          new SimpleEntry<>(
+              CristinContributorRoleCode.EDITORIAL_BOARD_MEMBER, Role.EDITORIAL_BOARD_MEMBER),
+          new SimpleEntry<>(CristinContributorRoleCode.INTERVIEW_SUBJECT, Role.INTERVIEW_SUBJECT),
+          new SimpleEntry<>(
+              CristinContributorRoleCode.ACADEMIC_COORDINATOR, Role.ACADEMIC_COORDINATOR),
+          new SimpleEntry<>(CristinContributorRoleCode.ARTIST, Role.ARTIST),
+          new SimpleEntry<>(CristinContributorRoleCode.ARCHITECT, Role.ARCHITECT),
+          new SimpleEntry<>(CristinContributorRoleCode.COMPOSER, Role.COMPOSER),
+          new SimpleEntry<>(CristinContributorRoleCode.CONDUCTOR, Role.CONDUCTOR),
+          new SimpleEntry<>(CristinContributorRoleCode.CONTRIBUTOR, Role.OTHER),
+          new SimpleEntry<>(CristinContributorRoleCode.CURATOR, Role.CURATOR),
+          new SimpleEntry<>(CristinContributorRoleCode.ORGANIZER, Role.ORGANIZER),
+          new SimpleEntry<>(CristinContributorRoleCode.PERFORMER, Role.ARTIST),
+          new SimpleEntry<>(CristinContributorRoleCode.TRANSLATOR, Role.TRANSLATOR_ADAPTER));
 
-    @JsonProperty("rollekode")
-    private CristinContributorRoleCode roleCode;
+  @JsonProperty("rollekode")
+  private CristinContributorRoleCode roleCode;
 
-    public CristinContributorRole() {
-    }
+  public CristinContributorRole() {}
 
-    public RoleType toNvaRole() {
-        return new RoleType(cristinRoleToNvaRoles.getOrDefault(roleCode, Role.OTHER));
-    }
+  public RoleType toNvaRole() {
+    return new RoleType(cristinRoleToNvaRoles.getOrDefault(roleCode, Role.OTHER));
+  }
 }

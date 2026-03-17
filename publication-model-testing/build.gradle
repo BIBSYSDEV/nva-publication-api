@@ -11,5 +11,7 @@ dependencies {
 }
 
 tasks.named('check').configure {
-    dependsOn -= [jacocoTestCoverageVerification]
+    dependsOn -= [
+        jacocoTestCoverageVerification
+    ]
 }

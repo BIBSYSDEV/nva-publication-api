@@ -7,7 +7,7 @@ import no.unit.nva.model.pages.MonographPages;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class PopularScienceMonograph extends BookMonograph {
 
-    public PopularScienceMonograph(@JsonProperty(PAGES_FIELD) MonographPages pages) {
-        super(pages);
-    }
+  public PopularScienceMonograph(@JsonProperty(PAGES_FIELD) MonographPages pages) {
+    super(pages);
+  }
 }

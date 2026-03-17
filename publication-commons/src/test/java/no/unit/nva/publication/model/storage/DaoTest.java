@@ -23,6 +23,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.text.IsEmptyString.emptyString;
+
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
@@ -61,285 +62,322 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class DaoTest extends ResourcesLocalTest {
 
-    public static final String DATA_APPROVED_FILES = "data.approvedFiles";
-    private static final String DATA_ASSIGNEE = "data.assignee";
-    public static final String DATA_FILES_FOR_APPROVAL = "data.filesForApproval";
-    private static final String DATA_FINALIZED_BY = "data.finalizedBy";
-    private static final String DATA_FINALIZED_DATE = "data.finalizedDate";
-    public static final String DATA_IMPORT_STATUS = "data.importStatus";
-    private static final String DATA_OWNER_AFFILIATION = "data.ownerAffiliation";
-    private static final String DATA_STATE = "data.resourceEvent";
-    private static final String RESOURCE_STATE = "resource.resourceEvent";
-    public static final String DATA_REVISION = "data.entityDescription.reference.publicationContext.revision";
-    public static final String RESOURCE_IMPORT_STATUS = "resource.importStatus";
-    public static final String RESOURCE_REVISION = "resource.entityDescription.reference.publicationContext.revision";
-    public static final String RESOURCE_FILES = ".resource.files";
-    private static final String DATA_FILES = ".data.files";
-    private static final String DATA_FILE_ENTRIES = ".data.fileEntries";
-    private static final String DATA_RESPONSIBILITY_AREA = "data.responsibilityArea";
-    private static final String RESOURCE_FILE_ENTRIES = ".resource.fileEntries";
-    public static final String DATA_TICKET_EVENT = "data.ticketEvent";
-    private static final String DATA_VIEWED_BY = "data.viewedBy";
-    protected static final String DATA_PUBLICATION_CHANNELS = "data.publicationChannels";
-    protected static final String RESOURCE_PUBLICATION_CHANNELS = "resource.publicationChannels";
-    public static final String RESOURCE_IMPORT_DETAILS = "resource.importDetails";
-    public static final String IMPORT_DETAILS = ".importDetails";
-    public static final String DATA_IMPORT_DETAILS = "data.importDetails";
-    public static final String RESOURCE_ASSOCIATED_CUSTOMERS = "resource.associatedCustomers";
-    public static final String DATA_ASSOCIATED_CUSTOMERS = "data.associatedCustomers";
-    public static final String DATA_RELATED_RESOURCES = "data.relatedResources";
-    public static final String RESOURCE_RELATED_RESOURCES = "resource.relatedResources";
-    public static final Set<String> IGNORED_FIELDS = Set.of(DATA_OWNER_AFFILIATION,
-                                                            DATA_RESPONSIBILITY_AREA,
-                                                            DATA_ASSIGNEE,
-                                                            DATA_FINALIZED_BY,
-                                                            DATA_FINALIZED_DATE, DATA_IMPORT_STATUS,
-                                                            RESOURCE_IMPORT_STATUS, RESOURCE_REVISION,
-                                                            DATA_REVISION,
-                                                            DATA_APPROVED_FILES,
-                                                            DATA_FILES_FOR_APPROVAL,
-                                                            DATA_STATE, RESOURCE_STATE, RESOURCE_FILES, DATA_FILES,
-                                                            RESOURCE_FILE_ENTRIES, DATA_FILE_ENTRIES,
-                                                            DATA_TICKET_EVENT,
-                                                            DATA_VIEWED_BY,
-                                                            DATA_PUBLICATION_CHANNELS,
-                                                            RESOURCE_PUBLICATION_CHANNELS,
-                                                            RESOURCE_IMPORT_DETAILS,
-                                                            IMPORT_DETAILS,
-                                                            DATA_IMPORT_DETAILS,
-                                                            RESOURCE_ASSOCIATED_CUSTOMERS,
-                                                            DATA_ASSOCIATED_CUSTOMERS,
-                                                            DATA_RELATED_RESOURCES,
-                                                            RESOURCE_RELATED_RESOURCES);
+  public static final String DATA_APPROVED_FILES = "data.approvedFiles";
+  private static final String DATA_ASSIGNEE = "data.assignee";
+  public static final String DATA_FILES_FOR_APPROVAL = "data.filesForApproval";
+  private static final String DATA_FINALIZED_BY = "data.finalizedBy";
+  private static final String DATA_FINALIZED_DATE = "data.finalizedDate";
+  public static final String DATA_IMPORT_STATUS = "data.importStatus";
+  private static final String DATA_OWNER_AFFILIATION = "data.ownerAffiliation";
+  private static final String DATA_STATE = "data.resourceEvent";
+  private static final String RESOURCE_STATE = "resource.resourceEvent";
+  public static final String DATA_REVISION =
+      "data.entityDescription.reference.publicationContext.revision";
+  public static final String RESOURCE_IMPORT_STATUS = "resource.importStatus";
+  public static final String RESOURCE_REVISION =
+      "resource.entityDescription.reference.publicationContext.revision";
+  public static final String RESOURCE_FILES = ".resource.files";
+  private static final String DATA_FILES = ".data.files";
+  private static final String DATA_FILE_ENTRIES = ".data.fileEntries";
+  private static final String DATA_RESPONSIBILITY_AREA = "data.responsibilityArea";
+  private static final String RESOURCE_FILE_ENTRIES = ".resource.fileEntries";
+  public static final String DATA_TICKET_EVENT = "data.ticketEvent";
+  private static final String DATA_VIEWED_BY = "data.viewedBy";
+  protected static final String DATA_PUBLICATION_CHANNELS = "data.publicationChannels";
+  protected static final String RESOURCE_PUBLICATION_CHANNELS = "resource.publicationChannels";
+  public static final String RESOURCE_IMPORT_DETAILS = "resource.importDetails";
+  public static final String IMPORT_DETAILS = ".importDetails";
+  public static final String DATA_IMPORT_DETAILS = "data.importDetails";
+  public static final String RESOURCE_ASSOCIATED_CUSTOMERS = "resource.associatedCustomers";
+  public static final String DATA_ASSOCIATED_CUSTOMERS = "data.associatedCustomers";
+  public static final String DATA_RELATED_RESOURCES = "data.relatedResources";
+  public static final String RESOURCE_RELATED_RESOURCES = "resource.relatedResources";
+  public static final Set<String> IGNORED_FIELDS =
+      Set.of(
+          DATA_OWNER_AFFILIATION,
+          DATA_RESPONSIBILITY_AREA,
+          DATA_ASSIGNEE,
+          DATA_FINALIZED_BY,
+          DATA_FINALIZED_DATE,
+          DATA_IMPORT_STATUS,
+          RESOURCE_IMPORT_STATUS,
+          RESOURCE_REVISION,
+          DATA_REVISION,
+          DATA_APPROVED_FILES,
+          DATA_FILES_FOR_APPROVAL,
+          DATA_STATE,
+          RESOURCE_STATE,
+          RESOURCE_FILES,
+          DATA_FILES,
+          RESOURCE_FILE_ENTRIES,
+          DATA_FILE_ENTRIES,
+          DATA_TICKET_EVENT,
+          DATA_VIEWED_BY,
+          DATA_PUBLICATION_CHANNELS,
+          RESOURCE_PUBLICATION_CHANNELS,
+          RESOURCE_IMPORT_DETAILS,
+          IMPORT_DETAILS,
+          DATA_IMPORT_DETAILS,
+          RESOURCE_ASSOCIATED_CUSTOMERS,
+          DATA_ASSOCIATED_CUSTOMERS,
+          DATA_RELATED_RESOURCES,
+          RESOURCE_RELATED_RESOURCES);
 
-    public static Stream<Named<Class<?>>> entityProvider() {
-        return TypeProvider.listSubTypes(Entity.class);
-    }
+  public static Stream<Named<Class<?>>> entityProvider() {
+    return TypeProvider.listSubTypes(Entity.class);
+  }
 
-    public static Stream<Named<Class<?>>> ticketProvider() {
-        return TypeProvider.listSubTypes(TicketEntry.class);
-    }
+  public static Stream<Named<Class<?>>> ticketProvider() {
+    return TypeProvider.listSubTypes(TicketEntry.class);
+  }
 
-    @Override
-    @BeforeEach
-    public void init() {
-        super.init();
-    }
+  @Override
+  @BeforeEach
+  public void init() {
+    super.init();
+  }
 
-    @ParameterizedTest(name = "dataType returns name of the contained object: {0}")
-    @MethodSource("instanceProvider")
-    void getTypeReturnsNameOfTheContainedObject(Dao daoInstance) {
-        String expectedType = daoInstance.getData().getClass().getSimpleName();
-        assertThat(daoInstance.dataType(), is(equalTo(expectedType)));
-    }
+  @ParameterizedTest(name = "dataType returns name of the contained object: {0}")
+  @MethodSource("instanceProvider")
+  void getTypeReturnsNameOfTheContainedObject(Dao daoInstance) {
+    String expectedType = daoInstance.getData().getClass().getSimpleName();
+    assertThat(daoInstance.dataType(), is(equalTo(expectedType)));
+  }
 
-    @ParameterizedTest(name = "getIdentifier returns the identifier of the contained object: {0}")
-    @MethodSource("instanceProvider")
-    void getIdentifierReturnsTheIdentifierOfTheContainedObject(Dao daoInstance) {
-        String expectedIdentifier = daoInstance.getData().getIdentifier().toString();
-        assertThat(expectedIdentifier, is(not(emptyString())));
+  @ParameterizedTest(name = "getIdentifier returns the identifier of the contained object: {0}")
+  @MethodSource("instanceProvider")
+  void getIdentifierReturnsTheIdentifierOfTheContainedObject(Dao daoInstance) {
+    String expectedIdentifier = daoInstance.getData().getIdentifier().toString();
+    assertThat(expectedIdentifier, is(not(emptyString())));
 
-        assertThat(daoInstance.getIdentifier().toString(), is(equalTo(expectedIdentifier)));
-    }
+    assertThat(daoInstance.getIdentifier().toString(), is(equalTo(expectedIdentifier)));
+  }
 
-    @ParameterizedTest(name = "getCustomerId returns the customerId of the contained object: {0}")
-    @MethodSource("instanceProvider")
-    void getCustomerIdReturnsTheCustomerIdOfTheContainedObject(Dao dao) {
-        String expectedCustomerId = dao.getData().getCustomerId().toString();
-        assertThat(expectedCustomerId, is(not(emptyString())));
+  @ParameterizedTest(name = "getCustomerId returns the customerId of the contained object: {0}")
+  @MethodSource("instanceProvider")
+  void getCustomerIdReturnsTheCustomerIdOfTheContainedObject(Dao dao) {
+    String expectedCustomerId = dao.getData().getCustomerId().toString();
+    assertThat(expectedCustomerId, is(not(emptyString())));
 
-        assertThat(dao.getCustomerId().toString(), is(equalTo(expectedCustomerId)));
-    }
+    assertThat(dao.getCustomerId().toString(), is(equalTo(expectedCustomerId)));
+  }
 
-    @ParameterizedTest(name = "daoPrimaryKeyPartitionKey contains only Type, CustomerIdentifier, and Owner "
-                              + "in that order: {0}")
-    @MethodSource("instanceProvider")
-    void daoPrimaryKeyPartitionKeyContainsOnlyTypeCustomerIdentifierAndOwnerInThatOrder(Dao daoInstance)
-        throws JsonProcessingException {
-        JsonNode jsonNode = serializeInstance(daoInstance);
+  @ParameterizedTest(
+      name =
+          "daoPrimaryKeyPartitionKey contains only Type, CustomerIdentifier, and Owner "
+              + "in that order: {0}")
+  @MethodSource("instanceProvider")
+  void daoPrimaryKeyPartitionKeyContainsOnlyTypeCustomerIdentifierAndOwnerInThatOrder(
+      Dao daoInstance) throws JsonProcessingException {
+    JsonNode jsonNode = serializeInstance(daoInstance);
 
-        assertThat(jsonNode.get(PRIMARY_KEY_PARTITION_KEY_NAME), is(not(nullValue())));
-        String primaryKeyPartitionKey = jsonNode.get(PRIMARY_KEY_PARTITION_KEY_NAME).textValue();
+    assertThat(jsonNode.get(PRIMARY_KEY_PARTITION_KEY_NAME), is(not(nullValue())));
+    String primaryKeyPartitionKey = jsonNode.get(PRIMARY_KEY_PARTITION_KEY_NAME).textValue();
 
-        String expectedFormat = String.join(KEY_FIELDS_DELIMITER,
-                                            daoInstance.indexingType(),
-                                            daoInstance.getCustomerIdentifier(),
-                                            daoInstance.getOwner().toString()
-        );
+    String expectedFormat =
+        String.join(
+            KEY_FIELDS_DELIMITER,
+            daoInstance.indexingType(),
+            daoInstance.getCustomerIdentifier(),
+            daoInstance.getOwner().toString());
 
-        assertThat(primaryKeyPartitionKey, is(equalTo(expectedFormat)));
-    }
+    assertThat(primaryKeyPartitionKey, is(equalTo(expectedFormat)));
+  }
 
-    @ParameterizedTest(name = "daoPrimaryKeySortKey contains only Type and Identifier in that order: {0}")
-    @MethodSource("instanceProvider")
-    void daoPrimaryKeySortKeyContainsOnlyTypeAndIdentifierInThatOrder(Dao daoInstance)
-        throws JsonProcessingException {
-        JsonNode jsonNode = serializeInstance(daoInstance);
-        assertThat(jsonNode.get(PRIMARY_KEY_SORT_KEY_NAME), is(not(nullValue())));
-        String primaryKeySortKey = jsonNode.get(PRIMARY_KEY_SORT_KEY_NAME).textValue();
+  @ParameterizedTest(
+      name = "daoPrimaryKeySortKey contains only Type and Identifier in that order: {0}")
+  @MethodSource("instanceProvider")
+  void daoPrimaryKeySortKeyContainsOnlyTypeAndIdentifierInThatOrder(Dao daoInstance)
+      throws JsonProcessingException {
+    JsonNode jsonNode = serializeInstance(daoInstance);
+    assertThat(jsonNode.get(PRIMARY_KEY_SORT_KEY_NAME), is(not(nullValue())));
+    String primaryKeySortKey = jsonNode.get(PRIMARY_KEY_SORT_KEY_NAME).textValue();
 
-        String expectedFormat = String.join(KEY_FIELDS_DELIMITER,
-                                            daoInstance.indexingType(),
-                                            daoInstance.getIdentifier().toString());
-        assertThat(primaryKeySortKey, is(equalTo(expectedFormat)));
-    }
+    String expectedFormat =
+        String.join(
+            KEY_FIELDS_DELIMITER,
+            daoInstance.indexingType(),
+            daoInstance.getIdentifier().toString());
+    assertThat(primaryKeySortKey, is(equalTo(expectedFormat)));
+  }
 
-    @ParameterizedTest(name = "dao can be retrieved by primary-key from dynamo: {0}")
-    @MethodSource("instanceProvider")
-    void daoCanBeRetrievedByPrimaryKeyFromDynamo(Dao originalResource) {
-        client.putItem(toPutItemRequest(originalResource));
-        GetItemResult getItemResult = client.getItem(
-            new GetItemRequest().withTableName(RESOURCES_TABLE_NAME)
+  @ParameterizedTest(name = "dao can be retrieved by primary-key from dynamo: {0}")
+  @MethodSource("instanceProvider")
+  void daoCanBeRetrievedByPrimaryKeyFromDynamo(Dao originalResource) {
+    client.putItem(toPutItemRequest(originalResource));
+    GetItemResult getItemResult =
+        client.getItem(
+            new GetItemRequest()
+                .withTableName(RESOURCES_TABLE_NAME)
                 .withKey(originalResource.primaryKey()));
-        Dao retrievedResource = parseAttributeValuesMap(getItemResult.getItem(), originalResource.getClass());
+    Dao retrievedResource =
+        parseAttributeValuesMap(getItemResult.getItem(), originalResource.getClass());
 
-        assertThat(originalResource, doesNotHaveEmptyValuesIgnoringFields(IGNORED_FIELDS));
-        assertThat(originalResource, is(equalTo(retrievedResource)));
+    assertThat(originalResource, doesNotHaveEmptyValuesIgnoringFields(IGNORED_FIELDS));
+    assertThat(originalResource, is(equalTo(retrievedResource)));
+  }
+
+  @ParameterizedTest
+  @MethodSource("instanceProvider")
+  void parseAttributeValuesMapCreatesDaoWithoutLossOfInformation(Dao originalDao) {
+
+    assertThat(originalDao, doesNotHaveEmptyValuesIgnoringFields(IGNORED_FIELDS));
+    Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
+    Dao parsedDao = parseAttributeValuesMap(dynamoMap, originalDao.getClass());
+    assertThat(parsedDao, is(equalTo(originalDao)));
+  }
+
+  @ParameterizedTest(name = "toDynamoFormat creates a Dynamo object preserving all information")
+  @MethodSource("instanceProvider")
+  void toDynamoFormatCreatesADynamoJsonFormatObjectPreservingAllInformation(Dao originalDao) {
+
+    Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
+    client.putItem(RESOURCES_TABLE_NAME, dynamoMap);
+    Map<String, AttributeValue> savedMap =
+        client.getItem(RESOURCES_TABLE_NAME, originalDao.primaryKey()).getItem();
+    assertThat(dynamoMap, is(equalTo(savedMap)));
+
+    Dao retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
+    assertThat(retrievedDao, doesNotHaveEmptyValuesIgnoringFields(IGNORED_FIELDS));
+    assertThat(retrievedDao, is(equalTo(originalDao)));
+  }
+
+  @ParameterizedTest(name = "Dao type:{0}")
+  @DisplayName(
+      "should generate a new version whenever it is instantiated through a Business Object")
+  @MethodSource("entityProvider")
+  void shouldGenerateNewVersionWheneverIsInstantiatedThroughBusinessObject(Class<?> entityType)
+      throws ConflictException {
+    var entity = (Entity) generateEntity(entityType);
+    var dao = entity.toDao();
+    var dao2 = entity.toDao();
+    assertThat(dao.getVersion(), is(not(nullValue())));
+    assertThat(dao2.getVersion(), is(not(nullValue())));
+    assertThat(dao.getVersion(), is(not(equalTo(dao2.getVersion()))));
+  }
+
+  @ParameterizedTest(name = "Dao type:{0}")
+  @MethodSource("ticketProvider")
+  void ticketsShouldHaveAllDesiredFieldsInDao(Class<?> entityType)
+      throws JsonProcessingException, ConflictException {
+    var entity = (Entity) generateEntity(entityType);
+    var dao = entity.toDao();
+    String stringValue = dynamoDbObjectMapper.writeValueAsString(dao);
+    ObjectNode jsonNode = (ObjectNode) dynamoDbObjectMapper.readTree(stringValue);
+    Iterator<String> fieldNames = jsonNode.fieldNames();
+    List<String> fieldNameList = new ArrayList<>();
+    fieldNames.forEachRemaining(fieldNameList::add);
+    assertThat(
+        fieldNameList,
+        everyItem(
+            anyOf(
+                startsWith("PK"),
+                startsWith("SK"),
+                equalTo("identifier"),
+                equalTo("data"),
+                equalTo("type"),
+                equalTo("version"),
+                equalTo("status"),
+                equalTo("owner"),
+                equalTo("createdDate"),
+                equalTo("modifiedDate"),
+                equalTo("customerId"),
+                equalTo("ticketIdentifier"),
+                equalTo("resourceIdentifier"))));
+  }
+
+  @Test
+  void resourceShouldHaveAllDesiredFieldsInDao() throws JsonProcessingException, ConflictException {
+    var entity = (Entity) generateEntity(Resource.class);
+    var dao = entity.toDao();
+    String stringValue = dynamoDbObjectMapper.writeValueAsString(dao);
+    ObjectNode jsonNode = (ObjectNode) dynamoDbObjectMapper.readTree(stringValue);
+    Iterator<String> fieldNames = jsonNode.fieldNames();
+    List<String> fieldNameList = new ArrayList<>();
+    fieldNames.forEachRemaining(fieldNameList::add);
+    assertThat(
+        fieldNameList,
+        everyItem(
+            anyOf(
+                startsWith("PK"),
+                startsWith("SK"),
+                equalTo("identifier"),
+                equalTo("data"),
+                equalTo("type"),
+                equalTo("version"),
+                equalTo("status"),
+                equalTo("doi"),
+                equalTo("modifiedDate"))));
+  }
+
+  private static TicketEntry createTicket(Class<? extends TicketEntry> entityType)
+      throws ConflictException {
+    return TicketEntry.createNewTicket(
+            randomDegreePublication().copy().withStatus(PUBLISHED).build(),
+            entityType,
+            SortableIdentifier::next)
+        .withOwner(randomString());
+  }
+
+  private static Stream<Dao> instanceProvider() {
+    return DaoUtils.instanceProvider();
+  }
+
+  @SuppressWarnings("unchecked")
+  private Object generateEntity(Class<?> entityType) throws ConflictException {
+
+    if (Resource.class.equals(entityType)) {
+      return Resource.fromPublication(randomPublication());
+    } else if (TicketEntry.class.isAssignableFrom(entityType)) {
+      return createTicket((Class<? extends TicketEntry>) entityType);
+    } else if (Message.class.equals(entityType)) {
+      var ticket = createTicket(DoiRequest.class);
+      return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
+    } else if (FileEntry.class.equals(entityType)) {
+      return createRandomFileEntry();
+    } else if (ClaimedPublicationChannel.class.equals(entityType)) {
+      return createRandomClaimedPublicationChannel();
+    } else if (NonClaimedPublicationChannel.class.equals(entityType)) {
+      return createRandomNonClaimedPublicationChannel();
+    } else {
+      throw new UnsupportedOperationException();
     }
+  }
 
-    @ParameterizedTest
-    @MethodSource("instanceProvider")
-    void parseAttributeValuesMapCreatesDaoWithoutLossOfInformation(Dao originalDao) {
+  private ClaimedPublicationChannel createRandomClaimedPublicationChannel() {
+    var randomConstraint =
+        new Constraint(ChannelPolicy.EVERYONE, ChannelPolicy.OWNER_ONLY, List.of());
+    return new ClaimedPublicationChannel(
+        randomUri(),
+        randomUri(),
+        randomUri(),
+        randomConstraint,
+        ChannelType.PUBLISHER,
+        SortableIdentifier.next(),
+        SortableIdentifier.next(),
+        Instant.now(),
+        Instant.now());
+  }
 
-        assertThat(originalDao, doesNotHaveEmptyValuesIgnoringFields(IGNORED_FIELDS));
-        Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
-        Dao parsedDao = parseAttributeValuesMap(dynamoMap, originalDao.getClass());
-        assertThat(parsedDao, is(equalTo(originalDao)));
-    }
+  private NonClaimedPublicationChannel createRandomNonClaimedPublicationChannel() {
+    return new NonClaimedPublicationChannel(
+        randomUri(),
+        ChannelType.PUBLISHER,
+        SortableIdentifier.next(),
+        SortableIdentifier.next(),
+        Instant.now(),
+        Instant.now());
+  }
 
-    @ParameterizedTest(name = "toDynamoFormat creates a Dynamo object preserving all information")
-    @MethodSource("instanceProvider")
-    void toDynamoFormatCreatesADynamoJsonFormatObjectPreservingAllInformation(Dao originalDao) {
+  private FileEntry createRandomFileEntry() {
+    return FileEntry.create(
+        randomOpenFile(),
+        SortableIdentifier.next(),
+        UserInstance.fromPublication(randomPublication()));
+  }
 
-        Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
-        client.putItem(RESOURCES_TABLE_NAME, dynamoMap);
-        Map<String, AttributeValue> savedMap = client
-                                                   .getItem(RESOURCES_TABLE_NAME, originalDao.primaryKey())
-                                                   .getItem();
-        assertThat(dynamoMap, is(equalTo(savedMap)));
-
-        Dao retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
-        assertThat(retrievedDao, doesNotHaveEmptyValuesIgnoringFields(IGNORED_FIELDS));
-        assertThat(retrievedDao, is(equalTo(originalDao)));
-    }
-
-    @ParameterizedTest(name = "Dao type:{0}")
-    @DisplayName("should generate a new version whenever it is instantiated through a Business Object")
-    @MethodSource("entityProvider")
-    void shouldGenerateNewVersionWheneverIsInstantiatedThroughBusinessObject(Class<?> entityType)
-        throws ConflictException {
-        var entity = (Entity) generateEntity(entityType);
-        var dao = entity.toDao();
-        var dao2 = entity.toDao();
-        assertThat(dao.getVersion(), is(not(nullValue())));
-        assertThat(dao2.getVersion(), is(not(nullValue())));
-        assertThat(dao.getVersion(), is(not(equalTo(dao2.getVersion()))));
-    }
-
-    @ParameterizedTest(name = "Dao type:{0}")
-    @MethodSource("ticketProvider")
-    void ticketsShouldHaveAllDesiredFieldsInDao(Class<?> entityType)
-        throws JsonProcessingException, ConflictException {
-        var entity = (Entity) generateEntity(entityType);
-        var dao = entity.toDao();
-        String stringValue = dynamoDbObjectMapper.writeValueAsString(dao);
-        ObjectNode jsonNode = (ObjectNode) dynamoDbObjectMapper.readTree(stringValue);
-        Iterator<String> fieldNames = jsonNode.fieldNames();
-        List<String> fieldNameList = new ArrayList<>();
-        fieldNames.forEachRemaining(fieldNameList::add);
-        assertThat(fieldNameList, everyItem(anyOf(
-                       startsWith("PK"),
-                       startsWith("SK"),
-                       equalTo("identifier"),
-                       equalTo("data"),
-                       equalTo("type"),
-                       equalTo("version"),
-                       equalTo("status"),
-                       equalTo("owner"),
-                       equalTo("createdDate"),
-                       equalTo("modifiedDate"),
-                       equalTo("customerId"),
-                       equalTo("ticketIdentifier"),
-                       equalTo("resourceIdentifier")
-                   ))
-        );
-    }
-
-    @Test
-    void resourceShouldHaveAllDesiredFieldsInDao()
-        throws JsonProcessingException, ConflictException {
-        var entity = (Entity) generateEntity(Resource.class);
-        var dao = entity.toDao();
-        String stringValue = dynamoDbObjectMapper.writeValueAsString(dao);
-        ObjectNode jsonNode = (ObjectNode) dynamoDbObjectMapper.readTree(stringValue);
-        Iterator<String> fieldNames = jsonNode.fieldNames();
-        List<String> fieldNameList = new ArrayList<>();
-        fieldNames.forEachRemaining(fieldNameList::add);
-        assertThat(fieldNameList, everyItem(anyOf(
-                       startsWith("PK"),
-                       startsWith("SK"),
-                       equalTo("identifier"),
-                       equalTo("data"),
-                       equalTo("type"),
-                       equalTo("version"),
-                       equalTo("status"),
-                       equalTo("doi"),
-                       equalTo("modifiedDate")
-                   ))
-        );
-    }
-
-    private static TicketEntry createTicket(Class<? extends TicketEntry> entityType) throws ConflictException {
-        return TicketEntry.createNewTicket(randomDegreePublication().copy().withStatus(PUBLISHED).build(), entityType,
-                                           SortableIdentifier::next)
-                   .withOwner(randomString());
-    }
-
-    private static Stream<Dao> instanceProvider() {
-        return DaoUtils.instanceProvider();
-    }
-
-    @SuppressWarnings("unchecked")
-    private Object generateEntity(Class<?> entityType)
-        throws ConflictException {
-
-        if (Resource.class.equals(entityType)) {
-            return Resource.fromPublication(randomPublication());
-        } else if (TicketEntry.class.isAssignableFrom(entityType)) {
-            return createTicket((Class<? extends TicketEntry>) entityType);
-        } else if (Message.class.equals(entityType)) {
-            var ticket = createTicket(DoiRequest.class);
-            return Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
-        } else if (FileEntry.class.equals(entityType)) {
-            return createRandomFileEntry();
-        } else if (ClaimedPublicationChannel.class.equals(entityType)) {
-            return createRandomClaimedPublicationChannel();
-        } else if (NonClaimedPublicationChannel.class.equals(entityType)) {
-            return createRandomNonClaimedPublicationChannel();
-        } else {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    private ClaimedPublicationChannel createRandomClaimedPublicationChannel() {
-        var randomConstraint = new Constraint(ChannelPolicy.EVERYONE, ChannelPolicy.OWNER_ONLY, List.of());
-        return new ClaimedPublicationChannel(randomUri(), randomUri(), randomUri(), randomConstraint,
-                                             ChannelType.PUBLISHER, SortableIdentifier.next(),
-                                             SortableIdentifier.next(), Instant.now(), Instant.now());
-    }
-
-    private NonClaimedPublicationChannel createRandomNonClaimedPublicationChannel() {
-        return new NonClaimedPublicationChannel(randomUri(), ChannelType.PUBLISHER, SortableIdentifier.next(),
-                                                SortableIdentifier.next(), Instant.now(), Instant.now());
-    }
-
-    private FileEntry createRandomFileEntry() {
-        return FileEntry.create(randomOpenFile(), SortableIdentifier.next(),
-                                UserInstance.fromPublication(randomPublication()));
-    }
-
-    private JsonNode serializeInstance(Dao daoInstance) throws JsonProcessingException {
-        String json = dynamoDbObjectMapper.writeValueAsString(daoInstance);
-        return dynamoDbObjectMapper.readTree(json);
-    }
+  private JsonNode serializeInstance(Dao daoInstance) throws JsonProcessingException {
+    String json = dynamoDbObjectMapper.writeValueAsString(daoInstance);
+    return dynamoDbObjectMapper.readTree(json);
+  }
 }

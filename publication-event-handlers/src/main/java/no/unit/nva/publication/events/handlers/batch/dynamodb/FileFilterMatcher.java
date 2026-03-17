@@ -31,7 +31,8 @@ public class FileFilterMatcher implements EntityFilterMatcher {
   }
 
   private boolean matchesOwnerAffiliation(FileEntry fileEntry, BatchFilter filter) {
-    if (isNull(filter.fileOwnerAffiliationPrefixes()) || filter.fileOwnerAffiliationPrefixes().isEmpty()) {
+    if (isNull(filter.fileOwnerAffiliationPrefixes())
+        || filter.fileOwnerAffiliationPrefixes().isEmpty()) {
       return true;
     }
     return Optional.ofNullable(fileEntry.getOwnerAffiliation())

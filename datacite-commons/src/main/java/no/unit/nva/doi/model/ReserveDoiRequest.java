@@ -6,14 +6,14 @@ import java.net.URI;
 
 public class ReserveDoiRequest {
 
-    private final URI customer;
+  private final URI customer;
 
-    public URI getCustomer() {
-        return customer;
-    }
+  public URI getCustomer() {
+    return customer;
+  }
 
-    @JsonCreator
-    public ReserveDoiRequest(@JsonProperty("customer") URI customer) {
-        this.customer = customer;
-    }
+  @JsonCreator
+  public ReserveDoiRequest(@JsonProperty("customer") URI customer) {
+    this.customer = customer;
+  }
 }

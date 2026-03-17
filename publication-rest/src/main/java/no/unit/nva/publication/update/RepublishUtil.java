@@ -12,32 +12,39 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class RepublishUtil {
 
-    private final ResourceService resourceService;
-    private final TicketService ticketService;
-    private final PublicationPermissions permissionStrategy;
+  private final ResourceService resourceService;
+  private final TicketService ticketService;
+  private final PublicationPermissions permissionStrategy;
 
-    public RepublishUtil(ResourceService resourceService, TicketService ticketService,
-                         PublicationPermissions permissionStrategy) {
-        this.resourceService = resourceService;
-        this.ticketService = ticketService;
-        this.permissionStrategy = permissionStrategy;
+  public RepublishUtil(
+      ResourceService resourceService,
+      TicketService ticketService,
+      PublicationPermissions permissionStrategy) {
+    this.resourceService = resourceService;
+    this.ticketService = ticketService;
+    this.permissionStrategy = permissionStrategy;
+  }
+
+  public static RepublishUtil create(
+      ResourceService resourceService,
+      TicketService ticketService,
+      PublicationPermissions permissionStrategy) {
+    return new RepublishUtil(resourceService, ticketService, permissionStrategy);
+  }
+
+  public Resource republish(Resource resource, UserInstance userInstance)
+      throws ApiGatewayException {
+    validateRepublishing();
+    resource.republish(resourceService, ticketService, userInstance);
+
+    return resource
+        .fetch(resourceService)
+        .orElseThrow(() -> new NotFoundException("Resource not found!"));
+  }
+
+  private void validateRepublishing() throws ForbiddenException {
+    if (!permissionStrategy.allowsAction(PublicationOperation.REPUBLISH)) {
+      throw new ForbiddenException();
     }
-
-    public static RepublishUtil create(ResourceService resourceService, TicketService ticketService,
-                                       PublicationPermissions permissionStrategy) {
-        return new RepublishUtil(resourceService, ticketService, permissionStrategy);
-    }
-
-    public Resource republish(Resource resource, UserInstance userInstance) throws ApiGatewayException {
-        validateRepublishing();
-        resource.republish(resourceService, ticketService, userInstance);
-
-        return resource.fetch(resourceService).orElseThrow(() -> new NotFoundException("Resource not found!"));
-    }
-
-    private void validateRepublishing() throws ForbiddenException {
-        if (!permissionStrategy.allowsAction(PublicationOperation.REPUBLISH)) {
-            throw new ForbiddenException();
-        }
-    }
+  }
 }

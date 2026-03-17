@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
+
 import java.net.URI;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -24,91 +25,94 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class PublicationGeneratorTest {
 
-    public static final Set<String> FIELDS_EXPECTED_TO_BE_NULL =
-        Set.of(".doiRequest", ".entityDescription.reference.publicationContext.revision", ".importDetails");
-    public static final Pattern EXPECTED_PUBLICATION_CHANNELS_URI =
-        Pattern.compile("https://.*?nva\\.aws\\.unit\\.no/publication-channels-v2/.*");
+  public static final Set<String> FIELDS_EXPECTED_TO_BE_NULL =
+      Set.of(
+          ".doiRequest",
+          ".entityDescription.reference.publicationContext.revision",
+          ".importDetails");
+  public static final Pattern EXPECTED_PUBLICATION_CHANNELS_URI =
+      Pattern.compile("https://.*?nva\\.aws\\.unit\\.no/publication-channels-v2/.*");
 
-    public static Stream<Class<?>> publicationInstanceProvider() {
-        return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
+  public static Stream<Class<?>> publicationInstanceProvider() {
+    return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
+  }
+
+  @ParameterizedTest(name = "Should return publication of type {0} without empty fields")
+  @MethodSource("publicationInstanceProvider")
+  void shouldReturnPublicationWithoutEmptyFields(Class<?> publicationInstance) {
+
+    assertThat(
+        PublicationGenerator.randomPublication(publicationInstance),
+        doesNotHaveEmptyValuesIgnoringFields(FIELDS_EXPECTED_TO_BE_NULL));
+  }
+
+  @Test
+  void shouldReturnPublicationThatIsInstanceOfTargetClasses() {
+    var publication = PublicationGenerator.fromInstanceClasses(AcademicArticle.class);
+    var publicationInstanceTypeClass =
+        publication.getEntityDescription().getReference().getPublicationInstance().getClass();
+    assertThat(publicationInstanceTypeClass, is(equalTo(AcademicArticle.class)));
+  }
+
+  @Test
+  void shouldReturnPublicationThatIsInstanceOfTargetClassesExcluding() {
+    var publication = PublicationGenerator.fromInstanceClassesExcluding(AcademicArticle.class);
+    var publicationInstanceTypeClass =
+        publication.getEntityDescription().getReference().getPublicationInstance().getClass();
+    assertThat(publicationInstanceTypeClass, is(not(equalTo(AcademicArticle.class))));
+  }
+
+  @ParameterizedTest
+  @MethodSource("publicationInstanceProvider")
+  void shouldReturnPublicationWithPublicationChannelUriWherePublicationChannelUriIsExpected(
+      Class<?> instantType) {
+    Publication publication = PublicationGenerator.randomPublicationWithEmptyValues(instantType);
+    var publicationContext =
+        publication.getEntityDescription().getReference().getPublicationContext();
+    if (isGenerallyBook(publicationContext)) {
+      assertThatPublisherAndSeriesArePublicationChannelsUris(publicationContext);
     }
-
-    @ParameterizedTest(name = "Should return publication of type {0} without empty fields")
-    @MethodSource("publicationInstanceProvider")
-    void shouldReturnPublicationWithoutEmptyFields(Class<?> publicationInstance) {
-
-        assertThat(PublicationGenerator.randomPublication(publicationInstance),
-                   doesNotHaveEmptyValuesIgnoringFields(FIELDS_EXPECTED_TO_BE_NULL));
+    if (isGenerallyJournal(publicationContext)) {
+      assertThatJournalIdIsPublicationChannelsUri(publicationContext);
     }
-
-    @Test
-    void shouldReturnPublicationThatIsInstanceOfTargetClasses() {
-        var publication = PublicationGenerator.fromInstanceClasses(AcademicArticle.class);
-        var publicationInstanceTypeClass = publication.getEntityDescription()
-                                               .getReference()
-                                               .getPublicationInstance()
-                                               .getClass();
-        assertThat(publicationInstanceTypeClass, is(equalTo(AcademicArticle.class)));
+    if (isBookSeries(publicationContext)) {
+      assertThatSeriesUriIsPublicationChannelsUri(publicationContext);
     }
+  }
 
-    @Test
-    void shouldReturnPublicationThatIsInstanceOfTargetClassesExcluding() {
-        var publication = PublicationGenerator.fromInstanceClassesExcluding(AcademicArticle.class);
-        var publicationInstanceTypeClass = publication.getEntityDescription()
-                                               .getReference()
-                                               .getPublicationInstance()
-                                               .getClass();
-        assertThat(publicationInstanceTypeClass, is(not(equalTo(AcademicArticle.class))));
-    }
+  private void assertThatSeriesUriIsPublicationChannelsUri(PublicationContext publicationContext) {
+    Series series = (Series) publicationContext;
+    assertThatUriPointsToPublicationChannelsService(series.getId());
+  }
 
-    @ParameterizedTest
-    @MethodSource("publicationInstanceProvider")
-    void shouldReturnPublicationWithPublicationChannelUriWherePublicationChannelUriIsExpected(Class<?> instantType) {
-        Publication publication = PublicationGenerator.randomPublicationWithEmptyValues(instantType);
-        var publicationContext = publication.getEntityDescription().getReference().getPublicationContext();
-        if (isGenerallyBook(publicationContext)) {
-            assertThatPublisherAndSeriesArePublicationChannelsUris(publicationContext);
-        }
-        if (isGenerallyJournal(publicationContext)) {
-            assertThatJournalIdIsPublicationChannelsUri(publicationContext);
-        }
-        if (isBookSeries(publicationContext)) {
-            assertThatSeriesUriIsPublicationChannelsUri(publicationContext);
-        }
-    }
+  private boolean isBookSeries(PublicationContext publicationContext) {
+    return publicationContext instanceof BookSeries;
+  }
 
-    private void assertThatSeriesUriIsPublicationChannelsUri(PublicationContext publicationContext) {
-        Series series = (Series) publicationContext;
-        assertThatUriPointsToPublicationChannelsService(series.getId());
-    }
+  private void assertThatJournalIdIsPublicationChannelsUri(PublicationContext publicationContext) {
+    Journal journal = (Journal) publicationContext;
+    assertThatUriPointsToPublicationChannelsService(journal.getId());
+  }
 
-    private boolean isBookSeries(PublicationContext publicationContext) {
-        return publicationContext instanceof BookSeries;
-    }
+  private void assertThatUriPointsToPublicationChannelsService(URI id) {
+    assertThat(id.toString(), matchesPattern(EXPECTED_PUBLICATION_CHANNELS_URI));
+  }
 
-    private void assertThatJournalIdIsPublicationChannelsUri(PublicationContext publicationContext) {
-        Journal journal = (Journal) publicationContext;
-        assertThatUriPointsToPublicationChannelsService(journal.getId());
-    }
+  private boolean isGenerallyJournal(PublicationContext publicationContext) {
+    return publicationContext instanceof Journal;
+  }
 
-    private void assertThatUriPointsToPublicationChannelsService(URI id) {
-        assertThat(id.toString(), matchesPattern(EXPECTED_PUBLICATION_CHANNELS_URI));
-    }
+  private void assertThatPublisherAndSeriesArePublicationChannelsUris(
+      PublicationContext publicationContext) {
+    Book book = (Book) publicationContext;
+    Publisher publisher = (Publisher) book.getPublisher();
+    Series series = (Series) book.getSeries();
+    assertThatUriPointsToPublicationChannelsService(publisher.getId());
+    assertThatUriPointsToPublicationChannelsService(series.getId());
+  }
 
-    private boolean isGenerallyJournal(PublicationContext publicationContext) {
-        return publicationContext instanceof Journal;
-    }
-
-    private void assertThatPublisherAndSeriesArePublicationChannelsUris(PublicationContext publicationContext) {
-        Book book = (Book) publicationContext;
-        Publisher publisher = (Publisher) book.getPublisher();
-        Series series = (Series) book.getSeries();
-        assertThatUriPointsToPublicationChannelsService(publisher.getId());
-        assertThatUriPointsToPublicationChannelsService(series.getId());
-    }
-
-    private boolean isGenerallyBook(PublicationContext publicationContext) {
-        // Book is supertype to all book-like contexts
-        return publicationContext instanceof Book;
-    }
+  private boolean isGenerallyBook(PublicationContext publicationContext) {
+    // Book is supertype to all book-like contexts
+    return publicationContext instanceof Book;
+  }
 }

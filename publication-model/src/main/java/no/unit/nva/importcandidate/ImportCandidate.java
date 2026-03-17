@@ -1,6 +1,7 @@
 package no.unit.nva.importcandidate;
 
 import static java.util.Objects.nonNull;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
@@ -24,193 +25,202 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ImportCandidate implements JsonSerializable {
 
-    public static final String TYPE = "ImportCandidate";
-    private ImportStatus importStatus;
-    private List<URI> associatedCustomers;
-    private SortableIdentifier identifier;
-    private Instant createdDate;
-    private Instant modifiedDate;
-    private ImportEntityDescription entityDescription;
-    private AssociatedArtifactList associatedArtifacts;
-    private Set<AdditionalIdentifierBase> additionalIdentifiers;
+  public static final String TYPE = "ImportCandidate";
+  private ImportStatus importStatus;
+  private List<URI> associatedCustomers;
+  private SortableIdentifier identifier;
+  private Instant createdDate;
+  private Instant modifiedDate;
+  private ImportEntityDescription entityDescription;
+  private AssociatedArtifactList associatedArtifacts;
+  private Set<AdditionalIdentifierBase> additionalIdentifiers;
 
-    public ImportCandidate() {
+  public ImportCandidate() {}
+
+  public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
+    return nonNull(additionalIdentifiers)
+        ? Set.copyOf(additionalIdentifiers)
+        : Collections.emptySet();
+  }
+
+  public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
+    this.additionalIdentifiers = additionalIdentifiers;
+  }
+
+  public Instant getCreatedDate() {
+    return createdDate;
+  }
+
+  public void setCreatedDate(Instant createdDate) {
+    this.createdDate = createdDate;
+  }
+
+  public PublicationStatus getStatus() {
+    return null;
+  }
+
+  public Instant getModifiedDate() {
+    return modifiedDate;
+  }
+
+  public void setModifiedDate(Instant modifiedDate) {
+    this.modifiedDate = modifiedDate;
+  }
+
+  public SortableIdentifier getIdentifier() {
+    return identifier;
+  }
+
+  public void setIdentifier(SortableIdentifier identifier) {
+    this.identifier = identifier;
+  }
+
+  public ImportEntityDescription getEntityDescription() {
+    return entityDescription;
+  }
+
+  public void setEntityDescription(ImportEntityDescription entityDescription) {
+    this.entityDescription = entityDescription;
+  }
+
+  public AssociatedArtifactList getAssociatedArtifacts() {
+    return nonNull(associatedArtifacts)
+        ? new AssociatedArtifactList(List.copyOf(associatedArtifacts))
+        : AssociatedArtifactList.empty();
+  }
+
+  public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
+    this.associatedArtifacts = associatedArtifacts;
+  }
+
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof ImportCandidate that)) {
+      return false;
+    }
+    return Objects.equals(getImportStatus(), that.getImportStatus())
+        && Objects.equals(getAssociatedCustomers(), that.getAssociatedCustomers())
+        && Objects.equals(getIdentifier(), that.getIdentifier())
+        && Objects.equals(getCreatedDate(), that.getCreatedDate())
+        && Objects.equals(getModifiedDate(), that.getModifiedDate())
+        && Objects.equals(getEntityDescription(), that.getEntityDescription())
+        && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
+        && new HashSet<>(getAssociatedArtifacts()).containsAll(that.getAssociatedArtifacts());
+  }
+
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        getImportStatus(),
+        getAssociatedCustomers(),
+        getIdentifier(),
+        getCreatedDate(),
+        getModifiedDate(),
+        getEntityDescription(),
+        getAssociatedArtifacts(),
+        getAdditionalIdentifiers());
+  }
+
+  @Override
+  public String toString() {
+    return this.toJsonString();
+  }
+
+  public Builder copy() {
+    return new Builder()
+        .withIdentifier(getIdentifier())
+        .withCreatedDate(getCreatedDate())
+        .withModifiedDate(getModifiedDate())
+        .withEntityDescription(getEntityDescription())
+        .withAdditionalIdentifiers(getAdditionalIdentifiers())
+        .withAssociatedArtifacts(getAssociatedArtifacts())
+        .withImportStatus(getImportStatus())
+        .withAssociatedCustomers(getAssociatedCustomers());
+  }
+
+  public ImportStatus getImportStatus() {
+    return importStatus;
+  }
+
+  @JacocoGenerated
+  public void setImportStatus(ImportStatus importStatus) {
+    this.importStatus = importStatus;
+  }
+
+  public List<URI> getAssociatedCustomers() {
+    return nonNull(associatedCustomers)
+        ? associatedCustomers.stream().filter(Objects::nonNull).toList()
+        : Collections.emptyList();
+  }
+
+  public void setAssociatedCustomers(Collection<URI> associatedCustomers) {
+    this.associatedCustomers =
+        nonNull(associatedCustomers)
+            ? associatedCustomers.stream().filter(Objects::nonNull).toList()
+            : Collections.emptyList();
+  }
+
+  @JsonIgnore
+  public Optional<String> getScopusIdentifier() {
+    return getAdditionalIdentifiers().stream()
+        .filter(ScopusIdentifier.class::isInstance)
+        .map(ScopusIdentifier.class::cast)
+        .map(ScopusIdentifier::value)
+        .findFirst();
+  }
+
+  public static final class Builder {
+
+    private final ImportCandidate importCandidate;
+
+    public Builder() {
+      importCandidate = new ImportCandidate();
     }
 
-    public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
-        return nonNull(additionalIdentifiers) ? Set.copyOf(additionalIdentifiers) : Collections.emptySet();
+    public Builder withImportStatus(ImportStatus importStatus) {
+      importCandidate.setImportStatus(importStatus);
+      return this;
     }
 
-    public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
-        this.additionalIdentifiers = additionalIdentifiers;
+    public Builder withIdentifier(SortableIdentifier identifier) {
+      importCandidate.setIdentifier(identifier);
+      return this;
     }
 
-    public Instant getCreatedDate() {
-        return createdDate;
+    public Builder withCreatedDate(Instant createdDate) {
+      importCandidate.setCreatedDate(createdDate);
+      return this;
     }
 
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
+    public Builder withModifiedDate(Instant modifiedDate) {
+      importCandidate.setModifiedDate(modifiedDate);
+      return this;
     }
 
-    public PublicationStatus getStatus() {
-        return null;
+    public Builder withEntityDescription(ImportEntityDescription entityDescription) {
+      importCandidate.setEntityDescription(entityDescription);
+      return this;
     }
 
-    public Instant getModifiedDate() {
-        return modifiedDate;
+    public Builder withAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
+      importCandidate.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
+      return this;
     }
 
-    public void setModifiedDate(Instant modifiedDate) {
-        this.modifiedDate = modifiedDate;
+    public Builder withAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
+      importCandidate.setAdditionalIdentifiers(additionalIdentifiers);
+      return this;
     }
 
-    public SortableIdentifier getIdentifier() {
-        return identifier;
+    public Builder withAssociatedCustomers(Collection<URI> associatedCustomers) {
+      this.importCandidate.setAssociatedCustomers(associatedCustomers);
+      return this;
     }
 
-    public void setIdentifier(SortableIdentifier identifier) {
-        this.identifier = identifier;
+    public ImportCandidate build() {
+      return importCandidate;
     }
-
-    public ImportEntityDescription getEntityDescription() {
-        return entityDescription;
-    }
-
-    public void setEntityDescription(ImportEntityDescription entityDescription) {
-        this.entityDescription = entityDescription;
-    }
-
-    public AssociatedArtifactList getAssociatedArtifacts() {
-        return nonNull(associatedArtifacts)
-                   ? new AssociatedArtifactList(List.copyOf(associatedArtifacts))
-                   : AssociatedArtifactList.empty();
-    }
-
-    public void setAssociatedArtifacts(AssociatedArtifactList associatedArtifacts) {
-        this.associatedArtifacts = associatedArtifacts;
-    }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof ImportCandidate that)) {
-            return false;
-        }
-        return Objects.equals(getImportStatus(), that.getImportStatus())
-               && Objects.equals(getAssociatedCustomers(), that.getAssociatedCustomers())
-               && Objects.equals(getIdentifier(), that.getIdentifier())
-               && Objects.equals(getCreatedDate(), that.getCreatedDate())
-               && Objects.equals(getModifiedDate(), that.getModifiedDate())
-               && Objects.equals(getEntityDescription(), that.getEntityDescription())
-               && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
-               && new HashSet<>(getAssociatedArtifacts()).containsAll(that.getAssociatedArtifacts());
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getImportStatus(), getAssociatedCustomers(), getIdentifier(), getCreatedDate(),
-                            getModifiedDate(), getEntityDescription(),
-                            getAssociatedArtifacts(), getAdditionalIdentifiers());
-    }
-
-    @Override
-    public String toString() {
-        return this.toJsonString();
-    }
-
-    public Builder copy() {
-        return new Builder()
-                   .withIdentifier(getIdentifier())
-                   .withCreatedDate(getCreatedDate())
-                   .withModifiedDate(getModifiedDate())
-                   .withEntityDescription(getEntityDescription())
-                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                   .withAssociatedArtifacts(getAssociatedArtifacts())
-                   .withImportStatus(getImportStatus())
-                   .withAssociatedCustomers(getAssociatedCustomers());
-    }
-
-    public ImportStatus getImportStatus() {
-        return importStatus;
-    }
-
-    @JacocoGenerated
-    public void setImportStatus(ImportStatus importStatus) {
-        this.importStatus = importStatus;
-    }
-
-    public List<URI> getAssociatedCustomers() {
-        return nonNull(associatedCustomers) ? associatedCustomers.stream().filter(Objects::nonNull).toList()
-                   : Collections.emptyList();
-    }
-
-    public void setAssociatedCustomers(Collection<URI> associatedCustomers) {
-        this.associatedCustomers =
-            nonNull(associatedCustomers) ? associatedCustomers.stream().filter(Objects::nonNull).toList()
-                : Collections.emptyList();
-    }
-
-    @JsonIgnore
-    public Optional<String> getScopusIdentifier() {
-        return getAdditionalIdentifiers().stream()
-                   .filter(ScopusIdentifier.class::isInstance)
-                   .map(ScopusIdentifier.class::cast)
-                   .map(ScopusIdentifier::value)
-                   .findFirst();
-    }
-
-    public static final class Builder {
-
-        private final ImportCandidate importCandidate;
-
-        public Builder() {
-            importCandidate = new ImportCandidate();
-        }
-
-        public Builder withImportStatus(ImportStatus importStatus) {
-            importCandidate.setImportStatus(importStatus);
-            return this;
-        }
-
-        public Builder withIdentifier(SortableIdentifier identifier) {
-            importCandidate.setIdentifier(identifier);
-            return this;
-        }
-
-        public Builder withCreatedDate(Instant createdDate) {
-            importCandidate.setCreatedDate(createdDate);
-            return this;
-        }
-
-        public Builder withModifiedDate(Instant modifiedDate) {
-            importCandidate.setModifiedDate(modifiedDate);
-            return this;
-        }
-
-        public Builder withEntityDescription(ImportEntityDescription entityDescription) {
-            importCandidate.setEntityDescription(entityDescription);
-            return this;
-        }
-
-        public Builder withAssociatedArtifacts(List<AssociatedArtifact> associatedArtifacts) {
-            importCandidate.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
-            return this;
-        }
-
-        public Builder withAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
-            importCandidate.setAdditionalIdentifiers(additionalIdentifiers);
-            return this;
-        }
-
-        public Builder withAssociatedCustomers(Collection<URI> associatedCustomers) {
-            this.importCandidate.setAssociatedCustomers(associatedCustomers);
-            return this;
-        }
-
-        public ImportCandidate build() {
-            return importCandidate;
-        }
-    }
+  }
 }

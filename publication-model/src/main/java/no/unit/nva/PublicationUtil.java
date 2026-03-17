@@ -9,12 +9,12 @@ import no.unit.nva.model.instancetypes.degree.OtherStudentWork;
 
 public class PublicationUtil {
 
-    public static final Class<?>[] PROTECTED_DEGREE_INSTANCE_TYPES = {
-        DegreeLicentiate.class,
-        DegreeBachelor.class,
-        DegreeMaster.class,
-        DegreePhd.class,
-        ArtisticDegreePhd.class,
-        OtherStudentWork.class,
-    };
+  public static final Class<?>[] PROTECTED_DEGREE_INSTANCE_TYPES = {
+    DegreeLicentiate.class,
+    DegreeBachelor.class,
+    DegreeMaster.class,
+    DegreePhd.class,
+    ArtisticDegreePhd.class,
+    OtherStudentWork.class,
+  };
 }

@@ -1,6 +1,6 @@
 # tickets
 
-Handlers for managing tickets. 
+Handlers for managing tickets.
 
 ## What is a ticket?
 

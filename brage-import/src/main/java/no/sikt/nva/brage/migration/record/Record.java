@@ -1,6 +1,7 @@
 package no.sikt.nva.brage.migration.record;
 
 import static java.util.Objects.nonNull;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -15,368 +16,405 @@ import no.sikt.nva.brage.migration.record.content.ResourceContent;
 import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.JacocoGenerated;
 
-@JsonPropertyOrder({"customer", "brageLocation", "id", "cristinId", "doi", "link", "publishedDate",
-    "publisherAuthority", "rightsholder", "type", "partOf", "hasPart", "publisherAuthority", "spatialCoverage", "date",
-    "language", "publication", "entityDescription", "recordContent", "errors", "warnings"})
+@JsonPropertyOrder({
+  "customer",
+  "brageLocation",
+  "id",
+  "cristinId",
+  "doi",
+  "link",
+  "publishedDate",
+  "publisherAuthority",
+  "rightsholder",
+  "type",
+  "partOf",
+  "hasPart",
+  "publisherAuthority",
+  "spatialCoverage",
+  "date",
+  "language",
+  "publication",
+  "entityDescription",
+  "recordContent",
+  "errors",
+  "warnings"
+})
 @SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass", "PMD.ExcessivePublicCount"})
 public class Record implements JsonSerializable {
 
-    private EntityDescription entityDescription;
-    private Customer customer;
-    private URI id;
-    private URI doi;
-    private URI link;
-    private Type type;
-    private PublisherAuthority publisherAuthority;
-    private String rightsholder;
-    private List<String> spatialCoverage;
-    private String partOf;
-    private List<String> part;
-    private Publication publication;
-    private ResourceContent contentBundle;
-    private PublishedDate publishedDate;
-    private String cristinId;
-    private String brageLocation;
-    private List<ErrorDetails> errors;
-    private List<WarningDetails> warnings;
-    private List<URI> subjects;
-    private String subjectCode;
-    private String accessCode;
-    private List<Project> projects;
-    private Set<String> prioritizedProperties;
-    private String insperaIdentifier;
-    private String wiseflowIdentifier;
+  private EntityDescription entityDescription;
+  private Customer customer;
+  private URI id;
+  private URI doi;
+  private URI link;
+  private Type type;
+  private PublisherAuthority publisherAuthority;
+  private String rightsholder;
+  private List<String> spatialCoverage;
+  private String partOf;
+  private List<String> part;
+  private Publication publication;
+  private ResourceContent contentBundle;
+  private PublishedDate publishedDate;
+  private String cristinId;
+  private String brageLocation;
+  private List<ErrorDetails> errors;
+  private List<WarningDetails> warnings;
+  private List<URI> subjects;
+  private String subjectCode;
+  private String accessCode;
+  private List<Project> projects;
+  private Set<String> prioritizedProperties;
+  private String insperaIdentifier;
+  private String wiseflowIdentifier;
 
-    @JsonCreator
-    public Record() {
-        // Default constructor
-    }
+  @JsonCreator
+  public Record() {
+    // Default constructor
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getEntityDescription(), getCustomer(), getId(), getDoi(), getLink(),
-                            getType(), getPublisherAuthority(), getRightsholder(), getSpatialCoverage(), getPartOf(),
-                            getPart(), getPublication(), getContentBundle(), getPublishedDate(), getCristinId(),
-                            getBrageLocation(), getErrors(), getWarnings(), getSubjects(), getAccessCode(),
-                            getProjects());
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        getEntityDescription(),
+        getCustomer(),
+        getId(),
+        getDoi(),
+        getLink(),
+        getType(),
+        getPublisherAuthority(),
+        getRightsholder(),
+        getSpatialCoverage(),
+        getPartOf(),
+        getPart(),
+        getPublication(),
+        getContentBundle(),
+        getPublishedDate(),
+        getCristinId(),
+        getBrageLocation(),
+        getErrors(),
+        getWarnings(),
+        getSubjects(),
+        getAccessCode(),
+        getProjects());
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        }
-        if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        Record record = (Record) object;
-        return Objects.equals(getEntityDescription(), record.getEntityDescription())
-               && Objects.equals(getCustomer(), record.getCustomer())
-               && Objects.equals(getId(), record.getId())
-               && Objects.equals(getDoi(), record.getDoi())
-               && Objects.equals(getLink(), record.getLink())
-               && Objects.equals(getType(), record.getType())
-               && Objects.equals(getPublisherAuthority(), record.getPublisherAuthority())
-               && Objects.equals(getRightsholder(), record.getRightsholder())
-               && Objects.equals(getSpatialCoverage(), record.getSpatialCoverage())
-               && Objects.equals(getPartOf(), record.getPartOf())
-               && Objects.equals(getPart(), record.getPart())
-               && Objects.equals(getPublication(), record.getPublication())
-               && Objects.equals(getContentBundle(), record.getContentBundle())
-               && Objects.equals(getPublishedDate(), record.getPublishedDate())
-               && Objects.equals(getCristinId(), record.getCristinId())
-               && Objects.equals(getBrageLocation(), record.getBrageLocation())
-               && Objects.equals(getErrors(), record.getErrors())
-               && Objects.equals(getWarnings(), record.getWarnings())
-               && Objects.equals(getSubjects(), record.getSubjects())
-               && Objects.equals(getAccessCode(), record.getAccessCode())
-               && Objects.equals(getProjects(), record.getProjects());
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object object) {
+    if (this == object) {
+      return true;
     }
+    if (object == null || getClass() != object.getClass()) {
+      return false;
+    }
+    Record record = (Record) object;
+    return Objects.equals(getEntityDescription(), record.getEntityDescription())
+        && Objects.equals(getCustomer(), record.getCustomer())
+        && Objects.equals(getId(), record.getId())
+        && Objects.equals(getDoi(), record.getDoi())
+        && Objects.equals(getLink(), record.getLink())
+        && Objects.equals(getType(), record.getType())
+        && Objects.equals(getPublisherAuthority(), record.getPublisherAuthority())
+        && Objects.equals(getRightsholder(), record.getRightsholder())
+        && Objects.equals(getSpatialCoverage(), record.getSpatialCoverage())
+        && Objects.equals(getPartOf(), record.getPartOf())
+        && Objects.equals(getPart(), record.getPart())
+        && Objects.equals(getPublication(), record.getPublication())
+        && Objects.equals(getContentBundle(), record.getContentBundle())
+        && Objects.equals(getPublishedDate(), record.getPublishedDate())
+        && Objects.equals(getCristinId(), record.getCristinId())
+        && Objects.equals(getBrageLocation(), record.getBrageLocation())
+        && Objects.equals(getErrors(), record.getErrors())
+        && Objects.equals(getWarnings(), record.getWarnings())
+        && Objects.equals(getSubjects(), record.getSubjects())
+        && Objects.equals(getAccessCode(), record.getAccessCode())
+        && Objects.equals(getProjects(), record.getProjects());
+  }
 
-    @JacocoGenerated
-    @Override
-    public String toString() {
-        return this.toJsonString();
-    }
+  @JacocoGenerated
+  @Override
+  public String toString() {
+    return this.toJsonString();
+  }
 
-    @JacocoGenerated
-    @JsonProperty("subjectCode")
-    public String getSubjectCode() {
-        return subjectCode;
-    }
+  @JacocoGenerated
+  @JsonProperty("subjectCode")
+  public String getSubjectCode() {
+    return subjectCode;
+  }
 
-    @JacocoGenerated
-    public void setSubjectCode(String subjectCode) {
-        this.subjectCode = subjectCode;
-    }
+  @JacocoGenerated
+  public void setSubjectCode(String subjectCode) {
+    this.subjectCode = subjectCode;
+  }
 
-    public List<Project> getProjects() {
-        return projects;
-    }
+  public List<Project> getProjects() {
+    return projects;
+  }
 
-    public void setProjects(List<Project> projects) {
-        this.projects = projects;
-    }
+  public void setProjects(List<Project> projects) {
+    this.projects = projects;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("link")
-    public URI getLink() {
-        return link;
-    }
+  @JacocoGenerated
+  @JsonProperty("link")
+  public URI getLink() {
+    return link;
+  }
 
-    @JacocoGenerated
-    public void setLink(URI link) {
-        this.link = link;
-    }
+  @JacocoGenerated
+  public void setLink(URI link) {
+    this.link = link;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("hasPart")
-    public List<String> getPart() {
-        return part;
-    }
+  @JacocoGenerated
+  @JsonProperty("hasPart")
+  public List<String> getPart() {
+    return part;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("insperaIdentifier")
-    public String getInsperaIdentifier() {
-        return insperaIdentifier;
-    }
+  @JacocoGenerated
+  @JsonProperty("insperaIdentifier")
+  public String getInsperaIdentifier() {
+    return insperaIdentifier;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("wiseflowIdentifier")
-    public String getWiseflowIdentifier() {
-        return wiseflowIdentifier;
-    }
+  @JacocoGenerated
+  @JsonProperty("wiseflowIdentifier")
+  public String getWiseflowIdentifier() {
+    return wiseflowIdentifier;
+  }
 
-    public void setInsperaIdentifier(String insperaIdentifier) {
-        this.insperaIdentifier = insperaIdentifier;
-    }
+  public void setInsperaIdentifier(String insperaIdentifier) {
+    this.insperaIdentifier = insperaIdentifier;
+  }
 
-    public void setWiseflowIdentifier(String wiseflowIdentifier) {
-        this.wiseflowIdentifier = wiseflowIdentifier;
-    }
+  public void setWiseflowIdentifier(String wiseflowIdentifier) {
+    this.wiseflowIdentifier = wiseflowIdentifier;
+  }
 
-    @JacocoGenerated
-    public void setPart(List<String> part) {
-        this.part = part;
-    }
+  @JacocoGenerated
+  public void setPart(List<String> part) {
+    this.part = part;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("partOf")
-    public String getPartOf() {
-        return partOf;
-    }
+  @JacocoGenerated
+  @JsonProperty("partOf")
+  public String getPartOf() {
+    return partOf;
+  }
 
-    @JacocoGenerated
-    public void setPartOf(String partOf) {
-        this.partOf = partOf;
-    }
+  @JacocoGenerated
+  public void setPartOf(String partOf) {
+    this.partOf = partOf;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("brageLocation")
-    public String getBrageLocation() {
-        return brageLocation;
-    }
+  @JacocoGenerated
+  @JsonProperty("brageLocation")
+  public String getBrageLocation() {
+    return brageLocation;
+  }
 
-    @JacocoGenerated
-    public void setBrageLocation(String brageLocation) {
-        this.brageLocation = brageLocation;
-    }
+  @JacocoGenerated
+  public void setBrageLocation(String brageLocation) {
+    this.brageLocation = brageLocation;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("warnings")
-    public List<WarningDetails> getWarnings() {
-        return warnings;
-    }
+  @JacocoGenerated
+  @JsonProperty("warnings")
+  public List<WarningDetails> getWarnings() {
+    return warnings;
+  }
 
-    @JacocoGenerated
-    public void setWarnings(List<WarningDetails> warnings) {
-        this.warnings = warnings;
-    }
+  @JacocoGenerated
+  public void setWarnings(List<WarningDetails> warnings) {
+    this.warnings = warnings;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("errors")
-    public List<ErrorDetails> getErrors() {
-        return errors;
-    }
+  @JacocoGenerated
+  @JsonProperty("errors")
+  public List<ErrorDetails> getErrors() {
+    return errors;
+  }
 
-    @JacocoGenerated
-    public void setErrors(List<ErrorDetails> errors) {
-        this.errors = errors;
-    }
+  @JacocoGenerated
+  public void setErrors(List<ErrorDetails> errors) {
+    this.errors = errors;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("cristinId")
-    public String getCristinId() {
-        return cristinId;
-    }
+  @JacocoGenerated
+  @JsonProperty("cristinId")
+  public String getCristinId() {
+    return cristinId;
+  }
 
-    @JacocoGenerated
-    public void setCristinId(String cristinId) {
-        this.cristinId = cristinId;
-    }
+  @JacocoGenerated
+  public void setCristinId(String cristinId) {
+    this.cristinId = cristinId;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("publishedDate")
-    public PublishedDate getPublishedDate() {
-        return publishedDate;
-    }
+  @JacocoGenerated
+  @JsonProperty("publishedDate")
+  public PublishedDate getPublishedDate() {
+    return publishedDate;
+  }
 
-    @JacocoGenerated
-    public void setPublishedDate(PublishedDate publishedDate) {
-        this.publishedDate = publishedDate;
-    }
+  @JacocoGenerated
+  public void setPublishedDate(PublishedDate publishedDate) {
+    this.publishedDate = publishedDate;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("recordContent")
-    public ResourceContent getContentBundle() {
-        return contentBundle;
-    }
+  @JacocoGenerated
+  @JsonProperty("recordContent")
+  public ResourceContent getContentBundle() {
+    return contentBundle;
+  }
 
-    @JacocoGenerated
-    public void setContentBundle(ResourceContent contentBundle) {
-        this.contentBundle = contentBundle;
-    }
+  @JacocoGenerated
+  public void setContentBundle(ResourceContent contentBundle) {
+    this.contentBundle = contentBundle;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("spatialCoverage")
-    public List<String> getSpatialCoverage() {
-        return spatialCoverage;
-    }
+  @JacocoGenerated
+  @JsonProperty("spatialCoverage")
+  public List<String> getSpatialCoverage() {
+    return spatialCoverage;
+  }
 
-    @JacocoGenerated
-    public void setSpatialCoverage(List<String> spatialCoverage) {
-        this.spatialCoverage = spatialCoverage;
-    }
+  @JacocoGenerated
+  public void setSpatialCoverage(List<String> spatialCoverage) {
+    this.spatialCoverage = spatialCoverage;
+  }
 
-    @JsonInclude
-    @JsonProperty("publisherAuthority")
-    public PublisherAuthority getPublisherAuthority() {
-        return publisherAuthority;
-    }
+  @JsonInclude
+  @JsonProperty("publisherAuthority")
+  public PublisherAuthority getPublisherAuthority() {
+    return publisherAuthority;
+  }
 
-    @JacocoGenerated
-    public void setPublisherAuthority(PublisherAuthority publisherAuthority) {
-        this.publisherAuthority = publisherAuthority;
-    }
+  @JacocoGenerated
+  public void setPublisherAuthority(PublisherAuthority publisherAuthority) {
+    this.publisherAuthority = publisherAuthority;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("publication")
-    public Publication getPublication() {
-        return publication;
-    }
+  @JacocoGenerated
+  @JsonProperty("publication")
+  public Publication getPublication() {
+    return publication;
+  }
 
-    @JacocoGenerated
-    public void setPublication(Publication publication) {
-        this.publication = publication;
-    }
+  @JacocoGenerated
+  public void setPublication(Publication publication) {
+    this.publication = publication;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("customer")
-    public Customer getCustomer() {
-        return this.customer;
-    }
+  @JacocoGenerated
+  @JsonProperty("customer")
+  public Customer getCustomer() {
+    return this.customer;
+  }
 
-    @JacocoGenerated
-    public void setCustomer(Customer customer) {
-        this.customer = customer;
-    }
+  @JacocoGenerated
+  public void setCustomer(Customer customer) {
+    this.customer = customer;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("id")
-    public URI getId() {
-        return this.id;
-    }
+  @JacocoGenerated
+  @JsonProperty("id")
+  public URI getId() {
+    return this.id;
+  }
 
-    @JacocoGenerated
-    public void setId(URI id) {
-        this.id = id;
-    }
+  @JacocoGenerated
+  public void setId(URI id) {
+    this.id = id;
+  }
 
-    @JacocoGenerated
-    @JsonProperty("type")
-    public Type getType() {
-        return this.type;
-    }
+  @JacocoGenerated
+  @JsonProperty("type")
+  public Type getType() {
+    return this.type;
+  }
 
-    @JacocoGenerated
-    public void setType(Type type) {
-        this.type = type;
-    }
+  @JacocoGenerated
+  public void setType(Type type) {
+    this.type = type;
+  }
 
-    @JsonProperty("rightsholder")
-    public String getRightsholder() {
-        return rightsholder;
-    }
+  @JsonProperty("rightsholder")
+  public String getRightsholder() {
+    return rightsholder;
+  }
 
-    @JacocoGenerated
-    public void setRightsholder(String rightsholder) {
-        this.rightsholder = rightsholder;
-    }
+  @JacocoGenerated
+  public void setRightsholder(String rightsholder) {
+    this.rightsholder = rightsholder;
+  }
 
-    @JacocoGenerated
-    public void setRightsHolder(String rightsholder) {
-        this.rightsholder = rightsholder;
-    }
+  @JacocoGenerated
+  public void setRightsHolder(String rightsholder) {
+    this.rightsholder = rightsholder;
+  }
 
-    @JsonProperty("doi")
-    public URI getDoi() {
-        return doi;
-    }
+  @JsonProperty("doi")
+  public URI getDoi() {
+    return doi;
+  }
 
-    @JacocoGenerated
-    public void setDoi(URI doi) {
-        this.doi = doi;
-    }
+  @JacocoGenerated
+  public void setDoi(URI doi) {
+    this.doi = doi;
+  }
 
-    @JsonProperty("entityDescription")
-    public EntityDescription getEntityDescription() {
-        return entityDescription;
-    }
+  @JsonProperty("entityDescription")
+  public EntityDescription getEntityDescription() {
+    return entityDescription;
+  }
 
-    public void setEntityDescription(EntityDescription entityDescription) {
-        this.entityDescription = entityDescription;
-    }
+  public void setEntityDescription(EntityDescription entityDescription) {
+    this.entityDescription = entityDescription;
+  }
 
-    public Set<String> getPrioritizedProperties() {
-        return nonNull(prioritizedProperties) ? prioritizedProperties : new HashSet<>();
-    }
+  public Set<String> getPrioritizedProperties() {
+    return nonNull(prioritizedProperties) ? prioritizedProperties : new HashSet<>();
+  }
 
-    public void setPrioritizedProperties(Set<String> prioritizedProperties) {
-        this.prioritizedProperties = prioritizedProperties;
-    }
+  public void setPrioritizedProperties(Set<String> prioritizedProperties) {
+    this.prioritizedProperties = prioritizedProperties;
+  }
 
-    @JsonProperty("subjects")
-    public List<URI> getSubjects() {
-        return subjects;
-    }
+  @JsonProperty("subjects")
+  public List<URI> getSubjects() {
+    return subjects;
+  }
 
-    public void setSubjects(List<URI> subjects) {
-        this.subjects = subjects;
-    }
+  public void setSubjects(List<URI> subjects) {
+    this.subjects = subjects;
+  }
 
-    public String getAccessCode() {
-        return accessCode;
-    }
+  public String getAccessCode() {
+    return accessCode;
+  }
 
-    public void setAccessCode(String accessCode) {
-        this.accessCode = accessCode;
-    }
+  public void setAccessCode(String accessCode) {
+    this.accessCode = accessCode;
+  }
 
-    @JacocoGenerated
-    public boolean hasParentPublication() {
-        return hasIsbn() && isChapter();
-    }
+  @JacocoGenerated
+  public boolean hasParentPublication() {
+    return hasIsbn() && isChapter();
+  }
 
-    @JacocoGenerated
-    private boolean hasIsbn() {
-        return !publication.getIsbnList().isEmpty();
-    }
+  @JacocoGenerated
+  private boolean hasIsbn() {
+    return !publication.getIsbnList().isEmpty();
+  }
 
-    @JacocoGenerated
-    private boolean isChapter() {
-        return NvaType.CHAPTER.getValue().equals(type.getNva()) || NvaType.SCIENTIFIC_CHAPTER.getValue()
-                                                                       .equals(type.getNva());
-    }
+  @JacocoGenerated
+  private boolean isChapter() {
+    return NvaType.CHAPTER.getValue().equals(type.getNva())
+        || NvaType.SCIENTIFIC_CHAPTER.getValue().equals(type.getNva());
+  }
 }

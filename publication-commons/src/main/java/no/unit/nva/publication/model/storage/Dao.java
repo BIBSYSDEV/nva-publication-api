@@ -7,6 +7,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_FORMAT;
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
@@ -30,190 +31,198 @@ import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({
+  @JsonSubTypes.Type(name = ResourceDao.TYPE, value = ResourceDao.class),
+  @JsonSubTypes.Type(TicketDao.class),
+  @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class),
+  @JsonSubTypes.Type(name = FileDao.TYPE, value = FileDao.class),
+  @JsonSubTypes.Type(name = PublicationChannelDao.TYPE, value = PublicationChannelDao.class)
+})
+public abstract class Dao implements DynamoEntry, WithPrimaryKey, DynamoEntryByIdentifier {
 
-@JsonSubTypes({@JsonSubTypes.Type(name = ResourceDao.TYPE, value = ResourceDao.class),
-    @JsonSubTypes.Type(TicketDao.class), @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class),
-    @JsonSubTypes.Type(name = FileDao.TYPE, value = FileDao.class),
-    @JsonSubTypes.Type(name = PublicationChannelDao.TYPE, value = PublicationChannelDao.class)})
-public abstract class Dao
-    implements DynamoEntry, WithPrimaryKey, DynamoEntryByIdentifier {
+  public static final String URI_PATH_SEPARATOR = "/";
+  public static final String VERSION_FIELD = "version";
+  private Entity data;
 
-    public static final String URI_PATH_SEPARATOR = "/";
-    public static final String VERSION_FIELD = "version";
-    private Entity data;
+  @JsonProperty(VERSION_FIELD)
+  private UUID version;
 
-    @JsonProperty(VERSION_FIELD)
-    private UUID version;
+  @JsonProperty(IDENTIFIER_FIELD)
+  private SortableIdentifier identifier;
 
-    @JsonProperty(IDENTIFIER_FIELD)
-    private SortableIdentifier identifier;
+  protected Dao() {}
 
-    protected Dao() {
+  protected Dao(Entity data) {
+    this.version = UUID.randomUUID();
+    this.data = data;
+  }
 
+  public static String orgUriToOrgIdentifier(URI uri) {
+    String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
+    return pathParts[pathParts.length - 1];
+  }
+
+  /**
+   * Filtering expression to be used when we need to scan the whole database and perform actions on
+   * every data entry. This expression excludes Uniqueness entries (i.e. entries for guaranteeing
+   * the uniqueness of certain values * see link below). This filter is used primarily when
+   * migrating the Resources table.
+   *
+   * <p>{@see * <a
+   * href=https://aws.amazon.com/blogs/database/simulating-amazon-dynamodb-unique-constraints-using-transactions>
+   * documentation </a>}
+   *
+   * @return filtering expression string.
+   */
+  public static String scanFilterExpressionForDataEntries(Collection<KeyField> types) {
+    return getTypesOrDefault(types).map(Dao::toQueryPart).collect(Collectors.joining(" or \n"));
+  }
+
+  // replaces the hash values in the filter expression with the actual key name
+  public static Map<String, String> scanFilterExpressionAttributeNames() {
+    return Map.of("#PK", DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME);
+  }
+
+  // replaces the colon values in the filter expression with the actual value
+  public static Map<String, AttributeValue> scanFilterExpressionAttributeValues(
+      Collection<KeyField> types) {
+    return getTypesOrDefault(types)
+        .map(Dao::createFilterExpression)
+        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+  }
+
+  public UUID getVersion() {
+    return version;
+  }
+
+  public void setVersion(UUID version) {
+    this.version = version;
+  }
+
+  @Override
+  public String getPrimaryKeyPartitionKey() {
+    return formatPrimaryPartitionKey(getCustomerId(), getOwner().toString());
+  }
+
+  @Override
+  @JacocoGenerated
+  public final void setPrimaryKeyPartitionKey(String key) {
+    // do nothing
+  }
+
+  @Override
+  @JacocoGenerated
+  public String getPrimaryKeySortKey() {
+    return String.format(PRIMARY_KEY_SORT_KEY_FORMAT, indexingType(), getIdentifier());
+  }
+
+  @Override
+  @JacocoGenerated
+  public final void setPrimaryKeySortKey(String key) {
+    // do nothing
+  }
+
+  @Override
+  @JsonProperty(CONTAINED_DATA_FIELD_NAME)
+  public final Entity getData() {
+    return this.data;
+  }
+
+  public final void setData(Entity data) {
+    this.data = data;
+  }
+
+  @JsonIgnore
+  @Override
+  public abstract String indexingType();
+
+  @JsonIgnore
+  public final String getCustomerIdentifier() {
+    return orgUriToOrgIdentifier(getCustomerId());
+  }
+
+  @JsonIgnore
+  public abstract URI getCustomerId();
+
+  @Override
+  public SortableIdentifier getIdentifier() {
+    return this.identifier;
+  }
+
+  @JacocoGenerated
+  public final void setIdentifier(SortableIdentifier identifier) {
+    this.identifier = identifier;
+  }
+
+  @Override
+  public Map<String, AttributeValue> toDynamoFormat() {
+    return attempt(() -> compressDaoData(this)).orElseThrow();
+  }
+
+  public abstract TransactWriteItemsRequest createInsertionTransactionRequest();
+
+  public abstract void updateExistingEntry(AmazonDynamoDB client);
+
+  public final String dataType() {
+    return getData().getType();
+  }
+
+  @Override
+  @JacocoGenerated
+  public int hashCode() {
+    return Objects.hash(getVersion());
+  }
+
+  @Override
+  @JacocoGenerated
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
-
-    protected Dao(Entity data) {
-        this.version = UUID.randomUUID();
-        this.data = data;
+    if (!(o instanceof Dao dao)) {
+      return false;
     }
+    return Objects.equals(getData(), dao.getData())
+        && Objects.equals(getVersion(), dao.getVersion());
+  }
 
-    public static String orgUriToOrgIdentifier(URI uri) {
-        String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
-        return pathParts[pathParts.length - 1];
-    }
+  protected String formatPrimaryPartitionKey(URI organizationUri, String userIdentifier) {
+    String organizationIdentifier = orgUriToOrgIdentifier(organizationUri);
+    return formatPrimaryPartitionKey(organizationIdentifier, userIdentifier);
+  }
 
-    /**
-     * Filtering expression to be used when we need to scan the whole database and perform actions on every data entry.
-     * This expression excludes Uniqueness entries (i.e. entries for guaranteeing the uniqueness of certain values * see
-     * link below). This filter is used primarily when migrating the Resources table.
-     *
-     * <p>{@see * <a
-     * href=https://aws.amazon.com/blogs/database/simulating-amazon-dynamodb-unique-constraints-using-transactions>
-     * documentation </a>}
-     *
-     * @return filtering expression string.
-     */
-    public static String scanFilterExpressionForDataEntries(Collection<KeyField> types) {
-        return getTypesOrDefault(types).map(Dao::toQueryPart).collect(Collectors.joining(" or \n"));
-    }
+  protected String formatPrimaryPartitionKey(String publisherId, String owner) {
+    return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, indexingType(), publisherId, owner);
+  }
 
-    // replaces the hash values in the filter expression with the actual key name
-    public static Map<String, String> scanFilterExpressionAttributeNames() {
-        return Map.of("#PK", DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME);
-    }
+  @JsonIgnore
+  protected abstract User getOwner();
 
-    // replaces the colon values in the filter expression with the actual value
-    public static Map<String, AttributeValue> scanFilterExpressionAttributeValues(Collection<KeyField> types) {
-        return getTypesOrDefault(types).map(Dao::createFilterExpression)
-                   .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-    }
+  private static Stream<KeyField> getTypesOrDefault(Collection<KeyField> types) {
+    return isNull(types) || types.isEmpty() ? Stream.of(KeyField.values()) : types.stream();
+  }
 
-    public UUID getVersion() {
-        return version;
-    }
+  private static String toQueryPart(KeyField type) {
+    return "begins_with (#PK, " + type.getKeyField() + ")";
+  }
 
-    public void setVersion(UUID version) {
-        this.version = version;
-    }
-
-    @Override
-    public String getPrimaryKeyPartitionKey() {
-        return formatPrimaryPartitionKey(getCustomerId(), getOwner().toString());
-    }
-
-    @Override
-    @JacocoGenerated
-    public final void setPrimaryKeyPartitionKey(String key) {
-        // do nothing
-    }
-
-    @Override
-    @JacocoGenerated
-    public String getPrimaryKeySortKey() {
-        return String.format(PRIMARY_KEY_SORT_KEY_FORMAT, indexingType(), getIdentifier());
-    }
-
-    @Override
-    @JacocoGenerated
-    public final void setPrimaryKeySortKey(String key) {
-        // do nothing
-    }
-
-    @Override
-    @JsonProperty(CONTAINED_DATA_FIELD_NAME)
-    public final Entity getData() {
-        return this.data;
-    }
-
-    public final void setData(Entity data) {
-        this.data = data;
-    }
-
-    @JsonIgnore
-    @Override
-    public abstract String indexingType();
-
-    @JsonIgnore
-    public final String getCustomerIdentifier() {
-        return orgUriToOrgIdentifier(getCustomerId());
-    }
-
-    @JsonIgnore
-    public abstract URI getCustomerId();
-
-    @Override
-    public SortableIdentifier getIdentifier() {
-        return this.identifier;
-    }
-
-    @JacocoGenerated
-    public final void setIdentifier(SortableIdentifier identifier) {
-        this.identifier = identifier;
-    }
-
-    @Override
-    public Map<String, AttributeValue> toDynamoFormat() {
-        return attempt(() -> compressDaoData(this)).orElseThrow();
-    }
-
-    public abstract TransactWriteItemsRequest createInsertionTransactionRequest();
-
-    public abstract void updateExistingEntry(AmazonDynamoDB client);
-
-    public final String dataType() {
-        return getData().getType();
-    }
-
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getVersion());
-    }
-
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof Dao dao)) {
-            return false;
-        }
-        return Objects.equals(getData(), dao.getData()) && Objects.equals(getVersion(), dao.getVersion());
-    }
-
-    protected String formatPrimaryPartitionKey(URI organizationUri, String userIdentifier) {
-        String organizationIdentifier = orgUriToOrgIdentifier(organizationUri);
-        return formatPrimaryPartitionKey(organizationIdentifier, userIdentifier);
-    }
-
-    protected String formatPrimaryPartitionKey(String publisherId, String owner) {
-        return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, indexingType(), publisherId, owner);
-    }
-
-    @JsonIgnore
-    protected abstract User getOwner();
-
-    private static Stream<KeyField> getTypesOrDefault(Collection<KeyField> types) {
-        return isNull(types) || types.isEmpty() ? Stream.of(KeyField.values()) : types.stream();
-    }
-
-    private static String toQueryPart(KeyField type) {
-        return "begins_with (#PK, " + type.getKeyField() + ")";
-    }
-
-    private static Entry<String, AttributeValue> createFilterExpression(KeyField keyField) {
-        return switch (keyField) {
-            case RESOURCE ->
-                Map.entry(keyField.getKeyField(), new AttributeValue(ResourceDao.TYPE + KEY_FIELDS_DELIMITER));
-            case MESSAGE ->
-                Map.entry(keyField.getKeyField(), new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER));
-            case TICKET -> Map.entry(keyField.getKeyField(),
-                                     new AttributeValue(TicketDao.TICKETS_INDEXING_TYPE + KEY_FIELDS_DELIMITER));
-            case DOI_REQUEST ->
-                Map.entry(keyField.getKeyField(), new AttributeValue("DoiRequest" + KEY_FIELDS_DELIMITER));
-            case FILE_ENTRY ->
-                Map.entry(keyField.getKeyField(), new AttributeValue("File" + KEY_FIELDS_DELIMITER));
-        };
-    }
+  private static Entry<String, AttributeValue> createFilterExpression(KeyField keyField) {
+    return switch (keyField) {
+      case RESOURCE ->
+          Map.entry(
+              keyField.getKeyField(), new AttributeValue(ResourceDao.TYPE + KEY_FIELDS_DELIMITER));
+      case MESSAGE ->
+          Map.entry(
+              keyField.getKeyField(), new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER));
+      case TICKET ->
+          Map.entry(
+              keyField.getKeyField(),
+              new AttributeValue(TicketDao.TICKETS_INDEXING_TYPE + KEY_FIELDS_DELIMITER));
+      case DOI_REQUEST ->
+          Map.entry(
+              keyField.getKeyField(), new AttributeValue("DoiRequest" + KEY_FIELDS_DELIMITER));
+      case FILE_ENTRY ->
+          Map.entry(keyField.getKeyField(), new AttributeValue("File" + KEY_FIELDS_DELIMITER));
+    };
+  }
 }

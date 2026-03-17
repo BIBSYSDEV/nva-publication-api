@@ -10,20 +10,24 @@ import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.TicketLogEntry;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(DoiRequestedEvent.class), @JsonSubTypes.Type(DoiAssignedEvent.class),
-    @JsonSubTypes.Type(DoiRejectedEvent.class)})
+@JsonSubTypes({
+  @JsonSubTypes.Type(DoiRequestedEvent.class),
+  @JsonSubTypes.Type(DoiAssignedEvent.class),
+  @JsonSubTypes.Type(DoiRejectedEvent.class)
+})
 public interface TicketEvent {
 
-    Instant date();
+  Instant date();
 
-    User user();
+  User user();
 
-    SortableIdentifier identifier();
+  SortableIdentifier identifier();
 
-    /**
-     * @return id of the top level cristin organizations
-     */
-    URI institution();
+  /**
+   * @return id of the top level cristin organizations
+   */
+  URI institution();
 
-    TicketLogEntry toLogEntry(SortableIdentifier resourceIdentifier, SortableIdentifier ticketIdentifier, LogAgent user);
+  TicketLogEntry toLogEntry(
+      SortableIdentifier resourceIdentifier, SortableIdentifier ticketIdentifier, LogAgent user);
 }

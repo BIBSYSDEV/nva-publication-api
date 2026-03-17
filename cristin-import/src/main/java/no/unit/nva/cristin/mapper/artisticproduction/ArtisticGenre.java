@@ -13,18 +13,15 @@ import lombok.Setter;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"sjangernavn", "sjangernavn_engelsk", "sjangernavn_nynorsk"})
 public class ArtisticGenre {
 
-    @JsonProperty("sjangerkode")
-    private String genreCode;
+  @JsonProperty("sjangerkode")
+  private String genreCode;
 
-    public ArtisticGenre() {
-
-    }
+  public ArtisticGenre() {}
 }

@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,75 +35,66 @@ import org.zalando.problem.Problem;
 
 class ResolveShortenedUrlHandlerTest {
 
-    private static final Context CONTEXT = mock(Context.class);
-    private static final String COGNITO_AUTHORIZER_URLS = "COGNITO_AUTHORIZER_URLS";
-    private ResolveShortenedUrlHandler handler;
-    private ByteArrayOutputStream output;
-    private static final String ANY_ORIGIN = "*";
-    private static final String APPLICATION_JSON = "application/json; charset=utf-8";
-    private UriResolver resolver;
+  private static final Context CONTEXT = mock(Context.class);
+  private static final String COGNITO_AUTHORIZER_URLS = "COGNITO_AUTHORIZER_URLS";
+  private ResolveShortenedUrlHandler handler;
+  private ByteArrayOutputStream output;
+  private static final String ANY_ORIGIN = "*";
+  private static final String APPLICATION_JSON = "application/json; charset=utf-8";
+  private UriResolver resolver;
 
-    @BeforeEach
-    void setUp() {
-        output = new ByteArrayOutputStream();
-        resolver = mock(UriResolver.class);
-    }
+  @BeforeEach
+  void setUp() {
+    output = new ByteArrayOutputStream();
+    resolver = mock(UriResolver.class);
+  }
 
-    @Test
-    void shouldReturnNotFoundWhenUriResolverReturnsNotFound() throws IOException, ApiGatewayException {
-        handler = new ResolveShortenedUrlHandler(mockEnvironment(), resolver);
-        when(resolver.resolve(any())).thenThrow(new NotFoundException("Not found"));
-        handler.handleRequest(
-            createRequest(),
-            output,
-            CONTEXT);
-        var gatewayResponse = GatewayResponse.fromString(output.toString(), Problem.class);
-        assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
-    }
+  @Test
+  void shouldReturnNotFoundWhenUriResolverReturnsNotFound()
+      throws IOException, ApiGatewayException {
+    handler = new ResolveShortenedUrlHandler(mockEnvironment(), resolver);
+    when(resolver.resolve(any())).thenThrow(new NotFoundException("Not found"));
+    handler.handleRequest(createRequest(), output, CONTEXT);
+    var gatewayResponse = GatewayResponse.fromString(output.toString(), Problem.class);
+    assertBasicRestRequirements(gatewayResponse, SC_NOT_FOUND, APPLICATION_PROBLEM_JSON);
+  }
 
-    @Test
-    void shouldReturnRedirectWhenUriResolverReturnsLongUri() throws IOException, ApiGatewayException {
-        var expectedUri = randomUri();
-        handler = new ResolveShortenedUrlHandler(mockEnvironment(), resolver);
-        when(resolver.resolve(any())).thenReturn(expectedUri);
-        handler.handleRequest(
-            createRequest(),
-            output,
-            CONTEXT);
-        var gatewayResponse = GatewayResponse.fromString(output.toString(), Void.class);
-        assertBasicRestRequirements(gatewayResponse, SC_MOVED_PERMANENTLY, APPLICATION_JSON);
-        assertThat(gatewayResponse.getHeaders().get(LOCATION), equalTo(expectedUri.toString()));
-    }
+  @Test
+  void shouldReturnRedirectWhenUriResolverReturnsLongUri() throws IOException, ApiGatewayException {
+    var expectedUri = randomUri();
+    handler = new ResolveShortenedUrlHandler(mockEnvironment(), resolver);
+    when(resolver.resolve(any())).thenReturn(expectedUri);
+    handler.handleRequest(createRequest(), output, CONTEXT);
+    var gatewayResponse = GatewayResponse.fromString(output.toString(), Void.class);
+    assertBasicRestRequirements(gatewayResponse, SC_MOVED_PERMANENTLY, APPLICATION_JSON);
+    assertThat(gatewayResponse.getHeaders().get(LOCATION), equalTo(expectedUri.toString()));
+  }
 
-    private void assertBasicRestRequirements(GatewayResponse<?> gatewayResponse,
-                                             int expectedStatusCode,
-                                             String expectedContentType) {
-        assertThat(gatewayResponse.getStatusCode(), equalTo(expectedStatusCode));
-        assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
-        assertThat(gatewayResponse.getHeaders().get(CONTENT_TYPE), equalTo(expectedContentType));
-        assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertThat(gatewayResponse.getHeaders().get(ACCESS_CONTROL_ALLOW_ORIGIN), equalTo(ANY_ORIGIN));
-    }
+  private void assertBasicRestRequirements(
+      GatewayResponse<?> gatewayResponse, int expectedStatusCode, String expectedContentType) {
+    assertThat(gatewayResponse.getStatusCode(), equalTo(expectedStatusCode));
+    assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
+    assertThat(gatewayResponse.getHeaders().get(CONTENT_TYPE), equalTo(expectedContentType));
+    assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+    assertThat(gatewayResponse.getHeaders().get(ACCESS_CONTROL_ALLOW_ORIGIN), equalTo(ANY_ORIGIN));
+  }
 
-    private InputStream createRequest()
-        throws IOException {
-        var identifier = SortableIdentifier.next().toString();
-        var domainNameNode = dtoObjectMapper.createObjectNode();
-        domainNameNode.put("domainName", "www.example.com");
-        return new HandlerRequestBuilder<Void>(dtoObjectMapper)
-                   .withHeaders(TestHeaders.getRequestHeaders())
-                   .withRequestContext(domainNameNode)
-                   .withOtherProperties(Map.of("path", "download/short/" + identifier))
-                   .withPathParameters(Map.of("identifier", identifier))
-                   .build();
-    }
+  private InputStream createRequest() throws IOException {
+    var identifier = SortableIdentifier.next().toString();
+    var domainNameNode = dtoObjectMapper.createObjectNode();
+    domainNameNode.put("domainName", "www.example.com");
+    return new HandlerRequestBuilder<Void>(dtoObjectMapper)
+        .withHeaders(TestHeaders.getRequestHeaders())
+        .withRequestContext(domainNameNode)
+        .withOtherProperties(Map.of("path", "download/short/" + identifier))
+        .withPathParameters(Map.of("identifier", identifier))
+        .build();
+  }
 
-
-
-    private Environment mockEnvironment() {
-        Environment environment = mock(Environment.class);
-        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ANY_ORIGIN);
-        when(environment.readEnv(COGNITO_AUTHORIZER_URLS)).thenReturn("http://localhost:3000");
-        return environment;
-    }
+  private Environment mockEnvironment() {
+    Environment environment = mock(Environment.class);
+    when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ANY_ORIGIN);
+    when(environment.readEnv(COGNITO_AUTHORIZER_URLS)).thenReturn("http://localhost:3000");
+    return environment;
+  }
 }

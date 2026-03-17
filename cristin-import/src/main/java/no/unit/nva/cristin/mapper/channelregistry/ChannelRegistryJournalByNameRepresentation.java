@@ -10,31 +10,31 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ChannelRegistryJournalByNameRepresentation {
 
-    @CsvBindByName(column = "Original tittel")
-    private String title;
+  @CsvBindByName(column = "Original tittel")
+  private String title;
 
-    @CsvBindByName(column = "PID")
-    private String pid;
+  @CsvBindByName(column = "PID")
+  private String pid;
 
-    @CsvBindByName(column = "Print ISSN")
-    private String printIssn;
+  @CsvBindByName(column = "Print ISSN")
+  private String printIssn;
 
-    @CsvBindByName(column = "Online ISSN")
-    private String onlineIssn;
+  @CsvBindByName(column = "Online ISSN")
+  private String onlineIssn;
 
-    public boolean hasTitle(String value) {
-        return title.equalsIgnoreCase(value);
-    }
+  public boolean hasTitle(String value) {
+    return title.equalsIgnoreCase(value);
+  }
 
-    public boolean hasIssn(String issn) {
-        return hasPrintIssn(issn) || hasOnlineIssn(issn);
-    }
+  public boolean hasIssn(String issn) {
+    return hasPrintIssn(issn) || hasOnlineIssn(issn);
+  }
 
-    public boolean hasPrintIssn(String issn) {
-        return printIssn.equalsIgnoreCase(issn);
-    }
+  public boolean hasPrintIssn(String issn) {
+    return printIssn.equalsIgnoreCase(issn);
+  }
 
-    public boolean hasOnlineIssn(String issn) {
-        return onlineIssn.equalsIgnoreCase(issn);
-    }
+  public boolean hasOnlineIssn(String issn) {
+    return onlineIssn.equalsIgnoreCase(issn);
+  }
 }

@@ -7,4 +7,3 @@ Includes persistence models for entities in publication-api (Resource, Ticket, I
 ## Notes
 
 Because of its size, the Publication model is not included here, but in [publication-model](../publication-model/README.md).
- 

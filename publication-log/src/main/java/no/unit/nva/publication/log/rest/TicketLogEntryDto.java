@@ -10,12 +10,20 @@ import no.unit.nva.publication.model.business.logentry.TicketLogEntry;
 
 @JsonTypeName(TicketLogEntry.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public record TicketLogEntryDto(LogTopic topic, Instant timestamp, LogAgent performedBy,
-                                SortableIdentifier publicationIdentifier, SortableIdentifier ticketIdentifier)
+public record TicketLogEntryDto(
+    LogTopic topic,
+    Instant timestamp,
+    LogAgent performedBy,
+    SortableIdentifier publicationIdentifier,
+    SortableIdentifier ticketIdentifier)
     implements LogEntryDto {
 
-    public static TicketLogEntryDto fromLogEntry(TicketLogEntry logEntry) {
-        return new TicketLogEntryDto(logEntry.topic(), logEntry.timestamp(), logEntry.performedBy(),
-                                     logEntry.resourceIdentifier(), logEntry.ticketIdentifier());
-    }
+  public static TicketLogEntryDto fromLogEntry(TicketLogEntry logEntry) {
+    return new TicketLogEntryDto(
+        logEntry.topic(),
+        logEntry.timestamp(),
+        logEntry.performedBy(),
+        logEntry.resourceIdentifier(),
+        logEntry.ticketIdentifier());
+  }
 }

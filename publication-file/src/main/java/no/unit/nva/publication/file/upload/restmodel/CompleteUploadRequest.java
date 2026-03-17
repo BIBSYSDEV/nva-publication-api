@@ -8,11 +8,16 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
-    @JsonSubTypes.Type(name = InternalCompleteUploadRequest.TYPE, value = InternalCompleteUploadRequest.class),
-    @JsonSubTypes.Type(name = ExternalCompleteUploadRequest.TYPE, value = ExternalCompleteUploadRequest.class)})
+  @JsonSubTypes.Type(
+      name = InternalCompleteUploadRequest.TYPE,
+      value = InternalCompleteUploadRequest.class),
+  @JsonSubTypes.Type(
+      name = ExternalCompleteUploadRequest.TYPE,
+      value = ExternalCompleteUploadRequest.class)
+})
 public interface CompleteUploadRequest {
 
-    CompleteMultipartUploadRequest toCompleteMultipartUploadRequest(String bucketName);
+  CompleteMultipartUploadRequest toCompleteMultipartUploadRequest(String bucketName);
 
-    void validate() throws BadRequestException;
+  void validate() throws BadRequestException;
 }

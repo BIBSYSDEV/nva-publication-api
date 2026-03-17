@@ -61,276 +61,283 @@ import java.util.stream.Collectors;
 
 public class FakeAmazonSQS implements AmazonSQS {
 
-    private final List<String> messageBodies;
-    private final List<String> queueUrls;
+  private final List<String> messageBodies;
+  private final List<String> queueUrls;
 
-    public FakeAmazonSQS() {
-        messageBodies = new ArrayList<>();
-        queueUrls = new ArrayList<>();
-    }
+  public FakeAmazonSQS() {
+    messageBodies = new ArrayList<>();
+    queueUrls = new ArrayList<>();
+  }
 
-    public List<String> getQueueUrls() {
-        return queueUrls;
-    }
+  public List<String> getQueueUrls() {
+    return queueUrls;
+  }
 
-    @Override
-    public void setEndpoint(String endpoint) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public void setEndpoint(String endpoint) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public void setRegion(Region region) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public void setRegion(Region region) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public AddPermissionResult addPermission(AddPermissionRequest addPermissionRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public AddPermissionResult addPermission(AddPermissionRequest addPermissionRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public AddPermissionResult addPermission(String queueUrl, String label, List<String> awsAccountIds,
-                                             List<String> actions) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public AddPermissionResult addPermission(
+      String queueUrl, String label, List<String> awsAccountIds, List<String> actions) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public CancelMessageMoveTaskResult cancelMessageMoveTask(
-        CancelMessageMoveTaskRequest cancelMessageMoveTaskRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public CancelMessageMoveTaskResult cancelMessageMoveTask(
+      CancelMessageMoveTaskRequest cancelMessageMoveTaskRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public ChangeMessageVisibilityResult changeMessageVisibility(
-        ChangeMessageVisibilityRequest changeMessageVisibilityRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public ChangeMessageVisibilityResult changeMessageVisibility(
+      ChangeMessageVisibilityRequest changeMessageVisibilityRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public ChangeMessageVisibilityResult changeMessageVisibility(String queueUrl, String receiptHandle,
-                                                                 Integer visibilityTimeout) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public ChangeMessageVisibilityResult changeMessageVisibility(
+      String queueUrl, String receiptHandle, Integer visibilityTimeout) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public ChangeMessageVisibilityBatchResult changeMessageVisibilityBatch(
-        ChangeMessageVisibilityBatchRequest changeMessageVisibilityBatchRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public ChangeMessageVisibilityBatchResult changeMessageVisibilityBatch(
+      ChangeMessageVisibilityBatchRequest changeMessageVisibilityBatchRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public ChangeMessageVisibilityBatchResult changeMessageVisibilityBatch(
-        String queueUrl,
-        List<ChangeMessageVisibilityBatchRequestEntry> entries) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public ChangeMessageVisibilityBatchResult changeMessageVisibilityBatch(
+      String queueUrl, List<ChangeMessageVisibilityBatchRequestEntry> entries) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public CreateQueueResult createQueue(CreateQueueRequest createQueueRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public CreateQueueResult createQueue(CreateQueueRequest createQueueRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public CreateQueueResult createQueue(String queueName) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public CreateQueueResult createQueue(String queueName) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public DeleteMessageResult deleteMessage(DeleteMessageRequest deleteMessageRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public DeleteMessageResult deleteMessage(DeleteMessageRequest deleteMessageRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public DeleteMessageResult deleteMessage(String queueUrl, String receiptHandle) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public DeleteMessageResult deleteMessage(String queueUrl, String receiptHandle) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public DeleteMessageBatchResult deleteMessageBatch(DeleteMessageBatchRequest deleteMessageBatchRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public DeleteMessageBatchResult deleteMessageBatch(
+      DeleteMessageBatchRequest deleteMessageBatchRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public DeleteMessageBatchResult deleteMessageBatch(String queueUrl, List<DeleteMessageBatchRequestEntry> entries) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public DeleteMessageBatchResult deleteMessageBatch(
+      String queueUrl, List<DeleteMessageBatchRequestEntry> entries) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public DeleteQueueResult deleteQueue(DeleteQueueRequest deleteQueueRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public DeleteQueueResult deleteQueue(DeleteQueueRequest deleteQueueRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public DeleteQueueResult deleteQueue(String queueUrl) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public DeleteQueueResult deleteQueue(String queueUrl) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public GetQueueAttributesResult getQueueAttributes(GetQueueAttributesRequest getQueueAttributesRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public GetQueueAttributesResult getQueueAttributes(
+      GetQueueAttributesRequest getQueueAttributesRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public GetQueueAttributesResult getQueueAttributes(String queueUrl, List<String> attributeNames) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public GetQueueAttributesResult getQueueAttributes(String queueUrl, List<String> attributeNames) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public GetQueueUrlResult getQueueUrl(GetQueueUrlRequest getQueueUrlRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public GetQueueUrlResult getQueueUrl(GetQueueUrlRequest getQueueUrlRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public GetQueueUrlResult getQueueUrl(String queueName) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public GetQueueUrlResult getQueueUrl(String queueName) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public ListDeadLetterSourceQueuesResult listDeadLetterSourceQueues(
-        ListDeadLetterSourceQueuesRequest listDeadLetterSourceQueuesRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public ListDeadLetterSourceQueuesResult listDeadLetterSourceQueues(
+      ListDeadLetterSourceQueuesRequest listDeadLetterSourceQueuesRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public ListMessageMoveTasksResult listMessageMoveTasks(ListMessageMoveTasksRequest listMessageMoveTasksRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public ListMessageMoveTasksResult listMessageMoveTasks(
+      ListMessageMoveTasksRequest listMessageMoveTasksRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public ListQueueTagsResult listQueueTags(ListQueueTagsRequest listQueueTagsRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public ListQueueTagsResult listQueueTags(ListQueueTagsRequest listQueueTagsRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public ListQueueTagsResult listQueueTags(String queueUrl) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public ListQueueTagsResult listQueueTags(String queueUrl) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public ListQueuesResult listQueues(ListQueuesRequest listQueuesRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public ListQueuesResult listQueues(ListQueuesRequest listQueuesRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public ListQueuesResult listQueues() {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public ListQueuesResult listQueues() {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public ListQueuesResult listQueues(String queueNamePrefix) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public ListQueuesResult listQueues(String queueNamePrefix) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public PurgeQueueResult purgeQueue(PurgeQueueRequest purgeQueueRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public PurgeQueueResult purgeQueue(PurgeQueueRequest purgeQueueRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public ReceiveMessageResult receiveMessage(ReceiveMessageRequest receiveMessageRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public ReceiveMessageResult receiveMessage(ReceiveMessageRequest receiveMessageRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public ReceiveMessageResult receiveMessage(String queueUrl) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public ReceiveMessageResult receiveMessage(String queueUrl) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public RemovePermissionResult removePermission(RemovePermissionRequest removePermissionRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public RemovePermissionResult removePermission(RemovePermissionRequest removePermissionRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public RemovePermissionResult removePermission(String queueUrl, String label) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public RemovePermissionResult removePermission(String queueUrl, String label) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public SendMessageResult sendMessage(SendMessageRequest sendMessageRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public SendMessageResult sendMessage(SendMessageRequest sendMessageRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public SendMessageResult sendMessage(String queueUrl, String messageBody) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public SendMessageResult sendMessage(String queueUrl, String messageBody) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public SendMessageBatchResult sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {
-        var messages = sendMessageBatchRequest.getEntries()
-                           .stream()
-                           .map(SendMessageBatchRequestEntry::getMessageBody)
-                           .collect(Collectors.toList());
-        messageBodies.addAll(messages);
-        queueUrls.add(sendMessageBatchRequest.getQueueUrl());
-        var messageBatchResultEntries = sendMessageBatchRequest.getEntries()
-                                            .stream()
-                                            .map(this::convertToResult)
-                                            .collect(
-                                                Collectors.toList());
-        var sendMessageBatchResult = new SendMessageBatchResult();
-        sendMessageBatchResult.setSuccessful(messageBatchResultEntries);
-        return sendMessageBatchResult;
-    }
+  @Override
+  public SendMessageBatchResult sendMessageBatch(SendMessageBatchRequest sendMessageBatchRequest) {
+    var messages =
+        sendMessageBatchRequest.getEntries().stream()
+            .map(SendMessageBatchRequestEntry::getMessageBody)
+            .collect(Collectors.toList());
+    messageBodies.addAll(messages);
+    queueUrls.add(sendMessageBatchRequest.getQueueUrl());
+    var messageBatchResultEntries =
+        sendMessageBatchRequest.getEntries().stream()
+            .map(this::convertToResult)
+            .collect(Collectors.toList());
+    var sendMessageBatchResult = new SendMessageBatchResult();
+    sendMessageBatchResult.setSuccessful(messageBatchResultEntries);
+    return sendMessageBatchResult;
+  }
 
-    @Override
-    public SendMessageBatchResult sendMessageBatch(String queueUrl, List<SendMessageBatchRequestEntry> entries) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public SendMessageBatchResult sendMessageBatch(
+      String queueUrl, List<SendMessageBatchRequestEntry> entries) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public SetQueueAttributesResult setQueueAttributes(SetQueueAttributesRequest setQueueAttributesRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public SetQueueAttributesResult setQueueAttributes(
+      SetQueueAttributesRequest setQueueAttributesRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public SetQueueAttributesResult setQueueAttributes(String queueUrl, Map<String, String> attributes) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public SetQueueAttributesResult setQueueAttributes(
+      String queueUrl, Map<String, String> attributes) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public StartMessageMoveTaskResult startMessageMoveTask(StartMessageMoveTaskRequest startMessageMoveTaskRequest) {
-        return null;
-    }
+  @Override
+  public StartMessageMoveTaskResult startMessageMoveTask(
+      StartMessageMoveTaskRequest startMessageMoveTaskRequest) {
+    return null;
+  }
 
-    @Override
-    public TagQueueResult tagQueue(TagQueueRequest tagQueueRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public TagQueueResult tagQueue(TagQueueRequest tagQueueRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public TagQueueResult tagQueue(String queueUrl, Map<String, String> tags) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public TagQueueResult tagQueue(String queueUrl, Map<String, String> tags) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public UntagQueueResult untagQueue(UntagQueueRequest untagQueueRequest) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public UntagQueueResult untagQueue(UntagQueueRequest untagQueueRequest) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public UntagQueueResult untagQueue(String queueUrl, List<String> tagKeys) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public UntagQueueResult untagQueue(String queueUrl, List<String> tagKeys) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public void shutdown() {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public void shutdown() {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public ResponseMetadata getCachedResponseMetadata(AmazonWebServiceRequest request) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public ResponseMetadata getCachedResponseMetadata(AmazonWebServiceRequest request) {
+    throw new UnsupportedOperationException();
+  }
 
-    public List<String> getMessageBodies() {
-        return messageBodies;
-    }
+  public List<String> getMessageBodies() {
+    return messageBodies;
+  }
 
-    private SendMessageBatchResultEntry convertToResult(SendMessageBatchRequestEntry sendMessageBatchRequestEntry) {
-        var sendMessageBatchResultEntry = new SendMessageBatchResultEntry();
-        sendMessageBatchResultEntry.withMessageId(sendMessageBatchRequestEntry.getId());
-        return sendMessageBatchResultEntry;
-    }
+  private SendMessageBatchResultEntry convertToResult(
+      SendMessageBatchRequestEntry sendMessageBatchRequestEntry) {
+    var sendMessageBatchResultEntry = new SendMessageBatchResultEntry();
+    sendMessageBatchResultEntry.withMessageId(sendMessageBatchRequestEntry.getId());
+    return sendMessageBatchResultEntry;
+  }
 }

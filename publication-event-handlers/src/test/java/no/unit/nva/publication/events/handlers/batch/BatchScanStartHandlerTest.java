@@ -6,6 +6,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+
 import java.io.IOException;
 import java.util.List;
 import no.unit.nva.commons.json.JsonUtils;
@@ -18,42 +19,42 @@ import org.junit.jupiter.api.Test;
 
 class BatchScanStartHandlerTest {
 
-    private static final String TOPIC = "OUTPUT_EVENT_TOPIC";
-    private static final int NOT_SET_PAGE_SIZE = 0;
-    private final FakeContext context = new FakeContext() {
+  private static final String TOPIC = "OUTPUT_EVENT_TOPIC";
+  private static final int NOT_SET_PAGE_SIZE = 0;
+  private final FakeContext context =
+      new FakeContext() {
         @Override
         public String getInvokedFunctionArn() {
-            return randomString();
+          return randomString();
         }
-    };
+      };
 
-    @Test
-    void shouldSendInitialScanMessageWithDefaultPageSizeWhenPageSizeIsNotSet() throws IOException {
-        var client = new FakeEventBridgeClient();
-        var handler = new BatchScanStartHandler(client);
-        var scanDatabaseRequest = ScanDatabaseRequest.builder()
-                                      .withPageSize(NOT_SET_PAGE_SIZE)
-                                      .withTopic(TOPIC)
-                                      .withTypes(List.of(randomElement(KeyField.values())))
-                                      .build();
-        var request = IoUtils.stringToStream(scanDatabaseRequest.toJsonString());
-        handler.handleRequest(request, null, context);
-        assertThat(client.getRequestEntries(), hasSize(1));
-        var eventDetail = client.getRequestEntries().get(0).detail();
-        var sentRequest = JsonUtils.dtoObjectMapper.readValue(eventDetail, ScanDatabaseRequest.class);
-        assertThat(sentRequest.getPageSize(), is(equalTo(ScanDatabaseRequest.DEFAULT_PAGE_SIZE)));
-    }
+  @Test
+  void shouldSendInitialScanMessageWithDefaultPageSizeWhenPageSizeIsNotSet() throws IOException {
+    var client = new FakeEventBridgeClient();
+    var handler = new BatchScanStartHandler(client);
+    var scanDatabaseRequest =
+        ScanDatabaseRequest.builder()
+            .withPageSize(NOT_SET_PAGE_SIZE)
+            .withTopic(TOPIC)
+            .withTypes(List.of(randomElement(KeyField.values())))
+            .build();
+    var request = IoUtils.stringToStream(scanDatabaseRequest.toJsonString());
+    handler.handleRequest(request, null, context);
+    assertThat(client.getRequestEntries(), hasSize(1));
+    var eventDetail = client.getRequestEntries().get(0).detail();
+    var sentRequest = JsonUtils.dtoObjectMapper.readValue(eventDetail, ScanDatabaseRequest.class);
+    assertThat(sentRequest.getPageSize(), is(equalTo(ScanDatabaseRequest.DEFAULT_PAGE_SIZE)));
+  }
 
-    @Test
-    void shouldSendInitialScanMessageForInitiatingBatchScanning() throws IOException {
-        FakeEventBridgeClient client = new FakeEventBridgeClient();
-        BatchScanStartHandler handler = new BatchScanStartHandler(client);
-        ScanDatabaseRequest scanDatabaseRequest = ScanDatabaseRequest.builder()
-                                                      .withPageSize(NOT_SET_PAGE_SIZE)
-                                                      .withTopic(TOPIC)
-                                                      .build();
-        var request = IoUtils.stringToStream(scanDatabaseRequest.toJsonString());
-        handler.handleRequest(request, null, context);
-        assertThat(client.getRequestEntries(), hasSize(1));
-    }
+  @Test
+  void shouldSendInitialScanMessageForInitiatingBatchScanning() throws IOException {
+    FakeEventBridgeClient client = new FakeEventBridgeClient();
+    BatchScanStartHandler handler = new BatchScanStartHandler(client);
+    ScanDatabaseRequest scanDatabaseRequest =
+        ScanDatabaseRequest.builder().withPageSize(NOT_SET_PAGE_SIZE).withTopic(TOPIC).build();
+    var request = IoUtils.stringToStream(scanDatabaseRequest.toJsonString());
+    handler.handleRequest(request, null, context);
+    assertThat(client.getRequestEntries(), hasSize(1));
+  }
 }

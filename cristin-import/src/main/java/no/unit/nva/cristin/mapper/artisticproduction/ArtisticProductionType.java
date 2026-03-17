@@ -15,25 +15,24 @@ import nva.commons.core.JacocoGenerated;
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
-    setterPrefix = "with"
-)
+    setterPrefix = "with")
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"produkttypenavn",
-    "produksjonstypenavn",
-    "produksjonstypenavn_engelsk",
-    "produksjonstypenavn_nynorsk",
-    "produkttypenavn_engelsk",
-    "produkttypenavn_nynorsk"})
+@JsonIgnoreProperties({
+  "produkttypenavn",
+  "produksjonstypenavn",
+  "produksjonstypenavn_engelsk",
+  "produksjonstypenavn_nynorsk",
+  "produkttypenavn_engelsk",
+  "produkttypenavn_nynorsk"
+})
 public class ArtisticProductionType {
 
-    @JsonProperty("produkttypekode")
-    @JsonAlias("produksjonstypekode")
-    private String productTypeCode;
+  @JsonProperty("produkttypekode")
+  @JsonAlias("produksjonstypekode")
+  private String productTypeCode;
 
-    @JacocoGenerated
-    public ArtisticProductionType() {
-
-    }
+  @JacocoGenerated
+  public ArtisticProductionType() {}
 }

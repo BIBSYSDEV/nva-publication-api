@@ -8,13 +8,12 @@ import no.unit.nva.model.Publication;
 
 public interface FindExistingPublicationService {
 
-    int DUPLICATE_PUBLICATIONS_COUNT = 2;
+  int DUPLICATE_PUBLICATIONS_COUNT = 2;
 
+  Optional<PublicationForUpdate> findExistingPublication(
+      PublicationRepresentation publicationRepresentation);
 
-    Optional<PublicationForUpdate> findExistingPublication(PublicationRepresentation publicationRepresentation);
-
-    static boolean moreThanOneDuplicateFound(List<Publication> publications) {
-        return publications.size() >= DUPLICATE_PUBLICATIONS_COUNT;
-    }
-
+  static boolean moreThanOneDuplicateFound(List<Publication> publications) {
+    return publications.size() >= DUPLICATE_PUBLICATIONS_COUNT;
+  }
 }

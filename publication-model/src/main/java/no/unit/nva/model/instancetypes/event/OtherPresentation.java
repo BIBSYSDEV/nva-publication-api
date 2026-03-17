@@ -5,9 +5,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class OtherPresentation extends ConferenceLecture {
-    @JsonCreator
-
-    public OtherPresentation() {
-        super();
-    }
+  @JsonCreator
+  public OtherPresentation() {
+    super();
+  }
 }

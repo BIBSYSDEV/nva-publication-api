@@ -5,13 +5,13 @@ import java.util.List;
 
 public class ContentWrapper {
 
-    private final List<Serializable> contentList;
+  private final List<Serializable> contentList;
 
-    public ContentWrapper(List<Serializable> contentList) {
-        this.contentList = contentList;
-    }
+  public ContentWrapper(List<Serializable> contentList) {
+    this.contentList = contentList;
+  }
 
-    public List<Serializable> getContentList() {
-        return contentList;
-    }
+  public List<Serializable> getContentList() {
+    return contentList;
+  }
 }

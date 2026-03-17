@@ -11,22 +11,21 @@ import no.unit.nva.publication.model.business.logentry.LogTopic;
 public record FileHiddenEvent(Instant date, User user, SortableIdentifier identifier)
     implements FileEvent {
 
-    public static FileHiddenEvent create(User user, Instant timestamp) {
-        return new FileHiddenEvent(timestamp, user, SortableIdentifier.next());
-    }
+  public static FileHiddenEvent create(User user, Instant timestamp) {
+    return new FileHiddenEvent(timestamp, user, SortableIdentifier.next());
+  }
 
-    @Override
-    public FileLogEntry toLogEntry(FileEntry fileEntry, LogAgent user) {
-        return FileLogEntry.builder()
-                   .withIdentifier(identifier)
-                   .withFileIdentifier(fileEntry.getIdentifier())
-                   .withResourceIdentifier(fileEntry.getResourceIdentifier())
-                   .withTopic(LogTopic.FILE_HIDDEN)
-                   .withTimestamp(date)
-                   .withPerformedBy(user)
-                   .withFilename(fileEntry.getFile().getName())
-                   .withFileType(fileEntry.getFile().getClass().getSimpleName())
-                   .build();
-    }
-
+  @Override
+  public FileLogEntry toLogEntry(FileEntry fileEntry, LogAgent user) {
+    return FileLogEntry.builder()
+        .withIdentifier(identifier)
+        .withFileIdentifier(fileEntry.getIdentifier())
+        .withResourceIdentifier(fileEntry.getResourceIdentifier())
+        .withTopic(LogTopic.FILE_HIDDEN)
+        .withTimestamp(date)
+        .withPerformedBy(user)
+        .withFilename(fileEntry.getFile().getName())
+        .withFileType(fileEntry.getFile().getClass().getSimpleName())
+        .build();
+  }
 }

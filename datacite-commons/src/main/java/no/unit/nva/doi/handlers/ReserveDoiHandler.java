@@ -18,43 +18,49 @@ import nva.commons.secrets.SecretsReader;
 
 public class ReserveDoiHandler extends ApiGatewayHandler<Void, DoiResponse> {
 
-    public static final String BAD_RESPONSE_ERROR_MESSAGE = "Bad response from DataCite";
-    private final ReserveDoiService reserveDoiService;
+  public static final String BAD_RESPONSE_ERROR_MESSAGE = "Bad response from DataCite";
+  private final ReserveDoiService reserveDoiService;
 
-    @JacocoGenerated
-    public ReserveDoiHandler() {
-        this(ResourceService.defaultService(),
-             new DataCiteDoiClient(getDefaultHttpClient(),
-                                   SecretsReader.defaultSecretsManagerClient(), new Environment().readEnv("API_HOST")),
-             new Environment());
-    }
+  @JacocoGenerated
+  public ReserveDoiHandler() {
+    this(
+        ResourceService.defaultService(),
+        new DataCiteDoiClient(
+            getDefaultHttpClient(),
+            SecretsReader.defaultSecretsManagerClient(),
+            new Environment().readEnv("API_HOST")),
+        new Environment());
+  }
 
-    public ReserveDoiHandler(ResourceService resourceService,
-                             DataCiteDoiClient reserveDoiClient, Environment environment) {
-        super(Void.class, environment);
-        this.reserveDoiService = new ReserveDoiService(resourceService, reserveDoiClient);
-    }
+  public ReserveDoiHandler(
+      ResourceService resourceService,
+      DataCiteDoiClient reserveDoiClient,
+      Environment environment) {
+    super(Void.class, environment);
+    this.reserveDoiService = new ReserveDoiService(resourceService, reserveDoiClient);
+  }
 
-    @Override
-    protected void validateRequest(Void unused, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        //Do nothing
-    }
+  @Override
+  protected void validateRequest(Void unused, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
+    // Do nothing
+  }
 
-    @Override
-    protected DoiResponse processInput(Void input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
-        var userInstance = UserInstance.fromRequestInfo(requestInfo);
-        var publicationIdentifier = RequestUtil.getIdentifier(requestInfo);
-        return reserveDoiService.reserve(userInstance, publicationIdentifier);
-    }
+  @Override
+  protected DoiResponse processInput(Void input, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
+    var userInstance = UserInstance.fromRequestInfo(requestInfo);
+    var publicationIdentifier = RequestUtil.getIdentifier(requestInfo);
+    return reserveDoiService.reserve(userInstance, publicationIdentifier);
+  }
 
-    @Override
-    protected Integer getSuccessStatusCode(Void input, DoiResponse output) {
-        return HttpURLConnection.HTTP_CREATED;
-    }
+  @Override
+  protected Integer getSuccessStatusCode(Void input, DoiResponse output) {
+    return HttpURLConnection.HTTP_CREATED;
+  }
 
-    @JacocoGenerated
-    private static HttpClient getDefaultHttpClient() {
-        return HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build();
-    }
+  @JacocoGenerated
+  private static HttpClient getDefaultHttpClient() {
+    return HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build();
+  }
 }

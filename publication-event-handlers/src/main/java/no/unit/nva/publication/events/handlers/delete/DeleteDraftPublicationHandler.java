@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.delete;
 
 import static java.util.Objects.nonNull;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
@@ -14,59 +15,57 @@ import nva.commons.core.JacocoGenerated;
 
 public class DeleteDraftPublicationHandler
     extends DestinationsEventBridgeEventHandler<ResourceDraftedForDeletionEvent, Void> {
-    
-    public static final String DELETE_WITH_DOI_ERROR = "Not allowed to delete Draft Publication with DOI. "
-                                                       + "Remove DOI first and try again";
-    private final ResourceService resourceService;
-    
-    /**
-     * Default constructor for DeleteDraftPublicationHandler.
-     */
-    @JacocoGenerated
-    public DeleteDraftPublicationHandler() {
-        this(ResourceService.defaultService());
+
+  public static final String DELETE_WITH_DOI_ERROR =
+      "Not allowed to delete Draft Publication with DOI. " + "Remove DOI first and try again";
+  private final ResourceService resourceService;
+
+  /** Default constructor for DeleteDraftPublicationHandler. */
+  @JacocoGenerated
+  public DeleteDraftPublicationHandler() {
+    this(ResourceService.defaultService());
+  }
+
+  /**
+   * Constructor for DeleteDraftPublicationHandler.
+   *
+   * @param resourceService publicationService
+   */
+  public DeleteDraftPublicationHandler(ResourceService resourceService) {
+    super(ResourceDraftedForDeletionEvent.class);
+    this.resourceService = resourceService;
+  }
+
+  @Override
+  protected Void processInputPayload(
+      ResourceDraftedForDeletionEvent input,
+      AwsEventBridgeEvent<AwsEventBridgeDetail<ResourceDraftedForDeletionEvent>> event,
+      Context context) {
+    if (input.hasDoi()) {
+      throwPublicationHasDoiError();
     }
-    
-    /**
-     * Constructor for DeleteDraftPublicationHandler.
-     *
-     * @param resourceService publicationService
-     */
-    public DeleteDraftPublicationHandler(ResourceService resourceService) {
-        super(ResourceDraftedForDeletionEvent.class);
-        this.resourceService = resourceService;
+
+    try {
+      var userInstance = fetchUserInformationForPublication(input);
+      resourceService.deleteDraftPublication(userInstance, input.getIdentifier());
+    } catch (NotFoundException | BadRequestException e) {
+      throw new RuntimeException(e);
     }
-    
-    @Override
-    protected Void processInputPayload(
-        ResourceDraftedForDeletionEvent input,
-        AwsEventBridgeEvent<AwsEventBridgeDetail<ResourceDraftedForDeletionEvent>> event,
-        Context context) {
-        if (input.hasDoi()) {
-            throwPublicationHasDoiError();
-        }
-        
-        try {
-            var userInstance = fetchUserInformationForPublication(input);
-            resourceService.deleteDraftPublication(userInstance, input.getIdentifier());
-        } catch (NotFoundException | BadRequestException e) {
-            throw new RuntimeException(e);
-        }
-        return null;
+    return null;
+  }
+
+  private UserInstance fetchUserInformationForPublication(ResourceDraftedForDeletionEvent input)
+      throws NotFoundException {
+    var publication = resourceService.getPublicationByIdentifier(input.getIdentifier());
+    if (nonNull(publication.getDoi())) {
+      throwPublicationHasDoiError();
     }
-    
-    private UserInstance fetchUserInformationForPublication(ResourceDraftedForDeletionEvent input)
-        throws NotFoundException {
-        var publication = resourceService.getPublicationByIdentifier(input.getIdentifier());
-        if (nonNull(publication.getDoi())) {
-            throwPublicationHasDoiError();
-        }
-        var value = publication.getResourceOwner().getOwner().getValue();
-        var publisherId = publication.getPublisher().getId();
-        return UserInstance.create(value, publisherId);
-    }
-    
-    private void throwPublicationHasDoiError() {
-        throw new RuntimeException(DELETE_WITH_DOI_ERROR);
-    }
+    var value = publication.getResourceOwner().getOwner().getValue();
+    var publisherId = publication.getPublisher().getId();
+    return UserInstance.create(value, publisherId);
+  }
+
+  private void throwPublicationHasDoiError() {
+    throw new RuntimeException(DELETE_WITH_DOI_ERROR);
+  }
 }

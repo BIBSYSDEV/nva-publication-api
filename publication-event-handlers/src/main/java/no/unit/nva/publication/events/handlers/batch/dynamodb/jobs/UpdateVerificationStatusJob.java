@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb.jobs;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
@@ -31,148 +32,163 @@ import org.slf4j.LoggerFactory;
 public class UpdateVerificationStatusJob extends ServiceWithTransactions
     implements DynamodbResourceBatchJobExecutor {
 
-    private static final Logger logger = LoggerFactory.getLogger(UpdateVerificationStatusJob.class);
-    private static final String JOB_TYPE = "UPDATE_VERIFICATION_STATUS";
-    private static final String TABLE_NAME_ENV = "TABLE_NAME";
-    private static final int IDENTIFIER_INDEX = 1;
+  private static final Logger logger = LoggerFactory.getLogger(UpdateVerificationStatusJob.class);
+  private static final String JOB_TYPE = "UPDATE_VERIFICATION_STATUS";
+  private static final String TABLE_NAME_ENV = "TABLE_NAME";
+  private static final int IDENTIFIER_INDEX = 1;
 
-    private final ResourceService resourceService;
-    private final CristinClient cristinClient;
-    private final String tableName;
+  private final ResourceService resourceService;
+  private final CristinClient cristinClient;
+  private final String tableName;
 
-    @JacocoGenerated
-    public UpdateVerificationStatusJob() {
-        this(ResourceService.defaultService(), CristinClient.defaultClient(),
-             AmazonDynamoDBClientBuilder.defaultClient(), new Environment().readEnv(TABLE_NAME_ENV));
+  @JacocoGenerated
+  public UpdateVerificationStatusJob() {
+    this(
+        ResourceService.defaultService(), CristinClient.defaultClient(),
+        AmazonDynamoDBClientBuilder.defaultClient(), new Environment().readEnv(TABLE_NAME_ENV));
+  }
+
+  public UpdateVerificationStatusJob(
+      ResourceService resourceService,
+      CristinClient cristinClient,
+      AmazonDynamoDB dynamoDbClient,
+      String tableName) {
+    super(dynamoDbClient);
+    this.resourceService = resourceService;
+    this.cristinClient = cristinClient;
+    this.tableName = tableName;
+  }
+
+  @Override
+  public void executeBatch(List<BatchWorkItem> workItems) {
+    var transactItems =
+        workItems.stream()
+            .map(this::extractIdentifier)
+            .map(this::fetchResourceWithVersion)
+            .flatMap(this::updateVerificationStatus)
+            .map(this::toTransactWriteItem)
+            .toList();
+
+    if (!transactItems.isEmpty()) {
+      sendTransactionWriteRequest(newTransactWriteItemsRequest(transactItems));
     }
+  }
 
-    public UpdateVerificationStatusJob(ResourceService resourceService, CristinClient cristinClient,
-                                       AmazonDynamoDB dynamoDbClient, String tableName) {
-        super(dynamoDbClient);
-        this.resourceService = resourceService;
-        this.cristinClient = cristinClient;
-        this.tableName = tableName;
+  @Override
+  public String getJobType() {
+    return JOB_TYPE;
+  }
+
+  private SortableIdentifier extractIdentifier(BatchWorkItem workItem) {
+    var sortKey = workItem.dynamoDbKey().sortKey();
+    var parts = sortKey.split(KEY_FIELDS_DELIMITER);
+    return new SortableIdentifier(parts[IDENTIFIER_INDEX]);
+  }
+
+  private ResourceWithOriginalVersion fetchResourceWithVersion(SortableIdentifier identifier) {
+    try {
+      var resource = resourceService.getResourceByIdentifier(identifier);
+      return new ResourceWithOriginalVersion(resource, resource.getVersion());
+    } catch (NotFoundException e) {
+      throw new RuntimeException("Resource not found: " + identifier, e);
     }
+  }
 
-    @Override
-    public void executeBatch(List<BatchWorkItem> workItems) {
-        var transactItems = workItems.stream()
-                                .map(this::extractIdentifier)
-                                .map(this::fetchResourceWithVersion)
-                                .flatMap(this::updateVerificationStatus)
-                                .map(this::toTransactWriteItem)
-                                .toList();
+  private Stream<ResourceWithOriginalVersion> updateVerificationStatus(
+      ResourceWithOriginalVersion resourceWithVersion) {
+    var resource = resourceWithVersion.resource();
+    var resourceIdentifier = resource.getIdentifier();
+    return Optional.ofNullable(resource.getEntityDescription())
+        .map(EntityDescription::getContributors)
+        .map(contributors -> updateContributors(contributors, resourceIdentifier))
+        .filter(
+            updatedContributors ->
+                hasChanges(resource.getEntityDescription().getContributors(), updatedContributors))
+        .map(updatedContributors -> applyContributorUpdates(resource, updatedContributors))
+        .map(
+            updatedResource ->
+                new ResourceWithOriginalVersion(
+                    updatedResource, resourceWithVersion.originalVersion()))
+        .stream();
+  }
 
-        if (!transactItems.isEmpty()) {
-            sendTransactionWriteRequest(newTransactWriteItemsRequest(transactItems));
-        }
-    }
+  private TransactWriteItem toTransactWriteItem(ResourceWithOriginalVersion resourceWithVersion) {
+    var dao = (ResourceDao) resourceWithVersion.resource().toDao();
+    return newPutTransactionItemWithLocking(dao, resourceWithVersion.originalVersion(), tableName);
+  }
 
-    @Override
-    public String getJobType() {
-        return JOB_TYPE;
-    }
+  private List<Contributor> updateContributors(
+      Collection<Contributor> contributors, SortableIdentifier resourceIdentifier) {
+    return contributors.stream()
+        .map(contributor -> updateContributorVerificationStatus(contributor, resourceIdentifier))
+        .toList();
+  }
 
-    private SortableIdentifier extractIdentifier(BatchWorkItem workItem) {
-        var sortKey = workItem.dynamoDbKey().sortKey();
-        var parts = sortKey.split(KEY_FIELDS_DELIMITER);
-        return new SortableIdentifier(parts[IDENTIFIER_INDEX]);
-    }
+  private Resource applyContributorUpdates(
+      Resource resource, List<Contributor> updatedContributors) {
+    resource.getEntityDescription().setContributors(updatedContributors);
+    return resource;
+  }
 
-    private ResourceWithOriginalVersion fetchResourceWithVersion(SortableIdentifier identifier) {
-        try {
-            var resource = resourceService.getResourceByIdentifier(identifier);
-            return new ResourceWithOriginalVersion(resource, resource.getVersion());
-        } catch (NotFoundException e) {
-            throw new RuntimeException("Resource not found: " + identifier, e);
-        }
-    }
+  private boolean hasChanges(List<Contributor> original, List<Contributor> updated) {
+    return !original.equals(updated);
+  }
 
-    private Stream<ResourceWithOriginalVersion> updateVerificationStatus(
-        ResourceWithOriginalVersion resourceWithVersion) {
-        var resource = resourceWithVersion.resource();
-        var resourceIdentifier = resource.getIdentifier();
-        return Optional.ofNullable(resource.getEntityDescription())
-                   .map(EntityDescription::getContributors)
-                   .map(contributors -> updateContributors(contributors, resourceIdentifier))
-                   .filter(updatedContributors -> hasChanges(resource.getEntityDescription().getContributors(),
-                                                             updatedContributors))
-                   .map(updatedContributors -> applyContributorUpdates(resource, updatedContributors))
-                   .map(updatedResource -> new ResourceWithOriginalVersion(updatedResource,
-                                                                           resourceWithVersion.originalVersion()))
-                   .stream();
-    }
+  private Contributor updateContributorVerificationStatus(
+      Contributor contributor, SortableIdentifier resourceIdentifier) {
+    return extractCristinId(contributor)
+        .map(cristinId -> fetchVerificationStatus(cristinId, resourceIdentifier))
+        .flatMap(status -> applyVerificationStatus(contributor, status, resourceIdentifier))
+        .orElse(contributor);
+  }
 
-    private TransactWriteItem toTransactWriteItem(
-        ResourceWithOriginalVersion resourceWithVersion) {
-        var dao = (ResourceDao) resourceWithVersion.resource().toDao();
-        return newPutTransactionItemWithLocking(dao, resourceWithVersion.originalVersion(), tableName);
-    }
+  private Optional<URI> extractCristinId(Contributor contributor) {
+    return Optional.ofNullable(contributor.getIdentity()).map(Identity::getId);
+  }
 
-    private List<Contributor> updateContributors(Collection<Contributor> contributors,
-                                                 SortableIdentifier resourceIdentifier) {
-        return contributors.stream()
-                   .map(contributor -> updateContributorVerificationStatus(contributor, resourceIdentifier))
-                   .toList();
-    }
+  private Optional<Contributor> applyVerificationStatus(
+      Contributor contributor,
+      ContributorVerificationStatus status,
+      SortableIdentifier resourceIdentifier) {
+    return Optional.of(contributor.getIdentity())
+        .filter(identity -> !status.equals(identity.getVerificationStatus()))
+        .map(identity -> logStatusChange(identity, status, resourceIdentifier))
+        .map(identity -> createUpdatedIdentity(identity, status))
+        .map(updatedIdentity -> contributor.copy().withIdentity(updatedIdentity).build());
+  }
 
-    private Resource applyContributorUpdates(Resource resource, List<Contributor> updatedContributors) {
-        resource.getEntityDescription().setContributors(updatedContributors);
-        return resource;
-    }
+  private Identity logStatusChange(
+      Identity identity,
+      ContributorVerificationStatus newStatus,
+      SortableIdentifier resourceIdentifier) {
+    logger.info(
+        "Updating verification status for contributor {} in publication {}: {} -> {}",
+        identity.getId(),
+        resourceIdentifier,
+        identity.getVerificationStatus(),
+        newStatus);
+    return identity;
+  }
 
-    private boolean hasChanges(List<Contributor> original, List<Contributor> updated) {
-        return !original.equals(updated);
-    }
+  private ContributorVerificationStatus fetchVerificationStatus(
+      URI cristinId, SortableIdentifier resourceIdentifier) {
+    var person =
+        cristinClient
+            .getPerson(cristinId)
+            .orElseThrow(
+                () ->
+                    new RuntimeException(
+                        "Cristin person not found: %s for publication: %s"
+                            .formatted(cristinId, resourceIdentifier)));
+    return person.verified()
+        ? ContributorVerificationStatus.VERIFIED
+        : ContributorVerificationStatus.NOT_VERIFIED;
+  }
 
-    private Contributor updateContributorVerificationStatus(Contributor contributor,
-                                                            SortableIdentifier resourceIdentifier) {
-        return extractCristinId(contributor)
-                   .map(cristinId -> fetchVerificationStatus(cristinId, resourceIdentifier))
-                   .flatMap(status -> applyVerificationStatus(contributor, status, resourceIdentifier))
-                   .orElse(contributor);
-    }
+  private Identity createUpdatedIdentity(
+      Identity original, ContributorVerificationStatus verificationStatus) {
+    return original.copy().withVerificationStatus(verificationStatus).build();
+  }
 
-    private Optional<URI> extractCristinId(Contributor contributor) {
-        return Optional.ofNullable(contributor.getIdentity())
-                   .map(Identity::getId);
-    }
-
-    private Optional<Contributor> applyVerificationStatus(Contributor contributor,
-                                                          ContributorVerificationStatus status,
-                                                          SortableIdentifier resourceIdentifier) {
-        return Optional.of(contributor.getIdentity())
-                   .filter(identity -> !status.equals(identity.getVerificationStatus()))
-                   .map(identity -> logStatusChange(identity, status, resourceIdentifier))
-                   .map(identity -> createUpdatedIdentity(identity, status))
-                   .map(updatedIdentity -> contributor.copy().withIdentity(updatedIdentity).build());
-    }
-
-    private Identity logStatusChange(Identity identity, ContributorVerificationStatus newStatus,
-                                     SortableIdentifier resourceIdentifier) {
-        logger.info("Updating verification status for contributor {} in publication {}: {} -> {}",
-                    identity.getId(), resourceIdentifier, identity.getVerificationStatus(), newStatus);
-        return identity;
-    }
-
-    private ContributorVerificationStatus fetchVerificationStatus(URI cristinId,
-                                                                  SortableIdentifier resourceIdentifier) {
-        var person = cristinClient.getPerson(cristinId)
-                         .orElseThrow(() -> new RuntimeException(
-                             "Cristin person not found: %s for publication: %s".formatted(cristinId,
-                                                                                          resourceIdentifier)));
-        return person.verified()
-                   ? ContributorVerificationStatus.VERIFIED
-                   : ContributorVerificationStatus.NOT_VERIFIED;
-    }
-
-    private Identity createUpdatedIdentity(Identity original, ContributorVerificationStatus verificationStatus) {
-        return original.copy()
-                   .withVerificationStatus(verificationStatus)
-                   .build();
-    }
-
-    private record ResourceWithOriginalVersion(Resource resource, UUID originalVersion) {
-
-    }
+  private record ResourceWithOriginalVersion(Resource resource, UUID originalVersion) {}
 }

@@ -5,12 +5,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 public record EntityDescriptionValidationReport(Set<String> errors) implements ValidationReport {
-    public EntityDescriptionValidationReport(Collection<String> errors) {
-        this(new HashSet<>(errors));
-    }
+  public EntityDescriptionValidationReport(Collection<String> errors) {
+    this(new HashSet<>(errors));
+  }
 
-    @Override
-    public boolean isValid() {
-        return errors.isEmpty();
-    }
+  @Override
+  public boolean isValid() {
+    return errors.isEmpty();
+  }
 }

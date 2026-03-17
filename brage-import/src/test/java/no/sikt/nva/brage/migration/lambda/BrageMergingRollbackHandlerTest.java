@@ -16,6 +16,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.mockito.Mockito.mock;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -46,199 +47,228 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 class BrageMergingRollbackHandlerTest extends ResourcesLocalTest {
 
-    private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
-    private static final Context CONTEXT = mock(Context.class);
-    private BrageMergingRollbackHandler brageMergingRollbackHandler;
-    private FakeS3Client s3Client;
-    private S3Driver s3Driver;
-    private ResourceService resourceService;
+  private static final String INPUT_BUCKET_NAME = "some-input-bucket-name";
+  private static final Context CONTEXT = mock(Context.class);
+  private BrageMergingRollbackHandler brageMergingRollbackHandler;
+  private FakeS3Client s3Client;
+  private S3Driver s3Driver;
+  private ResourceService resourceService;
 
-    @BeforeEach
-    public void init() {
-        super.init();
-        this.resourceService = getResourceService(client);
-        this.s3Client = new ExtendedFakeS3Client();
-        this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
-        brageMergingRollbackHandler = new BrageMergingRollbackHandler(s3Client, resourceService);
-    }
+  @BeforeEach
+  public void init() {
+    super.init();
+    this.resourceService = getResourceService(client);
+    this.s3Client = new ExtendedFakeS3Client();
+    this.s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
+    brageMergingRollbackHandler = new BrageMergingRollbackHandler(s3Client, resourceService);
+  }
 
-    @Test
-    void shouldStoreErrorReportWhenS3BucketDoesNotContainReport() throws JsonProcessingException {
-        var eventReferencePointingToNothing = new EventReference(TOPIC, null, mergeReportUri());
-        var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReferencePointingToNothing);
-        brageMergingRollbackHandler.processInput(eventReferencePointingToNothing, awsEventBridgeEvent, CONTEXT);
-        var actualErrorReport = extractErrorReportFromS3Client(eventReferencePointingToNothing,
-                                                               NoSuchKeyException.class.getSimpleName());
-        assertThat(actualErrorReport, is(notNullValue()));
-    }
+  @Test
+  void shouldStoreErrorReportWhenS3BucketDoesNotContainReport() throws JsonProcessingException {
+    var eventReferencePointingToNothing = new EventReference(TOPIC, null, mergeReportUri());
+    var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReferencePointingToNothing);
+    brageMergingRollbackHandler.processInput(
+        eventReferencePointingToNothing, awsEventBridgeEvent, CONTEXT);
+    var actualErrorReport =
+        extractErrorReportFromS3Client(
+            eventReferencePointingToNothing, NoSuchKeyException.class.getSimpleName());
+    assertThat(actualErrorReport, is(notNullValue()));
+  }
 
-    @Test
-    void shouldStoreErrorReportWhenMergeReportIsNoLongerParseable() throws IOException {
-        var unparsablePublication = createUnParseablePublicationJson();
-        var eventReference = createEventReference(unparsablePublication);
-        var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
-        brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
+  @Test
+  void shouldStoreErrorReportWhenMergeReportIsNoLongerParseable() throws IOException {
+    var unparsablePublication = createUnParseablePublicationJson();
+    var eventReference = createEventReference(unparsablePublication);
+    var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
+    brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
 
-        var actualErrorReport = extractErrorReportFromS3Client(eventReference,
-                                                               InvalidTypeIdException.class.getSimpleName());
-        var exception = actualErrorReport.get("exception").asText();
-        assertThat(exception, is(notNullValue()));
-        var input = actualErrorReport.get("input").asText();
-        assertThat(input, is(equalTo(unparsablePublication)));
-    }
+    var actualErrorReport =
+        extractErrorReportFromS3Client(
+            eventReference, InvalidTypeIdException.class.getSimpleName());
+    var exception = actualErrorReport.get("exception").asText();
+    assertThat(exception, is(notNullValue()));
+    var input = actualErrorReport.get("input").asText();
+    assertThat(input, is(equalTo(unparsablePublication)));
+  }
 
-    @Test
-    void shouldStoreExceptionIfPublicationDoesNotExist() throws IOException {
-        var mergeReport = new BrageMergingReport(PublicationGenerator.randomPublication(),
-                                                 PublicationGenerator.randomPublication());
-        var eventReference = createEventReference(mergeReport.toString());
-        var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
-        brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
-        var actualErrorReport = extractErrorReportFromS3Client(eventReference,
-                                                               NotFoundException.class.getSimpleName());
-        var exception = actualErrorReport.get("exception").asText();
-        assertThat(exception, is(notNullValue()));
-    }
+  @Test
+  void shouldStoreExceptionIfPublicationDoesNotExist() throws IOException {
+    var mergeReport =
+        new BrageMergingReport(
+            PublicationGenerator.randomPublication(), PublicationGenerator.randomPublication());
+    var eventReference = createEventReference(mergeReport.toString());
+    var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
+    brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
+    var actualErrorReport =
+        extractErrorReportFromS3Client(eventReference, NotFoundException.class.getSimpleName());
+    var exception = actualErrorReport.get("exception").asText();
+    assertThat(exception, is(notNullValue()));
+  }
 
-    @Test
-    void shouldStoreExceptionWhenPublicationHasBeenModifiedSinceBrageMerging() throws IOException {
-        var oldImage = PublicationGenerator.randomPublication();
-        var newImageInReport = resourceService.createPublicationFromImportedEntry(
-            PublicationGenerator.randomPublication(), ImportSource.fromBrageArchive(randomString()));
-        var updatedAfterMerge = newImageInReport.copy().withDoi(randomDoi()).build();
-        resourceService.updatePublication(updatedAfterMerge);
+  @Test
+  void shouldStoreExceptionWhenPublicationHasBeenModifiedSinceBrageMerging() throws IOException {
+    var oldImage = PublicationGenerator.randomPublication();
+    var newImageInReport =
+        resourceService.createPublicationFromImportedEntry(
+            PublicationGenerator.randomPublication(),
+            ImportSource.fromBrageArchive(randomString()));
+    var updatedAfterMerge = newImageInReport.copy().withDoi(randomDoi()).build();
+    resourceService.updatePublication(updatedAfterMerge);
 
-        var mergeReport = new BrageMergingReport(oldImage, newImageInReport);
-        var eventReference = createEventReference(mergeReport.toString());
-        var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
-        brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
-        var actualErrorReport = extractErrorReportFromS3Client(eventReference,
-                                                               RollBackConflictException.class.getSimpleName());
-        var exception = actualErrorReport.get("exception").asText();
-        assertThat(exception, containsString(NEWER_VERSION_OF_THE_PUBLICATION_EXISTS));
-    }
+    var mergeReport = new BrageMergingReport(oldImage, newImageInReport);
+    var eventReference = createEventReference(mergeReport.toString());
+    var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
+    brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
+    var actualErrorReport =
+        extractErrorReportFromS3Client(
+            eventReference, RollBackConflictException.class.getSimpleName());
+    var exception = actualErrorReport.get("exception").asText();
+    assertThat(exception, containsString(NEWER_VERSION_OF_THE_PUBLICATION_EXISTS));
+  }
 
-    @Test
-    void dummyTestShouldDoNothingWhenProcessingAPublication() throws IOException {
-        var oldImage = PublicationGenerator.randomPublication();
-        var newImageInReport = resourceService.createPublicationFromImportedEntry(
-            PublicationGenerator.randomPublication(), ImportSource.fromBrageArchive(randomString()));
-        var mergeReport = new BrageMergingReport(oldImage, newImageInReport);
-        var eventReference = createEventReference(mergeReport.toString());
-        var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
-        brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
-    }
+  @Test
+  void dummyTestShouldDoNothingWhenProcessingAPublication() throws IOException {
+    var oldImage = PublicationGenerator.randomPublication();
+    var newImageInReport =
+        resourceService.createPublicationFromImportedEntry(
+            PublicationGenerator.randomPublication(),
+            ImportSource.fromBrageArchive(randomString()));
+    var mergeReport = new BrageMergingReport(oldImage, newImageInReport);
+    var eventReference = createEventReference(mergeReport.toString());
+    var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
+    brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
+  }
 
-    @Test
-    void shouldRollbackPublicationInDatabaseWhenReportPassesChecks() throws IOException, NotFoundException {
-        var newImageInReport = resourceService.createPublicationFromImportedEntry(
-            PublicationGenerator.randomPublication(), ImportSource.fromBrageArchive(randomString()));
-        var oldImageInReport = createFromNewImage(newImageInReport);
-        var mergeReport = new BrageMergingReport(oldImageInReport, newImageInReport);
+  @Test
+  void shouldRollbackPublicationInDatabaseWhenReportPassesChecks()
+      throws IOException, NotFoundException {
+    var newImageInReport =
+        resourceService.createPublicationFromImportedEntry(
+            PublicationGenerator.randomPublication(),
+            ImportSource.fromBrageArchive(randomString()));
+    var oldImageInReport = createFromNewImage(newImageInReport);
+    var mergeReport = new BrageMergingReport(oldImageInReport, newImageInReport);
 
-        var eventReference = createEventReference(mergeReport.toString());
-        var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
-        brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
+    var eventReference = createEventReference(mergeReport.toString());
+    var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
+    brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
 
-        var actualPublicationAfterRollback =
-            resourceService.getPublicationByIdentifier(newImageInReport.getIdentifier());
-        var ignoredFields = new String[]{"modifiedDate", "createdDate", "publishedDate", "associatedArtifacts", "pendingOpenFileCount"};
-        assertThat(actualPublicationAfterRollback, is(samePropertyValuesAs(oldImageInReport, ignoredFields)));
-    }
+    var actualPublicationAfterRollback =
+        resourceService.getPublicationByIdentifier(newImageInReport.getIdentifier());
+    var ignoredFields =
+        new String[] {
+          "modifiedDate",
+          "createdDate",
+          "publishedDate",
+          "associatedArtifacts",
+          "pendingOpenFileCount"
+        };
+    assertThat(
+        actualPublicationAfterRollback, is(samePropertyValuesAs(oldImageInReport, ignoredFields)));
+  }
 
-    @Test
-    void shouldPersistRollbackReportWhenPublicationWasRolledBackInDatabase() throws IOException {
-        var newImageInReport = resourceService.createPublicationFromImportedEntry(
-            PublicationGenerator.randomPublication(), ImportSource.fromBrageArchive(randomString()));
-        var oldImageInReport = createFromNewImage(newImageInReport);
-        var mergeReport = new BrageMergingReport(oldImageInReport, newImageInReport);
+  @Test
+  void shouldPersistRollbackReportWhenPublicationWasRolledBackInDatabase() throws IOException {
+    var newImageInReport =
+        resourceService.createPublicationFromImportedEntry(
+            PublicationGenerator.randomPublication(),
+            ImportSource.fromBrageArchive(randomString()));
+    var oldImageInReport = createFromNewImage(newImageInReport);
+    var mergeReport = new BrageMergingReport(oldImageInReport, newImageInReport);
 
-        var eventReference = createEventReference(mergeReport.toString());
-        var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
-        brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
+    var eventReference = createEventReference(mergeReport.toString());
+    var awsEventBridgeEvent = createAwsEventBridgeEvent(eventReference);
+    brageMergingRollbackHandler.processInput(eventReference, awsEventBridgeEvent, CONTEXT);
 
-        var rollbackReport = extractSuccessReportFromS3(eventReference);
-        assertThat(rollbackReport, is(notNullValue()));
-    }
+    var rollbackReport = extractSuccessReportFromS3(eventReference);
+    assertThat(rollbackReport, is(notNullValue()));
+  }
 
-    private String extractSuccessReportFromS3(EventReference eventReference) {
-        var expectedReportUri = createExpectedReportUriWrapper(eventReference);
-        return s3Driver.getFile(expectedReportUri.toS3bucketPath());
-    }
+  private String extractSuccessReportFromS3(EventReference eventReference) {
+    var expectedReportUri = createExpectedReportUriWrapper(eventReference);
+    return s3Driver.getFile(expectedReportUri.toS3bucketPath());
+  }
 
-    private UriWrapper createExpectedReportUriWrapper(EventReference eventReference) {
-        var successUri = eventReference.getUri().toString().replace(UPDATE_REPORTS_PATH, SUCCESS_MERGING_ROLLBACK);
-        return UriWrapper.fromUri(successUri);
-    }
+  private UriWrapper createExpectedReportUriWrapper(EventReference eventReference) {
+    var successUri =
+        eventReference.getUri().toString().replace(UPDATE_REPORTS_PATH, SUCCESS_MERGING_ROLLBACK);
+    return UriWrapper.fromUri(successUri);
+  }
 
-    private Publication createFromNewImage(Publication newImageInReport) {
-        var oldImage = PublicationGenerator.randomPublication();
-        oldImage.setCuratingInstitutions(null);
-        oldImage.setIdentifier(newImageInReport.getIdentifier());
-        oldImage.setResourceOwner(newImageInReport.getResourceOwner());
-        oldImage.setStatus(newImageInReport.getStatus());
-        oldImage.setPublisher(newImageInReport.getPublisher());
-        return oldImage;
-    }
+  private Publication createFromNewImage(Publication newImageInReport) {
+    var oldImage = PublicationGenerator.randomPublication();
+    oldImage.setCuratingInstitutions(null);
+    oldImage.setIdentifier(newImageInReport.getIdentifier());
+    oldImage.setResourceOwner(newImageInReport.getResourceOwner());
+    oldImage.setStatus(newImageInReport.getStatus());
+    oldImage.setPublisher(newImageInReport.getPublisher());
+    return oldImage;
+  }
 
-    private URI mergeReportUri() {
-        var unixpath = getRandomMergeReportUnixPath();
-        var uriwrapper = new UriWrapper("s3", INPUT_BUCKET_NAME);
-        return uriwrapper.addChild(unixpath).getUri();
-    }
+  private URI mergeReportUri() {
+    var unixpath = getRandomMergeReportUnixPath();
+    var uriwrapper = new UriWrapper("s3", INPUT_BUCKET_NAME);
+    return uriwrapper.addChild(unixpath).getUri();
+  }
 
-    private JsonNode extractErrorReportFromS3Client(EventReference eventReference,
-                                                    String exceptionSimpleName)
-        throws JsonProcessingException {
-        var errorFileUri = constructErrorFileUri(eventReference, exceptionSimpleName);
-        var s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
-        var content = s3Driver.getFile(errorFileUri.toS3bucketPath());
-        return JsonUtils.dtoObjectMapper.readTree(content);
-    }
+  private JsonNode extractErrorReportFromS3Client(
+      EventReference eventReference, String exceptionSimpleName) throws JsonProcessingException {
+    var errorFileUri = constructErrorFileUri(eventReference, exceptionSimpleName);
+    var s3Driver = new S3Driver(s3Client, INPUT_BUCKET_NAME);
+    var content = s3Driver.getFile(errorFileUri.toS3bucketPath());
+    return JsonUtils.dtoObjectMapper.readTree(content);
+  }
 
-    private UriWrapper constructErrorFileUri(EventReference event,
-                                             String exceptionSimpleName) {
-        var errorReport = event.getUri().toString().replace(UPDATE_REPORTS_PATH,
-                                                            ERROR_MERGING_ROLLBACK + "/" + exceptionSimpleName);
-        return UriWrapper.fromUri(errorReport);
-    }
+  private UriWrapper constructErrorFileUri(EventReference event, String exceptionSimpleName) {
+    var errorReport =
+        event
+            .getUri()
+            .toString()
+            .replace(UPDATE_REPORTS_PATH, ERROR_MERGING_ROLLBACK + "/" + exceptionSimpleName);
+    return UriWrapper.fromUri(errorReport);
+  }
 
-    private EventReference createEventReference(String mergeReport) throws IOException {
-        var uri =
-            s3Driver.insertFile(getRandomMergeReportUnixPath(),
-                                mergeReport);
-        return new EventReference(TOPIC, null, uri);
-    }
+  private EventReference createEventReference(String mergeReport) throws IOException {
+    var uri = s3Driver.insertFile(getRandomMergeReportUnixPath(), mergeReport);
+    return new EventReference(TOPIC, null, uri);
+  }
 
-    private UnixPath getRandomMergeReportUnixPath() {
-        return UnixPath.of(UPDATE_REPORTS_PATH
-                           + "/" + randomInstitutionShortName()
-                           + "/" + randomInstant().toString()
-                           + "/" + randomHandlePart()
-                           + "/" + randomHandlePart()
-                           + "/" + randomNvaIdentifier());
-    }
+  private UnixPath getRandomMergeReportUnixPath() {
+    return UnixPath.of(
+        UPDATE_REPORTS_PATH
+            + "/"
+            + randomInstitutionShortName()
+            + "/"
+            + randomInstant().toString()
+            + "/"
+            + randomHandlePart()
+            + "/"
+            + randomHandlePart()
+            + "/"
+            + randomNvaIdentifier());
+  }
 
-    private String randomNvaIdentifier() {
-        return SortableIdentifier.next().toString();
-    }
+  private String randomNvaIdentifier() {
+    return SortableIdentifier.next().toString();
+  }
 
-    private String randomHandlePart() {
-        return randomInteger().toString();
-    }
+  private String randomHandlePart() {
+    return randomInteger().toString();
+  }
 
-    private String randomInstitutionShortName() {
-        return randomString();
-    }
+  private String randomInstitutionShortName() {
+    return randomString();
+  }
 
-    private String createUnParseablePublicationJson() {
-        return "{\"newImage\": {}}";
-    }
+  private String createUnParseablePublicationJson() {
+    return "{\"newImage\": {}}";
+  }
 
-    private AwsEventBridgeEvent<EventReference> createAwsEventBridgeEvent(EventReference eventReference) {
-        var awsEventBridgeEvent = new AwsEventBridgeEvent<EventReference>();
-        awsEventBridgeEvent.setDetail(eventReference);
-        awsEventBridgeEvent.setTime(Instant.now());
-        return awsEventBridgeEvent;
-    }
+  private AwsEventBridgeEvent<EventReference> createAwsEventBridgeEvent(
+      EventReference eventReference) {
+    var awsEventBridgeEvent = new AwsEventBridgeEvent<EventReference>();
+    awsEventBridgeEvent.setDetail(eventReference);
+    awsEventBridgeEvent.setTime(Instant.now());
+    return awsEventBridgeEvent;
+  }
 }

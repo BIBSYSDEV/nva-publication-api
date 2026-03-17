@@ -1,6 +1,7 @@
 package no.unit.nva.publication.update;
 
 import static no.unit.nva.publication.update.UpdatePublicationRequest.WRONG_PUBLICATION_UPDATE_ERROR;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -20,76 +21,79 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeName("PartialUpdatePublicationRequest")
 public final class PartialUpdatePublicationRequest implements PublicationRequest, UpdateRequest {
 
-    private final SortableIdentifier identifier;
-    private final Set<Funding> fundings;
-    private final List<ResearchProject> projects;
-    private final AssociatedArtifactList associatedArtifacts;
+  private final SortableIdentifier identifier;
+  private final Set<Funding> fundings;
+  private final List<ResearchProject> projects;
+  private final AssociatedArtifactList associatedArtifacts;
 
-    @JsonCreator
-    public PartialUpdatePublicationRequest(@JsonProperty("identifier") SortableIdentifier identifier,
-                                           @JsonProperty("fundings") Set<Funding> fundings,
-                                           @JsonProperty("projects") List<ResearchProject> projects,
-                                           @JsonProperty("associatedArtifacts") AssociatedArtifactList associatedArtifacts) {
-        this.identifier = identifier;
-        this.fundings = fundings;
-        this.projects = projects;
-        this.associatedArtifacts = associatedArtifacts;
-    }
+  @JsonCreator
+  public PartialUpdatePublicationRequest(
+      @JsonProperty("identifier") SortableIdentifier identifier,
+      @JsonProperty("fundings") Set<Funding> fundings,
+      @JsonProperty("projects") List<ResearchProject> projects,
+      @JsonProperty("associatedArtifacts") AssociatedArtifactList associatedArtifacts) {
+    this.identifier = identifier;
+    this.fundings = fundings;
+    this.projects = projects;
+    this.associatedArtifacts = associatedArtifacts;
+  }
 
-    public Set<Funding> getFundings() {
-        return fundings;
-    }
+  public Set<Funding> getFundings() {
+    return fundings;
+  }
 
-    public List<ResearchProject> getProjects() {
-        return projects;
-    }
+  public List<ResearchProject> getProjects() {
+    return projects;
+  }
 
-    @Override
-    public Resource generateUpdate(Resource resource) {
-        if (!getIdentifier().equals(resource.getIdentifier())) {
-            throw new IllegalArgumentException(WRONG_PUBLICATION_UPDATE_ERROR + resource.getIdentifier());
-        }
-        return resource.copy()
-                   .withAssociatedArtifactsList(getAssociatedArtifacts())
-                   .withFundings(getFundings())
-                   .withProjects(getProjects())
-                   .build();
+  @Override
+  public Resource generateUpdate(Resource resource) {
+    if (!getIdentifier().equals(resource.getIdentifier())) {
+      throw new IllegalArgumentException(WRONG_PUBLICATION_UPDATE_ERROR + resource.getIdentifier());
     }
+    return resource
+        .copy()
+        .withAssociatedArtifactsList(getAssociatedArtifacts())
+        .withFundings(getFundings())
+        .withProjects(getProjects())
+        .build();
+  }
 
-    @Override
-    public AssociatedArtifactList getAssociatedArtifacts() {
-        return associatedArtifacts;
-    }
+  @Override
+  public AssociatedArtifactList getAssociatedArtifacts() {
+    return associatedArtifacts;
+  }
 
-    @Override
-    public void authorize(PublicationPermissions permissions, Resource existingResource)
-        throws UnauthorizedException {
-        permissions.authorize(PublicationOperation.PARTIAL_UPDATE);
-    }
+  @Override
+  public void authorize(PublicationPermissions permissions, Resource existingResource)
+      throws UnauthorizedException {
+    permissions.authorize(PublicationOperation.PARTIAL_UPDATE);
+  }
 
-    @Override
-    public SortableIdentifier getIdentifier() {
-        return identifier;
-    }
+  @Override
+  public SortableIdentifier getIdentifier() {
+    return identifier;
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(identifier, fundings, projects, associatedArtifacts);
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(identifier, fundings, projects, associatedArtifacts);
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        }
-        if (obj == null || obj.getClass() != this.getClass()) {
-            return false;
-        }
-        var that = (PartialUpdatePublicationRequest) obj;
-        return Objects.equals(this.identifier, that.identifier) && Objects.equals(this.fundings, that.fundings) &&
-               Objects.equals(this.projects, that.projects) &&
-               Objects.equals(this.associatedArtifacts, that.associatedArtifacts);
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
     }
+    if (obj == null || obj.getClass() != this.getClass()) {
+      return false;
+    }
+    var that = (PartialUpdatePublicationRequest) obj;
+    return Objects.equals(this.identifier, that.identifier)
+        && Objects.equals(this.fundings, that.fundings)
+        && Objects.equals(this.projects, that.projects)
+        && Objects.equals(this.associatedArtifacts, that.associatedArtifacts);
+  }
 }

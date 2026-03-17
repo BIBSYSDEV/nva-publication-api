@@ -2,5 +2,3 @@ dependencies {
     implementation nvaLibs.core
     implementation nvaCatalog.bundles.logging
 }
-
-

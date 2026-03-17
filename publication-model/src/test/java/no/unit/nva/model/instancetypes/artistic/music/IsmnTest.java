@@ -7,6 +7,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.commons.json.JsonUtils;
@@ -16,28 +17,29 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class IsmnTest {
 
-    public static final String DEFAULT_ISMN_SEPARATOR = "-";
-    public static final String NO_SEPARATOR = "";
-    public static final String SPACE = " ";
-    private static final String VALID_ISMN_10 = "M-2306-7118-7";
-    private static final String VALID_ISMN_13 = "979-0-9016791-7-7";
-    private static final String INVALID_CHECKBIT_ISMN = "979-0-9016791-72";
-    private static final String INVALID_SHORT_LENGTH_ISMN = "979-0-9016791";
-    private static final String INVALID_LONG_LENGTH_ISMN = "979-0-9016791-1233";
-    private static final String INVALID_PREFIX_ISMN = "929-0-9016791-7";
+  public static final String DEFAULT_ISMN_SEPARATOR = "-";
+  public static final String NO_SEPARATOR = "";
+  public static final String SPACE = " ";
+  private static final String VALID_ISMN_10 = "M-2306-7118-7";
+  private static final String VALID_ISMN_13 = "979-0-9016791-7-7";
+  private static final String INVALID_CHECKBIT_ISMN = "979-0-9016791-72";
+  private static final String INVALID_SHORT_LENGTH_ISMN = "979-0-9016791";
+  private static final String INVALID_LONG_LENGTH_ISMN = "979-0-9016791-1233";
+  private static final String INVALID_PREFIX_ISMN = "929-0-9016791-7";
 
-    @Test
-    void shouldValidateValidIsmn13() {
-        assertDoesNotThrow(() -> new Ismn(VALID_ISMN_13));
-    }
+  @Test
+  void shouldValidateValidIsmn13() {
+    assertDoesNotThrow(() -> new Ismn(VALID_ISMN_13));
+  }
 
-    @Test
-    void musicNotationCanBeCreatedWhenInputIsValidIsmn10() {
-        assertDoesNotThrow(() -> new Ismn(VALID_ISMN_10));
-    }
+  @Test
+  void musicNotationCanBeCreatedWhenInputIsValidIsmn10() {
+    assertDoesNotThrow(() -> new Ismn(VALID_ISMN_10));
+  }
 
-    @ParameterizedTest(name = "ISMNs like {0} throw InvalidIsmnException")
-    @ValueSource(strings = {
+  @ParameterizedTest(name = "ISMNs like {0} throw InvalidIsmnException")
+  @ValueSource(
+      strings = {
         INVALID_PREFIX_ISMN,
         INVALID_SHORT_LENGTH_ISMN,
         INVALID_LONG_LENGTH_ISMN,
@@ -53,15 +55,16 @@ class IsmnTest {
         "",
         " ",
         "    "
-    })
-    void shouldThrowExceptionsWhenIsmsAreInvalid(String candidate) {
-        var exception = assertThrows(InvalidIsmnException.class, () -> new Ismn(candidate));
-        var expectedMessage = String.format(INVALID_ISMN_TEMPLATE, candidate);
-        assertThat(exception.getMessage(), containsString(expectedMessage));
-    }
+      })
+  void shouldThrowExceptionsWhenIsmsAreInvalid(String candidate) {
+    var exception = assertThrows(InvalidIsmnException.class, () -> new Ismn(candidate));
+    var expectedMessage = String.format(INVALID_ISMN_TEMPLATE, candidate);
+    assertThat(exception.getMessage(), containsString(expectedMessage));
+  }
 
-    @ParameterizedTest(name = "Music notation getIsmn reformats {0} correctly")
-    @ValueSource(strings = {
+  @ParameterizedTest(name = "Music notation getIsmn reformats {0} correctly")
+  @ValueSource(
+      strings = {
         "M-001-12050-0",
         "M-004-16663-5",
         "M-049-05851-3",
@@ -87,33 +90,33 @@ class IsmnTest {
         "979-0-800059-00-1",
         "979-0-9002305-4-6",
         "979-0-9002013-3-1",
-    })
-    void shouldReturnIsmnStrippedOfAllSeparators(String candidate) throws InvalidIsmnException {
-        var expectedFormat = candidate.replaceAll(DEFAULT_ISMN_SEPARATOR, NO_SEPARATOR);
-        var candidateWithSpaces = candidate.replaceAll(DEFAULT_ISMN_SEPARATOR, SPACE);
-        assertThat(new Ismn(candidate).toString(), is(equalTo(expectedFormat)));
-        assertThat(new Ismn(candidateWithSpaces).toString(), is(equalTo(expectedFormat)));
-    }
+      })
+  void shouldReturnIsmnStrippedOfAllSeparators(String candidate) throws InvalidIsmnException {
+    var expectedFormat = candidate.replaceAll(DEFAULT_ISMN_SEPARATOR, NO_SEPARATOR);
+    var candidateWithSpaces = candidate.replaceAll(DEFAULT_ISMN_SEPARATOR, SPACE);
+    assertThat(new Ismn(candidate).toString(), is(equalTo(expectedFormat)));
+    assertThat(new Ismn(candidateWithSpaces).toString(), is(equalTo(expectedFormat)));
+  }
 
-    @Test
-    void shouldSerializeAsTypedObject() throws InvalidIsmnException, JsonProcessingException {
-        var ismn = new Ismn(VALID_ISMN_13);
-        var expectedJson = createExpectedJson(ismn);
-        var actualJsonString = JsonUtils.dtoObjectMapper.writeValueAsString(ismn);
-        var actualJson = JsonUtils.dtoObjectMapper.readTree(actualJsonString);
-        assertThat(actualJson, is(equalTo(expectedJson)));
-    }
+  @Test
+  void shouldSerializeAsTypedObject() throws InvalidIsmnException, JsonProcessingException {
+    var ismn = new Ismn(VALID_ISMN_13);
+    var expectedJson = createExpectedJson(ismn);
+    var actualJsonString = JsonUtils.dtoObjectMapper.writeValueAsString(ismn);
+    var actualJson = JsonUtils.dtoObjectMapper.readTree(actualJsonString);
+    assertThat(actualJson, is(equalTo(expectedJson)));
+  }
 
-    @Test
-    void musicNotationReturnsEmptyIsmnWhenIsmnIsNull() {
-        assertDoesNotThrow(() -> new Ismn(null));
-    }
+  @Test
+  void musicNotationReturnsEmptyIsmnWhenIsmnIsNull() {
+    assertDoesNotThrow(() -> new Ismn(null));
+  }
 
-    private ObjectNode createExpectedJson(Ismn ismn) {
-        var expectedJson = JsonUtils.dtoObjectMapper.createObjectNode();
-        expectedJson.put("type", Ismn.class.getSimpleName());
-        expectedJson.put("value", ismn.value());
-        expectedJson.put("formatted", ismn.formatted());
-        return expectedJson;
-    }
+  private ObjectNode createExpectedJson(Ismn ismn) {
+    var expectedJson = JsonUtils.dtoObjectMapper.createObjectNode();
+    expectedJson.put("type", Ismn.class.getSimpleName());
+    expectedJson.put("value", ismn.value());
+    expectedJson.put("formatted", ismn.formatted());
+    return expectedJson;
+  }
 }

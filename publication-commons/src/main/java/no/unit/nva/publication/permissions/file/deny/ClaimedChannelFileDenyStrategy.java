@@ -9,36 +9,37 @@ import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
 public class ClaimedChannelFileDenyStrategy extends FileStrategyBase implements FileDenyStrategy {
 
-    public ClaimedChannelFileDenyStrategy(FileEntry file, UserInstance userInstance, Resource resource) {
-        super(file, userInstance, resource);
+  public ClaimedChannelFileDenyStrategy(
+      FileEntry file, UserInstance userInstance, Resource resource) {
+    super(file, userInstance, resource);
+  }
+
+  @Override
+  public boolean deniesAction(FileOperation permission) {
+    if (currentUserIsFileOwner() && !fileIsFinalized()) {
+      return false;
     }
 
-    @Override
-    public boolean deniesAction(FileOperation permission) {
-        if (currentUserIsFileOwner() && !fileIsFinalized()) {
-            return false;
-        }
+    return isDeniedOperation(permission)
+        && !isExternalClientWithRelation()
+        && isDeniedUserByClaimedChannelWithinScope();
+  }
 
-        return isDeniedOperation(permission)
-               && !isExternalClientWithRelation()
-               && isDeniedUserByClaimedChannelWithinScope();
-    }
+  private boolean isDeniedOperation(FileOperation permission) {
+    return resourceIsDegreeWithEmbargo()
+        ? isWriteOrDeleteOrDownload(permission)
+        : isWriteOrDelete(permission);
+  }
 
-    private boolean isDeniedOperation(FileOperation permission) {
-        return resourceIsDegreeWithEmbargo()
-                   ? isWriteOrDeleteOrDownload(permission)
-                   : isWriteOrDelete(permission);
-    }
+  private boolean resourceIsDegreeWithEmbargo() {
+    return resourceIsDegree() && fileHasEmbargo();
+  }
 
-    private boolean resourceIsDegreeWithEmbargo() {
-        return resourceIsDegree() && fileHasEmbargo();
-    }
+  private boolean isDeniedUserByClaimedChannelWithinScope() {
+    return hasClaimedPublicationChannel() && !userBelongsToPublicationChannelOwner();
+  }
 
-    private boolean isDeniedUserByClaimedChannelWithinScope() {
-        return hasClaimedPublicationChannel() && !userBelongsToPublicationChannelOwner();
-    }
-
-    private boolean hasClaimedPublicationChannel() {
-        return resource.getPrioritizedClaimedPublicationChannelWithinScope().isPresent();
-    }
+  private boolean hasClaimedPublicationChannel() {
+    return resource.getPrioritizedClaimedPublicationChannelWithinScope().isPresent();
+  }
 }

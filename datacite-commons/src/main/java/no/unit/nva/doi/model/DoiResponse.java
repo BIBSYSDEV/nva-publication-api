@@ -12,33 +12,33 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeName("Doi")
 public class DoiResponse {
 
-    private final URI doi;
+  private final URI doi;
 
-    @JsonCreator
-    public DoiResponse(@JsonProperty("doi") URI doi) {
-        this.doi = doi;
-    }
+  @JsonCreator
+  public DoiResponse(@JsonProperty("doi") URI doi) {
+    this.doi = doi;
+  }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        DoiResponse that = (DoiResponse) o;
-        return Objects.equals(getDoi(), that.getDoi());
+  @JacocoGenerated
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    DoiResponse that = (DoiResponse) o;
+    return Objects.equals(getDoi(), that.getDoi());
+  }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getDoi());
-    }
+  @JacocoGenerated
+  @Override
+  public int hashCode() {
+    return Objects.hash(getDoi());
+  }
 
-    public URI getDoi() {
-        return doi;
-    }
+  public URI getDoi() {
+    return doi;
+  }
 }

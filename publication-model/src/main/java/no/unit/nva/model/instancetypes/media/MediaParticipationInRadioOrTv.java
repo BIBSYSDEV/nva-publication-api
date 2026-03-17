@@ -6,9 +6,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class MediaParticipationInRadioOrTv extends MediaBase {
 
-    @JsonCreator
-    public MediaParticipationInRadioOrTv() {
-        super();
-    }
-
+  @JsonCreator
+  public MediaParticipationInRadioOrTv() {
+    super();
+  }
 }

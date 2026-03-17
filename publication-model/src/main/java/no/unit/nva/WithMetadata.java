@@ -11,27 +11,27 @@ import no.unit.nva.model.funding.Funding;
 
 public interface WithMetadata extends PublicationBase {
 
-    EntityDescription getEntityDescription();
+  EntityDescription getEntityDescription();
 
-    void setEntityDescription(EntityDescription entityDescription);
+  void setEntityDescription(EntityDescription entityDescription);
 
-    List<ResearchProject> getProjects();
+  List<ResearchProject> getProjects();
 
-    void setProjects(List<ResearchProject> projects);
+  void setProjects(List<ResearchProject> projects);
 
-    List<URI> getSubjects();
+  List<URI> getSubjects();
 
-    void setSubjects(List<URI> subjects);
+  void setSubjects(List<URI> subjects);
 
-    Set<Funding> getFundings();
+  Set<Funding> getFundings();
 
-    void setFundings(Set<Funding> fundings);
+  void setFundings(Set<Funding> fundings);
 
-    String getRightsHolder();
+  String getRightsHolder();
 
-    void setRightsHolder(String rightsHolder);
+  void setRightsHolder(String rightsHolder);
 
-    List<ImportDetail> getImportDetails();
+  List<ImportDetail> getImportDetails();
 
-    void setImportDetails(Collection<ImportDetail> importDetails);
+  void setImportDetails(Collection<ImportDetail> importDetails);
 }

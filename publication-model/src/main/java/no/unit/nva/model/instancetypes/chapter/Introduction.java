@@ -6,7 +6,7 @@ import no.unit.nva.model.pages.Range;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Introduction extends ChapterArticle {
-    public Introduction(@JsonProperty(PAGES_FIELD) Range pages) {
-        super(pages);
-    }
+  public Introduction(@JsonProperty(PAGES_FIELD) Range pages) {
+    super(pages);
+  }
 }

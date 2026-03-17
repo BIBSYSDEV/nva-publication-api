@@ -1,12 +1,12 @@
 package no.unit.nva.cristin.mapper.nva.exceptions;
 
-    public final class UnconfirmedJournalException extends RuntimeException {
+public final class UnconfirmedJournalException extends RuntimeException {
 
-        private UnconfirmedJournalException() {
-            super();
-        }
+  private UnconfirmedJournalException() {
+    super();
+  }
 
-        public static String name() {
-            return UnconfirmedJournalException.class.getSimpleName();
-        }
+  public static String name() {
+    return UnconfirmedJournalException.class.getSimpleName();
+  }
 }

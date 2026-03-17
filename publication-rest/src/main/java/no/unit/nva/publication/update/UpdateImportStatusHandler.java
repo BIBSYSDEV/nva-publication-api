@@ -18,54 +18,61 @@ import nva.commons.core.JacocoGenerated;
 
 public class UpdateImportStatusHandler extends ApiGatewayHandler<ImportStatusDto, ImportCandidate> {
 
-    public static final String IMPORT_CANDIDATE_IDENTIFIER_PATH_PARAMETER = "importCandidateIdentifier";
-    public static final String TABLE_NAME = new Environment().readEnv("TABLE_NAME");
-    private final ResourceService importCandidateService;
+  public static final String IMPORT_CANDIDATE_IDENTIFIER_PATH_PARAMETER =
+      "importCandidateIdentifier";
+  public static final String TABLE_NAME = new Environment().readEnv("TABLE_NAME");
+  private final ResourceService importCandidateService;
 
-    @JacocoGenerated
-    public UpdateImportStatusHandler() {
-        this(ResourceService.defaultService(TABLE_NAME), new Environment());
-    }
+  @JacocoGenerated
+  public UpdateImportStatusHandler() {
+    this(ResourceService.defaultService(TABLE_NAME), new Environment());
+  }
 
-    public UpdateImportStatusHandler(ResourceService importCandidateService, Environment environment) {
-        super(ImportStatusDto.class, environment);
-        this.importCandidateService = importCandidateService;
-    }
+  public UpdateImportStatusHandler(
+      ResourceService importCandidateService, Environment environment) {
+    super(ImportStatusDto.class, environment);
+    this.importCandidateService = importCandidateService;
+  }
 
-    @Override
-    protected void validateRequest(ImportStatusDto importStatusDto, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
-        validateAccessRights(requestInfo);
-    }
+  @Override
+  protected void validateRequest(
+      ImportStatusDto importStatusDto, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
+    validateAccessRights(requestInfo);
+  }
 
-    @Override
-    protected ImportCandidate processInput(ImportStatusDto input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
-        var identifier = getIdentifier(requestInfo);
-        var importStatus = input.toImportStatus().copy()
-                               .withSetBy(new Username(requestInfo.getUserName()))
-                               .withModifiedDate(Instant.now())
-                               .build();
-        return importCandidateService.updateImportStatus(identifier, importStatus);
-    }
+  @Override
+  protected ImportCandidate processInput(
+      ImportStatusDto input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+    var identifier = getIdentifier(requestInfo);
+    var importStatus =
+        input
+            .toImportStatus()
+            .copy()
+            .withSetBy(new Username(requestInfo.getUserName()))
+            .withModifiedDate(Instant.now())
+            .build();
+    return importCandidateService.updateImportStatus(identifier, importStatus);
+  }
 
-    @Override
-    protected Integer getSuccessStatusCode(ImportStatusDto input, ImportCandidate output) {
-        return HttpURLConnection.HTTP_OK;
-    }
+  @Override
+  protected Integer getSuccessStatusCode(ImportStatusDto input, ImportCandidate output) {
+    return HttpURLConnection.HTTP_OK;
+  }
 
-    private SortableIdentifier getIdentifier(RequestInfo requestInfo) {
-        var identifier = requestInfo.getPathParameters().get(IMPORT_CANDIDATE_IDENTIFIER_PATH_PARAMETER);
-        return new SortableIdentifier(identifier);
-    }
+  private SortableIdentifier getIdentifier(RequestInfo requestInfo) {
+    var identifier =
+        requestInfo.getPathParameters().get(IMPORT_CANDIDATE_IDENTIFIER_PATH_PARAMETER);
+    return new SortableIdentifier(identifier);
+  }
 
-    private boolean isNotAuthorized(RequestInfo requestInfo) {
-        return !requestInfo.userIsAuthorized(AccessRight.MANAGE_IMPORT);
-    }
+  private boolean isNotAuthorized(RequestInfo requestInfo) {
+    return !requestInfo.userIsAuthorized(AccessRight.MANAGE_IMPORT);
+  }
 
-    private void validateAccessRights(RequestInfo requestInfo) throws NotAuthorizedException {
-        if (isNotAuthorized(requestInfo)) {
-            throw new NotAuthorizedException();
-        }
+  private void validateAccessRights(RequestInfo requestInfo) throws NotAuthorizedException {
+    if (isNotAuthorized(requestInfo)) {
+      throw new NotAuthorizedException();
     }
+  }
 }

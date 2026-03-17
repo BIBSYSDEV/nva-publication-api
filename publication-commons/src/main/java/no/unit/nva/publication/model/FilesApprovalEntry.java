@@ -5,6 +5,7 @@ import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRA
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.APPROVED_FILES_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.FILES_FOR_APPROVAL_FIELD;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.WORKFLOW;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -37,142 +38,171 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(name = FilesApprovalThesis.TYPE, value = FilesApprovalThesis.class),
-    @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class)})
+@JsonSubTypes({
+  @JsonSubTypes.Type(name = FilesApprovalThesis.TYPE, value = FilesApprovalThesis.class),
+  @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class)
+})
 public abstract class FilesApprovalEntry extends TicketEntry {
 
-    private static final Logger logger = LoggerFactory.getLogger(FilesApprovalEntry.class);
+  private static final Logger logger = LoggerFactory.getLogger(FilesApprovalEntry.class);
 
-    @JsonProperty(WORKFLOW)
-    private PublishingWorkflow workflow;
-    @JsonProperty(APPROVED_FILES_FIELD)
-    private Set<File> approvedFiles;
-    @JsonProperty(FILES_FOR_APPROVAL_FIELD)
-    private Set<File> filesForApproval;
+  @JsonProperty(WORKFLOW)
+  private PublishingWorkflow workflow;
 
-    @Override
-    public abstract void validateCreationRequirements(Publication publication) throws ConflictException;
+  @JsonProperty(APPROVED_FILES_FIELD)
+  private Set<File> approvedFiles;
 
-    @Override
-    public FilesApprovalEntry complete(Publication publication, UserInstance userInstance) {
-        var completed = (FilesApprovalEntry) super.complete(publication, userInstance);
-        completed.setApprovedFiles(getPendingFilesToApprove(publication));
-        completed.setFilesForApproval(Set.of());
-        return completed;
+  @JsonProperty(FILES_FOR_APPROVAL_FIELD)
+  private Set<File> filesForApproval;
+
+  @Override
+  public abstract void validateCreationRequirements(Publication publication)
+      throws ConflictException;
+
+  @Override
+  public FilesApprovalEntry complete(Publication publication, UserInstance userInstance) {
+    var completed = (FilesApprovalEntry) super.complete(publication, userInstance);
+    completed.setApprovedFiles(getPendingFilesToApprove(publication));
+    completed.setFilesForApproval(Set.of());
+    return completed;
+  }
+
+  private Set<File> getPendingFilesToApprove(Publication publication) {
+    return getFilesForApproval().stream()
+        .filter(
+            file ->
+                publication
+                    .getFile(file.getIdentifier())
+                    .filter(PendingFile.class::isInstance)
+                    .isPresent())
+        .map(this::toApprovedFile)
+        .collect(Collectors.toSet());
+  }
+
+  public FilesApprovalEntry applyPublicationChannelClaim(
+      URI organizationId, SortableIdentifier channelClaimIdentifier) {
+    this.setReceivingOrganizationDetails(
+        new ReceivingOrganizationDetails(organizationId, organizationId, channelClaimIdentifier));
+    logger.info(
+        "Ticket {} is redirected to {} due to claimed channel {}.",
+        this.getIdentifier(),
+        organizationId,
+        channelClaimIdentifier);
+    return this;
+  }
+
+  public FilesApprovalEntry clearPublicationChannelClaim(
+      SortableIdentifier channelClaimIdentifier) {
+    if (isInfluencedByClaimedChannel(channelClaimIdentifier)) {
+      this.setReceivingOrganizationDetails(
+          new ReceivingOrganizationDetails(getOwnerAffiliation(), getResponsibilityArea()));
+      logger.info(
+          "Ticket {} is redirected back to {}/{}.",
+          this.getIdentifier(),
+          getOwnerAffiliation(),
+          getResponsibilityArea());
+    } else {
+      logger.info(
+          "Not redirecting ticket {} as it is no longer influenced by claimed channel {}.",
+          this.getIdentifier(),
+          channelClaimIdentifier);
     }
+    return this;
+  }
 
-    private Set<File> getPendingFilesToApprove(Publication publication) {
-        return getFilesForApproval().stream()
-                   .filter(file -> publication.getFile(file.getIdentifier())
-                                       .filter(PendingFile.class::isInstance)
-                                       .isPresent())
-                   .map(this::toApprovedFile)
-                   .collect(Collectors.toSet());
-    }
+  @JsonIgnore
+  private boolean isInfluencedByClaimedChannel(SortableIdentifier channelClaimIdentifier) {
+    return channelClaimIdentifier.equals(
+        getReceivingOrganizationDetails().influencingChannelClaim());
+  }
 
-    public FilesApprovalEntry applyPublicationChannelClaim(URI organizationId,
-                                                           SortableIdentifier channelClaimIdentifier) {
-        this.setReceivingOrganizationDetails(
-            new ReceivingOrganizationDetails(organizationId, organizationId, channelClaimIdentifier));
-        logger.info("Ticket {} is redirected to {} due to claimed channel {}.",
-                    this.getIdentifier(), organizationId, channelClaimIdentifier);
-        return this;
-    }
+  protected FilesApprovalEntry completeAndApproveFiles(
+      Resource resource, UserInstance userInstance) {
+    this.setAssignee(new Username(userInstance.getUsername()));
+    return this.complete(resource.toPublication(), userInstance);
+  }
 
-    public FilesApprovalEntry clearPublicationChannelClaim(SortableIdentifier channelClaimIdentifier) {
-        if (isInfluencedByClaimedChannel(channelClaimIdentifier)) {
-            this.setReceivingOrganizationDetails(
-                new ReceivingOrganizationDetails(getOwnerAffiliation(), getResponsibilityArea()));
-            logger.info("Ticket {} is redirected back to {}/{}.",
-                        this.getIdentifier(), getOwnerAffiliation(), getResponsibilityArea());
-        } else {
-            logger.info("Not redirecting ticket {} as it is no longer influenced by claimed channel {}.",
-                        this.getIdentifier(), channelClaimIdentifier);
-        }
-        return this;
-    }
+  public TicketEntry persistAutoComplete(
+      TicketService ticketService, Publication publication, UserInstance userInstance)
+      throws ApiGatewayException {
+    return this.complete(publication, userInstance).persistNewTicket(ticketService);
+  }
 
-    @JsonIgnore
-    private boolean isInfluencedByClaimedChannel(SortableIdentifier channelClaimIdentifier) {
-        return channelClaimIdentifier.equals(getReceivingOrganizationDetails().influencingChannelClaim());
-    }
+  public void rejectRejectedFiles(ResourceService resourceService) {
+    getFilesForApproval().stream()
+        .map(PendingFile.class::cast)
+        .forEach(
+            file ->
+                FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
+                    .fetch(resourceService)
+                    .ifPresent(
+                        fileEntry ->
+                            fileEntry.reject(
+                                resourceService, new User(getFinalizedBy().getValue()))));
+  }
 
-    protected FilesApprovalEntry completeAndApproveFiles(Resource resource, UserInstance userInstance) {
-        this.setAssignee(new Username(userInstance.getUsername()));
-        return this.complete(resource.toPublication(), userInstance);
-    }
+  @Override
+  public abstract TicketEntry copy();
 
-    public TicketEntry persistAutoComplete(TicketService ticketService, Publication publication,
-                                           UserInstance userInstance) throws ApiGatewayException {
-        return this.complete(publication, userInstance).persistNewTicket(ticketService);
-    }
+  @Override
+  public abstract TicketDao toDao();
 
-    public void rejectRejectedFiles(ResourceService resourceService) {
-        getFilesForApproval().stream()
-            .map(PendingFile.class::cast)
-            .forEach(file -> FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
-                                 .fetch(resourceService)
-                                 .ifPresent(fileEntry -> fileEntry.reject(resourceService,
-                                                                          new User(getFinalizedBy().getValue()))));
-    }
+  @Override
+  public abstract String getType();
 
-    @Override
-    public abstract TicketEntry copy();
+  public Set<File> getApprovedFiles() {
+    return nonNull(approvedFiles) ? approvedFiles : Set.of();
+  }
 
-    @Override
-    public abstract TicketDao toDao();
+  public void setApprovedFiles(Set<File> approvedFiles) {
+    this.approvedFiles = approvedFiles;
+  }
 
-    @Override
-    public abstract String getType();
+  public Set<File> getFilesForApproval() {
+    return nonNull(filesForApproval) ? filesForApproval : Set.of();
+  }
 
-    public Set<File> getApprovedFiles() {
-        return nonNull(approvedFiles) ? approvedFiles : Set.of();
-    }
+  public void setFilesForApproval(Collection<File> filesForApproval) {
+    this.filesForApproval = new HashSet<>(filesForApproval);
+  }
 
-    public void setApprovedFiles(Set<File> approvedFiles) {
-        this.approvedFiles = approvedFiles;
-    }
+  public PublishingWorkflow getWorkflow() {
+    return workflow;
+  }
 
-    public Set<File> getFilesForApproval() {
-        return nonNull(filesForApproval) ? filesForApproval : Set.of();
-    }
+  public void setWorkflow(PublishingWorkflow workflow) {
+    this.workflow = workflow;
+  }
 
-    public void setFilesForApproval(Collection<File> filesForApproval) {
-        this.filesForApproval = new HashSet<>(filesForApproval);
-    }
+  public void publishApprovedFiles(ResourceService resourceService) {
+    getApprovedFiles()
+        .forEach(
+            file ->
+                FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
+                    .fetch(resourceService)
+                    .ifPresent(
+                        fileEntry ->
+                            fileEntry.approve(
+                                resourceService, new User(getFinalizedBy().getValue()))));
+  }
 
-    public PublishingWorkflow getWorkflow() {
-        return workflow;
-    }
+  public FilesApprovalEntry withFilesForApproval(Collection<File> filesForApproval) {
+    setFilesForApproval(filesForApproval);
+    return this;
+  }
 
-    public void setWorkflow(PublishingWorkflow workflow) {
-        this.workflow = workflow;
-    }
+  private File toApprovedFile(File file) {
+    return file instanceof PendingFile<?, ?> pendingFile ? pendingFile.approve() : file;
+  }
 
-    public void publishApprovedFiles(ResourceService resourceService) {
-        getApprovedFiles().forEach(file -> FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
-                                               .fetch(resourceService)
-                                               .ifPresent(fileEntry -> fileEntry.approve(resourceService, new User(
-                                                   getFinalizedBy().getValue()))));
-    }
+  protected boolean canPublishMetadataAndNoFilesToApprove(PublishingWorkflow workflow) {
+    return REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(workflow) && getFilesForApproval().isEmpty();
+  }
 
-    public FilesApprovalEntry withFilesForApproval(Collection<File> filesForApproval) {
-        setFilesForApproval(filesForApproval);
-        return this;
-    }
-
-    private File toApprovedFile(File file) {
-        return file instanceof PendingFile<?, ?> pendingFile ? pendingFile.approve() : file;
-    }
-
-    protected boolean canPublishMetadataAndNoFilesToApprove(PublishingWorkflow workflow) {
-        return REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(workflow) && getFilesForApproval().isEmpty();
-    }
-
-    protected FilesApprovalEntry handleMetadataOnlyWorkflow(Resource resource, UserInstance userInstance,
-                                                            PublishingWorkflow workflow) {
-        return canPublishMetadataAndNoFilesToApprove(workflow)
-                   ? this.complete(resource.toPublication(), userInstance)
-                   : this;
-    }
+  protected FilesApprovalEntry handleMetadataOnlyWorkflow(
+      Resource resource, UserInstance userInstance, PublishingWorkflow workflow) {
+    return canPublishMetadataAndNoFilesToApprove(workflow)
+        ? this.complete(resource.toPublication(), userInstance)
+        : this;
+  }
 }

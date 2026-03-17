@@ -1,6 +1,7 @@
 package no.unit.nva.publication.s3imports;
 
 import static nva.commons.core.attempt.Try.attempt;
+
 import java.io.StringReader;
 import java.util.List;
 import java.util.Objects;
@@ -15,40 +16,39 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class DublinCore {
 
-    private static final JAXBContext JAXB_CONTEXT = createJaxbContext();
+  private static final JAXBContext JAXB_CONTEXT = createJaxbContext();
 
-    @XmlElement(name = "dcvalue")
-    private List<DcValue> dcValues;
+  @XmlElement(name = "dcvalue")
+  private List<DcValue> dcValues;
 
-    public DublinCore() {
+  public DublinCore() {}
+
+  public DublinCore(List<DcValue> dcValues) {
+    this.dcValues = dcValues;
+  }
+
+  public static DublinCore fromString(String value) {
+    return attempt(() -> unmarshallValue(value)).orElseThrow();
+  }
+
+  public List<DcValue> getAbstracts() {
+    return dcValues.stream()
+        .filter(Objects::nonNull)
+        .filter(DcValue::isAbstract)
+        .filter(DcValue::hasValue)
+        .toList();
+  }
+
+  private static JAXBContext createJaxbContext() {
+    try {
+      return JAXBContext.newInstance(DublinCore.class);
+    } catch (JAXBException e) {
+      throw new IllegalStateException("Failed to create JAXBContext for DublinCore", e);
     }
+  }
 
-    public DublinCore(List<DcValue> dcValues) {
-        this.dcValues = dcValues;
-    }
-
-    public static DublinCore fromString(String value) {
-        return attempt(() -> unmarshallValue(value)).orElseThrow();
-    }
-
-    public List<DcValue> getAbstracts() {
-        return dcValues.stream()
-                   .filter(Objects::nonNull)
-                   .filter(DcValue::isAbstract)
-                   .filter(DcValue::hasValue)
-                   .toList();
-    }
-
-    private static JAXBContext createJaxbContext() {
-        try {
-            return JAXBContext.newInstance(DublinCore.class);
-        } catch (JAXBException e) {
-            throw new IllegalStateException("Failed to create JAXBContext for DublinCore", e);
-        }
-    }
-
-    private static DublinCore unmarshallValue(String value) throws JAXBException {
-        var unmarshaller = JAXB_CONTEXT.createUnmarshaller();
-        return (DublinCore) unmarshaller.unmarshal(new StringReader(value));
-    }
+  private static DublinCore unmarshallValue(String value) throws JAXBException {
+    var unmarshaller = JAXB_CONTEXT.createUnmarshaller();
+    return (DublinCore) unmarshaller.unmarshal(new StringReader(value));
+  }
 }

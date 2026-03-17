@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import java.util.List;
 import no.scopus.generated.CitationTitleTp;
 import no.scopus.generated.CitationtypeAtt;
@@ -34,141 +35,180 @@ import org.junit.jupiter.api.Test;
 
 public class ScopusConverterTest {
 
-    @Test
-    void shouldReturnImportCandidateWithoutTitleWhenTitleListFromScopusXmlISEmpty() {
-        var generator = new ScopusGenerator();
-        generator.getDocument().getItem().getItem().getBibrecord().getHead().getCitationTitle().getTitletext().clear();
-        var candidate = generateImportCandidate(generator);
+  @Test
+  void shouldReturnImportCandidateWithoutTitleWhenTitleListFromScopusXmlISEmpty() {
+    var generator = new ScopusGenerator();
+    generator
+        .getDocument()
+        .getItem()
+        .getItem()
+        .getBibrecord()
+        .getHead()
+        .getCitationTitle()
+        .getTitletext()
+        .clear();
+    var candidate = generateImportCandidate(generator);
 
-        assertThat(candidate.getEntityDescription().mainTitle(), is(nullValue()));
-    }
+    assertThat(candidate.getEntityDescription().mainTitle(), is(nullValue()));
+  }
 
-    @Test
-    void shouldReturnImportCandidateWithoutTitleWhenTitleFromXmlIsNull() {
-        var generator = new ScopusGenerator();
-        setNullTitle(generator);
-        var candidate = generateImportCandidate(generator);
+  @Test
+  void shouldReturnImportCandidateWithoutTitleWhenTitleFromXmlIsNull() {
+    var generator = new ScopusGenerator();
+    setNullTitle(generator);
+    var candidate = generateImportCandidate(generator);
 
-        assertThat(candidate.getEntityDescription().mainTitle(), is(nullValue()));
-    }
+    assertThat(candidate.getEntityDescription().mainTitle(), is(nullValue()));
+  }
 
-    @Test
-    void shouldReturnImportCandidateWithPublicationDateFromOaAccessEffectiveDateWhenDateIsPresent() {
-        var generator = new ScopusGenerator();
-        generator.getDocument().getMeta().setOpenAccess(new OpenAccessType());
-        generator.getDocument().getMeta().getOpenAccess().setOaAccessEffectiveDate("2024-10-16");
+  @Test
+  void shouldReturnImportCandidateWithPublicationDateFromOaAccessEffectiveDateWhenDateIsPresent() {
+    var generator = new ScopusGenerator();
+    generator.getDocument().getMeta().setOpenAccess(new OpenAccessType());
+    generator.getDocument().getMeta().getOpenAccess().setOaAccessEffectiveDate("2024-10-16");
 
-        var candidate = generateImportCandidate(generator);
+    var candidate = generateImportCandidate(generator);
 
-        var expectedPublicationDate = new PublicationDate.Builder().withYear("2024").withMonth("10").withDay("16").build();
+    var expectedPublicationDate =
+        new PublicationDate.Builder().withYear("2024").withMonth("10").withDay("16").build();
 
-        assertEquals(expectedPublicationDate, candidate.getEntityDescription().publicationDate());
-    }
+    assertEquals(expectedPublicationDate, candidate.getEntityDescription().publicationDate());
+  }
 
-    @Test
-    void shouldReturnImportCandidateWithPublicationDateFromDateSortWhenOaAccessEffectiveDateIsNotISODate() {
-        var generator = new ScopusGenerator();
-        generator.getDocument().getMeta().setOpenAccess(new OpenAccessType());
-        generator.getDocument().getMeta().getOpenAccess().setOaAccessEffectiveDate("2024");
+  @Test
+  void
+      shouldReturnImportCandidateWithPublicationDateFromDateSortWhenOaAccessEffectiveDateIsNotISODate() {
+    var generator = new ScopusGenerator();
+    generator.getDocument().getMeta().setOpenAccess(new OpenAccessType());
+    generator.getDocument().getMeta().getOpenAccess().setOaAccessEffectiveDate("2024");
 
-        var candidate = generateImportCandidate(generator);
+    var candidate = generateImportCandidate(generator);
 
-        var dateSort = generator.getDocument().getItem().getItem().getProcessInfo().getDateSort();
-        var expectedPublicationDate =
-            new PublicationDate.Builder().withYear(dateSort.getYear()).withMonth(dateSort.getMonth()).withDay(dateSort.getDay()).build();
+    var dateSort = generator.getDocument().getItem().getItem().getProcessInfo().getDateSort();
+    var expectedPublicationDate =
+        new PublicationDate.Builder()
+            .withYear(dateSort.getYear())
+            .withMonth(dateSort.getMonth())
+            .withDay(dateSort.getDay())
+            .build();
 
-        assertEquals(expectedPublicationDate, candidate.getEntityDescription().publicationDate());
-    }
+    assertEquals(expectedPublicationDate, candidate.getEntityDescription().publicationDate());
+  }
 
-    @Test
-    void shouldReturnImportCandidateFromDateSortWhenOaAccessEffectiveDateIsNotPresent() {
-        var generator = new ScopusGenerator();
+  @Test
+  void shouldReturnImportCandidateFromDateSortWhenOaAccessEffectiveDateIsNotPresent() {
+    var generator = new ScopusGenerator();
 
-        var candidate = generateImportCandidate(generator);
-        var dateSort = generator.getDocument().getItem().getItem().getProcessInfo().getDateSort();
-        var expectedPublicationDate =
-            new PublicationDate.Builder().withYear(dateSort.getYear()).withMonth(dateSort.getMonth()).withDay(dateSort.getDay()).build();
+    var candidate = generateImportCandidate(generator);
+    var dateSort = generator.getDocument().getItem().getItem().getProcessInfo().getDateSort();
+    var expectedPublicationDate =
+        new PublicationDate.Builder()
+            .withYear(dateSort.getYear())
+            .withMonth(dateSort.getMonth())
+            .withDay(dateSort.getDay())
+            .build();
 
-        assertEquals(expectedPublicationDate, candidate.getEntityDescription().publicationDate());
-    }
+    assertEquals(expectedPublicationDate, candidate.getEntityDescription().publicationDate());
+  }
 
-    @Test
-    void shouldThrowMissingNvaContributorExceptionWhenNoContributorsBelongToNvaCustomer() throws ApiGatewayException {
-        var generator = new ScopusGenerator();
-        var identityServiceClient = mock(IdentityServiceClient.class);
-        var contributorExtractor = mock(ContributorExtractor.class);
+  @Test
+  void shouldThrowMissingNvaContributorExceptionWhenNoContributorsBelongToNvaCustomer()
+      throws ApiGatewayException {
+    var generator = new ScopusGenerator();
+    var identityServiceClient = mock(IdentityServiceClient.class);
+    var contributorExtractor = mock(ContributorExtractor.class);
 
-        var nonNvaOrgId = randomUri();
-        when(contributorExtractor.generateContributors(any()))
-            .thenReturn(new ContributorsOrganizationsWrapper(
+    var nonNvaOrgId = randomUri();
+    when(contributorExtractor.generateContributors(any()))
+        .thenReturn(
+            new ContributorsOrganizationsWrapper(
                 List.of(randomImportContributorWithAffiliationId(nonNvaOrgId)),
-                List.of(nonNvaOrgId)
-            ));
+                List.of(nonNvaOrgId)));
 
-        var differentOrgId = randomUri();
-        when(identityServiceClient.getAllCustomers())
-            .thenReturn(new CustomerList(List.of(randomCustomer(differentOrgId))));
+    var differentOrgId = randomUri();
+    when(identityServiceClient.getAllCustomers())
+        .thenReturn(new CustomerList(List.of(randomCustomer(differentOrgId))));
 
-        var converter = new ScopusConverter(
+    var converter =
+        new ScopusConverter(
             generator.getDocument(),
             mock(PublicationChannelConnection.class),
             identityServiceClient,
             mock(ScopusFileConverter.class),
-            contributorExtractor
-        );
+            contributorExtractor);
 
-        assertThrows(MissingNvaContributorException.class, converter::generateImportCandidate);
-    }
+    assertThrows(MissingNvaContributorException.class, converter::generateImportCandidate);
+  }
 
-    @Test
-    void shouldMapCitationTitleForCitationTypeErWhenOriginalTitleIsMissing() {
-        var citationTitle = randomString();
-        var scopusDocument = createScopusDocumentWithCitationTypeAndCitationTitle(citationTitle);
-        var importCandidate = generateImportCandidate(scopusDocument);
+  @Test
+  void shouldMapCitationTitleForCitationTypeErWhenOriginalTitleIsMissing() {
+    var citationTitle = randomString();
+    var scopusDocument = createScopusDocumentWithCitationTypeAndCitationTitle(citationTitle);
+    var importCandidate = generateImportCandidate(scopusDocument);
 
-        assertEquals(citationTitle, importCandidate.getEntityDescription().mainTitle());
-    }
+    assertEquals(citationTitle, importCandidate.getEntityDescription().mainTitle());
+  }
 
-    private static ScopusGenerator createScopusDocumentWithCitationTypeAndCitationTitle(String nonOriginalTitle) {
-        var scopusGenerator = ScopusGenerator.create(CitationtypeAtt.ER);
-        var title = new CitationTitleTp();
-        var titletextTp = new TitletextTp();
-        titletextTp.setOriginal(YesnoAtt.N);
-        titletextTp.getContent().add(nonOriginalTitle);
-        title.getTitletext().add(titletextTp);
-        scopusGenerator.getDocument().getItem().getItem().getBibrecord().getHead().setCitationTitle(title);
-        return scopusGenerator;
-    }
+  private static ScopusGenerator createScopusDocumentWithCitationTypeAndCitationTitle(
+      String nonOriginalTitle) {
+    var scopusGenerator = ScopusGenerator.create(CitationtypeAtt.ER);
+    var title = new CitationTitleTp();
+    var titletextTp = new TitletextTp();
+    titletextTp.setOriginal(YesnoAtt.N);
+    titletextTp.getContent().add(nonOriginalTitle);
+    title.getTitletext().add(titletextTp);
+    scopusGenerator
+        .getDocument()
+        .getItem()
+        .getItem()
+        .getBibrecord()
+        .getHead()
+        .setCitationTitle(title);
+    return scopusGenerator;
+  }
 
-    private static ImportCandidate generateImportCandidate(ScopusGenerator generator) {
-        var identityServiceClient = mock(IdentityServiceClient.class);
-        var cristinConnection = mock(CristinConnection.class);
-        var contributorExtractor = mock(ContributorExtractor.class);
-        var affiliationId = randomUri();
-        when(contributorExtractor.generateContributors(any()))
-            .thenReturn(new ContributorsOrganizationsWrapper(List.of(
-                randomImportContributorWithAffiliationId(affiliationId)), List.of(affiliationId)));
-        var converter = new ScopusConverter(generator.getDocument(),
-                                            mock(PublicationChannelConnection.class),
-                                            identityServiceClient,
-                                            mock(ScopusFileConverter.class),
-                                            contributorExtractor);
-        when(attempt(identityServiceClient::getAllCustomers).orElseThrow())
-            .thenReturn(new CustomerList(List.of(randomCustomer(affiliationId))));
-        when(cristinConnection.fetchCristinOrganizationByCristinId(any()))
-            .thenReturn(randomCristinOrganization());
-        return converter.generateImportCandidate();
-    }
+  private static ImportCandidate generateImportCandidate(ScopusGenerator generator) {
+    var identityServiceClient = mock(IdentityServiceClient.class);
+    var cristinConnection = mock(CristinConnection.class);
+    var contributorExtractor = mock(ContributorExtractor.class);
+    var affiliationId = randomUri();
+    when(contributorExtractor.generateContributors(any()))
+        .thenReturn(
+            new ContributorsOrganizationsWrapper(
+                List.of(randomImportContributorWithAffiliationId(affiliationId)),
+                List.of(affiliationId)));
+    var converter =
+        new ScopusConverter(
+            generator.getDocument(),
+            mock(PublicationChannelConnection.class),
+            identityServiceClient,
+            mock(ScopusFileConverter.class),
+            contributorExtractor);
+    when(attempt(identityServiceClient::getAllCustomers).orElseThrow())
+        .thenReturn(new CustomerList(List.of(randomCustomer(affiliationId))));
+    when(cristinConnection.fetchCristinOrganizationByCristinId(any()))
+        .thenReturn(randomCristinOrganization());
+    return converter.generateImportCandidate();
+  }
 
-    private static void setNullTitle(ScopusGenerator generator) {
-        generator.getDocument().getItem().getItem().getBibrecord().getHead().getCitationTitle().getTitletext().clear();
-        generator.getDocument()
-            .getItem()
-            .getItem()
-            .getBibrecord()
-            .getHead()
-            .getCitationTitle()
-            .getTitletext()
-            .add(null);
-    }
+  private static void setNullTitle(ScopusGenerator generator) {
+    generator
+        .getDocument()
+        .getItem()
+        .getItem()
+        .getBibrecord()
+        .getHead()
+        .getCitationTitle()
+        .getTitletext()
+        .clear();
+    generator
+        .getDocument()
+        .getItem()
+        .getItem()
+        .getBibrecord()
+        .getHead()
+        .getCitationTitle()
+        .getTitletext()
+        .add(null);
+  }
 }

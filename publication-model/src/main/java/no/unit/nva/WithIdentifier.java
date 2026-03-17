@@ -4,8 +4,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 
 public interface WithIdentifier extends PublicationBase {
 
-    SortableIdentifier getIdentifier();
+  SortableIdentifier getIdentifier();
 
-    void setIdentifier(SortableIdentifier identifier);
-
+  void setIdentifier(SortableIdentifier identifier);
 }

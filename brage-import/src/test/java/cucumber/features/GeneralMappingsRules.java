@@ -5,14 +5,14 @@ import io.cucumber.java.en.When;
 
 public class GeneralMappingsRules {
 
-    private final ScenarioContext scenarioContext;
+  private final ScenarioContext scenarioContext;
 
-    public GeneralMappingsRules(ScenarioContext scenarioContext) {
-        this.scenarioContext = scenarioContext;
-    }
+  public GeneralMappingsRules(ScenarioContext scenarioContext) {
+    this.scenarioContext = scenarioContext;
+  }
 
-    @When("the nva publications are merged")
-    public void theNvaPublicationIsUpdated() {
-        scenarioContext.mergePublications();
-    }
+  @When("the nva publications are merged")
+  public void theNvaPublicationIsUpdated() {
+    scenarioContext.mergePublications();
+  }
 }

@@ -10,18 +10,18 @@ import org.junit.jupiter.api.Test;
 
 class PublicationSchemaGeneratorTest {
 
-    public static final String SCHEMA_YAML = "../documentation/schema.yaml";
+  public static final String SCHEMA_YAML = "../documentation/schema.yaml";
 
-    @Test
-    void writePublicationSchemaToFile() throws IOException {
-        var model = ModelConverters.getInstance().readAll(Publication.class);
-        model.forEach(this::removeDiscriminator);
+  @Test
+  void writePublicationSchemaToFile() throws IOException {
+    var model = ModelConverters.getInstance().readAll(Publication.class);
+    model.forEach(this::removeDiscriminator);
 
-        File file = new File(SCHEMA_YAML);
-        Yaml.pretty().writeValue(file, model);
-    }
+    File file = new File(SCHEMA_YAML);
+    Yaml.pretty().writeValue(file, model);
+  }
 
-    private void removeDiscriminator(String schemaName, Schema schema) {
-        schema.setDiscriminator(null);
-    }
+  private void removeDiscriminator(String schemaName, Schema schema) {
+    schema.setDiscriminator(null);
+  }
 }

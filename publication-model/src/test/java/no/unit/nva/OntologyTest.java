@@ -5,6 +5,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -37,124 +38,138 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class OntologyTest {
 
-    public static final ObjectMapper MAPPER = JsonUtils.dtoObjectMapper;
-    private static final URI BASE_URI = URI.create("https://localhost");
-    public static final JsonNode JSON_LD_CONTEXT =
-        attempt(() -> MAPPER.readTree(Publication.getJsonLdContext(BASE_URI))).orElseThrow();
-    public static final String ONTOLOGY_STRING = Publication.getOntology(BASE_URI);
+  public static final ObjectMapper MAPPER = JsonUtils.dtoObjectMapper;
+  private static final URI BASE_URI = URI.create("https://localhost");
+  public static final JsonNode JSON_LD_CONTEXT =
+      attempt(() -> MAPPER.readTree(Publication.getJsonLdContext(BASE_URI))).orElseThrow();
+  public static final String ONTOLOGY_STRING = Publication.getOntology(BASE_URI);
 
-    public static Stream<Class<?>> publicationInstanceProvider() {
-        return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
-    }
+  public static Stream<Class<?>> publicationInstanceProvider() {
+    return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
+  }
 
-    public static Stream<String> modelPropertiesProvider() {
-        return getModelProperties().stream();
-    }
+  public static Stream<String> modelPropertiesProvider() {
+    return getModelProperties().stream();
+  }
 
-    public static Stream<String> modelClassProvider() {
-        return getModelClasses().stream();
-    }
+  public static Stream<String> modelClassProvider() {
+    return getModelClasses().stream();
+  }
 
-    @Test
-    void shouldContainDistinctDescriptions() {
-        var ontologyValues = ONTOLOGY_STRING.lines()
-                                 .filter(line -> line.startsWith("nva:"))
-                                 .collect(Collectors.toList());
-        var distinctValues = ontologyValues.stream().distinct().collect(Collectors.toList());
-        String duplicatesMessage = ontologyValues.equals(distinctValues) ? null : getDuplicatesMessage(ontologyValues);
-        assertThat(duplicatesMessage, distinctValues, is(equalTo(ontologyValues)));
-    }
+  @Test
+  void shouldContainDistinctDescriptions() {
+    var ontologyValues =
+        ONTOLOGY_STRING
+            .lines()
+            .filter(line -> line.startsWith("nva:"))
+            .collect(Collectors.toList());
+    var distinctValues = ontologyValues.stream().distinct().collect(Collectors.toList());
+    String duplicatesMessage =
+        ontologyValues.equals(distinctValues) ? null : getDuplicatesMessage(ontologyValues);
+    assertThat(duplicatesMessage, distinctValues, is(equalTo(ontologyValues)));
+  }
 
-    @ParameterizedTest
-    @MethodSource("modelClassProvider")
-    void shouldContainEveryVisibleClassOfModel(String modelClass) {
-        var ontologyClasses = extractClassesFromOntology();
-        assertThat(ontologyClasses, hasItem(modelClass));
-    }
+  @ParameterizedTest
+  @MethodSource("modelClassProvider")
+  void shouldContainEveryVisibleClassOfModel(String modelClass) {
+    var ontologyClasses = extractClassesFromOntology();
+    assertThat(ontologyClasses, hasItem(modelClass));
+  }
 
-    @ParameterizedTest
-    @MethodSource("modelPropertiesProvider")
-    void shouldContainEveryVisiblePropertyOfModel(String modelProperty) {
-        var ontologyProperties = extractPropertiesFromOntology();
-        assertThat(ontologyProperties, hasItem(modelProperty));
-    }
+  @ParameterizedTest
+  @MethodSource("modelPropertiesProvider")
+  void shouldContainEveryVisiblePropertyOfModel(String modelProperty) {
+    var ontologyProperties = extractPropertiesFromOntology();
+    assertThat(ontologyProperties, hasItem(modelProperty));
+  }
 
-    private static String getDuplicatesMessage(List<String> ontologyValues) {
-        // Not a performant solution, with Collections.frequency, but here it is not important
-        var duplicates = ontologyValues.stream()
-                             .filter(e -> Collections.frequency(ontologyValues, e) > 1)
-                             .distinct()
-                             .collect(Collectors.joining(", "));
-        return "Duplicates found: " + duplicates;
-    }
+  private static String getDuplicatesMessage(List<String> ontologyValues) {
+    // Not a performant solution, with Collections.frequency, but here it is not important
+    var duplicates =
+        ontologyValues.stream()
+            .filter(e -> Collections.frequency(ontologyValues, e) > 1)
+            .distinct()
+            .collect(Collectors.joining(", "));
+    return "Duplicates found: " + duplicates;
+  }
 
-    private static Set<String> getModelClasses() {
-        return createModelFromJson(generateAllNvaTypes()).listStatements(null, RDF.type, (RDFNode) null).toSet().stream()
-                   .map(Statement::getObject)
-                   .map(RDFNode::asResource)
-                   .map(Resource::getLocalName)
-                   .collect(Collectors.toSet());
-    }
+  private static Set<String> getModelClasses() {
+    return createModelFromJson(generateAllNvaTypes())
+        .listStatements(null, RDF.type, (RDFNode) null)
+        .toSet()
+        .stream()
+        .map(Statement::getObject)
+        .map(RDFNode::asResource)
+        .map(Resource::getLocalName)
+        .collect(Collectors.toSet());
+  }
 
-    private static Set<String> getModelProperties() {
-        return createModelFromJson(generateAllNvaTypes()).listStatements(null, null, (RDFNode) null).toSet().stream()
-                   .map(Statement::getPredicate)
-                   .filter(OntologyTest::isNotRdfType)
-                   .map(Resource::getURI)
-                   .collect(Collectors.toSet());
-    }
+  private static Set<String> getModelProperties() {
+    return createModelFromJson(generateAllNvaTypes())
+        .listStatements(null, null, (RDFNode) null)
+        .toSet()
+        .stream()
+        .map(Statement::getPredicate)
+        .filter(OntologyTest::isNotRdfType)
+        .map(Resource::getURI)
+        .collect(Collectors.toSet());
+  }
 
-    private static boolean isNotRdfType(Property i) {
-        return !i.equals(RDF.type);
-    }
+  private static boolean isNotRdfType(Property i) {
+    return !i.equals(RDF.type);
+  }
 
-    private static List<InputStream> generateAllNvaTypes() {
-        return publicationInstanceProvider().map(PublicationGenerator::randomPublication)
-                   .map(OntologyTest::serializeToJson)
-                   .map(OntologyTest::addContextObject)
-                   .map(OntologyTest::toByteArrayInputStream)
-                   .collect(Collectors.toList());
-    }
+  private static List<InputStream> generateAllNvaTypes() {
+    return publicationInstanceProvider()
+        .map(PublicationGenerator::randomPublication)
+        .map(OntologyTest::serializeToJson)
+        .map(OntologyTest::addContextObject)
+        .map(OntologyTest::toByteArrayInputStream)
+        .collect(Collectors.toList());
+  }
 
-    private static ByteArrayInputStream toByteArrayInputStream(String item) {
-        return new ByteArrayInputStream(item.getBytes(StandardCharsets.UTF_8));
-    }
+  private static ByteArrayInputStream toByteArrayInputStream(String item) {
+    return new ByteArrayInputStream(item.getBytes(StandardCharsets.UTF_8));
+  }
 
-    private static String addContextObject(String string) {
-        var jsonNode = (ObjectNode) attempt(() -> MAPPER.readTree(string)).orElseThrow();
-        jsonNode.set("@context", JSON_LD_CONTEXT);
-        return attempt(() -> MAPPER.writeValueAsString(jsonNode)).orElseThrow();
-    }
+  private static String addContextObject(String string) {
+    var jsonNode = (ObjectNode) attempt(() -> MAPPER.readTree(string)).orElseThrow();
+    jsonNode.set("@context", JSON_LD_CONTEXT);
+    return attempt(() -> MAPPER.writeValueAsString(jsonNode)).orElseThrow();
+  }
 
-    private static Model createModelFromJson(List<InputStream> inputStreams) {
-        var model = ModelFactory.createDefaultModel();
-        inputStreams.forEach(item -> RDFDataMgr.read(model, item, Lang.JSONLD11));
-        return model;
-    }
+  private static Model createModelFromJson(List<InputStream> inputStreams) {
+    var model = ModelFactory.createDefaultModel();
+    inputStreams.forEach(item -> RDFDataMgr.read(model, item, Lang.JSONLD11));
+    return model;
+  }
 
-    private static String serializeToJson(Publication object) {
-        return attempt(() -> MAPPER.writeValueAsString(object)).orElseThrow();
-    }
+  private static String serializeToJson(Publication object) {
+    return attempt(() -> MAPPER.writeValueAsString(object)).orElseThrow();
+  }
 
-    private List<String> extractClassesFromOntology() {
-        var model = getOntologyModel();
-        return model.listStatements(null, RDF.type, RDFS.Class).toSet().stream()
-                   .map(Statement::getSubject)
-                   .map(Resource::getLocalName)
-                   .collect(Collectors.toList());
-    }
+  private List<String> extractClassesFromOntology() {
+    var model = getOntologyModel();
+    return model.listStatements(null, RDF.type, RDFS.Class).toSet().stream()
+        .map(Statement::getSubject)
+        .map(Resource::getLocalName)
+        .collect(Collectors.toList());
+  }
 
-    private List<String> extractPropertiesFromOntology() {
-        return getOntologyModel().listStatements(null, RDF.type, RDF.Property).toSet().stream()
-                   .map(Statement::getSubject)
-                   .map(Resource::getURI)
-                   .distinct()
-                   .collect(Collectors.toList());
-    }
+  private List<String> extractPropertiesFromOntology() {
+    return getOntologyModel().listStatements(null, RDF.type, RDF.Property).toSet().stream()
+        .map(Statement::getSubject)
+        .map(Resource::getURI)
+        .distinct()
+        .collect(Collectors.toList());
+  }
 
-    private Model getOntologyModel() {
-        var model = ModelFactory.createDefaultModel();
-        RDFDataMgr.read(model, new ByteArrayInputStream(ONTOLOGY_STRING.getBytes(StandardCharsets.UTF_8)), Lang.TURTLE);
-        return model;
-    }
+  private Model getOntologyModel() {
+    var model = ModelFactory.createDefaultModel();
+    RDFDataMgr.read(
+        model,
+        new ByteArrayInputStream(ONTOLOGY_STRING.getBytes(StandardCharsets.UTF_8)),
+        Lang.TURTLE);
+    return model;
+  }
 }

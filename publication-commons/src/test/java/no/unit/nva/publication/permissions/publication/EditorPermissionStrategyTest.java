@@ -5,6 +5,7 @@ import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.permissions.PermissionsTestUtils.getAccessRightsForEditor;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Set;
 import no.unit.nva.model.CuratingInstitution;
@@ -22,108 +23,147 @@ import org.junit.jupiter.params.provider.EnumSource.Mode;
 
 class EditorPermissionStrategyTest extends PublicationPermissionStrategyTest {
 
+  @ParameterizedTest(name = "Should deny editor {0} operation on non-degree resources")
+  @EnumSource(
+      value = PublicationOperation.class,
+      mode = Mode.EXCLUDE,
+      names = {"UNPUBLISH", "UPDATE", "PARTIAL_UPDATE", "TERMINATE"})
+  void shouldDenyEditorOnNonDegree(PublicationOperation operation)
+      throws JsonProcessingException, UnauthorizedException {
 
-    @ParameterizedTest(name = "Should deny editor {0} operation on non-degree resources")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = {"UNPUBLISH", "UPDATE",
-        "PARTIAL_UPDATE", "TERMINATE"})
-    void shouldDenyEditorOnNonDegree(PublicationOperation operation)
-        throws JsonProcessingException, UnauthorizedException {
+    var institution = randomUri();
+    var resourceOwner = randomString();
+    var editorUsername = randomString();
+    var cristinId = randomUri();
 
-        var institution = randomUri();
-        var resourceOwner = randomString();
-        var editorUsername = randomString();
-        var cristinId = randomUri();
+    var requestInfo =
+        createUserRequestInfo(
+            editorUsername, institution, getAccessRightsForEditor(), cristinId, randomUri());
+    var publication = createNonDegreePublication(resourceOwner, institution);
+    var userInstance =
+        RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        var requestInfo = createUserRequestInfo(editorUsername, institution, getAccessRightsForEditor(),
-                                                cristinId, randomUri());
-        var publication = createNonDegreePublication(resourceOwner, institution);
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+    Assertions.assertFalse(
+        PublicationPermissions.create(Resource.fromPublication(publication), userInstance)
+            .allowsAction(operation));
+  }
 
-        Assertions.assertFalse(PublicationPermissions
-                                   .create(Resource.fromPublication(publication), userInstance)
-                                   .allowsAction(operation));
-    }
+  @ParameterizedTest
+  @EnumSource(
+      value = PublicationOperation.class,
+      mode = Mode.INCLUDE,
+      names = {"UNPUBLISH", "UPDATE", "PARTIAL_UPDATE"})
+  void shouldAllowEditorUpdateOnDegreeWithResourceOwnerAffiliation(PublicationOperation operation)
+      throws JsonProcessingException, UnauthorizedException {
 
-    @ParameterizedTest
-    @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE,
-        names = {"UNPUBLISH", "UPDATE", "PARTIAL_UPDATE"})
-    void shouldAllowEditorUpdateOnDegreeWithResourceOwnerAffiliation(PublicationOperation operation)
-        throws JsonProcessingException, UnauthorizedException {
+    var cristinTopLevelId = randomUri();
 
-        var cristinTopLevelId = randomUri();
+    var requestInfo =
+        createUserRequestInfo(
+            randomString(),
+            randomUri(),
+            getAccessRightsForEditor(),
+            randomUri(),
+            cristinTopLevelId);
 
-        var requestInfo = createUserRequestInfo(randomString(), randomUri(), getAccessRightsForEditor(),
-                                                randomUri(), cristinTopLevelId);
+    var publication = createDegreePhd(randomString(), randomUri(), cristinTopLevelId);
+    setFileToPendingOpenFiles(publication);
 
-        var publication = createDegreePhd(randomString(), randomUri(), cristinTopLevelId);
-        setFileToPendingOpenFiles(publication);
+    var userInstance =
+        RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+    Assertions.assertTrue(
+        PublicationPermissions.create(Resource.fromPublication(publication), userInstance)
+            .allowsAction(operation));
+  }
 
-        Assertions.assertTrue(PublicationPermissions
-                                  .create(Resource.fromPublication(publication), userInstance)
-                                  .allowsAction(operation));
-    }
+  @ParameterizedTest(
+      name =
+          "Should allow Editor {0} operation on degree resources with matching resource owner "
+              + "affiliation")
+  @EnumSource(
+      value = PublicationOperation.class,
+      mode = Mode.INCLUDE,
+      names = {"REPUBLISH", "TERMINATE"})
+  void shouldAllowEditorOnDegreeWhenPublicationIsUnpublishedAndEditorIsFromCuratingInstitution(
+      PublicationOperation operation) throws JsonProcessingException, UnauthorizedException {
 
-    @ParameterizedTest(name = "Should allow Editor {0} operation on degree resources with matching resource owner "
-                              + "affiliation")
-    @EnumSource(value = PublicationOperation.class, mode = Mode.INCLUDE, names = {"REPUBLISH", "TERMINATE"})
-    void shouldAllowEditorOnDegreeWhenPublicationIsUnpublishedAndEditorIsFromCuratingInstitution(
-        PublicationOperation operation)
-        throws JsonProcessingException, UnauthorizedException {
+    var cristinTopLevelId = randomUri();
 
-        var cristinTopLevelId = randomUri();
+    var requestInfo =
+        createUserRequestInfo(
+            randomString(),
+            randomUri(),
+            getAccessRightsForEditor(),
+            randomUri(),
+            cristinTopLevelId);
 
-        var requestInfo = createUserRequestInfo(randomString(), randomUri(), getAccessRightsForEditor(),
-                                                randomUri(), cristinTopLevelId);
+    var publication = createDegreePhd(randomString(), randomUri(), cristinTopLevelId);
+    setFileToPendingOpenFiles(publication);
+    publication.setCuratingInstitutions(
+        Set.of(new CuratingInstitution(cristinTopLevelId, Set.of())));
+    publication.setStatus(UNPUBLISHED);
 
-        var publication = createDegreePhd(randomString(), randomUri(), cristinTopLevelId);
-        setFileToPendingOpenFiles(publication);
-        publication.setCuratingInstitutions(Set.of(new CuratingInstitution(cristinTopLevelId, Set.of())));
-        publication.setStatus(UNPUBLISHED);
+    var userInstance =
+        RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+    Assertions.assertTrue(
+        PublicationPermissions.create(Resource.fromPublication(publication), userInstance)
+            .allowsAction(operation));
+  }
 
-        Assertions.assertTrue(PublicationPermissions
-                                  .create(Resource.fromPublication(publication), userInstance)
-                                  .allowsAction(operation));
-    }
+  @ParameterizedTest(
+      name =
+          "Should deny Editor {0} operation on degree resources with no matching resource owner "
+              + "affiliation or curating institution")
+  @EnumSource(value = PublicationOperation.class, mode = Mode.EXCLUDE, names = "PARTIAL_UPDATE")
+  void shouldDenyAllowNotRelatedEditorOnDegree(PublicationOperation operation)
+      throws JsonProcessingException, UnauthorizedException {
+    var requestInfo =
+        createUserRequestInfo(
+            randomString(), randomUri(), getAccessRightsForEditor(), randomUri(), randomUri());
 
-    @ParameterizedTest(name = "Should deny Editor {0} operation on degree resources with no matching resource owner "
-                              + "affiliation or curating institution")
-    @EnumSource(value = PublicationOperation.class,  mode = Mode.EXCLUDE, names = "PARTIAL_UPDATE")
-    void shouldDenyAllowNotRelatedEditorOnDegree(PublicationOperation operation)
-        throws JsonProcessingException, UnauthorizedException {
-        var requestInfo = createUserRequestInfo(randomString(), randomUri(), getAccessRightsForEditor(),
-                                                randomUri(), randomUri());
+    var publication =
+        createDegreePublicationWithContributor(
+            randomString(), randomUri(), Role.CREATOR, randomUri(), randomUri());
 
-        var publication = createDegreePublicationWithContributor(randomString(), randomUri(), Role.CREATOR,
-                                                                 randomUri(), randomUri());
+    var userInstance =
+        RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
+    Assertions.assertFalse(
+        PublicationPermissions.create(Resource.fromPublication(publication), userInstance)
+            .allowsAction(operation));
+  }
 
-        Assertions.assertFalse(PublicationPermissions
-                                   .create(Resource.fromPublication(publication), userInstance)
-                                   .allowsAction(operation));
-    }
+  @DisplayName(
+      "Should allow editor to republish publication when curating institution matches editor"
+          + " institution")
+  @Test
+  void
+      shouldAllowEditorToRepublishUnpublishedPublicationWithEditorInstitutionInCuratingInstitutions()
+          throws JsonProcessingException, UnauthorizedException {
 
-    @DisplayName("Should allow editor to republish publication when curating institution matches editor institution")
-    @Test
-    void shouldAllowEditorToRepublishUnpublishedPublicationWithEditorInstitutionInCuratingInstitutions()
-        throws JsonProcessingException, UnauthorizedException {
+    var editorInstitution = randomUri();
 
-        var editorInstitution = randomUri();
+    var requestInfo =
+        createUserRequestInfo(
+            randomString(),
+            randomUri(),
+            getAccessRightsForEditor(),
+            randomUri(),
+            editorInstitution);
+    var publication =
+        createNonDegreePublication(randomString(), randomUri())
+            .copy()
+            .withCuratingInstitutions(
+                Set.of(new CuratingInstitution(editorInstitution, Set.of(randomUri()))))
+            .withStatus(UNPUBLISHED)
+            .build();
+    var userInstance =
+        RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-        var requestInfo = createUserRequestInfo(randomString(), randomUri(), getAccessRightsForEditor(),
-                                                randomUri(), editorInstitution);
-        var publication = createNonDegreePublication(randomString(), randomUri()).copy()
-                              .withCuratingInstitutions(Set.of(new CuratingInstitution(editorInstitution,
-                                                                                       Set.of(randomUri()))))
-                              .withStatus(UNPUBLISHED).build();
-        var userInstance = RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-
-        Assertions.assertTrue(PublicationPermissions
-                                  .create(Resource.fromPublication(publication), userInstance)
-                                  .allowsAction(REPUBLISH));
-    }
+    Assertions.assertTrue(
+        PublicationPermissions.create(Resource.fromPublication(publication), userInstance)
+            .allowsAction(REPUBLISH));
+  }
 }

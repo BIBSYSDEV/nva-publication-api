@@ -4,6 +4,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -22,58 +23,59 @@ import org.junit.jupiter.api.Test;
 
 public class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
-    public static final Context context = null;
-    private DeletePublicationHandler handler;
+  public static final Context context = null;
+  private DeletePublicationHandler handler;
 
-    private ResourceService resourceService;
+  private ResourceService resourceService;
 
-    private ByteArrayOutputStream outputStream;
+  private ByteArrayOutputStream outputStream;
 
-    @BeforeEach
-    public void init() {
-        super.init();
-        outputStream = new ByteArrayOutputStream();
-        resourceService = getResourceService(client);
-        handler = new DeletePublicationHandler(resourceService);
-    }
+  @BeforeEach
+  public void init() {
+    super.init();
+    outputStream = new ByteArrayOutputStream();
+    resourceService = getResourceService(client);
+    handler = new DeletePublicationHandler(resourceService);
+  }
 
-    @Test
-    void shouldDeleteImportedPublicationWhenS3UriIsSupplied() throws ApiGatewayException {
-        var publication = createPublishedResource();
-        var expectedPublication =
-            publication.copy().withStatus(PublicationStatus.DELETED).withPublishedDate(null).build();
-        handler.handleRequest(createDeleteEntryEventInputStream(publication), outputStream, context);
-        var actualPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        assertThatActualPublicationIsEqualToExpectedPublicationIgnoringModifiedDate(actualPublication,
-                                                                                    expectedPublication);
-    }
+  @Test
+  void shouldDeleteImportedPublicationWhenS3UriIsSupplied() throws ApiGatewayException {
+    var publication = createPublishedResource();
+    var expectedPublication =
+        publication.copy().withStatus(PublicationStatus.DELETED).withPublishedDate(null).build();
+    handler.handleRequest(createDeleteEntryEventInputStream(publication), outputStream, context);
+    var actualPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+    assertThatActualPublicationIsEqualToExpectedPublicationIgnoringModifiedDate(
+        actualPublication, expectedPublication);
+  }
 
-    private void assertThatActualPublicationIsEqualToExpectedPublicationIgnoringModifiedDate(
-        Publication actualPublication, Publication expectedPublication) {
-        actualPublication.setModifiedDate(null);
-        expectedPublication.setModifiedDate(null);
-        assertThat(actualPublication, is(equalTo(expectedPublication)));
-    }
+  private void assertThatActualPublicationIsEqualToExpectedPublicationIgnoringModifiedDate(
+      Publication actualPublication, Publication expectedPublication) {
+    actualPublication.setModifiedDate(null);
+    expectedPublication.setModifiedDate(null);
+    assertThat(actualPublication, is(equalTo(expectedPublication)));
+  }
 
-    private InputStream createDeleteEntryEventInputStream(Publication publication) {
-        var deleteEntryEvent = new DeleteEntryEvent(DeleteEntryEvent.EVENT_TOPIC, publication.getIdentifier());
-        return EventBridgeEventBuilder.sampleEvent(deleteEntryEvent);
-    }
+  private InputStream createDeleteEntryEventInputStream(Publication publication) {
+    var deleteEntryEvent =
+        new DeleteEntryEvent(DeleteEntryEvent.EVENT_TOPIC, publication.getIdentifier());
+    return EventBridgeEventBuilder.sampleEvent(deleteEntryEvent);
+  }
 
-    private Publication createPublishedResource() throws ApiGatewayException {
-        Publication resource = createPersistedPublicationWithoutDoi();
-        publishResource(resource);
-        return resourceService.getPublicationByIdentifier(resource.getIdentifier());
-    }
+  private Publication createPublishedResource() throws ApiGatewayException {
+    Publication resource = createPersistedPublicationWithoutDoi();
+    publishResource(resource);
+    return resourceService.getPublicationByIdentifier(resource.getIdentifier());
+  }
 
-    private void publishResource(Publication publication) {
-        var resource = Resource.fromPublication(publication);
-        resource.publish(resourceService, UserInstance.fromPublication(publication));
-    }
+  private void publishResource(Publication publication) {
+    var resource = Resource.fromPublication(publication);
+    resource.publish(resourceService, UserInstance.fromPublication(publication));
+  }
 
-    private Publication createPersistedPublicationWithoutDoi() throws BadRequestException {
-        var publication = randomPublication().copy().withDoi(null).build();
-        return Resource.fromPublication(publication).persistNew(resourceService,
-                                                                UserInstance.fromPublication(publication));
-    }
+  private Publication createPersistedPublicationWithoutDoi() throws BadRequestException {
+    var publication = randomPublication().copy().withDoi(null).build();
+    return Resource.fromPublication(publication)
+        .persistNew(resourceService, UserInstance.fromPublication(publication));
+  }
 }

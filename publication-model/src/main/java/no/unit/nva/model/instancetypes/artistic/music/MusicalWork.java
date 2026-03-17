@@ -10,46 +10,46 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class MusicalWork {
 
-    public static final String TITLE = "title";
-    public static final String COMPOSER = "composer";
+  public static final String TITLE = "title";
+  public static final String COMPOSER = "composer";
 
-    @JsonProperty(TITLE)
-    private final String title;
-    @JsonProperty(COMPOSER)
-    private final String composer;
+  @JsonProperty(TITLE)
+  private final String title;
 
-    @JsonCreator
-    public MusicalWork(@JsonProperty(TITLE) String title,
-                       @JsonProperty(COMPOSER) String composer) {
-        this.title = title;
-        this.composer = composer;
+  @JsonProperty(COMPOSER)
+  private final String composer;
+
+  @JsonCreator
+  public MusicalWork(@JsonProperty(TITLE) String title, @JsonProperty(COMPOSER) String composer) {
+    this.title = title;
+    this.composer = composer;
+  }
+
+  public String getTitle() {
+    return title;
+  }
+
+  public String getComposer() {
+    return composer;
+  }
+
+  @Override
+  @JacocoGenerated
+  public int hashCode() {
+    return Objects.hash(getTitle(), getComposer());
+  }
+
+  @Override
+  @JacocoGenerated
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
-
-    public String getTitle() {
-        return title;
+    if (!(o instanceof MusicalWork)) {
+      return false;
     }
-
-    public String getComposer() {
-        return composer;
-    }
-
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getTitle(), getComposer());
-    }
-
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof MusicalWork)) {
-            return false;
-        }
-        MusicalWork that = (MusicalWork) o;
-        return Objects.equals(getTitle(), that.getTitle()) && Objects.equals(getComposer(),
-                                                                             that.getComposer());
-    }
+    MusicalWork that = (MusicalWork) o;
+    return Objects.equals(getTitle(), that.getTitle())
+        && Objects.equals(getComposer(), that.getComposer());
+  }
 }

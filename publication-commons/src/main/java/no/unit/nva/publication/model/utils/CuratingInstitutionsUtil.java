@@ -2,6 +2,7 @@ package no.unit.nva.publication.model.utils;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.utils.RdfUtils.getTopLevelOrgUri;
+
 import java.net.URI;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collections;
@@ -21,101 +22,114 @@ import org.jetbrains.annotations.NotNull;
 
 public class CuratingInstitutionsUtil {
 
-    private static final int CONTRIBUTOR_CACHE_THRESHOLD = 100;
-    private static CustomerList customerList;
-    private final RawContentRetriever uriRetriever;
-    private final CustomerService customerService;
+  private static final int CONTRIBUTOR_CACHE_THRESHOLD = 100;
+  private static CustomerList customerList;
+  private final RawContentRetriever uriRetriever;
+  private final CustomerService customerService;
 
-    public CuratingInstitutionsUtil(RawContentRetriever uriRetriever, CustomerService customerService) {
-        this.customerService = customerService;
-        this.uriRetriever = uriRetriever;
-    }
+  public CuratingInstitutionsUtil(
+      RawContentRetriever uriRetriever, CustomerService customerService) {
+    this.customerService = customerService;
+    this.uriRetriever = uriRetriever;
+  }
 
-    public Set<CuratingInstitution> getCuratingInstitutions(EntityDescription entityDescription,
-                                                            CristinUnitsUtil cristinUnitsUtil) {
-        var contributors = getAffiliatedContributors(entityDescription).toList();
+  public Set<CuratingInstitution> getCuratingInstitutions(
+      EntityDescription entityDescription, CristinUnitsUtil cristinUnitsUtil) {
+    var contributors = getAffiliatedContributors(entityDescription).toList();
 
-        var topLevelMap = contributors.stream()
-                              .flatMap(contributor -> contributors.size() > CONTRIBUTOR_CACHE_THRESHOLD
-                                                          ? toCuratingInstitution(contributor,
-                                                                                  cristinUnitsUtil)
-                                                          : toCuratingInstitutionOnline(contributor));
-        return toCuratingInstitutionSet(topLevelMap);
-    }
+    var topLevelMap =
+        contributors.stream()
+            .flatMap(
+                contributor ->
+                    contributors.size() > CONTRIBUTOR_CACHE_THRESHOLD
+                        ? toCuratingInstitution(contributor, cristinUnitsUtil)
+                        : toCuratingInstitutionOnline(contributor));
+    return toCuratingInstitutionSet(topLevelMap);
+  }
 
-    public Set<CuratingInstitution> getCuratingInstitutionsOnline(EntityDescription entityDescription) {
-        var contributors = getAffiliatedContributors(entityDescription);
-        var topLevelMap = contributors.flatMap(this::toCuratingInstitutionOnline);
+  public Set<CuratingInstitution> getCuratingInstitutionsOnline(
+      EntityDescription entityDescription) {
+    var contributors = getAffiliatedContributors(entityDescription);
+    var topLevelMap = contributors.flatMap(this::toCuratingInstitutionOnline);
 
-        return toCuratingInstitutionSet(topLevelMap);
-    }
+    return toCuratingInstitutionSet(topLevelMap);
+  }
 
-    @NotNull
-    private Set<CuratingInstitution> toCuratingInstitutionSet(Stream<SimpleEntry<URI, URI>> topLevelMap) {
-        return topLevelMap.filter(this::isCustomer)
-                   .collect(Collectors.groupingBy(SimpleEntry::getKey,
-                                                  Collectors.mapping(SimpleEntry::getValue, Collectors.toSet())))
-                   .entrySet()
-                   .stream()
-                   .map(entry -> new CuratingInstitution(entry.getKey(), entry.getValue()))
-                   .collect(Collectors.toSet());
-    }
+  @NotNull
+  private Set<CuratingInstitution> toCuratingInstitutionSet(
+      Stream<SimpleEntry<URI, URI>> topLevelMap) {
+    return topLevelMap
+        .filter(this::isCustomer)
+        .collect(
+            Collectors.groupingBy(
+                SimpleEntry::getKey, Collectors.mapping(SimpleEntry::getValue, Collectors.toSet())))
+        .entrySet()
+        .stream()
+        .map(entry -> new CuratingInstitution(entry.getKey(), entry.getValue()))
+        .collect(Collectors.toSet());
+  }
 
-    public Set<CuratingInstitution> getCuratingInstitutionsCached(EntityDescription entityDescription,
-                                                                  CristinUnitsUtil cristinUnitsUtil) {
-        var contributors = getAffiliatedContributors(entityDescription);
+  public Set<CuratingInstitution> getCuratingInstitutionsCached(
+      EntityDescription entityDescription, CristinUnitsUtil cristinUnitsUtil) {
+    var contributors = getAffiliatedContributors(entityDescription);
 
-        var topLevelMap = contributors.flatMap(contributor -> toCuratingInstitution(contributor, cristinUnitsUtil));
+    var topLevelMap =
+        contributors.flatMap(contributor -> toCuratingInstitution(contributor, cristinUnitsUtil));
 
-        return toCuratingInstitutionSet(topLevelMap);
-    }
+    return toCuratingInstitutionSet(topLevelMap);
+  }
 
-    private static Stream<SimpleEntry<URI, URI>> toCuratingInstitution(Contributor contributor,
-                                                                       CristinUnitsUtil cristinUnitsUtil) {
-        return getOrganizationIds(contributor).map(cristinUnitsUtil::getTopLevel)
-                   .filter(Objects::nonNull)
-                   .map(id -> new SimpleEntry<>(id, Optional.of(contributor)
-                                                        .map(Contributor::getIdentity)
-                                                        .map(Identity::getId)
-                                                        .orElse(null)));
-    }
+  private static Stream<SimpleEntry<URI, URI>> toCuratingInstitution(
+      Contributor contributor, CristinUnitsUtil cristinUnitsUtil) {
+    return getOrganizationIds(contributor)
+        .map(cristinUnitsUtil::getTopLevel)
+        .filter(Objects::nonNull)
+        .map(
+            id ->
+                new SimpleEntry<>(
+                    id,
+                    Optional.of(contributor)
+                        .map(Contributor::getIdentity)
+                        .map(Identity::getId)
+                        .orElse(null)));
+  }
 
-    private static Stream<URI> getOrganizationIds(Contributor contributor) {
-        return contributor.getAffiliations()
-                   .stream()
-                   .filter(Organization.class::isInstance)
-                   .map(Organization.class::cast)
-                   .map(Organization::getId)
-                   .filter(Objects::nonNull);
-    }
+  private static Stream<URI> getOrganizationIds(Contributor contributor) {
+    return contributor.getAffiliations().stream()
+        .filter(Organization.class::isInstance)
+        .map(Organization.class::cast)
+        .map(Organization::getId)
+        .filter(Objects::nonNull);
+  }
 
-    private static Stream<Contributor> getAffiliatedContributors(EntityDescription entityDescription) {
-        return Optional.ofNullable(entityDescription)
-                   .map(EntityDescription::getContributors)
-                   .orElse(Collections.emptyList())
-                   .stream()
-                   .filter(CuratingInstitutionsUtil::isAffiliatedContributor);
-    }
+  private static Stream<Contributor> getAffiliatedContributors(
+      EntityDescription entityDescription) {
+    return Optional.ofNullable(entityDescription)
+        .map(EntityDescription::getContributors)
+        .orElse(Collections.emptyList())
+        .stream()
+        .filter(CuratingInstitutionsUtil::isAffiliatedContributor);
+  }
 
-    private static boolean isAffiliatedContributor(Contributor contributor) {
-        return contributor.getAffiliations().stream().anyMatch(Organization.class::isInstance);
-    }
+  private static boolean isAffiliatedContributor(Contributor contributor) {
+    return contributor.getAffiliations().stream().anyMatch(Organization.class::isInstance);
+  }
 
-    private CustomerList getCustomerList() {
-        customerList = nonNull(customerList) ? customerList : customerService.fetchCustomers();
-        return customerList;
-    }
+  private CustomerList getCustomerList() {
+    customerList = nonNull(customerList) ? customerList : customerService.fetchCustomers();
+    return customerList;
+  }
 
-    private boolean isCustomer(SimpleEntry<URI, URI> entry) {
-        return getCustomerList().customers()
-                   .stream()
-                   .map(CustomerSummary::cristinId)
-                   .anyMatch(cristinId -> Objects.equals(cristinId, entry.getKey()));
-    }
+  private boolean isCustomer(SimpleEntry<URI, URI> entry) {
+    return getCustomerList().customers().stream()
+        .map(CustomerSummary::cristinId)
+        .anyMatch(cristinId -> Objects.equals(cristinId, entry.getKey()));
+  }
 
-    private Stream<SimpleEntry<URI, URI>> toCuratingInstitutionOnline(Contributor contributor) {
-        return getOrganizationIds(contributor).map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
-                   .filter(Objects::nonNull)
-                   .map(topLevelOrgId -> new SimpleEntry<>(topLevelOrgId, contributor.getIdentity().getId()));
-    }
+  private Stream<SimpleEntry<URI, URI>> toCuratingInstitutionOnline(Contributor contributor) {
+    return getOrganizationIds(contributor)
+        .map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
+        .filter(Objects::nonNull)
+        .map(topLevelOrgId -> new SimpleEntry<>(topLevelOrgId, contributor.getIdentity().getId()));
+  }
 }

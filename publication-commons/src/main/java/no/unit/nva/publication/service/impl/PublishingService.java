@@ -2,6 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -35,173 +36,194 @@ import org.slf4j.LoggerFactory;
 
 public class PublishingService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PublishingService.class);
-    protected static final String CUSTOMER = "customer";
-    protected static final String CHANNEL_CLAIM = "channel-claim";
-    protected static final String EVERYONE = "Everyone";
-    protected static final String NOT_FOUND_MESSAGE = "Resource with identifier %s not found!";
-    private static final String API_HOST = new Environment().readEnv("API_HOST");
-    private final ResourceService resourceService;
-    private final TicketService ticketService;
-    private final IdentityServiceClient identityServiceClient;
+  private static final Logger LOGGER = LoggerFactory.getLogger(PublishingService.class);
+  protected static final String CUSTOMER = "customer";
+  protected static final String CHANNEL_CLAIM = "channel-claim";
+  protected static final String EVERYONE = "Everyone";
+  protected static final String NOT_FOUND_MESSAGE = "Resource with identifier %s not found!";
+  private static final String API_HOST = new Environment().readEnv("API_HOST");
+  private final ResourceService resourceService;
+  private final TicketService ticketService;
+  private final IdentityServiceClient identityServiceClient;
 
-    public PublishingService(ResourceService resourceService, TicketService ticketService,
-                             IdentityServiceClient identityServiceClient) {
-        this.resourceService = resourceService;
-        this.ticketService = ticketService;
-        this.identityServiceClient = identityServiceClient;
+  public PublishingService(
+      ResourceService resourceService,
+      TicketService ticketService,
+      IdentityServiceClient identityServiceClient) {
+    this.resourceService = resourceService;
+    this.ticketService = ticketService;
+    this.identityServiceClient = identityServiceClient;
+  }
+
+  @JacocoGenerated
+  public static PublishingService defaultService() {
+    return new PublishingService(
+        ResourceService.defaultService(),
+        TicketService.defaultService(),
+        IdentityServiceClient.prepare());
+  }
+
+  public void publishResource(SortableIdentifier resourceIdentifier, UserInstance userInstance)
+      throws ApiGatewayException {
+    var resource = getResource(resourceIdentifier);
+    if (PUBLISHED.equals(resource.getStatus())) {
+      return;
+    }
+    validatePermissions(resource, userInstance);
+
+    var publishedResource = publishResource(userInstance, resource);
+
+    if (!resource.getPendingFiles().isEmpty()) {
+      publishResourceWithPendingFiles(userInstance, resource);
     }
 
-    @JacocoGenerated
-    public static PublishingService defaultService() {
-        return new PublishingService(ResourceService.defaultService(), TicketService.defaultService(),
-                                     IdentityServiceClient.prepare());
+    if (nonNull(publishedResource.getDoi())) {
+      DoiRequest.create(publishedResource, userInstance).persistNewTicket(ticketService);
+    }
+  }
+
+  private static void validatePermissions(Resource resource, UserInstance userInstance)
+      throws ForbiddenException {
+    var permissionStrategy = PublicationPermissions.create(resource, userInstance);
+    if (!permissionStrategy.allowsAction(PublicationOperation.UPDATE)) {
+      throw new ForbiddenException();
+    }
+  }
+
+  private static boolean everyoneCanPublish(ChannelClaimDto channelClaim) {
+    return Optional.ofNullable(channelClaim)
+        .map(ChannelClaimDto::channelClaim)
+        .map(ChannelClaim::constraint)
+        .map(ChannelConstraint::publishingPolicy)
+        .map(EVERYONE::equals)
+        .orElse(false);
+  }
+
+  private static URI getOrganizationId(ChannelClaimDto channelClaim) {
+    return channelClaim.claimedBy().organizationId();
+  }
+
+  private static boolean isOutOfScope(List<String> scope, String instanceType) {
+    return !scope.contains(instanceType);
+  }
+
+  private Resource publishResource(UserInstance userInstance, Resource resource)
+      throws BadGatewayException, ForbiddenException {
+    var publisher = resource.getPublisherWhenDegree();
+    if (publisher.isEmpty()) {
+      return resource.publish(resourceService, userInstance);
     }
 
-    public void publishResource(SortableIdentifier resourceIdentifier, UserInstance userInstance)
-        throws ApiGatewayException {
-        var resource = getResource(resourceIdentifier);
-        if (PUBLISHED.equals(resource.getStatus())) {
-            return;
-        }
-        validatePermissions(resource, userInstance);
-
-        var publishedResource = publishResource(userInstance, resource);
-
-        if (!resource.getPendingFiles().isEmpty()) {
-            publishResourceWithPendingFiles(userInstance, resource);
-        }
-
-        if (nonNull(publishedResource.getDoi())) {
-            DoiRequest.create(publishedResource, userInstance).persistNewTicket(ticketService);
-        }
+    var channelClaim = getChannelClaimDto(publisher.get());
+    if (channelClaim.isEmpty()) {
+      return resource.publish(resourceService, userInstance);
     }
 
-    private static void validatePermissions(Resource resource, UserInstance userInstance) throws ForbiddenException {
-        var permissionStrategy = PublicationPermissions.create(resource, userInstance);
-        if (!permissionStrategy.allowsAction(PublicationOperation.UPDATE)) {
-            throw new ForbiddenException();
-        }
+    var instanceType = resource.getInstanceType().orElseThrow();
+    var scope =
+        channelClaim
+            .map(ChannelClaimDto::channelClaim)
+            .map(ChannelClaim::constraint)
+            .map(ChannelConstraint::scope)
+            .orElse(List.of());
+    if (isOutOfScope(scope, instanceType)) {
+      return resource.publish(resourceService, userInstance);
     }
 
-    private static boolean everyoneCanPublish(ChannelClaimDto channelClaim) {
-        return Optional.ofNullable(channelClaim)
-                   .map(ChannelClaimDto::channelClaim)
-                   .map(ChannelClaim::constraint)
-                   .map(ChannelConstraint::publishingPolicy)
-                   .map(EVERYONE::equals)
-                   .orElse(false);
+    if (everyoneCanPublish(channelClaim.get())) {
+      return resource.publish(resourceService, userInstance);
     }
 
-    private static URI getOrganizationId(ChannelClaimDto channelClaim) {
-        return channelClaim.claimedBy().organizationId();
+    if (isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
+      return resource.publish(resourceService, userInstance);
+    } else {
+      throw new ForbiddenException();
+    }
+  }
+
+  private Resource getResource(SortableIdentifier resourceIdentifier) throws NotFoundException {
+    return Resource.resourceQueryObject(resourceIdentifier)
+        .fetch(resourceService)
+        .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE.formatted(resourceIdentifier)));
+  }
+
+  private void publishResourceWithPendingFiles(UserInstance userInstance, Resource resource)
+      throws ApiGatewayException {
+    var workflow = getCustomerWorkflow(userInstance);
+    if (resource.isDegree()) {
+      var ticket = handleDegreeResource(userInstance, resource, workflow);
+      logPersistedTicket(resource, (FilesApprovalEntry) ticket);
+    } else {
+      var ticket =
+          PublishingRequestCase.create(resource, userInstance, workflow)
+              .persistNewTicket(ticketService);
+      logPersistedTicket(resource, (FilesApprovalEntry) ticket);
+    }
+  }
+
+  private TicketEntry handleDegreeResource(
+      UserInstance userInstance, Resource resource, PublishingWorkflow workflow)
+      throws ApiGatewayException {
+    var publisher = resource.getPublisherWhenDegree();
+    if (publisher.isPresent()) {
+      var channelClaim = getChannelClaimDto(publisher.get());
+      if (channelClaim.isPresent()
+          && !isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
+        var organizationId = getOrganizationId(channelClaim.get());
+        var channelClaimIdentifier = getChannelIdentifier(channelClaim.get());
+        return FilesApprovalThesis.createForChannelOwningInstitution(
+                resource, userInstance, organizationId, channelClaimIdentifier, workflow)
+            .persistNewTicket(ticketService);
+      }
     }
 
-    private static boolean isOutOfScope(List<String> scope, String instanceType) {
-        return !scope.contains(instanceType);
+    return FilesApprovalThesis.createForUserInstitution(resource, userInstance, workflow)
+        .persistNewTicket(ticketService);
+  }
+
+  private static void logPersistedTicket(Resource resource, FilesApprovalEntry ticket) {
+    LOGGER.info(
+        "Created ticket {} for resource {} with pending files for approval {}",
+        ticket.getIdentifier(),
+        resource.getIdentifier(),
+        ticket.getFilesForApproval().stream().map(File::getIdentifier).toList());
+  }
+
+  private Optional<ChannelClaimDto> getChannelClaimDto(Publisher publisher)
+      throws BadGatewayException {
+    try {
+      return Optional.of(identityServiceClient.getChannelClaim(createChannelClaimUri(publisher)));
+    } catch (NotFoundException exception) {
+      return Optional.empty();
+    } catch (Exception e) {
+      throw new BadGatewayException("Could not fetch channel owner!");
     }
+  }
 
-    private Resource publishResource(UserInstance userInstance, Resource resource)
-        throws BadGatewayException, ForbiddenException {
-        var publisher = resource.getPublisherWhenDegree();
-        if (publisher.isEmpty()) {
-            return resource.publish(resourceService, userInstance);
-        }
+  private boolean isClaimedByUserOrganization(
+      ChannelClaimDto channelClaim, UserInstance userInstance) {
+    return Optional.ofNullable(channelClaim)
+        .map(ChannelClaimDto::claimedBy)
+        .map(CustomerSummaryDto::id)
+        .map(id -> userInstance.getCustomerId().equals(id))
+        .orElse(true);
+  }
 
-        var channelClaim = getChannelClaimDto(publisher.get());
-        if (channelClaim.isEmpty()) {
-            return resource.publish(resourceService, userInstance);
-        }
+  private URI createChannelClaimUri(Publisher publisher) {
+    return UriWrapper.fromHost(API_HOST)
+        .addChild(CUSTOMER)
+        .addChild(CHANNEL_CLAIM)
+        .addChild(publisher.getIdentifier().toString())
+        .getUri();
+  }
 
-        var instanceType = resource.getInstanceType().orElseThrow();
-        var scope = channelClaim.map(ChannelClaimDto::channelClaim).map(ChannelClaim::constraint).map(ChannelConstraint::scope).orElse(List.of());
-        if (isOutOfScope(scope, instanceType)) {
-            return resource.publish(resourceService, userInstance);
-        }
+  private PublishingWorkflow getCustomerWorkflow(UserInstance userInstance)
+      throws NotFoundException {
+    var customer = identityServiceClient.getCustomerById(userInstance.getCustomerId());
+    return PublishingWorkflow.lookUp(customer.publicationWorkflow());
+  }
 
-        if (everyoneCanPublish(channelClaim.get())) {
-            return resource.publish(resourceService, userInstance);
-        }
-
-        if (isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
-            return resource.publish(resourceService, userInstance);
-        } else {
-            throw new ForbiddenException();
-        }
-    }
-
-    private Resource getResource(SortableIdentifier resourceIdentifier) throws NotFoundException {
-        return Resource.resourceQueryObject(resourceIdentifier)
-                   .fetch(resourceService)
-                   .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE.formatted(resourceIdentifier)));
-    }
-
-    private void publishResourceWithPendingFiles(UserInstance userInstance, Resource resource)
-        throws ApiGatewayException {
-        var workflow = getCustomerWorkflow(userInstance);
-        if (resource.isDegree()) {
-            var ticket = handleDegreeResource(userInstance, resource, workflow);
-            logPersistedTicket(resource, (FilesApprovalEntry) ticket);
-        } else {
-            var ticket = PublishingRequestCase.create(resource, userInstance, workflow).persistNewTicket(ticketService);
-            logPersistedTicket(resource, (FilesApprovalEntry) ticket);
-        }
-    }
-
-    private TicketEntry handleDegreeResource(UserInstance userInstance, Resource resource, PublishingWorkflow workflow)
-        throws ApiGatewayException {
-        var publisher = resource.getPublisherWhenDegree();
-        if (publisher.isPresent()) {
-            var channelClaim = getChannelClaimDto(publisher.get());
-            if (channelClaim.isPresent() && !isClaimedByUserOrganization(channelClaim.get(), userInstance)) {
-                var organizationId = getOrganizationId(channelClaim.get());
-                var channelClaimIdentifier = getChannelIdentifier(channelClaim.get());
-                return FilesApprovalThesis.createForChannelOwningInstitution(resource, userInstance, organizationId,
-                                                                             channelClaimIdentifier, workflow)
-                           .persistNewTicket(ticketService);
-            }
-        }
-
-        return FilesApprovalThesis.createForUserInstitution(resource, userInstance, workflow).persistNewTicket(ticketService);
-    }
-
-    private static void logPersistedTicket(Resource resource, FilesApprovalEntry ticket) {
-        LOGGER.info("Created ticket {} for resource {} with pending files for approval {}",
-                    ticket.getIdentifier(), resource.getIdentifier(), ticket.getFilesForApproval().stream().map(File::getIdentifier).toList());
-    }
-
-    private Optional<ChannelClaimDto> getChannelClaimDto(Publisher publisher) throws BadGatewayException {
-        try {
-            return Optional.of(identityServiceClient.getChannelClaim(createChannelClaimUri(publisher)));
-        } catch (NotFoundException exception) {
-            return Optional.empty();
-        } catch (Exception e) {
-            throw new BadGatewayException("Could not fetch channel owner!");
-        }
-    }
-
-    private boolean isClaimedByUserOrganization(ChannelClaimDto channelClaim, UserInstance userInstance) {
-        return Optional.ofNullable(channelClaim)
-                   .map(ChannelClaimDto::claimedBy)
-                   .map(CustomerSummaryDto::id)
-                   .map(id -> userInstance.getCustomerId().equals(id))
-                   .orElse(true);
-    }
-
-    private URI createChannelClaimUri(Publisher publisher) {
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild(CUSTOMER)
-                   .addChild(CHANNEL_CLAIM)
-                   .addChild(publisher.getIdentifier().toString())
-                   .getUri();
-    }
-
-    private PublishingWorkflow getCustomerWorkflow(UserInstance userInstance) throws NotFoundException {
-        var customer = identityServiceClient.getCustomerById(userInstance.getCustomerId());
-        return PublishingWorkflow.lookUp(customer.publicationWorkflow());
-    }
-
-    private SortableIdentifier getChannelIdentifier(ChannelClaimDto channelClaim) {
-        return new SortableIdentifier(UriWrapper.fromUri(channelClaim.id()).getLastPathElement());
-    }
+  private SortableIdentifier getChannelIdentifier(ChannelClaimDto channelClaim) {
+    return new SortableIdentifier(UriWrapper.fromUri(channelClaim.id()).getLastPathElement());
+  }
 }

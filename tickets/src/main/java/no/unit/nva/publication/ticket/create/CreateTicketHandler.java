@@ -2,6 +2,7 @@ package no.unit.nva.publication.ticket.create;
 
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import java.util.Map;
@@ -23,68 +24,71 @@ import nva.commons.core.paths.UriWrapper;
 
 public class CreateTicketHandler extends ApiGatewayHandler<TicketDto, Void> {
 
-    public static final String LOCATION_HEADER = "Location";
-    private final TicketResolver ticketResolver;
-    private final MessageService messageService;
+  public static final String LOCATION_HEADER = "Location";
+  private final TicketResolver ticketResolver;
+  private final MessageService messageService;
 
-    @JacocoGenerated
-    public CreateTicketHandler() {
-        this(new TicketResolver(ResourceService.defaultService(), TicketService.defaultService()),
-             MessageService.defaultService(),
-             new Environment());
-    }
+  @JacocoGenerated
+  public CreateTicketHandler() {
+    this(
+        new TicketResolver(ResourceService.defaultService(), TicketService.defaultService()),
+        MessageService.defaultService(),
+        new Environment());
+  }
 
-    public CreateTicketHandler(TicketResolver ticketResolver, MessageService messageService, Environment environment) {
-        super(TicketDto.class, environment);
-        this.ticketResolver = ticketResolver;
-        this.messageService = messageService;
-    }
+  public CreateTicketHandler(
+      TicketResolver ticketResolver, MessageService messageService, Environment environment) {
+    super(TicketDto.class, environment);
+    this.ticketResolver = ticketResolver;
+    this.messageService = messageService;
+  }
 
-    @Override
-    protected void validateRequest(TicketDto ticketDto, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
-        //Do nothing
-    }
+  @Override
+  protected void validateRequest(TicketDto ticketDto, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
+    // Do nothing
+  }
 
-    @Override
-    protected Void processInput(TicketDto input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
-        try {
-            var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
-            var persistedTicket = ticketResolver.resolveAndPersistTicket(input, requestUtils);
-            persistMessage(input, requestUtils, persistedTicket);
-            addLocationHeader(requestUtils.publicationIdentifier(), persistedTicket.getIdentifier());
-            return null;
-        } catch (IllegalStateException exception) {
-            throw new ConflictException(exception, exception.getMessage());
-        }
+  @Override
+  protected Void processInput(TicketDto input, RequestInfo requestInfo, Context context)
+      throws ApiGatewayException {
+    try {
+      var requestUtils = RequestUtils.fromRequestInfo(requestInfo);
+      var persistedTicket = ticketResolver.resolveAndPersistTicket(input, requestUtils);
+      persistMessage(input, requestUtils, persistedTicket);
+      addLocationHeader(requestUtils.publicationIdentifier(), persistedTicket.getIdentifier());
+      return null;
+    } catch (IllegalStateException exception) {
+      throw new ConflictException(exception, exception.getMessage());
     }
+  }
 
-    private void persistMessage(TicketDto input, RequestUtils requestUtils, TicketEntry ticket) {
-        if (!input.getMessages().isEmpty()) {
-            var message = input.getMessages().getFirst().getText();
-            messageService.createMessage(ticket, requestUtils.toUserInstance(), message);
-        }
+  private void persistMessage(TicketDto input, RequestUtils requestUtils, TicketEntry ticket) {
+    if (!input.getMessages().isEmpty()) {
+      var message = input.getMessages().getFirst().getText();
+      messageService.createMessage(ticket, requestUtils.toUserInstance(), message);
     }
+  }
 
-    private void addLocationHeader(SortableIdentifier publicationIdentifier, SortableIdentifier ticketIdentifier) {
-        var ticketLocation = createTicketLocation(publicationIdentifier, ticketIdentifier);
-        addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));
-    }
+  private void addLocationHeader(
+      SortableIdentifier publicationIdentifier, SortableIdentifier ticketIdentifier) {
+    var ticketLocation = createTicketLocation(publicationIdentifier, ticketIdentifier);
+    addAdditionalHeaders(() -> Map.of(LOCATION_HEADER, ticketLocation));
+  }
 
-    @Override
-    protected Integer getSuccessStatusCode(TicketDto input, Void output) {
-        return HttpURLConnection.HTTP_CREATED;
-    }
+  @Override
+  protected Integer getSuccessStatusCode(TicketDto input, Void output) {
+    return HttpURLConnection.HTTP_CREATED;
+  }
 
-    private static String createTicketLocation(SortableIdentifier publicationIdentifier,
-                                               SortableIdentifier ticketIdentifier) {
-        return UriWrapper.fromHost(API_HOST)
-                   .addChild(PUBLICATION_PATH)
-                   .addChild(publicationIdentifier.toString())
-                   .addChild(PublicationServiceConfig.TICKET_PATH)
-                   .addChild(ticketIdentifier.toString())
-                   .getUri()
-                   .toString();
-    }
+  private static String createTicketLocation(
+      SortableIdentifier publicationIdentifier, SortableIdentifier ticketIdentifier) {
+    return UriWrapper.fromHost(API_HOST)
+        .addChild(PUBLICATION_PATH)
+        .addChild(publicationIdentifier.toString())
+        .addChild(PublicationServiceConfig.TICKET_PATH)
+        .addChild(ticketIdentifier.toString())
+        .getUri()
+        .toString();
+  }
 }

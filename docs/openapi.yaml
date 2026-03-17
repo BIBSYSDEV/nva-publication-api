@@ -14,7 +14,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Publication'
+              $ref: "#/components/schemas/Publication"
       parameters:
         - name: System
           in: header
@@ -23,37 +23,38 @@ paths:
           schema:
             type: string
       security:
-        - CognitoUserPool: [
-          'https://api.nva.unit.no/scopes/backend',
-          'https://api.nva.unit.no/scopes/frontend',
-          'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/publication-upsert'
-        ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+              "https://api.nva.unit.no/scopes/third-party/publication-upsert",
+            ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreatePublicationFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '201':
+        "201":
           description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Publication'
-        '400':
+                $ref: "#/components/schemas/Publication"
+        "400":
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '502':
+                $ref: "#/components/schemas/Problem"
+        "502":
           description: Bad Gateway
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
   /{publicationIdentifier}:
     get:
       operationId: fetchPublicationByIdentifier
@@ -82,7 +83,7 @@ paths:
           schema:
             type: string
           description: ETag value used for caching and conditional requests
-          example: '123e4567-e89b-12d3-a456-426614174000'
+          example: "123e4567-e89b-12d3-a456-426614174000"
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}:live/invocations
@@ -94,7 +95,7 @@ paths:
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
+        "200":
           description: OK
           headers:
             ETag:
@@ -109,17 +110,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublicationResponse'
+                $ref: "#/components/schemas/PublicationResponse"
             application/ld+json:
               schema:
-                $ref: '#/components/schemas/PublicationResponse'
+                $ref: "#/components/schemas/PublicationResponse"
             application/vnd.datacite.datacite+xml:
               schema:
-                $ref: '#/components/schemas/PublicationDataCiteXml'
+                $ref: "#/components/schemas/PublicationDataCiteXml"
             application/vnd.schemaorg.ld+json:
               schema:
-                $ref: '#/components/schemas/PublicationSchemaOrg'
-        '301':
+                $ref: "#/components/schemas/PublicationSchemaOrg"
+        "301":
           description: MOVED PERMANENTLY
           headers:
             Location:
@@ -131,9 +132,9 @@ paths:
               description: Cache-Control header
               schema:
                 type: string
-        '304':
+        "304":
           description: Not Modified
-        '410':
+        "410":
           description: Permanently gone
           content:
             application/json:
@@ -145,21 +146,22 @@ paths:
       tags:
         - external
       security:
-        - CognitoUserPool: [
-          'https://api.nva.unit.no/scopes/backend',
-          'https://api.nva.unit.no/scopes/frontend',
-          'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/publication-upsert'
-        ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+              "https://api.nva.unit.no/scopes/third-party/publication-upsert",
+            ]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               oneOf:
-                - $ref: '#/components/schemas/Publication'
-                - $ref: '#/components/schemas/DeletePublicationRequest'
-                - $ref: '#/components/schemas/UnpublishPublicationRequest'
+                - $ref: "#/components/schemas/Publication"
+                - $ref: "#/components/schemas/DeletePublicationRequest"
+                - $ref: "#/components/schemas/UnpublishPublicationRequest"
       parameters:
         - in: path
           name: publicationIdentifier
@@ -175,39 +177,39 @@ paths:
           schema:
             type: string
           description: ETag value used for caching and conditional requests
-          example: '123e4567-e89b-12d3-a456-426614174000'
+          example: "123e4567-e89b-12d3-a456-426614174000"
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaUpdatePublicationFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublicationResponse'
-        '202':
+                $ref: "#/components/schemas/PublicationResponse"
+        "202":
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublicationResponse'
-        '400':
+                $ref: "#/components/schemas/PublicationResponse"
+        "400":
           description: Bad Request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '403':
+        "403":
           description: Forbidden
           content:
             application/json:
@@ -219,11 +221,13 @@ paths:
       tags:
         - external
       security:
-        - CognitoUserPool: [
-          'https://api.nva.unit.no/scopes/backend',
-          'https://api.nva.unit.no/scopes/frontend',
-          'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/publication-upsert' ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+              "https://api.nva.unit.no/scopes/third-party/publication-upsert",
+            ]
       parameters:
         - in: path
           name: publicationIdentifier
@@ -236,27 +240,28 @@ paths:
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaDeletePublicationFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '202':
+        "202":
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Publication'
+                $ref: "#/components/schemas/Publication"
   /{publicationIdentifier}/publish:
     post:
       operationId: publishPublication
       summary: Publish publication by identifier
       security:
-        - CognitoUserPool: [
-          'https://api.nva.unit.no/scopes/backend',
-          'https://api.nva.unit.no/scopes/frontend',
-          'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/publication-upsert'
-        ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+              "https://api.nva.unit.no/scopes/third-party/publication-upsert",
+            ]
       requestBody:
         required: false
         content: {}
@@ -272,41 +277,41 @@ paths:
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PublishPublicationFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '202':
+        "202":
           description: Accepted - Publication is being publish
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublicationResponse'
-        '400':
+                $ref: "#/components/schemas/PublicationResponse"
+        "400":
           description: Bad Request - Publication is not publishable
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '401':
+        "401":
           description: Unauthorized - User is not authorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '403':
+        "403":
           description: Forbidden - User has no permissions to publish publication
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '404':
+        "404":
           description: Not found - Publication does not exist
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '502':
+        "502":
           description: Bad Gateway - Error in external service
           content:
             application/json:
@@ -319,27 +324,28 @@ paths:
       tags:
         - external
       security:
-        - CognitoUserPool: [
-          'https://api.nva.unit.no/scopes/backend',
-          'https://api.nva.unit.no/scopes/frontend',
-          'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/publication-read'
-        ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+              "https://api.nva.unit.no/scopes/third-party/publication-read",
+            ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaPublicationsByOwnerFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Publication'
+                  $ref: "#/components/schemas/Publication"
   /{publicationIdentifier}/doi:
     post:
       operationId: reserveDoiForDraftPublication
@@ -350,56 +356,60 @@ paths:
           schema:
             type: string
           required: true
-          example: '135f2cf8-b816-11ed-afa1-0242ac120002'
+          example: "135f2cf8-b816-11ed-afa1-0242ac120002"
           style: simple
           explode: false
           description: UUID identifier of the Publication to fetch.
       security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+            ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ReserveDoiHandler.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
+        "200":
           description: OK, doi is already reserved
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Doi'
-        '201':
+                $ref: "#/components/schemas/Doi"
+        "201":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Doi'
-        '401':
+                $ref: "#/components/schemas/Doi"
+        "401":
           description: Unauthorized, no config found for users customer
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '404':
+        "404":
           description: Publication not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '405':
+        "405":
           description: Operation is not allowed, publication is not a draft
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '502':
+        "502":
           description: Bad response from Datacite
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-
 
   /{publicationIdentifier}/ticket:
     parameters:
@@ -420,7 +430,7 @@ paths:
             schema:
               $ref: "#/components/schemas/NewTicketRequest"
       responses:
-        '201':
+        "201":
           description: ACCEPTED
           headers:
             Location:
@@ -433,11 +443,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/Ticket"
       security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+            ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateTicketFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
 
@@ -467,106 +482,121 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateTicketRequest'
+              $ref: "#/components/schemas/UpdateTicketRequest"
       responses:
-        '202':
+        "202":
           description: Accepted
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/UpdateTicketRequest"
-        '400':
+        "400":
           description: Bad Request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '403':
+        "403":
           description: Forbidden
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '502':
+        "502":
           description: Bad gateway
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
       security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+            ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateTicketHandler.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
     delete:
       operationId: deleteTicketForPublication
       description: Delete existing ticket
       responses:
-        '200':
+        "200":
           description: Ok
-        '400':
+        "400":
           description: Bad Request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '404':
+        "404":
           description: Not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '502':
+        "502":
           description: Bad gateway
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
       security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+            ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeleteTicketHandler.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
     get:
       operationId: fetchTicketForPublication
       description: Get an existing ticket
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Ticket"
-        '502':
+        "502":
           description: Bad gateway
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
       security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+            ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetTicketFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
   /{publicationIdentifier}/ticket/{ticketIdentifier}/message:
@@ -594,9 +624,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Message'
+              $ref: "#/components/schemas/Message"
       responses:
-        '201':
+        "201":
           description: "Created"
           headers:
             "Location":
@@ -604,18 +634,23 @@ paths:
               schema:
                 type: string
                 format: uri
-        '403':
+        "403":
           description: "Forbidden"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
       security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+            ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreateMessageFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
   /{publicationIdentifier}/ticket/{ticketIdentifier}/message/{messageIdentifier}:
@@ -648,37 +683,42 @@ paths:
       operationId: deleteMessageForTicket
       description: Deleting message
       responses:
-        '200':
+        "200":
           description: "Ok"
           headers:
             "Location":
               description: Message has been successfully deleted
               schema:
                 type: string
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '404':
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '502':
+                $ref: "#/components/schemas/Problem"
+        "502":
           description: Bad Gateway
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
       security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+            ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeleteMessageHandler.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
   /{publicationIdentifier}/filelink/{fileIdentifier}:
@@ -707,36 +747,36 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PresignedUriResponse'
-        '401':
+                $ref: "#/components/schemas/PresignedUriResponse"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '404':
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '502':
+                $ref: "#/components/schemas/Problem"
+        "502":
           description: Bad Gateway
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '503':
+                $ref: "#/components/schemas/Problem"
+        "503":
           description: Service Unavailable
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
   /{publicationIdentifier}/file-upload/create:
     post:
       summary: Create a upload
@@ -744,12 +784,13 @@ paths:
       tags:
         - external
       security:
-        - CognitoUserPool: [
-          'https://api.nva.unit.no/scopes/backend',
-          'https://api.nva.unit.no/scopes/frontend',
-          'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/file-upload'
-        ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+              "https://api.nva.unit.no/scopes/third-party/file-upload",
+            ]
       parameters:
         - in: path
           name: publicationIdentifier
@@ -763,44 +804,45 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateUploadRequestBody'
+              $ref: "#/components/schemas/CreateUploadRequestBody"
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateUploadFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '201':
-          description: 'Upload Created'
+        "201":
+          description: "Upload Created"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateUploadResponseBody'
-        '400':
-          description: 'Bad request'
+                $ref: "#/components/schemas/CreateUploadResponseBody"
+        "400":
+          description: "Bad request"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
-          description: 'Internal server error'
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: "Internal server error"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
   /{publicationIdentifier}/file-upload/listparts:
     post:
       summary: List the parts of a file that have already been uploaded.
       tags:
         - external
       security:
-        - CognitoUserPool: [
-          'https://api.nva.unit.no/scopes/backend',
-          'https://api.nva.unit.no/scopes/frontend',
-          'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/file-upload'
-        ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+              "https://api.nva.unit.no/scopes/third-party/file-upload",
+            ]
       parameters:
         - in: path
           name: publicationIdentifier
@@ -814,44 +856,45 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ListPartsRequestBody'
+              $ref: "#/components/schemas/ListPartsRequestBody"
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListPartsUploadFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
-          description: 'Parts already uploaded'
+        "200":
+          description: "Parts already uploaded"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListPartsResponseBody'
-        '400':
-          description: 'Bad request'
+                $ref: "#/components/schemas/ListPartsResponseBody"
+        "400":
+          description: "Bad request"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
-          description: 'Internal server error'
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: "Internal server error"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
   /{publicationIdentifier}/file-upload/prepare:
     post:
       summary: Generates a URL to upload a single file-part
       tags:
         - external
       security:
-        - CognitoUserPool: [
-          'https://api.nva.unit.no/scopes/backend',
-          'https://api.nva.unit.no/scopes/frontend',
-          'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/file-upload'
-        ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+              "https://api.nva.unit.no/scopes/third-party/file-upload",
+            ]
       parameters:
         - in: path
           name: publicationIdentifier
@@ -865,32 +908,32 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PrepareUploadPartRequestBody'
+              $ref: "#/components/schemas/PrepareUploadPartRequestBody"
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PrepareUploadPartFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
-          description: 'presigned upload url'
+        "200":
+          description: "presigned upload url"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PrepareUploadPartResponseBody'
-        '400':
-          description: 'Bad request'
+                $ref: "#/components/schemas/PrepareUploadPartResponseBody"
+        "400":
+          description: "Bad request"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
-          description: 'Internal server error'
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: "Internal server error"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
   /{publicationIdentifier}/file-upload/abort:
     post:
       summary: Aborts a upload
@@ -898,12 +941,13 @@ paths:
       tags:
         - external
       security:
-        - CognitoUserPool: [
-          'https://api.nva.unit.no/scopes/backend',
-          'https://api.nva.unit.no/scopes/frontend',
-          'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/file-upload'
-        ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+              "https://api.nva.unit.no/scopes/third-party/file-upload",
+            ]
       parameters:
         - in: path
           name: publicationIdentifier
@@ -917,28 +961,28 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AbortUploadRequestBody'
+              $ref: "#/components/schemas/AbortUploadRequestBody"
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AbortUploadFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '202':
-          description: 'Accepted'
-        '400':
-          description: 'Bad request'
+        "202":
+          description: "Accepted"
+        "400":
+          description: "Bad request"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
-          description: 'Internal server error'
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: "Internal server error"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
   /{publicationIdentifier}/file-upload/complete:
     post:
       summary: Completes a upload
@@ -946,12 +990,13 @@ paths:
       tags:
         - external
       security:
-        - CognitoUserPool: [
-          'https://api.nva.unit.no/scopes/backend',
-          'https://api.nva.unit.no/scopes/frontend',
-          'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/file-upload'
-        ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+              "https://api.nva.unit.no/scopes/third-party/file-upload",
+            ]
       parameters:
         - in: path
           name: publicationIdentifier
@@ -966,33 +1011,33 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: '#/components/schemas/InternalCompleteUploadRequestBody'
-                - $ref: '#/components/schemas/ExternalCompleteUploadRequestBody'
+                - $ref: "#/components/schemas/InternalCompleteUploadRequestBody"
+                - $ref: "#/components/schemas/ExternalCompleteUploadRequestBody"
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CompleteUploadFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
-          description: 'Upload Completed'
+        "200":
+          description: "Upload Completed"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/File'
-        '400':
-          description: 'Bad request'
+                $ref: "#/components/schemas/File"
+        "400":
+          description: "Bad request"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
-          description: 'Internal server error'
+                $ref: "#/components/schemas/Problem"
+        "500":
+          description: "Internal server error"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
 
   /{publicationIdentifier}/file/{fileIdentifier}:
     post:
@@ -1001,12 +1046,13 @@ paths:
       tags:
         - external
       security:
-        - CognitoUserPool: [
-          'https://api.nva.unit.no/scopes/backend',
-          'https://api.nva.unit.no/scopes/frontend',
-          'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/file-upload'
-        ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+              "https://api.nva.unit.no/scopes/third-party/file-upload",
+            ]
       parameters:
         - in: path
           name: publicationIdentifier
@@ -1025,58 +1071,59 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/File'
+              $ref: "#/components/schemas/File"
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateFileFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '202':
+        "202":
           description: File Updated
-        '400':
+        "400":
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '401':
+                $ref: "#/components/schemas/Problem"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '403':
+                $ref: "#/components/schemas/Problem"
+        "403":
           description: Forbidden
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '404':
+                $ref: "#/components/schemas/Problem"
+        "404":
           description: Not Found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
+                $ref: "#/components/schemas/Problem"
+        "500":
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
     delete:
       summary: Delete file
       description: Deletes file metadata
       tags:
         - external
       security:
-        - CognitoUserPool: [
-          'https://api.nva.unit.no/scopes/backend',
-          'https://api.nva.unit.no/scopes/frontend',
-          'aws.cognito.signin.user.admin',
-          'https://api.nva.unit.no/scopes/third-party/file-upload'
-        ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+              "https://api.nva.unit.no/scopes/third-party/file-upload",
+            ]
       parameters:
         - in: path
           name: publicationIdentifier
@@ -1093,36 +1140,36 @@ paths:
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeleteFileFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '202':
+        "202":
           description: Accepted
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '403':
+                $ref: "#/components/schemas/Problem"
+        "403":
           description: Forbidden
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '404':
+                $ref: "#/components/schemas/Problem"
+        "404":
           description: Not Found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
+                $ref: "#/components/schemas/Problem"
+        "500":
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
   /file/{fileIdentifier}:
     get:
       summary: Resolves shortened URI to original presigned URI
@@ -1142,7 +1189,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '301':
+        "301":
           description: Permanently moved
           headers:
             Location:
@@ -1150,30 +1197,30 @@ paths:
                 type: string
                 format: uri
               description: The URI that this redirects to
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '404':
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '502':
+                $ref: "#/components/schemas/Problem"
+        "502":
           description: Bad Gateway
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '503':
+                $ref: "#/components/schemas/Problem"
+        "503":
           description: Service Unavailable
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
   /{publicationIdentifier}/tickets:
     parameters:
       - in: path
@@ -1188,19 +1235,19 @@ paths:
       operationId: listTicketsForPublication
       description: List tickets for publication
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/TicketCollection"
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '403':
+        "403":
           description: Forbidden
           content:
             application/json:
@@ -1208,11 +1255,16 @@ paths:
                 $ref: "#/components/schemas/Problem"
 
       security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+            ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListTicketsForPublicationHandler.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
   /{publicationIdentifier}/log:
@@ -1229,38 +1281,43 @@ paths:
           explode: false
           description: UUID identifier of the Publication to fetch Log for.
       security:
-        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+            ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FetchPublicationLogFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PublicationLogResponse"
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '403':
+        "403":
           description: Forbidden
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '502':
+        "502":
           description: Bad Gateway
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
 
   /context:
     get:
@@ -1271,11 +1328,11 @@ paths:
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationContextFunction.Arn}/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -1284,7 +1341,7 @@ paths:
             application/ld+json:
               schema:
                 $ref: "#/components/schemas/PublicationContext"
-        '415':
+        "415":
           description: Unsupported Media Type
           content:
             application/json:
@@ -1307,28 +1364,28 @@ paths:
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchImportCandidateFunction.Arn}:live/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportCandidate'
-        '404':
+                $ref: "#/components/schemas/ImportCandidate"
+        "404":
           description: Import candidate not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '502':
+        "502":
           description: Bad Gateway
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
     post:
       operationId: createPublicationFromImportCandidate
       summary: Create Publication from Import candidate
@@ -1346,38 +1403,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ImportCandidate'
+              $ref: "#/components/schemas/ImportCandidate"
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreatePublicationFromImportCandidateFunction.Arn}:live/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '201':
+        "201":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Publication'
-        '400':
+                $ref: "#/components/schemas/Publication"
+        "400":
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '401':
+                $ref: "#/components/schemas/Problem"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '502':
+                $ref: "#/components/schemas/Problem"
+        "502":
           description: Bad Gateway
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
     put:
       operationId: updateImportCandidate
       summary: Update import status
@@ -1395,38 +1452,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ImportStatus'
+              $ref: "#/components/schemas/ImportStatus"
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateImportStatusHandler.Arn}:live/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportCandidate'
-        '404':
+                $ref: "#/components/schemas/ImportCandidate"
+        "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '401':
+                $ref: "#/components/schemas/Problem"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
-        '502':
+                $ref: "#/components/schemas/Problem"
+        "502":
           description: Bad Gateway
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
   /import-candidate/{importCandidateIdentifier}/file/{fileIdentifier}:
     get:
       operationId: fetchPreSignedUrlForImportCandidateFile
@@ -1451,34 +1508,34 @@ paths:
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ImportCandidatePresignedUrlHandler.Arn}:live/invocations
-        responses: { }
+        responses: {}
         httpMethod: POST
         type: AWS_PROXY
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PresignedUriResponse'
-        '404':
+                $ref: "#/components/schemas/PresignedUriResponse"
+        "404":
           description: File not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
-        '502':
+        "502":
           description: Bad Gateway
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
 
 components:
   schemas:
     PublicationResponse:
       allOf:
-        - $ref: '#/components/schemas/Publication'
+        - $ref: "#/components/schemas/Publication"
         - type: object
           properties:
             allowedOperations:
@@ -1492,7 +1549,21 @@ components:
                   * ticket/publish - Allowed to approve a PublishingRequest ticket
               items:
                 type: string
-                enum: ["update", "delete", "terminate", "unpublish", "republish", "update-including-files", "doi-request-create", "doi-request-approve", "publishing-request-create", "publishing-request-approve", "support-request-create", "support-request-approve"]
+                enum:
+                  [
+                    "update",
+                    "delete",
+                    "terminate",
+                    "unpublish",
+                    "republish",
+                    "update-including-files",
+                    "doi-request-create",
+                    "doi-request-approve",
+                    "publishing-request-create",
+                    "publishing-request-approve",
+                    "support-request-create",
+                    "support-request-approve",
+                  ]
     DeletePublicationRequest:
       type: object
       description: Delete publication request
@@ -1501,7 +1572,7 @@ components:
       properties:
         type:
           type: string
-          enum: [ 'DeletePublicationRequest' ]
+          enum: ["DeletePublicationRequest"]
           description: Type of the request
     UnpublishPublicationRequest:
       type: object
@@ -1512,7 +1583,7 @@ components:
       properties:
         type:
           type: string
-          enum: [ 'UnpublishPublicationRequest' ]
+          enum: ["UnpublishPublicationRequest"]
           description: Type of the request
         duplicateOf:
           type: string
@@ -1854,19 +1925,19 @@ components:
         logEntries:
           type: array
           items:
-            $ref: '#/components/schemas/LogEntry'
+            $ref: "#/components/schemas/LogEntry"
     LogEntry:
       description: LogEntry
       type: object
       properties:
         type:
-            type: string
-            enum:
-                - PublicationLogEntry
-                - FileLogEntry
-                - TicketLogEntry
+          type: string
+          enum:
+            - PublicationLogEntry
+            - FileLogEntry
+            - TicketLogEntry
         logTopic:
-          $ref: '#/components/schemas/LogTopic'
+          $ref: "#/components/schemas/LogTopic"
         timestamp:
           type: string
           format: date-time
@@ -1912,11 +1983,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             volume:
               type: string
             issue:
@@ -1930,11 +2001,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             type:
               type: string
     AcademicLiteratureReview:
@@ -1942,11 +2013,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             volume:
               type: string
             issue:
@@ -1960,17 +2031,17 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     AdditionalIdentifier:
       type: object
       allOf:
-        - $ref: '#/components/schemas/AdditionalIdentifierBase'
+        - $ref: "#/components/schemas/AdditionalIdentifierBase"
     AdditionalIdentifierBase:
       required:
         - type
@@ -1994,7 +2065,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationContext'
+        - $ref: "#/components/schemas/PublicationContext"
         - type: object
           properties:
             id:
@@ -2034,19 +2105,19 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             subtype:
-              $ref: '#/components/schemas/ArchitectureSubtype'
+              $ref: "#/components/schemas/ArchitectureSubtype"
             description:
               type: string
             architectureOutput:
               type: array
               items:
-                $ref: '#/components/schemas/ArchitectureOutput'
+                $ref: "#/components/schemas/ArchitectureOutput"
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     ArchitectureOutput:
@@ -2078,7 +2149,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationContext'
+        - $ref: "#/components/schemas/PublicationContext"
         - type: object
           properties:
             type:
@@ -2088,19 +2159,19 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             subtype:
-              $ref: '#/components/schemas/ArtisticDesignSubtype'
+              $ref: "#/components/schemas/ArtisticDesignSubtype"
             description:
               type: string
             venues:
               type: array
               items:
-                $ref: '#/components/schemas/Venue'
+                $ref: "#/components/schemas/Venue"
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     ArtisticDesignSubtype:
@@ -2136,17 +2207,17 @@ components:
         empty:
           type: boolean
         first:
-          $ref: '#/components/schemas/AssociatedArtifact'
+          $ref: "#/components/schemas/AssociatedArtifact"
         last:
-          $ref: '#/components/schemas/AssociatedArtifact'
+          $ref: "#/components/schemas/AssociatedArtifact"
       items:
-        $ref: '#/components/schemas/AssociatedArtifact'
+        $ref: "#/components/schemas/AssociatedArtifact"
     AssociatedLink:
       required:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/AssociatedArtifact'
+        - $ref: "#/components/schemas/AssociatedArtifact"
         - type: object
           properties:
             id:
@@ -2163,21 +2234,21 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/MusicPerformanceManifestation'
+        - $ref: "#/components/schemas/MusicPerformanceManifestation"
         - type: object
           properties:
             mediaType:
-              $ref: '#/components/schemas/MusicMediaSubtype'
+              $ref: "#/components/schemas/MusicMediaSubtype"
             publisher:
-              $ref: '#/components/schemas/PublishingHouse'
+              $ref: "#/components/schemas/PublishingHouse"
             catalogueNumber:
               type: string
             trackList:
               type: array
               items:
-                $ref: '#/components/schemas/MusicTrack'
+                $ref: "#/components/schemas/MusicTrack"
             isrc:
-              $ref: '#/components/schemas/Isrc'
+              $ref: "#/components/schemas/Isrc"
             type:
               type: string
     Award:
@@ -2185,7 +2256,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/ArchitectureOutput'
+        - $ref: "#/components/schemas/ArchitectureOutput"
         - type: object
           properties:
             name:
@@ -2193,7 +2264,7 @@ components:
             organizer:
               type: string
             date:
-              $ref: '#/components/schemas/Instant'
+              $ref: "#/components/schemas/Instant"
             ranking:
               type: integer
               format: int32
@@ -2206,18 +2277,18 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationContext'
+        - $ref: "#/components/schemas/PublicationContext"
         - type: object
           properties:
             series:
-              $ref: '#/components/schemas/BookSeries'
+              $ref: "#/components/schemas/BookSeries"
             seriesTitle:
               type: string
               writeOnly: true
             seriesNumber:
               type: string
             publisher:
-              $ref: '#/components/schemas/PublishingHouse'
+              $ref: "#/components/schemas/PublishingHouse"
             isbnList:
               type: array
               items:
@@ -2231,7 +2302,7 @@ components:
               uniqueItems: true
               type: array
               items:
-                $ref: '#/components/schemas/AdditionalIdentifier'
+                $ref: "#/components/schemas/AdditionalIdentifier"
             type:
               type: string
     BookAnthology:
@@ -2239,11 +2310,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     BookSeries:
@@ -2258,13 +2329,13 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/MovingPictureOutput'
+        - $ref: "#/components/schemas/MovingPictureOutput"
         - type: object
           properties:
             publisher:
-              $ref: '#/components/schemas/PublishingHouse'
+              $ref: "#/components/schemas/PublishingHouse"
             date:
-              $ref: '#/components/schemas/Instant'
+              $ref: "#/components/schemas/Instant"
             type:
               type: string
     CaseReport:
@@ -2272,11 +2343,11 @@ components:
         - Type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             volume:
               type: string
             issue:
@@ -2290,11 +2361,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             type:
               type: string
     ChapterInReport:
@@ -2302,11 +2373,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             type:
               type: string
     CinematicRelease:
@@ -2314,13 +2385,13 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/MovingPictureOutput'
+        - $ref: "#/components/schemas/MovingPictureOutput"
         - type: object
           properties:
             place:
-              $ref: '#/components/schemas/UnconfirmedPlace'
+              $ref: "#/components/schemas/UnconfirmedPlace"
             date:
-              $ref: '#/components/schemas/Instant'
+              $ref: "#/components/schemas/Instant"
             type:
               type: string
     Competition:
@@ -2328,7 +2399,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/ArchitectureOutput'
+        - $ref: "#/components/schemas/ArchitectureOutput"
         - type: object
           properties:
             name:
@@ -2336,25 +2407,25 @@ components:
             description:
               type: string
             date:
-              $ref: '#/components/schemas/Time'
+              $ref: "#/components/schemas/Time"
             type:
               type: string
     Concert:
       type: object
       allOf:
-        - $ref: '#/components/schemas/MusicPerformanceManifestation'
+        - $ref: "#/components/schemas/MusicPerformanceManifestation"
         - type: object
           properties:
             place:
-              $ref: '#/components/schemas/UnconfirmedPlace'
+              $ref: "#/components/schemas/UnconfirmedPlace"
             time:
-              $ref: '#/components/schemas/Time'
+              $ref: "#/components/schemas/Time"
             extent:
               type: string
             concertProgramme:
               type: array
               items:
-                $ref: '#/components/schemas/MusicalWorkPerformance'
+                $ref: "#/components/schemas/MusicalWorkPerformance"
             concertSeries:
               type: string
     ConferenceAbstract:
@@ -2362,7 +2433,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             volume:
@@ -2372,7 +2443,7 @@ components:
             articleNumber:
               type: string
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             type:
               type: string
     ConferenceLecture:
@@ -2380,11 +2451,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     ConferencePoster:
@@ -2392,11 +2463,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     ConferenceReport:
@@ -2404,11 +2475,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     ConfirmedDocument:
@@ -2416,7 +2487,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/RelatedDocument'
+        - $ref: "#/components/schemas/RelatedDocument"
         - type: object
           properties:
             identifier:
@@ -2429,7 +2500,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/Funding'
+        - $ref: "#/components/schemas/Funding"
         - type: object
           properties:
             id:
@@ -2443,13 +2514,13 @@ components:
       type: object
       properties:
         identity:
-          $ref: '#/components/schemas/Identity'
+          $ref: "#/components/schemas/Identity"
         affiliations:
           type: array
           items:
-            $ref: '#/components/schemas/Corporation'
+            $ref: "#/components/schemas/Corporation"
         role:
-          $ref: '#/components/schemas/RoleType'
+          $ref: "#/components/schemas/RoleType"
         sequence:
           type: integer
           format: int32
@@ -2462,7 +2533,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/Agent'
+        - $ref: "#/components/schemas/Agent"
         - type: object
           properties:
             type:
@@ -2477,7 +2548,7 @@ components:
     CristinIdentifier:
       type: object
       allOf:
-        - $ref: '#/components/schemas/AdditionalIdentifierBase'
+        - $ref: "#/components/schemas/AdditionalIdentifierBase"
     CreateUploadRequestBody:
       description: Request body containing details about file to be uploaded
       type: object
@@ -2608,7 +2679,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/RightsRetentionStrategy'
+        - $ref: "#/components/schemas/RightsRetentionStrategy"
         - type: object
           properties:
             type:
@@ -2618,16 +2689,16 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             related:
               uniqueItems: true
               type: array
               items:
-                $ref: '#/components/schemas/RelatedDocument'
+                $ref: "#/components/schemas/RelatedDocument"
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     DataSet:
@@ -2635,13 +2706,13 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             userAgreesToTermsAndConditions:
               type: boolean
             geographicalCoverage:
-              $ref: '#/components/schemas/GeographicalDescription'
+              $ref: "#/components/schemas/GeographicalDescription"
             referencedBy:
               uniqueItems: true
               type: array
@@ -2652,7 +2723,7 @@ components:
               uniqueItems: true
               type: array
               items:
-                $ref: '#/components/schemas/RelatedDocument'
+                $ref: "#/components/schemas/RelatedDocument"
             compliesWith:
               uniqueItems: true
               type: array
@@ -2660,7 +2731,7 @@ components:
                 type: string
                 format: uri
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     DefinedDuration:
@@ -2668,7 +2739,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/Duration'
+        - $ref: "#/components/schemas/Duration"
         - type: object
           properties:
             minutes:
@@ -2690,36 +2761,36 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationContext'
+        - $ref: "#/components/schemas/PublicationContext"
         - type: object
           properties:
             series:
-              $ref: '#/components/schemas/BookSeries'
+              $ref: "#/components/schemas/BookSeries"
             seriesTitle:
               type: string
               writeOnly: true
             seriesNumber:
               type: string
             publisher:
-              $ref: '#/components/schemas/PublishingHouse'
+              $ref: "#/components/schemas/PublishingHouse"
             isbnList:
               type: array
               items:
                 type: string
             courseCode:
-              $ref: '#/components/schemas/Course'
+              $ref: "#/components/schemas/Course"
             revision:
               type: string
               enum:
                 - Revised
                 - Unrevised
             course:
-              $ref: '#/components/schemas/Course'
+              $ref: "#/components/schemas/Course"
             additionalIdentifiers:
               uniqueItems: true
               type: array
               items:
-                $ref: '#/components/schemas/AdditionalIdentifier'
+                $ref: "#/components/schemas/AdditionalIdentifier"
             type:
               type: string
     DegreeBachelor:
@@ -2727,13 +2798,13 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             submittedDate:
-              $ref: '#/components/schemas/PublicationDate'
+              $ref: "#/components/schemas/PublicationDate"
             type:
               type: string
     DegreeLicentiate:
@@ -2741,13 +2812,13 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             submittedDate:
-              $ref: '#/components/schemas/PublicationDate'
+              $ref: "#/components/schemas/PublicationDate"
             type:
               type: string
     DegreeMaster:
@@ -2755,13 +2826,13 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             submittedDate:
-              $ref: '#/components/schemas/PublicationDate'
+              $ref: "#/components/schemas/PublicationDate"
             type:
               type: string
     DegreePhd:
@@ -2769,18 +2840,18 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             submittedDate:
-              $ref: '#/components/schemas/PublicationDate'
+              $ref: "#/components/schemas/PublicationDate"
             related:
               uniqueItems: true
               type: array
               items:
-                $ref: '#/components/schemas/RelatedDocument'
+                $ref: "#/components/schemas/RelatedDocument"
             type:
               type: string
     ArtisticDegreePhd:
@@ -2788,18 +2859,18 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             submittedDate:
-              $ref: '#/components/schemas/PublicationDate'
+              $ref: "#/components/schemas/PublicationDate"
             related:
               uniqueItems: true
               type: array
               items:
-                $ref: '#/components/schemas/RelatedDocument'
+                $ref: "#/components/schemas/RelatedDocument"
             type:
               type: string
     Duration:
@@ -2814,21 +2885,21 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     EncyclopediaChapter:
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
     EntityDescription:
       required:
         - type
@@ -2844,11 +2915,11 @@ components:
           type: string
           format: uri
         publicationDate:
-          $ref: '#/components/schemas/PublicationDate'
+          $ref: "#/components/schemas/PublicationDate"
         contributors:
           type: array
           items:
-            $ref: '#/components/schemas/Contributor'
+            $ref: "#/components/schemas/Contributor"
         alternativeAbstracts:
           type: object
           additionalProperties:
@@ -2862,7 +2933,7 @@ components:
         description:
           type: string
         reference:
-          $ref: '#/components/schemas/Reference'
+          $ref: "#/components/schemas/Reference"
         metadataSource:
           type: string
           format: uri
@@ -2875,22 +2946,22 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationContext'
+        - $ref: "#/components/schemas/PublicationContext"
         - type: object
           properties:
             label:
               type: string
             place:
-              $ref: '#/components/schemas/Place'
+              $ref: "#/components/schemas/Place"
             time:
-              $ref: '#/components/schemas/Time'
+              $ref: "#/components/schemas/Time"
             agent:
-              $ref: '#/components/schemas/Agent'
+              $ref: "#/components/schemas/Agent"
             product:
               type: string
               format: uri
             subEvent:
-              $ref: '#/components/schemas/Event'
+              $ref: "#/components/schemas/Event"
             type:
               type: string
     Exhibition:
@@ -2898,17 +2969,17 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/ArchitectureOutput'
+        - $ref: "#/components/schemas/ArchitectureOutput"
         - type: object
           properties:
             name:
               type: string
             place:
-              $ref: '#/components/schemas/UnconfirmedPlace'
+              $ref: "#/components/schemas/UnconfirmedPlace"
             organizer:
               type: string
             date:
-              $ref: '#/components/schemas/Period'
+              $ref: "#/components/schemas/Period"
             otherInformation:
               type: string
             type:
@@ -2916,25 +2987,25 @@ components:
     ExhibitionBasic:
       type: object
       allOf:
-        - $ref: '#/components/schemas/ExhibitionProductionManifestation'
+        - $ref: "#/components/schemas/ExhibitionProductionManifestation"
         - type: object
           properties:
             organization:
-              $ref: '#/components/schemas/UnconfirmedOrganization'
+              $ref: "#/components/schemas/UnconfirmedOrganization"
             place:
-              $ref: '#/components/schemas/UnconfirmedPlace'
+              $ref: "#/components/schemas/UnconfirmedPlace"
             date:
-              $ref: '#/components/schemas/Period'
+              $ref: "#/components/schemas/Period"
     ExhibitionCatalog:
       required:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     ExhibitionCatalogChapter:
@@ -2942,11 +3013,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             type:
               type: string
     ExhibitionCatalogReference:
@@ -2954,7 +3025,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/ExhibitionProductionManifestation'
+        - $ref: "#/components/schemas/ExhibitionProductionManifestation"
         - type: object
           properties:
             id:
@@ -2967,7 +3038,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationContext'
+        - $ref: "#/components/schemas/PublicationContext"
         - type: object
           properties:
             type:
@@ -2975,7 +3046,7 @@ components:
     ExhibitionMentionInPublication:
       type: object
       allOf:
-        - $ref: '#/components/schemas/ExhibitionProductionManifestation'
+        - $ref: "#/components/schemas/ExhibitionProductionManifestation"
         - type: object
           properties:
             title:
@@ -2985,7 +3056,7 @@ components:
             pages:
               type: string
             date:
-              $ref: '#/components/schemas/Time'
+              $ref: "#/components/schemas/Time"
             otherInformation:
               type: string
     ExhibitionOtherPresentation:
@@ -2993,7 +3064,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/ExhibitionProductionManifestation'
+        - $ref: "#/components/schemas/ExhibitionProductionManifestation"
         - type: object
           properties:
             typeDescription:
@@ -3001,11 +3072,11 @@ components:
             description:
               type: string
             place:
-              $ref: '#/components/schemas/UnconfirmedPlace'
+              $ref: "#/components/schemas/UnconfirmedPlace"
             publisher:
-              $ref: '#/components/schemas/PublishingHouse'
+              $ref: "#/components/schemas/PublishingHouse"
             date:
-              $ref: '#/components/schemas/Instant'
+              $ref: "#/components/schemas/Instant"
             type:
               type: string
     ExhibitionProduction:
@@ -3013,17 +3084,17 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             subtype:
-              $ref: '#/components/schemas/ExhibitionProductionSubtype'
+              $ref: "#/components/schemas/ExhibitionProductionSubtype"
             manifestations:
               type: array
               items:
-                $ref: '#/components/schemas/ExhibitionProductionManifestation'
+                $ref: "#/components/schemas/ExhibitionProductionManifestation"
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     ExhibitionProductionManifestation:
@@ -3054,7 +3125,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/AssociatedArtifact'
+        - $ref: "#/components/schemas/AssociatedArtifact"
         - type: object
           properties:
             identifier:
@@ -3079,14 +3150,14 @@ components:
               type: string
               format: date-time
             rightsRetentionStrategy:
-              $ref: '#/components/schemas/RightsRetentionStrategy'
+              $ref: "#/components/schemas/RightsRetentionStrategy"
             legalNote:
               type: string
             publishedDate:
               type: string
               format: date-time
             uploadDetails:
-              $ref: '#/components/schemas/UploadDetails'
+              $ref: "#/components/schemas/UploadDetails"
             allowedOperations:
               type: array
               items:
@@ -3103,7 +3174,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/RightsRetentionStrategy'
+        - $ref: "#/components/schemas/RightsRetentionStrategy"
         - type: object
           properties:
             type:
@@ -3123,7 +3194,7 @@ components:
           type: string
           format: uri
         fundingAmount:
-          $ref: '#/components/schemas/MonetaryAmount'
+          $ref: "#/components/schemas/MonetaryAmount"
         activeFrom:
           type: string
           format: date-time
@@ -3137,11 +3208,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationContext'
+        - $ref: "#/components/schemas/PublicationContext"
         - type: object
           properties:
             publisher:
-              $ref: '#/components/schemas/PublishingHouse'
+              $ref: "#/components/schemas/PublishingHouse"
             type:
               type: string
     GeographicalDescription:
@@ -3156,7 +3227,7 @@ components:
     HandleIdentifier:
       type: object
       allOf:
-        - $ref: '#/components/schemas/AdditionalIdentifierBase'
+        - $ref: "#/components/schemas/AdditionalIdentifierBase"
     Identity:
       required:
         - type
@@ -3183,7 +3254,7 @@ components:
         additionalIdentifiers:
           type: array
           items:
-            $ref: '#/components/schemas/AdditionalIdentifier'
+            $ref: "#/components/schemas/AdditionalIdentifier"
         type:
           type: string
     ImportDetail:
@@ -3195,7 +3266,7 @@ components:
           type: string
           format: date-time
         importSource:
-          $ref: '#/components/schemas/ImportSource'
+          $ref: "#/components/schemas/ImportSource"
         type:
           type: string
     ImportSource:
@@ -3218,7 +3289,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/UploadDetails'
+        - $ref: "#/components/schemas/UploadDetails"
         - type: object
           properties:
             source:
@@ -3248,11 +3319,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             type:
               type: string
     Ismn:
@@ -3280,7 +3351,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationContext'
+        - $ref: "#/components/schemas/PublicationContext"
         - type: object
           properties:
             id:
@@ -3293,7 +3364,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             volume:
@@ -3303,7 +3374,7 @@ components:
             articleNumber:
               type: string
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             corrigendumFor:
               type: string
               format: uri
@@ -3314,7 +3385,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             volume:
@@ -3324,7 +3395,7 @@ components:
             articleNumber:
               type: string
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             type:
               type: string
     JournalLeader:
@@ -3332,7 +3403,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             volume:
@@ -3342,7 +3413,7 @@ components:
             articleNumber:
               type: string
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             type:
               type: string
     JournalLetter:
@@ -3350,7 +3421,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             volume:
@@ -3360,7 +3431,7 @@ components:
             articleNumber:
               type: string
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             type:
               type: string
     JournalReview:
@@ -3368,7 +3439,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             volume:
@@ -3378,7 +3449,7 @@ components:
             articleNumber:
               type: string
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             type:
               type: string
     Lecture:
@@ -3386,11 +3457,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     LiteraryArts:
@@ -3398,19 +3469,19 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             subtype:
-              $ref: '#/components/schemas/LiteraryArtsSubtype'
+              $ref: "#/components/schemas/LiteraryArtsSubtype"
             manifestations:
               type: array
               items:
-                $ref: '#/components/schemas/LiteraryArtsManifestation'
+                $ref: "#/components/schemas/LiteraryArtsManifestation"
             description:
               type: string
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     LiteraryArtsAudioVisual:
@@ -3418,13 +3489,13 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/LiteraryArtsManifestation'
+        - $ref: "#/components/schemas/LiteraryArtsManifestation"
         - type: object
           properties:
             subtype:
-              $ref: '#/components/schemas/LiteraryArtsAudioVisualSubtype'
+              $ref: "#/components/schemas/LiteraryArtsAudioVisualSubtype"
             publisher:
-              $ref: '#/components/schemas/PublishingHouse'
+              $ref: "#/components/schemas/PublishingHouse"
             isbnList:
               type: array
               items:
@@ -3454,7 +3525,7 @@ components:
       type: object
       properties:
         publicationDate:
-          $ref: '#/components/schemas/PublicationDate'
+          $ref: "#/components/schemas/PublicationDate"
         type:
           type: string
     LiteraryArtsMonograph:
@@ -3462,17 +3533,17 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/LiteraryArtsManifestation'
+        - $ref: "#/components/schemas/LiteraryArtsManifestation"
         - type: object
           properties:
             publisher:
-              $ref: '#/components/schemas/PublishingHouse'
+              $ref: "#/components/schemas/PublishingHouse"
             isbnList:
               type: array
               items:
                 type: string
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     LiteraryArtsPerformance:
@@ -3480,13 +3551,13 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/LiteraryArtsManifestation'
+        - $ref: "#/components/schemas/LiteraryArtsManifestation"
         - type: object
           properties:
             subtype:
-              $ref: '#/components/schemas/LiteraryArtsPerformanceSubtype'
+              $ref: "#/components/schemas/LiteraryArtsPerformanceSubtype"
             place:
-              $ref: '#/components/schemas/UnconfirmedPlace'
+              $ref: "#/components/schemas/UnconfirmedPlace"
             type:
               type: string
     LiteraryArtsPerformanceSubtype:
@@ -3524,14 +3595,14 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/LiteraryArtsManifestation'
+        - $ref: "#/components/schemas/LiteraryArtsManifestation"
         - type: object
           properties:
             id:
               type: string
               format: uri
             publisher:
-              $ref: '#/components/schemas/PublishingHouse'
+              $ref: "#/components/schemas/PublishingHouse"
             type:
               type: string
     ListPartsRequestBody:
@@ -3554,13 +3625,13 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             description:
               type: string
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     ListPartsResponseBody:
@@ -3584,11 +3655,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     MediaContribution:
@@ -3596,11 +3667,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationContext'
+        - $ref: "#/components/schemas/PublicationContext"
         - type: object
           properties:
             medium:
-              $ref: '#/components/schemas/MediaSubType'
+              $ref: "#/components/schemas/MediaSubType"
             format:
               type: string
               enum:
@@ -3610,7 +3681,7 @@ components:
             disseminationChannel:
               type: string
             partOf:
-              $ref: '#/components/schemas/SeriesEpisode'
+              $ref: "#/components/schemas/SeriesEpisode"
             type:
               type: string
     MediaContributionPeriodical:
@@ -3618,7 +3689,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationContext'
+        - $ref: "#/components/schemas/PublicationContext"
         - type: object
           properties:
             id:
@@ -3631,7 +3702,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             volume:
@@ -3641,7 +3712,7 @@ components:
             articleNumber:
               type: string
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             type:
               type: string
     MediaInterview:
@@ -3649,11 +3720,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     MediaParticipationInRadioOrTv:
@@ -3661,11 +3732,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     MediaPodcast:
@@ -3673,11 +3744,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     MediaReaderOpinion:
@@ -3685,7 +3756,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             volume:
@@ -3695,7 +3766,7 @@ components:
             articleNumber:
               type: string
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             type:
               type: string
     MediaSubType:
@@ -3717,7 +3788,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/ArchitectureOutput'
+        - $ref: "#/components/schemas/ArchitectureOutput"
         - type: object
           properties:
             title:
@@ -3725,7 +3796,7 @@ components:
             issue:
               type: string
             date:
-              $ref: '#/components/schemas/Time'
+              $ref: "#/components/schemas/Time"
             otherInformation:
               type: string
             type:
@@ -3749,7 +3820,7 @@ components:
       type: object
       properties:
         introduction:
-          $ref: '#/components/schemas/Range'
+          $ref: "#/components/schemas/Range"
         pages:
           type: string
         illustrated:
@@ -3761,21 +3832,21 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             subtype:
-              $ref: '#/components/schemas/MovingPictureSubtype'
+              $ref: "#/components/schemas/MovingPictureSubtype"
             description:
               type: string
             outputs:
               type: array
               items:
-                $ref: '#/components/schemas/MovingPictureOutput'
+                $ref: "#/components/schemas/MovingPictureOutput"
             duration:
-              $ref: '#/components/schemas/Duration'
+              $ref: "#/components/schemas/Duration"
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     MovingPictureOutput:
@@ -3823,17 +3894,17 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             manifestations:
               type: array
               items:
-                $ref: '#/components/schemas/MusicPerformanceManifestation'
+                $ref: "#/components/schemas/MusicPerformanceManifestation"
             duration:
-              $ref: '#/components/schemas/Duration'
+              $ref: "#/components/schemas/Duration"
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     MusicPerformanceManifestation:
@@ -3848,7 +3919,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/MusicPerformanceManifestation'
+        - $ref: "#/components/schemas/MusicPerformanceManifestation"
         - type: object
           properties:
             ensemble:
@@ -3858,9 +3929,9 @@ components:
             extent:
               type: string
             publisher:
-              $ref: '#/components/schemas/PublishingHouse'
+              $ref: "#/components/schemas/PublishingHouse"
             ismn:
-              $ref: '#/components/schemas/Ismn'
+              $ref: "#/components/schemas/Ismn"
             type:
               type: string
     MusicTrack:
@@ -3901,11 +3972,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             type:
               type: string
     NonFictionMonograph:
@@ -3913,11 +3984,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     NullAssociatedArtifact:
@@ -3925,7 +3996,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/AssociatedArtifact'
+        - $ref: "#/components/schemas/AssociatedArtifact"
         - type: object
           properties:
             type:
@@ -3935,7 +4006,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/Duration'
+        - $ref: "#/components/schemas/Duration"
         - type: object
           properties:
             type:
@@ -3952,7 +4023,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublishingHouse'
+        - $ref: "#/components/schemas/PublishingHouse"
         - type: object
           properties:
             type:
@@ -3962,7 +4033,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/RightsRetentionStrategy'
+        - $ref: "#/components/schemas/RightsRetentionStrategy"
         - type: object
           properties:
             type:
@@ -3972,7 +4043,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/Corporation'
+        - $ref: "#/components/schemas/Corporation"
         - type: object
           properties:
             id:
@@ -3985,19 +4056,19 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/MusicPerformanceManifestation'
+        - $ref: "#/components/schemas/MusicPerformanceManifestation"
         - type: object
           properties:
             performanceType:
               type: string
             place:
-              $ref: '#/components/schemas/UnconfirmedPlace'
+              $ref: "#/components/schemas/UnconfirmedPlace"
             extent:
               type: string
             musicalWorks:
               type: array
               items:
-                $ref: '#/components/schemas/MusicalWork'
+                $ref: "#/components/schemas/MusicalWork"
             type:
               type: string
     OtherPresentation:
@@ -4005,11 +4076,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     OtherRelease:
@@ -4017,17 +4088,17 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/MovingPictureOutput'
+        - $ref: "#/components/schemas/MovingPictureOutput"
         - type: object
           properties:
             description:
               type: string
             place:
-              $ref: '#/components/schemas/UnconfirmedPlace'
+              $ref: "#/components/schemas/UnconfirmedPlace"
             publisher:
-              $ref: '#/components/schemas/PublishingHouse'
+              $ref: "#/components/schemas/PublishingHouse"
             date:
-              $ref: '#/components/schemas/Instant'
+              $ref: "#/components/schemas/Instant"
             type:
               type: string
     OtherStudentWork:
@@ -4035,13 +4106,13 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             submittedDate:
-              $ref: '#/components/schemas/PublicationDate'
+              $ref: "#/components/schemas/PublicationDate"
             type:
               type: string
     OverriddenRightsRetentionStrategy:
@@ -4049,7 +4120,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/RightsRetentionStrategy'
+        - $ref: "#/components/schemas/RightsRetentionStrategy"
         - type: object
           properties:
             overriddenBy:
@@ -4068,19 +4139,19 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             subtype:
-              $ref: '#/components/schemas/PerformingArtsSubtype'
+              $ref: "#/components/schemas/PerformingArtsSubtype"
             description:
               type: string
             outputs:
               type: array
               items:
-                $ref: '#/components/schemas/PerformingArtsOutput'
+                $ref: "#/components/schemas/PerformingArtsOutput"
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     PerformingArtsOutput:
@@ -4107,13 +4178,13 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PerformingArtsOutput'
+        - $ref: "#/components/schemas/PerformingArtsOutput"
         - type: object
           properties:
             place:
-              $ref: '#/components/schemas/Place'
+              $ref: "#/components/schemas/Place"
             date:
-              $ref: '#/components/schemas/Time'
+              $ref: "#/components/schemas/Time"
             sequence:
               type: integer
               format: int32
@@ -4144,11 +4215,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             volume:
               type: string
             issue:
@@ -4162,11 +4233,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             type:
               type: string
     PopularScienceMonograph:
@@ -4174,11 +4245,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     ProfessionalArticle:
@@ -4186,11 +4257,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             volume:
               type: string
             issue:
@@ -4237,7 +4308,7 @@ components:
       type: object
       properties:
         identifier:
-          $ref: '#/components/schemas/SortableIdentifier'
+          $ref: "#/components/schemas/SortableIdentifier"
         status:
           type: string
           enum:
@@ -4249,9 +4320,9 @@ components:
             - UNPUBLISHED
             - DRAFT_FOR_DELETION
         resourceOwner:
-          $ref: '#/components/schemas/ResourceOwner'
+          $ref: "#/components/schemas/ResourceOwner"
         publisher:
-          $ref: '#/components/schemas/Organization'
+          $ref: "#/components/schemas/Organization"
         createdDate:
           type: string
           format: date-time
@@ -4274,22 +4345,22 @@ components:
           type: string
           format: uri
         entityDescription:
-          $ref: '#/components/schemas/EntityDescription'
+          $ref: "#/components/schemas/EntityDescription"
         projects:
           type: array
           items:
-            $ref: '#/components/schemas/ResearchProject'
+            $ref: "#/components/schemas/ResearchProject"
         fundings:
           type: array
           items:
             oneOf:
-              - $ref: '#/components/schemas/ConfirmedFunding'
-              - $ref: '#/components/schemas/UnconfirmedFunding'
+              - $ref: "#/components/schemas/ConfirmedFunding"
+              - $ref: "#/components/schemas/UnconfirmedFunding"
         additionalIdentifiers:
           uniqueItems: true
           type: array
           items:
-            $ref: '#/components/schemas/AdditionalIdentifierBase'
+            $ref: "#/components/schemas/AdditionalIdentifierBase"
         subjects:
           type: array
           items:
@@ -4301,11 +4372,11 @@ components:
             empty:
               type: boolean
             first:
-              $ref: '#/components/schemas/AssociatedArtifact'
+              $ref: "#/components/schemas/AssociatedArtifact"
             last:
-              $ref: '#/components/schemas/AssociatedArtifact'
+              $ref: "#/components/schemas/AssociatedArtifact"
           items:
-            $ref: '#/components/schemas/AssociatedArtifact'
+            $ref: "#/components/schemas/AssociatedArtifact"
         rightsHolder:
           type: string
         duplicateOf:
@@ -4314,7 +4385,7 @@ components:
         publicationNotes:
           type: array
           items:
-            $ref: '#/components/schemas/PublicationNoteBase'
+            $ref: "#/components/schemas/PublicationNoteBase"
         curatingInstitutions:
           uniqueItems: true
           type: array
@@ -4324,7 +4395,7 @@ components:
         importDetails:
           type: array
           items:
-            $ref: '#/components/schemas/ImportDetail'
+            $ref: "#/components/schemas/ImportDetail"
         allowedOperations:
           type: array
           items:
@@ -4373,13 +4444,13 @@ components:
       type: object
       properties:
         pages:
-          $ref: '#/components/schemas/Pages'
+          $ref: "#/components/schemas/Pages"
         type:
           type: string
     PublicationNote:
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationNoteBase'
+        - $ref: "#/components/schemas/PublicationNoteBase"
     PublicationNoteBase:
       required:
         - type
@@ -4394,7 +4465,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/File'
+        - $ref: "#/components/schemas/File"
         - type: object
           properties:
             type:
@@ -4404,7 +4475,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublishingHouse'
+        - $ref: "#/components/schemas/PublishingHouse"
         - type: object
           properties:
             id:
@@ -4438,12 +4509,12 @@ components:
       type: object
       properties:
         publicationContext:
-          $ref: '#/components/schemas/PublicationContext'
+          $ref: "#/components/schemas/PublicationContext"
         doi:
           type: string
           format: uri
         publicationInstance:
-          $ref: '#/components/schemas/PublicationInstancePages'
+          $ref: "#/components/schemas/PublicationInstancePages"
         type:
           type: string
     RelatedDocument:
@@ -4456,18 +4527,18 @@ components:
     Report:
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationContext'
+        - $ref: "#/components/schemas/PublicationContext"
         - type: object
           properties:
             series:
-              $ref: '#/components/schemas/BookSeries'
+              $ref: "#/components/schemas/BookSeries"
             seriesTitle:
               type: string
               writeOnly: true
             seriesNumber:
               type: string
             publisher:
-              $ref: '#/components/schemas/PublishingHouse'
+              $ref: "#/components/schemas/PublishingHouse"
             isbnList:
               type: array
               items:
@@ -4481,17 +4552,17 @@ components:
               uniqueItems: true
               type: array
               items:
-                $ref: '#/components/schemas/AdditionalIdentifier'
+                $ref: "#/components/schemas/AdditionalIdentifier"
     ReportBasic:
       required:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     ReportBookOfAbstract:
@@ -4499,11 +4570,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     ReportPolicy:
@@ -4511,11 +4582,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     ReportResearch:
@@ -4523,11 +4594,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     ReportWorkingPaper:
@@ -4535,11 +4606,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     ResearchData:
@@ -4547,11 +4618,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationContext'
+        - $ref: "#/components/schemas/PublicationContext"
         - type: object
           properties:
             publisher:
-              $ref: '#/components/schemas/PublishingHouse'
+              $ref: "#/components/schemas/PublishingHouse"
             type:
               type: string
     ResearchProject:
@@ -4567,7 +4638,7 @@ components:
         approvals:
           type: array
           items:
-            $ref: '#/components/schemas/Approval'
+            $ref: "#/components/schemas/Approval"
         type:
           type: string
     ResourceOwner:
@@ -4670,13 +4741,13 @@ components:
     ScopusIdentifier:
       type: object
       allOf:
-        - $ref: '#/components/schemas/AdditionalIdentifierBase'
+        - $ref: "#/components/schemas/AdditionalIdentifierBase"
     Series:
       required:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/BookSeries'
+        - $ref: "#/components/schemas/BookSeries"
         - type: object
           properties:
             id:
@@ -4702,11 +4773,11 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
             volume:
               type: string
             issue:
@@ -4720,21 +4791,21 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/MonographPages'
+              $ref: "#/components/schemas/MonographPages"
             type:
               type: string
     TextbookChapter:
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             pages:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
     Time:
       required:
         - type
@@ -4747,7 +4818,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/Course'
+        - $ref: "#/components/schemas/Course"
         - type: object
           properties:
             code:
@@ -4759,7 +4830,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/RelatedDocument'
+        - $ref: "#/components/schemas/RelatedDocument"
         - type: object
           properties:
             text:
@@ -4771,7 +4842,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/Funding'
+        - $ref: "#/components/schemas/Funding"
         - type: object
           properties:
             type:
@@ -4781,7 +4852,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationContext'
+        - $ref: "#/components/schemas/PublicationContext"
         - type: object
           properties:
             title:
@@ -4797,7 +4868,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationContext'
+        - $ref: "#/components/schemas/PublicationContext"
         - type: object
           properties:
             title:
@@ -4833,7 +4904,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublishingHouse'
+        - $ref: "#/components/schemas/PublishingHouse"
         - type: object
           properties:
             name:
@@ -4845,7 +4916,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/BookSeries'
+        - $ref: "#/components/schemas/BookSeries"
         - type: object
           properties:
             title:
@@ -4861,7 +4932,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/Duration'
+        - $ref: "#/components/schemas/Duration"
         - type: object
           properties:
             value:
@@ -4873,7 +4944,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/File'
+        - $ref: "#/components/schemas/File"
         - type: object
           properties:
             type:
@@ -4881,7 +4952,7 @@ components:
     UnpublishingNote:
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationNoteBase'
+        - $ref: "#/components/schemas/PublicationNoteBase"
         - type: object
           properties:
             createdBy:
@@ -4901,7 +4972,7 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/UploadDetails'
+        - $ref: "#/components/schemas/UploadDetails"
         - type: object
           properties:
             uploadedBy:
@@ -4917,9 +4988,9 @@ components:
       type: object
       properties:
         place:
-          $ref: '#/components/schemas/Place'
+          $ref: "#/components/schemas/Place"
         date:
-          $ref: '#/components/schemas/Time'
+          $ref: "#/components/schemas/Time"
         sequence:
           type: integer
           format: int32
@@ -4930,20 +5001,20 @@ components:
         - type
       type: object
       allOf:
-        - $ref: '#/components/schemas/PublicationInstancePages'
+        - $ref: "#/components/schemas/PublicationInstancePages"
         - type: object
           properties:
             subtype:
-              $ref: '#/components/schemas/VisualArtsSubtype'
+              $ref: "#/components/schemas/VisualArtsSubtype"
             description:
               type: string
             venues:
               uniqueItems: true
               type: array
               items:
-                $ref: '#/components/schemas/Venue'
+                $ref: "#/components/schemas/Venue"
             pages:
-              $ref: '#/components/schemas/NullPages'
+              $ref: "#/components/schemas/NullPages"
             type:
               type: string
     VisualArtsSubtype:

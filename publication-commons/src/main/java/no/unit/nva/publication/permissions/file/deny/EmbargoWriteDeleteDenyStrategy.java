@@ -9,22 +9,21 @@ import no.unit.nva.publication.permissions.file.FileStrategyBase;
 
 public class EmbargoWriteDeleteDenyStrategy extends FileStrategyBase implements FileDenyStrategy {
 
-    public EmbargoWriteDeleteDenyStrategy(FileEntry file,
-                                          UserInstance userInstance,
-                                          Resource resource) {
-        super(file, userInstance, resource);
+  public EmbargoWriteDeleteDenyStrategy(
+      FileEntry file, UserInstance userInstance, Resource resource) {
+    super(file, userInstance, resource);
+  }
+
+  @Override
+  public boolean deniesAction(FileOperation permission) {
+    if (currentUserIsFileOwner() && !fileIsFinalized()) {
+      return false;
     }
 
-    @Override
-    public boolean deniesAction(FileOperation permission) {
-        if (currentUserIsFileOwner() && !fileIsFinalized()) {
-            return false;
-        }
+    return fileHasEmbargo() && !resourceIsDegree() && isWriteOrDelete(permission) && isDeniedUser();
+  }
 
-        return fileHasEmbargo() && !resourceIsDegree() && isWriteOrDelete(permission) && isDeniedUser();
-    }
-
-    private boolean isDeniedUser() {
-        return !(currentUserIsFileCuratorForGivenFile() || isExternalClientWithRelation());
-    }
+  private boolean isDeniedUser() {
+    return !(currentUserIsFileCuratorForGivenFile() || isExternalClientWithRelation());
+  }
 }

@@ -31,227 +31,237 @@ import nva.commons.core.paths.UriWrapper;
 @JsonTypeName(PublicationSummary.TYPE)
 public class PublicationSummary {
 
-    public static final String TYPE = "Publication";
-    private static final int MAX_SIZE_CONTRIBUTOR_LIST = 10;
+  public static final String TYPE = "Publication";
+  private static final int MAX_SIZE_CONTRIBUTOR_LIST = 10;
 
-    @JsonProperty("id")
-    private URI publicationId;
-    @JsonProperty("identifier")
-    private SortableIdentifier identifier;
-    @JsonProperty("mainTitle")
-    private String title;
-    @JsonProperty
-    private User owner;
-    @JsonProperty
-    private PublicationStatus status;
-    @JsonProperty
-    private PublicationInstance<? extends Pages> publicationInstance;
-    @JsonProperty
-    private Instant publishedDate;
-    @JsonProperty
-    private List<Contributor> contributors;
-    @JsonProperty
-    private int contributorsCount;
-    @JsonProperty("abstract")
-    private String mainLanguageAbstract;
-    @JsonProperty("handles")
-    private Set<URI> handles;
+  @JsonProperty("id")
+  private URI publicationId;
 
-    public static PublicationSummary create(Publication publication) {
-        var publicationSummary = new PublicationSummary();
-        publicationSummary.setIdentifier(publication.getIdentifier());
-        publicationSummary.setPublicationId(toPublicationId(publication.getIdentifier()));
-        publicationSummary.setPublishedDate(publication.getPublishedDate());
-        publicationSummary.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
-        publicationSummary.setStatus(publication.getStatus());
-        publicationSummary.setTitle(extractTitle(publication.getEntityDescription()));
-        publicationSummary.setPublicationInstance(extractPublicationInstance(publication.getEntityDescription()));
-        publicationSummary.setContributors(extractContributors(publication.getEntityDescription()));
-        publicationSummary.setAbstract(extractAbstract(publication));
-        publicationSummary.setHandles(extractHandles(publication));
-        return publicationSummary;
+  @JsonProperty("identifier")
+  private SortableIdentifier identifier;
+
+  @JsonProperty("mainTitle")
+  private String title;
+
+  @JsonProperty private User owner;
+  @JsonProperty private PublicationStatus status;
+  @JsonProperty private PublicationInstance<? extends Pages> publicationInstance;
+  @JsonProperty private Instant publishedDate;
+  @JsonProperty private List<Contributor> contributors;
+  @JsonProperty private int contributorsCount;
+
+  @JsonProperty("abstract")
+  private String mainLanguageAbstract;
+
+  @JsonProperty("handles")
+  private Set<URI> handles;
+
+  public static PublicationSummary create(Publication publication) {
+    var publicationSummary = new PublicationSummary();
+    publicationSummary.setIdentifier(publication.getIdentifier());
+    publicationSummary.setPublicationId(toPublicationId(publication.getIdentifier()));
+    publicationSummary.setPublishedDate(publication.getPublishedDate());
+    publicationSummary.setOwner(new User(publication.getResourceOwner().getOwner().getValue()));
+    publicationSummary.setStatus(publication.getStatus());
+    publicationSummary.setTitle(extractTitle(publication.getEntityDescription()));
+    publicationSummary.setPublicationInstance(
+        extractPublicationInstance(publication.getEntityDescription()));
+    publicationSummary.setContributors(extractContributors(publication.getEntityDescription()));
+    publicationSummary.setAbstract(extractAbstract(publication));
+    publicationSummary.setHandles(extractHandles(publication));
+    return publicationSummary;
+  }
+
+  private static Collection<URI> extractHandles(Publication publication) {
+    var handlesFromAdditionalIdentifiers = extractHandlesFromAdditionalIdentifiers(publication);
+    return Stream.concat(
+            handlesFromAdditionalIdentifiers, Stream.ofNullable(publication.getHandle()))
+        .collect(Collectors.toSet());
+  }
+
+  private static Stream<URI> extractHandlesFromAdditionalIdentifiers(Publication publication) {
+    return publication.getAdditionalIdentifiers().stream()
+        .filter(HandleIdentifier.class::isInstance)
+        .map(HandleIdentifier.class::cast)
+        .map(HandleIdentifier::uri);
+  }
+
+  public static PublicationSummary create(URI publicationId, String publicationTitle) {
+    var publicationSummary = new PublicationSummary();
+    publicationSummary.setIdentifier(extractPublicationIdentifier(publicationId));
+    publicationSummary.setPublicationId(publicationId);
+    publicationSummary.setTitle(publicationTitle);
+    return publicationSummary;
+  }
+
+  private static String extractAbstract(Publication publication) {
+    return Optional.ofNullable(publication.getEntityDescription())
+        .map(EntityDescription::getAbstract)
+        .orElse(null);
+  }
+
+  @JsonProperty("abstract")
+  public String getAbstract() {
+    return mainLanguageAbstract;
+  }
+
+  public void setAbstract(String mainLanguageAbstract) {
+    this.mainLanguageAbstract = mainLanguageAbstract;
+  }
+
+  public Instant getPublishedDate() {
+    return publishedDate;
+  }
+
+  public void setPublishedDate(Instant publishedDate) {
+    this.publishedDate = publishedDate;
+  }
+
+  public List<Contributor> getContributors() {
+    return contributors;
+  }
+
+  public void setContributors(List<Contributor> contributors) {
+    this.contributorsCount = contributors.size();
+    this.contributors = sortAndLimitNumberOfContributors(contributors);
+  }
+
+  public int getContributorsCount() {
+    return contributorsCount;
+  }
+
+  public SortableIdentifier getIdentifier() {
+    return identifier;
+  }
+
+  public void setIdentifier(SortableIdentifier identifier) {
+    this.identifier = identifier;
+  }
+
+  public PublicationStatus getStatus() {
+    return status;
+  }
+
+  public void setStatus(PublicationStatus status) {
+    this.status = status;
+  }
+
+  public URI getPublicationId() {
+    return publicationId;
+  }
+
+  public void setPublicationId(URI publicationId) {
+    this.publicationId = publicationId;
+  }
+
+  public String getTitle() {
+    return title;
+  }
+
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
+  public User getOwner() {
+    return owner;
+  }
+
+  public void setOwner(User owner) {
+    this.owner = owner;
+  }
+
+  public PublicationInstance<? extends Pages> getPublicationInstance() {
+    return publicationInstance;
+  }
+
+  public void setPublicationInstance(PublicationInstance<? extends Pages> publicationInstance) {
+    this.publicationInstance = publicationInstance;
+  }
+
+  public Set<URI> getHandles() {
+    return handles;
+  }
+
+  public void setHandles(Collection<URI> handles) {
+    this.handles = new HashSet<>(handles);
+  }
+
+  public SortableIdentifier extractPublicationIdentifier() {
+    return extractPublicationIdentifier(publicationId);
+  }
+
+  private static SortableIdentifier extractPublicationIdentifier(URI publicationId) {
+    return new SortableIdentifier(UriWrapper.fromUri(publicationId).getLastPathElement());
+  }
+
+  @Override
+  @JacocoGenerated
+  public int hashCode() {
+    return Objects.hash(
+        getPublicationId(),
+        getIdentifier(),
+        getTitle(),
+        getOwner(),
+        getStatus(),
+        getPublicationInstance(),
+        getPublishedDate(),
+        getContributors(),
+        getContributorsCount(),
+        getAbstract(),
+        getHandles());
+  }
+
+  @Override
+  @JacocoGenerated
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
-
-    private static Collection<URI> extractHandles(Publication publication) {
-        var handlesFromAdditionalIdentifiers = extractHandlesFromAdditionalIdentifiers(publication);
-        return Stream.concat(handlesFromAdditionalIdentifiers, Stream.ofNullable(publication.getHandle()))
-                   .collect(Collectors.toSet());
+    if (!(o instanceof PublicationSummary that)) {
+      return false;
     }
+    return Objects.equals(getPublicationId(), that.getPublicationId())
+        && Objects.equals(getIdentifier(), that.getIdentifier())
+        && Objects.equals(getTitle(), that.getTitle())
+        && Objects.equals(getOwner(), that.getOwner())
+        && getStatus() == that.getStatus()
+        && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
+        && Objects.equals(getPublishedDate(), that.getPublishedDate())
+        && Objects.equals(getContributors(), that.getContributors())
+        && Objects.equals(getContributorsCount(), that.getContributorsCount())
+        && Objects.equals(getAbstract(), that.getAbstract())
+        && Objects.equals(getHandles(), that.getHandles());
+  }
 
-    private static Stream<URI> extractHandlesFromAdditionalIdentifiers(Publication publication) {
-        return publication.getAdditionalIdentifiers().stream()
-                   .filter(HandleIdentifier.class::isInstance)
-                   .map(HandleIdentifier.class::cast)
-                   .map(HandleIdentifier::uri);
-    }
+  private static String extractTitle(EntityDescription entityDescription) {
+    return Optional.ofNullable(entityDescription).map(EntityDescription::getMainTitle).orElse(null);
+  }
 
-    public static PublicationSummary create(URI publicationId, String publicationTitle) {
-        var publicationSummary = new PublicationSummary();
-        publicationSummary.setIdentifier(extractPublicationIdentifier(publicationId));
-        publicationSummary.setPublicationId(publicationId);
-        publicationSummary.setTitle(publicationTitle);
-        return publicationSummary;
-    }
+  private static List<Contributor> extractContributors(EntityDescription entityDescription) {
+    return Optional.ofNullable(entityDescription)
+        .map(EntityDescription::getContributors)
+        .orElse(Collections.emptyList());
+  }
 
-    private static String extractAbstract(Publication publication) {
-        return Optional.ofNullable(publication.getEntityDescription())
-                   .map(EntityDescription::getAbstract)
-                   .orElse(null);
-    }
+  private static List<Contributor> sortAndLimitNumberOfContributors(
+      List<Contributor> contributors) {
+    return contributors.stream()
+        .sorted(Comparator.comparing(Contributor::getSequence))
+        .limit(MAX_SIZE_CONTRIBUTOR_LIST)
+        .collect(Collectors.toList());
+  }
 
-    @JsonProperty("abstract")
-    public String getAbstract() {
-        return mainLanguageAbstract;
-    }
+  private static PublicationInstance<? extends Pages> extractPublicationInstance(
+      EntityDescription entityDescription) {
+    return Optional.ofNullable(entityDescription)
+        .map(EntityDescription::getReference)
+        .map(Reference::getPublicationInstance)
+        .orElse(null);
+  }
 
-    public void setAbstract(String mainLanguageAbstract) {
-        this.mainLanguageAbstract = mainLanguageAbstract;
-    }
-
-    public Instant getPublishedDate() {
-        return publishedDate;
-    }
-
-    public void setPublishedDate(Instant publishedDate) {
-        this.publishedDate = publishedDate;
-    }
-
-    public List<Contributor> getContributors() {
-        return contributors;
-    }
-
-    public void setContributors(List<Contributor> contributors) {
-        this.contributorsCount = contributors.size();
-        this.contributors = sortAndLimitNumberOfContributors(contributors);
-    }
-
-    public int getContributorsCount() {
-        return contributorsCount;
-    }
-
-    public SortableIdentifier getIdentifier() {
-        return identifier;
-    }
-
-    public void setIdentifier(SortableIdentifier identifier) {
-        this.identifier = identifier;
-    }
-
-    public PublicationStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(PublicationStatus status) {
-        this.status = status;
-    }
-
-    public URI getPublicationId() {
-        return publicationId;
-    }
-
-    public void setPublicationId(URI publicationId) {
-        this.publicationId = publicationId;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public User getOwner() {
-        return owner;
-    }
-
-    public void setOwner(User owner) {
-        this.owner = owner;
-    }
-
-    public PublicationInstance<? extends Pages> getPublicationInstance() {
-        return publicationInstance;
-    }
-
-    public void setPublicationInstance(PublicationInstance<? extends Pages> publicationInstance) {
-        this.publicationInstance = publicationInstance;
-    }
-
-
-    public Set<URI> getHandles() {
-        return handles;
-    }
-
-    public void setHandles(Collection<URI> handles) {
-        this.handles = new HashSet<>(handles);
-    }
-
-    public SortableIdentifier extractPublicationIdentifier() {
-        return extractPublicationIdentifier(publicationId);
-    }
-
-    private static SortableIdentifier extractPublicationIdentifier(URI publicationId) {
-        return new SortableIdentifier(UriWrapper.fromUri(publicationId).getLastPathElement());
-    }
-
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getPublicationId(), getIdentifier(), getTitle(), getOwner(), getStatus(),
-                            getPublicationInstance(), getPublishedDate(), getContributors(), getContributorsCount(),
-                            getAbstract(), getHandles());
-    }
-
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof PublicationSummary that)) {
-            return false;
-        }
-        return Objects.equals(getPublicationId(), that.getPublicationId())
-               && Objects.equals(getIdentifier(), that.getIdentifier())
-               && Objects.equals(getTitle(), that.getTitle())
-               && Objects.equals(getOwner(), that.getOwner())
-               && getStatus() == that.getStatus()
-               && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
-               && Objects.equals(getPublishedDate(), that.getPublishedDate())
-               && Objects.equals(getContributors(), that.getContributors())
-               && Objects.equals(getContributorsCount(), that.getContributorsCount())
-               && Objects.equals(getAbstract(), that.getAbstract())
-               && Objects.equals(getHandles(), that.getHandles());
-    }
-
-    private static String extractTitle(EntityDescription entityDescription) {
-        return Optional.ofNullable(entityDescription).map(EntityDescription::getMainTitle).orElse(null);
-    }
-
-    private static List<Contributor> extractContributors(EntityDescription entityDescription) {
-        return Optional.ofNullable(entityDescription)
-                   .map(EntityDescription::getContributors)
-                   .orElse(Collections.emptyList());
-    }
-
-    private static List<Contributor> sortAndLimitNumberOfContributors(List<Contributor> contributors) {
-        return contributors.stream()
-                   .sorted(Comparator.comparing(Contributor::getSequence))
-                   .limit(MAX_SIZE_CONTRIBUTOR_LIST)
-                   .collect(Collectors.toList());
-    }
-
-    private static PublicationInstance<? extends Pages> extractPublicationInstance(
-        EntityDescription entityDescription) {
-        return Optional.ofNullable(entityDescription)
-                   .map(EntityDescription::getReference)
-                   .map(Reference::getPublicationInstance)
-                   .orElse(null);
-    }
-
-    private static URI toPublicationId(SortableIdentifier identifier) {
-        return UriWrapper.fromUri(PublicationServiceConfig.PUBLICATION_HOST_URI)
-                   .addChild(identifier.toString())
-                   .getUri();
-    }
+  private static URI toPublicationId(SortableIdentifier identifier) {
+    return UriWrapper.fromUri(PublicationServiceConfig.PUBLICATION_HOST_URI)
+        .addChild(identifier.toString())
+        .getUri();
+  }
 }

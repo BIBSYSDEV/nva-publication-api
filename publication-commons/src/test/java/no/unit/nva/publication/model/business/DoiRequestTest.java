@@ -14,6 +14,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Year;
 import no.unit.nva.model.Publication;
@@ -26,70 +27,80 @@ import org.junit.jupiter.api.Test;
 
 class DoiRequestTest {
 
-    public static final String TYPE_FIELD = "type";
-    private final DoiRequest sampleDoiRequest = sampleDoiRequestFromResource();
+  public static final String TYPE_FIELD = "type";
+  private final DoiRequest sampleDoiRequest = sampleDoiRequestFromResource();
 
-    @Test
-    void doiRequestHasTypeDoiRequest() {
-        JsonNode json = dynamoDbObjectMapper.convertValue(sampleDoiRequest, JsonNode.class);
-        assertThat(json.get(TYPE_FIELD), is(not(nullValue())));
-        assertThat(json.get(TYPE_FIELD).textValue(), is(equalTo(DoiRequest.TYPE)));
-    }
+  @Test
+  void doiRequestHasTypeDoiRequest() {
+    JsonNode json = dynamoDbObjectMapper.convertValue(sampleDoiRequest, JsonNode.class);
+    assertThat(json.get(TYPE_FIELD), is(not(nullValue())));
+    assertThat(json.get(TYPE_FIELD).textValue(), is(equalTo(DoiRequest.TYPE)));
+  }
 
-    @Test
-    void doiRequestHasReferenceToResource() {
-        assertThat(sampleDoiRequest.getResourceIdentifier(), is(notNullValue()));
-    }
+  @Test
+  void doiRequestHasReferenceToResource() {
+    assertThat(sampleDoiRequest.getResourceIdentifier(), is(notNullValue()));
+  }
 
-    @Test
-    void updateThrowsExceptionWhenResourceIdentifierIsDifferent() {
-        Resource resource = Resource.fromPublication(randomPublishedPublicationWithIdentifier());
-        DoiRequest doiRequest = DoiRequest.create(resource, UserInstance.fromPublication(resource.toPublication()));
+  @Test
+  void updateThrowsExceptionWhenResourceIdentifierIsDifferent() {
+    Resource resource = Resource.fromPublication(randomPublishedPublicationWithIdentifier());
+    DoiRequest doiRequest =
+        DoiRequest.create(resource, UserInstance.fromPublication(resource.toPublication()));
 
-        Resource updatedResource = Resource.fromPublication(publicationWithIdentifier());
+    Resource updatedResource = Resource.fromPublication(publicationWithIdentifier());
 
-        assertThrows(IllegalDoiRequestUpdate.class, () -> doiRequest.update(updatedResource));
-    }
+    assertThrows(IllegalDoiRequestUpdate.class, () -> doiRequest.update(updatedResource));
+  }
 
-    @Test
-    void shouldSetDoiAssignedEventWhenCompletingDoi() {
-        var doiRequest = sampleDoiRequestFromResource();
-        var publication = randomPublication();
-        publication.setStatus(PUBLISHED);
-        publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear(Year.now().toString()).build());
-        var completedDoiRequest = doiRequest.complete(publication, UserInstance.create(randomString(), randomUri()));
+  @Test
+  void shouldSetDoiAssignedEventWhenCompletingDoi() {
+    var doiRequest = sampleDoiRequestFromResource();
+    var publication = randomPublication();
+    publication.setStatus(PUBLISHED);
+    publication
+        .getEntityDescription()
+        .setPublicationDate(new PublicationDate.Builder().withYear(Year.now().toString()).build());
+    var completedDoiRequest =
+        doiRequest.complete(publication, UserInstance.create(randomString(), randomUri()));
 
-        assertInstanceOf(DoiAssignedEvent.class, completedDoiRequest.getTicketEvent());
-    }
+    assertInstanceOf(DoiAssignedEvent.class, completedDoiRequest.getTicketEvent());
+  }
 
-    @Test
-    void shouldSetDoiRejectedEventWhenClosingDoi() throws ApiGatewayException {
-        var doiRequest = sampleDoiRequestFromResource();
-        var publication = randomPublication();
-        publication.setStatus(PUBLISHED);
-        publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear(Year.now().toString()).build());
-        var rejectedDoiRequest = doiRequest.close(UserInstance.create(randomString(), randomUri()));
+  @Test
+  void shouldSetDoiRejectedEventWhenClosingDoi() throws ApiGatewayException {
+    var doiRequest = sampleDoiRequestFromResource();
+    var publication = randomPublication();
+    publication.setStatus(PUBLISHED);
+    publication
+        .getEntityDescription()
+        .setPublicationDate(new PublicationDate.Builder().withYear(Year.now().toString()).build());
+    var rejectedDoiRequest = doiRequest.close(UserInstance.create(randomString(), randomUri()));
 
-        assertInstanceOf(DoiRejectedEvent.class, rejectedDoiRequest.getTicketEvent());
-    }
+    assertInstanceOf(DoiRejectedEvent.class, rejectedDoiRequest.getTicketEvent());
+  }
 
-    @Test
-    void shouldThrowInvalidTicketStatusTransitionExceptionWhenCompletingDoiRequestWhichDoesNotSatisfyRequirements() {
-        var doiRequest = sampleDoiRequestFromResource();
-        var publication = randomPublication();
-        publication.getEntityDescription().setPublicationDate(new PublicationDate.Builder().withYear(randomString()).build());
+  @Test
+  void
+      shouldThrowInvalidTicketStatusTransitionExceptionWhenCompletingDoiRequestWhichDoesNotSatisfyRequirements() {
+    var doiRequest = sampleDoiRequestFromResource();
+    var publication = randomPublication();
+    publication
+        .getEntityDescription()
+        .setPublicationDate(new PublicationDate.Builder().withYear(randomString()).build());
 
-        assertThrows(InvalidTicketStatusTransitionException.class, () ->
-            doiRequest.complete(publication, UserInstance.create(randomString(), randomUri())));
-    }
+    assertThrows(
+        InvalidTicketStatusTransitionException.class,
+        () -> doiRequest.complete(publication, UserInstance.create(randomString(), randomUri())));
+  }
 
-    private DoiRequest sampleDoiRequestFromResource() {
-        var publication = randomPublishedPublicationWithIdentifier();
-        var resource = Resource.fromPublication(publication);
-        return DoiRequest.create(resource, UserInstance.fromPublication(resource.toPublication()));
-    }
+  private DoiRequest sampleDoiRequestFromResource() {
+    var publication = randomPublishedPublicationWithIdentifier();
+    var resource = Resource.fromPublication(publication);
+    return DoiRequest.create(resource, UserInstance.fromPublication(resource.toPublication()));
+  }
 
-    private static Publication randomPublishedPublicationWithIdentifier() {
-        return publicationWithIdentifier().copy().withStatus(PUBLISHED).build();
-    }
+  private static Publication randomPublishedPublicationWithIdentifier() {
+    return publicationWithIdentifier().copy().withStatus(PUBLISHED).build();
+  }
 }

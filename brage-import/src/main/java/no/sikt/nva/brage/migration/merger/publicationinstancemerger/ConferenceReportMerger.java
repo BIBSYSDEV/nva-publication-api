@@ -5,16 +5,17 @@ import no.unit.nva.model.instancetypes.report.ConferenceReport;
 
 public final class ConferenceReportMerger extends PublicationInstanceMerger<ConferenceReport> {
 
-    public ConferenceReportMerger(ConferenceReport conferenceReport) {
-        super(conferenceReport);
-    }
+  public ConferenceReportMerger(ConferenceReport conferenceReport) {
+    super(conferenceReport);
+  }
 
-    @Override
-    public ConferenceReport merge(PublicationInstance<?> publicationInstance) {
-        if (publicationInstance instanceof ConferenceReport conferenceReport) {
-            return new ConferenceReport(getPages(this.publicationInstance.getPages(), conferenceReport.getPages()));
-        } else {
-            return this.publicationInstance;
-        }
+  @Override
+  public ConferenceReport merge(PublicationInstance<?> publicationInstance) {
+    if (publicationInstance instanceof ConferenceReport conferenceReport) {
+      return new ConferenceReport(
+          getPages(this.publicationInstance.getPages(), conferenceReport.getPages()));
+    } else {
+      return this.publicationInstance;
     }
+  }
 }

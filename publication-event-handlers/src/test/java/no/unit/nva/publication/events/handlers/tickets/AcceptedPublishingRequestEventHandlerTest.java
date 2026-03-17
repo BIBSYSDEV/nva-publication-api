@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.dynamodbv2.model.OperationType;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
@@ -77,600 +78,609 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
 
-    private static final Context CONTEXT = new FakeContext();
-    private static final UserInstance USER_INSTANCE = UserInstance.create(randomString(), randomUri());
-    private ResourceService resourceService;
-    private TicketService ticketService;
-    private AcceptedPublishingRequestEventHandler handler;
-    private ByteArrayOutputStream outputStream;
-    private S3Driver s3Driver;
+  private static final Context CONTEXT = new FakeContext();
+  private static final UserInstance USER_INSTANCE =
+      UserInstance.create(randomString(), randomUri());
+  private ResourceService resourceService;
+  private TicketService ticketService;
+  private AcceptedPublishingRequestEventHandler handler;
+  private ByteArrayOutputStream outputStream;
+  private S3Driver s3Driver;
 
-    @BeforeEach
-    void setup() {
-        super.init();
-        resourceService = getResourceService(client);
-        this.ticketService = getTicketService();
-        var s3Client = new FakeS3Client();
-        s3Driver = new S3Driver(s3Client, randomString());
-        handler =
-            new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
-        outputStream = new ByteArrayOutputStream();
-    }
+  @BeforeEach
+  void setup() {
+    super.init();
+    resourceService = getResourceService(client);
+    this.ticketService = getTicketService();
+    var s3Client = new FakeS3Client();
+    s3Driver = new S3Driver(s3Client, randomString());
+    handler = new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
+    outputStream = new ByteArrayOutputStream();
+  }
 
-    @Test
-    void shouldDoNothingWhenEventHasNoEffectiveChanges() throws ApiGatewayException, IOException {
-        var publication =
-            TicketTestUtils.createPersistedPublication(
-                PublicationStatus.PUBLISHED, resourceService);
-        var publishingRequest =
-            pendingPublishingRequest(publication).complete(publication, USER_INSTANCE);
-        var event = createEvent(publishingRequest, publishingRequest);
-        handler.handleRequest(event, outputStream, CONTEXT);
-        var notUpdatedPublication =
-            resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        assertThat(
-            publication.getModifiedDate(),
-            is(equalTo(notUpdatedPublication.getModifiedDate())));
-        assertThat(notUpdatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-    }
+  @Test
+  void shouldDoNothingWhenEventHasNoEffectiveChanges() throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+    var publishingRequest =
+        pendingPublishingRequest(publication).complete(publication, USER_INSTANCE);
+    var event = createEvent(publishingRequest, publishingRequest);
+    handler.handleRequest(event, outputStream, CONTEXT);
+    var notUpdatedPublication =
+        resourceService.getPublicationByIdentifier(publication.getIdentifier());
+    assertThat(publication.getModifiedDate(), is(equalTo(notUpdatedPublication.getModifiedDate())));
+    assertThat(notUpdatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+  }
 
-    @Test
-    void shouldPublishFilesWhenPublicationIsAlreadyPublished()
-        throws ApiGatewayException, IOException {
-        var publication =
-            TicketTestUtils.createPersistedPublication(
-                PublicationStatus.PUBLISHED, resourceService);
-        var pendingPublishingRequest = pendingPublishingRequest(publication);
-        var approvedPublishingRequest =
-            pendingPublishingRequest
-                .complete(publication, USER_INSTANCE)
-                .persistNewTicket(ticketService);
-        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
-        handler.handleRequest(event, outputStream, CONTEXT);
-        var updatedPublication =
-            resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-    }
+  @Test
+  void shouldPublishFilesWhenPublicationIsAlreadyPublished()
+      throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+    var pendingPublishingRequest = pendingPublishingRequest(publication);
+    var approvedPublishingRequest =
+        pendingPublishingRequest
+            .complete(publication, USER_INSTANCE)
+            .persistNewTicket(ticketService);
+    var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+    handler.handleRequest(event, outputStream, CONTEXT);
+    var updatedPublication =
+        resourceService.getPublicationByIdentifier(publication.getIdentifier());
+    assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+  }
 
-    @Test
-    void shouldPublishPublicationWhenPublishingRequestIsApproved()
-        throws ApiGatewayException, IOException {
-        var publication =
-            TicketTestUtils.createPersistedPublication(
-                PublicationStatus.PUBLISHED, resourceService);
-        var pendingPublishingRequest = pendingPublishingRequest(publication);
-        pendingPublishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        var approvedPublishingRequest =
-            pendingPublishingRequest
-                .complete(publication, USER_INSTANCE)
-                .persistNewTicket(ticketService);
-        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
-        handler.handleRequest(event, outputStream, CONTEXT);
-        var updatedPublication =
-            resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-    }
+  @Test
+  void shouldPublishPublicationWhenPublishingRequestIsApproved()
+      throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+    var pendingPublishingRequest = pendingPublishingRequest(publication);
+    pendingPublishingRequest.setWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY);
+    var approvedPublishingRequest =
+        pendingPublishingRequest
+            .complete(publication, USER_INSTANCE)
+            .persistNewTicket(ticketService);
+    var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+    handler.handleRequest(event, outputStream, CONTEXT);
+    var updatedPublication =
+        resourceService.getPublicationByIdentifier(publication.getIdentifier());
+    assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+  }
 
-    private static Stream<Arguments> workflowAndFileCombinationsProvider() {
-        return Stream.of(
-            Arguments.of(
-                REGISTRATOR_PUBLISHES_METADATA_ONLY,
-                randomPendingOpenFile(),
-                OpenFile.class),
-            Arguments.of(
-                REGISTRATOR_PUBLISHES_METADATA_ONLY,
-                randomPendingInternalFile(),
-                InternalFile.class),
-            Arguments.of(
-                REGISTRATOR_PUBLISHES_METADATA_AND_FILES,
-                randomPendingOpenFile(),
-                OpenFile.class),
-            Arguments.of(
-                REGISTRATOR_PUBLISHES_METADATA_AND_FILES,
-                randomPendingInternalFile(),
-                InternalFile.class),
-            Arguments.of(
-                REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES,
-                randomPendingOpenFile(),
-                OpenFile.class),
-            Arguments.of(
-                REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES,
-                randomPendingInternalFile(),
-                InternalFile.class));
-    }
+  private static Stream<Arguments> workflowAndFileCombinationsProvider() {
+    return Stream.of(
+        Arguments.of(REGISTRATOR_PUBLISHES_METADATA_ONLY, randomPendingOpenFile(), OpenFile.class),
+        Arguments.of(
+            REGISTRATOR_PUBLISHES_METADATA_ONLY, randomPendingInternalFile(), InternalFile.class),
+        Arguments.of(
+            REGISTRATOR_PUBLISHES_METADATA_AND_FILES, randomPendingOpenFile(), OpenFile.class),
+        Arguments.of(
+            REGISTRATOR_PUBLISHES_METADATA_AND_FILES,
+            randomPendingInternalFile(),
+            InternalFile.class),
+        Arguments.of(
+            REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES,
+            randomPendingOpenFile(),
+            OpenFile.class),
+        Arguments.of(
+            REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES,
+            randomPendingInternalFile(),
+            InternalFile.class));
+  }
 
-    @ParameterizedTest
-    @MethodSource("workflowAndFileCombinationsProvider")
-    void shouldPublishFilesWhenPublishingRequestIsApproved(
-        PublishingWorkflow publishingWorkflow,
-        File file,
-        Class<? extends File> expectedFileType)
-        throws ApiGatewayException, IOException {
-        var publication =
-            TicketTestUtils.createPersistedPublicationWithFile(
-                PublicationStatus.PUBLISHED, file, resourceService);
-        var pendingPublishingRequest =
-            (PublishingRequestCase)
-                persistPublishingRequestContainingExistingUnpublishedFiles(publication);
-        pendingPublishingRequest.setWorkflow(publishingWorkflow);
-        var approvedPublishingRequest =
-            pendingPublishingRequest
-                .complete(publication, USER_INSTANCE)
-                .persistNewTicket(ticketService);
-        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
-        handler.handleRequest(event, outputStream, CONTEXT);
-        var updatedPublication =
-            resourceService.getPublicationByIdentifier(publication.getIdentifier());
+  @ParameterizedTest
+  @MethodSource("workflowAndFileCombinationsProvider")
+  void shouldPublishFilesWhenPublishingRequestIsApproved(
+      PublishingWorkflow publishingWorkflow, File file, Class<? extends File> expectedFileType)
+      throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedPublicationWithFile(
+            PublicationStatus.PUBLISHED, file, resourceService);
+    var pendingPublishingRequest =
+        (PublishingRequestCase)
+            persistPublishingRequestContainingExistingUnpublishedFiles(publication);
+    pendingPublishingRequest.setWorkflow(publishingWorkflow);
+    var approvedPublishingRequest =
+        pendingPublishingRequest
+            .complete(publication, USER_INSTANCE)
+            .persistNewTicket(ticketService);
+    var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+    handler.handleRequest(event, outputStream, CONTEXT);
+    var updatedPublication =
+        resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
-        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-        assertThat(getAssociatedFiles(updatedPublication), everyItem(instanceOf(expectedFileType)));
-    }
+    assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+    assertThat(getAssociatedFiles(updatedPublication), everyItem(instanceOf(expectedFileType)));
+  }
 
-    @Test
-    void shouldNotPublishInternalFileWhenPublishingRequestIsApproved()
-        throws ApiGatewayException, IOException {
-        var publication =
-            TicketTestUtils.createPersistedPublicationWithInternalFile(
-                resourceService);
-        var pendingPublishingRequest = pendingPublishingRequest(publication);
-        pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
-        var approvedPublishingRequest =
-            pendingPublishingRequest
-                .complete(publication, USER_INSTANCE)
-                .persistNewTicket(ticketService);
-        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
-        handler.handleRequest(event, outputStream, CONTEXT);
-        var updatedPublication =
-            resourceService.getPublicationByIdentifier(publication.getIdentifier());
+  @Test
+  void shouldNotPublishInternalFileWhenPublishingRequestIsApproved()
+      throws ApiGatewayException, IOException {
+    var publication = TicketTestUtils.createPersistedPublicationWithInternalFile(resourceService);
+    var pendingPublishingRequest = pendingPublishingRequest(publication);
+    pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
+    var approvedPublishingRequest =
+        pendingPublishingRequest
+            .complete(publication, USER_INSTANCE)
+            .persistNewTicket(ticketService);
+    var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+    handler.handleRequest(event, outputStream, CONTEXT);
+    var updatedPublication =
+        resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
-        assertThat(
-            updatedPublication.getAssociatedArtifacts().getFirst(),
-            is(instanceOf(InternalFile.class)));
-        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-    }
+    assertThat(
+        updatedPublication.getAssociatedArtifacts().getFirst(), is(instanceOf(InternalFile.class)));
+    assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+  }
 
-    @Test
-    void shouldNotCreateNewDoiRequestTicketWhenTicketAlreadyExists()
-        throws ApiGatewayException, IOException {
-        var publication = createDraftPublicationWithDoi();
-        Resource.fromPublication(publication).publish(resourceService, UserInstance.fromPublication(publication));
-        final var existingTicket =
-            createDoiRequestTicket(
-                Resource.fromPublication(publication).fetch(resourceService).orElseThrow().toPublication());
-        var pendingPublishingRequest = pendingPublishingRequest(publication);
-        pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
-        var approvedPublishingRequest =
-            pendingPublishingRequest
-                .complete(publication, USER_INSTANCE)
-                .persistNewTicket(ticketService);
-        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
-        handler.handleRequest(event, outputStream, CONTEXT);
-        var updatedPublication =
-            resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        var actualTicket =
-            ticketService
-                .fetchTicketByResourceIdentifier(
-                    publication.getPublisher().getId(),
-                    publication.getIdentifier(),
-                    DoiRequest.class)
-                .orElseThrow();
+  @Test
+  void shouldNotCreateNewDoiRequestTicketWhenTicketAlreadyExists()
+      throws ApiGatewayException, IOException {
+    var publication = createDraftPublicationWithDoi();
+    Resource.fromPublication(publication)
+        .publish(resourceService, UserInstance.fromPublication(publication));
+    final var existingTicket =
+        createDoiRequestTicket(
+            Resource.fromPublication(publication)
+                .fetch(resourceService)
+                .orElseThrow()
+                .toPublication());
+    var pendingPublishingRequest = pendingPublishingRequest(publication);
+    pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
+    var approvedPublishingRequest =
+        pendingPublishingRequest
+            .complete(publication, USER_INSTANCE)
+            .persistNewTicket(ticketService);
+    var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+    handler.handleRequest(event, outputStream, CONTEXT);
+    var updatedPublication =
+        resourceService.getPublicationByIdentifier(publication.getIdentifier());
+    var actualTicket =
+        ticketService
+            .fetchTicketByResourceIdentifier(
+                publication.getPublisher().getId(), publication.getIdentifier(), DoiRequest.class)
+            .orElseThrow();
 
-        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-        assertThat(existingTicket.getIdentifier(), is(equalTo(actualTicket.getIdentifier())));
-        assertThat(actualTicket.getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
-    }
+    assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+    assertThat(existingTicket.getIdentifier(), is(equalTo(actualTicket.getIdentifier())));
+    assertThat(actualTicket.getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+  }
 
-    @Test
-    void shouldNotPublishPublicationWhenPublishingRequestIsStillNotApproved()
-        throws ApiGatewayException, IOException {
-        var publication = createPublication();
-        var pendingPublishingRequest = pendingPublishingRequest(publication);
-        var stillPendingPublishingRequest = modifyPublishingRequest(pendingPublishingRequest);
-        var event = createEvent(pendingPublishingRequest, stillPendingPublishingRequest);
+  @Test
+  void shouldNotPublishPublicationWhenPublishingRequestIsStillNotApproved()
+      throws ApiGatewayException, IOException {
+    var publication = createPublication();
+    var pendingPublishingRequest = pendingPublishingRequest(publication);
+    var stillPendingPublishingRequest = modifyPublishingRequest(pendingPublishingRequest);
+    var event = createEvent(pendingPublishingRequest, stillPendingPublishingRequest);
 
-        handler.handleRequest(event, outputStream, CONTEXT);
-        var updatedPublication =
-            resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
-    }
+    handler.handleRequest(event, outputStream, CONTEXT);
+    var updatedPublication =
+        resourceService.getPublicationByIdentifier(publication.getIdentifier());
+    assertThat(updatedPublication.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
+  }
 
-    @Test
-    void shouldThrowRuntimeExceptionAndLogExceptionMessageWhenPublishingPublicationFails()
-        throws ApiGatewayException, IOException {
-        var publication = createUnpublishablePublication();
-        var pendingPublishingRequest = pendingPublishingRequest(publication);
-        pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
-        var approvedPublishingRequest =
-            pendingPublishingRequest
-                .complete(publication, USER_INSTANCE)
-                .persistNewTicket(ticketService);
-        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
-        var logger = LogUtils.getTestingAppenderForRootLogger();
+  @Test
+  void shouldThrowRuntimeExceptionAndLogExceptionMessageWhenPublishingPublicationFails()
+      throws ApiGatewayException, IOException {
+    var publication = createUnpublishablePublication();
+    var pendingPublishingRequest = pendingPublishingRequest(publication);
+    pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
+    var approvedPublishingRequest =
+        pendingPublishingRequest
+            .complete(publication, USER_INSTANCE)
+            .persistNewTicket(ticketService);
+    var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+    var logger = LogUtils.getTestingAppenderForRootLogger();
 
-        assertThrows(
-            RuntimeException.class, () -> handler.handleRequest(event, outputStream, CONTEXT));
+    assertThrows(RuntimeException.class, () -> handler.handleRequest(event, outputStream, CONTEXT));
 
-        assertThat(logger.getMessages(), containsString("Resource is not publishable"));
-    }
+    assertThat(logger.getMessages(), containsString("Resource is not publishable"));
+  }
 
-    @Test
-    void shouldThrowRuntimeExceptionAndLogExceptionMessageWhenUpdatingFilesFails()
-        throws ApiGatewayException, IOException {
-        var publication = createPublication();
-        var pendingPublishingRequest =
-            (PublishingRequestCase) persistPublishingRequestContainingExistingUnpublishedFiles(publication);
-        pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
-        var approvedPublishingRequest = pendingPublishingRequest
-                                            .complete(publication, USER_INSTANCE)
-                                            .persistNewTicket(ticketService);
-        var handlerThrowingException =
-            handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication(publication);
-        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+  @Test
+  void shouldThrowRuntimeExceptionAndLogExceptionMessageWhenUpdatingFilesFails()
+      throws ApiGatewayException, IOException {
+    var publication = createPublication();
+    var pendingPublishingRequest =
+        (PublishingRequestCase)
+            persistPublishingRequestContainingExistingUnpublishedFiles(publication);
+    pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
+    var approvedPublishingRequest =
+        pendingPublishingRequest
+            .complete(publication, USER_INSTANCE)
+            .persistNewTicket(ticketService);
+    var handlerThrowingException =
+        handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication(publication);
+    var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
 
-        assertThrows(
-            RuntimeException.class,
-            () -> handlerThrowingException.handleRequest(event, outputStream, CONTEXT));
-    }
+    assertThrows(
+        RuntimeException.class,
+        () -> handlerThrowingException.handleRequest(event, outputStream, CONTEXT));
+  }
 
-    @Test
-    void shouldThrowRuntimeExceptionAndLogExceptionMessageWhenFetchingPublishingRequestFails()
-        throws ApiGatewayException, IOException {
-        var publication = createUnpublishablePublication();
-        var pendingPublishingRequest = pendingPublishingRequest(publication);
-        pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
-        var approvedPublishingRequest =
-            pendingPublishingRequest
-                .complete(publication, USER_INSTANCE)
-                .persistNewTicket(ticketService);
-        var handlerThrowingException =
-            handlerWithResourceServiceThrowingExceptionWhenFetchingTicket();
-        var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
-        var logger = LogUtils.getTestingAppenderForRootLogger();
+  @Test
+  void shouldThrowRuntimeExceptionAndLogExceptionMessageWhenFetchingPublishingRequestFails()
+      throws ApiGatewayException, IOException {
+    var publication = createUnpublishablePublication();
+    var pendingPublishingRequest = pendingPublishingRequest(publication);
+    pendingPublishingRequest.setWorkflow(REGISTRATOR_REQUIRES_APPROVAL_FOR_METADATA_AND_FILES);
+    var approvedPublishingRequest =
+        pendingPublishingRequest
+            .complete(publication, USER_INSTANCE)
+            .persistNewTicket(ticketService);
+    var handlerThrowingException = handlerWithResourceServiceThrowingExceptionWhenFetchingTicket();
+    var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
+    var logger = LogUtils.getTestingAppenderForRootLogger();
 
-        assertThrows(
-            RuntimeException.class,
-            () -> handlerThrowingException.handleRequest(event, outputStream, CONTEXT));
+    assertThrows(
+        RuntimeException.class,
+        () -> handlerThrowingException.handleRequest(event, outputStream, CONTEXT));
 
-        assertThat(logger.getMessages(), containsString("Could not fetch PublishingRequest"));
-    }
+    assertThat(logger.getMessages(), containsString("Could not fetch PublishingRequest"));
+  }
 
-    @Test
-    void shouldPublishFilesFromPublishingRequestOnlyWhenPublishingRequestIsApproved()
-        throws ApiGatewayException, IOException {
-        var fileToPublish = randomPendingOpenFile();
-        var file = randomPendingOpenFile();
-        var publication = createPublicationWithFiles(file, fileToPublish);
-        var completedPublishingRequest =
-            persistCompletedPublishingRequestWithApprovedFiles(publication, fileToPublish);
-        completedPublishingRequest.setFilesForApproval(Set.of(fileToPublish));
-        var event = createEvent(null, completedPublishingRequest);
-        handler.handleRequest(event, outputStream, CONTEXT);
-        var updatedPublication =
-            resourceService.getPublicationByIdentifier(publication.getIdentifier());
-        var publishedFiles = getOpenFiles(updatedPublication);
+  @Test
+  void shouldPublishFilesFromPublishingRequestOnlyWhenPublishingRequestIsApproved()
+      throws ApiGatewayException, IOException {
+    var fileToPublish = randomPendingOpenFile();
+    var file = randomPendingOpenFile();
+    var publication = createPublicationWithFiles(file, fileToPublish);
+    var completedPublishingRequest =
+        persistCompletedPublishingRequestWithApprovedFiles(publication, fileToPublish);
+    completedPublishingRequest.setFilesForApproval(Set.of(fileToPublish));
+    var event = createEvent(null, completedPublishingRequest);
+    handler.handleRequest(event, outputStream, CONTEXT);
+    var updatedPublication =
+        resourceService.getPublicationByIdentifier(publication.getIdentifier());
+    var publishedFiles = getOpenFiles(updatedPublication);
 
-        assertThat(publishedFiles, hasSize(1));
-        assertThat(
-            publishedFiles.getFirst().getIdentifier(),
-            is(equalTo(fileToPublish.getIdentifier())));
-    }
+    assertThat(publishedFiles, hasSize(1));
+    assertThat(
+        publishedFiles.getFirst().getIdentifier(), is(equalTo(fileToPublish.getIdentifier())));
+  }
 
-    @Test
-    void shouldUpdateFilesFromPublishingRequestWhenOwnerAffiliationChanges()
-        throws ApiGatewayException, IOException {
-        var fileToPublish = randomPendingOpenFile();
-        var file = randomPendingOpenFile();
-        var publication = createPublicationWithFiles(file, fileToPublish);
-        var publishingRequest = pendingPublishingRequest(publication, Set.of(fileToPublish));
-        var newOwnerAffiliation = randomUri();
-        var updatedPublishingRequest = publishingRequest.copy();
+  @Test
+  void shouldUpdateFilesFromPublishingRequestWhenOwnerAffiliationChanges()
+      throws ApiGatewayException, IOException {
+    var fileToPublish = randomPendingOpenFile();
+    var file = randomPendingOpenFile();
+    var publication = createPublicationWithFiles(file, fileToPublish);
+    var publishingRequest = pendingPublishingRequest(publication, Set.of(fileToPublish));
+    var newOwnerAffiliation = randomUri();
+    var updatedPublishingRequest = publishingRequest.copy();
 
-        updatedPublishingRequest.setReceivingOrganizationDetailsAndResetAssignee(newOwnerAffiliation,
-                                                                                 newOwnerAffiliation);
+    updatedPublishingRequest.setReceivingOrganizationDetailsAndResetAssignee(
+        newOwnerAffiliation, newOwnerAffiliation);
 
-        var event = createEvent(publishingRequest, updatedPublishingRequest);
+    var event = createEvent(publishingRequest, updatedPublishingRequest);
 
-        handler.handleRequest(event, outputStream, CONTEXT);
+    handler.handleRequest(event, outputStream, CONTEXT);
 
-        var updatedPublication =
-            resourceService.getResourceByIdentifier(publication.getIdentifier());
+    var updatedPublication = resourceService.getResourceByIdentifier(publication.getIdentifier());
 
-        assertThat(getActualOwnerAffiliation(updatedPublication, fileToPublish),
-                   is(equalTo(newOwnerAffiliation)));
-    }
+    assertThat(
+        getActualOwnerAffiliation(updatedPublication, fileToPublish),
+        is(equalTo(newOwnerAffiliation)));
+  }
 
-    @Test
-    void shouldNotUpdateFileOwnershipAffiliationWhenOldTicketIsNullAndReceivingCompletedTicket()
-        throws ApiGatewayException, IOException {
-        var publication = createPublicationWithFiles(randomPendingOpenFile(), randomPendingOpenFile());
-        var publishingRequest = completedPublishingRequest(publication).persistNewTicket(ticketService);
+  @Test
+  void shouldNotUpdateFileOwnershipAffiliationWhenOldTicketIsNullAndReceivingCompletedTicket()
+      throws ApiGatewayException, IOException {
+    var publication = createPublicationWithFiles(randomPendingOpenFile(), randomPendingOpenFile());
+    var publishingRequest = completedPublishingRequest(publication).persistNewTicket(ticketService);
 
-        handler.handleRequest(createEvent(null, publishingRequest), outputStream, CONTEXT);
+    handler.handleRequest(createEvent(null, publishingRequest), outputStream, CONTEXT);
 
-        Resource.fromPublication(publication).fetchFileEntries(resourceService)
-            .forEach(fileEntry -> fileOwnerIsUnchanged(fileEntry, publication));
-    }
+    Resource.fromPublication(publication)
+        .fetchFileEntries(resourceService)
+        .forEach(fileEntry -> fileOwnerIsUnchanged(fileEntry, publication));
+  }
 
-    private static void fileOwnerIsUnchanged(FileEntry fileEntry, Publication publication) {
-        assertEquals(publication.getResourceOwner().getOwnerAffiliation(), fileEntry.getOwnerAffiliation());
-    }
+  private static void fileOwnerIsUnchanged(FileEntry fileEntry, Publication publication) {
+    assertEquals(
+        publication.getResourceOwner().getOwnerAffiliation(), fileEntry.getOwnerAffiliation());
+  }
 
-    private static URI getActualOwnerAffiliation(Resource resource, File file) {
-        return resource.getFileEntry(new SortableIdentifier(file.getIdentifier().toString()))
-                   .orElseThrow()
-                   .getOwnerAffiliation();
-    }
+  private static URI getActualOwnerAffiliation(Resource resource, File file) {
+    return resource
+        .getFileEntry(new SortableIdentifier(file.getIdentifier().toString()))
+        .orElseThrow()
+        .getOwnerAffiliation();
+  }
 
-    @Test
-    void shouldNotUpdateFilesFromPublishingRequestWhenOwnerAffiliationUnchanged()
-        throws ApiGatewayException, IOException {
-        var fileToPublish = randomPendingOpenFile();
-        var file = randomPendingOpenFile();
-        var publication = createPublicationWithFiles(file, fileToPublish);
-        var publishingRequest = pendingPublishingRequest(publication, Set.of(fileToPublish));
-        var updatedPublishingRequest = publishingRequest.copy();
+  @Test
+  void shouldNotUpdateFilesFromPublishingRequestWhenOwnerAffiliationUnchanged()
+      throws ApiGatewayException, IOException {
+    var fileToPublish = randomPendingOpenFile();
+    var file = randomPendingOpenFile();
+    var publication = createPublicationWithFiles(file, fileToPublish);
+    var publishingRequest = pendingPublishingRequest(publication, Set.of(fileToPublish));
+    var updatedPublishingRequest = publishingRequest.copy();
 
-        updatedPublishingRequest.setReceivingOrganizationDetails(publishingRequest.getReceivingOrganizationDetails());
+    updatedPublishingRequest.setReceivingOrganizationDetails(
+        publishingRequest.getReceivingOrganizationDetails());
 
-        var event = createEvent(publishingRequest, updatedPublishingRequest);
+    var event = createEvent(publishingRequest, updatedPublishingRequest);
 
-        handler.handleRequest(event, outputStream, CONTEXT);
+    handler.handleRequest(event, outputStream, CONTEXT);
 
-        var updatedPublication =
-            resourceService.getResourceByIdentifier(publication.getIdentifier());
+    var updatedPublication = resourceService.getResourceByIdentifier(publication.getIdentifier());
 
-        assertThat(getActualOwnerAffiliation(updatedPublication, fileToPublish),
-                   is(not(equalTo(publishingRequest.getReceivingOrganizationDetails().topLevelOrganizationId()))));
-    }
+    assertThat(
+        getActualOwnerAffiliation(updatedPublication, fileToPublish),
+        is(
+            not(
+                equalTo(
+                    publishingRequest
+                        .getReceivingOrganizationDetails()
+                        .topLevelOrganizationId()))));
+  }
 
-    @Test
-    void shouldNotTriggerUpdateFilesFromPublishingRequestWhenDeletingTicket()
-        throws ApiGatewayException, IOException {
-        var file = randomPendingOpenFile();
-        var publication = createPublicationWithFiles(file);
-        var publishingRequest = pendingPublishingRequest(publication, Set.of(file));
+  @Test
+  void shouldNotTriggerUpdateFilesFromPublishingRequestWhenDeletingTicket()
+      throws ApiGatewayException, IOException {
+    var file = randomPendingOpenFile();
+    var publication = createPublicationWithFiles(file);
+    var publishingRequest = pendingPublishingRequest(publication, Set.of(file));
 
-        var event = createEvent(publishingRequest, null);
+    var event = createEvent(publishingRequest, null);
 
-        handler.handleRequest(event, outputStream, CONTEXT);
+    handler.handleRequest(event, outputStream, CONTEXT);
 
-        var updatedPublication =
-            resourceService.getResourceByIdentifier(publication.getIdentifier());
+    var updatedPublication = resourceService.getResourceByIdentifier(publication.getIdentifier());
 
-        assertThat(getActualOwnerAffiliation(updatedPublication, file),
-                   is(not(equalTo(publishingRequest.getReceivingOrganizationDetails().topLevelOrganizationId()))));
-    }
+    assertThat(
+        getActualOwnerAffiliation(updatedPublication, file),
+        is(
+            not(
+                equalTo(
+                    publishingRequest
+                        .getReceivingOrganizationDetails()
+                        .topLevelOrganizationId()))));
+  }
 
-    @Test
-    void shouldProceedTicketOwnedByOtherInstitutionThanPublication() throws ApiGatewayException, IOException {
-        var publication = createPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var publishingRequest = PublishingRequestCase.create(Resource.fromPublication(publication),
-                                                             userInstance,
-                                                             REGISTRATOR_PUBLISHES_METADATA_ONLY)
-                                    .complete(publication, userInstance)
-                                    .persistNewTicket(ticketService);
-        var event = createEvent(null, publishingRequest);
+  @Test
+  void shouldProceedTicketOwnedByOtherInstitutionThanPublication()
+      throws ApiGatewayException, IOException {
+    var publication = createPublication();
+    var userInstance = UserInstance.fromPublication(publication);
+    var publishingRequest =
+        PublishingRequestCase.create(
+                Resource.fromPublication(publication),
+                userInstance,
+                REGISTRATOR_PUBLISHES_METADATA_ONLY)
+            .complete(publication, userInstance)
+            .persistNewTicket(ticketService);
+    var event = createEvent(null, publishingRequest);
 
-        assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, CONTEXT));
-    }
+    assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, CONTEXT));
+  }
 
-    @Test
-    void shouldHandleClosedPublishingRequestWhenPublishingRequestIsBeingRejected()
-        throws ApiGatewayException, IOException {
-        var publication = randomPublication();
-        var internalFileToReject = randomPendingInternalFile();
-        var openFileToReject = randomPendingOpenFile();
-        publication.setAssociatedArtifacts(new AssociatedArtifactList(internalFileToReject, openFileToReject));
-        publication = Resource.fromPublication(publication)
-                          .persistNew(resourceService, UserInstance.fromPublication(publication));
-        var publishingRequest = PublishingRequestCase
-                                    .createWithFilesForApproval(Resource.fromPublication(publication),
-                                                                UserInstance.fromPublication(publication),
-                                                                REGISTRATOR_PUBLISHES_METADATA_ONLY,
-                                                                Set.of(internalFileToReject, openFileToReject));
-        var ticket = publishingRequest.persistNewTicket(ticketService);
-        ticket.close(UserInstance.create(randomString(), randomUri())).persistUpdate(ticketService);
+  @Test
+  void shouldHandleClosedPublishingRequestWhenPublishingRequestIsBeingRejected()
+      throws ApiGatewayException, IOException {
+    var publication = randomPublication();
+    var internalFileToReject = randomPendingInternalFile();
+    var openFileToReject = randomPendingOpenFile();
+    publication.setAssociatedArtifacts(
+        new AssociatedArtifactList(internalFileToReject, openFileToReject));
+    publication =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    var publishingRequest =
+        PublishingRequestCase.createWithFilesForApproval(
+            Resource.fromPublication(publication),
+            UserInstance.fromPublication(publication),
+            REGISTRATOR_PUBLISHES_METADATA_ONLY,
+            Set.of(internalFileToReject, openFileToReject));
+    var ticket = publishingRequest.persistNewTicket(ticketService);
+    ticket.close(UserInstance.create(randomString(), randomUri())).persistUpdate(ticketService);
 
-        var closedPublishingRequest = ticketService.fetchTicket(ticket);
-        var event = createEvent(null, closedPublishingRequest);
+    var closedPublishingRequest = ticketService.fetchTicket(ticket);
+    var event = createEvent(null, closedPublishingRequest);
 
-        handler.handleRequest(event, outputStream, CONTEXT);
+    handler.handleRequest(event, outputStream, CONTEXT);
 
-        var updatedPublication = resourceService.getPublicationByIdentifier(publication.getIdentifier());
+    var updatedPublication =
+        resourceService.getPublicationByIdentifier(publication.getIdentifier());
 
-        assertTrue(updatedPublication.getAssociatedArtifacts().stream().allMatch(RejectedFile.class::isInstance));
-    }
+    assertTrue(
+        updatedPublication.getAssociatedArtifacts().stream()
+            .allMatch(RejectedFile.class::isInstance));
+  }
 
-    @Test
-    void shouldSetPublishingRequestOwnerAsThePersonWhoPublishedPublicationInResourceEventWhenPublishingPublicationByConsumingTicket()
-        throws ApiGatewayException, IOException {
-        var publication = createPublication();
-        var publishingRequest = PublishingRequestCase
-                                    .create(Resource.fromPublication(publication),
-                                            UserInstance.fromPublication(publication),
-                                            REGISTRATOR_PUBLISHES_METADATA_ONLY);
-        var ticket = publishingRequest.persistNewTicket(ticketService);
-        var event = createEvent(null, ticket);
+  @Test
+  void
+      shouldSetPublishingRequestOwnerAsThePersonWhoPublishedPublicationInResourceEventWhenPublishingPublicationByConsumingTicket()
+          throws ApiGatewayException, IOException {
+    var publication = createPublication();
+    var publishingRequest =
+        PublishingRequestCase.create(
+            Resource.fromPublication(publication),
+            UserInstance.fromPublication(publication),
+            REGISTRATOR_PUBLISHES_METADATA_ONLY);
+    var ticket = publishingRequest.persistNewTicket(ticketService);
+    var event = createEvent(null, ticket);
 
-        handler.handleRequest(event, outputStream, CONTEXT);
+    handler.handleRequest(event, outputStream, CONTEXT);
 
-        var resource = Resource.resourceQueryObject(publication.getIdentifier())
-                           .fetch(resourceService)
-                           .orElseThrow();
+    var resource =
+        Resource.resourceQueryObject(publication.getIdentifier())
+            .fetch(resourceService)
+            .orElseThrow();
 
-        assertEquals(publishingRequest.getOwner().toString(), resource.getResourceEvent().user().toString());
-    }
+    assertEquals(
+        publishingRequest.getOwner().toString(), resource.getResourceEvent().user().toString());
+  }
 
-    @Test
-    void shouldHandleFilesApprovalThesis() throws ApiGatewayException, IOException {
-        var publication =
-            TicketTestUtils.createPersistedDegreePublication(PublicationStatus.PUBLISHED, resourceService);
-        var filesApprovalThesis = pendingFilesApprovalThesis(publication);
-        var approvedTicket = filesApprovalThesis
-                                 .complete(publication, USER_INSTANCE)
-                                 .persistNewTicket(ticketService);
-        var event = createEvent(filesApprovalThesis, approvedTicket);
+  @Test
+  void shouldHandleFilesApprovalThesis() throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedDegreePublication(
+            PublicationStatus.PUBLISHED, resourceService);
+    var filesApprovalThesis = pendingFilesApprovalThesis(publication);
+    var approvedTicket =
+        filesApprovalThesis.complete(publication, USER_INSTANCE).persistNewTicket(ticketService);
+    var event = createEvent(filesApprovalThesis, approvedTicket);
 
-        assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, CONTEXT));
-    }
+    assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, CONTEXT));
+  }
 
-    private PublishingRequestCase persistCompletedPublishingRequestWithApprovedFiles(
-        Publication publication, File file) throws ApiGatewayException {
-        var userInstance = UserInstance.fromPublication(publication);
-        return (PublishingRequestCase) PublishingRequestCase.createWithFilesForApproval(
+  private PublishingRequestCase persistCompletedPublishingRequestWithApprovedFiles(
+      Publication publication, File file) throws ApiGatewayException {
+    var userInstance = UserInstance.fromPublication(publication);
+    return (PublishingRequestCase)
+        PublishingRequestCase.createWithFilesForApproval(
                 Resource.fromPublication(publication),
                 userInstance,
                 REGISTRATOR_PUBLISHES_METADATA_ONLY,
-                Set.of(file)).complete(publication, userInstance)
-                                           .persistNewTicket(ticketService);
-    }
+                Set.of(file))
+            .complete(publication, userInstance)
+            .persistNewTicket(ticketService);
+  }
 
-    private Publication createPublicationWithFiles(File... files)
-        throws ApiGatewayException {
-        var publication = randomPublication();
-        publication.setAssociatedArtifacts(
-            new AssociatedArtifactList(List.of(files)));
-        var persistedPublication =
-            Resource.fromPublication(publication)
-                .persistNew(resourceService, UserInstance.fromPublication(publication));
-        Resource.fromPublication(persistedPublication)
-            .publish(resourceService, UserInstance.fromPublication(publication));
-        return persistedPublication;
-    }
+  private Publication createPublicationWithFiles(File... files) throws ApiGatewayException {
+    var publication = randomPublication();
+    publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(files)));
+    var persistedPublication =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    Resource.fromPublication(persistedPublication)
+        .publish(resourceService, UserInstance.fromPublication(publication));
+    return persistedPublication;
+  }
 
-    private static List<OpenFile> getOpenFiles(Publication updatedPublication) {
-        return updatedPublication.getAssociatedArtifacts().stream()
-                   .filter(OpenFile.class::isInstance)
-                   .map(OpenFile.class::cast)
-                   .toList();
-    }
+  private static List<OpenFile> getOpenFiles(Publication updatedPublication) {
+    return updatedPublication.getAssociatedArtifacts().stream()
+        .filter(OpenFile.class::isInstance)
+        .map(OpenFile.class::cast)
+        .toList();
+  }
 
-    private static List<AssociatedArtifact> getAssociatedFiles(Publication updatedPublication) {
-        return updatedPublication.getAssociatedArtifacts().stream()
-                   .filter(File.class::isInstance)
-                   .toList();
-    }
+  private static List<AssociatedArtifact> getAssociatedFiles(Publication updatedPublication) {
+    return updatedPublication.getAssociatedArtifacts().stream()
+        .filter(File.class::isInstance)
+        .toList();
+  }
 
-    private DoiRequest createDoiRequestTicket(Publication publication) {
-        return (DoiRequest)
-                   attempt(
-                       () ->
-                           DoiRequest.create(Resource.fromPublication(publication),
-                                             UserInstance.fromPublication(publication))
-                               .persistNewTicket(ticketService))
-                       .orElseThrow();
-    }
+  private DoiRequest createDoiRequestTicket(Publication publication) {
+    return (DoiRequest)
+        attempt(
+                () ->
+                    DoiRequest.create(
+                            Resource.fromPublication(publication),
+                            UserInstance.fromPublication(publication))
+                        .persistNewTicket(ticketService))
+            .orElseThrow();
+  }
 
-    private Publication createDraftPublicationWithDoi() throws BadRequestException {
-        var publication =
-            randomPublication()
-                .copy()
-                .withStatus(PublicationStatus.DRAFT)
-                .withDoi(randomDoi())
-                .build();
-        return Resource.fromPublication(publication)
-                   .persistNew(resourceService, UserInstance.fromPublication(publication));
-    }
+  private Publication createDraftPublicationWithDoi() throws BadRequestException {
+    var publication =
+        randomPublication().copy().withStatus(PublicationStatus.DRAFT).withDoi(randomDoi()).build();
+    return Resource.fromPublication(publication)
+        .persistNew(resourceService, UserInstance.fromPublication(publication));
+  }
 
-    private InputStream createEvent(
-        TicketEntry pendingPublishingRequest, TicketEntry approvedPublishingRequest)
-        throws IOException {
-        var sampleEvent = eventBody(pendingPublishingRequest, approvedPublishingRequest);
-        var eventReference = storeEventToS3AndGenerateEventReference(sampleEvent);
-        return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventReference);
-    }
+  private InputStream createEvent(
+      TicketEntry pendingPublishingRequest, TicketEntry approvedPublishingRequest)
+      throws IOException {
+    var sampleEvent = eventBody(pendingPublishingRequest, approvedPublishingRequest);
+    var eventReference = storeEventToS3AndGenerateEventReference(sampleEvent);
+    return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventReference);
+  }
 
-    private EventReference storeEventToS3AndGenerateEventReference(String sampleEvent)
-        throws IOException {
-        var blobUri = s3Driver.insertEvent(UnixPath.of(randomString()), sampleEvent);
-        return new EventReference(
-            DataEntryUpdateEvent.PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC, blobUri);
-    }
+  private EventReference storeEventToS3AndGenerateEventReference(String sampleEvent)
+      throws IOException {
+    var blobUri = s3Driver.insertEvent(UnixPath.of(randomString()), sampleEvent);
+    return new EventReference(DataEntryUpdateEvent.PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC, blobUri);
+  }
 
-    private String eventBody(
-        TicketEntry pendingPublishingRequest, TicketEntry approvedPublishingRequest) {
-        return new DataEntryUpdateEvent(OperationType.MODIFY.toString(), pendingPublishingRequest, approvedPublishingRequest)
-                   .toJsonString();
-    }
+  private String eventBody(
+      TicketEntry pendingPublishingRequest, TicketEntry approvedPublishingRequest) {
+    return new DataEntryUpdateEvent(
+            OperationType.MODIFY.toString(), pendingPublishingRequest, approvedPublishingRequest)
+        .toJsonString();
+  }
 
-    private Publication createUnpublishablePublication() throws BadRequestException {
-        var publication = randomPublication();
-        publication.getEntityDescription().setMainTitle(null);
-        return Resource.fromPublication(publication)
-                   .persistNew(resourceService, UserInstance.fromPublication(publication));
-    }
+  private Publication createUnpublishablePublication() throws BadRequestException {
+    var publication = randomPublication();
+    publication.getEntityDescription().setMainTitle(null);
+    return Resource.fromPublication(publication)
+        .persistNew(resourceService, UserInstance.fromPublication(publication));
+  }
 
-    private PublishingRequestCase modifyPublishingRequest(
-        PublishingRequestCase pendingPublishingRequest) {
-        pendingPublishingRequest.setModifiedDate(randomInstant());
-        return pendingPublishingRequest;
-    }
+  private PublishingRequestCase modifyPublishingRequest(
+      PublishingRequestCase pendingPublishingRequest) {
+    pendingPublishingRequest.setModifiedDate(randomInstant());
+    return pendingPublishingRequest;
+  }
 
-    private Publication createPublication() throws BadRequestException {
-        var publication = randomPublication();
-        return Resource.fromPublication(publication)
-                   .persistNew(resourceService, UserInstance.fromPublication(publication));
-    }
+  private Publication createPublication() throws BadRequestException {
+    var publication = randomPublication();
+    return Resource.fromPublication(publication)
+        .persistNew(resourceService, UserInstance.fromPublication(publication));
+  }
 
-    private PublishingRequestCase pendingPublishingRequest(Publication publication) {
-        return pendingPublishingRequest(publication, Set.of());
-    }
+  private PublishingRequestCase pendingPublishingRequest(Publication publication) {
+    return pendingPublishingRequest(publication, Set.of());
+  }
 
-    private PublishingRequestCase pendingPublishingRequest(Publication publication, Set<File> files) {
-        var userInstance = UserInstance.create(new ResourceOwner(new Username(randomString()), randomUri()),
-                                               randomUri());
-        return PublishingRequestCase.createWithFilesForApproval(Resource.fromPublication(publication), userInstance,
-                                                                REGISTRATOR_PUBLISHES_METADATA_ONLY, files);
-    }
+  private PublishingRequestCase pendingPublishingRequest(Publication publication, Set<File> files) {
+    var userInstance =
+        UserInstance.create(
+            new ResourceOwner(new Username(randomString()), randomUri()), randomUri());
+    return PublishingRequestCase.createWithFilesForApproval(
+        Resource.fromPublication(publication),
+        userInstance,
+        REGISTRATOR_PUBLISHES_METADATA_ONLY,
+        files);
+  }
 
-    private PublishingRequestCase completedPublishingRequest(Publication publication) {
-        var userInstance = UserInstance.fromPublication(publication);
-        var resource = Resource.fromPublication(publication);
-        return PublishingRequestCase.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
-    }
+  private PublishingRequestCase completedPublishingRequest(Publication publication) {
+    var userInstance = UserInstance.fromPublication(publication);
+    var resource = Resource.fromPublication(publication);
+    return PublishingRequestCase.create(
+        resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
+  }
 
-    private FilesApprovalThesis pendingFilesApprovalThesis(Publication publication) {
-        var userInstance = UserInstance.create(randomString(), randomUri());
-        return FilesApprovalThesis.createForUserInstitution(Resource.fromPublication(publication), userInstance,
-                                                            REGISTRATOR_PUBLISHES_METADATA_ONLY);
-    }
+  private FilesApprovalThesis pendingFilesApprovalThesis(Publication publication) {
+    var userInstance = UserInstance.create(randomString(), randomUri());
+    return FilesApprovalThesis.createForUserInstitution(
+        Resource.fromPublication(publication), userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY);
+  }
 
-    private AcceptedPublishingRequestEventHandler
-    handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication(Publication publication)
-        throws ApiGatewayException {
-        resourceService = mock(ResourceService.class);
-        var s3Client = new FakeS3Client();
-        this.s3Driver = new S3Driver(s3Client, randomString());
-        when(resourceService.getPublicationByIdentifier(any())).thenReturn(publication);
-        when(resourceService.getResourceByIdentifier(any())).thenReturn(Resource.fromPublication(publication));
-        doThrow(RuntimeException.class).when(resourceService).updateResource(any(), any());
-        return new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
-    }
+  private AcceptedPublishingRequestEventHandler
+      handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication(Publication publication)
+          throws ApiGatewayException {
+    resourceService = mock(ResourceService.class);
+    var s3Client = new FakeS3Client();
+    this.s3Driver = new S3Driver(s3Client, randomString());
+    when(resourceService.getPublicationByIdentifier(any())).thenReturn(publication);
+    when(resourceService.getResourceByIdentifier(any()))
+        .thenReturn(Resource.fromPublication(publication));
+    doThrow(RuntimeException.class).when(resourceService).updateResource(any(), any());
+    return new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
+  }
 
-    private AcceptedPublishingRequestEventHandler
-    handlerWithResourceServiceThrowingExceptionWhenFetchingTicket()
-        throws ApiGatewayException {
-        ticketService = mock(TicketService.class);
-        var s3Client = new FakeS3Client();
-        this.s3Driver = new S3Driver(s3Client, randomString());
-        when(ticketService.fetchTicket(any())).thenThrow(RuntimeException.class);
-        return new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
-    }
+  private AcceptedPublishingRequestEventHandler
+      handlerWithResourceServiceThrowingExceptionWhenFetchingTicket() throws ApiGatewayException {
+    ticketService = mock(TicketService.class);
+    var s3Client = new FakeS3Client();
+    this.s3Driver = new S3Driver(s3Client, randomString());
+    when(ticketService.fetchTicket(any())).thenThrow(RuntimeException.class);
+    return new AcceptedPublishingRequestEventHandler(resourceService, ticketService, s3Client);
+  }
 
-    private TicketEntry persistPublishingRequestContainingExistingUnpublishedFiles(
-        Publication publication) throws ApiGatewayException {
-        var publishingRequest =
-            (PublishingRequestCase)
-                PublishingRequestCase.createNewTicket(
-                        publication,
-                        PublishingRequestCase.class,
-                        SortableIdentifier::next)
-                    .withOwner(UserInstance.fromPublication(publication).getUsername())
-                    .withOwnerAffiliation(
-                        publication.getResourceOwner().getOwnerAffiliation());
-        publishingRequest.withFilesForApproval(
-            TicketTestUtils.getFilesForApproval(publication));
-        return publishingRequest.persistNewTicket(ticketService);
-    }
+  private TicketEntry persistPublishingRequestContainingExistingUnpublishedFiles(
+      Publication publication) throws ApiGatewayException {
+    var publishingRequest =
+        (PublishingRequestCase)
+            PublishingRequestCase.createNewTicket(
+                    publication, PublishingRequestCase.class, SortableIdentifier::next)
+                .withOwner(UserInstance.fromPublication(publication).getUsername())
+                .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
+    publishingRequest.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication));
+    return publishingRequest.persistNewTicket(ticketService);
+  }
 }

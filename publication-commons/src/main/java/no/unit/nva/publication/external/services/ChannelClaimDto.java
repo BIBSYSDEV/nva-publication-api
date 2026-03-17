@@ -11,23 +11,22 @@ import no.unit.nva.commons.json.JsonSerializable;
 public record ChannelClaimDto(URI id, CustomerSummaryDto claimedBy, ChannelClaim channelClaim)
     implements JsonSerializable {
 
-    static final String CLAIMED_CHANNEL_TYPE = "ClaimedChannel";
+  static final String CLAIMED_CHANNEL_TYPE = "ClaimedChannel";
 
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-    @JsonTypeName(ChannelClaim.CHANNEL_CLAIM_TYPE)
-    public record ChannelClaim(URI channel, ChannelConstraint constraint) {
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+  @JsonTypeName(ChannelClaim.CHANNEL_CLAIM_TYPE)
+  public record ChannelClaim(URI channel, ChannelConstraint constraint) {
 
-        private static final String CHANNEL_CLAIM_TYPE = "ChannelClaim";
+    private static final String CHANNEL_CLAIM_TYPE = "ChannelClaim";
 
-        public record ChannelConstraint(String publishingPolicy, String editingPolicy, List<String> scope) {
+    public record ChannelConstraint(
+        String publishingPolicy, String editingPolicy, List<String> scope) {}
+  }
 
-        }
-    }
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+  @JsonTypeName(CustomerSummaryDto.TYPE)
+  public record CustomerSummaryDto(URI id, URI organizationId) {
 
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-    @JsonTypeName(CustomerSummaryDto.TYPE)
-    public record CustomerSummaryDto(URI id, URI organizationId) {
-
-        private static final String TYPE = "Customer";
-    }
+    private static final String TYPE = "Customer";
+  }
 }

@@ -13,35 +13,43 @@ import no.unit.nva.publication.model.business.logentry.FileLogEntry;
 import no.unit.nva.publication.model.business.logentry.LogAgent;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 
-public record FileUploadedEvent(Instant date, User user, URI institution, SortableIdentifier identifier,
-                                ImportSource importSource) implements FileEvent {
+public record FileUploadedEvent(
+    Instant date,
+    User user,
+    URI institution,
+    SortableIdentifier identifier,
+    ImportSource importSource)
+    implements FileEvent {
 
-    public static FileUploadedEvent create(UserInstance userInstance, Instant timestamp) {
-        return new FileUploadedEvent(timestamp, userInstance.getUser(), userInstance.getTopLevelOrgCristinId(),
-                                     SortableIdentifier.next(),
-                                     userInstance.isExternalClient() ? getImportSource(userInstance) : null);
-    }
+  public static FileUploadedEvent create(UserInstance userInstance, Instant timestamp) {
+    return new FileUploadedEvent(
+        timestamp,
+        userInstance.getUser(),
+        userInstance.getTopLevelOrgCristinId(),
+        SortableIdentifier.next(),
+        userInstance.isExternalClient() ? getImportSource(userInstance) : null);
+  }
 
-    private static ImportSource getImportSource(UserInstance userInstance) {
-        return userInstance.getThirdPartySystem()
-                   .map(ThirdPartySystem::toSource)
-                   .map(ImportSource::fromSource)
-                   .orElse(ImportSource.fromSource(Source.OTHER));
+  private static ImportSource getImportSource(UserInstance userInstance) {
+    return userInstance
+        .getThirdPartySystem()
+        .map(ThirdPartySystem::toSource)
+        .map(ImportSource::fromSource)
+        .orElse(ImportSource.fromSource(Source.OTHER));
+  }
 
-    }
-
-    @Override
-    public FileLogEntry toLogEntry(FileEntry fileEntry, LogAgent user) {
-        return FileLogEntry.builder()
-                   .withIdentifier(identifier)
-                   .withFileIdentifier(fileEntry.getIdentifier())
-                   .withResourceIdentifier(fileEntry.getResourceIdentifier())
-                   .withTopic(LogTopic.FILE_UPLOADED)
-                   .withTimestamp(date)
-                   .withPerformedBy(user)
-                   .withFilename(fileEntry.getFile().getName())
-                   .withFileType(fileEntry.getFile().getClass().getSimpleName())
-                   .withImportSource(importSource)
-                   .build();
-    }
+  @Override
+  public FileLogEntry toLogEntry(FileEntry fileEntry, LogAgent user) {
+    return FileLogEntry.builder()
+        .withIdentifier(identifier)
+        .withFileIdentifier(fileEntry.getIdentifier())
+        .withResourceIdentifier(fileEntry.getResourceIdentifier())
+        .withTopic(LogTopic.FILE_UPLOADED)
+        .withTimestamp(date)
+        .withPerformedBy(user)
+        .withFilename(fileEntry.getFile().getName())
+        .withFileType(fileEntry.getFile().getClass().getSimpleName())
+        .withImportSource(importSource)
+        .build();
+  }
 }

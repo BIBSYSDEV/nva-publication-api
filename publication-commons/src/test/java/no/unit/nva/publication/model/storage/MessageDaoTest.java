@@ -7,6 +7,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import java.net.URI;
 import no.unit.nva.model.Organization;
@@ -29,65 +30,73 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class MessageDaoTest extends ResourcesLocalTest {
-    
-    public static final URI SAMPLE_ORG = URI.create("https://example.org/123");
-    public static final String SAMPLE_OWNER_USERNAME = "some@owner";
-    public static final UserInstance SAMPLE_OWNER = UserInstance.create(SAMPLE_OWNER_USERNAME, SAMPLE_ORG);
-    public static final ResourceOwner RANDOM_RESOURCE_OWNER =
-         new ResourceOwner(new Username(SAMPLE_OWNER.getUsername()), SAMPLE_OWNER.getCustomerId());
-    private MessageService messageService;
-    private TicketService ticketService;
-    private ResourceService resourceService;
-    
-    @BeforeEach
-    public void initialize() {
-        super.init();
-        this.resourceService = getResourceService(client);
-        this.messageService = getMessageService();
-        this.ticketService = getTicketService();
-    }
 
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void shouldBeRetrievableByIdentifier(Class<? extends TicketEntry> ticketType, PublicationStatus status)
-            throws ApiGatewayException {
-        var message = insertSampleMessageInDatabase(ticketType, status);
-        var retrievedMessage = messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
-        assertThat(retrievedMessage, is(equalTo(message)));
-    }
+  public static final URI SAMPLE_ORG = URI.create("https://example.org/123");
+  public static final String SAMPLE_OWNER_USERNAME = "some@owner";
+  public static final UserInstance SAMPLE_OWNER =
+      UserInstance.create(SAMPLE_OWNER_USERNAME, SAMPLE_ORG);
+  public static final ResourceOwner RANDOM_RESOURCE_OWNER =
+      new ResourceOwner(new Username(SAMPLE_OWNER.getUsername()), SAMPLE_OWNER.getCustomerId());
+  private MessageService messageService;
+  private TicketService ticketService;
+  private ResourceService resourceService;
 
-    @ParameterizedTest
-    @MethodSource("no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-    void queryObjectCreatesObjectForRetrievingMessageByPrimaryKey(
-            Class<? extends TicketEntry> ticketType, PublicationStatus status) throws ApiGatewayException {
-        var message = insertSampleMessageInDatabase(ticketType, status);
-        var queryObject = MessageDao.queryObject(SAMPLE_OWNER, message.getIdentifier());
-        var retrievedMessage = fetchMessageFromDatabase(queryObject);
-        
-        assertThat(retrievedMessage, is(equalTo(message)));
-    }
-    
-    @Test
-    void listMessagesAndResourcesForUserReturnsDaoWithOwnerAndPublisher() {
-        var actualMessage = MessageDao.listMessagesAndResourcesForUser(SAMPLE_OWNER);
-        assertThat(actualMessage.getOwner(), is(equalTo(SAMPLE_OWNER.getUser())));
-        assertThat(actualMessage.getCustomerId(), is(equalTo(SAMPLE_OWNER.getCustomerId())));
-    }
-    
-    private Message fetchMessageFromDatabase(MessageDao queryObject) {
-        return attempt(() -> client.getItem(RESOURCES_TABLE_NAME, queryObject.primaryKey()))
-                   .map(GetItemResult::getItem)
-                   .map(item -> parseAttributeValuesMap(item, MessageDao.class))
-                   .map(MessageDao::getMessage)
-                   .orElseThrow();
-    }
-    
-    private Message insertSampleMessageInDatabase(Class<? extends TicketEntry> ticketType, PublicationStatus status)
-        throws ApiGatewayException {
-        Organization publisher = new Builder().withId(SAMPLE_OWNER.getCustomerId()).build();
-        var publication = TicketTestUtils.createPersistedPublicationWithOwner(status,
-                UserInstance.create(RANDOM_RESOURCE_OWNER, publisher.getId()), resourceService);
-        var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
-        return messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
-    }
+  @BeforeEach
+  public void initialize() {
+    super.init();
+    this.resourceService = getResourceService(client);
+    this.messageService = getMessageService();
+    this.ticketService = getTicketService();
+  }
+
+  @ParameterizedTest
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+  void shouldBeRetrievableByIdentifier(
+      Class<? extends TicketEntry> ticketType, PublicationStatus status)
+      throws ApiGatewayException {
+    var message = insertSampleMessageInDatabase(ticketType, status);
+    var retrievedMessage =
+        messageService.getMessageByIdentifier(message.getIdentifier()).orElseThrow();
+    assertThat(retrievedMessage, is(equalTo(message)));
+  }
+
+  @ParameterizedTest
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+  void queryObjectCreatesObjectForRetrievingMessageByPrimaryKey(
+      Class<? extends TicketEntry> ticketType, PublicationStatus status)
+      throws ApiGatewayException {
+    var message = insertSampleMessageInDatabase(ticketType, status);
+    var queryObject = MessageDao.queryObject(SAMPLE_OWNER, message.getIdentifier());
+    var retrievedMessage = fetchMessageFromDatabase(queryObject);
+
+    assertThat(retrievedMessage, is(equalTo(message)));
+  }
+
+  @Test
+  void listMessagesAndResourcesForUserReturnsDaoWithOwnerAndPublisher() {
+    var actualMessage = MessageDao.listMessagesAndResourcesForUser(SAMPLE_OWNER);
+    assertThat(actualMessage.getOwner(), is(equalTo(SAMPLE_OWNER.getUser())));
+    assertThat(actualMessage.getCustomerId(), is(equalTo(SAMPLE_OWNER.getCustomerId())));
+  }
+
+  private Message fetchMessageFromDatabase(MessageDao queryObject) {
+    return attempt(() -> client.getItem(RESOURCES_TABLE_NAME, queryObject.primaryKey()))
+        .map(GetItemResult::getItem)
+        .map(item -> parseAttributeValuesMap(item, MessageDao.class))
+        .map(MessageDao::getMessage)
+        .orElseThrow();
+  }
+
+  private Message insertSampleMessageInDatabase(
+      Class<? extends TicketEntry> ticketType, PublicationStatus status)
+      throws ApiGatewayException {
+    Organization publisher = new Builder().withId(SAMPLE_OWNER.getCustomerId()).build();
+    var publication =
+        TicketTestUtils.createPersistedPublicationWithOwner(
+            status, UserInstance.create(RANDOM_RESOURCE_OWNER, publisher.getId()), resourceService);
+    var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
+    return messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
+  }
 }
