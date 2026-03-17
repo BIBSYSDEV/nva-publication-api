@@ -11,6 +11,7 @@ import no.unit.nva.publication.permissions.publication.grant.BackendClientGrantS
 import no.unit.nva.publication.permissions.publication.grant.ContributorGrantStrategy;
 import no.unit.nva.publication.permissions.publication.grant.CuratorGrantStrategy;
 import no.unit.nva.publication.permissions.publication.grant.EditorGrantStrategy;
+import no.unit.nva.publication.permissions.publication.grant.ImporterGrantStrategy;
 import no.unit.nva.publication.permissions.publication.grant.ResourceOwnerGrantStrategy;
 import no.unit.nva.publication.permissions.publication.grant.TrustedThirdPartyGrantStrategy;
 import no.unit.nva.publication.permissions.publication.restrict.ClaimedChannelDenyStrategy;
@@ -38,7 +39,8 @@ public class PublicationPermissions {
             new ContributorGrantStrategy(resource, userInstance),
             new ResourceOwnerGrantStrategy(resource, userInstance),
             new TrustedThirdPartyGrantStrategy(resource, userInstance),
-            new BackendClientGrantStrategy(resource, userInstance)
+            new BackendClientGrantStrategy(resource, userInstance),
+            new ImporterGrantStrategy(resource, userInstance)
         );
         this.denyStrategies = Set.of(
             new DegreeDenyStrategy(resource, userInstance),

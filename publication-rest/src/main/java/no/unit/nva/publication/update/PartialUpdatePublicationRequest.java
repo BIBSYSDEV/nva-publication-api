@@ -62,7 +62,8 @@ public final class PartialUpdatePublicationRequest implements PublicationRequest
     }
 
     @Override
-    public void authorize(PublicationPermissions permissions) throws UnauthorizedException {
+    public void authorize(PublicationPermissions permissions, Resource existingResource)
+        throws UnauthorizedException {
         permissions.authorize(PublicationOperation.PARTIAL_UPDATE);
     }
 

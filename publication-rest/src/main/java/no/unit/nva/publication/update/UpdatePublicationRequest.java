@@ -9,12 +9,14 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.WithContext;
 import no.unit.nva.WithIdentifier;
 import no.unit.nva.WithMetadata;
+import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
@@ -44,6 +46,7 @@ public class UpdatePublicationRequest
     private Set<Funding> fundings;
     private String rightsHolder;
     private List<ImportDetail> importDetails;
+    private Set<AdditionalIdentifierBase> additionalIdentifiers;
 
     @Override
     public Resource generateUpdate(Resource resource) throws ForbiddenException {
@@ -58,6 +61,8 @@ public class UpdatePublicationRequest
                                     .withSubjects(this.subjects)
                                     .withFundings(this.fundings)
                                     .withRightsHolder(this.rightsHolder)
+                                    .withAdditionalIdentifiers(
+                                        mergeAdditionalIdentifiers(resource.getAdditionalIdentifiers()))
                                     .build());
     }
 
@@ -70,8 +75,12 @@ public class UpdatePublicationRequest
     }
 
     @Override
-    public void authorize(PublicationPermissions permissions) throws UnauthorizedException {
+    public void authorize(PublicationPermissions permissions, Resource existingResource)
+        throws UnauthorizedException {
         permissions.authorize(PublicationOperation.UPDATE);
+        if (hasNewAdditionalIdentifiers(existingResource)) {
+            permissions.authorize(PublicationOperation.ADD_ADDITIONAL_IDENTIFIERS);
+        }
     }
 
     @JacocoGenerated
@@ -181,10 +190,21 @@ public class UpdatePublicationRequest
         this.importDetails = new ArrayList<>(importDetails);
     }
 
+    @JacocoGenerated
+    public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
+        return additionalIdentifiers;
+    }
+
+    @JacocoGenerated
+    public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
+        this.additionalIdentifiers = additionalIdentifiers;
+    }
+
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(identifier, entityDescription, associatedArtifacts, subjects, context, importDetails);
+        return Objects.hash(identifier, entityDescription, associatedArtifacts, subjects, context, importDetails,
+                           additionalIdentifiers);
     }
 
     @Override
@@ -202,7 +222,27 @@ public class UpdatePublicationRequest
                && Objects.equals(associatedArtifacts, that.associatedArtifacts)
                && Objects.equals(subjects, that.subjects)
                && Objects.equals(context, that.context)
-               && Objects.equals(importDetails, that.importDetails);
+               && Objects.equals(importDetails, that.importDetails)
+               && Objects.equals(additionalIdentifiers, that.additionalIdentifiers);
+    }
+
+    private boolean hasAdditionalIdentifiers() {
+        return nonNull(additionalIdentifiers) && !additionalIdentifiers.isEmpty();
+    }
+
+    private boolean hasNewAdditionalIdentifiers(Resource existingResource) {
+        return hasAdditionalIdentifiers()
+               && !existingResource.getAdditionalIdentifiers().containsAll(additionalIdentifiers);
+    }
+
+    private Set<AdditionalIdentifierBase> mergeAdditionalIdentifiers(
+        Set<AdditionalIdentifierBase> existingIdentifiers) {
+        if (!hasAdditionalIdentifiers()) {
+            return existingIdentifiers;
+        }
+        var merged = new HashSet<>(existingIdentifiers);
+        merged.addAll(additionalIdentifiers);
+        return merged;
     }
 }
 
