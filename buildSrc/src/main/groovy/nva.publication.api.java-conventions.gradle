@@ -1,7 +1,6 @@
 plugins {
     id 'nva.publication.api.formatting'
     id 'java'
-    id 'checkstyle'
     id 'pmd'
     id 'jacoco-report-aggregation'
     id 'com.diffplug.spotless'
@@ -43,20 +42,6 @@ pmd {
     ruleSets = []
     ignoreFailures = false
 }
-
-checkstyle {
-    toolVersion = '12.2.0'
-    configFile = rootProject.resources.text.fromFile('config/checkstyle/checkstyle.xml').asFile()
-    showViolations = true
-}
-tasks.withType(Checkstyle) .configureEach{
-    reports {
-        xml.required
-        html.required
-        html.stylesheet = rootProject.resources.text.fromFile('config/checkstyle/checkstyle-simple.xsl')
-    }
-}
-
 
 check.dependsOn jacocoTestCoverageVerification
 jacocoTestCoverageVerification.dependsOn(jacocoTestReport)
