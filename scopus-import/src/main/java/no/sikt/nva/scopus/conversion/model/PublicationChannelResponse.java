@@ -4,10 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.List;
-import lombok.Getter;
 import no.unit.nva.commons.json.JsonSerializable;
 
-@Getter
 public class PublicationChannelResponse implements JsonSerializable {
 
   public static final String HITS_JSON_NAME = "hits";
@@ -27,12 +25,19 @@ public class PublicationChannelResponse implements JsonSerializable {
     this.hits = hits;
   }
 
+  public int getTotalHits() {
+    return totalHits;
+  }
+
+  public List<PublicationChannelHit> getHits() {
+    return hits;
+  }
+
   @Override
   public String toString() {
     return this.toJsonString();
   }
 
-  @Getter
   public static class PublicationChannelHit implements JsonSerializable {
 
     public static final String ID_JSON_NAME = "id";
@@ -43,6 +48,10 @@ public class PublicationChannelResponse implements JsonSerializable {
     @JsonCreator
     public PublicationChannelHit(@JsonProperty(ID_JSON_NAME) URI id) {
       this.id = id;
+    }
+
+    public URI getId() {
+      return id;
     }
   }
 }
