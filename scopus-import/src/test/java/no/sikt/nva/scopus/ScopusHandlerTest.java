@@ -10,7 +10,6 @@ import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.conversion.PiaConnection.API_HOST;
-import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.sikt.nva.scopus.conversion.files.ScopusFileConverter.CROSSREF_URI_ENV_VAR_NAME;
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
 import static no.sikt.nva.scopus.utils.ScopusGenerator.createWithOneAuthorGroupAndAffiliation;
@@ -782,17 +781,17 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
   @Test
   void
-      shouldReturnPublicationWithJournalWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd()
+      shouldReturnPublicationWithJournalWithOaAccessYearAsPublicationYearWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd()
           throws IOException {
     createEmptyPiaMock();
     scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
     var expectedYear = "2022";
-    scopusData.setPublicationYear(expectedYear);
+    setOpenAccessEffectiveYear(expectedYear);
     scopusData.clearIssn();
     var expectedIssn = randomIssn();
     scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
     var event = createNewScopusPublicationEvent();
-    var expectedJournalId = randomUri();
+    var expectedJournalId = UriWrapper.fromUri(randomUri()).addChild(expectedYear).getUri();
     when(authorizedBackendUriRetriever.fetchResponse(any(), any()))
         .thenReturn(
             Optional.of(
@@ -804,9 +803,19 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     var publication = scopusHandler.handleRequest(event, CONTEXT);
     var actualPublicationContext =
         publication.getEntityDescription().reference().getPublicationContext();
-    assertThat(actualPublicationContext, instanceOf(Journal.class));
     var actualJournalUri = ((Journal) actualPublicationContext).getId();
+
+    assertEquals(expectedYear, UriWrapper.fromUri(actualJournalUri).getLastPathElement());
     assertThat(actualJournalUri, is(expectedJournalId));
+  }
+
+  private void setOpenAccessEffectiveYear(String expectedYear) {
+    scopusData.getDocument().getMeta().setOpenAccess(new OpenAccessType());
+    scopusData
+        .getDocument()
+        .getMeta()
+        .getOpenAccess()
+        .setOaAccessEffectiveDate("%s-01-01".formatted(expectedYear));
   }
 
   @Test
@@ -831,7 +840,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
   void shouldThrowExceptionWhenSrcTypeIsNotSupported() throws IOException {
     createEmptyPiaMock();
     scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
-    var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, getSrctype(), getEid());
+    var expectedMessage =
+        String.format("Unsupported source type %s, in %s", getSrctype(), getEid());
     var event = createNewScopusPublicationEvent();
     scopusHandler.handleRequest(event, CONTEXT);
     var report = extractErrorReportFromS3Client();

@@ -39,10 +39,10 @@ import nva.commons.core.SingletonCollector;
 @SuppressWarnings({"PMD.PrematureDeclaration", "PMD.UnusedLocalVariable", "PMD.GodClass"})
 public class PublicationContextCreator {
 
-  public static final String UNSUPPORTED_SOURCE_TYPE = "Unsupported source type %s, in %s";
-  public static final String DASH = "-";
-  public static final int START_YEAR_FOR_LEVEL_INFO = 2004;
-  public static final String NOT_APPLICABLE = "NA";
+  private static final String UNSUPPORTED_SOURCE_TYPE = "Unsupported source type %s, in %s";
+  private static final String DASH = "-";
+  private static final int START_YEAR_FOR_LEVEL_INFO = 2004;
+  private static final String NOT_APPLICABLE = "NA";
   private final DocTp docTp;
   private final PublicationChannelConnection publicationChannelConnection;
 
@@ -210,7 +210,7 @@ public class PublicationContextCreator {
     var sourceTitle = findSourceTitle();
     var printIssn = findPrintIssn().orElse(null);
     var electronicIssn = findElectronicIssn().orElse(null);
-    var publicationYear = findPublicationYear().orElseThrow();
+    var publicationYear = PublicationDateExtractor.extractPublicationDate(docTp).getYear();
     var seriesId =
         publicationChannelConnection.fetchSerialPublication(
             printIssn, electronicIssn, sourceTitle, publicationYear);
@@ -219,7 +219,7 @@ public class PublicationContextCreator {
 
   private Optional<PublishingHouse> fetchConfirmedPublisherFromPublicationChannels() {
     var publisherName = findPublisherName();
-    var publicationYear = findPublicationYear().orElse(null);
+    var publicationYear = PublicationDateExtractor.extractPublicationDate(docTp).getYear();
     return publisherName
         .map(name -> publicationChannelConnection.fetchPublisher(name, publicationYear))
         .filter(Optional::isPresent)
@@ -254,7 +254,7 @@ public class PublicationContextCreator {
     var sourceTitle = findSourceTitle();
     var printIssn = findPrintIssn().orElse(null);
     var electronicIssn = findElectronicIssn().orElse(null);
-    var publicationYear = findPublicationYear().orElseThrow();
+    var publicationYear = PublicationDateExtractor.extractPublicationDate(docTp).getYear();
     var journalId =
         publicationChannelConnection.fetchSerialPublication(
             printIssn, electronicIssn, sourceTitle, publicationYear);
@@ -262,7 +262,11 @@ public class PublicationContextCreator {
   }
 
   private boolean thereIsLevelInformationForPublication() {
-    return findPublicationYear().map(year -> year >= START_YEAR_FOR_LEVEL_INFO).orElse(false);
+    var year = PublicationDateExtractor.extractPublicationDate(docTp).getYear();
+    return attempt(() -> Integer.parseInt(year))
+        .toOptional()
+        .map(value -> value >= START_YEAR_FOR_LEVEL_INFO)
+        .orElse(false);
   }
 
   private UnconfirmedJournal createUnconfirmedJournal() {
@@ -271,13 +275,6 @@ public class PublicationContextCreator {
     var electronicIssn = findElectronicIssn().orElse(null);
     return attempt(() -> new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn))
         .orElseThrow();
-  }
-
-  private Optional<Integer> findPublicationYear() {
-    return Optional.ofNullable(docTp)
-        .map(DocTp::getMeta)
-        .map(MetaTp::getPubYear)
-        .map(Integer::parseInt);
   }
 
   private String findSourceTitle() {
