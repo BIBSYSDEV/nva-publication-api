@@ -210,7 +210,7 @@ public class PublicationContextCreator {
     var sourceTitle = findSourceTitle();
     var printIssn = findPrintIssn().orElse(null);
     var electronicIssn = findElectronicIssn().orElse(null);
-    var publicationYear = PublicationDateExtractor.extractPublicationDate(docTp).getYear();
+    var publicationYear = getYear();
     var seriesId =
         publicationChannelConnection.fetchSerialPublication(
             printIssn, electronicIssn, sourceTitle, publicationYear);
@@ -219,7 +219,7 @@ public class PublicationContextCreator {
 
   private Optional<PublishingHouse> fetchConfirmedPublisherFromPublicationChannels() {
     var publisherName = findPublisherName();
-    var publicationYear = PublicationDateExtractor.extractPublicationDate(docTp).getYear();
+    var publicationYear = getYear();
     return publisherName
         .map(name -> publicationChannelConnection.fetchPublisher(name, publicationYear))
         .filter(Optional::isPresent)
@@ -254,15 +254,19 @@ public class PublicationContextCreator {
     var sourceTitle = findSourceTitle();
     var printIssn = findPrintIssn().orElse(null);
     var electronicIssn = findElectronicIssn().orElse(null);
-    var publicationYear = PublicationDateExtractor.extractPublicationDate(docTp).getYear();
+    var publicationYear = getYear();
     var journalId =
         publicationChannelConnection.fetchSerialPublication(
             printIssn, electronicIssn, sourceTitle, publicationYear);
     return journalId.map(Journal::new);
   }
 
+  private String getYear() {
+    return PublicationDateExtractor.extractPublicationDate(docTp).getYear();
+  }
+
   private boolean thereIsLevelInformationForPublication() {
-    var year = PublicationDateExtractor.extractPublicationDate(docTp).getYear();
+    var year = getYear();
     return attempt(() -> Integer.parseInt(year))
         .toOptional()
         .map(value -> value >= START_YEAR_FOR_LEVEL_INFO)
