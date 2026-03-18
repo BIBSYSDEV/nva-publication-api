@@ -14,7 +14,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import jakarta.xml.bind.JAXBElement;
 import java.net.URI;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -29,12 +28,9 @@ import no.scopus.generated.CitationLanguageTp;
 import no.scopus.generated.CitationTitleTp;
 import no.scopus.generated.CitationTypeTp;
 import no.scopus.generated.CitationtypeAtt;
-import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
-import no.scopus.generated.MetaTp;
-import no.scopus.generated.OpenAccessType;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
@@ -42,6 +38,7 @@ import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.LanguageExtractor;
 import no.sikt.nva.scopus.conversion.PublicationChannelConnection;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
+import no.sikt.nva.scopus.conversion.PublicationDateExtractor;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.sikt.nva.scopus.conversion.files.ScopusFileConverter;
 import no.sikt.nva.scopus.exception.MissingNvaContributorException;
@@ -52,7 +49,6 @@ import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportContributor;
 import no.unit.nva.importcandidate.ImportEntityDescription;
 import no.unit.nva.importcandidate.ImportStatusFactory;
-import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
@@ -152,7 +148,7 @@ public class ScopusConverter {
     return new ImportEntityDescription(
         extractMainTitle(),
         new LanguageExtractor(extractCitationLanguages()).extractLanguage(),
-        extractPublicationDate(),
+        PublicationDateExtractor.extractPublicationDate(docTp),
         contributors,
         extractMainAbstract(),
         null,
@@ -195,49 +191,6 @@ public class ScopusConverter {
         .getHead()
         .getCitationInfo()
         .getCitationLanguage();
-  }
-
-  private PublicationDate extractPublicationDate() {
-    return getPublicationDateFromOaAccessEffectiveDate()
-        .orElseGet(this::getPublicationDateFromDateSort);
-  }
-
-  private PublicationDate getPublicationDateFromDateSort() {
-    var dateSort = getDateSortTp();
-    return new PublicationDate.Builder()
-        .withDay(dateSort.getDay())
-        .withMonth(dateSort.getMonth())
-        .withYear(dateSort.getYear())
-        .build();
-  }
-
-  private Optional<PublicationDate> getPublicationDateFromOaAccessEffectiveDate() {
-    return Optional.of(docTp.getMeta())
-        .map(MetaTp::getOpenAccess)
-        .map(OpenAccessType::getOaAccessEffectiveDate)
-        .map(this::toPublicationDate);
-  }
-
-  private PublicationDate toPublicationDate(String value) {
-    var localDate = attempt(() -> LocalDate.parse(value)).toOptional();
-    return localDate.map(ScopusConverter::toPublicationDate).orElse(null);
-  }
-
-  private static PublicationDate toPublicationDate(LocalDate date) {
-    return new PublicationDate.Builder()
-        .withYear(String.valueOf(date.getYear()))
-        .withMonth(String.valueOf(date.getMonthValue()))
-        .withDay(String.valueOf(date.getDayOfMonth()))
-        .build();
-  }
-
-  /*
-  According to the "SciVerse SCOPUS CUSTOM DATA DOCUMENTATION" dateSort contains the publication date if it exists,
-   if not there are several rules to determine what's the second-best date is. See "SciVerse SCOPUS CUSTOM DATA
-   DOCUMENTATION" for details.
-   */
-  private DateSortTp getDateSortTp() {
-    return docTp.getItem().getItem().getProcessInfo().getDateSort();
   }
 
   private String extractMainAbstract() {
