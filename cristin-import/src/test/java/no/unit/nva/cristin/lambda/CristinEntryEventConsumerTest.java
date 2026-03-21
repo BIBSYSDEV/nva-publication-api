@@ -587,8 +587,9 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     var publication = resourceService.getPublicationsByCristinIdentifier(cristinId).getFirst();
 
     publication.getEntityDescription().getContributors().stream()
-        .map(Contributor::getRole)
-        .forEach(role -> assertEquals(role, new RoleType(Role.OTHER)));
+        .map(Contributor::role)
+        .map(RoleType::getType)
+        .forEach(role -> assertEquals(role, Role.OTHER));
 
     assertThat(file, is(not(emptyString())));
   }

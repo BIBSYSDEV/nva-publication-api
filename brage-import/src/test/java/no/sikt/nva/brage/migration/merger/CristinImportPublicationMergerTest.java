@@ -355,8 +355,7 @@ class CristinImportPublicationMergerTest {
     var updatedPublication = mergePublications(existingPublication, bragePublication, brageRecord);
     var updatedContributor = updatedPublication.getEntityDescription().getContributors().getFirst();
 
-    assertThat(
-        updatedContributor.getAffiliations(), is(equalTo(brageContributor.getAffiliations())));
+    assertThat(updatedContributor.affiliations(), is(equalTo(brageContributor.affiliations())));
   }
 
   @Test
@@ -379,8 +378,8 @@ class CristinImportPublicationMergerTest {
         updatedPublication.getEntityDescription().getContributors().getFirst();
 
     assertThat(
-        notUpdatedContributor.getAffiliations(),
-        is(equalTo(contributorToKeepUnchanged.getAffiliations())));
+        notUpdatedContributor.affiliations(),
+        is(equalTo(contributorToKeepUnchanged.affiliations())));
   }
 
   private static Contributor randomContributor(int sequence, Role creator) {

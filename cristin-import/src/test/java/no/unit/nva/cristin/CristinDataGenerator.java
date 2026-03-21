@@ -26,8 +26,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.LocalDate;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -343,14 +341,15 @@ public final class CristinDataGenerator {
 
   public static JsonNode objectWithContributorsWithoutAffiliation() throws JsonProcessingException {
     CristinObject cristinObject = randomBook();
-    cristinObject.getContributors().get(0).setAffiliations(null);
+    cristinObject.getContributors().getFirst().setAffiliations(null);
     return eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
   }
 
   public static JsonNode objectWithAffiliationWithoutRole() throws JsonProcessingException {
     CristinObject cristinObject = randomBook();
     cristinObject.getContributors().stream()
-        .flatMap(contributor -> contributor.getAffiliations().stream())
+        .map(CristinContributor::getAffiliations)
+        .flatMap(List::stream)
         .forEach(affiliation -> affiliation.setRoles(null));
     return eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
   }
@@ -908,10 +907,7 @@ public final class CristinDataGenerator {
   }
 
   private static int randomYear() {
-    Date date = FAKER.date().birthday();
-    Calendar calendar = Calendar.getInstance();
-    calendar.setTime(date);
-    return calendar.get(Calendar.YEAR);
+    return FAKER.timeAndDate().birthday().getYear();
   }
 
   private static JsonNode cristinObjectWithUnexpectedValue(

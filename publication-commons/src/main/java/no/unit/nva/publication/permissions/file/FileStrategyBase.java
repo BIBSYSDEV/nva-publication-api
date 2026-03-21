@@ -16,6 +16,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileOperation;
+import no.unit.nva.model.Identity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -176,10 +177,12 @@ public class FileStrategyBase {
         .stream()
         .flatMap(List::stream)
         .filter(this::isVerifiedContributor)
-        .anyMatch(contributor -> contributor.getIdentity().getId().equals(personCristinId));
+        .map(Contributor::identity)
+        .map(Identity::getId)
+        .anyMatch(identity -> identity.equals(personCristinId));
   }
 
   private boolean isVerifiedContributor(Contributor contributor) {
-    return nonNull(contributor.getIdentity()) && contributor.getIdentity().getId() != null;
+    return nonNull(contributor.identity()) && nonNull(contributor.identity().getId());
   }
 }

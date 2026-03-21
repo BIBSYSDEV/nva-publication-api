@@ -1048,10 +1048,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
 
     var generator =
         new NvaBrageMigrationDataGenerator.Builder()
@@ -1133,10 +1130,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
 
     String mainTitle = "Dynamic Response of Floating Wind Turbines";
     var generator =
@@ -1180,10 +1174,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
 
     var generator =
         new NvaBrageMigrationDataGenerator.Builder()
@@ -1227,10 +1218,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
 
     var title = "Dynamic Response of Floating Wind Turbines";
     var generator =
@@ -1277,10 +1265,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
 
     var title = "Dynamic Response of Floating Wind Turbines";
     var generator =
@@ -1336,10 +1321,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
     var subjectCode = randomString();
     var brageGenerator =
         new NvaBrageMigrationDataGenerator.Builder()
@@ -1400,10 +1382,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
     var subjectCode = randomString();
     var brageGenerator =
         new NvaBrageMigrationDataGenerator.Builder()
@@ -1471,10 +1450,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
     var subjectCode = randomString();
     var newFileIdentifier = randomUUID();
     var brageGenerator =
@@ -1785,10 +1761,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
 
     var generator =
         new NvaBrageMigrationDataGenerator.Builder()
@@ -1841,10 +1814,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
     var nvaBrageMigrationDataGenerator =
         new NvaBrageMigrationDataGenerator.Builder()
             .withPublishedDate(null)
@@ -1915,10 +1885,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     final var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
     assertThat(existingPublication.getHandle(), is(nullValue()));
 
     var listOfExistingPublications =
@@ -2035,10 +2002,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
     mockSingleHitSearchApiResponse(existingPublication.getIdentifier(), 200);
 
     var generator =
@@ -2181,10 +2145,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
     var isbn = getIsbn(existingPublication);
     mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier(), isbn);
     var generator =
@@ -2233,10 +2194,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
     mockSearchPublicationByIsbnResponse(existingPublication.getIdentifier(), isbn);
     var generator =
         new NvaBrageMigrationDataGenerator.Builder()
@@ -2282,10 +2240,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
 
     mockSingleHitSearchApiResponse(existingPublication.getIdentifier(), 200);
 
@@ -2334,10 +2289,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
     mockSingleHitSearchApiResponse(existingPublication.getIdentifier(), 200);
 
     var generator =
@@ -2696,10 +2648,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
     var brageContributor =
         new Contributor(
-            new Identity(contributor.getIdentity().getName(), null, null),
-            "ARTIST",
-            null,
-            List.of());
+            new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
     var generator =
         new NvaBrageMigrationDataGenerator.Builder()
             .withIsbn(isbn)

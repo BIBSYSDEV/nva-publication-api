@@ -22,19 +22,18 @@ public class ContributorFlattenedDetails implements JsonSerializable {
     this.affiliationUri = affiliationUri;
   }
 
-  public static ContributorFlattenedDetails extractNameAndSequence(Contributor c) {
-    String name = c.getIdentity().getName();
-    int sequence = c.getSequence();
+  public static ContributorFlattenedDetails extractNameAndSequence(Contributor contributor) {
+    String name = contributor.identity().getName();
+    int sequence = contributor.sequence();
     return new ContributorFlattenedDetails(name, sequence, null);
   }
 
   public static ContributorFlattenedDetails extractNameSequenceAndAffiliationUri(
       Contributor contributor) {
-    String name = contributor.getIdentity().getName();
-    int sequence = contributor.getSequence();
+    String name = contributor.identity().getName();
+    int sequence = contributor.sequence();
     URI affiliationUri =
-        ((Organization)
-                contributor.getAffiliations().stream().collect(SingletonCollector.collect()))
+        ((Organization) contributor.affiliations().stream().collect(SingletonCollector.collect()))
             .getId();
     return new ContributorFlattenedDetails(name, sequence, affiliationUri);
   }

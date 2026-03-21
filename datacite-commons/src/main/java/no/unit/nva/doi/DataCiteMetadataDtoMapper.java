@@ -178,6 +178,6 @@ public final class DataCiteMetadataDtoMapper {
   }
 
   private static CreatorDto toCreatorDto(Contributor contributor) {
-    return new CreatorDto.Builder().withCreatorName(contributor.getIdentity().getName()).build();
+    return new CreatorDto.Builder().withCreatorName(contributor.identity().getName()).build();
   }
 }
