@@ -1821,7 +1821,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
   private Contributor getCorrespondingContributor(List<Contributor> actualPublicationContributors) {
     createEmptyPiaMock();
     return actualPublicationContributors.stream()
-        .filter(contributor -> contributor.correspondingAuthor())
+        .filter(Contributor::correspondingAuthor)
         .findAny()
         .orElse(null);
   }

@@ -613,7 +613,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
   private static boolean hasIdentifier(Contributor contributor, String oldContributorIdentifier) {
     return Optional.ofNullable(contributor)
-        .map(contributor1 -> contributor1.identity())
+        .map(Contributor::identity)
         .map(Identity::getId)
         .map(URI::toString)
         .map(oldContributorIdentifier::contains)

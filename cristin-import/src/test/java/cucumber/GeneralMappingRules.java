@@ -286,7 +286,7 @@ public class GeneralMappingRules {
     List<String> expectedContributorNames = expectedContributors.rows(SKIP_HEADERS).asList();
     List<String> actualContributorNames =
         scenarioContext.getNvaEntry().getEntityDescription().getContributors().stream()
-            .map(contributor -> contributor.identity())
+            .map(Contributor::identity)
             .map(Identity::getName)
             .toList();
 
@@ -335,7 +335,7 @@ public class GeneralMappingRules {
         is(equalTo(this.scenarioContext.getCristinEntry().getContributors().size())));
     String actualRole =
         contributors.stream()
-            .map(contributor -> contributor.role())
+            .map(Contributor::role)
             .map(RoleType::getType)
             .map(Enum::toString)
             .collect(SingletonCollector.collect());
@@ -661,7 +661,7 @@ public class GeneralMappingRules {
   @Then("the NVA contributor has role other.")
   public void theNVAContributorHasRoleOther() {
     scenarioContext.getNvaEntry().getEntityDescription().getContributors().stream()
-        .map(contributor -> contributor.role())
+        .map(Contributor::role)
         .forEach(role -> assertEquals(role, new RoleType(Role.OTHER)));
   }
 

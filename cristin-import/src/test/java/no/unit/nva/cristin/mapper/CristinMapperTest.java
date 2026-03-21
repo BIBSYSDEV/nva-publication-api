@@ -296,7 +296,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
             .map(Publication::getEntityDescription)
             .map(EntityDescription::getContributors)
             .flatMap(Collection::stream)
-            .map(contributor -> contributor.identity())
+            .map(Contributor::identity)
             .map(Identity::getName)
             .toList();
 
@@ -740,7 +740,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
 
   private static List<Integer> getSequnceNumberList(List<Contributor> actualContributors) {
     return actualContributors.stream()
-        .map(contributor -> contributor.sequence())
+        .map(Contributor::sequence)
         .sorted(Comparator.nullsLast(Comparator.naturalOrder()))
         .toList();
   }

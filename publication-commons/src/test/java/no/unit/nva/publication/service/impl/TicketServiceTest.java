@@ -62,6 +62,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -985,7 +986,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
 
   private static Set<CuratingInstitution> getCuratingInstitutions(Publication publication) {
     return publication.getEntityDescription().getContributors().stream()
-        .map(contributor -> contributor.affiliations())
+        .map(Contributor::affiliations)
         .flatMap(Collection::stream)
         .filter(Organization.class::isInstance)
         .map(Organization.class::cast)

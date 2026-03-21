@@ -177,7 +177,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
   private boolean hasContributorId(Contributor contributor, String contributorId) {
     return Optional.ofNullable(contributor)
-        .map(contributor1 -> contributor1.identity())
+        .map(Contributor::identity)
         .map(Identity::getId)
         .map(UriWrapper::fromUri)
         .map(UriWrapper::getLastPathElement)

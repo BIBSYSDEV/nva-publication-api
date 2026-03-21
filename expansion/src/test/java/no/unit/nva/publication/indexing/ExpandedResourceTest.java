@@ -418,9 +418,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
             contributorsJson,
             objectMapper.getTypeFactory().constructCollectionType(List.class, Contributor.class));
     var sortedContributors =
-        contributors.stream()
-            .sorted(Comparator.comparing(contributor -> contributor.sequence()))
-            .toList();
+        contributors.stream().sorted(Comparator.comparing(Contributor::sequence)).toList();
 
     assertThat(contributors, is(equalTo(sortedContributors)));
   }
@@ -1203,7 +1201,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
     var versionedType = MediaType.parse("application/ld+json; version=2023-05-26");
     resource.getEntityDescription().getContributors().stream()
-        .map(contributor -> contributor.affiliations())
+        .map(Contributor::affiliations)
         .flatMap(i -> i.stream().map(Organization.class::cast).map(Organization::getId))
         .forEach(
             uri -> {

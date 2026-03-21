@@ -182,7 +182,7 @@ public final class TicketTestUtils {
 
   private static Set<URI> getContributorIds(Publication publication) {
     return publication.getEntityDescription().getContributors().stream()
-        .map(contributor -> contributor.identity())
+        .map(Contributor::identity)
         .map(Identity::getId)
         .collect(Collectors.toSet());
   }

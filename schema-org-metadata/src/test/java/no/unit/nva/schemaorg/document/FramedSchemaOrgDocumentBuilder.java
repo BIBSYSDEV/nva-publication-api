@@ -35,7 +35,7 @@ public final class FramedSchemaOrgDocumentBuilder {
   private PersonList generatorCreatorList(List<Contributor> creators) {
     var persons =
         creators.stream()
-            .map(contributor -> contributor.identity())
+            .map(Contributor::identity)
             .map(Identity::getName)
             .map(Person::new)
             .collect(Collectors.toList());
