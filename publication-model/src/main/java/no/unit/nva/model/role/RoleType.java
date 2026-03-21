@@ -1,5 +1,7 @@
 package no.unit.nva.model.role;
 
+import static java.util.Objects.nonNull;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
@@ -20,7 +22,7 @@ public class RoleType {
   @JsonCreator
   public static RoleType fromJson(
       @JsonProperty(TYPE_FIELD) Role type, @JsonProperty(DESCRIPTION_FIELD) String description) {
-    return Role.OTHER.equals(type)
+    return Role.OTHER.equals(type) && nonNull(description) && !description.isBlank()
         ? new RoleTypeOther(Role.OTHER, description)
         : new RoleType(type);
   }
