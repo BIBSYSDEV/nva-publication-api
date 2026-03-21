@@ -37,26 +37,6 @@ class ContributorTest {
     assertThat(other, is(equalTo(description)));
   }
 
-  private static Contributor createContributor(String description) {
-    return new Contributor(
-        createIdentity(),
-        List.of(PublicationGenerator.randomOrganization()),
-        new RoleTypeOther(Role.OTHER, description),
-        1,
-        true);
-  }
-
-  private static Identity createIdentity() {
-    return new Identity.Builder()
-        .withVerificationStatus(ContributorVerificationStatus.VERIFIED)
-        .withId(randomUri())
-        .withAdditionalIdentifiers(Collections.emptyList())
-        .withName(randomString())
-        .withNameType(NameType.PERSONAL)
-        .withOrcId(randomString())
-        .build();
-  }
-
   @Test
   void shouldRoundtripRoleTypeOtherDirectly() throws JsonProcessingException {
     var description = randomString();
@@ -99,5 +79,26 @@ class ContributorTest {
         """;
     var fromJson = JsonUtils.dtoObjectMapper.readValue(json, RoleType.class);
     assertThat(fromJson.getClass(), is(equalTo(RoleType.class)));
+  }
+
+
+  private static Contributor createContributor(String description) {
+    return new Contributor(
+            createIdentity(),
+            List.of(PublicationGenerator.randomOrganization()),
+            new RoleTypeOther(Role.OTHER, description),
+            1,
+            true);
+  }
+
+  private static Identity createIdentity() {
+    return new Identity.Builder()
+            .withVerificationStatus(ContributorVerificationStatus.VERIFIED)
+            .withId(randomUri())
+            .withAdditionalIdentifiers(Collections.emptyList())
+            .withName(randomString())
+            .withNameType(NameType.PERSONAL)
+            .withOrcId(randomString())
+            .build();
   }
 }
