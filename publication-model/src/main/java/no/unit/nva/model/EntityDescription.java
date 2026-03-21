@@ -122,7 +122,8 @@ public class EntityDescription implements WithCopy<EntityDescription.Builder> {
         contributors.stream()
             .sorted(
                 Comparator.comparing(
-                    Contributor::getSequence, Comparator.nullsLast(Comparator.naturalOrder())))
+                    contributor -> contributor.sequence(),
+                    Comparator.nullsLast(Comparator.naturalOrder())))
             .toList();
 
     return updatedContributorSequence(contributorList);

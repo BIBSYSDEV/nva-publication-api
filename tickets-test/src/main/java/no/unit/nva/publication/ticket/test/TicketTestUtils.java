@@ -160,7 +160,7 @@ public final class TicketTestUtils {
         .getEntityDescription()
         .getContributors()
         .forEach(
-            contributor -> contributor.getAffiliations().forEach(TicketTestUtils::setAffiliation));
+            contributor -> contributor.affiliations().forEach(TicketTestUtils::setAffiliation));
     publication.setCuratingInstitutions(
         Set.of(new CuratingInstitution(CURATING_INSTITUTION_ID, getContributorIds(publication))));
     return publication;
@@ -182,7 +182,7 @@ public final class TicketTestUtils {
 
   private static Set<URI> getContributorIds(Publication publication) {
     return publication.getEntityDescription().getContributors().stream()
-        .map(Contributor::getIdentity)
+        .map(contributor -> contributor.identity())
         .map(Identity::getId)
         .collect(Collectors.toSet());
   }
@@ -198,7 +198,7 @@ public final class TicketTestUtils {
         .getEntityDescription()
         .getContributors()
         .forEach(
-            contributor -> contributor.getAffiliations().forEach(TicketTestUtils::setAffiliation));
+            contributor -> contributor.affiliations().forEach(TicketTestUtils::setAffiliation));
     publication.setCuratingInstitutions(
         Set.of(new CuratingInstitution(CURATING_INSTITUTION_ID, getContributorIds(publication))));
     return persistPublication(resourceService, publication);

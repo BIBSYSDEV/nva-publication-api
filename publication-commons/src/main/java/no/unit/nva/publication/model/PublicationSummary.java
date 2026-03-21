@@ -246,7 +246,7 @@ public class PublicationSummary {
   private static List<Contributor> sortAndLimitNumberOfContributors(
       List<Contributor> contributors) {
     return contributors.stream()
-        .sorted(Comparator.comparing(Contributor::getSequence))
+        .sorted(Comparator.comparing(contributor -> contributor.sequence()))
         .limit(MAX_SIZE_CONTRIBUTOR_LIST)
         .collect(Collectors.toList());
   }

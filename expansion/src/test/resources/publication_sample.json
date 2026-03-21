@@ -91,7 +91,9 @@
           "type": "Identity",
           "name": "Withauthor TestUser"
         },
-        "role": "Creator",
+        "role": {
+          "type": "Creator"
+        },
         "sequence": 1
       }
     ],

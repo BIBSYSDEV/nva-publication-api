@@ -135,7 +135,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
   private void assertContainsUpdatedAffiliation(Contributor contributor) {
     var expectedAffiliation = Organization.fromUri(NEW_AFFILIATION_ID);
-    assertThat(contributor.getAffiliations(), hasItem(expectedAffiliation));
+    assertThat(contributor.affiliations(), hasItem(expectedAffiliation));
   }
 
   private void assertOtherAffiliationsUnchanged(
@@ -147,7 +147,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
     unchangedOriginalAffiliations.forEach(
         originalAffiliation ->
-            assertThat(updatedContributor.getAffiliations(), hasItem(originalAffiliation)));
+            assertThat(updatedContributor.affiliations(), hasItem(originalAffiliation)));
   }
 
   private Contributor findContributor(Resource resource, Contributor contributor) {
@@ -166,18 +166,18 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   }
 
   private List<Corporation> getAffiliationsWithId(Contributor contributor) {
-    return contributor.getAffiliations().stream()
+    return contributor.affiliations().stream()
         .filter(affiliation -> hasAffiliationId(affiliation, NEW_AFFILIATION_ID))
         .toList();
   }
 
   private String extractContributorId(Contributor contributor) {
-    return UriWrapper.fromUri(contributor.getIdentity().getId()).getLastPathElement();
+    return UriWrapper.fromUri(contributor.identity().getId()).getLastPathElement();
   }
 
   private boolean hasContributorId(Contributor contributor, String contributorId) {
     return Optional.ofNullable(contributor)
-        .map(Contributor::getIdentity)
+        .map(contributor1 -> contributor1.identity())
         .map(Identity::getId)
         .map(UriWrapper::fromUri)
         .map(UriWrapper::getLastPathElement)
@@ -191,6 +191,6 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   }
 
   private List<Corporation> copyAffiliations(Contributor contributor) {
-    return new ArrayList<>(contributor.getAffiliations());
+    return new ArrayList<>(contributor.affiliations());
   }
 }

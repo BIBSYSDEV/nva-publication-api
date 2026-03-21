@@ -99,7 +99,7 @@ class PublicationSummaryTest extends ResourcesLocalTest {
         summary.getContributors(),
         containsInAnyOrder(
             entityDescription.getContributors().stream()
-                .sorted(Comparator.comparing(Contributor::getSequence))
+                .sorted(Comparator.comparing(contributor -> contributor.sequence()))
                 .limit(MAX_SIZE_CONTRIBUTOR_LIST)
                 .toArray()));
   }

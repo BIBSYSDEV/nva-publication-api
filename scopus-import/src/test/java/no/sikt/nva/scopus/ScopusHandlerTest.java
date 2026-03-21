@@ -1647,7 +1647,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
   private void hasAffiliationWithId(Contributor contributor, String cristinAffiliationId) {
     var affiliationIdList =
-        contributor.getAffiliations().stream()
+        contributor.affiliations().stream()
             .filter(Organization.class::isInstance)
             .map(Organization.class::cast)
             .map(Organization::getId)
@@ -1821,7 +1821,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
   private Contributor getCorrespondingContributor(List<Contributor> actualPublicationContributors) {
     createEmptyPiaMock();
     return actualPublicationContributors.stream()
-        .filter(Contributor::isCorrespondingAuthor)
+        .filter(contributor -> contributor.correspondingAuthor())
         .findAny()
         .orElse(null);
   }
@@ -1930,18 +1930,21 @@ class ScopusHandlerTest extends ResourcesLocalTest {
       var optionalContributor = findContributorByOrcid(orcidAsUriString, contributors);
       assertTrue(optionalContributor.isPresent());
       var contributor = optionalContributor.get();
-      assertThat(contributor.getIdentity().getName(), containsString(authorTp.getSurname()));
+      assertThat(contributor.identity().getName(), containsString(authorTp.getSurname()));
     }
   }
 
   private void checkContributor(AuthorTp authorTp, List<Contributor> contributors) {
     var contributor = findContributorByName(authorTp.getGivenName(), contributors);
-    assertEquals(getExpectedFullAuthorName(authorTp), contributor.getIdentity().getName());
+    assertEquals(getExpectedFullAuthorName(authorTp), contributor.identity().getName());
   }
 
   private Contributor findContributorByName(String givenName, List<Contributor> contributors) {
     return contributors.stream()
-        .filter(contributor -> contributor.getIdentity().getName().contains(givenName))
+        .filter(
+            contributor -> {
+              return contributor.identity().getName().contains(givenName);
+            })
         .findAny()
         .orElseThrow();
   }
@@ -1988,7 +1991,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
   private Optional<Contributor> findContributorByOrcid(
       String orcid, List<Contributor> contributors) {
     return contributors.stream()
-        .filter(contributor -> orcid.equals(contributor.getIdentity().getOrcId()))
+        .filter(
+            contributor -> {
+              return orcid.equals(contributor.identity().getOrcId());
+            })
         .findFirst();
   }
 

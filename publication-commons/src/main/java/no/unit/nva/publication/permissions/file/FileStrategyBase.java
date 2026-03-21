@@ -1,5 +1,6 @@
 package no.unit.nva.publication.permissions.file;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.FileOperation.DELETE;
 import static no.unit.nva.model.FileOperation.DOWNLOAD;
@@ -176,10 +177,13 @@ public class FileStrategyBase {
         .stream()
         .flatMap(List::stream)
         .filter(this::isVerifiedContributor)
-        .anyMatch(contributor -> contributor.getIdentity().getId().equals(personCristinId));
+        .anyMatch(contributor -> contributor.identity().getId().equals(personCristinId));
   }
 
   private boolean isVerifiedContributor(Contributor contributor) {
-    return nonNull(contributor.getIdentity()) && contributor.getIdentity().getId() != null;
+    if (isNull(contributor.identity())) {
+      return false;
+    }
+    return contributor.identity().getId() != null;
   }
 }

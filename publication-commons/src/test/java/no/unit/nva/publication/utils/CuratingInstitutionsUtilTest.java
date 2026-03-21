@@ -104,7 +104,7 @@ class CuratingInstitutionsUtilTest {
   }
 
   private void mockTopLevelOrg(Contributor contributor, URI topLevelOrg, CristinUnitsUtil util) {
-    contributor.getAffiliations().stream()
+    contributor.affiliations().stream()
         .filter(Organization.class::isInstance)
         .map(Organization.class::cast)
         .map(Organization::getId)
