@@ -22,9 +22,9 @@ public class ContributorFlattenedDetails implements JsonSerializable {
     this.affiliationUri = affiliationUri;
   }
 
-  public static ContributorFlattenedDetails extractNameAndSequence(Contributor c) {
-    String name = c.identity().getName();
-    int sequence = c.sequence();
+  public static ContributorFlattenedDetails extractNameAndSequence(Contributor contributor) {
+    String name = contributor.identity().getName();
+    int sequence = contributor.sequence();
     return new ContributorFlattenedDetails(name, sequence, null);
   }
 
