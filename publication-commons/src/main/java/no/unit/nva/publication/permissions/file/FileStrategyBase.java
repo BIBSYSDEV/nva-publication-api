@@ -1,6 +1,5 @@
 package no.unit.nva.publication.permissions.file;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.FileOperation.DELETE;
 import static no.unit.nva.model.FileOperation.DOWNLOAD;
@@ -184,9 +183,6 @@ public class FileStrategyBase {
   }
 
   private boolean isVerifiedContributor(Contributor contributor) {
-    if (isNull(contributor.identity())) {
-      return false;
-    }
-    return contributor.identity().getId() != null;
+    return nonNull(contributor.identity()) && nonNull(contributor.identity().getId());
   }
 }
