@@ -5,6 +5,7 @@ import static no.unit.nva.publication.events.handlers.persistence.PersistedDocum
 import static nva.commons.core.attempt.Try.attempt;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;

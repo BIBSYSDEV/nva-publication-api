@@ -12,8 +12,6 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -108,8 +106,6 @@ public class PublicationRdfExpansion {
   }
 
   private void enrichRelatedPublications(Model model, Resource resource, Publication publication) {
-    var list = new ArrayList<URI>();
-
     if (isAnthologySubPart(publication)) {
       extractAnthologyUri(publication)
           .flatMap(this::fetchJsonLd)
@@ -248,9 +244,11 @@ public class PublicationRdfExpansion {
   }
 
   private static Stream<URI> affiliationUris(Publication publication) {
-    return Optional.ofNullable(publication.getContributors())
+    return Optional.ofNullable(publication.getEntityDescription())
+        .map(EntityDescription::getContributors)
+        .orElse(java.util.List.of())
         .stream()
-        .flatMap(c -> c.affiliation().stream())
+        .flatMap(c -> c.getAffiliations().stream())
         .filter(a -> a instanceof Organization)
         .map(a -> ((Organization) a).getId())
         .filter(Objects::nonNull);
@@ -262,7 +260,9 @@ public class PublicationRdfExpansion {
             .map(EntityDescription::getReference)
             .map(no.unit.nva.model.Reference::getPublicationContext)
             .orElse(null);
-    if (context == null) return Stream.empty();
+    if (context == null) {
+      return Stream.empty();
+    }
     return channelUrisFrom(context);
   }
 
