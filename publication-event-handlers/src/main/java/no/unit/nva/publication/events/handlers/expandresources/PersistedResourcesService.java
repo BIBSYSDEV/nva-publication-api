@@ -26,7 +26,11 @@ public class PersistedResourcesService {
   }
 
   public URI persist(ExpandedDataEntry expandedDataEntry) {
-    return attempt(() -> PersistedDocument.createIndexDocument(expandedDataEntry))
+    return persist(expandedDataEntry, null);
+  }
+
+  public URI persist(ExpandedDataEntry expandedDataEntry, String nTriples) {
+    return attempt(() -> PersistedDocument.createIndexDocument(expandedDataEntry, nTriples))
         .map(this::writeToPersistedResources)
         .orElseThrow(failure -> throwError(failure, expandedDataEntry));
   }

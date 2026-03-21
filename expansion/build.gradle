@@ -18,6 +18,7 @@ dependencies {
     testImplementation nvaLibs.testutils
     testImplementation nvaLibs.logutils
     testImplementation libs.jsonassert
+    testImplementation nvaCatalog.jena.shacl
 }
 
 test {
