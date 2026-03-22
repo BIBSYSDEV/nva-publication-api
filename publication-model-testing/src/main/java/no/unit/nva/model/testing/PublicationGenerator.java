@@ -304,7 +304,6 @@ public final class PublicationGenerator {
         .build();
   }
 
-  // TODO update for publication contributors accessor
   private static Set<CuratingInstitution> extractCuratingInstitutions(
       EntityDescription entityDescription) {
     return entityDescription.getContributors().stream()
