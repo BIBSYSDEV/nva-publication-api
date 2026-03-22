@@ -985,7 +985,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
   }
 
   private static Set<CuratingInstitution> getCuratingInstitutions(Publication publication) {
-    return publication.getEntityDescription().getContributors().stream()
+    return publication.getContributors().stream()
         .map(Contributor::affiliations)
         .flatMap(Collection::stream)
         .filter(Organization.class::isInstance)

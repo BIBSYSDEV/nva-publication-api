@@ -293,8 +293,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
     List<String> actualContributorNames =
         cristinObjects.stream()
             .map(this::mapToPublication)
-            .map(Publication::getEntityDescription)
-            .map(EntityDescription::getContributors)
+            .map(Publication::getContributors)
             .flatMap(Collection::stream)
             .map(Contributor::identity)
             .map(Identity::getName)
@@ -451,10 +450,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
             .withContributors(List.of(contributorWithMissingName))
             .build();
     var mappedContributor =
-        mapToPublication(cristinObjectWithContributorsWithoutRole)
-            .getEntityDescription()
-            .getContributors()
-            .getFirst();
+        mapToPublication(cristinObjectWithContributorsWithoutRole).getContributors().getFirst();
 
     assertNull(mappedContributor.identity().getName());
   }
@@ -735,7 +731,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
   }
 
   private List<Contributor> getContributors(CristinObject singleCristinObject) {
-    return mapToPublication(singleCristinObject).getEntityDescription().getContributors();
+    return mapToPublication(singleCristinObject).getContributors();
   }
 
   private static List<Integer> getSequnceNumberList(List<Contributor> actualContributors) {
@@ -790,7 +786,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
             .collect(SingletonCollector.collect());
     Integer cristinIdentifierValue = Integer.parseInt(cristinIdentifier.value());
 
-    return publication.getEntityDescription().getContributors().stream()
+    return publication.getContributors().stream()
         .map(contributor -> extractContributionReference(cristinIdentifierValue, contributor))
         .toList();
   }

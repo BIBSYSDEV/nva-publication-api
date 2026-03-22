@@ -1040,7 +1040,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
   }
 
   private static List<Contributor> extractContributorsWithId(URI id, Publication publication) {
-    return publication.getEntityDescription().getContributors().stream()
+    return publication.getContributors().stream()
         .filter(
             contributor -> {
               return nonNull(contributor.identity());
@@ -1110,7 +1110,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
   private Publication getPublicationWithSamePersonInDifferentContributorRoles(URI id)
       throws JsonProcessingException {
     var publication = getSamplePublication();
-    var contributors = new ArrayList<>(publication.getEntityDescription().getContributors());
+    var contributors = new ArrayList<>(publication.getContributors());
     var name = randomString();
     contributors.add(
         createContributor(

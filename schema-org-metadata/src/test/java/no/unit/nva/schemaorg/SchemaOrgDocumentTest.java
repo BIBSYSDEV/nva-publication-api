@@ -55,7 +55,7 @@ class SchemaOrgDocumentTest {
             () ->
                 MAPPER.writeValueAsString(
                     FramedSchemaOrgDocumentBuilder.newInstance()
-                        .withCreator(publication.getEntityDescription().getContributors())
+                        .withCreator(publication.getContributors())
                         .withName(publication.getEntityDescription().getMainTitle())
                         .withId(constructExpectedId(publication))
                         .withProvider(URI.create("https://sikt.no"), "Sikt")

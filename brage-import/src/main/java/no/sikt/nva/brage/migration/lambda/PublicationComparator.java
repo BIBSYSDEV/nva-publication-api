@@ -116,7 +116,7 @@ public final class PublicationComparator {
 
   private static boolean contributorsMatch(
       Publication existingPublication, Publication incomingPublication) {
-    var existingContributors = existingPublication.getEntityDescription().getContributors();
+    var existingContributors = existingPublication.getContributors();
     if (existingContributors.isEmpty()) {
       return true;
     }
@@ -125,7 +125,7 @@ public final class PublicationComparator {
 
   private static boolean atLeastOneContributorLastNameMatch(
       Publication incomingPublication, List<Contributor> existingContributors) {
-    var incomingContributors = incomingPublication.getEntityDescription().getContributors();
+    var incomingContributors = incomingPublication.getContributors();
     return existingContributors.stream()
         .flatMap(contributor -> containsContributor(incomingContributors, contributor))
         .findAny()

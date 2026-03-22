@@ -134,17 +134,17 @@ public class CristinMapper extends CristinMappingModule {
             .withSubjects(generateNvaHrcsCategoriesAndActivities())
             .withFundings(extractFundings())
             .withPublicationNotes(extractPublicationNotes())
-            .withCuratingInstitutions(extractCuratingInstitutions(entityDescription))
+            .withCuratingInstitutions(
+                extractCuratingInstitutions(entityDescription.getContributors()))
             .withAssociatedArtifacts(AssociatedLinkExtractor.extractAssociatedLinks(cristinObject))
             .build();
     validateDoesNotHaveEmptyFields(publication);
     return publication;
   }
 
-  protected Set<CuratingInstitution> extractCuratingInstitutions(
-      EntityDescription entityDescription) {
+  protected Set<CuratingInstitution> extractCuratingInstitutions(List<Contributor> contributors) {
     return new CuratingInstitutionsUtil(uriRetriever, customerService)
-        .getCuratingInstitutionsCached(entityDescription, cristinUnitsUtil);
+        .getCuratingInstitutionsCached(contributors, cristinUnitsUtil);
   }
 
   private static Optional<URI> extractArchiveUri(List<CristinAssociatedUri> associatedUris) {
@@ -294,7 +294,7 @@ public class CristinMapper extends CristinMappingModule {
 
   private void validateDoesNotHaveEmptyFields(Publication publication) {
     try {
-      if (publication.getEntityDescription().getContributors().isEmpty()) {
+      if (publication.getContributors().isEmpty()) {
         DoesNotHaveEmptyValues.checkForEmptyFields(
             publication, IGNORE_CONTRIBUTOR_FIELDS_ADDITIONALLY);
       } else {

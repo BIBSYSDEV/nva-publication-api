@@ -157,7 +157,6 @@ public final class TicketTestUtils {
         .getEntityDescription()
         .setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
     publication
-        .getEntityDescription()
         .getContributors()
         .forEach(
             contributor -> contributor.affiliations().forEach(TicketTestUtils::setAffiliation));
@@ -181,7 +180,7 @@ public final class TicketTestUtils {
   }
 
   private static Set<URI> getContributorIds(Publication publication) {
-    return publication.getEntityDescription().getContributors().stream()
+    return publication.getContributors().stream()
         .map(Contributor::identity)
         .map(Identity::getId)
         .collect(Collectors.toSet());
@@ -195,7 +194,6 @@ public final class TicketTestUtils {
         .getEntityDescription()
         .setPublicationDate(new PublicationDate.Builder().withYear("2020").build());
     publication
-        .getEntityDescription()
         .getContributors()
         .forEach(
             contributor -> contributor.affiliations().forEach(TicketTestUtils::setAffiliation));
