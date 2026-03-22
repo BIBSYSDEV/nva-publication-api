@@ -35,13 +35,13 @@ public class CuratingInstitutionsUtil {
   }
 
   public Set<CuratingInstitution> getCuratingInstitutions(
-      Collection<Contributor> x, CristinUnitsUtil cristinUnitsUtil) {
-    var contributors = getAffiliatedContributors(x).toList();
+      Collection<Contributor> contributors, CristinUnitsUtil cristinUnitsUtil) {
+    var affiliatedContributors = getAffiliatedContributors(contributors).toList();
     return toCuratingInstitutionSet(
-        contributors.stream()
+        affiliatedContributors.stream()
             .flatMap(
                 contributor ->
-                    contributors.size() > CONTRIBUTOR_CACHE_THRESHOLD
+                    affiliatedContributors.size() > CONTRIBUTOR_CACHE_THRESHOLD
                         ? toCuratingInstitution(contributor, cristinUnitsUtil)
                         : toCuratingInstitutionOnline(contributor)));
   }
