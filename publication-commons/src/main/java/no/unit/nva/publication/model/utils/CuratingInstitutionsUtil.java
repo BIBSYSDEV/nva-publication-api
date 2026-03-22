@@ -100,7 +100,6 @@ public class CuratingInstitutionsUtil {
         .filter(Objects::nonNull);
   }
 
-  // TODO Fix contributor lookup
   private static Stream<Contributor> getAffiliatedContributors(
       Collection<Contributor> contributors) {
     return contributors.stream().filter(CuratingInstitutionsUtil::isAffiliatedContributor);
