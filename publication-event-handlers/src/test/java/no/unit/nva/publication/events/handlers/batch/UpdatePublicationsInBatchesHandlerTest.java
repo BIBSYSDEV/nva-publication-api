@@ -552,19 +552,14 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
           var updatedContributorIdentifier =
               findContributorByIdentifier(updatedPublication, newContributorIdentifier);
           var contributorsToKeepUnchanged =
-              publication.getEntityDescription().getContributors().stream()
+              publication.getContributors().stream()
                   .filter(contributor -> !hasIdentifier(contributor, oldContributorIdentifier))
                   .toList();
           assertEquals(
               newContributorIdentifier, getContributorIdentifier(updatedContributorIdentifier));
           assertEquals(
-              publication.getEntityDescription().getContributors().size(),
-              updatedPublication.getEntityDescription().getContributors().size());
-          assertTrue(
-              updatedPublication
-                  .getEntityDescription()
-                  .getContributors()
-                  .containsAll(contributorsToKeepUnchanged));
+              publication.getContributors().size(), updatedPublication.getContributors().size());
+          assertTrue(updatedPublication.getContributors().containsAll(contributorsToKeepUnchanged));
         });
   }
 
@@ -586,10 +581,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
           var updatedPublication = getPublicationByIdentifier(publication);
 
           assertTrue(
-              updatedPublication
-                  .getEntityDescription()
-                  .getContributors()
-                  .containsAll(publication.getEntityDescription().getContributors()));
+              updatedPublication.getContributors().containsAll(publication.getContributors()));
         });
   }
 
@@ -605,7 +597,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
   private static Contributor findContributorByIdentifier(
       Publication publication, String contributorIdentifier) {
-    return publication.getEntityDescription().getContributors().stream()
+    return publication.getContributors().stream()
         .filter(contributor -> hasIdentifier(contributor, contributorIdentifier))
         .findFirst()
         .orElseThrow();

@@ -1,7 +1,6 @@
 package no.unit.nva.publication.doi.update.dto;
 
 import java.net.URI;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -30,7 +29,7 @@ public class DoiRegistrarEntryFields {
   public static DoiRegistrarEntryFields fromPublication(Publication publication) {
     DoiRegistrarEntryFields doiRegistrarEntryFields = new DoiRegistrarEntryFields();
     doiRegistrarEntryFields.resourceIdentifier = publication.getIdentifier();
-    doiRegistrarEntryFields.contributors = extractContributors(publication);
+    doiRegistrarEntryFields.contributors = publication.getContributors();
     doiRegistrarEntryFields.publicationDate = extractPublicationDate(publication);
     doiRegistrarEntryFields.publisherId = extractPublisherId(publication);
     doiRegistrarEntryFields.title = extractTitle(publication);
@@ -125,12 +124,6 @@ public class DoiRegistrarEntryFields {
     return extractEntityDescription(publication)
         .map(EntityDescription::getPublicationDate)
         .orElse(null);
-  }
-
-  private static List<Contributor> extractContributors(Publication publication) {
-    return extractEntityDescription(publication)
-        .map(EntityDescription::getContributors)
-        .orElse(Collections.emptyList());
   }
 
   private static Optional<EntityDescription> extractEntityDescription(Publication publication) {

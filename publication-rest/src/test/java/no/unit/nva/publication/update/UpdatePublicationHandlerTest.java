@@ -829,7 +829,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
   void shouldUpdateResourceWhenAuthorizedUserIsContributorAndHasCristinId()
       throws BadRequestException, IOException, NotFoundException {
     var savedPublication = createAndPersistNonDegreePublication();
-    var contributors = new ArrayList<>(savedPublication.getEntityDescription().getContributors());
+    var contributors = new ArrayList<>(savedPublication.getContributors());
     var cristinId = randomUri();
     var contributor = createContributorForPublicationUpdate(cristinId);
     contributors.add(contributor);
@@ -2691,7 +2691,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
   }
 
   private void injectContributor(Publication savedPublication, Contributor contributor) {
-    var contributors = new ArrayList<>(savedPublication.getEntityDescription().getContributors());
+    var contributors = new ArrayList<>(savedPublication.getContributors());
     contributors.add(contributor);
     savedPublication.getEntityDescription().setContributors(contributors);
     resourceService.updateResource(

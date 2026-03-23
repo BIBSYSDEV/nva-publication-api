@@ -612,7 +612,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
           entityDescription.getMainTitle(),
           entityDescription.getLanguage(),
           entityDescription.getPublicationDate(),
-          entityDescription.getContributors().stream()
+          publication.getContributors().stream()
               .map(ExpandedDataEntryWithAssociatedPublication::toImportContributor)
               .toList(),
           entityDescription.getAbstract(),

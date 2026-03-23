@@ -238,8 +238,8 @@ public class CristinImportPublicationMerger {
   }
 
   private List<Contributor> determineContributors() {
-    return existingPublication.getEntityDescription().getContributors().isEmpty()
-        ? bragePublicationRepresentation.publication().getEntityDescription().getContributors()
+    return existingPublication.getContributors().isEmpty()
+        ? bragePublicationRepresentation.publication().getContributors()
         : mergeContributors();
   }
 
@@ -247,7 +247,7 @@ public class CristinImportPublicationMerger {
     if (isDegree(existingPublication)) {
       return updateExistingCreatorsAffiliationWithBrageAffiliation();
     }
-    return existingPublication.getEntityDescription().getContributors();
+    return existingPublication.getContributors();
   }
 
   private List<Contributor> updateExistingCreatorsAffiliationWithBrageAffiliation() {
@@ -270,28 +270,20 @@ public class CristinImportPublicationMerger {
 
   private boolean isNotContributorWithAnotherRoleInExistingPublication(Contributor contributor) {
     var name = contributor.identity().getName();
-    return existingPublication.getEntityDescription().getContributors().stream()
+    return existingPublication.getContributors().stream()
         .map(Contributor::identity)
         .map(Identity::getName)
         .noneMatch(name::equals);
   }
 
   private List<Contributor> extractSupervisors() {
-    return bragePublicationRepresentation
-        .publication()
-        .getEntityDescription()
-        .getContributors()
-        .stream()
+    return bragePublicationRepresentation.publication().getContributors().stream()
         .filter(contributor -> SUPERVISOR.equals(contributor.role().getType()))
         .toList();
   }
 
   private boolean incomingPublicationHasSupervisor() {
-    return bragePublicationRepresentation
-        .publication()
-        .getEntityDescription()
-        .getContributors()
-        .stream()
+    return bragePublicationRepresentation.publication().getContributors().stream()
         .anyMatch(contributor -> SUPERVISOR.equals(contributor.role().getType()));
   }
 
@@ -303,21 +295,17 @@ public class CristinImportPublicationMerger {
   private List<Contributor> existingContributorsWithUpdatedAffiliation() {
     return getBrageAffiliation()
         .map(this::updateExistingCreatorWithAffiliation)
-        .orElseGet(() -> existingPublication.getEntityDescription().getContributors());
+        .orElseGet(existingPublication::getContributors);
   }
 
   private List<Contributor> updateExistingCreatorWithAffiliation(Organization organization) {
-    return existingPublication.getEntityDescription().getContributors().stream()
+    return existingPublication.getContributors().stream()
         .map(contributor -> updateCreatorAffiliation(contributor, organization))
         .toList();
   }
 
   private Optional<Organization> getBrageAffiliation() {
-    return bragePublicationRepresentation
-        .publication()
-        .getEntityDescription()
-        .getContributors()
-        .stream()
+    return bragePublicationRepresentation.publication().getContributors().stream()
         .map(Contributor::affiliations)
         .flatMap(List::stream)
         .filter(Organization.class::isInstance)

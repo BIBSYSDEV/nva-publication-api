@@ -285,7 +285,7 @@ public class GeneralMappingRules {
   public void theNvaResourceHasAListOfNvaContributors(DataTable expectedContributors) {
     List<String> expectedContributorNames = expectedContributors.rows(SKIP_HEADERS).asList();
     List<String> actualContributorNames =
-        scenarioContext.getNvaEntry().getEntityDescription().getContributors().stream()
+        scenarioContext.getNvaEntry().getContributors().stream()
             .map(Contributor::identity)
             .map(Identity::getName)
             .toList();
@@ -296,7 +296,7 @@ public class GeneralMappingRules {
   @Then("the NVA Resource has a List of NVA Contributors with the following sequences:")
   public void theNvaResourceHasAListOfNvaContributorsWithTheFollowingSequences(DataTable table) {
     List<ContributorFlattenedDetails> actualContributors =
-        this.scenarioContext.getNvaEntry().getEntityDescription().getContributors().stream()
+        this.scenarioContext.getNvaEntry().getContributors().stream()
             .map(ContributorFlattenedDetails::extractNameAndSequence)
             .toList();
 
@@ -311,8 +311,7 @@ public class GeneralMappingRules {
   @Then("the NVA Resource Contributors have the following names, sequences and affiliation URIs")
   public void theNvaResourceContributorsHaveTheFollowingNamesSequencesAndAffiliationURIs(
       DataTable dataTable) {
-    List<Contributor> contributors =
-        this.scenarioContext.getNvaEntry().getEntityDescription().getContributors();
+    List<Contributor> contributors = this.scenarioContext.getNvaEntry().getContributors();
 
     List<ContributorFlattenedDetails> actualDetails =
         contributors.stream()
@@ -328,8 +327,7 @@ public class GeneralMappingRules {
 
   @Then("the NVA Contributor has the role {string}")
   public void theNvaContributorHasTheRole(String expectedNvaRole) {
-    List<Contributor> contributors =
-        this.scenarioContext.getNvaEntry().getEntityDescription().getContributors();
+    List<Contributor> contributors = this.scenarioContext.getNvaEntry().getContributors();
     assertThat(
         contributors.size(),
         is(equalTo(this.scenarioContext.getCristinEntry().getContributors().size())));
@@ -640,7 +638,7 @@ public class GeneralMappingRules {
 
   @Then("the NVA contributor has no affiliation")
   public void theNvaContributorHasNoAffiliation() {
-    var contributors = scenarioContext.getNvaEntry().getEntityDescription().getContributors();
+    var contributors = scenarioContext.getNvaEntry().getContributors();
     assertThat(contributors, hasSize(1));
     var contributor = contributors.get(0);
     assertThat(contributor.affiliations(), hasSize(0));
@@ -660,7 +658,7 @@ public class GeneralMappingRules {
 
   @Then("the NVA contributor has role other.")
   public void theNVAContributorHasRoleOther() {
-    scenarioContext.getNvaEntry().getEntityDescription().getContributors().stream()
+    scenarioContext.getNvaEntry().getContributors().stream()
         .map(Contributor::role)
         .forEach(role -> assertEquals(role, new RoleType(Role.OTHER)));
   }
@@ -720,7 +718,7 @@ public class GeneralMappingRules {
   }
 
   private Contributor getFirstContributor() {
-    var contributors = scenarioContext.getNvaEntry().getEntityDescription().getContributors();
+    var contributors = scenarioContext.getNvaEntry().getContributors();
     assertThat(contributors, hasSize(1));
     return contributors.get(0);
   }

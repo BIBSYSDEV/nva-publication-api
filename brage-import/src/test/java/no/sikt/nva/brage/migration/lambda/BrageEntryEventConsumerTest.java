@@ -1045,7 +1045,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             .getReference()
             .getPublicationInstance()
             .getInstanceType();
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -1127,7 +1127,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var existingPublication =
         resourceService.createPublicationFromImportedEntry(
             publication, ImportSource.fromBrageArchive(randomString()));
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -1171,7 +1171,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var existingPublication =
         resourceService.createPublicationFromImportedEntry(
             publication, ImportSource.fromBrageArchive(randomString()));
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -1215,7 +1215,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var existingPublication =
         resourceService.createPublicationFromImportedEntry(
             publication, ImportSource.fromBrageArchive(randomString()));
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -1262,7 +1262,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var existingPublication =
         resourceService.createPublicationFromImportedEntry(
             publication, ImportSource.fromBrageArchive(randomString()));
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -1318,7 +1318,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             .getReference()
             .getPublicationInstance()
             .getInstanceType();
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -1379,7 +1379,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             .getReference()
             .getPublicationInstance()
             .getInstanceType();
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -1447,7 +1447,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             .getReference()
             .getPublicationInstance()
             .getInstanceType();
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -1758,7 +1758,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             .getReference()
             .getPublicationInstance()
             .getInstanceType();
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -1811,7 +1811,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             .getReference()
             .getPublicationInstance()
             .getInstanceType();
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -1882,7 +1882,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             .getReference()
             .getPublicationInstance()
             .getInstanceType();
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     final var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -1999,7 +1999,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             .getReference()
             .getPublicationInstance()
             .getInstanceType();
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -2142,7 +2142,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var existingPublication =
         resourceService.createPublicationFromImportedEntry(
             publication, ImportSource.fromBrageArchive(randomString()));
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -2191,7 +2191,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var existingPublication =
         resourceService.createPublicationFromImportedEntry(
             publication, ImportSource.fromBrageArchive(randomString()));
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -2237,7 +2237,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             .getReference()
             .getPublicationInstance()
             .getInstanceType();
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -2286,7 +2286,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
             .getReference()
             .getPublicationInstance()
             .getInstanceType();
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());
@@ -2409,9 +2409,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     assertThat(
         updatedPublication.publication().getIdentifier(),
         is(equalTo(existingPublication.getIdentifier())));
-    assertThat(
-        updatedPublication.publication().getEntityDescription().getContributors(),
-        contains(expectedContributor));
+    assertThat(updatedPublication.publication().getContributors(), contains(expectedContributor));
   }
 
   @ParameterizedTest
@@ -2645,7 +2643,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var existingPublication =
         resourceService.createPublicationFromImportedEntry(
             publication, ImportSource.fromBrageArchive(randomString()));
-    var contributor = existingPublication.getEntityDescription().getContributors().getFirst();
+    var contributor = existingPublication.getContributors().getFirst();
     var brageContributor =
         new Contributor(
             new Identity(contributor.identity().getName(), null, null), "ARTIST", null, List.of());

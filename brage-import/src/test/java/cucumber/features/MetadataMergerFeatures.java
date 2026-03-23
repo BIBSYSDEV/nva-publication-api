@@ -43,6 +43,6 @@ public class MetadataMergerFeatures {
   @Then("the NVA publication has a contributor with properties:")
   public void theNVAPublicationHasAContributorWithProperties(Contributor contributor) {
     var publication = scenarioContext.getMergedPublication();
-    assertThat(publication.getEntityDescription().getContributors(), contains(contributor));
+    assertThat(publication.getContributors(), contains(contributor));
   }
 }

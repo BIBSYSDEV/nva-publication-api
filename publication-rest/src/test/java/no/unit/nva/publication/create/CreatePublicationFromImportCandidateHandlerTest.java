@@ -405,8 +405,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
             .withAffiliations(userInputContributor.affiliations())
             .withRole(userInputContributor.role())
             .build();
-    assertEquals(
-        expectedContributor, publication.getEntityDescription().getContributors().getFirst());
+    assertEquals(expectedContributor, publication.getContributors().getFirst());
   }
 
   private CreatePublicationRequest importCandidateWithContributors(

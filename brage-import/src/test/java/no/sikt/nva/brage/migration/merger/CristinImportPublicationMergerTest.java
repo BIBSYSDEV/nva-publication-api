@@ -353,7 +353,7 @@ class CristinImportPublicationMergerTest {
     var brageRecord = new Record();
     brageRecord.setId(bragePublication.getHandle());
     var updatedPublication = mergePublications(existingPublication, bragePublication, brageRecord);
-    var updatedContributor = updatedPublication.getEntityDescription().getContributors().getFirst();
+    var updatedContributor = updatedPublication.getContributors().getFirst();
 
     assertThat(updatedContributor.affiliations(), is(equalTo(brageContributor.affiliations())));
   }
@@ -374,8 +374,7 @@ class CristinImportPublicationMergerTest {
     var brageRecord = new Record();
     brageRecord.setId(bragePublication.getHandle());
     var updatedPublication = mergePublications(existingPublication, bragePublication, brageRecord);
-    var notUpdatedContributor =
-        updatedPublication.getEntityDescription().getContributors().getFirst();
+    var notUpdatedContributor = updatedPublication.getContributors().getFirst();
 
     assertThat(
         notUpdatedContributor.affiliations(),
@@ -721,7 +720,7 @@ class CristinImportPublicationMergerTest {
 
     var updatedPublication = mergePublications(existingPublication, bragePublication);
 
-    assertThat(updatedPublication.getEntityDescription().getContributors(), hasItem(supervisor));
+    assertThat(updatedPublication.getContributors(), hasItem(supervisor));
   }
 
   @Test
@@ -741,8 +740,7 @@ class CristinImportPublicationMergerTest {
     var updatedPublication = mergePublications(existingPublication, bragePublication);
 
     assertThat(
-        updatedPublication.getEntityDescription().getContributors(),
-        is(equalTo(existingPublication.getEntityDescription().getContributors())));
+        updatedPublication.getContributors(), is(equalTo(existingPublication.getContributors())));
   }
 
   @Test

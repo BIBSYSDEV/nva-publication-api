@@ -170,7 +170,7 @@ public final class PublicationUpdater {
   }
 
   private static List<Contributor> getContributors(Publication publication) {
-    return publication.getEntityDescription().getContributors();
+    return publication.getContributors();
   }
 
   private static List<String> updatedTags(PublicationRepresentations publicationRepresentations) {

@@ -74,8 +74,7 @@ class PublicationSummaryTest extends ResourcesLocalTest {
         is(equalTo(publication.getEntityDescription().getReference().getPublicationInstance())));
     assertThat(summary.getPublishedDate(), is(equalTo(publication.getPublishedDate())));
     assertThat(
-        summary.getContributors(),
-        containsInAnyOrder(publication.getEntityDescription().getContributors().toArray()));
+        summary.getContributors(), containsInAnyOrder(publication.getContributors().toArray()));
   }
 
   @Test
@@ -98,7 +97,7 @@ class PublicationSummaryTest extends ResourcesLocalTest {
     assertThat(
         summary.getContributors(),
         containsInAnyOrder(
-            entityDescription.getContributors().stream()
+            publication.getContributors().stream()
                 .sorted(Comparator.comparing(Contributor::sequence))
                 .limit(MAX_SIZE_CONTRIBUTOR_LIST)
                 .toArray()));
@@ -111,8 +110,7 @@ class PublicationSummaryTest extends ResourcesLocalTest {
     entityDescription.setContributors(
         getNumberOfContributors(getRandomNumberOfContributorsLargerThanMaxSize()));
     var summary = PublicationSummary.create(publication);
-    assertThat(
-        summary.getContributorsCount(), is(equalTo(entityDescription.getContributors().size())));
+    assertThat(summary.getContributorsCount(), is(equalTo(publication.getContributors().size())));
   }
 
   @Test

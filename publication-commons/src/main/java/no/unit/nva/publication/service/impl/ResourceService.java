@@ -856,7 +856,7 @@ public class ResourceService extends ServiceWithTransactions {
     newResource.setCuratingInstitutions(
         new CuratingInstitutionsUtil(uriRetriever, customerService)
             .getCuratingInstitutions(
-                newResource.toPublication().getEntityDescription(), cristinUnitsUtil));
+                newResource.toPublication().getContributors(), cristinUnitsUtil));
   }
 
   private ImportCandidate insertResourceFromImportCandidate(ImportCandidateDao importCandidateDao) {
