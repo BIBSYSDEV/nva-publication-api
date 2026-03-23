@@ -79,7 +79,7 @@ class PublicationUpdaterTest {
         PublicationUpdater.update(publicationRepresentations).getExistingPublication();
 
     assertEquals(
-        publication.getEntityDescription().getContributors().getFirst().getIdentity().getId(),
+        publication.getEntityDescription().getContributors().getFirst().identity().getId(),
         contributorId);
   }
 
@@ -107,8 +107,7 @@ class PublicationUpdaterTest {
     var publication =
         PublicationUpdater.update(publicationRepresentations).getExistingPublication();
 
-    assertNull(
-        publication.getEntityDescription().getContributors().getFirst().getIdentity().getId());
+    assertNull(publication.getEntityDescription().getContributors().getFirst().identity().getId());
   }
 
   private static PublicationRepresentations getPublicationRepresentations(

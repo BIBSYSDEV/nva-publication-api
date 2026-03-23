@@ -258,7 +258,7 @@ class MigrationTests extends ResourcesLocalTest {
         .forEach(
             contributor ->
                 contributor
-                    .getAffiliations()
+                    .affiliations()
                     .forEach(
                         affiliation ->
                             ((Organization) affiliation)

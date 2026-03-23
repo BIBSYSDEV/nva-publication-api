@@ -418,7 +418,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
             contributorsJson,
             objectMapper.getTypeFactory().constructCollectionType(List.class, Contributor.class));
     var sortedContributors =
-        contributors.stream().sorted(Comparator.comparing(Contributor::getSequence)).toList();
+        contributors.stream().sorted(Comparator.comparing(Contributor::sequence)).toList();
 
     assertThat(contributors, is(equalTo(sortedContributors)));
   }
@@ -646,7 +646,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
                 .getEntityDescription()
                 .getContributors()
                 .getFirst()
-                .getAffiliations()
+                .affiliations()
                 .getFirst())
         .setId(null);
     var resource =
@@ -1201,7 +1201,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
     var versionedType = MediaType.parse("application/ld+json; version=2023-05-26");
     resource.getEntityDescription().getContributors().stream()
-        .map(Contributor::getAffiliations)
+        .map(Contributor::affiliations)
         .flatMap(i -> i.stream().map(Organization.class::cast).map(Organization::getId))
         .forEach(
             uri -> {
@@ -1347,11 +1347,11 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
   private static Contributor createContributorsWithEmptyAffiliations(Contributor contributor) {
     return new Contributor.Builder()
-        .withIdentity(contributor.getIdentity())
+        .withIdentity(contributor.identity())
         .withAffiliations(List.of(new Organization()))
-        .withRole(contributor.getRole())
-        .withSequence(contributor.getSequence())
-        .withCorrespondingAuthor(contributor.isCorrespondingAuthor())
+        .withRole(contributor.role())
+        .withSequence(contributor.sequence())
+        .withCorrespondingAuthor(contributor.correspondingAuthor())
         .build();
   }
 

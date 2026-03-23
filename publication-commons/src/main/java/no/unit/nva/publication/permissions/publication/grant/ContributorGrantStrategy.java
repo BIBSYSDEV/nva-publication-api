@@ -42,11 +42,12 @@ public final class ContributorGrantStrategy extends PublicationStrategyBase
             .flatMap(List::stream)
             .filter(this::isVerifiedContributor)
             .anyMatch(
-                contributor ->
-                    contributor
-                        .getIdentity()
-                        .getId()
-                        .equals(this.userInstance.getPersonCristinId()));
+                contributor -> {
+                  return contributor
+                      .identity()
+                      .getId()
+                      .equals(this.userInstance.getPersonCristinId());
+                });
   }
 
   private boolean userIsVerifiedContributorAtCurrentInstitution() {

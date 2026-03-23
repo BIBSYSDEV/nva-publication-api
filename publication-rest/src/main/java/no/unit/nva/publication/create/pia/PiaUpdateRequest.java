@@ -14,9 +14,9 @@ public record PiaUpdateRequest(
     return new PiaUpdateRequest(
         createPiaPublication(scopusId),
         extractContributorCristinIdentifier(contributor),
-        contributor.getIdentity().getOrcId(),
+        contributor.identity().getOrcId(),
         extractScopusAuid(contributor),
-        contributor.getSequence());
+        contributor.sequence());
   }
 
   @Override
@@ -33,12 +33,12 @@ public record PiaUpdateRequest(
   }
 
   private static String extractContributorCristinIdentifier(Contributor contributor) {
-    var cristinId = contributor.getIdentity().getId();
+    var cristinId = contributor.identity().getId();
     return UriWrapper.fromUri(cristinId).getLastPathElement();
   }
 
   private static Optional<AdditionalIdentifier> extractAuid(Contributor contributor) {
-    return contributor.getIdentity().getAdditionalIdentifiers().stream()
+    return contributor.identity().getAdditionalIdentifiers().stream()
         .filter(
             additionalIdentifier ->
                 "scopus-auid".equalsIgnoreCase(additionalIdentifier.sourceName()))

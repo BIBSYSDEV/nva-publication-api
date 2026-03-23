@@ -146,8 +146,8 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
   }
 
   private static Comparator<Contributor> compareByCorrespondingAuthorAndSequence() {
-    return Comparator.comparing(Contributor::isCorrespondingAuthor, Comparator.reverseOrder())
-        .thenComparing(Contributor::getSequence, Comparator.nullsLast(Comparator.naturalOrder()));
+    return Comparator.comparing(Contributor::correspondingAuthor, Comparator.reverseOrder())
+        .thenComparing(Contributor::sequence, Comparator.nullsLast(Comparator.naturalOrder()));
   }
 
   private CustomerDto getCustomerAllowingApproval(Collection<CustomerDto> customers) {
@@ -199,7 +199,7 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
 
   private Optional<CustomerContributorPair> findMatchingCustomer(
       Contributor contributor, Map<String, CustomerDto> customerMap) {
-    return contributor.getAffiliations().stream()
+    return contributor.affiliations().stream()
         .filter(Organization.class::isInstance)
         .map(Organization.class::cast)
         .map(Organization::getId)
@@ -282,17 +282,17 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
 
     private static URI getContributorId(Contributor contributor) {
       return Optional.ofNullable(contributor)
-          .map(Contributor::getIdentity)
+          .map(Contributor::identity)
           .map(Identity::getId)
           .orElse(null);
     }
 
     private static boolean isCorrespondingAuthor(Contributor contributor) {
-      return Optional.ofNullable(contributor).map(Contributor::isCorrespondingAuthor).orElse(false);
+      return Optional.ofNullable(contributor).map(Contributor::correspondingAuthor).orElse(false);
     }
 
     private static Integer getSequence(Contributor contributor) {
-      return Optional.ofNullable(contributor).map(Contributor::getSequence).orElse(null);
+      return Optional.ofNullable(contributor).map(Contributor::sequence).orElse(null);
     }
 
     public CustomerDto getCustomer() {

@@ -313,12 +313,13 @@ public final class PublicationGenerator {
 
   public static Stream<CuratingInstitution> createCuratingInstitutionsFromContributor(
       Contributor contributor) {
-    return contributor.getAffiliations().stream()
+    return contributor.affiliations().stream()
         .map(Organization.class::cast)
         .map(
-            affiliation ->
-                new CuratingInstitution(
-                    affiliation.getId(), Set.of(contributor.getIdentity().getId())));
+            affiliation -> {
+              return new CuratingInstitution(
+                  affiliation.getId(), Set.of(contributor.identity().getId()));
+            });
   }
 
   private static Set<AdditionalIdentifierBase> randomAdditionalIdentifiers() {

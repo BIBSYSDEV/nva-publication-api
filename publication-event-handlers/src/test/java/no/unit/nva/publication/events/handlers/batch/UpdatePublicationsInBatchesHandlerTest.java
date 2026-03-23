@@ -600,7 +600,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   }
 
   private static String getContributorIdentifier(Contributor contributor) {
-    return UriWrapper.fromUri(contributor.getIdentity().getId()).getLastPathElement();
+    return UriWrapper.fromUri(contributor.identity().getId()).getLastPathElement();
   }
 
   private static Contributor findContributorByIdentifier(
@@ -613,7 +613,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
   private static boolean hasIdentifier(Contributor contributor, String oldContributorIdentifier) {
     return Optional.ofNullable(contributor)
-        .map(Contributor::getIdentity)
+        .map(Contributor::identity)
         .map(Identity::getId)
         .map(URI::toString)
         .map(oldContributorIdentifier::contains)

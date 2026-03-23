@@ -144,7 +144,7 @@ public final class PublicationComparator {
   }
 
   private static String getLastName(Contributor contributor) {
-    return Optional.ofNullable(contributor.getIdentity())
+    return Optional.ofNullable(contributor.identity())
         .map(Identity::getName)
         .map(name -> name.split(StringUtils.SPACE))
         .map(nameArray -> nameArray[nameArray.length - 1])

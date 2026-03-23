@@ -143,14 +143,14 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
   }
 
   private Optional<URI> extractCristinId(Contributor contributor) {
-    return Optional.ofNullable(contributor.getIdentity()).map(Identity::getId);
+    return Optional.ofNullable(contributor.identity()).map(Identity::getId);
   }
 
   private Optional<Contributor> applyVerificationStatus(
       Contributor contributor,
       ContributorVerificationStatus status,
       SortableIdentifier resourceIdentifier) {
-    return Optional.of(contributor.getIdentity())
+    return Optional.of(contributor.identity())
         .filter(identity -> !status.equals(identity.getVerificationStatus()))
         .map(identity -> logStatusChange(identity, status, resourceIdentifier))
         .map(identity -> createUpdatedIdentity(identity, status))

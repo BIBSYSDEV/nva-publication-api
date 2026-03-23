@@ -978,7 +978,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                     .withEntityDescription(entityDescription)
                     .withCuratingInstitutions(mockCuratingInstitutions(contributors)))
             .build();
-    var topLevelCristinOrgId = ((Organization) contributor.getAffiliations().getFirst()).getId();
+    var topLevelCristinOrgId = ((Organization) contributor.affiliations().getFirst()).getId();
     when(uriRetriever.getRawContent(eq(topLevelCristinOrgId), any()))
         .thenReturn(
             Optional.of(
@@ -1029,7 +1029,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
   }
 
   private static Set<URI> getAffiliationUriStream(Contributor c) {
-    return c.getAffiliations().stream()
+    return c.affiliations().stream()
         .filter(a -> a instanceof Organization)
         .map(b -> (Organization) b)
         .map(Organization::getId)
@@ -1188,7 +1188,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     resource.publish(resourceService, UserInstance.fromPublication(publication));
     var publicationUpdate = publicationWithoutFiles.copy().withDoi(randomUri()).build();
 
-    var username = contributor.getIdentity().getName();
+    var username = contributor.identity().getName();
     var event =
         contributorUpdatesPublicationAndHasRightsToUpdate(publicationUpdate, cristinId, username);
     var pendingTicket =

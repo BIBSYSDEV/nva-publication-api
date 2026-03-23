@@ -39,8 +39,8 @@ public class ContributorUpdateService {
   }
 
   private boolean hasSameAuidButDifferentCristinId(ImportContributor a, Contributor b) {
-    var cristinIdsDiffer = !Objects.equals(a.identity().getId(), b.getIdentity().getId());
-    var auidsMatch = Objects.equals(extractAuid(a.identity()), extractAuid(b.getIdentity()));
+    var cristinIdsDiffer = !Objects.equals(a.identity().getId(), b.identity().getId());
+    var auidsMatch = Objects.equals(extractAuid(a.identity()), extractAuid(b.identity()));
     return cristinIdsDiffer && auidsMatch;
   }
 
