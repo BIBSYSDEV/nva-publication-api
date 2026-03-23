@@ -1414,11 +1414,11 @@ class ExpandedResourceTest extends ResourcesLocalTest {
   private Publication createPublicationWithEmptyAffiliations() {
     var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
     publication.setStatus(PUBLISHED);
-    var entityDescription = publication.getEntityDescription();
     var contributors =
-        entityDescription.getContributors().stream()
+        publication.getContributors().stream()
             .map(ExpandedResourceTest::createContributorsWithEmptyAffiliations)
             .toList();
+    var entityDescription = publication.getEntityDescription();
     entityDescription.setContributors(contributors);
     return publication;
   }

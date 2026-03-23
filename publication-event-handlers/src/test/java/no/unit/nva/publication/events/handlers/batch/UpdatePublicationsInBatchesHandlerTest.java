@@ -581,9 +581,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
           var updatedPublication = getPublicationByIdentifier(publication);
 
           assertTrue(
-              updatedPublication
-                  .getContributors()
-                  .containsAll(publication.getEntityDescription().getContributors()));
+              updatedPublication.getContributors().containsAll(publication.getContributors()));
         });
   }
 

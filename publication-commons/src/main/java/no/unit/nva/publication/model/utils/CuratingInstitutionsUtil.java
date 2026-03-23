@@ -6,7 +6,6 @@ import static no.unit.nva.publication.utils.RdfUtils.getTopLevelOrgUri;
 import java.net.URI;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -17,7 +16,6 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,9 +44,10 @@ public class CuratingInstitutionsUtil {
                         : toCuratingInstitutionOnline(contributor)));
   }
 
-  public Set<CuratingInstitution> getCuratingInstitutionsOnline(Publication publication) {
-    var contributors = getAffiliatedContributors(publication.getContributors());
-    var topLevelMap = contributors.flatMap(this::toCuratingInstitutionOnline);
+  public Set<CuratingInstitution> getCuratingInstitutionsOnline(
+      Collection<Contributor> contributors) {
+    var affiliatedContributors = getAffiliatedContributors(contributors);
+    var topLevelMap = affiliatedContributors.flatMap(this::toCuratingInstitutionOnline);
 
     return toCuratingInstitutionSet(topLevelMap);
   }
@@ -68,7 +67,7 @@ public class CuratingInstitutionsUtil {
   }
 
   public Set<CuratingInstitution> getCuratingInstitutionsCached(
-      List<Contributor> contributors, CristinUnitsUtil cristinUnitsUtil) {
+      Collection<Contributor> contributors, CristinUnitsUtil cristinUnitsUtil) {
 
     var topLevelMap =
         getAffiliatedContributors(contributors)
@@ -124,9 +123,6 @@ public class CuratingInstitutionsUtil {
     return getOrganizationIds(contributor)
         .map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
         .filter(Objects::nonNull)
-        .map(
-            topLevelOrgId -> {
-              return new SimpleEntry<>(topLevelOrgId, contributor.identity().getId());
-            });
+        .map(topLevelOrgId -> new SimpleEntry<>(topLevelOrgId, contributor.identity().getId()));
   }
 }

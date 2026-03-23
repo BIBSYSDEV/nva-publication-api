@@ -91,7 +91,8 @@ class CuratingInstitutionsUtilTest {
     var publication = randomPublication();
     publication.getEntityDescription().setContributors(List.of(contributorWithOrganization(orgId)));
 
-    var curatingInstitutions = curatingInstitutionsUtil.getCuratingInstitutionsOnline(publication);
+    var curatingInstitutions =
+        curatingInstitutionsUtil.getCuratingInstitutionsOnline(publication.getContributors());
 
     assertThat(
         curatingInstitutions.stream().findFirst().orElseThrow().id(), is(equalTo(topLevelId)));
