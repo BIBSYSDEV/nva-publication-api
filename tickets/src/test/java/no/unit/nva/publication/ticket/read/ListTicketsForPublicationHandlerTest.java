@@ -384,7 +384,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                 randomUri(),
                 randomUri(),
                 List.of(),
-                contributor.getIdentity().getId()))
+                contributor.identity().getId()))
         .persistNewTicket(ticketService)
         .complete(publication, randomUserInstance())
         .persistUpdate(ticketService);

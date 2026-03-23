@@ -95,7 +95,7 @@ public class CristinImportPublicationMerger {
   }
 
   private static boolean isCreator(Contributor contributor) {
-    return CREATOR.equals(contributor.getRole().getType());
+    return CREATOR.equals(contributor.role().getType());
   }
 
   private static boolean isDublinCore(File file) {
@@ -269,9 +269,9 @@ public class CristinImportPublicationMerger {
   }
 
   private boolean isNotContributorWithAnotherRoleInExistingPublication(Contributor contributor) {
-    var name = contributor.getIdentity().getName();
+    var name = contributor.identity().getName();
     return existingPublication.getEntityDescription().getContributors().stream()
-        .map(Contributor::getIdentity)
+        .map(Contributor::identity)
         .map(Identity::getName)
         .noneMatch(name::equals);
   }
@@ -282,7 +282,7 @@ public class CristinImportPublicationMerger {
         .getEntityDescription()
         .getContributors()
         .stream()
-        .filter(contributor -> SUPERVISOR.equals(contributor.getRole().getType()))
+        .filter(contributor -> SUPERVISOR.equals(contributor.role().getType()))
         .toList();
   }
 
@@ -292,12 +292,12 @@ public class CristinImportPublicationMerger {
         .getEntityDescription()
         .getContributors()
         .stream()
-        .anyMatch(contributor -> SUPERVISOR.equals(contributor.getRole().getType()));
+        .anyMatch(contributor -> SUPERVISOR.equals(contributor.role().getType()));
   }
 
   private boolean isMissingSupervisor(List<Contributor> contributors) {
     return contributors.stream()
-        .noneMatch(contributor -> SUPERVISOR.equals(contributor.getRole().getType()));
+        .noneMatch(contributor -> SUPERVISOR.equals(contributor.role().getType()));
   }
 
   private List<Contributor> existingContributorsWithUpdatedAffiliation() {
@@ -318,7 +318,7 @@ public class CristinImportPublicationMerger {
         .getEntityDescription()
         .getContributors()
         .stream()
-        .map(Contributor::getAffiliations)
+        .map(Contributor::affiliations)
         .flatMap(List::stream)
         .filter(Organization.class::isInstance)
         .map(Organization.class::cast)

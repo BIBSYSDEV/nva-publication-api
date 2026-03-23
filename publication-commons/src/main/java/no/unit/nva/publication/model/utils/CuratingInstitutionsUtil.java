@@ -89,13 +89,13 @@ public class CuratingInstitutionsUtil {
                 new SimpleEntry<>(
                     id,
                     Optional.of(contributor)
-                        .map(Contributor::getIdentity)
+                        .map(Contributor::identity)
                         .map(Identity::getId)
                         .orElse(null)));
   }
 
   private static Stream<URI> getOrganizationIds(Contributor contributor) {
-    return contributor.getAffiliations().stream()
+    return contributor.affiliations().stream()
         .filter(Organization.class::isInstance)
         .map(Organization.class::cast)
         .map(Organization::getId)
@@ -112,7 +112,7 @@ public class CuratingInstitutionsUtil {
   }
 
   private static boolean isAffiliatedContributor(Contributor contributor) {
-    return contributor.getAffiliations().stream().anyMatch(Organization.class::isInstance);
+    return contributor.affiliations().stream().anyMatch(Organization.class::isInstance);
   }
 
   private CustomerList getCustomerList() {
@@ -130,6 +130,9 @@ public class CuratingInstitutionsUtil {
     return getOrganizationIds(contributor)
         .map(orgId -> getTopLevelOrgUri(uriRetriever, orgId))
         .filter(Objects::nonNull)
-        .map(topLevelOrgId -> new SimpleEntry<>(topLevelOrgId, contributor.getIdentity().getId()));
+        .map(
+            topLevelOrgId -> {
+              return new SimpleEntry<>(topLevelOrgId, contributor.identity().getId());
+            });
   }
 }

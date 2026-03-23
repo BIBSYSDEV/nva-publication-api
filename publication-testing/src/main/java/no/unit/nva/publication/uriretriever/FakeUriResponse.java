@@ -289,7 +289,7 @@ public final class FakeUriResponse {
     return nonNull(publication.getEntityDescription())
             && nonNull(publication.getEntityDescription().getContributors())
         ? publication.getEntityDescription().getContributors().stream()
-            .map(Contributor::getAffiliations)
+            .map(Contributor::affiliations)
             .flatMap(Collection::stream)
             .map(Organization.class::cast)
             .map(Organization::getId)

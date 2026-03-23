@@ -296,7 +296,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
             .map(Publication::getEntityDescription)
             .map(EntityDescription::getContributors)
             .flatMap(Collection::stream)
-            .map(Contributor::getIdentity)
+            .map(Contributor::identity)
             .map(Identity::getName)
             .toList();
 
@@ -396,10 +396,10 @@ class CristinMapperTest extends AbstractCristinImportTest {
 
     Optional<Contributor> contributor =
         getContributors(objectWithEditor).stream()
-            .filter(c -> c.getRole().equals(expectedNvaRole))
+            .filter(c -> c.role().equals(expectedNvaRole))
             .findAny();
     assertThat(contributor.isPresent(), is(true));
-    assertThat(contributor.orElseThrow().getRole(), is(equalTo(expectedNvaRole)));
+    assertThat(contributor.orElseThrow().role(), is(equalTo(expectedNvaRole)));
   }
 
   @Test
@@ -456,7 +456,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
             .getContributors()
             .getFirst();
 
-    assertNull(mappedContributor.getIdentity().getName());
+    assertNull(mappedContributor.identity().getName());
   }
 
   @Test
@@ -740,7 +740,7 @@ class CristinMapperTest extends AbstractCristinImportTest {
 
   private static List<Integer> getSequnceNumberList(List<Contributor> actualContributors) {
     return actualContributors.stream()
-        .map(Contributor::getSequence)
+        .map(Contributor::sequence)
         .sorted(Comparator.nullsLast(Comparator.naturalOrder()))
         .toList();
   }
@@ -808,12 +808,12 @@ class CristinMapperTest extends AbstractCristinImportTest {
   private ContributionReference extractContributionReference(
       Integer cristinIdentifierValue, Contributor contributor) {
     return new ContributionReference(
-        cristinIdentifierValue, extractPersonId(contributor), contributor.getSequence());
+        cristinIdentifierValue, extractPersonId(contributor), contributor.sequence());
   }
 
   private Integer extractPersonId(Contributor contributor) {
     String personIdentifier =
-        Path.of(contributor.getIdentity().getId().getPath()).getFileName().toString();
+        Path.of(contributor.identity().getId().getPath()).getFileName().toString();
     return Integer.parseInt(personIdentifier);
   }
 

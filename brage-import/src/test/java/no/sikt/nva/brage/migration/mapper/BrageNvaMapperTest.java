@@ -144,8 +144,7 @@ class BrageNvaMapperTest {
     var actualContributor = publication.getEntityDescription().getContributors().getFirst();
 
     assertEquals(
-        contributor.getIdentity().getOrcId().toString(),
-        actualContributor.getIdentity().getOrcId());
+        contributor.getIdentity().getOrcId().toString(), actualContributor.identity().getOrcId());
   }
 
   @Test
