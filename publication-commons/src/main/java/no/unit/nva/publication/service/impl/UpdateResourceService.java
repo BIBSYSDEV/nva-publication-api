@@ -273,12 +273,19 @@ public class UpdateResourceService extends ServiceWithTransactions {
       Resource persistedResource,
       ImportSource importSource) {
     return persistedResource.getFileEntries().stream()
+        .filter(fileEntry -> hasEffectiveChanges(fileEntry, resource))
         .map(
             fileEntry ->
                 updateFileEntry(fileEntry, resource.toPublication(), userInstance, importSource))
         .map(FileEntry::toDao)
         .map(dao -> dao.toPutTransactionItem(tableName))
         .toList();
+  }
+
+  private boolean hasEffectiveChanges(FileEntry persistedFileEntry, Resource updatedResource) {
+    var updatedFile =
+        updatedResource.getFileEntry(persistedFileEntry.getIdentifier()).map(FileEntry::getFile);
+    return updatedFile.filter(file -> !file.equals(persistedFileEntry.getFile())).isPresent();
   }
 
   private FileEntry updateFileEntry(

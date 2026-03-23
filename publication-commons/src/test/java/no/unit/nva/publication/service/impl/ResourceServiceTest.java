@@ -1838,6 +1838,42 @@ class ResourceServiceTest extends ResourcesLocalTest {
   }
 
   @Test
+  void shouldNotUpdateFilesWhenNoEffectiveChanges() throws BadRequestException {
+    var publication = randomPublication();
+    var userInstance = UserInstance.fromPublication(publication);
+    publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+    var persistedFileEntries =
+        Resource.fromPublication(publication).fetchFileEntries(resourceService).toList();
+    publication.setDoi(randomUri());
+
+    resourceService.updateResource(Resource.fromPublication(publication), userInstance);
+
+    var updatedFileEntries =
+        Resource.fromPublication(publication).fetchFileEntries(resourceService).toList();
+
+    assertThat(updatedFileEntries, containsInAnyOrder(persistedFileEntries.toArray()));
+  }
+
+  @Test
+  void shouldNotUpdateFilesWhenFileHasEffectiveChanges() throws BadRequestException {
+    var file = randomPendingInternalFile();
+    var publication = randomPublication();
+    publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
+    var userInstance = UserInstance.fromPublication(publication);
+    publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+    publication.setAssociatedArtifacts(
+        new AssociatedArtifactList(List.of(file.toPendingOpenFile())));
+
+    var updatedResource =
+        resourceService.updateResource(Resource.fromPublication(publication), userInstance);
+    var updatedFile = updatedResource.getFiles().getFirst();
+
+    assertNotEquals(file, updatedFile);
+  }
+
+  @Test
   void shouldFetchPublicationForFileApprovalThesis() throws BadRequestException {
     var publication = randomPublication(DegreeBachelor.class);
     var userInstance = UserInstance.fromPublication(publication);
