@@ -284,7 +284,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
   private boolean hasEffectiveChanges(FileEntry persistedFileEntry, Resource updatedResource) {
     var updatedFile =
-        updatedResource.getFileEntry(persistedFileEntry.getIdentifier()).map(FileEntry::getFile);
+        updatedResource.getFileByIdentifier(
+            UUID.fromString(persistedFileEntry.getIdentifier().toString()));
     return updatedFile.filter(file -> !file.equals(persistedFileEntry.getFile())).isPresent();
   }
 

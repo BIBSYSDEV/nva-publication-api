@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
@@ -39,7 +38,7 @@ import nva.commons.core.JacocoGenerated;
 @SuppressWarnings("PMD.GodClass")
 @JsonTypeName(FileEntry.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public final class FileEntry implements Entity, QueryObject<FileEntry>, JsonSerializable {
+public final class FileEntry implements Entity, QueryObject<FileEntry> {
 
   public static final String TYPE = "File";
   public static final String DO_NOT_USE_THIS_METHOD = "Do not use this method";
@@ -394,11 +393,6 @@ public final class FileEntry implements Entity, QueryObject<FileEntry>, JsonSeri
         && Objects.equals(getCreatedDate(), fileEntry.getCreatedDate())
         && Objects.equals(getModifiedDate(), fileEntry.getModifiedDate())
         && Objects.equals(getFile(), fileEntry.getFile());
-  }
-
-  @Override
-  public String toString() {
-    return this.toJsonString();
   }
 
   public FileEvent getFileEvent() {
