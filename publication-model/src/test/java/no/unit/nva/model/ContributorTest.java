@@ -40,7 +40,7 @@ class ContributorTest {
   @Test
   void shouldRoundtripRoleTypeOtherDirectly() throws JsonProcessingException {
     var description = randomString();
-    RoleType roleType = new RoleTypeOther(Role.OTHER, description);
+    var roleType = new RoleTypeOther(Role.OTHER, description);
     var json = JsonUtils.dtoObjectMapper.writeValueAsString(roleType);
     var fromJson = JsonUtils.dtoObjectMapper.readValue(json, RoleType.class);
     assertThat(fromJson, is(instanceOf(RoleTypeOther.class)));
@@ -50,7 +50,7 @@ class ContributorTest {
   @Test
   void shouldRoundtripAsPartOfList() throws JsonProcessingException {
     var description = randomString();
-    List<RoleType> roles = List.of(new RoleTypeOther(Role.OTHER, description));
+    var roles = List.of(new RoleTypeOther(Role.OTHER, description));
     var json = JsonUtils.dtoObjectMapper.writeValueAsString(roles);
     var fromJson =
         JsonUtils.dtoObjectMapper.readValue(json, new TypeReference<List<RoleType>>() {});
