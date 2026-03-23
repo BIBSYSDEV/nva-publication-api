@@ -612,7 +612,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
           entityDescription.getMainTitle(),
           entityDescription.getLanguage(),
           entityDescription.getPublicationDate(),
-          entityDescription.getContributors().stream()
+          publication.getContributors().stream()
               .map(ExpandedDataEntryWithAssociatedPublication::toImportContributor)
               .toList(),
           entityDescription.getAbstract(),
@@ -624,13 +624,13 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     private static ImportContributor toImportContributor(Contributor contributor) {
       return new ImportContributor(
-          contributor.getIdentity(),
-          contributor.getAffiliations().stream()
+          contributor.identity(),
+          contributor.affiliations().stream()
               .map(corporation -> new Affiliation(corporation, null))
               .toList(),
-          contributor.getRole(),
-          contributor.getSequence(),
-          contributor.isCorrespondingAuthor());
+          contributor.role(),
+          contributor.sequence(),
+          contributor.correspondingAuthor());
     }
 
     private static ExpandedDataEntry createExpandedUnpublishRequest(

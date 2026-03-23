@@ -11,9 +11,9 @@ import no.unit.nva.testutils.RandomDataGenerator;
 
 public class UserInstanceFixture {
   public static UserInstance getDegreeAndFileCuratorFromPublication(Publication publication) {
-    var contributor = publication.getEntityDescription().getContributors().getFirst();
+    var contributor = publication.getContributors().getFirst();
     var topLevelOrgCristinId =
-        contributor.getAffiliations().stream()
+        contributor.affiliations().stream()
             .map(Organization.class::cast)
             .findFirst()
             .orElseThrow()

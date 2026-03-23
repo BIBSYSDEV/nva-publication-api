@@ -286,16 +286,13 @@ public final class FakeUriResponse {
   }
 
   private static List<URI> extractAffiliations(Publication publication) {
-    return nonNull(publication.getEntityDescription())
-            && nonNull(publication.getEntityDescription().getContributors())
-        ? publication.getEntityDescription().getContributors().stream()
-            .map(Contributor::getAffiliations)
-            .flatMap(Collection::stream)
-            .map(Organization.class::cast)
-            .map(Organization::getId)
-            .filter(Objects::nonNull)
-            .toList()
-        : List.of();
+    return publication.getContributors().stream()
+        .map(Contributor::affiliations)
+        .flatMap(Collection::stream)
+        .map(Organization.class::cast)
+        .map(Organization::getId)
+        .filter(Objects::nonNull)
+        .toList();
   }
 
   private static String createFakeOrganizationStructure(URI uri) {

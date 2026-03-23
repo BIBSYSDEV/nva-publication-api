@@ -51,7 +51,7 @@ public final class DataCiteMetadataDtoMapper {
   public static DataCiteMetadataDto fromPublication(
       Publication publication, RawContentRetriever uriRetriever) {
     return new DataCiteMetadataDto.Builder()
-        .withCreator(toCreatorDtoList(extractContributors(publication)))
+        .withCreator(toCreatorDtoList(publication.getContributors()))
         .withIdentifier(toIdentifierDto(publication))
         .withAlternateIdentifiers(extractAlternateIdentifiers(publication))
         .withPublicationYear(extractPublicationYear(publication))
@@ -76,10 +76,6 @@ public final class DataCiteMetadataDtoMapper {
                     .constructResourceUri(publication.getIdentifier().toString())
                     .toString())
             .build());
-  }
-
-  private static List<Contributor> extractContributors(Publication publication) {
-    return getEntityDescription(publication).map(EntityDescription::getContributors).orElse(null);
   }
 
   private static String extractPublicationYear(Publication publication) {
@@ -178,6 +174,6 @@ public final class DataCiteMetadataDtoMapper {
   }
 
   private static CreatorDto toCreatorDto(Contributor contributor) {
-    return new CreatorDto.Builder().withCreatorName(contributor.getIdentity().getName()).build();
+    return new CreatorDto.Builder().withCreatorName(contributor.identity().getName()).build();
   }
 }

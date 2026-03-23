@@ -1,5 +1,6 @@
 package no.unit.nva.model;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.hash;
 import static java.util.Objects.isNull;
@@ -468,6 +469,13 @@ public class Publication
 
   public long getPendingOpenFileCount() {
     return getAssociatedArtifacts().stream().filter(PendingOpenFile.class::isInstance).count();
+  }
+
+  @JsonIgnore
+  public List<Contributor> getContributors() {
+    return nonNull(entityDescription) && nonNull(entityDescription.getContributors())
+        ? List.copyOf(entityDescription.getContributors())
+        : emptyList();
   }
 
   private void verifyStatusTransition(PublicationStatus nextStatus)

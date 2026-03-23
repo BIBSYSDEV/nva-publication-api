@@ -399,14 +399,13 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
     var expectedContributor =
         new Contributor.Builder()
-            .withCorrespondingAuthor(userInputContributor.isCorrespondingAuthor())
+            .withCorrespondingAuthor(userInputContributor.correspondingAuthor())
             .withSequence(1)
-            .withIdentity(userInputContributor.getIdentity())
-            .withAffiliations(userInputContributor.getAffiliations())
-            .withRole(userInputContributor.getRole())
+            .withIdentity(userInputContributor.identity())
+            .withAffiliations(userInputContributor.affiliations())
+            .withRole(userInputContributor.role())
             .build();
-    assertEquals(
-        expectedContributor, publication.getEntityDescription().getContributors().getFirst());
+    assertEquals(expectedContributor, publication.getContributors().getFirst());
   }
 
   private CreatePublicationRequest importCandidateWithContributors(
@@ -859,14 +858,14 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     var identityWithCristinId =
         new Identity.Builder()
             .withId(cristinId)
-            .withAdditionalIdentifiers(contributorWithAuid.getIdentity().getAdditionalIdentifiers())
+            .withAdditionalIdentifiers(contributorWithAuid.identity().getAdditionalIdentifiers())
             .withName(randomString())
             .build();
     return new Contributor(
         identityWithCristinId,
         emptyList(),
         new RoleType(Role.CREATOR),
-        contributorWithAuid.getSequence(),
+        contributorWithAuid.sequence(),
         false);
   }
 

@@ -56,7 +56,7 @@ class CuratingInstitutionsUtilTest {
 
     var list =
         new CuratingInstitutionsUtil(mock(UriRetriever.class), customerService)
-            .getCuratingInstitutionsCached(entityDescription, util);
+            .getCuratingInstitutionsCached(entityDescription.getContributors(), util);
 
     assertEquals(TOP_LEVEL_ORG, list.stream().findFirst().orElseThrow().id());
   }
@@ -92,7 +92,7 @@ class CuratingInstitutionsUtilTest {
     publication.getEntityDescription().setContributors(List.of(contributorWithOrganization(orgId)));
 
     var curatingInstitutions =
-        curatingInstitutionsUtil.getCuratingInstitutionsOnline(publication.getEntityDescription());
+        curatingInstitutionsUtil.getCuratingInstitutionsOnline(publication.getContributors());
 
     assertThat(
         curatingInstitutions.stream().findFirst().orElseThrow().id(), is(equalTo(topLevelId)));
@@ -104,7 +104,7 @@ class CuratingInstitutionsUtilTest {
   }
 
   private void mockTopLevelOrg(Contributor contributor, URI topLevelOrg, CristinUnitsUtil util) {
-    contributor.getAffiliations().stream()
+    contributor.affiliations().stream()
         .filter(Organization.class::isInstance)
         .map(Organization.class::cast)
         .map(Organization::getId)

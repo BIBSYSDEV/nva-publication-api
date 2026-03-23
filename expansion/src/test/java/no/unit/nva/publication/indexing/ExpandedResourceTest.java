@@ -305,7 +305,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     final var affiliationToBeExpanded = HARD_CODED_LEVEL_3_ORG_URI;
     var contributorAffiliatedToTopLevel =
         publication
-            .getEntityDescription()
             .getContributors()
             .getFirst()
             .copy()
@@ -372,7 +371,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     final var affiliationToBeExpanded = HARD_CODED_TOP_LEVEL_ORG_URI;
     var contributorAffiliatedToTopLevel =
         publication
-            .getEntityDescription()
             .getContributors()
             .getFirst()
             .copy()
@@ -418,7 +416,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
             contributorsJson,
             objectMapper.getTypeFactory().constructCollectionType(List.class, Contributor.class));
     var sortedContributors =
-        contributors.stream().sorted(Comparator.comparing(Contributor::getSequence)).toList();
+        contributors.stream().sorted(Comparator.comparing(Contributor::sequence)).toList();
 
     assertThat(contributors, is(equalTo(sortedContributors)));
   }
@@ -641,14 +639,7 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
     final Publication publication = randomBookWithConfirmedPublisher();
 
-    ((Organization)
-            publication
-                .getEntityDescription()
-                .getContributors()
-                .getFirst()
-                .getAffiliations()
-                .getFirst())
-        .setId(null);
+    ((Organization) publication.getContributors().getFirst().affiliations().getFirst()).setId(null);
     var resource =
         Resource.fromPublication(publication)
             .persistNew(resourceService, UserInstance.fromPublication(publication));
@@ -1200,8 +1191,8 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     var uriRetriever = FakeUriRetriever.newInstance();
     FakeUriResponse.setupFakeForType(resource, uriRetriever, resourceService, false);
     var versionedType = MediaType.parse("application/ld+json; version=2023-05-26");
-    resource.getEntityDescription().getContributors().stream()
-        .map(Contributor::getAffiliations)
+    resource.getContributors().stream()
+        .map(Contributor::affiliations)
         .flatMap(i -> i.stream().map(Organization.class::cast).map(Organization::getId))
         .forEach(
             uri -> {
@@ -1347,11 +1338,11 @@ class ExpandedResourceTest extends ResourcesLocalTest {
 
   private static Contributor createContributorsWithEmptyAffiliations(Contributor contributor) {
     return new Contributor.Builder()
-        .withIdentity(contributor.getIdentity())
+        .withIdentity(contributor.identity())
         .withAffiliations(List.of(new Organization()))
-        .withRole(contributor.getRole())
-        .withSequence(contributor.getSequence())
-        .withCorrespondingAuthor(contributor.isCorrespondingAuthor())
+        .withRole(contributor.role())
+        .withSequence(contributor.sequence())
+        .withCorrespondingAuthor(contributor.correspondingAuthor())
         .build();
   }
 
@@ -1423,11 +1414,11 @@ class ExpandedResourceTest extends ResourcesLocalTest {
   private Publication createPublicationWithEmptyAffiliations() {
     var publication = PublicationGenerator.randomPublication(AcademicArticle.class);
     publication.setStatus(PUBLISHED);
-    var entityDescription = publication.getEntityDescription();
     var contributors =
-        entityDescription.getContributors().stream()
+        publication.getContributors().stream()
             .map(ExpandedResourceTest::createContributorsWithEmptyAffiliations)
             .toList();
+    var entityDescription = publication.getEntityDescription();
     entityDescription.setContributors(contributors);
     return publication;
   }
@@ -1526,7 +1517,6 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     var affiliation = Organization.fromUri(affiliationUri);
     var contributor =
         publication
-            .getEntityDescription()
             .getContributors()
             .getFirst()
             .copy()

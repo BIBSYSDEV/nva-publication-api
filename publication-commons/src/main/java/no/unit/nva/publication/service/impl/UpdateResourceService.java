@@ -461,7 +461,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
       resource.setCuratingInstitutions(
           new CuratingInstitutionsUtil(uriRetriever, customerService)
               .getCuratingInstitutions(
-                  resource.toPublication().getEntityDescription(), cristinUnitsUtil));
+                  resource.toPublication().getContributors(), cristinUnitsUtil));
     }
   }
 

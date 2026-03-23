@@ -166,9 +166,7 @@ public class DataCiteMetadataDtoMapperTest {
                 .build())
         .withCreator(
             List.of(
-                new CreatorDto.Builder()
-                    .withCreatorName(contributor.getIdentity().getName())
-                    .build()))
+                new CreatorDto.Builder().withCreatorName(contributor.identity().getName()).build()))
         .withPublisher(new PublisherDto.Builder().withValue(PUBLISHER_NAME).build())
         .build();
   }

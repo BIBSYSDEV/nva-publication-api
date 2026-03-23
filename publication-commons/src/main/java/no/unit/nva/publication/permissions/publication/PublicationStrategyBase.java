@@ -104,7 +104,7 @@ public class PublicationStrategyBase {
   }
 
   protected boolean isVerifiedContributor(Contributor contributor) {
-    return Optional.ofNullable(contributor.getIdentity()).map(Identity::getId).isPresent();
+    return Optional.ofNullable(contributor.identity()).map(Identity::getId).isPresent();
   }
 
   protected boolean hasApprovedFiles() {
