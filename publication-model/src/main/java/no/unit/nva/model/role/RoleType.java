@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.StringUtils;
 
 public class RoleType {
 
@@ -22,7 +23,7 @@ public class RoleType {
   @JsonCreator
   public static RoleType fromJson(
       @JsonProperty(TYPE_FIELD) Role type, @JsonProperty(DESCRIPTION_FIELD) String description) {
-    return Role.OTHER.equals(type) && nonNull(description) && !description.isBlank()
+    return Role.OTHER.equals(type) && StringUtils.isNotBlank(description)
         ? new RoleTypeOther(Role.OTHER, description)
         : new RoleType(type);
   }
@@ -39,10 +40,9 @@ public class RoleType {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof RoleType)) {
+    if (!(o instanceof RoleType roleType)) {
       return false;
     }
-    RoleType roleType = (RoleType) o;
     return getType() == roleType.getType();
   }
 

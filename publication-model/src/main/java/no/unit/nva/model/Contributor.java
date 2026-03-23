@@ -2,7 +2,6 @@ package no.unit.nva.model;
 
 import static no.unit.nva.model.util.SerializationUtils.nullListAsEmpty;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.List;
 import no.unit.nva.model.role.RoleType;
@@ -15,29 +14,17 @@ public record Contributor(
     Integer sequence,
     boolean correspondingAuthor) {
 
-  @JsonCreator
   public Contributor {
     affiliations = nullListAsEmpty(affiliations);
-  }
-
-  private Contributor(Builder builder) {
-    this(
-        builder.identity,
-        builder.affiliations,
-        builder.role,
-        builder.sequence,
-        builder.correspondingAuthor);
   }
 
   public static final class Builder {
 
     private Identity identity;
     private List<Corporation> affiliations;
-    private Integer sequence;
     private RoleType role;
+    private Integer sequence;
     private boolean correspondingAuthor;
-
-    public Builder() {}
 
     public Builder withIdentity(Identity identity) {
       this.identity = identity;
@@ -49,8 +36,8 @@ public record Contributor(
       return this;
     }
 
-    public Builder withRole(RoleType type) {
-      this.role = type;
+    public Builder withRole(RoleType role) {
+      this.role = role;
       return this;
     }
 
@@ -65,7 +52,7 @@ public record Contributor(
     }
 
     public Contributor build() {
-      return new Contributor(this);
+      return new Contributor(identity, affiliations, role, sequence, correspondingAuthor);
     }
   }
 
