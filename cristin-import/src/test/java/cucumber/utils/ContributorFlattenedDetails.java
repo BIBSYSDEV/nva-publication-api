@@ -64,7 +64,7 @@ public class ContributorFlattenedDetails implements JsonSerializable {
     if (!(o instanceof ContributorFlattenedDetails that)) {
       return false;
     }
-      return getSequence() == that.getSequence()
+    return getSequence() == that.getSequence()
         && Objects.equals(getName(), that.getName())
         && Objects.equals(getAffiliationUri(), that.getAffiliationUri());
   }

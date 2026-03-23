@@ -81,24 +81,23 @@ class ContributorTest {
     assertThat(fromJson.getClass(), is(equalTo(RoleType.class)));
   }
 
-
   private static Contributor createContributor(String description) {
     return new Contributor(
-            createIdentity(),
-            List.of(PublicationGenerator.randomOrganization()),
-            new RoleTypeOther(Role.OTHER, description),
-            1,
-            true);
+        createIdentity(),
+        List.of(PublicationGenerator.randomOrganization()),
+        new RoleTypeOther(Role.OTHER, description),
+        1,
+        true);
   }
 
   private static Identity createIdentity() {
     return new Identity.Builder()
-            .withVerificationStatus(ContributorVerificationStatus.VERIFIED)
-            .withId(randomUri())
-            .withAdditionalIdentifiers(Collections.emptyList())
-            .withName(randomString())
-            .withNameType(NameType.PERSONAL)
-            .withOrcId(randomString())
-            .build();
+        .withVerificationStatus(ContributorVerificationStatus.VERIFIED)
+        .withId(randomUri())
+        .withAdditionalIdentifiers(Collections.emptyList())
+        .withName(randomString())
+        .withNameType(NameType.PERSONAL)
+        .withOrcId(randomString())
+        .build();
   }
 }
