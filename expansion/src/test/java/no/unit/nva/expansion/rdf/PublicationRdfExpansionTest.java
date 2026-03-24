@@ -4,23 +4,37 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+import java.util.Set;
+import no.unit.nva.auth.uriretriever.RawContentRetriever;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Anthology;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.funding.FundingBuilder;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.ResourceRelationship;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.ResourceRelationshipDao;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.uriretriever.FakeUriResponse;
@@ -122,6 +136,108 @@ class PublicationRdfExpansionTest extends ResourcesLocalTest {
         "Anthology URI should be present in the CBD");
   }
 
+  @Test
+  void bookPublicationChannelsAreFetched() throws BadRequestException {
+    var publisherUri =
+        URI.create(
+            "https://api.dev.nva.aws.unit.no/publication-channels-v2/publisher/test-pub/2024");
+    var seriesUri =
+        URI.create(
+            "https://api.dev.nva.aws.unit.no/publication-channels-v2/serial-publication/test-series/2024");
+    var publication = publicationWithBookContext(publisherUri, seriesUri);
+    var resource = persistedResource(publication);
+    fakeUriRetriever.registerResponse(
+        publisherUri, SC_OK, APPLICATION_JSON_LD, minimalPublicationJsonLd(publisherUri));
+    fakeUriRetriever.registerResponse(
+        seriesUri, SC_OK, APPLICATION_JSON_LD, minimalPublicationJsonLd(seriesUri));
+    registerNviNotFound(publicationUri(publication));
+
+    var model = buildModel(resource);
+
+    assertTrue(model.containsResource(model.createResource(publisherUri.toString())));
+    assertTrue(model.containsResource(model.createResource(seriesUri.toString())));
+  }
+
+  @Test
+  void relatedResourcesAreIncludedInCbd() throws BadRequestException {
+    var childPublication = randomPublication(AcademicArticle.class);
+    var childResource = persistedResource(childPublication);
+
+    var parentPublication = randomPublication(AcademicArticle.class);
+    var parentResource = persistedResource(parentPublication);
+    insertRelation(parentResource.getIdentifier(), childResource.getIdentifier());
+
+    registerNviNotFound(publicationUri(parentPublication));
+
+    var model = buildModel(parentResource);
+
+    var childUri =
+        UriWrapper.fromUri(PublicationServiceConfig.PUBLICATION_HOST_URI)
+            .addChild(childResource.getIdentifier().toString())
+            .getUri();
+    assertTrue(model.containsResource(model.createResource(childUri.toString())));
+  }
+
+  @Test
+  void inaccessibleRelatedResourceIsSkipped() throws BadRequestException {
+    var parentPublication = randomPublication(AcademicArticle.class);
+    var parentResource = persistedResource(parentPublication);
+    insertRelation(parentResource.getIdentifier(), SortableIdentifier.next());
+
+    registerNviNotFound(publicationUri(parentPublication));
+
+    assertDoesNotThrow(() -> buildModel(parentResource));
+  }
+
+  @Test
+  void confirmedFundingSourceIsFetched() throws BadRequestException {
+    var fundingId = URI.create("https://api.dev.nva.aws.unit.no/funding-source/test-funding-123");
+    var publication = publicationWithConfirmedFunding(fundingId);
+    var resource = persistedResource(publication);
+    fakeUriRetriever.registerResponse(
+        fundingId, SC_OK, APPLICATION_JSON_LD, minimalPublicationJsonLd(fundingId));
+    registerNviNotFound(publicationUri(publication));
+
+    var model = buildModel(resource);
+
+    assertTrue(model.containsResource(model.createResource(fundingId.toString())));
+  }
+
+  @Test
+  void nviCandidateNotReportedHasNoScientificIndexTriples() throws BadRequestException {
+    var resource = persistedResource(randomPublication(AcademicArticle.class));
+    registerNviWithStatus(publicationUri(resource.toPublication()), "2024", "Candidate");
+
+    var model = buildModel(resource);
+
+    var pub = model.createResource(publicationUri(resource.toPublication()).toString());
+    assertTrue(
+        model
+            .listObjectsOfProperty(pub, model.createProperty(NVA_ONTOLOGY + "scientificIndex"))
+            .toList()
+            .isEmpty(),
+        "Non-reported NVI candidate should have no scientificIndex triple");
+  }
+
+  @Test
+  void malformedJsonLdBodyIsSkipped() throws BadRequestException {
+    var publication = publicationWithAffiliation(AFFILIATION_URI);
+    var resource = persistedResource(publication);
+    fakeUriRetriever.registerResponse(
+        AFFILIATION_URI, SC_OK, APPLICATION_JSON_LD, "not valid json-ld {{{");
+    registerNviNotFound(publicationUri(publication));
+
+    assertDoesNotThrow(() -> buildModel(resource));
+  }
+
+  @Test
+  void httpRetrievalFailuresAreHandledGracefully() throws BadRequestException {
+    var resource = persistedResource(randomPublication(AcademicArticle.class));
+    var failingExpansion = new PublicationRdfExpansion(throwingRetriever(), resourceService);
+
+    assertDoesNotThrow(() -> failingExpansion.toNTriples(resource.getIdentifier()));
+  }
+
   // --- helpers ---
 
   private static URI publicationUri(Publication publication) {
@@ -177,6 +293,15 @@ class PublicationRdfExpansionTest extends ResourcesLocalTest {
         nviUri(publicationUri), SC_NOT_FOUND, MediaType.JSON_UTF_8, "");
   }
 
+  private void registerNviWithStatus(URI publicationUri, String year, String status) {
+    var body =
+        """
+        {"reportStatus":{"status":"%s"},"period":"%s"}
+        """
+            .formatted(status, year);
+    fakeUriRetriever.registerResponse(nviUri(publicationUri), SC_OK, MediaType.JSON_UTF_8, body);
+  }
+
   private void registerNviReported(URI publicationUri, String year) {
     var body =
         """
@@ -229,6 +354,50 @@ class PublicationRdfExpansionTest extends ResourcesLocalTest {
     }
     """
         .formatted(publicationUri);
+  }
+
+  private static Publication publicationWithBookContext(URI publisherUri, URI seriesUri) {
+    var publication = randomPublication(BookMonograph.class);
+    var book =
+        new Book.BookBuilder()
+            .withPublisher(new Publisher(publisherUri))
+            .withSeries(new Series(seriesUri))
+            .build();
+    publication.getEntityDescription().getReference().setPublicationContext(book);
+    return publication;
+  }
+
+  private static Publication publicationWithConfirmedFunding(URI fundingId) {
+    var publication = randomPublication(AcademicArticle.class);
+    var funding =
+        new FundingBuilder()
+            .withId(fundingId)
+            .withSource(URI.create("https://example.org/funding-source"))
+            .withIdentifier("test-funding")
+            .build();
+    publication.setFundings(Set.of(funding));
+    return publication;
+  }
+
+  private static RawContentRetriever throwingRetriever() {
+    return new RawContentRetriever() {
+      @Override
+      public Optional<String> getRawContent(URI uri, String mediaType) {
+        throw new RuntimeException("Simulated retrieval failure");
+      }
+
+      @Override
+      public Optional<HttpResponse<String>> fetchResponse(URI uri, String mediaType) {
+        throw new RuntimeException("Simulated retrieval failure");
+      }
+    };
+  }
+
+  private void insertRelation(SortableIdentifier parentId, SortableIdentifier childId) {
+    var relationship = new ResourceRelationship(parentId, childId);
+    var tableName = new nva.commons.core.Environment().readEnv("TABLE_NAME");
+    client.putItem(
+        new PutItemRequest(tableName, ResourceRelationshipDao.from(relationship).toDynamoFormat()));
   }
 
   // --- SHACL shapes (inline — each test asserts only what it claims) ---

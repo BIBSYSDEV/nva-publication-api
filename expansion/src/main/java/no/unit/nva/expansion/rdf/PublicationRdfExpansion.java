@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.rdf;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_URI;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
@@ -31,6 +32,7 @@ import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
@@ -39,6 +41,8 @@ import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.slf4j.Logger;
@@ -53,6 +57,10 @@ public class PublicationRdfExpansion {
   private static final String SCIENTIFIC_INDEX_PATH = "scientific-index";
   private static final String PUBLICATION_PATH = "publication";
   private static final String REPORT_STATUS_PATH = "report-status";
+  private static final Property NVA_SCIENTIFIC_INDEX =
+      ResourceFactory.createProperty(NVA, "scientificIndex");
+  private static final Property NVA_YEAR = ResourceFactory.createProperty(NVA, "year");
+  private static final Property NVA_STATUS = ResourceFactory.createProperty(NVA, "status");
 
   private final RawContentRetriever uriRetriever;
   private final ResourceService resourceService;
@@ -126,7 +134,7 @@ public class PublicationRdfExpansion {
                                 failure.getException().getMessage());
                             return null;
                           });
-              if (jsonLd != null) {
+              if (nonNull(jsonLd)) {
                 loadJsonLd(model, jsonLd);
               }
             });
@@ -149,9 +157,9 @@ public class PublicationRdfExpansion {
   private void addNviTriples(Model model, URI publicationUri, ScientificIndex nvi) {
     var publication = model.createResource(publicationUri.toString());
     var nviNode = model.createResource();
-    model.add(publication, model.createProperty(NVA + "scientificIndex"), nviNode);
-    model.add(nviNode, model.createProperty(NVA + "year"), model.createLiteral(nvi.year()));
-    model.add(nviNode, model.createProperty(NVA + "status"), model.createLiteral(nvi.status()));
+    model.add(publication, NVA_SCIENTIFIC_INDEX, nviNode);
+    model.add(nviNode, NVA_YEAR, model.createLiteral(nvi.year()));
+    model.add(nviNode, NVA_STATUS, model.createLiteral(nvi.status()));
   }
 
   private void runConstruct(Model model, String query) {
@@ -171,7 +179,8 @@ public class PublicationRdfExpansion {
 
   private Optional<String> fetchJsonLd(URI uri) {
     return attempt(() -> uriRetriever.fetchResponse(uri, APPLICATION_JSON_LD.toString()))
-        .map(opt -> opt.filter(r -> r.statusCode() / 100 == 2).map(HttpResponse::body))
+        .map(
+            opt -> opt.filter(response -> response.statusCode() / 100 == 2).map(HttpResponse::body))
         .orElse(
             failure -> {
               logger.warn("Could not fetch {}: {}", uri, failure.getException().getMessage());
@@ -184,8 +193,8 @@ public class PublicationRdfExpansion {
     return attempt(() -> uriRetriever.fetchResponse(nviUri, CONTENT_TYPE_JSON))
         .map(
             opt ->
-                opt.filter(r -> r.statusCode() / 100 == 2)
-                    .map(r -> toNviCandidateResponse(r.body()).toNviStatus()))
+                opt.filter(response -> response.statusCode() / 100 == 2)
+                    .map(response -> toNviCandidateResponse(response.body()).toNviStatus()))
         .orElse(
             failure -> {
               logger.warn(
@@ -244,13 +253,11 @@ public class PublicationRdfExpansion {
   }
 
   private static Stream<URI> affiliationUris(Publication publication) {
-    return Optional.ofNullable(publication.getEntityDescription())
-        .map(EntityDescription::getContributors)
-        .orElse(java.util.List.of())
-        .stream()
-        .flatMap(c -> c.getAffiliations().stream())
-        .filter(a -> a instanceof Organization)
-        .map(a -> ((Organization) a).getId())
+    return publication.getContributors().stream()
+        .flatMap(contributor -> contributor.affiliations().stream())
+        .filter(Organization.class::isInstance)
+        .map(Organization.class::cast)
+        .map(Organization::getId)
         .filter(Objects::nonNull);
   }
 
@@ -271,8 +278,8 @@ public class PublicationRdfExpansion {
       case Journal journal -> Stream.ofNullable(journal.getId());
       case Book book ->
           Stream.of(
-                  book.getPublisher() instanceof Publisher p ? p.getId() : null,
-                  book.getSeries() instanceof Series s ? s.getId() : null)
+                  book.getPublisher() instanceof Publisher publisher ? publisher.getId() : null,
+                  book.getSeries() instanceof Series series ? series.getId() : null)
               .filter(Objects::nonNull);
       default -> Stream.empty();
     };
@@ -280,8 +287,9 @@ public class PublicationRdfExpansion {
 
   private static Stream<URI> fundingSourceUris(Publication publication) {
     return Optional.ofNullable(publication.getFundings()).orElse(java.util.Set.of()).stream()
-        .filter(f -> f instanceof no.unit.nva.model.funding.ConfirmedFunding)
-        .map(f -> ((no.unit.nva.model.funding.ConfirmedFunding) f).getId())
+        .filter(ConfirmedFunding.class::isInstance)
+        .map(ConfirmedFunding.class::cast)
+        .map(ConfirmedFunding::getId)
         .filter(Objects::nonNull);
   }
 
@@ -289,7 +297,7 @@ public class PublicationRdfExpansion {
     return Optional.ofNullable(publication.getEntityDescription())
         .map(EntityDescription::getReference)
         .map(Reference::getPublicationContext)
-        .filter(ctx -> ctx instanceof Anthology)
+        .filter(Anthology.class::isInstance)
         .isPresent();
   }
 
