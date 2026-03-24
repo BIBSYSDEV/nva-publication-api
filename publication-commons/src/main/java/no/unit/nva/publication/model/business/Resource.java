@@ -33,6 +33,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
@@ -73,6 +74,7 @@ import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({
@@ -383,6 +385,25 @@ public class Resource implements Entity {
 
   public Resource importResource(
       ResourceService resourceService, ImportSource importSource, UserInstance fileOwner) {
+    prepareForImport(importSource);
+    return resourceService.importResource(this, importSource, fileOwner);
+  }
+
+  public Resource importResourceAndUpdateImportCandidateStatus(
+      ResourceService publicationService,
+      ImportSource importSource,
+      UserInstance fileOwner,
+      ResourceService candidateService,
+      SortableIdentifier candidateIdentifier,
+      String importedByUserName)
+      throws NotFoundException {
+    prepareForImport(importSource);
+    var importStatus = ImportStatusFactory.createImported(importedByUserName, getIdentifier());
+    return publicationService.importResourceAndUpdateImportCandidateStatus(
+        this, importSource, fileOwner, candidateService, candidateIdentifier, importStatus);
+  }
+
+  private void prepareForImport(ImportSource importSource) {
     var now = Instant.now();
     this.setCreatedDate(now);
     this.setModifiedDate(now);
@@ -392,7 +413,6 @@ public class Resource implements Entity {
     var publicationOwner = UserInstance.fromPublication(this.toPublication());
     this.setResourceEvent(
         ImportedResourceEvent.fromImportSource(importSource, publicationOwner, now));
-    return resourceService.importResource(this, importSource, fileOwner);
   }
 
   public Resource updateResourceFromImport(
