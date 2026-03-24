@@ -1856,7 +1856,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
   }
 
   @Test
-  void shouldNotUpdateFilesWhenFileHasEffectiveChanges() throws BadRequestException {
+  void shouldUpdateFilesWhenFileHasEffectiveChanges() throws BadRequestException {
     var file = randomPendingInternalFile();
     var publication = randomPublication();
     publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
