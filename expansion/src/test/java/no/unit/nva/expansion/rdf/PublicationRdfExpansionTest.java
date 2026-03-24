@@ -4,7 +4,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
@@ -42,6 +42,7 @@ import no.unit.nva.publication.uriretriever.FakeUriRetriever;
 import nva.commons.apigateway.MediaType;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UriWrapper;
+import nva.commons.logutils.LogUtils;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
@@ -179,14 +180,18 @@ class PublicationRdfExpansionTest extends ResourcesLocalTest {
   }
 
   @Test
-  void inaccessibleRelatedResourceIsSkipped() throws BadRequestException {
+  void inaccessibleRelatedResourceThrows() throws BadRequestException {
     var parentPublication = randomPublication(AcademicArticle.class);
     var parentResource = persistedResource(parentPublication);
-    insertRelation(parentResource.getIdentifier(), SortableIdentifier.next());
+    var missingId = SortableIdentifier.next();
+    insertRelation(parentResource.getIdentifier(), missingId);
 
     registerNviNotFound(publicationUri(parentPublication));
 
-    assertDoesNotThrow(() -> buildModel(parentResource));
+    var appender = LogUtils.getTestingAppenderForRootLogger();
+    assertThrows(RuntimeException.class, () -> buildModel(parentResource));
+    assertTrue(appender.getMessages().contains("Could not load related publication"));
+    assertTrue(appender.getMessages().contains(missingId.toString()));
   }
 
   @Test
@@ -220,22 +225,44 @@ class PublicationRdfExpansionTest extends ResourcesLocalTest {
   }
 
   @Test
-  void malformedJsonLdBodyIsSkipped() throws BadRequestException {
+  void malformedJsonLdBodyThrows() throws BadRequestException {
     var publication = publicationWithAffiliation(AFFILIATION_URI);
     var resource = persistedResource(publication);
     fakeUriRetriever.registerResponse(
         AFFILIATION_URI, SC_OK, APPLICATION_JSON_LD, "not valid json-ld {{{");
     registerNviNotFound(publicationUri(publication));
 
-    assertDoesNotThrow(() -> buildModel(resource));
+    var appender = LogUtils.getTestingAppenderForRootLogger();
+    assertThrows(RuntimeException.class, () -> buildModel(resource));
+    assertTrue(appender.getMessages().contains("Skipping unreadable JSON-LD"));
   }
 
   @Test
-  void httpRetrievalFailuresAreHandledGracefully() throws BadRequestException {
-    var resource = persistedResource(randomPublication(AcademicArticle.class));
-    var failingExpansion = new PublicationRdfExpansion(throwingRetriever(), resourceService);
+  void fetchJsonLdThrowsWhenRetrieverFails() throws BadRequestException {
+    var publication = publicationWithAffiliation(AFFILIATION_URI);
+    var resource = persistedResource(publication);
+    var failingExpansion =
+        new PublicationRdfExpansion(throwingRetrieverFor(AFFILIATION_URI), resourceService);
 
-    assertDoesNotThrow(() -> failingExpansion.toNTriples(resource.getIdentifier()));
+    var appender = LogUtils.getTestingAppenderForRootLogger();
+    assertThrows(
+        RuntimeException.class, () -> failingExpansion.toNTriples(resource.getIdentifier()));
+    assertTrue(appender.getMessages().contains("Could not fetch"));
+    assertTrue(appender.getMessages().contains(AFFILIATION_URI.toString()));
+  }
+
+  @Test
+  void fetchNviStatusThrowsWhenRetrieverFails() throws BadRequestException {
+    var resource = persistedResource(randomPublication(AcademicArticle.class));
+    var publicationUri = publicationUri(resource.toPublication());
+    var failingExpansion =
+        new PublicationRdfExpansion(throwingRetrieverFor(nviUri(publicationUri)), resourceService);
+
+    var appender = LogUtils.getTestingAppenderForRootLogger();
+    assertThrows(
+        RuntimeException.class, () -> failingExpansion.toNTriples(resource.getIdentifier()));
+    assertTrue(appender.getMessages().contains("Could not fetch NVI status for"));
+    assertTrue(appender.getMessages().contains(publicationUri.toString()));
   }
 
   // --- helpers ---
@@ -325,7 +352,11 @@ class PublicationRdfExpansionTest extends ResourcesLocalTest {
   private static String organisationJsonLd(URI orgUri, URI parentUri) {
     return """
     {
-      "@context": "https://bibsys.github.io/nva-ontology/ontology/cristin-org-context.json",
+      "@context": {
+        "nva": "https://nva.sikt.no/ontology/publication#",
+        "Organization": "nva:Organization",
+        "partOf": {"@id": "nva:partOf", "@type": "@id"}
+      },
       "@id": "%s",
       "@type": "Organization",
       "partOf": [{"@id": "%s"}]
@@ -337,7 +368,11 @@ class PublicationRdfExpansionTest extends ResourcesLocalTest {
   private static String topLevelOrganisationJsonLd(URI orgUri) {
     return """
     {
-      "@context": "https://bibsys.github.io/nva-ontology/ontology/cristin-org-context.json",
+      "@context": {
+        "nva": "https://nva.sikt.no/ontology/publication#",
+        "Organization": "nva:Organization",
+        "partOf": {"@id": "nva:partOf", "@type": "@id"}
+      },
       "@id": "%s",
       "@type": "Organization"
     }
@@ -348,9 +383,9 @@ class PublicationRdfExpansionTest extends ResourcesLocalTest {
   private static String minimalPublicationJsonLd(URI publicationUri) {
     return """
     {
-      "@context": "https://nva.sikt.no/ontology/publication",
+      "@context": {"nva": "https://nva.sikt.no/ontology/publication#"},
       "@id": "%s",
-      "@type": "Publication"
+      "@type": "nva:Publication"
     }
     """
         .formatted(publicationUri);
@@ -379,16 +414,18 @@ class PublicationRdfExpansionTest extends ResourcesLocalTest {
     return publication;
   }
 
-  private static RawContentRetriever throwingRetriever() {
+  private RawContentRetriever throwingRetrieverFor(URI targetUri) {
     return new RawContentRetriever() {
       @Override
       public Optional<String> getRawContent(URI uri, String mediaType) {
-        throw new RuntimeException("Simulated retrieval failure");
+        if (uri.equals(targetUri)) throw new RuntimeException("Simulated retrieval failure");
+        return fakeUriRetriever.getRawContent(uri, mediaType);
       }
 
       @Override
       public Optional<HttpResponse<String>> fetchResponse(URI uri, String mediaType) {
-        throw new RuntimeException("Simulated retrieval failure");
+        if (uri.equals(targetUri)) throw new RuntimeException("Simulated retrieval failure");
+        return fakeUriRetriever.fetchResponse(uri, mediaType);
       }
     };
   }

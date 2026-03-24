@@ -1,6 +1,5 @@
 package no.unit.nva.expansion.rdf;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_HOST_URI;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
@@ -13,6 +12,8 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -22,6 +23,7 @@ import no.unit.nva.expansion.model.nvi.NviCandidateResponse;
 import no.unit.nva.expansion.model.nvi.ScientificIndex;
 import no.unit.nva.expansion.utils.AffiliationQueries;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -35,6 +37,7 @@ import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.funding.ConfirmedFunding;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -61,6 +64,7 @@ public class PublicationRdfExpansion {
       ResourceFactory.createProperty(NVA, "scientificIndex");
   private static final Property NVA_YEAR = ResourceFactory.createProperty(NVA, "year");
   private static final Property NVA_STATUS = ResourceFactory.createProperty(NVA, "status");
+  private static final Path FUNDING_QUERY_SPARQL = Path.of("funding_query.sparql");
 
   private final RawContentRetriever uriRetriever;
   private final ResourceService resourceService;
@@ -78,7 +82,7 @@ public class PublicationRdfExpansion {
     return writer.toString();
   }
 
-  Model buildCbd(Resource resource) {
+  private Model buildCbd(Resource resource) {
     var publication = resource.toPublication();
     var model = loadPublication(publication);
     enrichAffiliations(model, publication);
@@ -119,25 +123,21 @@ public class PublicationRdfExpansion {
           .flatMap(this::fetchJsonLd)
           .ifPresent(body -> loadJsonLd(model, body));
     }
-    resource
-        .getRelatedResources()
-        .forEach(
-            id -> {
-              var jsonLd =
-                  attempt(() -> resourceService.getPublicationByIdentifier(id))
-                      .map(this::publicationToJsonLd)
-                      .orElse(
-                          failure -> {
-                            logger.warn(
-                                "Could not load related publication {}: {}",
-                                id,
-                                failure.getException().getMessage());
-                            return null;
-                          });
-              if (nonNull(jsonLd)) {
-                loadJsonLd(model, jsonLd);
-              }
-            });
+    resource.getRelatedResources().forEach(id -> fetchPublication(model, id));
+  }
+
+  private void fetchPublication(Model model, SortableIdentifier id) {
+    try {
+      var jsonLd = publicationToJsonLd(resourceService.getPublicationByIdentifier(id));
+      loadJsonLd(model, jsonLd);
+    } catch (NotFoundException e) {
+      logFailure(id, e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static void logFailure(SortableIdentifier id, Exception exception) {
+    logger.warn("Could not load related publication {}: {}", id, exception.getMessage());
   }
 
   private void applyConstructQueries(Model model, Publication publication) {
@@ -172,19 +172,21 @@ public class PublicationRdfExpansion {
     try {
       RDFDataMgr.read(
           model, new ByteArrayInputStream(jsonLd.getBytes(StandardCharsets.UTF_8)), Lang.JSONLD);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       logger.warn("Skipping unreadable JSON-LD: {}", e.getMessage());
+      throw e;
     }
   }
 
   private Optional<String> fetchJsonLd(URI uri) {
     return attempt(() -> uriRetriever.fetchResponse(uri, APPLICATION_JSON_LD.toString()))
         .map(
-            opt -> opt.filter(response -> response.statusCode() / 100 == 2).map(HttpResponse::body))
+            response ->
+                response.filter(PublicationRdfExpansion::successFamily).map(HttpResponse::body))
         .orElse(
             failure -> {
               logger.warn("Could not fetch {}: {}", uri, failure.getException().getMessage());
-              return Optional.<String>empty();
+              throw new RuntimeException("Could not fetch " + uri, failure.getException());
             });
   }
 
@@ -193,16 +195,23 @@ public class PublicationRdfExpansion {
     return attempt(() -> uriRetriever.fetchResponse(nviUri, CONTENT_TYPE_JSON))
         .map(
             opt ->
-                opt.filter(response -> response.statusCode() / 100 == 2)
-                    .map(response -> toNviCandidateResponse(response.body()).toNviStatus()))
+                opt.filter(PublicationRdfExpansion::successFamily)
+                    .map(HttpResponse::body)
+                    .map(this::toNviCandidateResponse)
+                    .map(NviCandidateResponse::toNviStatus))
         .orElse(
             failure -> {
               logger.warn(
                   "Could not fetch NVI status for {}: {}",
                   publicationId,
                   failure.getException().getMessage());
-              return Optional.<ScientificIndex>empty();
+              throw new RuntimeException(
+                  "Could not fetch NVI status for " + publicationId, failure.getException());
             });
+  }
+
+  private static boolean successFamily(HttpResponse<String> response) {
+    return response.statusCode() / 100 == 2;
   }
 
   private NviCandidateResponse toNviCandidateResponse(String body) {
@@ -247,14 +256,14 @@ public class PublicationRdfExpansion {
   }
 
   private static String fundingQuery(URI publicationUri) {
-    return nva.commons.core.ioutils.IoUtils.stringFromResources(
-            java.nio.file.Path.of("funding_query.sparql"))
+    return nva.commons.core.ioutils.IoUtils.stringFromResources(FUNDING_QUERY_SPARQL)
         .formatted(publicationUri.toString());
   }
 
   private static Stream<URI> affiliationUris(Publication publication) {
     return publication.getContributors().stream()
-        .flatMap(contributor -> contributor.affiliations().stream())
+        .map(Contributor::affiliations)
+        .flatMap(Collection::stream)
         .filter(Organization.class::isInstance)
         .map(Organization.class::cast)
         .map(Organization::getId)
@@ -262,15 +271,11 @@ public class PublicationRdfExpansion {
   }
 
   private static Stream<URI> publicationChannelUris(Publication publication) {
-    var context =
-        Optional.ofNullable(publication.getEntityDescription())
-            .map(EntityDescription::getReference)
-            .map(no.unit.nva.model.Reference::getPublicationContext)
-            .orElse(null);
-    if (context == null) {
-      return Stream.empty();
-    }
-    return channelUrisFrom(context);
+    return Optional.ofNullable(publication.getEntityDescription())
+        .map(EntityDescription::getReference)
+        .map(Reference::getPublicationContext)
+        .map(PublicationRdfExpansion::channelUrisFrom)
+        .orElse(Stream.empty());
   }
 
   private static Stream<URI> channelUrisFrom(PublicationContext context) {
