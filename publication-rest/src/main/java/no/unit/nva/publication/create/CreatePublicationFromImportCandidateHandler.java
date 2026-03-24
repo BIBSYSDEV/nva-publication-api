@@ -238,6 +238,7 @@ public class CreatePublicationFromImportCandidateHandler
     return importedResource;
   }
 
+  // FIXME: See NP-51007
   private Publication finalizeImport(
       Resource importedResource, ImportCandidate rawImportCandidate) {
     var publication = importedResource.toPublication();
