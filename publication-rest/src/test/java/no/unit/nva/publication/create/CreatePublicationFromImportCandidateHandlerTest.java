@@ -22,7 +22,6 @@ import static no.unit.nva.publication.create.CreatePublicationFromImportCandidat
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_NOT_PUBLISHABLE;
-import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.ROLLBACK_WENT_WRONG_MESSAGE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -243,7 +242,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
   }
 
   @Test
-  void shouldReturnBadGatewayAndNotUpdateBothResourcesWhenPublicationPersistenceFails(
+  void shouldNotUpdateImportCandidateWhenPublicationTransactionFails(
       @Mock ResourceService resourceService) throws IOException, ApiGatewayException {
 
     publicationService = resourceService;
@@ -259,7 +258,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     handler =
         new CreatePublicationFromImportCandidateHandler(
             configs, new Environment(), ticketService, approvalService);
-    when(publicationService.importResource(any(), any(), any()))
+    when(publicationService.importResourceAndUpdateImportCandidateStatus(
+            any(), any(), any(), any(), any(), any()))
         .thenThrow(new TransactionFailedException(new Exception()));
     var importCandidate = createPersistedImportCandidate();
     var request = createRequest(importCandidate);
@@ -278,32 +278,31 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
   }
 
   @Test
-  void shouldReturnBadGatewayWhenImportCandidatePersistenceFails(
+  void shouldReturnNotFoundWhenImportCandidateStatusUpdateFailsDueToMissingCandidate(
       @Mock ResourceService resourceService) throws IOException, ApiGatewayException {
     var importCandidate = createPersistedImportCandidate();
     final var request = createRequest(importCandidate);
 
-    importCandidateService = resourceService;
     configs =
         new ImportCandidateHandlerConfigs(
             SOME_PERSISTED_BUCKET,
             SOME_CANDIDATE_BUCKET,
             importCandidateService,
-            publicationService,
+            resourceService,
             ticketService,
             s3Client,
             piaClientConfig);
     handler =
         new CreatePublicationFromImportCandidateHandler(
             configs, new Environment(), ticketService, approvalService);
-    when(importCandidateService.getImportCandidateByIdentifier(any())).thenReturn(importCandidate);
-    when(importCandidateService.updateImportStatus(any(), any()))
-        .thenThrow(new TransactionFailedException(new Exception()));
+    when(resourceService.importResourceAndUpdateImportCandidateStatus(
+            any(), any(), any(), any(), any(), any()))
+        .thenThrow(new NotFoundException("Import candidate not found"));
 
     handler.handleRequest(request, output, context);
     var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
-    assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
   }
 
   @Test
@@ -325,39 +324,6 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
     assertThat(response.getStatusCode(), is(equalTo(HTTP_UNAUTHORIZED)));
-  }
-
-  @Test
-  void shouldReturnBadGatewayWhenRollbackFails(@Mock ResourceService resourceService)
-      throws NotFoundException, IOException {
-    var importCandidate = createPersistedImportCandidate();
-    final var request = createRequest(importCandidate);
-    publicationService = resourceService;
-    importCandidateService = resourceService;
-    configs =
-        new ImportCandidateHandlerConfigs(
-            SOME_PERSISTED_BUCKET,
-            SOME_CANDIDATE_BUCKET,
-            importCandidateService,
-            publicationService,
-            ticketService,
-            s3Client,
-            piaClientConfig);
-    handler =
-        new CreatePublicationFromImportCandidateHandler(
-            configs, new Environment(), ticketService, approvalService);
-    when(importCandidateService.getImportCandidateByIdentifier(any())).thenReturn(importCandidate);
-    when(importCandidateService.updateImportStatus(any(), any()))
-        .thenCallRealMethod()
-        .thenThrow(new NotFoundException(""));
-
-    handler.handleRequest(request, output, context);
-    var response = GatewayResponse.fromOutputStream(output, Problem.class);
-
-    assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
-    assertThat(
-        response.getBodyObject(Problem.class).getDetail(),
-        containsString(ROLLBACK_WENT_WRONG_MESSAGE));
   }
 
   @Test
