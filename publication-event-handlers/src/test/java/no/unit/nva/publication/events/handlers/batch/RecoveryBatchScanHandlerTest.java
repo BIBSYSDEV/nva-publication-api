@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.batch;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
+import static no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventConsumer.TABLE_NAME;
 import static no.unit.nva.publication.queue.RecoveryEntry.FILE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -33,6 +34,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.service.impl.VersionRefreshService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
@@ -61,8 +63,10 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     ticketService = getTicketService();
     messageService = getMessageService();
     queueClient = new FakeSqsClient();
+    var versionRefreshService = new VersionRefreshService(client, TABLE_NAME);
     recoveryBatchScanHandler =
-        new RecoveryBatchScanHandler(resourceService, ticketService, messageService, queueClient);
+        new RecoveryBatchScanHandler(
+            resourceService, ticketService, messageService, queueClient, versionRefreshService);
   }
 
   @Test
