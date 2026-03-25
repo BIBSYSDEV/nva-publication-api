@@ -150,6 +150,9 @@
   "language": {
     "@type": "@id"
   },
+  "license": {
+    "@type": "@id"
+  },
   "link": {
     "@type": "@id"
   },
