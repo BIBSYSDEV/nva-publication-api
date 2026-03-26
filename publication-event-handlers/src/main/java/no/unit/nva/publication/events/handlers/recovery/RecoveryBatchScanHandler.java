@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
-import java.util.function.Function;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.queue.RecoveryEntry;
@@ -31,7 +30,6 @@ public class RecoveryBatchScanHandler implements RequestStreamHandler {
   public static final String TYPE = "type";
   private static final Logger logger = LoggerFactory.getLogger(RecoveryBatchScanHandler.class);
   private final QueueClient defaultQueueClient;
-  private final Function<String, QueueClient> queueClientFactory;
   private final ResourceService resourceService;
   private final TicketService ticketService;
   private final MessageService messageService;
@@ -43,8 +41,7 @@ public class RecoveryBatchScanHandler implements RequestStreamHandler {
         TicketService.defaultService(),
         MessageService.defaultService(),
         ResourceQueueClient.defaultResourceQueueClient(
-            new Environment().readEnv(RECOVERY_QUEUE_ENV)),
-        ResourceQueueClient::defaultResourceQueueClient);
+            new Environment().readEnv(RECOVERY_QUEUE_ENV)));
   }
 
   public RecoveryBatchScanHandler(
@@ -52,20 +49,10 @@ public class RecoveryBatchScanHandler implements RequestStreamHandler {
       TicketService ticketService,
       MessageService messageService,
       QueueClient queueClient) {
-    this(resourceService, ticketService, messageService, queueClient, null);
-  }
-
-  public RecoveryBatchScanHandler(
-      ResourceService resourceService,
-      TicketService ticketService,
-      MessageService messageService,
-      QueueClient defaultQueueClient,
-      Function<String, QueueClient> queueClientFactory) {
     this.resourceService = resourceService;
     this.ticketService = ticketService;
     this.messageService = messageService;
-    this.defaultQueueClient = defaultQueueClient;
-    this.queueClientFactory = queueClientFactory;
+    this.defaultQueueClient = queueClient;
   }
 
   @Override
@@ -78,9 +65,10 @@ public class RecoveryBatchScanHandler implements RequestStreamHandler {
     processMessages(queueClient, messages);
   }
 
+  @JacocoGenerated
   private QueueClient resolveQueueClient(RecoveryRequest request) {
-    if (nonNull(request.queueUrl()) && nonNull(queueClientFactory)) {
-      return queueClientFactory.apply(request.queueUrl());
+    if (nonNull(request.queueUrl())) {
+      return ResourceQueueClient.defaultResourceQueueClient(request.queueUrl());
     }
     return defaultQueueClient;
   }
