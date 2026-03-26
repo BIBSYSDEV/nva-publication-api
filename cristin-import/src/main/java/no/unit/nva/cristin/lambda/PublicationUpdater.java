@@ -129,7 +129,10 @@ public final class PublicationUpdater {
   private static List<Contributor> updateExistingContributorsIdWhenMissing(
       List<Contributor> incomingContributors, List<Contributor> existingContributors) {
     incomingContributors.stream()
-        .filter(incomingContributor -> nonNull(incomingContributor.getIdentity().getId()))
+        .filter(
+            incomingContributor -> {
+              return nonNull(incomingContributor.identity().getId());
+            })
         .forEach(
             incomingContributor ->
                 setIdForExistingContributorWhenMissing(incomingContributor, existingContributors));
@@ -144,20 +147,21 @@ public final class PublicationUpdater {
             .filter(PublicationUpdater::hasNoId)
             .findFirst();
     contributorMissingId.ifPresent(
-        existingContributor ->
-            existingContributor.getIdentity().setId(incomingContributor.getIdentity().getId()));
+        existingContributor -> {
+          existingContributor.identity().setId(incomingContributor.identity().getId());
+        });
   }
 
   private static boolean hasNoId(Contributor existingContributor) {
-    return isNull(existingContributor.getIdentity().getId());
+    return isNull(existingContributor.identity().getId());
   }
 
   private static boolean haveSameName(
       Contributor incomingContributor, Contributor existingContributor) {
     return existingContributor
-        .getIdentity()
+        .identity()
         .getName()
-        .equals(incomingContributor.getIdentity().getName());
+        .equals(incomingContributor.identity().getName());
   }
 
   private static boolean isDegree(Publication publication) {
@@ -166,7 +170,7 @@ public final class PublicationUpdater {
   }
 
   private static List<Contributor> getContributors(Publication publication) {
-    return publication.getEntityDescription().getContributors();
+    return publication.getContributors();
   }
 
   private static List<String> updatedTags(PublicationRepresentations publicationRepresentations) {

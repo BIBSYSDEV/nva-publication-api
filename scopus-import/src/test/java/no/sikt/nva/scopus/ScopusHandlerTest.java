@@ -10,7 +10,6 @@ import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.conversion.PiaConnection.API_HOST;
-import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.sikt.nva.scopus.conversion.files.ScopusFileConverter.CROSSREF_URI_ENV_VAR_NAME;
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
 import static no.sikt.nva.scopus.utils.ScopusGenerator.createWithOneAuthorGroupAndAffiliation;
@@ -782,17 +781,17 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
   @Test
   void
-      shouldReturnPublicationWithJournalWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd()
+      shouldReturnPublicationWithJournalWithOaAccessYearAsPublicationYearWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd()
           throws IOException {
     createEmptyPiaMock();
     scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
     var expectedYear = "2022";
-    scopusData.setPublicationYear(expectedYear);
+    setOpenAccessEffectiveYear(expectedYear);
     scopusData.clearIssn();
     var expectedIssn = randomIssn();
     scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
     var event = createNewScopusPublicationEvent();
-    var expectedJournalId = randomUri();
+    var expectedJournalId = UriWrapper.fromUri(randomUri()).addChild(expectedYear).getUri();
     when(authorizedBackendUriRetriever.fetchResponse(any(), any()))
         .thenReturn(
             Optional.of(
@@ -804,9 +803,19 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     var publication = scopusHandler.handleRequest(event, CONTEXT);
     var actualPublicationContext =
         publication.getEntityDescription().reference().getPublicationContext();
-    assertThat(actualPublicationContext, instanceOf(Journal.class));
     var actualJournalUri = ((Journal) actualPublicationContext).getId();
+
+    assertEquals(expectedYear, UriWrapper.fromUri(actualJournalUri).getLastPathElement());
     assertThat(actualJournalUri, is(expectedJournalId));
+  }
+
+  private void setOpenAccessEffectiveYear(String expectedYear) {
+    scopusData.getDocument().getMeta().setOpenAccess(new OpenAccessType());
+    scopusData
+        .getDocument()
+        .getMeta()
+        .getOpenAccess()
+        .setOaAccessEffectiveDate("%s-01-01".formatted(expectedYear));
   }
 
   @Test
@@ -831,7 +840,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
   void shouldThrowExceptionWhenSrcTypeIsNotSupported() throws IOException {
     createEmptyPiaMock();
     scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
-    var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, getSrctype(), getEid());
+    var expectedMessage =
+        String.format("Unsupported source type %s, in %s", getSrctype(), getEid());
     var event = createNewScopusPublicationEvent();
     scopusHandler.handleRequest(event, CONTEXT);
     var report = extractErrorReportFromS3Client();
@@ -1637,7 +1647,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
   private void hasAffiliationWithId(Contributor contributor, String cristinAffiliationId) {
     var affiliationIdList =
-        contributor.getAffiliations().stream()
+        contributor.affiliations().stream()
             .filter(Organization.class::isInstance)
             .map(Organization.class::cast)
             .map(Organization::getId)
@@ -1811,7 +1821,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
   private Contributor getCorrespondingContributor(List<Contributor> actualPublicationContributors) {
     createEmptyPiaMock();
     return actualPublicationContributors.stream()
-        .filter(Contributor::isCorrespondingAuthor)
+        .filter(Contributor::correspondingAuthor)
         .findAny()
         .orElse(null);
   }
@@ -1920,18 +1930,21 @@ class ScopusHandlerTest extends ResourcesLocalTest {
       var optionalContributor = findContributorByOrcid(orcidAsUriString, contributors);
       assertTrue(optionalContributor.isPresent());
       var contributor = optionalContributor.get();
-      assertThat(contributor.getIdentity().getName(), containsString(authorTp.getSurname()));
+      assertThat(contributor.identity().getName(), containsString(authorTp.getSurname()));
     }
   }
 
   private void checkContributor(AuthorTp authorTp, List<Contributor> contributors) {
     var contributor = findContributorByName(authorTp.getGivenName(), contributors);
-    assertEquals(getExpectedFullAuthorName(authorTp), contributor.getIdentity().getName());
+    assertEquals(getExpectedFullAuthorName(authorTp), contributor.identity().getName());
   }
 
   private Contributor findContributorByName(String givenName, List<Contributor> contributors) {
     return contributors.stream()
-        .filter(contributor -> contributor.getIdentity().getName().contains(givenName))
+        .filter(
+            contributor -> {
+              return contributor.identity().getName().contains(givenName);
+            })
         .findAny()
         .orElseThrow();
   }
@@ -1978,7 +1991,10 @@ class ScopusHandlerTest extends ResourcesLocalTest {
   private Optional<Contributor> findContributorByOrcid(
       String orcid, List<Contributor> contributors) {
     return contributors.stream()
-        .filter(contributor -> orcid.equals(contributor.getIdentity().getOrcId()))
+        .filter(
+            contributor -> {
+              return orcid.equals(contributor.identity().getOrcId());
+            })
         .findFirst();
   }
 

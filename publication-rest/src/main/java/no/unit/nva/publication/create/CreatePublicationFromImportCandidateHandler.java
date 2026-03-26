@@ -3,17 +3,13 @@ package no.unit.nva.publication.create;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static no.unit.nva.publication.RequestUtil.getImportCandidateIdentifier;
 import static no.unit.nva.publication.create.ImportCandidateValidator.validate;
-import static nva.commons.core.attempt.Try.attempt;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.URI;
-import java.util.List;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.ImportCandidate;
-import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Publication;
@@ -25,6 +21,7 @@ import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.publication.create.pia.ContributorUpdateService;
 import no.unit.nva.publication.create.pia.PiaClient;
 import no.unit.nva.publication.exception.NotAuthorizedException;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
@@ -44,7 +41,6 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +56,6 @@ public class CreatePublicationFromImportCandidateHandler
       "Publication {} created from import candidate {}";
   private static final String LOG_IMPORT_STATUS_UPDATED =
       "Import candidate {} set to IMPORTED, publication {}";
-  public static final String ROLLBACK_WENT_WRONG_MESSAGE = "Rollback went wrong";
   public static final String IMPORT_PROCESS_WENT_WRONG = "Import process went wrong";
   public static final String RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE =
       "Resource has already been imported";
@@ -117,9 +112,14 @@ public class CreatePublicationFromImportCandidateHandler
     LOGGER.info(LOG_PROCESSING_IMPORT_CANDIDATE, identifier);
     var importCandidate = candidateService.getImportCandidateByIdentifier(identifier);
     validate(importCandidate, input);
-    return attempt(() -> importCandidate(input, requestInfo, importCandidate))
-        .map(PublicationResponse::fromPublication)
-        .orElseThrow(fail -> rollbackAndThrowException(fail, identifier));
+    try {
+      var publication = importCandidate(input, requestInfo, importCandidate);
+      return PublicationResponse.fromPublication(publication);
+    } catch (ApprovalAssignmentException e) {
+      throw new BadRequestException(e.getMessage());
+    } catch (TransactionFailedException e) {
+      throw new BadGatewayException(IMPORT_PROCESS_WENT_WRONG);
+    }
   }
 
   @Override
@@ -136,9 +136,6 @@ public class CreatePublicationFromImportCandidateHandler
     var publicationIdentifier = nvaPublication.getIdentifier();
     var candidateIdentifier = databaseVersion.getIdentifier();
     LOGGER.info(LOG_PUBLICATION_CREATED, publicationIdentifier, candidateIdentifier);
-    candidateService.updateImportStatus(
-        candidateIdentifier,
-        ImportStatusFactory.createImported(requestInfo.getUserName(), publicationIdentifier));
     LOGGER.info(LOG_IMPORT_STATUS_UPDATED, candidateIdentifier, publicationIdentifier);
     return nvaPublication;
   }
@@ -151,62 +148,86 @@ public class CreatePublicationFromImportCandidateHandler
 
     var importedResource =
         !resourceToImport.getFiles().isEmpty()
-            ? handleResourceWithFiles(
-                resourceToImport, requestInfo, databaseVersion.getAssociatedCustomers())
-            : resourceToImport.importResource(
-                publicationService,
-                ImportSource.fromSource(Source.SCOPUS),
-                UserInstance.fromPublication(resourceToImport.toPublication()));
-
+            ? handleResourceWithFiles(resourceToImport, requestInfo, databaseVersion)
+            : importResource(
+                resourceToImport,
+                UserInstance.fromPublication(resourceToImport.toPublication()),
+                databaseVersion.getIdentifier(),
+                requestInfo.getUserName());
     return finalizeImport(importedResource, databaseVersion);
   }
 
+  private Resource importResource(
+      Resource resourceToImport,
+      UserInstance fileOwner,
+      SortableIdentifier candidateIdentifier,
+      String userName)
+      throws NotFoundException {
+    return resourceToImport.importResourceAndUpdateImportCandidateStatus(
+        publicationService,
+        ImportSource.fromSource(Source.SCOPUS),
+        fileOwner,
+        candidateService,
+        candidateIdentifier,
+        userName);
+  }
+
   private Resource handleResourceWithFiles(
-      Resource resourceToImport, RequestInfo requestInfo, List<URI> associatedCustomers)
+      Resource resourceToImport, RequestInfo requestInfo, ImportCandidate databaseVersion)
       throws ApiGatewayException, ApprovalAssignmentException {
     var serviceResult =
         approvalService.determineCustomerResponsibleForApproval(
-            resourceToImport, associatedCustomers);
+            resourceToImport, databaseVersion.getAssociatedCustomers());
     LOGGER.info(serviceResult.getReason());
+    var fileOwner = createUserInstanceFromCustomer(requestInfo, serviceResult.getCustomer());
 
     return switch (serviceResult.getStatus()) {
       case APPROVAL_NEEDED ->
-          createPublicationWithFilesApprovalTicket(resourceToImport, serviceResult, requestInfo);
+          createPublicationWithFilesApprovalTicket(
+              resourceToImport, serviceResult, requestInfo, databaseVersion, fileOwner);
       case NO_APPROVAL_NEEDED ->
-          importResourceWithInternalFiles(resourceToImport, requestInfo, serviceResult);
+          importResourceWithInternalFiles(
+              resourceToImport, databaseVersion, requestInfo, fileOwner);
     };
   }
 
   private Resource importResourceWithInternalFiles(
-      Resource resourceToImport, RequestInfo requestInfo, AssignmentServiceResult serviceResult)
-      throws UnauthorizedException {
+      Resource resourceToImport,
+      ImportCandidate databaseVersion,
+      RequestInfo requestInfo,
+      UserInstance fileOwner)
+      throws NotFoundException, UnauthorizedException {
     resourceToImport.setAssociatedArtifacts(convertFilesToInternalFiles(resourceToImport));
-    return resourceToImport.importResource(
-        publicationService,
-        ImportSource.fromSource(Source.SCOPUS),
-        createUserInstanceFromCustomer(requestInfo, serviceResult.getCustomer()));
+    return importResource(
+        resourceToImport, fileOwner, databaseVersion.getIdentifier(), requestInfo.getUserName());
   }
 
   private static AssociatedArtifactList convertFilesToInternalFiles(Resource resourceToImport) {
     var associatedArtifacts =
         resourceToImport.getAssociatedArtifacts().stream()
-            .map(CreatePublicationFromImportCandidateHandler::toInternalFfile)
+            .map(CreatePublicationFromImportCandidateHandler::toInternalFile)
             .toList();
     return new AssociatedArtifactList(associatedArtifacts);
   }
 
-  private static AssociatedArtifact toInternalFfile(AssociatedArtifact associatedArtifact) {
+  private static AssociatedArtifact toInternalFile(AssociatedArtifact associatedArtifact) {
     return associatedArtifact instanceof File file ? file.toInternalFile() : associatedArtifact;
   }
 
   private Resource createPublicationWithFilesApprovalTicket(
-      Resource resourceToImport, AssignmentServiceResult serviceResult, RequestInfo requestInfo)
+      Resource resourceToImport,
+      AssignmentServiceResult serviceResult,
+      RequestInfo requestInfo,
+      ImportCandidate databaseVersion,
+      UserInstance fileOwner)
       throws ApiGatewayException {
     resourceToImport.setAssociatedArtifacts(convertFilesToPending(resourceToImport));
-    var fileOwner = createUserInstanceFromCustomer(requestInfo, serviceResult.getCustomer());
     var importedResource =
-        resourceToImport.importResource(
-            publicationService, ImportSource.fromSource(Source.SCOPUS), fileOwner);
+        importResource(
+            resourceToImport,
+            fileOwner,
+            databaseVersion.getIdentifier(),
+            requestInfo.getUserName());
     var fileApproval =
         PublishingRequestCase.createWithFilesForApproval(
             importedResource,
@@ -217,6 +238,7 @@ public class CreatePublicationFromImportCandidateHandler
     return importedResource;
   }
 
+  // FIXME: See NP-51007
   private Publication finalizeImport(
       Resource importedResource, ImportCandidate rawImportCandidate) {
     var publication = importedResource.toPublication();
@@ -252,29 +274,9 @@ public class CreatePublicationFromImportCandidateHandler
     };
   }
 
-  private ApiGatewayException rollbackAndThrowException(
-      Failure<PublicationResponse> failure, SortableIdentifier identifier) {
-    LOGGER.error("Import failed for import candidate {}", identifier, failure.getException());
-    return attempt(() -> rollbackImportStatusUpdate(identifier))
-        .orElse(fail -> throwException(fail.getException()));
-  }
-
-  private static ApiGatewayException throwException(Exception exception) {
-    if (exception instanceof ApprovalAssignmentException) {
-      return new BadRequestException(exception.getMessage());
-    }
-    return new BadGatewayException(ROLLBACK_WENT_WRONG_MESSAGE);
-  }
-
   private void validateAccessRight(RequestInfo requestInfo) throws NotAuthorizedException {
     if (!requestInfo.userIsAuthorized(AccessRight.MANAGE_IMPORT)) {
       throw new NotAuthorizedException();
     }
-  }
-
-  private ApiGatewayException rollbackImportStatusUpdate(SortableIdentifier identifier)
-      throws NotFoundException {
-    candidateService.updateImportStatus(identifier, ImportStatusFactory.createNotImported());
-    return new BadGatewayException(IMPORT_PROCESS_WENT_WRONG);
   }
 }

@@ -141,11 +141,10 @@ class BrageNvaMapperTest {
             .build();
     var publication =
         BrageNvaMapper.toNvaPublication(generator.getBrageRecord(), API_HOST, s3Client);
-    var actualContributor = publication.getEntityDescription().getContributors().getFirst();
+    var actualContributor = publication.getContributors().getFirst();
 
     assertEquals(
-        contributor.getIdentity().getOrcId().toString(),
-        actualContributor.getIdentity().getOrcId());
+        contributor.getIdentity().getOrcId().toString(), actualContributor.identity().getOrcId());
   }
 
   @Test

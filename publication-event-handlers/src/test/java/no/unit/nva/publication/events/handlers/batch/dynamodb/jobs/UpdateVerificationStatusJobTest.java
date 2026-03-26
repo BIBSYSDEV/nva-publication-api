@@ -91,7 +91,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
 
     assertEquals(
         ContributorVerificationStatus.VERIFIED,
-        updatedContributor.getIdentity().getVerificationStatus());
+        updatedContributor.identity().getVerificationStatus());
   }
 
   @Test
@@ -113,7 +113,7 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
 
     assertEquals(
         ContributorVerificationStatus.NOT_VERIFIED,
-        updatedContributor.getIdentity().getVerificationStatus());
+        updatedContributor.identity().getVerificationStatus());
   }
 
   @Test
@@ -203,7 +203,10 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     var persistedPublication = persistPublication(publication);
 
     contributors.stream()
-        .map(contributor -> contributor.getIdentity().getId())
+        .map(
+            contributor -> {
+              return contributor.identity().getId();
+            })
         .forEach(this::mockCristinClientReturnsVerifiedPerson);
 
     var workItem = createWorkItemForPublication(persistedPublication);
@@ -215,9 +218,9 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
 
     for (int index = 0; index < contributors.size(); index++) {
       assertEquals(
-          contributors.get(index).getIdentity().getId(),
-          updatedContributors.get(index).getIdentity().getId());
-      assertEquals(index + 1, updatedContributors.get(index).getSequence());
+          contributors.get(index).identity().getId(),
+          updatedContributors.get(index).identity().getId());
+      assertEquals(index + 1, updatedContributors.get(index).sequence());
     }
   }
 

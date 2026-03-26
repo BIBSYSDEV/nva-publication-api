@@ -1,8 +1,5 @@
 package no.sikt.nva.scopus.conversion;
 
-import lombok.Getter;
-
-@Getter
 public enum PublicationChannel {
   SERIAL_PUBLICATION("serial-publication"),
   PUBLISHER("publisher");
@@ -11,5 +8,9 @@ public enum PublicationChannel {
 
   PublicationChannel(String value) {
     this.value = value;
+  }
+
+  public String getValue() {
+    return value;
   }
 }

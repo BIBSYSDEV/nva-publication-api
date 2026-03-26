@@ -346,8 +346,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     var requestBody = constructDto(ticketType);
 
     var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
-    var contributorCristinId =
-        publication.getEntityDescription().getContributors().getFirst().getIdentity().getId();
+    var contributorCristinId = publication.getContributors().getFirst().identity().getId();
     var request =
         createHttpTicketCreationRequest(
             requestBody,
@@ -398,8 +397,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     var requestBody = constructDto(ticketType);
 
     var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
-    var contributorCristinId =
-        publication.getEntityDescription().getContributors().getFirst().getIdentity().getId();
+    var contributorCristinId = publication.getContributors().getFirst().identity().getId();
     var request =
         createHttpTicketCreationRequest(
             requestBody,
@@ -645,8 +643,7 @@ class CreateTicketHandlerTest extends TicketTestLocal {
     var requestBody = constructDto(ticketType);
     var curatingInstitution = publication.getCuratingInstitutions().iterator().next().id();
 
-    var userId =
-        publication.getEntityDescription().getContributors().getFirst().getIdentity().getId();
+    var userId = publication.getContributors().getFirst().identity().getId();
     var username = randomString();
     var request =
         createHttpTicketCreationRequest(

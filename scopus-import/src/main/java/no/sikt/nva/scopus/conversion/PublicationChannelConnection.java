@@ -20,11 +20,11 @@ import org.slf4j.LoggerFactory;
 
 public class PublicationChannelConnection {
 
-  public static final String PUBLICATION_CHANNELS_V2 = "publication-channels-v2";
-  public static final String QUERY = "query";
-  public static final String YEAR = "year";
-  public static final String CONTENT_TYPE = "application/json";
-  public static final int SINGLE_ITEM = 1;
+  private static final String PUBLICATION_CHANNELS_V2 = "publication-channels-v2";
+  private static final String QUERY = "query";
+  private static final String YEAR = "year";
+  private static final String CONTENT_TYPE = "application/json";
+  private static final int SINGLE_ITEM = 1;
   private static final Logger LOGGER = LoggerFactory.getLogger(PublicationChannelConnection.class);
   private static final String API_HOST = new Environment().readEnv("API_HOST");
   private final AuthorizedBackendUriRetriever uriRetriever;
@@ -34,7 +34,7 @@ public class PublicationChannelConnection {
   }
 
   public Optional<URI> fetchSerialPublication(
-      String printIssn, String electronicIssn, String sourceTitle, Integer publicationYear) {
+      String printIssn, String electronicIssn, String sourceTitle, String publicationYear) {
     LOGGER.info(
         "Searching for serial publication with printIssn={}, electronicIssn={}, sourceTitle={},"
             + " year={}",
@@ -49,7 +49,7 @@ public class PublicationChannelConnection {
     return fetchPublicationChannelId(uriStream);
   }
 
-  public Optional<URI> fetchPublisher(String publisherName, Integer publicationYear) {
+  public Optional<URI> fetchPublisher(String publisherName, String publicationYear) {
     LOGGER.info(
         "Searching for publisher with publisherName={}, year={}", publisherName, publicationYear);
     var uriToRetrieve = constructSearchUri(PUBLISHER, publisherName, publicationYear);
@@ -94,7 +94,7 @@ public class PublicationChannelConnection {
   }
 
   private URI constructSearchUri(
-      PublicationChannel publicationChannel, String searchTerm, Integer year) {
+      PublicationChannel publicationChannel, String searchTerm, String year) {
     return UriWrapper.fromHost(API_HOST)
         .addChild(PUBLICATION_CHANNELS_V2)
         .addChild(publicationChannel.getValue())

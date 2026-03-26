@@ -353,10 +353,9 @@ class CristinImportPublicationMergerTest {
     var brageRecord = new Record();
     brageRecord.setId(bragePublication.getHandle());
     var updatedPublication = mergePublications(existingPublication, bragePublication, brageRecord);
-    var updatedContributor = updatedPublication.getEntityDescription().getContributors().getFirst();
+    var updatedContributor = updatedPublication.getContributors().getFirst();
 
-    assertThat(
-        updatedContributor.getAffiliations(), is(equalTo(brageContributor.getAffiliations())));
+    assertThat(updatedContributor.affiliations(), is(equalTo(brageContributor.affiliations())));
   }
 
   @Test
@@ -375,12 +374,11 @@ class CristinImportPublicationMergerTest {
     var brageRecord = new Record();
     brageRecord.setId(bragePublication.getHandle());
     var updatedPublication = mergePublications(existingPublication, bragePublication, brageRecord);
-    var notUpdatedContributor =
-        updatedPublication.getEntityDescription().getContributors().getFirst();
+    var notUpdatedContributor = updatedPublication.getContributors().getFirst();
 
     assertThat(
-        notUpdatedContributor.getAffiliations(),
-        is(equalTo(contributorToKeepUnchanged.getAffiliations())));
+        notUpdatedContributor.affiliations(),
+        is(equalTo(contributorToKeepUnchanged.affiliations())));
   }
 
   private static Contributor randomContributor(int sequence, Role creator) {
@@ -722,7 +720,7 @@ class CristinImportPublicationMergerTest {
 
     var updatedPublication = mergePublications(existingPublication, bragePublication);
 
-    assertThat(updatedPublication.getEntityDescription().getContributors(), hasItem(supervisor));
+    assertThat(updatedPublication.getContributors(), hasItem(supervisor));
   }
 
   @Test
@@ -742,8 +740,7 @@ class CristinImportPublicationMergerTest {
     var updatedPublication = mergePublications(existingPublication, bragePublication);
 
     assertThat(
-        updatedPublication.getEntityDescription().getContributors(),
-        is(equalTo(existingPublication.getEntityDescription().getContributors())));
+        updatedPublication.getContributors(), is(equalTo(existingPublication.getContributors())));
   }
 
   @Test

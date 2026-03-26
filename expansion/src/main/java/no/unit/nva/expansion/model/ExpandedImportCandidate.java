@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import lombok.Getter;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.expansion.JournalExpansionServiceImpl;
@@ -119,7 +118,6 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
   @JsonProperty(CONTRIBUTORS_NUMBER_FIELD)
   private int totalNumberOfContributors;
 
-  @Getter
   @JsonProperty(CONTRIBUTORS_FIELD)
   private List<ImportContributor> contributors;
 
@@ -198,6 +196,10 @@ public class ExpandedImportCandidate implements ExpandedDataEntry {
 
   public void setOnlineIssn(String onlineIssn) {
     this.onlineIssn = onlineIssn;
+  }
+
+  public List<ImportContributor> getContributors() {
+    return contributors;
   }
 
   public void setContributors(List<ImportContributor> contributors) {

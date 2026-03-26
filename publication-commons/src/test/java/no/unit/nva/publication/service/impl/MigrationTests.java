@@ -253,12 +253,11 @@ class MigrationTests extends ResourcesLocalTest {
       SortableIdentifier hardCodedIdentifier) {
     var publication = randomPublication(JournalArticle.class);
     publication
-        .getEntityDescription()
         .getContributors()
         .forEach(
             contributor ->
                 contributor
-                    .getAffiliations()
+                    .affiliations()
                     .forEach(
                         affiliation ->
                             ((Organization) affiliation)

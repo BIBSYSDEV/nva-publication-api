@@ -22,28 +22,27 @@ public class ContributorFlattenedDetails implements JsonSerializable {
     this.affiliationUri = affiliationUri;
   }
 
-  public static ContributorFlattenedDetails extractNameAndSequence(Contributor c) {
-    String name = c.getIdentity().getName();
-    int sequence = c.getSequence();
+  public static ContributorFlattenedDetails extractNameAndSequence(Contributor contributor) {
+    var name = contributor.identity().getName();
+    var sequence = contributor.sequence();
     return new ContributorFlattenedDetails(name, sequence, null);
   }
 
   public static ContributorFlattenedDetails extractNameSequenceAndAffiliationUri(
       Contributor contributor) {
-    String name = contributor.getIdentity().getName();
-    int sequence = contributor.getSequence();
-    URI affiliationUri =
-        ((Organization)
-                contributor.getAffiliations().stream().collect(SingletonCollector.collect()))
+    var name = contributor.identity().getName();
+    var sequence = contributor.sequence();
+    var affiliationUri =
+        ((Organization) contributor.affiliations().stream().collect(SingletonCollector.collect()))
             .getId();
     return new ContributorFlattenedDetails(name, sequence, affiliationUri);
   }
 
   public static ContributorFlattenedDetails fromDataTableMapEntry(Map<String, String> mapEntry) {
-    String name = mapEntry.get(CristinContributorTransformer.TABLE_FIELD_FOR_EXPECTED_NVA_NAME);
-    int sequence =
+    var name = mapEntry.get(CristinContributorTransformer.TABLE_FIELD_FOR_EXPECTED_NVA_NAME);
+    var sequence =
         Integer.parseInt(mapEntry.get(CristinContributorTransformer.CONTRIBUTOR_ORDINAL_NUMBER));
-    URI uri =
+    var uri =
         Optional.ofNullable(
                 mapEntry.get(
                     CristinContributorTransformer.TABLE_FIELD_FOR_EXPECTED_AFFILIATION_URI))
@@ -62,10 +61,9 @@ public class ContributorFlattenedDetails implements JsonSerializable {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof ContributorFlattenedDetails)) {
+    if (!(o instanceof ContributorFlattenedDetails that)) {
       return false;
     }
-    ContributorFlattenedDetails that = (ContributorFlattenedDetails) o;
     return getSequence() == that.getSequence()
         && Objects.equals(getName(), that.getName())
         && Objects.equals(getAffiliationUri(), that.getAffiliationUri());

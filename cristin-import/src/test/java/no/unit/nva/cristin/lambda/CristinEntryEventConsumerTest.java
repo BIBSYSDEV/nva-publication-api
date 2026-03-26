@@ -541,7 +541,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     var sqsEvent = createSqsEvent(eventBody);
     var publications = handler.handleRequest(sqsEvent, CONTEXT);
     var actualtPublication = publications.getFirst();
-    assertThat(actualtPublication.getEntityDescription().getContributors(), hasSize(0));
+    assertThat(actualtPublication.getContributors(), hasSize(0));
   }
 
   @Test
@@ -586,9 +586,10 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     var publication = resourceService.getPublicationsByCristinIdentifier(cristinId).getFirst();
 
-    publication.getEntityDescription().getContributors().stream()
-        .map(Contributor::getRole)
-        .forEach(role -> assertEquals(role, new RoleType(Role.OTHER)));
+    publication.getContributors().stream()
+        .map(Contributor::role)
+        .map(RoleType::getType)
+        .forEach(role -> assertEquals(role, Role.OTHER));
 
     assertThat(file, is(not(emptyString())));
   }
@@ -835,8 +836,8 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     var updatedPublication = handler.handleRequest(sqsEvent, CONTEXT).getFirst();
 
     assertThat(
-        updatedPublication.getEntityDescription().getContributors(),
-        is(not(equalTo(existingPublication.getEntityDescription().getContributors()))));
+        updatedPublication.getContributors(),
+        is(not(equalTo(existingPublication.getContributors()))));
   }
 
   @Test

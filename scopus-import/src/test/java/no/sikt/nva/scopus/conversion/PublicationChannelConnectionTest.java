@@ -2,7 +2,6 @@ package no.sikt.nva.scopus.conversion;
 
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_OK;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -41,7 +40,7 @@ class PublicationChannelConnectionTest {
         .thenReturn(Optional.of(FakeHttpResponse.create(responseWithSingleHit(), HTTP_OK)));
 
     publicationChannelConnection.fetchSerialPublication(
-        randomString(), randomString(), randomString(), randomInteger());
+        randomString(), randomString(), randomString(), randomString());
 
     verify(uriRetriever, times(1)).fetchResponse(any(), any());
   }
@@ -55,7 +54,7 @@ class PublicationChannelConnectionTest {
 
     var appender = LogUtils.getTestingAppender(PublicationChannelConnection.class);
     publicationChannelConnection.fetchSerialPublication(
-        randomString(), randomString(), randomString(), randomInteger());
+        randomString(), randomString(), randomString(), randomString());
 
     assertTrue(appender.getMessages().contains("Publication channels API responded with 502"));
   }

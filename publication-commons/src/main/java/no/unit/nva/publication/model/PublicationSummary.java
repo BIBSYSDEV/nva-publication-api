@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -66,7 +65,7 @@ public class PublicationSummary {
     publicationSummary.setTitle(extractTitle(publication.getEntityDescription()));
     publicationSummary.setPublicationInstance(
         extractPublicationInstance(publication.getEntityDescription()));
-    publicationSummary.setContributors(extractContributors(publication.getEntityDescription()));
+    publicationSummary.setContributors(publication.getContributors());
     publicationSummary.setAbstract(extractAbstract(publication));
     publicationSummary.setHandles(extractHandles(publication));
     return publicationSummary;
@@ -237,16 +236,10 @@ public class PublicationSummary {
     return Optional.ofNullable(entityDescription).map(EntityDescription::getMainTitle).orElse(null);
   }
 
-  private static List<Contributor> extractContributors(EntityDescription entityDescription) {
-    return Optional.ofNullable(entityDescription)
-        .map(EntityDescription::getContributors)
-        .orElse(Collections.emptyList());
-  }
-
   private static List<Contributor> sortAndLimitNumberOfContributors(
       List<Contributor> contributors) {
     return contributors.stream()
-        .sorted(Comparator.comparing(Contributor::getSequence))
+        .sorted(Comparator.comparing(Contributor::sequence))
         .limit(MAX_SIZE_CONTRIBUTOR_LIST)
         .collect(Collectors.toList());
   }

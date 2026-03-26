@@ -6,7 +6,6 @@ import no.unit.nva.commons.json.JsonUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-@SuppressWarnings({"checkstyle:*"})
 @Deprecated
 class TimeMigrationTest {
 

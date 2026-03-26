@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
-import lombok.Getter;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.expansion.JournalExpansionServiceImpl;
@@ -492,7 +491,6 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         .orElseThrow();
   }
 
-  @Getter
   private class ExpandedDataEntryWithAssociatedPublication {
 
     private final ExpandedDataEntry expandedDataEntry;
@@ -503,6 +501,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     public ExpandedDataEntryWithAssociatedPublication() {
       this.expandedDataEntry = null;
+    }
+
+    public ExpandedDataEntry getExpandedDataEntry() {
+      return expandedDataEntry;
     }
 
     public ExpandedDataEntryWithAssociatedPublication create(
@@ -610,7 +612,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
           entityDescription.getMainTitle(),
           entityDescription.getLanguage(),
           entityDescription.getPublicationDate(),
-          entityDescription.getContributors().stream()
+          publication.getContributors().stream()
               .map(ExpandedDataEntryWithAssociatedPublication::toImportContributor)
               .toList(),
           entityDescription.getAbstract(),
@@ -622,13 +624,13 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
     private static ImportContributor toImportContributor(Contributor contributor) {
       return new ImportContributor(
-          contributor.getIdentity(),
-          contributor.getAffiliations().stream()
+          contributor.identity(),
+          contributor.affiliations().stream()
               .map(corporation -> new Affiliation(corporation, null))
               .toList(),
-          contributor.getRole(),
-          contributor.getSequence(),
-          contributor.isCorrespondingAuthor());
+          contributor.role(),
+          contributor.sequence(),
+          contributor.correspondingAuthor());
     }
 
     private static ExpandedDataEntry createExpandedUnpublishRequest(

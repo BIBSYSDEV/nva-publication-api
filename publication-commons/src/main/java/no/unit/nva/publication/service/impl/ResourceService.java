@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -214,7 +215,34 @@ public class ResourceService extends ServiceWithTransactions {
 
   public Resource importResource(
       Resource resource, ImportSource importSource, UserInstance fileOwner) {
-    return insertImportedResource(resource, importSource, fileOwner);
+    return insertImportedResource(resource, importSource, fileOwner, emptyList());
+  }
+
+  public Resource importResourceAndUpdateImportCandidateStatus(
+      Resource resource,
+      ImportSource importSource,
+      UserInstance fileOwner,
+      ResourceService candidateService,
+      SortableIdentifier candidateIdentifier,
+      ImportStatus importStatus)
+      throws NotFoundException {
+    var candidateTransaction =
+        candidateService.buildImportCandidateStatusUpdateTransaction(
+            candidateIdentifier, importStatus);
+    return insertImportedResource(resource, importSource, fileOwner, List.of(candidateTransaction));
+  }
+
+  private TransactWriteItem buildImportCandidateStatusUpdateTransaction(
+      SortableIdentifier identifier, ImportStatus status) throws NotFoundException {
+    var importCandidate =
+        readResourceService
+            .getImportCandidateByIdentifier(identifier)
+            .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE + identifier));
+    importCandidate.setImportStatus(status);
+    importCandidate.setModifiedDate(clockForTimestamps.instant());
+    var dao = new ImportCandidateDao(importCandidate, identifier);
+    var put = new Put().withTableName(tableName).withItem(dao.toDynamoFormat());
+    return new TransactWriteItem().withPut(put);
   }
 
   public Publication createPublicationFromImportedEntry(
@@ -588,7 +616,10 @@ public class ResourceService extends ServiceWithTransactions {
   }
 
   private Resource insertImportedResource(
-      Resource resource, ImportSource importSource, UserInstance fileOwner) {
+      Resource resource,
+      ImportSource importSource,
+      UserInstance fileOwner,
+      List<TransactWriteItem> additionalTransactions) {
     if (resource.getCuratingInstitutions().isEmpty()) {
       setCuratingInstitutions(resource, cristinUnitsUtil);
     }
@@ -608,6 +639,7 @@ public class ResourceService extends ServiceWithTransactions {
     transactions.add(newPutTransactionItem(new ResourceDao(resource), tableName));
     transactions.add(createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource));
     transactions.addAll(createPublicationChannelsTransaction(resource));
+    transactions.addAll(additionalTransactions);
 
     var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
     sendTransactionWriteRequest(transactWriteItemsRequest);
@@ -856,7 +888,7 @@ public class ResourceService extends ServiceWithTransactions {
     newResource.setCuratingInstitutions(
         new CuratingInstitutionsUtil(uriRetriever, customerService)
             .getCuratingInstitutions(
-                newResource.toPublication().getEntityDescription(), cristinUnitsUtil));
+                newResource.toPublication().getContributors(), cristinUnitsUtil));
   }
 
   private ImportCandidate insertResourceFromImportCandidate(ImportCandidateDao importCandidateDao) {

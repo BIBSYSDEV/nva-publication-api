@@ -100,7 +100,7 @@ public final class ManuallyUpdatePublicationUtil {
   private Contributor updateContributor(
       Contributor contributor, ManuallyUpdatePublicationsRequest request) {
     var updatedAffiliations =
-        contributor.getAffiliations().stream()
+        contributor.affiliations().stream()
             .map(corporation -> updateAffiliation(corporation, request))
             .toList();
 
@@ -124,7 +124,7 @@ public final class ManuallyUpdatePublicationUtil {
   }
 
   private boolean hasAffiliation(Contributor contributor, Organization organization) {
-    return contributor.getAffiliations().stream().anyMatch(organization::equals);
+    return contributor.affiliations().stream().anyMatch(organization::equals);
   }
 
   private static boolean hasLicense(String license, FileEntry file) {
@@ -187,7 +187,7 @@ public final class ManuallyUpdatePublicationUtil {
             .orElseThrow();
 
     contributors.remove(contributorToUpdate);
-    contributorToUpdate.getIdentity().setId(buildUri(CRISTIN, PERSON, request.newValue()));
+    contributorToUpdate.identity().setId(buildUri(CRISTIN, PERSON, request.newValue()));
     contributors.add(contributorToUpdate);
     resource.getEntityDescription().setContributors(contributors);
     return resource;
@@ -270,7 +270,7 @@ public final class ManuallyUpdatePublicationUtil {
 
   private boolean hasIdentifier(Contributor contributor, String contributorIdentifier) {
     return Optional.ofNullable(contributor)
-        .map(Contributor::getIdentity)
+        .map(Contributor::identity)
         .map(Identity::getId)
         .map(UriWrapper::fromUri)
         .map(UriWrapper::getLastPathElement)
