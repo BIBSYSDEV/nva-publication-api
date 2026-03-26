@@ -56,6 +56,7 @@ public class ScopusUpdater {
         .withEntityDescription(importCandidate.getEntityDescription())
         .withAssociatedArtifacts(importCandidate.getAssociatedArtifacts())
         .withAdditionalIdentifiers(importCandidate.getAdditionalIdentifiers())
+        .withAssociatedCustomers(importCandidate.getAssociatedCustomers())
         .build();
   }
 
