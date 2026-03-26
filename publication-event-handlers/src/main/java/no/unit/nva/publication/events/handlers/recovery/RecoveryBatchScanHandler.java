@@ -52,7 +52,7 @@ public class RecoveryBatchScanHandler implements RequestStreamHandler {
       TicketService ticketService,
       MessageService messageService,
       QueueClient queueClient) {
-    this(resourceService, ticketService, messageService, queueClient, ignored -> queueClient);
+    this(resourceService, ticketService, messageService, queueClient, null);
   }
 
   public RecoveryBatchScanHandler(
@@ -79,7 +79,7 @@ public class RecoveryBatchScanHandler implements RequestStreamHandler {
   }
 
   private QueueClient resolveQueueClient(RecoveryRequest request) {
-    if (nonNull(request.queueUrl())) {
+    if (nonNull(request.queueUrl()) && nonNull(queueClientFactory)) {
       return queueClientFactory.apply(request.queueUrl());
     }
     return defaultQueueClient;
