@@ -66,6 +66,30 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
   }
 
   @Test
+  void shouldUseQueueUrlFromInputWhenProvided() throws IOException, NotFoundException {
+    var overriddenQueueClient = new FakeSqsClient();
+    var handler =
+        new RecoveryBatchScanHandler(
+            resourceService,
+            ticketService,
+            messageService,
+            queueClient,
+            ignored -> overriddenQueueClient);
+    var publication = persistedPublication();
+    putMessageOnQueue(overriddenQueueClient, publication.getIdentifier(), "Resource");
+    handler.handleRequest(createEventWithQueueUrl(null, "some-queue-url"), outputStream, CONTEXT);
+
+    var refreshedPublication =
+        resourceService.getPublicationByIdentifier(publication.getIdentifier());
+    var resourceVersion = Resource.fromPublication(publication).toDao().getVersion();
+    var resourceVersionAfterRefresh =
+        Resource.fromPublication(refreshedPublication).toDao().getVersion();
+
+    assertThat(resourceVersionAfterRefresh, is(not(equalTo(resourceVersion))));
+    assertTrue(overriddenQueueClient.getDeliveredMessages().isEmpty());
+  }
+
+  @Test
   void
       shouldUpdateResourceVersionByReadingQueueMessageContainingResourceIdentifierWhenResourceIsPublication()
           throws IOException, NotFoundException {
@@ -165,7 +189,14 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
 
   private static InputStream createEvent(Integer messagesCount) throws JsonProcessingException {
     var jsonString =
-        JsonUtils.dtoObjectMapper.writeValueAsString(new RecoveryRequest(messagesCount));
+        JsonUtils.dtoObjectMapper.writeValueAsString(new RecoveryRequest(messagesCount, null));
+    return IoUtils.stringToStream(jsonString);
+  }
+
+  private static InputStream createEventWithQueueUrl(Integer messagesCount, String queueUrl)
+      throws JsonProcessingException {
+    var jsonString =
+        JsonUtils.dtoObjectMapper.writeValueAsString(new RecoveryRequest(messagesCount, queueUrl));
     return IoUtils.stringToStream(jsonString);
   }
 
@@ -176,12 +207,17 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
   }
 
   private void putMessageOnRecoveryQueue(SortableIdentifier identifier, String type) {
-    var id =
+    putMessageOnQueue(queueClient, identifier, type);
+  }
+
+  private static void putMessageOnQueue(
+      FakeSqsClient client, SortableIdentifier identifier, String type) {
+    var attributes =
         Map.of(
             "id", messageAttribute(identifier.toString()),
             "type", messageAttribute(type));
-    queueClient.sendMessage(
-        SendMessageRequest.builder().queueUrl(randomString()).messageAttributes(id).build());
+    client.sendMessage(
+        SendMessageRequest.builder().queueUrl(randomString()).messageAttributes(attributes).build());
   }
 
   private Publication persistedPublication() {

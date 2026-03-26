@@ -1,11 +1,14 @@
 package no.unit.nva.publication.events.handlers.recovery;
 
+import static java.util.Objects.nonNull;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.function.Function;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.queue.QueueClient;
 import no.unit.nva.publication.queue.RecoveryEntry;
@@ -21,13 +24,14 @@ import software.amazon.awssdk.services.sqs.model.Message;
 
 public class RecoveryBatchScanHandler implements RequestStreamHandler {
 
-  public static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
+  public static final String RECOVERY_QUEUE_ENV = "RECOVERY_QUEUE";
   public static final String ID = "id";
   public static final String ENTRIES_PROCEEDED_MESSAGE =
       "{} entries have been successfully processed";
   public static final String TYPE = "type";
   private static final Logger logger = LoggerFactory.getLogger(RecoveryBatchScanHandler.class);
-  private final QueueClient queueClient;
+  private final QueueClient defaultQueueClient;
+  private final Function<String, QueueClient> queueClientFactory;
   private final ResourceService resourceService;
   private final TicketService ticketService;
   private final MessageService messageService;
@@ -38,7 +42,9 @@ public class RecoveryBatchScanHandler implements RequestStreamHandler {
         ResourceService.defaultService(),
         TicketService.defaultService(),
         MessageService.defaultService(),
-        ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE));
+        ResourceQueueClient.defaultResourceQueueClient(
+            new Environment().readEnv(RECOVERY_QUEUE_ENV)),
+        ResourceQueueClient::defaultResourceQueueClient);
   }
 
   public RecoveryBatchScanHandler(
@@ -46,18 +52,37 @@ public class RecoveryBatchScanHandler implements RequestStreamHandler {
       TicketService ticketService,
       MessageService messageService,
       QueueClient queueClient) {
+    this(resourceService, ticketService, messageService, queueClient, ignored -> queueClient);
+  }
+
+  public RecoveryBatchScanHandler(
+      ResourceService resourceService,
+      TicketService ticketService,
+      MessageService messageService,
+      QueueClient defaultQueueClient,
+      Function<String, QueueClient> queueClientFactory) {
     this.resourceService = resourceService;
     this.ticketService = ticketService;
     this.messageService = messageService;
-    this.queueClient = queueClient;
+    this.defaultQueueClient = defaultQueueClient;
+    this.queueClientFactory = queueClientFactory;
   }
 
   @Override
   public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context)
       throws IOException {
-    var messages = queueClient.readMessages(RecoveryRequest.fromInputStream(inputStream).count());
+    var request = RecoveryRequest.fromInputStream(inputStream);
+    var queueClient = resolveQueueClient(request);
+    var messages = queueClient.readMessages(request.count());
 
-    processMessages(messages);
+    processMessages(queueClient, messages);
+  }
+
+  private QueueClient resolveQueueClient(RecoveryRequest request) {
+    if (nonNull(request.queueUrl())) {
+      return queueClientFactory.apply(request.queueUrl());
+    }
+    return defaultQueueClient;
   }
 
   private static SortableIdentifier extractResourceIdentifier(Message message) {
@@ -68,7 +93,7 @@ public class RecoveryBatchScanHandler implements RequestStreamHandler {
     return message.messageAttributes().get(TYPE).stringValue();
   }
 
-  private void processMessages(List<Message> messages) {
+  private void processMessages(QueueClient queueClient, List<Message> messages) {
     messages.forEach(this::refreshEntry);
     queueClient.deleteMessages(messages);
     logger.info(ENTRIES_PROCEEDED_MESSAGE, messages.size());
