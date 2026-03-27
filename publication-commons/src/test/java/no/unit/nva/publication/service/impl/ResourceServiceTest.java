@@ -81,6 +81,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.importcandidate.CandidateStatus;
 import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
@@ -1592,6 +1593,63 @@ class ResourceServiceTest extends ResourcesLocalTest {
   }
 
   @Test
+  void shouldImportResourceAndUpdateImportCandidateStatusAtomically() throws NotFoundException {
+    var importCandidateTableName = "import-candidates-table";
+    super.init(RESOURCES_TABLE_NAME, importCandidateTableName);
+    resourceService = getResourceService(client);
+    var candidateService = getResourceService(client, importCandidateTableName);
+
+    var importCandidate = candidateService.persistImportCandidate(randomImportCandidate());
+    var publication = randomPublication();
+    var userInstance = UserInstance.fromPublication(publication);
+
+    var importedResource =
+        Resource.fromPublication(publication)
+            .importResourceAndUpdateImportCandidateStatus(
+                resourceService,
+                ImportSource.fromSource(Source.SCOPUS),
+                userInstance,
+                candidateService,
+                importCandidate.getIdentifier(),
+                userInstance.getUsername());
+
+    var updatedCandidate =
+        candidateService.getImportCandidateByIdentifier(importCandidate.getIdentifier());
+    var savedPublication =
+        resourceService.getPublicationByIdentifier(importedResource.getIdentifier());
+
+    assertEquals(CandidateStatus.IMPORTED, updatedCandidate.getImportStatus().candidateStatus());
+    assertEquals(PublicationStatus.PUBLISHED, savedPublication.getStatus());
+    assertThat(
+        updatedCandidate.getImportStatus().nvaPublicationId().toString(),
+        containsString(savedPublication.getIdentifier().toString()));
+  }
+
+  @Test
+  void shouldThrowNotFoundWhenImportCandidateDoesNotExistDuringAtomicImport() {
+    var importCandidateTableName = "import-candidates-table-2";
+    super.init(RESOURCES_TABLE_NAME, importCandidateTableName);
+    resourceService = getResourceService(client);
+    var candidateService = getResourceService(client, importCandidateTableName);
+
+    var publication = randomPublication();
+    var userInstance = UserInstance.fromPublication(publication);
+    var nonExistentCandidateId = SortableIdentifier.next();
+
+    assertThrows(
+        NotFoundException.class,
+        () ->
+            Resource.fromPublication(publication)
+                .importResourceAndUpdateImportCandidateStatus(
+                    resourceService,
+                    ImportSource.fromSource(Source.SCOPUS),
+                    userInstance,
+                    candidateService,
+                    nonExistentCandidateId,
+                    userInstance.getUsername()));
+  }
+
+  @Test
   void shouldImportResourceAndSetFileOwnerAndOwnerAffiliationBasedOnUserInstance() {
     var userInstance =
         UserInstance.create(
@@ -1835,6 +1893,42 @@ class ResourceServiceTest extends ResourcesLocalTest {
         Resource.fromPublication(publication).update(resourceService, userInstance);
 
     assertNotEquals(publication, updatedResource.toPublication());
+  }
+
+  @Test
+  void shouldNotUpdateFilesWhenNoEffectiveChanges() throws BadRequestException {
+    var publication = randomPublication();
+    var userInstance = UserInstance.fromPublication(publication);
+    publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+    var persistedFileEntries =
+        Resource.fromPublication(publication).fetchFileEntries(resourceService).toList();
+    publication.setDoi(randomUri());
+
+    resourceService.updateResource(Resource.fromPublication(publication), userInstance);
+
+    var updatedFileEntries =
+        Resource.fromPublication(publication).fetchFileEntries(resourceService).toList();
+
+    assertThat(updatedFileEntries, containsInAnyOrder(persistedFileEntries.toArray()));
+  }
+
+  @Test
+  void shouldUpdateFilesWhenFileHasEffectiveChanges() throws BadRequestException {
+    var file = randomPendingInternalFile();
+    var publication = randomPublication();
+    publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(file)));
+    var userInstance = UserInstance.fromPublication(publication);
+    publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+    publication.setAssociatedArtifacts(
+        new AssociatedArtifactList(List.of(file.toPendingOpenFile())));
+
+    var updatedResource =
+        resourceService.updateResource(Resource.fromPublication(publication), userInstance);
+    var updatedFile = updatedResource.getFiles().getFirst();
+
+    assertNotEquals(file, updatedFile);
   }
 
   @Test
