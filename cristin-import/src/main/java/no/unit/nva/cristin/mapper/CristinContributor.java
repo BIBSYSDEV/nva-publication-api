@@ -44,6 +44,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 @Setter
 @JsonIgnoreProperties({"identified_cristin_person"})
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
+@SuppressWarnings("PMD.OverrideBothEqualsAndHashCodeOnComparable")
 public class CristinContributor implements Comparable<CristinContributor> {
 
   public static final String NAME_DELIMITER = ", ";
@@ -133,8 +134,7 @@ public class CristinContributor implements Comparable<CristinContributor> {
       nameBuilder.append(getGivenName());
     }
     if (StringUtils.isNotBlank(getFamilyName())) {
-      nameBuilder.append(StringUtils.SPACE);
-      nameBuilder.append(getFamilyName());
+      nameBuilder.append(StringUtils.SPACE).append(getFamilyName());
     }
 
     return StringUtils.isNotBlank(nameBuilder.toString().trim())
