@@ -169,7 +169,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
 
   private static InputStream createEvent(Integer messagesCount) throws JsonProcessingException {
     var jsonString =
-        JsonUtils.dtoObjectMapper.writeValueAsString(new RecoveryRequest(messagesCount));
+        JsonUtils.dtoObjectMapper.writeValueAsString(new RecoveryRequest(messagesCount, null));
     return IoUtils.stringToStream(jsonString);
   }
 
@@ -180,12 +180,15 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
   }
 
   private void putMessageOnRecoveryQueue(SortableIdentifier identifier, String type) {
-    var id =
+    var attributes =
         Map.of(
             "id", messageAttribute(identifier.toString()),
             "type", messageAttribute(type));
     queueClient.sendMessage(
-        SendMessageRequest.builder().queueUrl(randomString()).messageAttributes(id).build());
+        SendMessageRequest.builder()
+            .queueUrl(randomString())
+            .messageAttributes(attributes)
+            .build());
   }
 
   private Publication persistedPublication() {

@@ -8,7 +8,7 @@ import java.io.InputStream;
 import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.ioutils.IoUtils;
 
-public record RecoveryRequest(Integer count) implements JsonSerializable {
+public record RecoveryRequest(Integer count, String queueUrl) implements JsonSerializable {
 
   private static final int DEFAULT_MESSAGES_COUNT = 10;
 

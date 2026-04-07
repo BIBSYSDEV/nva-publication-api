@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.recovery;
 
+import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -27,13 +28,13 @@ import software.amazon.awssdk.services.sqs.model.Message;
 
 public class RecoveryBatchScanHandler implements RequestStreamHandler {
 
-  public static final String RECOVERY_QUEUE = new Environment().readEnv("RECOVERY_QUEUE");
+  public static final String RECOVERY_QUEUE_ENV = "RECOVERY_QUEUE";
   public static final String ID = "id";
   public static final String ENTRIES_PROCEEDED_MESSAGE =
       "{} entries have been successfully processed";
   public static final String TYPE = "type";
   private static final Logger logger = LoggerFactory.getLogger(RecoveryBatchScanHandler.class);
-  private final QueueClient queueClient;
+  private final QueueClient defaultQueueClient;
   private final ResourceService resourceService;
   private final TicketService ticketService;
   private final MessageService messageService;
@@ -45,7 +46,8 @@ public class RecoveryBatchScanHandler implements RequestStreamHandler {
         ResourceService.defaultService(),
         TicketService.defaultService(),
         MessageService.defaultService(),
-        ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE),
+        ResourceQueueClient.defaultResourceQueueClient(
+            new Environment().readEnv(RECOVERY_QUEUE_ENV)),
         VersionRefreshService.defaultService());
   }
 
@@ -58,16 +60,26 @@ public class RecoveryBatchScanHandler implements RequestStreamHandler {
     this.resourceService = resourceService;
     this.ticketService = ticketService;
     this.messageService = messageService;
-    this.queueClient = queueClient;
+    this.defaultQueueClient = queueClient;
     this.versionRefreshService = versionRefreshService;
   }
 
   @Override
   public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context)
       throws IOException {
-    var messages = queueClient.readMessages(RecoveryRequest.fromInputStream(inputStream).count());
+    var request = RecoveryRequest.fromInputStream(inputStream);
+    var queueClient = resolveQueueClient(request);
+    var messages = queueClient.readMessages(request.count());
 
-    processMessages(messages);
+    processMessages(queueClient, messages);
+  }
+
+  @JacocoGenerated
+  private QueueClient resolveQueueClient(RecoveryRequest request) {
+    if (nonNull(request.queueUrl())) {
+      return ResourceQueueClient.defaultResourceQueueClient(request.queueUrl());
+    }
+    return defaultQueueClient;
   }
 
   private static SortableIdentifier extractResourceIdentifier(Message message) {
@@ -78,7 +90,7 @@ public class RecoveryBatchScanHandler implements RequestStreamHandler {
     return message.messageAttributes().get(TYPE).stringValue();
   }
 
-  private void processMessages(List<Message> messages) {
+  private void processMessages(QueueClient queueClient, List<Message> messages) {
     messages.forEach(this::refreshEntry);
     queueClient.deleteMessages(messages);
     logger.info(ENTRIES_PROCEEDED_MESSAGE, messages.size());
