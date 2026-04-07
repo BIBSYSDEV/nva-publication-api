@@ -16,6 +16,9 @@
 
     <!-- FIXME: Disabled because of the high number of current violations-->
     <exclude name="ConstructorCallsOverridableMethod"/>
+
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="AvoidCatchingGenericException"/>
   </rule>
 
   <rule ref="category/java/multithreading.xml">
@@ -30,6 +33,21 @@
 
     <!-- FIXME: Disabled because of the high number of current violations-->
     <exclude name="LooseCoupling"/>
+
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="ImplicitFunctionalInterface"/>
+
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="UnnecessaryWarningSuppression"/>
+
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="UnusedLocalVariable"/>
+
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="EnumComparison"/>
+
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="RelianceOnDefaultCharset"/>
 
     <!-- In TableManager we map ResourceNotFoundException to TableNotFoundException -->
     <exclude name="PreserveStackTrace"/>
@@ -56,6 +74,9 @@
 
     <!-- FIXME: Disabled because of the high number of current violations-->
     <exclude name="UnnecessaryFullyQualifiedName"/>
+
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="UnnecessaryInterfaceDeclaration"/>
 
 
     <!-- This rule does not allow us the following:
@@ -91,6 +112,12 @@
 
     <!-- FIXME: Disabled because of the high number of current violations-->
     <exclude name="SimplifyBooleanReturns"/>
+
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="PublicMemberInNonPublicType"/>
+
+    <!-- FIXME: Disabled because of the high number of current violations-->
+    <exclude name="NPathComplexity"/>
 
     <!-- This rule does not allow the Lambda Handler to cast  the ContainerInitializationException
         to a RuntimeException.

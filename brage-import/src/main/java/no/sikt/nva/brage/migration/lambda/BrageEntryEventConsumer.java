@@ -76,7 +76,6 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
   private static final String ERROR_SAVING_BRAGE_IMPORT =
       "Error saving brage import for record with object key: ";
   private static final Logger logger = LoggerFactory.getLogger(BrageEntryEventConsumer.class);
-  private static final String UIO = "uio";
   private final S3Client s3Client;
   private final ResourceService resourceService;
   private final UriRetriever uriRetriever;

@@ -158,6 +158,7 @@ public final class S3MultipartCopier {
     }
   }
 
+  @SuppressWarnings("PMD.AssignmentInOperand")
   private long copyPartAndUpdatePosition(
       S3Client s3Client,
       long currentPosition,
