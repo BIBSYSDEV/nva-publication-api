@@ -59,6 +59,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
+import no.unit.nva.publication.exception.CandidateAlreadyImportedException;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
 import no.unit.nva.publication.model.ListingResult;
@@ -501,7 +502,7 @@ public class ResourceService extends ServiceWithTransactions {
   }
 
   public ImportCandidate updateImportCandidate(ImportCandidate importCandidate)
-      throws BadRequestException, NotFoundException {
+      throws CandidateAlreadyImportedException, NotFoundException {
     return updateResourceService.updateImportCandidate(importCandidate);
   }
 
