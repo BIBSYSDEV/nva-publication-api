@@ -41,12 +41,12 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
+import no.unit.nva.publication.exception.CandidateAlreadyImportedException;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.SearchService;
 import no.unit.nva.s3.S3Driver;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -325,7 +325,7 @@ public class ScopusHandler implements RequestHandler<SQSEvent, ImportCandidate> 
   }
 
   private Try<ImportCandidate> persistOrUpdateInDatabase(ImportCandidate importCandidate)
-      throws BadRequestException, NotFoundException {
+      throws CandidateAlreadyImportedException, NotFoundException {
     if (nonNull(importCandidate.getIdentifier())) {
       LOGGER.info("Updating existing candidate");
       return Try.of(importCandidateService.updateImportCandidate(importCandidate));

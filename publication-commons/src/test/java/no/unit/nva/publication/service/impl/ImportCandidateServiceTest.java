@@ -17,9 +17,9 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.ImportCandidate;
 import no.unit.nva.importcandidate.ImportStatusFactory;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.publication.exception.CandidateAlreadyImportedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.BadMethodException;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,7 +77,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
 
   @Test
   void shouldUpdateExistingNotImportedImportCandidate()
-      throws BadRequestException, NotFoundException {
+      throws CandidateAlreadyImportedException, NotFoundException {
     var importCandidate = resourceService.persistImportCandidate(randomImportCandidate());
     var updatedImportCandidate = update(importCandidate);
     resourceService.updateImportCandidate(updatedImportCandidate);
@@ -94,7 +94,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
 
   @Test
   void shouldOverwriteFilesWhenUpdatingExistingNotImportedImportCandidate()
-      throws BadRequestException, NotFoundException {
+      throws CandidateAlreadyImportedException, NotFoundException {
     var file = randomOpenFile();
     var importCandidate =
         randomImportCandidate().copy().withAssociatedArtifacts(List.of(file)).build();
@@ -119,7 +119,7 @@ public class ImportCandidateServiceTest extends ResourcesLocalTest {
         ImportStatusFactory.createImported(randomString(), SortableIdentifier.next()));
     var updatedImportCandidate = update(importCandidate);
     assertThrows(
-        BadRequestException.class,
+        CandidateAlreadyImportedException.class,
         () -> resourceService.updateImportCandidate(updatedImportCandidate));
   }
 

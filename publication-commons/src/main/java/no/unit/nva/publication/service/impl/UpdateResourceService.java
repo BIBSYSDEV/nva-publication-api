@@ -41,6 +41,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.exception.CandidateAlreadyImportedException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.DeletePublicationStatusResponse;
@@ -60,7 +61,6 @@ import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
@@ -355,7 +355,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
   }
 
   public ImportCandidate updateImportCandidate(ImportCandidate importCandidate)
-      throws BadRequestException, NotFoundException {
+      throws CandidateAlreadyImportedException, NotFoundException {
     var persistedImportCandidate =
         readResourceService
             .getImportCandidateByIdentifier(importCandidate.getIdentifier())
@@ -372,7 +372,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
       client.putItem(putItemRequest);
       return importCandidate;
     }
-    throw new BadRequestException("Can not update already imported candidate");
+    throw new CandidateAlreadyImportedException();
   }
 
   public void unpublishPublication(
