@@ -2355,6 +2355,24 @@ Resources:
   ScopusImportDLQ:
     Type: AWS::SQS::Queue
 
+  ScopusImportDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: ScopusImportDLQAlarm in publication-api
+      AlarmDescription: Check SQS messages on ScopusImportDLQ in publication-api
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Statistic: Sum
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt ScopusImportDLQ.QueueName
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SlackSnsArn
+
   CristinEntriesSQSConsumer:
     Type: AWS::Serverless::Function
     Properties:
