@@ -1,0 +1,63 @@
+@prefix sh:  <http://www.w3.org/ns/shacl#> .
+@prefix nva: <https://nva.sikt.no/ontology/publication#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+#
+# Base shape — every publication CBD must satisfy this.
+#
+nva:PublicationShape
+    a sh:NodeShape ;
+    sh:targetClass nva:Publication ;
+    sh:property [
+        sh:path nva:identifier ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] .
+
+#
+# Affiliation shape — a publication with contributors must have resolved
+# top-level organisations and contributor organisations in the graph.
+#
+nva:AffiliatedPublicationShape
+    a sh:NodeShape ;
+    sh:targetClass nva:Publication ;
+    sh:property [
+        sh:path nva:topLevelOrganization ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message "A publication with affiliations must have at least one resolved top-level organisation." ;
+    ] ;
+    sh:property [
+        sh:path nva:contributorOrganization ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message "A publication with affiliations must have resolved contributor organisations." ;
+    ] .
+
+#
+# NVI shape — a reported NVI candidate must carry scientificIndex data.
+#
+nva:NviPublicationShape
+    a sh:NodeShape ;
+    sh:targetClass nva:Publication ;
+    sh:property [
+        sh:path nva:scientificIndex ;
+        sh:minCount 1 ;
+        sh:message "A reported NVI candidate must have a scientificIndex node." ;
+    ] .
+
+nva:ScientificIndexShape
+    a sh:NodeShape ;
+    sh:targetClass nva:ScientificIndex ;
+    sh:property [
+        sh:path nva:year ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    sh:property [
+        sh:path nva:status ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] .
