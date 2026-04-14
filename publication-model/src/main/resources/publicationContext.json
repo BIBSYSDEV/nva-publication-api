@@ -25,7 +25,7 @@
   },
   "alternativeAbstracts": {
     "@container": "@language",
-    "@id": "alternativeTitle"
+    "@id": "alternativeAbstract"
   },
   "alternativeTitles": {
     "@container": "@language",
@@ -148,6 +148,9 @@
     "@id": "label"
   },
   "language": {
+    "@type": "@id"
+  },
+  "license": {
     "@type": "@id"
   },
   "link": {
