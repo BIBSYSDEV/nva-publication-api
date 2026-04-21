@@ -140,8 +140,6 @@ Globals:
     Timeout: 20
     MemorySize: 1800 # 1 vCPU
     AutoPublishAlias: live
-    DeploymentPreference:
-      Type: AllAtOnce
     SnapStart:
       ApplyOn: PublishedVersions
     Environment:
