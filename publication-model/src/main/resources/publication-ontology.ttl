@@ -441,7 +441,7 @@ nva:DataManagementPlan a rdfs:Class ;
   rdfs:isDefinedBy nva: ;
   rdfs:subClassOf nva:ResearchData .
 
-nva:Software a rdfs:Class ;
+nva:SoftwareSourceCode a rdfs:Class ;
   rdfs:comment "A software publication representing research software as research data." ;
   rdfs:label "Software" ;
   rdfs:isDefinedBy nva: ;
@@ -451,14 +451,14 @@ nva:softwareVersion a rdf:Property ;
   rdfs:comment "The version of the software, e.g. \"1.2.3\" or \"v2.0.0-rc1\"." ;
   rdfs:label "softwareVersion" ;
   rdfs:isDefinedBy nva: ;
-  rdfs:domain nva:Software ;
+  rdfs:domain nva:SoftwareSourceCode ;
   rdfs:range xsd:string .
 
 nva:codeRepository a rdf:Property ;
   rdfs:comment "URL to the source code repository, e.g. a GitHub or GitLab repository." ;
   rdfs:label "codeRepository" ;
   rdfs:isDefinedBy nva: ;
-  rdfs:domain nva:Software ;
+  rdfs:domain nva:SoftwareSourceCode ;
   rdfs:range xsd:anyURI .
 
 nva:ConferencePoster a rdfs:Class ;

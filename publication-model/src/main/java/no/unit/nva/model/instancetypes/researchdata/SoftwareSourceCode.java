@@ -11,7 +11,7 @@ import no.unit.nva.model.pages.NullPages;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class Software implements PublicationInstance<NullPages> {
+public class SoftwareSourceCode implements PublicationInstance<NullPages> {
 
   public static final String SOFTWARE_VERSION_FIELD = "softwareVersion";
   public static final String CODE_REPOSITORY_FIELD = "codeRepository";
@@ -22,7 +22,7 @@ public class Software implements PublicationInstance<NullPages> {
   @JsonProperty(CODE_REPOSITORY_FIELD)
   private final URI codeRepository;
 
-  public Software(
+  public SoftwareSourceCode(
       @JsonProperty(SOFTWARE_VERSION_FIELD) String softwareVersion,
       @JsonProperty(CODE_REPOSITORY_FIELD) URI codeRepository) {
     this.softwareVersion = requireNonNull(softwareVersion, "softwareVersion is required");
@@ -48,7 +48,7 @@ public class Software implements PublicationInstance<NullPages> {
     if (this == other) {
       return true;
     }
-    if (!(other instanceof Software software)) {
+    if (!(other instanceof SoftwareSourceCode software)) {
       return false;
     }
     return Objects.equals(getSoftwareVersion(), software.getSoftwareVersion())
