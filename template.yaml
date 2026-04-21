@@ -140,8 +140,6 @@ Globals:
     Timeout: 20
     MemorySize: 1800 # 1 vCPU
     AutoPublishAlias: live
-    SnapStart:
-      ApplyOn: PublishedVersions
     Environment:
       Variables:
         COGNITO_HOST: !Ref CognitoAuthorizationUri
