@@ -415,7 +415,7 @@ public final class PublicationInstanceBuilder {
   }
 
   private static Software generateSoftware() {
-    return new Software(randomString());
+    return new Software(randomString(), randomUri());
   }
 
   private static DataManagementPlan generateDataManagementPlan() {

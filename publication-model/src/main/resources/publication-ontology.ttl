@@ -454,6 +454,13 @@ nva:softwareVersion a rdf:Property ;
   rdfs:domain nva:Software ;
   rdfs:range xsd:string .
 
+nva:codeRepository a rdf:Property ;
+  rdfs:comment "URL to the source code repository, e.g. a GitHub or GitLab repository." ;
+  rdfs:label "codeRepository" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:domain nva:Software ;
+  rdfs:range xsd:anyURI .
+
 nva:ConferencePoster a rdfs:Class ;
   rdfs:comment "" ;
   rdfs:isDefinedBy nva: ;
