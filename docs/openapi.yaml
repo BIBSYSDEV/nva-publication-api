@@ -32,7 +32,7 @@ paths:
             ]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreatePublicationFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreatePublicationFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -180,7 +180,7 @@ paths:
           example: "123e4567-e89b-12d3-a456-426614174000"
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaUpdatePublicationFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaUpdatePublicationFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -239,7 +239,7 @@ paths:
           description: UUID identifier of the Publication to delete.
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaDeletePublicationFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaDeletePublicationFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -276,7 +276,7 @@ paths:
           description: UUID identifier of the Publication to publish.
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PublishPublicationFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PublishPublicationFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -333,7 +333,7 @@ paths:
             ]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaPublicationsByOwnerFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaPublicationsByOwnerFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -369,7 +369,7 @@ paths:
             ]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ReserveDoiHandler.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ReserveDoiHandler.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -451,7 +451,7 @@ paths:
             ]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateTicketFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateTicketFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -523,7 +523,7 @@ paths:
             ]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateTicketHandler.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateTicketHandler.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -566,7 +566,7 @@ paths:
             ]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeleteTicketHandler.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeleteTicketHandler.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -595,7 +595,7 @@ paths:
             ]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetTicketFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetTicketFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -649,7 +649,7 @@ paths:
             ]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreateMessageFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreateMessageFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -717,7 +717,7 @@ paths:
             ]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeleteMessageHandler.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeleteMessageHandler.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -728,7 +728,7 @@ paths:
       operationId: getPresignDownloadUri
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DownloadPublicationFileFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DownloadPublicationFileFunction.Arn}:live/invocations
         httpMethod: POST
         type: AWS_PROXY
       parameters:
@@ -807,7 +807,7 @@ paths:
               $ref: "#/components/schemas/CreateUploadRequestBody"
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateUploadFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateUploadFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -859,7 +859,7 @@ paths:
               $ref: "#/components/schemas/ListPartsRequestBody"
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListPartsUploadFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListPartsUploadFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -911,7 +911,7 @@ paths:
               $ref: "#/components/schemas/PrepareUploadPartRequestBody"
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PrepareUploadPartFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PrepareUploadPartFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -964,7 +964,7 @@ paths:
               $ref: "#/components/schemas/AbortUploadRequestBody"
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AbortUploadFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AbortUploadFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -1015,7 +1015,7 @@ paths:
                 - $ref: "#/components/schemas/ExternalCompleteUploadRequestBody"
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CompleteUploadFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CompleteUploadFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -1074,7 +1074,7 @@ paths:
               $ref: "#/components/schemas/File"
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateFileFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateFileFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -1139,7 +1139,7 @@ paths:
             type: string
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeleteFileFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeleteFileFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -1177,7 +1177,7 @@ paths:
       operationId: resolveDownloadUriFromIdentifier
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ResolveShortenedUrlFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ResolveShortenedUrlFunction.Arn}:live/invocations
         httpMethod: POST
         type: AWS_PROXY
       parameters:
@@ -1263,7 +1263,7 @@ paths:
             ]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListTicketsForPublicationHandler.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListTicketsForPublicationHandler.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -1289,7 +1289,7 @@ paths:
             ]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FetchPublicationLogFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FetchPublicationLogFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
@@ -1327,7 +1327,7 @@ paths:
         - external
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationContextFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationContextFunction.Arn}:live/invocations
         responses: {}
         httpMethod: POST
         type: AWS_PROXY
