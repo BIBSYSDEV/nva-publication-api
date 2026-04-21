@@ -139,6 +139,7 @@ public class PublicationContextBuilder {
         return randomMediaContribution();
       case "DataManagementPlan":
       case "DataSet":
+      case "Software":
         return randomResearchData();
       case "Map":
         return randomGeographicalContent();

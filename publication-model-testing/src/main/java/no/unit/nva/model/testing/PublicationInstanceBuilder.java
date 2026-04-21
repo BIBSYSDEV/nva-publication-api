@@ -147,6 +147,7 @@ import no.unit.nva.model.instancetypes.researchdata.DataManagementPlan;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.instancetypes.researchdata.GeographicalDescription;
 import no.unit.nva.model.instancetypes.researchdata.ReferencedByUris;
+import no.unit.nva.model.instancetypes.researchdata.Software;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
@@ -307,6 +308,8 @@ public final class PublicationInstanceBuilder {
         return generateDataManagementPlan();
       case "DataSet":
         return generateDataSet();
+      case "Software":
+        return generateSoftware();
       case "Map":
         return generateMap();
       case "ExhibitionProduction":
@@ -409,6 +412,10 @@ public final class PublicationInstanceBuilder {
         referencedUri,
         Set.of(new UnconfirmedDocument(randomString(), randomInteger())),
         compliesWithUris);
+  }
+
+  private static Software generateSoftware() {
+    return new Software(randomString());
   }
 
   private static DataManagementPlan generateDataManagementPlan() {
