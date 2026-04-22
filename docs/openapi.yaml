@@ -6,6 +6,7 @@ paths:
   /:
     post:
       operationId: createPublication
+      x-handler-class: no.unit.nva.publication.create.CreatePublicationHandler
       summary: Create Publication
       tags:
         - external
@@ -58,6 +59,7 @@ paths:
   /{publicationIdentifier}:
     get:
       operationId: fetchPublicationByIdentifier
+      x-handler-class: no.unit.nva.publication.fetch.FetchPublicationHandler
       summary: Fetch Publication by Identifier
       tags:
         - external

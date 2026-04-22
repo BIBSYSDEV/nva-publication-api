@@ -20,6 +20,7 @@ include 'scopus-import'
 include 'tickets-test'
 include 'publication-log'
 include 'publication-file'
+include 'publication-adapter-rest'
 
 dependencyResolutionManagement {
     repositories {

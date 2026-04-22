@@ -1,0 +1,42 @@
+plugins {
+    id 'application'
+}
+
+dependencies {
+    implementation project(':publication-rest')
+    implementation(project(':publication-commons')) {
+        exclude group: "software.amazon.ion", module: "ion-java"
+    }
+    implementation project(':publication-constants')
+    implementation project(':publication-model')
+
+    implementation nvaLibs.apigateway
+    implementation nvaLibs.core
+    implementation nvaLibs.auth
+    implementation nvaLibs.clients
+    implementation nvaLibs.json
+
+    implementation nvaCatalog.aws.lambda.core
+    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.jackson.databind
+    implementation nvaCatalog.bundles.logging
+
+    implementation(nvaCatalog.aws.dynamodb.local) {
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
+        exclude group: 'org.eclipse.jetty'
+        exclude group: 'org.eclipse.jetty.ee10'
+        exclude group: 'org.eclipse.jetty.ee10.websocket'
+    }
+
+    implementation libs.javalin
+    implementation libs.swagger.parser
+    implementation libs.classgraph
+    implementation libs.wiremock
+}
+
+application {
+    mainClass = 'no.unit.nva.publication.adapter.AdapterApplication'
+}
+
+jacocoTestCoverageVerification.enabled = false

@@ -1,5 +1,9 @@
 [versions]
 apache-bval = { strictly = '3.0.2' }
+classgraph = { strictly = '4.8.181' }
+javalin = { strictly = '6.7.0' }
+swaggerParser = { strictly = '2.1.34' }
+wiremock = { strictly = '3.13.1' }
 apacheCommonsCollections = { strictly = '4.5.0' }
 apacheCommonsText = { strictly = '1.14.0' }
 configTypesafe = { strictly = '1.4.3' }
@@ -43,6 +47,10 @@ resilience4j-all = { group = 'io.github.resilience4j', name = 'resilience4j-all'
 swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.ref = 'swaggerCoreVersion' }
 mockito-junit-jupiter = {group= 'org.mockito', name= 'mockito-junit-jupiter', version= '5.3.1'}
 reflections = { group = 'org.reflections', name = 'reflections', version.ref = 'reflections' }
+javalin = { group = 'io.javalin', name = 'javalin', version.ref = 'javalin' }
+swagger-parser = { group = 'io.swagger.parser.v3', name = 'swagger-parser', version.ref = 'swaggerParser' }
+classgraph = { group = 'io.github.classgraph', name = 'classgraph', version.ref = 'classgraph' }
+wiremock = { group = 'org.wiremock', name = 'wiremock', version.ref = 'wiremock' }
 
 [bundles]
 validation = ['jakarta-validation-api', 'jakarta-el-api', 'glassfish-el', 'apache-bval']
