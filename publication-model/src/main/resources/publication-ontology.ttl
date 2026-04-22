@@ -443,7 +443,7 @@ nva:DataManagementPlan a rdfs:Class ;
 
 nva:SoftwareSourceCode a rdfs:Class ;
   rdfs:comment "A software publication representing research software as research data." ;
-  rdfs:label "Software" ;
+  rdfs:label "SoftwareSourceCode" ;
   rdfs:isDefinedBy nva: ;
   rdfs:subClassOf nva:ResearchData .
 
