@@ -74,6 +74,7 @@ import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.instancetypes.researchdata.DataManagementPlan;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
+import no.unit.nva.model.instancetypes.researchdata.SoftwareSourceCode;
 import no.unit.nva.model.pages.Pages;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -139,6 +140,7 @@ import no.unit.nva.model.pages.Pages;
   @JsonSubTypes.Type(name = "MusicPerformance", value = MusicPerformance.class),
   @JsonSubTypes.Type(name = "DataManagementPlan", value = DataManagementPlan.class),
   @JsonSubTypes.Type(name = "DataSet", value = DataSet.class),
+  @JsonSubTypes.Type(name = "SoftwareSourceCode", value = SoftwareSourceCode.class),
   @JsonSubTypes.Type(name = "VisualArts", value = VisualArts.class),
   @JsonSubTypes.Type(name = "Map", value = Map.class),
   @JsonSubTypes.Type(name = "LiteraryArts", value = LiteraryArts.class),
