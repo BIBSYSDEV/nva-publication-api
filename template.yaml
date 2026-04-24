@@ -2832,6 +2832,8 @@ Resources:
 
   ScopusXmlBucket:
     Type: AWS::S3::Bucket
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
     Properties:
       BucketName: !Sub "${ScopusXmlBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
@@ -2869,8 +2871,13 @@ Resources:
 
   ScopusImportReportBucket:
     Type: AWS::S3::Bucket
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
     Properties:
       BucketName: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
+      Tags:
+        - Key: IncludedInBackup
+          Value: "false"
 
   #============================Alarms===============================================================
 
