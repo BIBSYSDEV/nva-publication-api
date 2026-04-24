@@ -177,7 +177,7 @@ Resources:
   NvaResourcesTable:
     Type: AWS::DynamoDB::Table
     UpdateReplacePolicy: Retain
-    DeletionPolicy: Delete # DeletionPolicy should be added on main branch stacks through use of stack policy
+    DeletionPolicy: Retain
     Properties:
       TableName: !Sub nva-resources-${AWS::StackName}
       BillingMode: PAY_PER_REQUEST
@@ -252,7 +252,7 @@ Resources:
   NvaImportCandidatesTable:
     Type: AWS::DynamoDB::Table
     UpdateReplacePolicy: Retain
-    DeletionPolicy: Delete # DeletionPolicy should be added on main branch stacks through use of stack policy
+    DeletionPolicy: Retain
     Properties:
       TableName: !Sub nva-import-candidates-${AWS::StackName}
       BillingMode: PAY_PER_REQUEST
@@ -2775,6 +2775,8 @@ Resources:
 
   BrageMigrationInputBucket:
     Type: AWS::S3::Bucket
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
     Properties:
       BucketName: !Sub "${BrageMigrationInputBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
@@ -2794,6 +2796,8 @@ Resources:
 
   BrageMigrationErrorBucket:
     Type: AWS::S3::Bucket
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
     Properties:
       BucketName: !Sub "${BrageMigrationErrorBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
@@ -2810,6 +2814,8 @@ Resources:
 
   ScopusZipBucket:
     Type: AWS::S3::Bucket
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
     Properties:
       BucketName: !Sub "${ScopusZipBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
@@ -2826,6 +2832,8 @@ Resources:
 
   ScopusXmlBucket:
     Type: AWS::S3::Bucket
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
     Properties:
       BucketName: !Sub "${ScopusXmlBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
@@ -2845,6 +2853,8 @@ Resources:
 
   ImportCandidateStorageBucket:
     Type: AWS::S3::Bucket
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
     Properties:
       BucketName: !Sub "${ImportCandidateStorageBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
@@ -2861,8 +2871,13 @@ Resources:
 
   ScopusImportReportBucket:
     Type: AWS::S3::Bucket
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
     Properties:
       BucketName: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
+      Tags:
+        - Key: IncludedInBackup
+          Value: "false"
 
   #============================Alarms===============================================================
 
