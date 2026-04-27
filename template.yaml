@@ -163,6 +163,8 @@ Globals:
         CRISTIN_UNITS_S3_URI: !Ref CristinUnitsS3ObjectUri
     Architectures:
       - arm64
+    SnapStart:
+      ApplyOn: None
 
 Resources:
   ApiAccessLogGroup:
