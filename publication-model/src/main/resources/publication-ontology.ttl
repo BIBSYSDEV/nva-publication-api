@@ -1407,11 +1407,18 @@ nva:formatted a rdf:Property ;
   rdfs:domain nva:Ismn ;
   rdfs:range xsd:string .
 
+nva:alternativeAbstract a rdf:Property ;
+    rdfs:comment "An alternative abstract for a document, typically a translation" ;
+    rdfs:label "Alternative abstract" ;
+    rdfs:isDefinedBy nva: ;
+    rdfs:domain nva:EntityDescription ;
+    rdfs:range rdf:langString .
+
 nva:alternativeTitle a rdf:Property ;
   rdfs:comment "" ;
   rdfs:label "" ;
   rdfs:isDefinedBy nva: ;
-  rdfs:domain nva:Publication ;
+  rdfs:domain nva:EntityDescription ;
   rdfs:range rdf:langString .
 
 nva:orcId a rdf:Property ;
