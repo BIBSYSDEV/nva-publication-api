@@ -5,6 +5,7 @@ import static no.unit.nva.publication.events.handlers.persistence.PersistedDocum
 import static nva.commons.core.attempt.Try.attempt;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
@@ -15,6 +16,7 @@ public class PersistedDocument implements JsonSerializable {
 
   public static final String BODY = "body";
   public static final String CONSUMPTION_ATTRIBUTES = "consumptionAttributes";
+  public static final String N_TRIPLES = "nTriples";
 
   @JsonProperty(CONSUMPTION_ATTRIBUTES)
   private final PersistedDocumentConsumptionAttributes consumptionAttributes;
@@ -22,18 +24,31 @@ public class PersistedDocument implements JsonSerializable {
   @JsonProperty(BODY)
   private final ExpandedDataEntry body;
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @JsonProperty(N_TRIPLES)
+  private final String nTriples;
+
   @JsonCreator
   public PersistedDocument(
       @JsonProperty(BODY) ExpandedDataEntry body,
       @JsonProperty(CONSUMPTION_ATTRIBUTES)
-          PersistedDocumentConsumptionAttributes consumptionAttributes) {
+          PersistedDocumentConsumptionAttributes consumptionAttributes,
+      @JsonProperty(N_TRIPLES) String nTriples) {
 
     this.consumptionAttributes = consumptionAttributes;
     this.body = body;
+    this.nTriples = nTriples;
   }
 
   public static PersistedDocument createIndexDocument(ExpandedDataEntry expandedResourceUpdate) {
-    return new PersistedDocument(expandedResourceUpdate, createAttributes(expandedResourceUpdate));
+    return new PersistedDocument(
+        expandedResourceUpdate, createAttributes(expandedResourceUpdate), null);
+  }
+
+  public static PersistedDocument createIndexDocument(
+      ExpandedDataEntry expandedResourceUpdate, String nTriples) {
+    return new PersistedDocument(
+        expandedResourceUpdate, createAttributes(expandedResourceUpdate), nTriples);
   }
 
   @JacocoGenerated
@@ -44,6 +59,11 @@ public class PersistedDocument implements JsonSerializable {
   @JacocoGenerated
   public ExpandedDataEntry getBody() {
     return body;
+  }
+
+  @JacocoGenerated
+  public String getNTriples() {
+    return nTriples;
   }
 
   @Override

@@ -19,6 +19,7 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
+import no.unit.nva.expansion.rdf.PublicationRdfExpansion;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.model.business.Entity;
@@ -59,6 +60,7 @@ public class ExpandDataEntriesHandler
   private final EntityExpansionResolverRegistry entityExpansionResolverRegistry;
   private final PersistedResourcesService persistedResourcesService;
   private final ResourceExpansionService resourceExpansionService;
+  private final PublicationRdfExpansion rdfExpansion;
 
   @JacocoGenerated
   public ExpandDataEntriesHandler() {
@@ -66,27 +68,39 @@ public class ExpandDataEntriesHandler
         ResourceQueueClient.defaultResourceQueueClient(RECOVERY_QUEUE),
         new S3Driver(EVENTS_BUCKET),
         new S3Driver(PERSISTED_ENTRIES_BUCKET),
-        defaultResourceExpansionService());
+        defaultResourceExpansionService(),
+        defaultRdfExpansion());
   }
 
   public ExpandDataEntriesHandler(
       QueueClient sqsClient, S3Client s3Client, ResourceExpansionService resourceExpansionService) {
+    this(sqsClient, s3Client, resourceExpansionService, null);
+  }
+
+  public ExpandDataEntriesHandler(
+      QueueClient sqsClient,
+      S3Client s3Client,
+      ResourceExpansionService resourceExpansionService,
+      PublicationRdfExpansion rdfExpansion) {
     this(
         sqsClient,
         new S3Driver(s3Client, EVENTS_BUCKET),
         new S3Driver(s3Client, PERSISTED_ENTRIES_BUCKET),
-        resourceExpansionService);
+        resourceExpansionService,
+        rdfExpansion);
   }
 
   private ExpandDataEntriesHandler(
       QueueClient sqsClient,
       S3Driver s3DriverEventsBucket,
       S3Driver s3DriverPersistedResourcesBucket,
-      ResourceExpansionService resourceExpansionService) {
+      ResourceExpansionService resourceExpansionService,
+      PublicationRdfExpansion rdfExpansion) {
     super(EventReference.class);
     this.sqsClient = sqsClient;
     this.s3DriverEventsBucket = s3DriverEventsBucket;
     this.resourceExpansionService = resourceExpansionService;
+    this.rdfExpansion = rdfExpansion;
     this.persistedResourcesService =
         new PersistedResourcesService(s3DriverPersistedResourcesBucket);
     this.entityExpansionResolverRegistry = initializeEntityExpansionStrategyRegistry();
@@ -139,6 +153,11 @@ public class ExpandDataEntriesHandler
   }
 
   @JacocoGenerated
+  private static PublicationRdfExpansion defaultRdfExpansion() {
+    return new PublicationRdfExpansion(new UriRetriever(), defaultResourceService());
+  }
+
+  @JacocoGenerated
   private static ResourceService defaultResourceService() {
     return ResourceService.defaultService();
   }
@@ -181,7 +200,7 @@ public class ExpandDataEntriesHandler
     var expandedEntity = expandEntityOrThrow(entityToExpand.get());
 
     return expandedEntity
-        .map(this::createEnrichedEventReference)
+        .map(expanded -> createEnrichedEventReference(entityToExpand.get(), expanded))
         .orElseGet(() -> logAndProvideEmptyEvent(entityToExpand.get()));
   }
 
@@ -197,8 +216,13 @@ public class ExpandDataEntriesHandler
                 new EntityExpansionException("Failed to expand " + entity, failure.getException()));
   }
 
-  private EventReference createEnrichedEventReference(ExpandedDataEntry expandedDataEntry) {
-    return Optional.of(persistedResourcesService.persist(expandedDataEntry))
+  private EventReference createEnrichedEventReference(
+      Entity entity, ExpandedDataEntry expandedDataEntry) {
+    var nTriples =
+        rdfExpansion != null && entity instanceof Resource resource
+            ? rdfExpansion.toNTriples(resource.getIdentifier())
+            : null;
+    return Optional.of(persistedResourcesService.persist(expandedDataEntry, nTriples))
         .map(uri -> new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri))
         .orElseThrow();
   }

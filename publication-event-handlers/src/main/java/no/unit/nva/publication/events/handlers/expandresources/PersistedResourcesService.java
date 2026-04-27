@@ -25,8 +25,8 @@ public class PersistedResourcesService {
     this.s3Driver = s3Driver;
   }
 
-  public URI persist(ExpandedDataEntry expandedDataEntry) {
-    return attempt(() -> PersistedDocument.createIndexDocument(expandedDataEntry))
+  public URI persist(ExpandedDataEntry expandedDataEntry, String nTriples) {
+    return attempt(() -> PersistedDocument.createIndexDocument(expandedDataEntry, nTriples))
         .map(this::writeToPersistedResources)
         .orElseThrow(failure -> throwError(failure, expandedDataEntry));
   }
