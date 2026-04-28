@@ -42,6 +42,8 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -80,12 +82,24 @@ public class ResourceDao extends Dao
   }
 
   public ResourceDao(Resource resource) {
-    super(resource);
+    super(withoutFiles(resource));
+    resource.setVersion(getVersion());
     setIdentifier(resource.getIdentifier());
     this.status = resource.getStatus();
     this.modifiedDate = resource.getModifiedDate();
     this.doi = resource.getDoi();
     this.importDetails = resource.getImportDetails();
+  }
+
+  private static Resource withoutFiles(Resource resource) {
+    var nonFileArtifacts =
+        resource.getAssociatedArtifacts().stream()
+            .filter(artifact -> !(artifact instanceof File))
+            .toList();
+    return resource
+        .copy()
+        .withAssociatedArtifactsList(new AssociatedArtifactList(nonFileArtifacts))
+        .build();
   }
 
   public static ResourceDao queryObject(
