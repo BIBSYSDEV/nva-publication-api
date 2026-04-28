@@ -40,14 +40,23 @@ public enum FileStatus {
   }
 
   public static FileStatus from(Class<? extends File> fileClass) {
-    if (UploadedFile.class.equals(fileClass)) return UPLOADED;
-    if (PendingOpenFile.class.equals(fileClass)) return PENDING_OPEN;
-    if (PendingInternalFile.class.equals(fileClass)) return PENDING_INTERNAL;
-    if (OpenFile.class.equals(fileClass)) return OPEN;
-    if (InternalFile.class.equals(fileClass)) return INTERNAL;
-    if (HiddenFile.class.equals(fileClass)) return HIDDEN;
-    if (RejectedFile.class.equals(fileClass)) return REJECTED;
-    throw new IllegalArgumentException("Unknown file type: " + fileClass);
+    if (UploadedFile.class.equals(fileClass)) {
+      return UPLOADED;
+    } else if (PendingOpenFile.class.equals(fileClass)) {
+      return PENDING_OPEN;
+    } else if (PendingInternalFile.class.equals(fileClass)) {
+      return PENDING_INTERNAL;
+    } else if (OpenFile.class.equals(fileClass)) {
+      return OPEN;
+    } else if (InternalFile.class.equals(fileClass)) {
+      return INTERNAL;
+    } else if (HiddenFile.class.equals(fileClass)) {
+      return HIDDEN;
+    } else if (RejectedFile.class.equals(fileClass)) {
+      return REJECTED;
+    } else {
+      throw new IllegalArgumentException("Unknown file type: " + fileClass);
+    }
   }
 
   public boolean canTransitionTo(FileStatus target) {
