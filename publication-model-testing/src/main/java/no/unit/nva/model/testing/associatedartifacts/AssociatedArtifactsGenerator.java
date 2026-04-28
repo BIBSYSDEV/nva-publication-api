@@ -50,13 +50,13 @@ public final class AssociatedArtifactsGenerator {
 
   public static List<AssociatedArtifact> randomNonFinalizedFiles() {
     return randomAssociatedArtifactsIncludingUploadedFileAndRejectedFile().stream()
-        .filter(artifact -> !(artifact instanceof File f && f.isFinalized()))
+        .filter(artifact -> !(artifact instanceof File file && file.isFinalized()))
         .toList();
   }
 
   public static List<AssociatedArtifact> randomFinalizedFiles() {
     return randomAssociatedArtifactsIncludingUploadedFileAndRejectedFile().stream()
-        .filter(artifact -> artifact instanceof File f && f.isFinalized())
+        .filter(artifact -> artifact instanceof File file && file.isFinalized())
         .toList();
   }
 

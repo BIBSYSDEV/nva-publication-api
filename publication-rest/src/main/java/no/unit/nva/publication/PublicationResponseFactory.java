@@ -93,7 +93,7 @@ public final class PublicationResponseFactory {
 
   private static boolean hasAccessToArtifact(
       PublicationPermissions strategy, AssociatedArtifact associatedArtifact) {
-    return !(associatedArtifact instanceof File f && FileStatus.from(f) == FileStatus.HIDDEN)
+    return !(associatedArtifact instanceof File file && FileStatus.from(file) == FileStatus.HIDDEN)
         || strategy.allowsAction(PublicationOperation.READ_HIDDEN_FILES);
   }
 

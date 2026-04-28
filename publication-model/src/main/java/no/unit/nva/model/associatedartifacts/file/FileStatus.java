@@ -28,13 +28,13 @@ public enum FileStatus {
 
   public static FileStatus from(File file) {
     return switch (file) {
-      case UploadedFile f -> UPLOADED;
-      case PendingOpenFile f -> PENDING_OPEN;
-      case PendingInternalFile f -> PENDING_INTERNAL;
-      case OpenFile f -> OPEN;
-      case InternalFile f -> INTERNAL;
-      case HiddenFile f -> HIDDEN;
-      case RejectedFile f -> REJECTED;
+      case UploadedFile ignored -> UPLOADED;
+      case PendingOpenFile ignored -> PENDING_OPEN;
+      case PendingInternalFile ignored -> PENDING_INTERNAL;
+      case OpenFile ignored -> OPEN;
+      case InternalFile ignored -> INTERNAL;
+      case HiddenFile ignored -> HIDDEN;
+      case RejectedFile ignored -> REJECTED;
       default -> throw new IllegalArgumentException("Unknown file type: " + file.getClass());
     };
   }

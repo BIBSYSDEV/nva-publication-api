@@ -455,8 +455,9 @@ public class CristinImportPublicationMerger {
 
   private List<File> extractDublinCore(AssociatedArtifactList associatedArtifactList) {
     return associatedArtifactList.stream()
-        .filter(a -> a instanceof File f && FileStatus.from(f) == FileStatus.HIDDEN)
+        .filter(File.class::isInstance)
         .map(File.class::cast)
+        .filter(file -> FileStatus.from(file) == FileStatus.HIDDEN)
         .filter(CristinImportPublicationMerger::isDublinCore)
         .toList();
   }
