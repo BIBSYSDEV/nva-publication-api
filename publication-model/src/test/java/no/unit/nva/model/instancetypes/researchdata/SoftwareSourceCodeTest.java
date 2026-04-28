@@ -6,7 +6,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hamcrest.Matchers.nullValue;
 
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -25,8 +25,19 @@ class SoftwareSourceCodeTest {
   }
 
   @Test
-  void shouldThrowWhenSoftwareVersionIsNull() {
-    assertThrows(NullPointerException.class, () -> new SoftwareSourceCode(null, randomUri()));
+  void shouldAllowNullSoftwareVersionToSupportDraftPublications() {
+    var instance = new SoftwareSourceCode(null, randomUri());
+
+    assertThat(instance.softwareVersion(), is(nullValue()));
+  }
+
+  @Test
+  void shouldDeserializeWithoutSoftwareVersionToSupportDraftPublications() throws Exception {
+    var json = "{\"type\":\"SoftwareSourceCode\"}";
+
+    var deserialized = JsonUtils.dtoObjectMapper.readValue(json, PublicationInstance.class);
+
+    assertThat(deserialized, is(equalTo(new SoftwareSourceCode(null, null))));
   }
 
   @Test

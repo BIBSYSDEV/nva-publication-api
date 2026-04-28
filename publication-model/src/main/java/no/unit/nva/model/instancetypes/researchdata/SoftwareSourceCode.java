@@ -1,7 +1,5 @@
 package no.unit.nva.model.instancetypes.researchdata;
 
-import static java.util.Objects.requireNonNull;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
@@ -10,17 +8,12 @@ import no.unit.nva.model.pages.NullPages;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record SoftwareSourceCode(
-    @JsonProperty(value = SoftwareSourceCode.SOFTWARE_VERSION_FIELD, required = true)
-        String softwareVersion,
+    @JsonProperty(SoftwareSourceCode.SOFTWARE_VERSION_FIELD) String softwareVersion,
     @JsonProperty(SoftwareSourceCode.CODE_REPOSITORY_FIELD) URI codeRepository)
     implements PublicationInstance<NullPages> {
 
   public static final String SOFTWARE_VERSION_FIELD = "softwareVersion";
   public static final String CODE_REPOSITORY_FIELD = "codeRepository";
-
-  public SoftwareSourceCode {
-    requireNonNull(softwareVersion, "softwareVersion is required");
-  }
 
   @Override
   public NullPages getPages() {
