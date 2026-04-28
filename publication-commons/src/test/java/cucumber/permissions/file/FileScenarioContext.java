@@ -14,6 +14,7 @@ import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.File.Builder;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.publication.model.business.FileEntry;
@@ -97,7 +98,7 @@ public final class FileScenarioContext {
     if (HAS_EMBARGO.equals(getFileEmbargoConfig())) {
       addEmbargo(file, getFileClassFromString());
     }
-    return file.build(getFileClassFromString());
+    return FileStatus.from(getFileClassFromString()).toFile(file.buildUploadedFile());
   }
 
   private void addEmbargo(Builder fileBuilder, Class<File> fileType) {

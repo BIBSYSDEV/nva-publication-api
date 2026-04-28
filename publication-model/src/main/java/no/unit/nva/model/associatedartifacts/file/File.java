@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -51,10 +50,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
   public static final String MISSING_LICENSE =
       "This file public and should therefore have a license";
   public static final String LEGAL_NOTE_FIELD = "legalNote";
-  public static final Set<Class<? extends File>> APPROVED_FILE_TYPES =
-      Set.of(OpenFile.class, InternalFile.class);
-  public static final Set<Class<? extends File>> FINALIZED_FILE_TYPES =
-      Set.of(OpenFile.class, InternalFile.class, HiddenFile.class);
   protected static final URI RIGHTS_RESERVED_LICENSE =
       URI.create("https://nva.sikt.no/license/copyright-act/1.0");
   protected static final String RIGHTS_STATEMENTS_LICENSE_REGEX =
@@ -181,6 +176,22 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     return nonNull(license);
   }
 
+  public final boolean isPending() {
+    return FileStatus.from(this).isPending();
+  }
+
+  public final boolean isApproved() {
+    return FileStatus.from(this).isApproved();
+  }
+
+  public final boolean isFinalized() {
+    return FileStatus.from(this).isFinalized();
+  }
+
+  public final boolean canTransitionTo(File target) {
+    return FileStatus.from(this).canTransitionTo(FileStatus.from(target));
+  }
+
   public PublisherVersion getPublisherVersion() {
     return publisherVersion;
   }
@@ -261,9 +272,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
 
   @JsonIgnore
   public abstract boolean isVisibleForNonOwner();
-
-  @JsonIgnore
-  public abstract boolean canBeConvertedTo(File file);
 
   public abstract Builder copy();
 
@@ -526,26 +534,6 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     public File buildUploadedFile() {
       return new UploadedFile(
           identifier, name, mimeType, size, rightsRetentionStrategy, uploadDetails);
-    }
-
-    public File build(Class<? extends File> clazz) {
-      if (clazz.equals(RejectedFile.class)) {
-        return buildRejectedFile();
-      } else if (clazz.equals(OpenFile.class)) {
-        return buildOpenFile();
-      } else if (clazz.equals(PendingOpenFile.class)) {
-        return buildPendingOpenFile();
-      } else if (clazz.equals(PendingInternalFile.class)) {
-        return buildPendingInternalFile();
-      } else if (clazz.equals(InternalFile.class)) {
-        return buildInternalFile();
-      } else if (clazz.equals(HiddenFile.class)) {
-        return buildHiddenFile();
-      } else if (clazz.equals(UploadedFile.class)) {
-        return buildUploadedFile();
-      } else {
-        throw new IllegalArgumentException("Invalid file type");
-      }
     }
   }
 }

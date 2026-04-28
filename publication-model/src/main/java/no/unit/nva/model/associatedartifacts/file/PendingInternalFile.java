@@ -13,7 +13,7 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 @SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PendingInternalFile.TYPE)
-public class PendingInternalFile extends File implements PendingFile<InternalFile, RejectedFile> {
+public class PendingInternalFile extends File {
 
   public static final String TYPE = "PendingInternalFile";
 
@@ -77,70 +77,6 @@ public class PendingInternalFile extends File implements PendingFile<InternalFil
         .withRightsRetentionStrategy(this.getRightsRetentionStrategy())
         .withLegalNote(this.getLegalNote())
         .withUploadDetails(this.getUploadDetails());
-  }
-
-  @Override
-  public PendingOpenFile toPendingOpenFile() {
-    return new PendingOpenFile(
-        getIdentifier(),
-        getName(),
-        getMimeType(),
-        getSize(),
-        getLicense(),
-        getPublisherVersion(),
-        getEmbargoDate().orElse(null),
-        getRightsRetentionStrategy(),
-        getLegalNote(),
-        getUploadDetails());
-  }
-
-  @Override
-  public RejectedFile reject() {
-    return new RejectedFile(
-        getIdentifier(),
-        getName(),
-        getMimeType(),
-        getSize(),
-        getLicense(),
-        getPublisherVersion(),
-        getEmbargoDate().orElse(null),
-        getRightsRetentionStrategy(),
-        getLegalNote(),
-        getUploadDetails());
-  }
-
-  @Override
-  public InternalFile approve() {
-    if (isNotApprovable()) {
-      throw new IllegalStateException(CANNOT_PUBLISH_FILE_MESSAGE.formatted(getIdentifier()));
-    }
-    return new InternalFile(
-        getIdentifier(),
-        getName(),
-        getMimeType(),
-        getSize(),
-        getLicense(),
-        getPublisherVersion(),
-        getEmbargoDate().orElse(null),
-        getRightsRetentionStrategy(),
-        getLegalNote(),
-        Instant.now(),
-        getUploadDetails());
-  }
-
-  @Override
-  public boolean isNotApprovable() {
-    return false;
-  }
-
-  @Override
-  public boolean canBeConvertedTo(File file) {
-    return switch (file) {
-      case PendingInternalFile ignore -> true;
-      case PendingOpenFile ignore -> true;
-      case HiddenFile ignore -> true;
-      default -> false;
-    };
   }
 
   @Override

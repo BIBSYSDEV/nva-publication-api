@@ -25,7 +25,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnpublishingNote;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.publication.PublicationResponseFactory;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.commons.customer.Customer;
@@ -328,7 +328,7 @@ public class UpdatePublicationHandler
       UserInstance userInstance) {
     var existingFile = existingResource.getFileByIdentifier(file.getIdentifier());
     return existingFile.isEmpty()
-        || !(file instanceof PendingOpenFile)
+        || FileStatus.from(file) != FileStatus.PENDING_OPEN
         || customerAllowsOpenFiles(customer, updatedResource)
         || elevatedUserCanUpdateResource(userInstance);
   }

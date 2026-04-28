@@ -6,7 +6,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import nva.commons.core.Environment;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UnixPath;
@@ -84,7 +84,7 @@ public class AssociatedArtifactMover {
             .withSize(size)
             .withLegalNote(file.getLegalNote())
             .withUploadDetails(file.getUploadDetails());
-    if (file instanceof HiddenFile) {
+    if (FileStatus.from(file) == FileStatus.HIDDEN) {
       return builder.buildHiddenFile();
     } else {
       return builder.buildOpenFile();

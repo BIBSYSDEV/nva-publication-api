@@ -19,7 +19,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -73,7 +73,7 @@ public abstract class FilesApprovalEntry extends TicketEntry {
             file ->
                 publication
                     .getFile(file.getIdentifier())
-                    .filter(PendingFile.class::isInstance)
+                    .filter(f -> FileStatus.from(f).isPending())
                     .isPresent())
         .map(this::toApprovedFile)
         .collect(Collectors.toSet());
@@ -129,8 +129,7 @@ public abstract class FilesApprovalEntry extends TicketEntry {
   }
 
   public void rejectRejectedFiles(ResourceService resourceService) {
-    getFilesForApproval().stream()
-        .map(PendingFile.class::cast)
+    getFilesForApproval()
         .forEach(
             file ->
                 FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
@@ -192,7 +191,8 @@ public abstract class FilesApprovalEntry extends TicketEntry {
   }
 
   private File toApprovedFile(File file) {
-    return file instanceof PendingFile<?, ?> pendingFile ? pendingFile.approve() : file;
+    var status = FileStatus.from(file);
+    return status.isPending() ? status.approve().toFile(file) : file;
   }
 
   protected boolean canPublishMetadataAndNoFilesToApprove(PublishingWorkflow workflow) {

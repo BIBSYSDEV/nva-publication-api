@@ -13,7 +13,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
@@ -59,7 +58,7 @@ public final class PublishingRequestResolver {
   }
 
   private static Stream<File> getPendingFiles(Resource resource) {
-    return resource.getFiles().stream().filter(PendingFile.class::isInstance);
+    return resource.getFiles().stream().filter(File::isPending);
   }
 
   private static boolean isPending(TicketEntry ticketEntry) {
@@ -89,7 +88,8 @@ public final class PublishingRequestResolver {
   }
 
   private boolean thereAreNoPendingFiles(Resource resource) {
-    return resource.getAssociatedArtifacts().stream().noneMatch(PendingFile.class::isInstance);
+    return resource.getAssociatedArtifacts().stream()
+        .noneMatch(a -> a instanceof File f && f.isPending());
   }
 
   private List<FilesApprovalEntry>
@@ -201,7 +201,7 @@ public final class PublishingRequestResolver {
             fileForApproval ->
                 newImage.getFileByIdentifier(fileForApproval.getIdentifier()).orElse(null))
         .filter(Objects::nonNull)
-        .filter(PendingFile.class::isInstance)
+        .filter(File::isPending)
         .collect(Collectors.toSet());
   }
 

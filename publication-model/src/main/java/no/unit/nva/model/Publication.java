@@ -35,7 +35,7 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.model.config.ResourcesBuildConfig;
 import no.unit.nva.model.exceptions.InvalidPublicationStatusTransitionException;
 import no.unit.nva.model.funding.Funding;
@@ -468,7 +468,9 @@ public class Publication
   }
 
   public long getPendingOpenFileCount() {
-    return getAssociatedArtifacts().stream().filter(PendingOpenFile.class::isInstance).count();
+    return getAssociatedArtifacts().stream()
+        .filter(a -> a instanceof File f && FileStatus.from(f) == FileStatus.PENDING_OPEN)
+        .count();
   }
 
   @JsonIgnore

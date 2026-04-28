@@ -1,6 +1,5 @@
 package no.unit.nva.model.testing.associatedartifacts;
 
-import static no.unit.nva.model.associatedartifacts.file.File.FINALIZED_FILE_TYPES;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -51,15 +50,13 @@ public final class AssociatedArtifactsGenerator {
 
   public static List<AssociatedArtifact> randomNonFinalizedFiles() {
     return randomAssociatedArtifactsIncludingUploadedFileAndRejectedFile().stream()
-        .filter(File.class::isInstance)
-        .filter(artifact -> !FINALIZED_FILE_TYPES.contains(artifact.getClass()))
+        .filter(artifact -> !(artifact instanceof File f && f.isFinalized()))
         .toList();
   }
 
   public static List<AssociatedArtifact> randomFinalizedFiles() {
     return randomAssociatedArtifactsIncludingUploadedFileAndRejectedFile().stream()
-        .filter(File.class::isInstance)
-        .filter(artifact -> FINALIZED_FILE_TYPES.contains(artifact.getClass()))
+        .filter(artifact -> artifact instanceof File f && f.isFinalized())
         .toList();
   }
 

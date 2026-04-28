@@ -37,7 +37,7 @@ import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
@@ -453,10 +453,10 @@ public class CristinImportPublicationMerger {
         .findFirst();
   }
 
-  private List<HiddenFile> extractDublinCore(AssociatedArtifactList associatedArtifactList) {
+  private List<File> extractDublinCore(AssociatedArtifactList associatedArtifactList) {
     return associatedArtifactList.stream()
-        .filter(HiddenFile.class::isInstance)
-        .map(HiddenFile.class::cast)
+        .filter(a -> a instanceof File f && FileStatus.from(f) == FileStatus.HIDDEN)
+        .map(File.class::cast)
         .filter(CristinImportPublicationMerger::isDublinCore)
         .toList();
   }
