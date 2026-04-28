@@ -19,7 +19,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -70,10 +70,10 @@ public abstract class FilesApprovalEntry extends TicketEntry {
   private Set<File> getPendingFilesToApprove(Publication publication) {
     return getFilesForApproval().stream()
         .filter(
-            file ->
+            fileForApproval ->
                 publication
-                    .getFile(file.getIdentifier())
-                    .filter(PendingFile.class::isInstance)
+                    .getFile(fileForApproval.getIdentifier())
+                    .filter(file -> FileStatus.from(file).isPending())
                     .isPresent())
         .map(this::toApprovedFile)
         .collect(Collectors.toSet());
@@ -129,8 +129,7 @@ public abstract class FilesApprovalEntry extends TicketEntry {
   }
 
   public void rejectRejectedFiles(ResourceService resourceService) {
-    getFilesForApproval().stream()
-        .map(PendingFile.class::cast)
+    getFilesForApproval()
         .forEach(
             file ->
                 FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
@@ -192,7 +191,15 @@ public abstract class FilesApprovalEntry extends TicketEntry {
   }
 
   private File toApprovedFile(File file) {
-    return file instanceof PendingFile<?, ?> pendingFile ? pendingFile.approve() : file;
+    var status = FileStatus.from(file);
+    if (!status.isPending()) {
+      return file;
+    }
+    if (status == FileStatus.PENDING_OPEN && !file.hasLicense()) {
+      throw new IllegalStateException(
+          FileStatus.CANNOT_APPROVE_FILE_WITHOUT_LICENSE.formatted(file.getIdentifier()));
+    }
+    return status.approve().toFile(file);
   }
 
   protected boolean canPublishMetadataAndNoFilesToApprove(PublishingWorkflow workflow) {

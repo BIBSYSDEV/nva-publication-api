@@ -12,8 +12,9 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.FileDto;
-import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FilePermissions;
@@ -92,7 +93,7 @@ public final class PublicationResponseFactory {
 
   private static boolean hasAccessToArtifact(
       PublicationPermissions strategy, AssociatedArtifact associatedArtifact) {
-    return !(associatedArtifact instanceof HiddenFile)
+    return !(associatedArtifact instanceof File file && FileStatus.from(file) == FileStatus.HIDDEN)
         || strategy.allowsAction(PublicationOperation.READ_HIDDEN_FILES);
   }
 

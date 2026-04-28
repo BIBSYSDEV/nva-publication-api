@@ -37,6 +37,7 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
@@ -328,11 +329,11 @@ class FileServiceTest extends ResourcesLocalTest {
     var curator = UserInstanceFixture.getDegreeAndFileCuratorFromPublication(publication);
     var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
-    var originalFile = randomHiddenFile().copy().build(clazz);
+    var originalFile = FileStatus.from(clazz).toFile(randomHiddenFile());
     FileEntry.create(originalFile, resource.getIdentifier(), curator)
         .persist(resourceService, UserInstance.fromPublication(publication));
 
-    var updatedFile = originalFile.copy().build(updatedClazz);
+    var updatedFile = FileStatus.from(updatedClazz).toFile(originalFile);
 
     assertThrows(
         IllegalStateException.class,
@@ -349,11 +350,11 @@ class FileServiceTest extends ResourcesLocalTest {
     var curator = getDegreeAndFileCuratorFromPublication(publication);
     var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
-    var originalFile = randomHiddenFile().copy().build(clazz);
+    var originalFile = FileStatus.from(clazz).toFile(randomHiddenFile());
     FileEntry.create(originalFile, resource.getIdentifier(), curator)
         .persist(resourceService, UserInstance.fromPublication(publication));
 
-    var updatedFile = originalFile.copy().build(updatedClazz);
+    var updatedFile = FileStatus.from(updatedClazz).toFile(originalFile);
 
     assertDoesNotThrow(
         () ->
