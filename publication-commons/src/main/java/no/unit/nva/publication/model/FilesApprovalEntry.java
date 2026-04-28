@@ -70,10 +70,10 @@ public abstract class FilesApprovalEntry extends TicketEntry {
   private Set<File> getPendingFilesToApprove(Publication publication) {
     return getFilesForApproval().stream()
         .filter(
-            file ->
+            fileForApproval ->
                 publication
-                    .getFile(file.getIdentifier())
-                    .filter(f -> FileStatus.from(f).isPending())
+                    .getFile(fileForApproval.getIdentifier())
+                    .filter(file -> FileStatus.from(file).isPending())
                     .isPresent())
         .map(this::toApprovedFile)
         .collect(Collectors.toSet());

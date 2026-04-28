@@ -108,12 +108,12 @@ public class PublicationStrategyBase {
 
   protected boolean hasApprovedFiles() {
     return resource.getAssociatedArtifacts().stream()
-        .anyMatch(artifact -> artifact instanceof File f && f.isApproved());
+        .anyMatch(artifact -> artifact instanceof File file && file.isApproved());
   }
 
   protected boolean hasFinalizedFiles() {
     return resource.getAssociatedArtifacts().stream()
-        .anyMatch(artifact -> artifact instanceof File f && f.isFinalized());
+        .anyMatch(artifact -> artifact instanceof File file && file.isFinalized());
   }
 
   protected boolean isImportedStudentThesis() {

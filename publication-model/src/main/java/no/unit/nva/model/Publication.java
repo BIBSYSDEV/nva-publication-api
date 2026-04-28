@@ -469,7 +469,9 @@ public class Publication
 
   public long getPendingOpenFileCount() {
     return getAssociatedArtifacts().stream()
-        .filter(a -> a instanceof File f && FileStatus.from(f) == FileStatus.PENDING_OPEN)
+        .filter(File.class::isInstance)
+        .map(File.class::cast)
+        .filter(file -> FileStatus.from(file) == FileStatus.PENDING_OPEN)
         .count();
   }
 

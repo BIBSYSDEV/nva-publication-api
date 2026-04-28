@@ -61,9 +61,10 @@ public final class AssociatedArtifactsMerger {
       AssociatedArtifactList artifacts) {
     long count =
         artifacts.stream()
-            .filter(a -> a instanceof File f && FileStatus.from(f) == FileStatus.OPEN)
+            .filter(File.class::isInstance)
             .map(File.class::cast)
-            .filter(f -> PUBLISHED_VERSION.equals(f.getPublisherVersion()))
+            .filter(file -> FileStatus.from(file) == FileStatus.OPEN)
+            .filter(file -> PUBLISHED_VERSION.equals(file.getPublisherVersion()))
             .count();
     return count != SINGLETON;
   }
