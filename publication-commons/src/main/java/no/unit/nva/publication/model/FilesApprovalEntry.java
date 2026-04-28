@@ -192,7 +192,14 @@ public abstract class FilesApprovalEntry extends TicketEntry {
 
   private File toApprovedFile(File file) {
     var status = FileStatus.from(file);
-    return status.isPending() ? status.approve().toFile(file) : file;
+    if (!status.isPending()) {
+      return file;
+    }
+    if (status == FileStatus.PENDING_OPEN && !file.hasLicense()) {
+      throw new IllegalStateException(
+          FileStatus.CANNOT_APPROVE_FILE_WITHOUT_LICENSE.formatted(file.getIdentifier()));
+    }
+    return status.approve().toFile(file);
   }
 
   protected boolean canPublishMetadataAndNoFilesToApprove(PublishingWorkflow workflow) {

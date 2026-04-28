@@ -176,18 +176,22 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
     return nonNull(license);
   }
 
+  @JsonIgnore
   public final boolean isPending() {
     return FileStatus.from(this).isPending();
   }
 
+  @JsonIgnore
   public final boolean isApproved() {
     return FileStatus.from(this).isApproved();
   }
 
+  @JsonIgnore
   public final boolean isFinalized() {
     return FileStatus.from(this).isFinalized();
   }
 
+  @JsonIgnore
   public final boolean canTransitionTo(File target) {
     return FileStatus.from(this).canTransitionTo(FileStatus.from(target));
   }
