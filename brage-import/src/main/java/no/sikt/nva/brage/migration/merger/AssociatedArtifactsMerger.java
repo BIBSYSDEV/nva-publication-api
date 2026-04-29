@@ -59,13 +59,11 @@ public final class AssociatedArtifactsMerger {
 
   private static boolean hasMultipleOrNoOpenFilesWithPublishedVersion(
       AssociatedArtifactList artifacts) {
-    long count =
-        artifacts.stream()
+    return artifacts.stream()
             .filter(File.class::isInstance)
             .map(File.class::cast)
             .filter(file -> FileStatus.from(file) == FileStatus.OPEN)
             .filter(file -> PUBLISHED_VERSION.equals(file.getPublisherVersion()))
-            .count();
-    return count != SINGLETON;
+            .count() != SINGLETON;
   }
 }

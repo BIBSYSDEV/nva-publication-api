@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.storage;
 
 import static java.util.Objects.nonNull;
+import static java.util.function.Predicate.not;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_PARTITION_KEY_NAME;
@@ -33,6 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -94,7 +96,7 @@ public class ResourceDao extends Dao
   private static Resource withoutFiles(Resource resource) {
     var nonFileArtifacts =
         resource.getAssociatedArtifacts().stream()
-            .filter(artifact -> !(artifact instanceof File))
+            .filter(not(File.class::isInstance))
             .toList();
     return resource
         .copy()

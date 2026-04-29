@@ -69,14 +69,17 @@ public abstract class FilesApprovalEntry extends TicketEntry {
 
   private Set<File> getPendingFilesToApprove(Publication publication) {
     return getFilesForApproval().stream()
-        .filter(
-            fileForApproval ->
-                publication
-                    .getFile(fileForApproval.getIdentifier())
-                    .filter(file -> FileStatus.from(file).isPending())
-                    .isPresent())
+        .filter(file -> isPending(publication, file))
         .map(this::toApprovedFile)
         .collect(Collectors.toSet());
+  }
+
+  private static boolean isPending(Publication publication, File file) {
+    return publication
+            .getFile(file.getIdentifier())
+            .map(FileStatus::from)
+            .filter(FileStatus::isPending)
+            .isPresent();
   }
 
   public FilesApprovalEntry applyPublicationChannelClaim(
