@@ -11,6 +11,7 @@ import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
@@ -348,12 +349,8 @@ public final class ManuallyUpdatePublicationUtil {
   }
 
   private void updateFileLicense(FileEntry fileEntry, Resource resource, String license) {
-    var updatedFile =
-        fileEntry
-            .getFile()
-            .copy()
-            .withLicense(URI.create(license))
-            .build(fileEntry.getFile().getClass());
+    var file = fileEntry.getFile();
+    var updatedFile = FileStatus.from(file).toFile(file.copy().withLicense(URI.create(license)));
     fileEntry.update(
         updatedFile, UserInstance.fromPublication(resource.toPublication()), resourceService);
   }

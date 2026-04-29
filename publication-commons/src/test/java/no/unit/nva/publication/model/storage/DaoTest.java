@@ -92,6 +92,8 @@ class DaoTest extends ResourcesLocalTest {
   public static final String DATA_ASSOCIATED_CUSTOMERS = "data.associatedCustomers";
   public static final String DATA_RELATED_RESOURCES = "data.relatedResources";
   public static final String RESOURCE_RELATED_RESOURCES = "resource.relatedResources";
+  private static final String RESOURCE_PENDING_FILES = ".resource.pendingFiles";
+  private static final String DATA_PENDING_FILES = ".data.pendingFiles";
   public static final Set<String> IGNORED_FIELDS =
       Set.of(
           DATA_OWNER_AFFILIATION,
@@ -121,7 +123,9 @@ class DaoTest extends ResourcesLocalTest {
           RESOURCE_ASSOCIATED_CUSTOMERS,
           DATA_ASSOCIATED_CUSTOMERS,
           DATA_RELATED_RESOURCES,
-          RESOURCE_RELATED_RESOURCES);
+          RESOURCE_RELATED_RESOURCES,
+          RESOURCE_PENDING_FILES,
+          DATA_PENDING_FILES);
 
   public static Stream<Named<Class<?>>> entityProvider() {
     return TypeProvider.listSubTypes(Entity.class);
