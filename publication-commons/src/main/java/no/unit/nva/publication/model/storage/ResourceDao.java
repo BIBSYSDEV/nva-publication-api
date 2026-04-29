@@ -34,7 +34,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -95,9 +94,7 @@ public class ResourceDao extends Dao
 
   private static Resource withoutFiles(Resource resource) {
     var nonFileArtifacts =
-        resource.getAssociatedArtifacts().stream()
-            .filter(not(File.class::isInstance))
-            .toList();
+        resource.getAssociatedArtifacts().stream().filter(not(File.class::isInstance)).toList();
     return resource
         .copy()
         .withAssociatedArtifactsList(new AssociatedArtifactList(nonFileArtifacts))

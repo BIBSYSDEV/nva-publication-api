@@ -64,6 +64,7 @@ public final class AssociatedArtifactsMerger {
             .map(File.class::cast)
             .filter(file -> FileStatus.from(file) == FileStatus.OPEN)
             .filter(file -> PUBLISHED_VERSION.equals(file.getPublisherVersion()))
-            .count() != SINGLETON;
+            .count()
+        != SINGLETON;
   }
 }

@@ -89,7 +89,8 @@ public final class PublishingRequestResolver {
 
   private boolean thereAreNoPendingFiles(Resource resource) {
     return resource.getAssociatedArtifacts().stream()
-        .noneMatch(associatedArtifact -> associatedArtifact instanceof File file && file.isPending());
+        .noneMatch(
+            associatedArtifact -> associatedArtifact instanceof File file && file.isPending());
   }
 
   private List<FilesApprovalEntry>

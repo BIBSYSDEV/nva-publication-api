@@ -76,10 +76,10 @@ public abstract class FilesApprovalEntry extends TicketEntry {
 
   private static boolean isPending(Publication publication, File file) {
     return publication
-            .getFile(file.getIdentifier())
-            .map(FileStatus::from)
-            .filter(FileStatus::isPending)
-            .isPresent();
+        .getFile(file.getIdentifier())
+        .map(FileStatus::from)
+        .filter(FileStatus::isPending)
+        .isPresent();
   }
 
   public FilesApprovalEntry applyPublicationChannelClaim(
