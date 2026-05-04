@@ -76,7 +76,6 @@ import no.unit.nva.model.instancetypes.researchdata.DataManagementPlan;
 import no.unit.nva.model.instancetypes.researchdata.DataSet;
 import no.unit.nva.model.instancetypes.researchdata.SoftwareSourceCode;
 import no.unit.nva.model.pages.Pages;
-import nva.commons.apigateway.exceptions.ValidationError;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -156,11 +155,6 @@ public interface PublicationInstance<P extends Pages> {
   @JsonIgnore
   default String getInstanceType() {
     return this.getClass().getSimpleName();
-  }
-
-  @JsonIgnore
-  default List<ValidationError> validateForPublish() {
-    return Collections.emptyList();
   }
 
   @JsonIgnore

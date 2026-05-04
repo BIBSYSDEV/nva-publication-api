@@ -55,6 +55,7 @@ import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.PublishValidator;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.PublicationSummary;
@@ -476,7 +477,9 @@ public class Resource implements Entity {
     return Optional.ofNullable(this.getEntityDescription())
         .map(EntityDescription::getReference)
         .map(Reference::getPublicationInstance)
-        .map(PublicationInstance::validateForPublish)
+        .filter(PublishValidator.class::isInstance)
+        .map(PublishValidator.class::cast)
+        .map(PublishValidator::validateForPublish)
         .orElse(List.of());
   }
 

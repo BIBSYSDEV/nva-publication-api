@@ -6,6 +6,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.PublishValidator;
 import no.unit.nva.model.pages.NullPages;
 import nva.commons.apigateway.exceptions.ValidationError;
 import nva.commons.core.StringUtils;
@@ -14,7 +15,7 @@ import nva.commons.core.StringUtils;
 public record SoftwareSourceCode(
     @JsonProperty(SoftwareSourceCode.SOFTWARE_VERSION_FIELD) String softwareVersion,
     @JsonProperty(SoftwareSourceCode.CODE_REPOSITORY_FIELD) URI codeRepository)
-    implements PublicationInstance<NullPages> {
+    implements PublicationInstance<NullPages>, PublishValidator {
 
   public static final String SOFTWARE_VERSION_FIELD = "softwareVersion";
   public static final String CODE_REPOSITORY_FIELD = "codeRepository";
