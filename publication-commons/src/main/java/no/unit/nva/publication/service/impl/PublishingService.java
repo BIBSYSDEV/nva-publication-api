@@ -26,7 +26,6 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
@@ -109,7 +108,7 @@ public class PublishingService {
   }
 
   private Resource publishResource(UserInstance userInstance, Resource resource)
-      throws BadGatewayException, ForbiddenException, BadRequestException {
+      throws BadGatewayException, ForbiddenException {
     var publisher = resource.getPublisherWhenDegree();
     if (publisher.isEmpty()) {
       return resource.publish(resourceService, userInstance);

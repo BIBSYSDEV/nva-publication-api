@@ -57,6 +57,7 @@ import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.PublishValidator;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.model.validation.ValidationException;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
@@ -93,6 +94,11 @@ public class Resource implements Entity {
   public static final List<PublicationStatus> PUBLISHABLE_STATUSES =
       List.of(DRAFT, PUBLISHED_METADATA, UNPUBLISHED);
   public static final String RESOURCE_IS_NOT_PUBLISHABLE_MESSAGE = "Resource is not publishable!";
+  public static final String STATUS_NOT_PUBLISHABLE_MESSAGE =
+      "publication cannot be published in current status";
+  public static final String STATUS_POINTER = "#/status";
+  public static final String MAIN_TITLE_REQUIRED_MESSAGE = "mainTitle is required";
+  public static final String MAIN_TITLE_POINTER = "#/entityDescription/mainTitle";
 
   @JsonProperty private SortableIdentifier identifier;
   @JsonProperty private PublicationStatus status;
@@ -434,8 +440,7 @@ public class Resource implements Entity {
         .toOptional();
   }
 
-  public Resource publish(ResourceService resourceService, UserInstance userInstance)
-      throws BadRequestException {
+  public Resource publish(ResourceService resourceService, UserInstance userInstance) {
     var resource = fetch(resourceService);
     if (resource.isPresent() && resource.get().isNotPublished()) {
       return resource.get().publish(userInstance, resourceService);
@@ -444,19 +449,15 @@ public class Resource implements Entity {
     }
   }
 
-  private Resource publish(UserInstance userInstance, ResourceService resourceService)
-      throws BadRequestException {
+  private Resource publish(UserInstance userInstance, ResourceService resourceService) {
     publish(userInstance);
     return resourceService.updateResource(this, userInstance);
   }
 
-  public void publish(UserInstance userInstance) throws BadRequestException {
-    if (isNotPublishable()) {
-      throw new BadRequestException(RESOURCE_IS_NOT_PUBLISHABLE_MESSAGE);
-    }
-    var validationErrors = collectInstanceValidationErrors();
+  public void publish(UserInstance userInstance) {
+    var validationErrors = validateForPublish();
     if (!validationErrors.isEmpty()) {
-      throw new BadRequestException(RESOURCE_IS_NOT_PUBLISHABLE_MESSAGE, validationErrors);
+      throw new ValidationException(RESOURCE_IS_NOT_PUBLISHABLE_MESSAGE, validationErrors);
     }
     if (this.isNotPublished()) {
       this.setStatus(PUBLISHED);
@@ -466,11 +467,22 @@ public class Resource implements Entity {
     }
   }
 
-  private boolean isNotPublishable() {
-    return !PUBLISHABLE_STATUSES.contains(this.getStatus())
-        || Optional.ofNullable(this.getEntityDescription())
-            .map(EntityDescription::getMainTitle)
-            .isEmpty();
+  private List<ValidationError> validateForPublish() {
+    var errors = new ArrayList<ValidationError>();
+    if (!PUBLISHABLE_STATUSES.contains(this.getStatus())) {
+      errors.add(new ValidationError(STATUS_NOT_PUBLISHABLE_MESSAGE, STATUS_POINTER));
+    }
+    if (mainTitleIsMissing()) {
+      errors.add(new ValidationError(MAIN_TITLE_REQUIRED_MESSAGE, MAIN_TITLE_POINTER));
+    }
+    errors.addAll(collectInstanceValidationErrors());
+    return errors;
+  }
+
+  private boolean mainTitleIsMissing() {
+    return Optional.ofNullable(this.getEntityDescription())
+        .map(EntityDescription::getMainTitle)
+        .isEmpty();
   }
 
   private List<ValidationError> collectInstanceValidationErrors() {
