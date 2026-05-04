@@ -7,7 +7,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.util.List;
-import java.util.function.Consumer;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.publication.model.business.DoiRequest;
@@ -22,9 +21,13 @@ import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 
 public abstract class TicketTestLocal extends ResourcesLocalTest {
+
+  @FunctionalInterface
+  protected interface PublicationAction {
+    void apply(Publication publication) throws ApiGatewayException;
+  }
 
   public static final FakeContext CONTEXT = new FakeContext();
   protected ResourceService resourceService;
@@ -42,8 +45,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     return createAndPersistPublicationAndThenActOnIt(this::publish);
   }
 
-  protected Publication createPersistAndPublishPublicationWithDoi()
-      throws NotFoundException, BadRequestException {
+  protected Publication createPersistAndPublishPublicationWithDoi() throws ApiGatewayException {
     return createAndPersistPublicationWithDoiAndThenActOnIt(this::publish);
   }
 
@@ -78,7 +80,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     return randomPublication();
   }
 
-  protected void publish(Publication publication) {
+  protected void publish(Publication publication) throws BadRequestException {
     Resource.fromPublication(publication)
         .publish(resourceService, UserInstance.fromPublication(publication));
   }
@@ -87,7 +89,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     return randomPublication().copy().withDoi(null).build();
   }
 
-  private Publication createAndPersistPublicationAndThenActOnIt(Consumer<Publication> action)
+  private Publication createAndPersistPublicationAndThenActOnIt(PublicationAction action)
       throws ApiGatewayException {
     var publication = randomPublicationWithoutDoi();
     publication
@@ -96,12 +98,12 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     var userInstance = UserInstance.fromPublication(publication);
     var storedResult =
         Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-    action.accept(storedResult);
+    action.apply(storedResult);
     return resourceService.getPublicationByIdentifier(storedResult.getIdentifier());
   }
 
-  private Publication createAndPersistPublicationWithDoiAndThenActOnIt(Consumer<Publication> action)
-      throws NotFoundException, BadRequestException {
+  private Publication createAndPersistPublicationWithDoiAndThenActOnIt(PublicationAction action)
+      throws ApiGatewayException {
     var publication = randomPublication();
     publication
         .getEntityDescription()
@@ -110,7 +112,7 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     var userInstance = UserInstance.fromPublication(publication);
     var storedResult =
         Resource.fromPublication(publication).persistNew(resourceService, userInstance);
-    action.accept(storedResult);
+    action.apply(storedResult);
     return resourceService.getPublicationByIdentifier(storedResult.getIdentifier());
   }
 }

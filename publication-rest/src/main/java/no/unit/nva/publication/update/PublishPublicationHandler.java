@@ -10,7 +10,6 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
@@ -54,12 +53,9 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, Void> {
   }
 
   private void handleException(Exception exception) throws ApiGatewayException {
-    if (exception instanceof IllegalStateException) {
-      throw new BadRequestException(exception.getMessage());
-    } else if (exception instanceof ApiGatewayException apiGatewayException) {
+    if (exception instanceof ApiGatewayException apiGatewayException) {
       throw apiGatewayException;
-    } else {
-      throw new BadGatewayException(exception.getMessage());
     }
+    throw new BadGatewayException(exception.getMessage());
   }
 }

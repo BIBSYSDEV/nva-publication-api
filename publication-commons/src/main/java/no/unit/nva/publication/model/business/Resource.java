@@ -75,6 +75,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.ValidationError;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({
@@ -90,6 +91,7 @@ public class Resource implements Entity {
   public static final URI NOT_IMPORTANT = null;
   public static final List<PublicationStatus> PUBLISHABLE_STATUSES =
       List.of(DRAFT, PUBLISHED_METADATA, UNPUBLISHED);
+  public static final String RESOURCE_IS_NOT_PUBLISHABLE_MESSAGE = "Resource is not publishable!";
 
   @JsonProperty private SortableIdentifier identifier;
   @JsonProperty private PublicationStatus status;
@@ -431,7 +433,8 @@ public class Resource implements Entity {
         .toOptional();
   }
 
-  public Resource publish(ResourceService resourceService, UserInstance userInstance) {
+  public Resource publish(ResourceService resourceService, UserInstance userInstance)
+      throws BadRequestException {
     var resource = fetch(resourceService);
     if (resource.isPresent() && resource.get().isNotPublished()) {
       return resource.get().publish(userInstance, resourceService);
@@ -440,15 +443,21 @@ public class Resource implements Entity {
     }
   }
 
-  private Resource publish(UserInstance userInstance, ResourceService resourceService) {
+  private Resource publish(UserInstance userInstance, ResourceService resourceService)
+      throws BadRequestException {
     publish(userInstance);
     return resourceService.updateResource(this, userInstance);
   }
 
-  public void publish(UserInstance userInstance) {
+  public void publish(UserInstance userInstance) throws BadRequestException {
     if (isNotPublishable()) {
-      throw new IllegalStateException("Resource is not publishable!");
-    } else if (this.isNotPublished()) {
+      throw new BadRequestException(RESOURCE_IS_NOT_PUBLISHABLE_MESSAGE);
+    }
+    var validationErrors = collectInstanceValidationErrors();
+    if (!validationErrors.isEmpty()) {
+      throw new BadRequestException(RESOURCE_IS_NOT_PUBLISHABLE_MESSAGE, validationErrors);
+    }
+    if (this.isNotPublished()) {
       this.setStatus(PUBLISHED);
       var currentTime = Instant.now();
       this.setPublishedDate(currentTime);
@@ -461,6 +470,14 @@ public class Resource implements Entity {
         || Optional.ofNullable(this.getEntityDescription())
             .map(EntityDescription::getMainTitle)
             .isEmpty();
+  }
+
+  private List<ValidationError> collectInstanceValidationErrors() {
+    return Optional.ofNullable(this.getEntityDescription())
+        .map(EntityDescription::getReference)
+        .map(Reference::getPublicationInstance)
+        .map(PublicationInstance::validateForPublish)
+        .orElse(List.of());
   }
 
   private boolean isNotPublished() {

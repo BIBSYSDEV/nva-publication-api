@@ -506,7 +506,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
             Resource.fromPublication(savedResource)
                 .publish(resourceService, UserInstance.fromPublication(sampleResource));
 
-    assertThrows(IllegalStateException.class, action);
+    assertThrows(BadRequestException.class, action);
   }
 
   @Test
@@ -728,7 +728,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     var userInstance = UserInstance.fromPublication(samplePublication);
 
     assertThrows(
-        IllegalStateException.class,
+        BadRequestException.class,
         () -> Resource.fromPublication(samplePublication).publish(resourceService, userInstance));
   }
 
@@ -1028,7 +1028,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     var publication = randomPublication().copy().withStatus(status).build();
     super.persistResource(Resource.fromPublication(publication));
     assertThrows(
-        IllegalStateException.class,
+        BadRequestException.class,
         () ->
             Resource.fromPublication(publication)
                 .publish(resourceService, UserInstance.fromPublication(publication)));
@@ -1184,7 +1184,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
   }
 
   @Test
-  void shouldThrowIllegalStateExceptionWhenPublishingNotPublishableResource()
+  void shouldThrowBadRequestExceptionWhenPublishingNotPublishableResource()
       throws BadRequestException {
     var publication = randomPublication();
     var userInstance = UserInstance.fromPublication(publication);
@@ -1196,7 +1196,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     resourceService.updateResource(resource, userInstance);
 
     assertThrows(
-        IllegalStateException.class,
+        BadRequestException.class,
         () ->
             Resource.resourceQueryObject(peristedPublication.getIdentifier())
                 .publish(resourceService, userInstance));

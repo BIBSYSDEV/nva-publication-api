@@ -68,7 +68,7 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
     return resourceService.getPublicationByIdentifier(resource.getIdentifier());
   }
 
-  private void publishResource(Publication publication) {
+  private void publishResource(Publication publication) throws BadRequestException {
     var resource = Resource.fromPublication(publication);
     resource.publish(resourceService, UserInstance.fromPublication(publication));
   }

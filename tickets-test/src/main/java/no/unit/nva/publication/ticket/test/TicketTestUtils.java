@@ -61,6 +61,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import org.junit.jupiter.params.provider.Arguments;
 
@@ -406,7 +407,8 @@ public final class TicketTestUtils {
     return PUBLISHED_STATUSES.contains(publication.getStatus());
   }
 
-  private static void publishPublication(ResourceService resourceService, Publication publication) {
+  private static void publishPublication(ResourceService resourceService, Publication publication)
+      throws BadRequestException {
     Resource.fromPublication(publication)
         .publish(resourceService, UserInstance.fromPublication(publication));
   }
