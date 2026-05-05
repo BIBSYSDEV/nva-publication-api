@@ -90,15 +90,23 @@ import nva.commons.core.JacocoGenerated;
 public class Resource implements Entity {
 
   public static final String TYPE = "Resource";
-  public static final URI NOT_IMPORTANT = null;
-  public static final List<PublicationStatus> PUBLISHABLE_STATUSES =
+
+  @JsonIgnore private static final URI NOT_IMPORTANT = null;
+
+  @JsonIgnore
+  private static final List<PublicationStatus> PUBLISHABLE_STATUSES =
       List.of(DRAFT, PUBLISHED_METADATA, UNPUBLISHED);
-  public static final String RESOURCE_IS_NOT_PUBLISHABLE_MESSAGE = "Resource is not publishable!";
-  public static final String STATUS_NOT_PUBLISHABLE_MESSAGE =
+
+  @JsonIgnore
+  private static final String RESOURCE_IS_NOT_PUBLISHABLE_MESSAGE = "Resource is not publishable!";
+
+  @JsonIgnore
+  private static final String STATUS_NOT_PUBLISHABLE_MESSAGE =
       "publication cannot be published in current status";
-  public static final String STATUS_POINTER = "#/status";
-  public static final String MAIN_TITLE_REQUIRED_MESSAGE = "mainTitle is required";
-  public static final String MAIN_TITLE_POINTER = "#/entityDescription/mainTitle";
+
+  @JsonIgnore private static final String STATUS_POINTER = "#/status";
+  @JsonIgnore private static final String MAIN_TITLE_REQUIRED_MESSAGE = "mainTitle is required";
+  @JsonIgnore private static final String MAIN_TITLE_POINTER = "#/entityDescription/mainTitle";
 
   @JsonProperty private SortableIdentifier identifier;
   @JsonProperty private PublicationStatus status;
