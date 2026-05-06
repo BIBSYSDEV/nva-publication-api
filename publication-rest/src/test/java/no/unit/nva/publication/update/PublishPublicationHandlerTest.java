@@ -14,6 +14,8 @@ import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -33,6 +35,8 @@ import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Reference;
+import no.unit.nva.model.instancetypes.researchdata.SoftwareSourceCode;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -122,6 +126,28 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
   }
 
   @Test
+  void shouldReturnBadRequestWithStructuredErrorWhenPublishingSoftwareSourceCodeWithoutVersion()
+      throws IOException, BadRequestException {
+    var publication = createSoftwareSourceCodePublicationWithoutVersion();
+    var request = createRequestWithUserWithPermissionsToPublishPublication(publication);
+
+    handler.handleRequest(request, output, context);
+
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    assertEquals(HTTP_BAD_REQUEST, response.getStatusCode());
+
+    var body = dtoObjectMapper.readTree(response.getBody());
+    var errors = body.get("errors");
+    assertThat(errors.isArray(), is(true));
+    assertThat(errors.size(), is(1));
+    assertThat(
+        errors.get(0).get("detail").asText(),
+        is(SoftwareSourceCode.SOFTWARE_VERSION_REQUIRED_MESSAGE));
+    assertThat(
+        errors.get(0).get("pointer").asText(), is(SoftwareSourceCode.SOFTWARE_VERSION_POINTER));
+  }
+
+  @Test
   void shouldAllowMoreThanMaxDynamodbTransactionsOnUpdate()
       throws IOException, BadRequestException {
     var pub = randomNonDegreePublication().copy().withStatus(PublicationStatus.DRAFT).build();
@@ -198,6 +224,19 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
   private Publication createPublication() throws BadRequestException {
     Publication publication = randomNonDegreePublication();
     return Resource.fromPublication(publication)
+        .persistNew(resourceService, UserInstance.fromPublication(publication));
+  }
+
+  private Publication createSoftwareSourceCodePublicationWithoutVersion()
+      throws BadRequestException {
+    var publication = randomNonDegreePublication().copy().withDoi(null).build();
+    var instanceWithoutVersion = new SoftwareSourceCode(null, randomUri());
+    var reference = new Reference.Builder().withPublicationInstance(instanceWithoutVersion).build();
+    var entityDescription =
+        publication.getEntityDescription().copy().withReference(reference).build();
+    var publicationWithSoftwareSourceCode =
+        publication.copy().withEntityDescription(entityDescription).build();
+    return Resource.fromPublication(publicationWithSoftwareSourceCode)
         .persistNew(resourceService, UserInstance.fromPublication(publication));
   }
 

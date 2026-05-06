@@ -4,9 +4,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.DELETED;
-import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.TicketStatus.NOT_APPLICABLE;
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
@@ -56,6 +54,10 @@ import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.model.validation.Validatable;
+import no.unit.nva.model.validation.ValidationException;
+import no.unit.nva.model.validation.ValidationResult;
+import no.unit.nva.model.validation.Validator;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
@@ -84,12 +86,14 @@ import nva.commons.core.JacocoGenerated;
   "PMD.CouplingBetweenObjects"
 })
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public class Resource implements Entity {
+public class Resource implements Entity, Validatable<Resource> {
 
   public static final String TYPE = "Resource";
-  public static final URI NOT_IMPORTANT = null;
-  public static final List<PublicationStatus> PUBLISHABLE_STATUSES =
-      List.of(DRAFT, PUBLISHED_METADATA, UNPUBLISHED);
+
+  @JsonIgnore private static final URI NOT_IMPORTANT = null;
+
+  @JsonIgnore
+  private static final String RESOURCE_IS_NOT_PUBLISHABLE_MESSAGE = "Resource is not publishable!";
 
   @JsonProperty private SortableIdentifier identifier;
   @JsonProperty private PublicationStatus status;
@@ -446,9 +450,11 @@ public class Resource implements Entity {
   }
 
   public void publish(UserInstance userInstance) {
-    if (isNotPublishable()) {
-      throw new IllegalStateException("Resource is not publishable!");
-    } else if (this.isNotPublished()) {
+    var result = validate(new ResourcePublishValidator());
+    if (!result.isValid()) {
+      throw new ValidationException(RESOURCE_IS_NOT_PUBLISHABLE_MESSAGE, result.errors());
+    }
+    if (this.isNotPublished()) {
       this.setStatus(PUBLISHED);
       var currentTime = Instant.now();
       this.setPublishedDate(currentTime);
@@ -456,11 +462,9 @@ public class Resource implements Entity {
     }
   }
 
-  private boolean isNotPublishable() {
-    return !PUBLISHABLE_STATUSES.contains(this.getStatus())
-        || Optional.ofNullable(this.getEntityDescription())
-            .map(EntityDescription::getMainTitle)
-            .isEmpty();
+  @Override
+  public ValidationResult validate(Validator<Resource> validator) {
+    return validator.validate(this);
   }
 
   private boolean isNotPublished() {
