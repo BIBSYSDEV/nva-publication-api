@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static java.util.Collections.emptyList;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
@@ -51,6 +52,6 @@ public class ResourcePublishValidator implements Validator<Resource> {
         .filter(PublishValidator.class::isInstance)
         .map(PublishValidator.class::cast)
         .map(PublishValidator::validateForPublish)
-        .orElse(List.of());
+        .orElse(emptyList());
   }
 }

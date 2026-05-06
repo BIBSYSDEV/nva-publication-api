@@ -1,9 +1,10 @@
 package no.unit.nva.model.instancetypes.researchdata;
 
+import static java.util.Collections.emptyList;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
-import java.util.Collections;
 import java.util.List;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.PublishValidator;
@@ -35,6 +36,6 @@ public record SoftwareSourceCode(
       return List.of(
           new ValidationError(SOFTWARE_VERSION_REQUIRED_MESSAGE, SOFTWARE_VERSION_POINTER));
     }
-    return Collections.emptyList();
+    return emptyList();
   }
 }
