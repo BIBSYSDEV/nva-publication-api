@@ -12,7 +12,7 @@ import static org.hamcrest.Matchers.nullValue;
 
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import nva.commons.apigateway.exceptions.ValidationError;
+import no.unit.nva.model.validation.ValidationError;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;

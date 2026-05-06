@@ -4,9 +4,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.DELETED;
-import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.publication.model.business.TicketStatus.NOT_APPLICABLE;
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
@@ -55,9 +53,11 @@ import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.funding.Funding;
 import no.unit.nva.model.funding.FundingList;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.PublishValidator;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.model.validation.Validatable;
 import no.unit.nva.model.validation.ValidationException;
+import no.unit.nva.model.validation.ValidationResult;
+import no.unit.nva.model.validation.Validator;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
@@ -77,7 +77,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.apigateway.exceptions.ValidationError;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({
@@ -87,26 +86,14 @@ import nva.commons.core.JacocoGenerated;
   "PMD.CouplingBetweenObjects"
 })
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public class Resource implements Entity {
+public class Resource implements Entity, Validatable<Resource> {
 
   public static final String TYPE = "Resource";
 
   @JsonIgnore private static final URI NOT_IMPORTANT = null;
 
   @JsonIgnore
-  private static final List<PublicationStatus> PUBLISHABLE_STATUSES =
-      List.of(DRAFT, PUBLISHED_METADATA, UNPUBLISHED);
-
-  @JsonIgnore
   private static final String RESOURCE_IS_NOT_PUBLISHABLE_MESSAGE = "Resource is not publishable!";
-
-  @JsonIgnore
-  private static final String STATUS_NOT_PUBLISHABLE_MESSAGE =
-      "publication cannot be published in current status";
-
-  @JsonIgnore private static final String STATUS_POINTER = "#/status";
-  @JsonIgnore private static final String MAIN_TITLE_REQUIRED_MESSAGE = "mainTitle is required";
-  @JsonIgnore private static final String MAIN_TITLE_POINTER = "#/entityDescription/mainTitle";
 
   @JsonProperty private SortableIdentifier identifier;
   @JsonProperty private PublicationStatus status;
@@ -463,9 +450,9 @@ public class Resource implements Entity {
   }
 
   public void publish(UserInstance userInstance) {
-    var validationErrors = validateForPublish();
-    if (!validationErrors.isEmpty()) {
-      throw new ValidationException(RESOURCE_IS_NOT_PUBLISHABLE_MESSAGE, validationErrors);
+    var result = validate(new ResourcePublishValidator());
+    if (!result.isValid()) {
+      throw new ValidationException(RESOURCE_IS_NOT_PUBLISHABLE_MESSAGE, result.errors());
     }
     if (this.isNotPublished()) {
       this.setStatus(PUBLISHED);
@@ -475,32 +462,9 @@ public class Resource implements Entity {
     }
   }
 
-  private List<ValidationError> validateForPublish() {
-    var errors = new ArrayList<ValidationError>();
-    if (!PUBLISHABLE_STATUSES.contains(this.getStatus())) {
-      errors.add(new ValidationError(STATUS_NOT_PUBLISHABLE_MESSAGE, STATUS_POINTER));
-    }
-    if (mainTitleIsMissing()) {
-      errors.add(new ValidationError(MAIN_TITLE_REQUIRED_MESSAGE, MAIN_TITLE_POINTER));
-    }
-    errors.addAll(collectInstanceValidationErrors());
-    return errors;
-  }
-
-  private boolean mainTitleIsMissing() {
-    return Optional.ofNullable(this.getEntityDescription())
-        .map(EntityDescription::getMainTitle)
-        .isEmpty();
-  }
-
-  private List<ValidationError> collectInstanceValidationErrors() {
-    return Optional.ofNullable(this.getEntityDescription())
-        .map(EntityDescription::getReference)
-        .map(Reference::getPublicationInstance)
-        .filter(PublishValidator.class::isInstance)
-        .map(PublishValidator.class::cast)
-        .map(PublishValidator::validateForPublish)
-        .orElse(List.of());
+  @Override
+  public ValidationResult validate(Validator<Resource> validator) {
+    return validator.validate(this);
   }
 
   private boolean isNotPublished() {

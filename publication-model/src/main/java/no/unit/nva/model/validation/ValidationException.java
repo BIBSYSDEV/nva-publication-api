@@ -1,7 +1,6 @@
 package no.unit.nva.model.validation;
 
 import java.util.List;
-import nva.commons.apigateway.exceptions.ValidationError;
 
 public class ValidationException extends RuntimeException {
 

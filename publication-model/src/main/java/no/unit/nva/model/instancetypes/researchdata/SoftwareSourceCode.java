@@ -8,7 +8,7 @@ import java.util.List;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.PublishValidator;
 import no.unit.nva.model.pages.NullPages;
-import nva.commons.apigateway.exceptions.ValidationError;
+import no.unit.nva.model.validation.ValidationError;
 import nva.commons.core.StringUtils;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")

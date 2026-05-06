@@ -3,7 +3,6 @@ plugins {
 }
 
 dependencies {
-    implementation( nvaLibs.apigateway )
     implementation( nvaLibs.core )
     implementation( nvaLibs.json )
     implementation( nvaLibs.identifiers )

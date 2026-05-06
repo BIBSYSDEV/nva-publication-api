@@ -1,7 +1,7 @@
 package no.unit.nva.model.instancetypes;
 
 import java.util.List;
-import nva.commons.apigateway.exceptions.ValidationError;
+import no.unit.nva.model.validation.ValidationError;
 
 @FunctionalInterface
 public interface PublishValidator {

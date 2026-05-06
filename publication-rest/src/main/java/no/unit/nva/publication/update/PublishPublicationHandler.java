@@ -3,6 +3,7 @@ package no.unit.nva.publication.update;
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import java.util.List;
 import no.unit.nva.model.validation.ValidationException;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -12,6 +13,7 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.ValidationError;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
@@ -56,11 +58,17 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, Void> {
 
   private void handleException(Exception exception) throws ApiGatewayException {
     if (exception instanceof ValidationException validation) {
-      throw new BadRequestException(validation.getMessage(), validation.getErrors());
+      throw new BadRequestException(validation.getMessage(), toApiErrors(validation));
     }
     if (exception instanceof ApiGatewayException apiGatewayException) {
       throw apiGatewayException;
     }
     throw new BadGatewayException(exception.getMessage());
+  }
+
+  private static List<ValidationError> toApiErrors(ValidationException validation) {
+    return validation.getErrors().stream()
+        .map(error -> new ValidationError(error.detail(), error.pointer()))
+        .toList();
   }
 }
