@@ -17,13 +17,13 @@ import no.unit.nva.model.validation.Validator;
 
 public class ResourcePublishValidator implements Validator<Resource> {
 
-  static final List<PublicationStatus> PUBLISHABLE_STATUSES =
+  private static final List<PublicationStatus> PUBLISHABLE_STATUSES =
       List.of(DRAFT, PUBLISHED_METADATA, UNPUBLISHED);
-  static final String STATUS_NOT_PUBLISHABLE_MESSAGE =
+  private static final String STATUS_NOT_PUBLISHABLE_MESSAGE =
       "publication cannot be published in current status";
-  static final String STATUS_POINTER = "#/status";
-  static final String MAIN_TITLE_REQUIRED_MESSAGE = "mainTitle is required";
-  static final String MAIN_TITLE_POINTER = "#/entityDescription/mainTitle";
+  private static final String STATUS_POINTER = "#/status";
+  private static final String MAIN_TITLE_REQUIRED_MESSAGE = "mainTitle is required";
+  private static final String MAIN_TITLE_POINTER = "#/entityDescription/mainTitle";
 
   @Override
   public ValidationResult validate(Resource resource) {
