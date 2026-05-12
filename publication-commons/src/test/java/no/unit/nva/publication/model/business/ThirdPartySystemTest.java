@@ -26,6 +26,7 @@ class ThirdPartySystemTest {
   private static Stream<Arguments> thirdPartySystemProvider() {
     return Stream.of(
         Arguments.of(" wiSEfloW ", ThirdPartySystem.WISE_FLOW),
-        Arguments.of(" INSperA ", ThirdPartySystem.INSPERA));
+        Arguments.of(" INSperA ", ThirdPartySystem.INSPERA),
+        Arguments.of(" dLR ", ThirdPartySystem.DLR));
   }
 }
