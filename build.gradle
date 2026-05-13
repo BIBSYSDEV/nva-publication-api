@@ -1,5 +1,6 @@
 plugins{
     id 'nva.publication.api.rootplugin'
+    id 'nva.publication.api.git-hooks'
 }
 
 //workaround for jacoco-merge to work
