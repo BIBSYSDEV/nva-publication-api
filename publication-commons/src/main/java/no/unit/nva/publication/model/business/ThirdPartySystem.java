@@ -9,6 +9,7 @@ public enum ThirdPartySystem {
   WISE_FLOW("WISEflow"),
   INSPERA("Inspera"),
   AVHANDLINGSPORTALEN("Avhandlingsportalen"),
+  DLR("DLR"),
   SIMULA("Simula"),
   OTHER("Other");
 
@@ -30,6 +31,7 @@ public enum ThirdPartySystem {
       case INSPERA -> Source.INSPERA;
       case WISE_FLOW -> Source.WISE_FLOW;
       case AVHANDLINGSPORTALEN -> Source.AVHANDLINGSPORTALEN;
+      case DLR -> Source.DLR;
       case SIMULA -> Source.SIMULA;
       case OTHER -> Source.OTHER;
     };
