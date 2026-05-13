@@ -31,7 +31,6 @@ import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.model.business.FileEntry;
@@ -227,7 +226,7 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
   }
 
   private File randomUpdateFileRequest(UUID fileIdentifier) {
-    return randomOpenFile().copy().withIdentifier(fileIdentifier).build(PendingOpenFile.class);
+    return randomOpenFile().copy().withIdentifier(fileIdentifier).buildPendingOpenFile();
   }
 
   private InputStream createRandomUserAuthorizedRequest(
