@@ -57,17 +57,6 @@ public class UploadedFile extends File {
   }
 
   @Override
-  public boolean canBeConvertedTo(File file) {
-    return switch (file) {
-      case UploadedFile ignore -> true;
-      case PendingInternalFile ignore -> true;
-      case PendingOpenFile ignore -> true;
-      case HiddenFile ignore -> true;
-      default -> false;
-    };
-  }
-
-  @Override
   public String getArtifactType() {
     return TYPE;
   }

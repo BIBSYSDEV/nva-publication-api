@@ -41,6 +41,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.publication.exception.CandidateAlreadyImportedException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
@@ -286,6 +287,12 @@ public class UpdateResourceService extends ServiceWithTransactions {
     var updatedFile =
         updatedResource.getFileByIdentifier(
             UUID.fromString(persistedFileEntry.getIdentifier().toString()));
+    if (persistedFileEntry.getFile().isFinalized()) {
+      return updatedFile
+          .filter(file -> !file.equals(persistedFileEntry.getFile()))
+          .filter(file -> FileStatus.from(file) == FileStatus.from(persistedFileEntry.getFile()))
+          .isPresent();
+    }
     return updatedFile.filter(file -> !file.equals(persistedFileEntry.getFile())).isPresent();
   }
 
