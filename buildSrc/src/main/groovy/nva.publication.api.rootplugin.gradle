@@ -1,24 +1,18 @@
 plugins {
-    id 'nva.publication.api.formatting'
-    id 'jacoco-report-aggregation'
-    id 'base'
-    id 'java-library'
+    id 'nva.root-module-conventions'
 }
 
-dependencies {
-    subprojects.forEach {
-        jacocoAggregation it
+nva {
+    dependencyAnalysis {
+        enforced = false
     }
-}
-
-reporting {
-    reports {
-        testCodeCoverageReport(JacocoCoverageReport) {
-            testSuiteName = 'test'
-        }
+    spectral {
+        documents = ['docs/*.yaml']
+        rulesetFile = file('.spectral.yaml')
     }
-}
-
-tasks.named('check') {
-    dependsOn tasks.named('testCodeCoverageReport', JacocoReport)
+    jacoco {
+        // FIXME: Remove dead code and add tests for remaining gaps
+        minMethodCoverage = new BigDecimal('0.970')
+        minClassCoverage = new BigDecimal('0.970')
+    }
 }

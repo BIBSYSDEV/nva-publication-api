@@ -1,13 +1,13 @@
 plugins {
-    id 'nva.publication.api.formatting'
-    id 'java'
-    id 'pmd'
-    id 'jacoco-report-aggregation'
-    id 'com.diffplug.spotless'
+    id 'nva.java-conventions'
+    id 'java-test-fixtures'
 }
 
-
-group = 'com.github.bibsysdev'
+nva {
+    pmd {
+        rulesetFile = rootProject.file('config/pmd/ruleset.xml')
+    }
+}
 
 dependencies {
     testImplementation nvaCatalog.bundles.testing.mockito
@@ -17,52 +17,9 @@ dependencies {
 
 tasks.named('test') {
     environment("API_HOST", "localhost")
-    useJUnitPlatform {
-        excludeTags  = [
-            "RemoteTest",
-            "integrationTest",
-            "KarateTest"
-        ]
-    }
-    failFast = false
-    testLogging {
-        events = [
-            'skipped',
-            'passed',
-            'failed'
-        ]
-        showCauses = true
-        exceptionFormat = "full"
-    }
 }
 
-pmd {
-    toolVersion = '7.23.0'
-    ruleSetConfig = rootProject.resources.text.fromFile('config/pmd/ruleset.xml')
-    ruleSets = []
-    ignoreFailures = false
-}
-
-check.dependsOn jacocoTestCoverageVerification
-jacocoTestCoverageVerification.dependsOn(jacocoTestReport)
-
-jacocoTestCoverageVerification {
-
-    violationRules {
-        rule {
-            limit {
-                counter = 'METHOD'
-                value = 'COVEREDRATIO'
-                minimum = 1.000
-            }
-        }
-
-        rule {
-            limit {
-                counter = 'CLASS'
-                value = 'COVEREDRATIO'
-                minimum = 1.000
-            }
-        }
-    }
+tasks.withType(JavaCompile).configureEach {
+    // Disabled because of a bug in ErrorProne (https://github.com/google/error-prone/issues/4918)
+    options.errorprone.disable("StringConcatToTextBlock")
 }

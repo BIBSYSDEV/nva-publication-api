@@ -1,3 +1,18 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    // Redirect nva.* plugin IDs to the Maven Central artifact, our plugins aren't published to the Gradle Plugin Portal
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id.startsWith('nva.')) {
+                useModule("com.github.bibsysdev:nva-gradle-plugins:${requested.version}")
+            }
+        }
+    }
+}
+
 rootProject.name = 'nva-publication-api'
 include 'publication-model'
 include 'publication-model-testing'

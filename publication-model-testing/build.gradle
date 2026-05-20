@@ -9,9 +9,3 @@ dependencies {
     implementation( nvaCatalog.javers )
     implementation( nvaCatalog.jackson.annotations )
 }
-
-tasks.named('check').configure {
-    dependsOn -= [
-        jacocoTestCoverageVerification
-    ]
-}

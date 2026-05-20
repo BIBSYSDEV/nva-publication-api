@@ -33,9 +33,3 @@ buildConfig {
     useJavaOutput() //forces the output to be Java
     buildConfigField("String", "RESOURCES_MODEL_VERSION", "\"${modelVersion}\"")
 }
-
-tasks.named('check').configure {
-    dependsOn -= [
-        jacocoTestCoverageVerification
-    ]
-}
