@@ -14,7 +14,7 @@ reflections = { strictly = '0.10.2' }
 resilience4j = { strictly = '2.3.0' }
 swaggerCoreVersion = { strictly = '2.2.34' }
 tika = { strictly = '3.2.3' }
-vavrVersion = { strictly = '0.10.6' }
+vavrVersion = { strictly = '1.0.1' }
 
 [libraries]
 nva-language = { group = 'com.github.bibsysdev', name = 'nva-language', version.ref = 'nva-language' }
