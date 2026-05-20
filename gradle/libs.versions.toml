@@ -2,7 +2,7 @@
 apache-bval = { strictly = '3.0.2' }
 apacheCommonsCollections = { strictly = '4.5.0' }
 apacheCommonsText = { strictly = '1.14.0' }
-configTypesafe = { strictly = '1.4.3' }
+configTypesafe = { strictly = '1.4.8' }
 glassfish-el = { strictly = '4.0.2' }
 hamcrestSpotify = { strictly = '1.3.2' }
 jakarta-el-api = { strictly = '6.0.1' }
@@ -11,8 +11,8 @@ jsonassert = { strictly = '1.5.3'}
 nva-language = { strictly = '1.2.1' }
 nvaDoiPartnerData = { strictly = '0.5.8' }
 reflections = { strictly = '0.10.2' }
-resilience4j = { strictly = '2.3.0' }
-swaggerCoreVersion = { strictly = '2.2.34' }
+resilience4j = { strictly = '2.4.0' }
+swaggerCoreVersion = { strictly = '2.2.50' }
 tika = { strictly = '3.2.3' }
 vavrVersion = { strictly = '1.0.1' }
 
