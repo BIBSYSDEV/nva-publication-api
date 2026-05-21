@@ -25,7 +25,6 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
-import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class BragePatchEventConsumer implements RequestHandler<SQSEvent, Void> {
@@ -123,8 +122,7 @@ public class BragePatchEventConsumer implements RequestHandler<SQSEvent, Void> {
     }
   }
 
-  private static @NotNull List<String> getPublicationIdentifiers(
-      List<Publication> parentPublicationList) {
+  private static List<String> getPublicationIdentifiers(List<Publication> parentPublicationList) {
     return parentPublicationList.stream()
         .map(Publication::getIdentifier)
         .map(SortableIdentifier::toString)
