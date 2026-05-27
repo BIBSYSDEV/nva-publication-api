@@ -228,11 +228,6 @@ class UpdatePublicationsFromBrageHandlerTest extends ResourcesLocalTest {
     return UserInstance.create(randomString(), randomUri());
   }
 
-  private Publication persistPublicationWithDublinCoreFromArchive(String archive)
-      throws BadRequestException, IOException {
-    return persistPublicationWithDublinCoreFromArchive(archive, randomPublication(), List.of());
-  }
-
   private Publication persistPublicationWithDublinCoreFromArchive(
       String archive, Publication publication, List<DcValue> abstractDcValues)
       throws BadRequestException, IOException {
