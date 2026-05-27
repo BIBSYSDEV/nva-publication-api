@@ -7,6 +7,6 @@ repositories {
 }
 
 dependencies {
-    implementation 'io.freefair.lombok:io.freefair.lombok.gradle.plugin:8.12.2.1'
-    implementation 'com.github.bibsysdev:nva-gradle-plugins:1.0.7'
+    implementation 'io.freefair.lombok:io.freefair.lombok.gradle.plugin:9.5.0'
+    implementation 'com.github.bibsysdev:nva-gradle-plugins:1.0.9'
 }

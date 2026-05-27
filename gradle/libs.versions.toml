@@ -1,20 +1,24 @@
 [versions]
 apache-bval = { strictly = '3.0.2' }
 apacheCommonsCollections = { strictly = '4.5.0' }
-apacheCommonsText = { strictly = '1.14.0' }
+apacheCommonsText = { strictly = '1.15.0' }
 configTypesafe = { strictly = '1.4.8' }
 glassfish-el = { strictly = '4.0.2' }
+glassfish-jaxb = '2.3.1'  # FIXME: Upgrading breaks brage-import
 hamcrestSpotify = { strictly = '1.3.2' }
+hamcrest-json = { strictly = '0.3' }
 jakarta-el-api = { strictly = '6.0.1' }
 jakarta-validation-api = { strictly = '3.1.1' }
+jakarta-xml = { strictly = '4.0.5' }
+javax-activation = { strictly = '1.2.0' }
+javax-bind = { strictly = '2.4.0-b180830.0359' }
 jsonassert = { strictly = '1.5.3'}
 nva-language = { strictly = '1.2.1' }
-nvaDoiPartnerData = { strictly = '0.5.8' }
+nvaDoiPartnerData = { strictly = '0.5.10' }
 reflections = { strictly = '0.10.2' }
-resilience4j = { strictly = '2.4.0' }
+sun-jaxb = { strictly = '4.0.8' }
 swaggerCoreVersion = { strictly = '2.2.50' }
-tika = { strictly = '3.2.3' }
-vavrVersion = { strictly = '1.0.1' }
+tika = { strictly = '3.3.1' }
 
 [libraries]
 nva-language = { group = 'com.github.bibsysdev', name = 'nva-language', version.ref = 'nva-language' }
@@ -26,22 +30,19 @@ glassfish-el = {group = 'org.glassfish', name = 'jakarta.el', version.ref = 'gla
 apache-bval = { group= 'org.apache.bval', name= 'bval-jsr', version.ref= 'apache-bval'}
 apache-commons-collections = { group = 'org.apache.commons', name = 'commons-collections4', version.ref = 'apacheCommonsCollections' }
 apache-commons-text = { group = 'org.apache.commons', name = 'commons-text', version.ref = 'apacheCommonsText' }
-jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version = '2.3.1' }
-xsd2java-xjc = { group = 'com.sun.xml.bind', name = 'jaxb-xjc', version = '4.0.5' }
-xsd2java-impl = { group = 'com.sun.xml.bind', name = 'jaxb-impl', version = '4.0.5' }
-xsd2java-api = { group = 'javax.xml.bind', name = 'jaxb-api', version = '2.4.0-b180830.0359' }
-xsd2java-activation = { group = 'javax.activation', name = 'javax.activation-api', version = '1.2.0' }
-xsd2java-jakarta = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version = '3.0.1' }
+jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version.ref = 'glassfish-jaxb' }
+xsd2java-xjc = { group = 'com.sun.xml.bind', name = 'jaxb-xjc', version.ref = 'sun-jaxb' }
+xsd2java-impl = { group = 'com.sun.xml.bind', name = 'jaxb-impl', version.ref = 'sun-jaxb' }
+xsd2java-api = { group = 'javax.xml.bind', name = 'jaxb-api', version.ref = 'javax-bind' }
+xsd2java-activation = { group = 'javax.activation', name = 'javax.activation-api', version.ref = 'javax-activation' }
+xsd2java-jakarta = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version.ref = 'jakarta-xml' }
 typesafe-config = { group = 'com.typesafe', name = 'config', version.ref = 'configTypesafe' }
 hamcrest-optional = { group = 'com.spotify', name = 'hamcrest-optional', version.ref = 'hamcrestSpotify' }
-hamcrest-json = {  group = 'uk.co.datumedge', name = 'hamcrest-json', version = '0.3' }
+hamcrest-json = {  group = 'uk.co.datumedge', name = 'hamcrest-json', version.ref = 'hamcrest-json' }
 tika-core = { group = 'org.apache.tika', name = 'tika-core', version.ref = 'tika' }
 tika-langdetect = { group = 'org.apache.tika', name = 'tika-langdetect', version.ref = 'tika' }
 tika-langdetect-optimaize = { group = 'org.apache.tika', name = 'tika-langdetect-optimaize', version.ref = 'tika' }
-vavr = { group = 'io.vavr', name = 'vavr', version.ref = 'vavrVersion' }
-resilience4j-all = { group = 'io.github.resilience4j', name = 'resilience4j-all', version.ref = 'resilience4j' }
 swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.ref = 'swaggerCoreVersion' }
-mockito-junit-jupiter = {group= 'org.mockito', name= 'mockito-junit-jupiter', version= '5.3.1'}
 reflections = { group = 'org.reflections', name = 'reflections', version.ref = 'reflections' }
 
 [bundles]

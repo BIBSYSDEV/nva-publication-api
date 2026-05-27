@@ -6,6 +6,10 @@ nva {
     dependencyAnalysis {
         enforced = false
     }
+    generatedCode = [
+        'no/scopus/generated/**',
+        'no/unit/nva/model/testing/**'
+    ]
     spectral {
         documents = ['docs/*.yaml']
         rulesetFile = file('.spectral.yaml')

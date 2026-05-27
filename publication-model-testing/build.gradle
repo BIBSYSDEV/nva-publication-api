@@ -1,7 +1,7 @@
 dependencies {
     implementation project(":publication-model")
     implementation( nvaLibs.core )
-    implementation( libs.nva.language )
+    implementation( nvaCatalog.nva.language )
     implementation( nvaLibs.identifiers )
     implementation ( nvaLibs.json )
     implementation( nvaLibs.testutils )

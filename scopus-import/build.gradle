@@ -18,7 +18,7 @@ dependencies {
     implementation nvaLibs.core
     implementation nvaLibs.eventhandlers
     implementation nvaLibs.apigateway
-    implementation libs.nva.language
+    implementation nvaCatalog.nva.language
     implementation nvaLibs.logutils
     implementation nvaLibs.auth
     implementation nvaLibs.identifiers

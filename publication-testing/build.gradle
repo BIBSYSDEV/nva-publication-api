@@ -7,7 +7,7 @@ dependencies {
     implementation nvaLibs.json
     implementation nvaLibs.identifiers
     implementation nvaLibs.s3
-    implementation libs.nva.language
+    implementation nvaCatalog.nva.language
     implementation nvaLibs.clients
     implementation nvaLibs.auth
 

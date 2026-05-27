@@ -42,12 +42,12 @@ dependencies {
 
     testImplementation nvaCatalog.bundles.wiremock
 
-    implementation libs.vavr
-    implementation libs.resilience4j.all
+    implementation nvaCatalog.vavr
+    implementation nvaCatalog.resilience4j.all
 
     testImplementation nvaLibs.testutils
     testImplementation nvaLibs.logutils
-    testImplementation libs.mockito.junit.jupiter
+    testImplementation nvaCatalog.mockito.junit.jupiter
     testImplementation nvaLibs.identifiers
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")

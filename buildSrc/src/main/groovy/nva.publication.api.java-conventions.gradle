@@ -4,6 +4,10 @@ plugins {
 }
 
 nva {
+    generatedCode = [
+        'no/scopus/generated/**',
+        'no/unit/nva/model/testing/**'
+    ]
     pmd {
         rulesetFile = rootProject.file('config/pmd/ruleset.xml')
     }

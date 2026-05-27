@@ -44,7 +44,7 @@ dependencies {
     testImplementation nvaCatalog.aws.sdk2.utils
     testImplementation nvaCatalog.aws.sdk2.s3
     testImplementation nvaCatalog.datafaker
-    testImplementation libs.mockito.junit.jupiter
+    testImplementation nvaCatalog.mockito.junit.jupiter
 
     compileOnly nvaLibs.apigateway
     compileOnly nvaCatalog.zalando

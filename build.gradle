@@ -5,20 +5,3 @@ plugins{
 subprojects{
     apply plugin: 'nva.publication.api.java-conventions'
 }
-
-def jacocoAggregateExcludes = [
-    'no/scopus/generated/**',
-    'no/unit/nva/model/testing/**',
-]
-
-tasks.named('testCodeCoverageReport').configure {
-    classDirectories.setFrom(files(classDirectories.files.collect { classesDir ->
-        fileTree(classesDir) { exclude jacocoAggregateExcludes }
-    }))
-}
-
-tasks.named('verifyCoverage').configure {
-    classDirectories.setFrom(files(classDirectories.files.collect { classesDir ->
-        fileTree(classesDir) { exclude jacocoAggregateExcludes }
-    }))
-}

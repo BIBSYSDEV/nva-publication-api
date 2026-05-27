@@ -29,8 +29,8 @@ dependencies {
     }
 
     implementation nvaCatalog.jackson.datatype.problem
-    implementation libs.vavr
-    implementation libs.resilience4j.all
+    implementation nvaCatalog.vavr
+    implementation nvaCatalog.resilience4j.all
 
     implementation nvaCatalog.bundles.logging
 
