@@ -13,7 +13,11 @@ dependencies {
     implementation nvaCatalog.jackson.core
     implementation nvaCatalog.jackson.databind
 
-    implementation nvaCatalog.bundles.logging
+    implementation nvaCatalog.lambda.log4j
+    implementation nvaCatalog.log4j.api
+    implementation nvaCatalog.log4j.core
+    implementation nvaCatalog.log4j.slf4j.impl
+    implementation nvaCatalog.slf4j.api
 
     testImplementation nvaLibs.testutils
     testImplementation nvaCatalog.zalando

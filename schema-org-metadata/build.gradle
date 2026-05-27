@@ -3,9 +3,19 @@ dependencies {
     implementation nvaLibs.json
     implementation project(":publication-model")
 
-    implementation nvaCatalog.bundles.jackson
+    implementation nvaCatalog.jackson.annotations
+    implementation nvaCatalog.jackson.core
+    implementation nvaCatalog.jackson.databind
+    implementation nvaCatalog.jackson.dataformat.xml
+    implementation nvaCatalog.jackson.datatype.jdk8
+    implementation nvaCatalog.jackson.datatype.jsr310
+    implementation nvaCatalog.jackson.datatype.problem
+    implementation nvaCatalog.jackson.module.parameter.names
 
-    implementation (nvaCatalog.bundles.jena) {
+    implementation (nvaCatalog.jena.core) {
+        exclude group: 'com.fasterxml.jackson.core', module:'jackson-core'
+    }
+    implementation (nvaCatalog.jena.arq) {
         exclude group: 'com.fasterxml.jackson.core', module:'jackson-core'
     }
     testImplementation nvaLibs.identifiers

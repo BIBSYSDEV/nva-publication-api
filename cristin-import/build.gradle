@@ -14,7 +14,14 @@ dependencies {
     implementation nvaLibs.auth
     implementation nvaLibs.apigateway
 
-    implementation nvaCatalog.bundles.jackson
+    implementation nvaCatalog.jackson.annotations
+    implementation nvaCatalog.jackson.core
+    implementation nvaCatalog.jackson.databind
+    implementation nvaCatalog.jackson.dataformat.xml
+    implementation nvaCatalog.jackson.datatype.jdk8
+    implementation nvaCatalog.jackson.datatype.jsr310
+    implementation nvaCatalog.jackson.datatype.problem
+    implementation nvaCatalog.jackson.module.parameter.names
 
     implementation nvaCatalog.hamcrest
 
@@ -28,7 +35,11 @@ dependencies {
     implementation nvaCatalog.aws.sdk2.regions
 
     implementation libs.typesafe.config
-    implementation nvaCatalog.bundles.logging
+    implementation nvaCatalog.lambda.log4j
+    implementation nvaCatalog.log4j.api
+    implementation nvaCatalog.log4j.core
+    implementation nvaCatalog.log4j.slf4j.impl
+    implementation nvaCatalog.slf4j.api
 
     implementation nvaCatalog.opencsv
 
@@ -61,8 +72,14 @@ dependencies {
         because "PMD org/apache/commons/validator/routines/ISBNValidator"
     }
 
-    testImplementation nvaCatalog.bundles.testing.cucumber
-    testImplementation nvaCatalog.bundles.testing.junit
+    testImplementation nvaCatalog.cucumber.java
+    testImplementation nvaCatalog.cucumber.junit.platform.engine
+    testImplementation nvaCatalog.cucumber.picocontainer
+    testImplementation nvaCatalog.junit.jupiter
+    testImplementation nvaCatalog.junit.jupiter.api
+    testImplementation nvaCatalog.junit.jupiter.engine
+    testImplementation nvaCatalog.junit.jupiter.params
+    testImplementation nvaCatalog.junit.platform.launcher
     testImplementation nvaCatalog.junit.platform.suite
 }
 

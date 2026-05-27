@@ -3,8 +3,16 @@ configurations {
 }
 
 dependencies {
-    xjc libs.bundles.xsd2java
-    implementation libs.bundles.xsd2java
+    xjc libs.xsd2java.xjc
+    xjc libs.xsd2java.impl
+    xjc libs.xsd2java.api
+    xjc libs.xsd2java.activation
+    xjc libs.xsd2java.jakarta
+    implementation libs.xsd2java.xjc
+    implementation libs.xsd2java.impl
+    implementation libs.xsd2java.api
+    implementation libs.xsd2java.activation
+    implementation libs.xsd2java.jakarta
     testImplementation nvaLibs.testutils
 }
 

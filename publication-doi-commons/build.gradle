@@ -3,7 +3,14 @@ dependencies {
     implementation nvaLibs.core
     implementation nvaLibs.json
     implementation nvaLibs.identifiers
-    implementation nvaCatalog.bundles.jackson
+    implementation nvaCatalog.jackson.annotations
+    implementation nvaCatalog.jackson.core
+    implementation nvaCatalog.jackson.databind
+    implementation nvaCatalog.jackson.dataformat.xml
+    implementation nvaCatalog.jackson.datatype.jdk8
+    implementation nvaCatalog.jackson.datatype.jsr310
+    implementation nvaCatalog.jackson.datatype.problem
+    implementation nvaCatalog.jackson.module.parameter.names
 
     testImplementation nvaLibs.testutils
     testImplementation project(":publication-model-testing")

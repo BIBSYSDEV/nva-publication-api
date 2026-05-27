@@ -10,8 +10,19 @@ dependencies {
     implementation nvaLibs.secrets
     implementation nvaLibs.auth
 
-    implementation nvaCatalog.bundles.logging
-    implementation nvaCatalog.bundles.jackson
+    implementation nvaCatalog.lambda.log4j
+    implementation nvaCatalog.log4j.api
+    implementation nvaCatalog.log4j.core
+    implementation nvaCatalog.log4j.slf4j.impl
+    implementation nvaCatalog.slf4j.api
+    implementation nvaCatalog.jackson.annotations
+    implementation nvaCatalog.jackson.core
+    implementation nvaCatalog.jackson.databind
+    implementation nvaCatalog.jackson.dataformat.xml
+    implementation nvaCatalog.jackson.datatype.jdk8
+    implementation nvaCatalog.jackson.datatype.jsr310
+    implementation nvaCatalog.jackson.datatype.problem
+    implementation nvaCatalog.jackson.module.parameter.names
 
     implementation project(":publication-model")
     implementation project(":publication-commons")
@@ -24,7 +35,10 @@ dependencies {
     testImplementation project(":publication-model-testing")
     testImplementation project(":publication-testing")
     testImplementation nvaLibs.testutils
-    testImplementation(nvaCatalog.bundles.wiremock) {
+    testImplementation(nvaCatalog.wiremock) {
+        exclude group: 'org.apache.commons', module: 'commons-lang3'
+    }
+    testImplementation(nvaCatalog.wiremock.junit5) {
         exclude group: 'org.apache.commons', module: 'commons-lang3'
     }
 }

@@ -26,13 +26,19 @@ dependencies {
     implementation nvaCatalog.aws.sdk.dynamo
     implementation nvaCatalog.aws.sdk.sqs
 
-    implementation libs.bundles.jaxb
+    implementation libs.jaxb.runtime
+    implementation libs.xsd2java.api
+    implementation libs.xsd2java.jakarta
     implementation nvaCatalog.opencsv
 
     implementation nvaCatalog.aws.ion
 
     implementation libs.apache.commons.collections
-    implementation nvaCatalog.bundles.logging
+    implementation nvaCatalog.lambda.log4j
+    implementation nvaCatalog.log4j.api
+    implementation nvaCatalog.log4j.core
+    implementation nvaCatalog.log4j.slf4j.impl
+    implementation nvaCatalog.slf4j.api
 
     runtimeOnly nvaCatalog.jackson.datatype.jsr310
     runtimeOnly nvaCatalog.jackson.datatype.jdk8

@@ -17,7 +17,11 @@ dependencies {
     implementation nvaCatalog.jackson.databind
 
     implementation nvaCatalog.zalando
-    implementation nvaCatalog.bundles.logging
+    implementation nvaCatalog.lambda.log4j
+    implementation nvaCatalog.log4j.api
+    implementation nvaCatalog.log4j.core
+    implementation nvaCatalog.log4j.slf4j.impl
+    implementation nvaCatalog.slf4j.api
 
     runtimeOnly nvaCatalog.jackson.core
 
@@ -27,7 +31,8 @@ dependencies {
     testImplementation nvaLibs.testutils
     testImplementation project(":tickets-test")
     testImplementation nvaLibs.logutils
-    testImplementation nvaCatalog.bundles.wiremock
+    testImplementation nvaCatalog.wiremock
+    testImplementation nvaCatalog.wiremock.junit5
     compileOnly nvaCatalog.zalando
     compileOnly nvaCatalog.aws.lambda.core
 }

@@ -8,7 +8,11 @@ dependencies {
     implementation( nvaLibs.identifiers )
     implementation ( nvaCatalog.commons.validator )
     implementation( nvaCatalog.jackson.databind )
-    implementation nvaCatalog.bundles.logging
+    implementation nvaCatalog.lambda.log4j
+    implementation nvaCatalog.log4j.api
+    implementation nvaCatalog.log4j.core
+    implementation nvaCatalog.log4j.slf4j.impl
+    implementation nvaCatalog.slf4j.api
 
     testImplementation( libs.reflections )
     testImplementation( nvaCatalog.jena.core )

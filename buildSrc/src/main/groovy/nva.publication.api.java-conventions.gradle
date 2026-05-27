@@ -14,9 +14,14 @@ nva {
 }
 
 dependencies {
-    testImplementation nvaCatalog.bundles.testing.mockito
-    testImplementation nvaCatalog.bundles.testing.hamcrest
-    testImplementation nvaCatalog.bundles.testing.junit
+    testImplementation nvaCatalog.mockito.core
+    testImplementation nvaCatalog.hamcrest
+    testImplementation nvaCatalog.hamcrest.core
+    testImplementation nvaCatalog.junit.jupiter
+    testImplementation nvaCatalog.junit.jupiter.api
+    testImplementation nvaCatalog.junit.jupiter.engine
+    testImplementation nvaCatalog.junit.jupiter.params
+    testImplementation nvaCatalog.junit.platform.launcher
 }
 
 tasks.named('test') {

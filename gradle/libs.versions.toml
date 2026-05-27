@@ -44,8 +44,3 @@ tika-langdetect = { group = 'org.apache.tika', name = 'tika-langdetect', version
 tika-langdetect-optimaize = { group = 'org.apache.tika', name = 'tika-langdetect-optimaize', version.ref = 'tika' }
 swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.ref = 'swaggerCoreVersion' }
 reflections = { group = 'org.reflections', name = 'reflections', version.ref = 'reflections' }
-
-[bundles]
-validation = ['jakarta-validation-api', 'jakarta-el-api', 'glassfish-el', 'apache-bval']
-jaxb = ['xsd2java-api', 'jaxb-runtime', 'xsd2java-jakarta']
-xsd2java = ["xsd2java-xjc", "xsd2java-impl", "xsd2java-api", "xsd2java-activation", "xsd2java-jakarta"]

@@ -9,8 +9,13 @@ dependencies {
     implementation project(":publication-model")
     implementation nvaCatalog.aws.sdk.dynamo
     implementation nvaCatalog.aws.sdk2.sqs
-    implementation nvaCatalog.bundles.jena
-    implementation nvaCatalog.bundles.logging
+    implementation nvaCatalog.jena.core
+    implementation nvaCatalog.jena.arq
+    implementation nvaCatalog.lambda.log4j
+    implementation nvaCatalog.log4j.api
+    implementation nvaCatalog.log4j.core
+    implementation nvaCatalog.log4j.slf4j.impl
+    implementation nvaCatalog.slf4j.api
 
     testImplementation(project(':publication-testing'))
     testImplementation project(":publication-model-testing")

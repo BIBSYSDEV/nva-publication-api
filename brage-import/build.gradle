@@ -11,7 +11,11 @@ dependencies {
     implementation nvaLibs.clients
     implementation nvaLibs.auth
 
-    implementation nvaCatalog.bundles.logging
+    implementation nvaCatalog.lambda.log4j
+    implementation nvaCatalog.log4j.api
+    implementation nvaCatalog.log4j.core
+    implementation nvaCatalog.log4j.slf4j.impl
+    implementation nvaCatalog.slf4j.api
 
     implementation nvaLibs.eventhandlers
 
@@ -36,8 +40,14 @@ dependencies {
     testImplementation nvaCatalog.junit.platform.suite
 
     testImplementation nvaLibs.testutils
-    testImplementation nvaCatalog.bundles.testing.cucumber
-    testImplementation nvaCatalog.bundles.testing.junit
+    testImplementation nvaCatalog.cucumber.java
+    testImplementation nvaCatalog.cucumber.junit.platform.engine
+    testImplementation nvaCatalog.cucumber.picocontainer
+    testImplementation nvaCatalog.junit.jupiter
+    testImplementation nvaCatalog.junit.jupiter.api
+    testImplementation nvaCatalog.junit.jupiter.engine
+    testImplementation nvaCatalog.junit.jupiter.params
+    testImplementation nvaCatalog.junit.platform.launcher
     testImplementation nvaCatalog.junit.platform.suite
     testImplementation project(":publication-model-testing")
     testImplementation project(path: ':publication-testing')

@@ -20,12 +20,24 @@ dependencies {
     implementation nvaCatalog.aws.sdk2.s3
     implementation nvaCatalog.aws.sdk2.sqs
 
-    implementation nvaCatalog.bundles.testing.junit
-    implementation nvaCatalog.bundles.testing.mockito
-    implementation nvaCatalog.bundles.testing.hamcrest
+    implementation nvaCatalog.junit.jupiter
+    implementation nvaCatalog.junit.jupiter.api
+    implementation nvaCatalog.junit.jupiter.engine
+    implementation nvaCatalog.junit.jupiter.params
+    implementation nvaCatalog.junit.platform.launcher
+    implementation nvaCatalog.mockito.core
+    implementation nvaCatalog.hamcrest
+    implementation nvaCatalog.hamcrest.core
     implementation nvaCatalog.datafaker
     implementation nvaLibs.testutils
-    implementation nvaCatalog.bundles.jackson
+    implementation nvaCatalog.jackson.annotations
+    implementation nvaCatalog.jackson.core
+    implementation nvaCatalog.jackson.databind
+    implementation nvaCatalog.jackson.dataformat.xml
+    implementation nvaCatalog.jackson.datatype.jdk8
+    implementation nvaCatalog.jackson.datatype.jsr310
+    implementation nvaCatalog.jackson.datatype.problem
+    implementation nvaCatalog.jackson.module.parameter.names
     implementation(nvaCatalog.aws.dynamodb.local) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
