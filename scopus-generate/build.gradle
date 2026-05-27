@@ -1,9 +1,3 @@
-project.ext {
-    jaxbTargetDir = file("$buildDir/generated/sources/xjc")
-}
-
-sourceSets.main.java.srcDirs += jaxbTargetDir
-
 configurations {
     xjc
 }
@@ -49,19 +43,17 @@ abstract class Xsd2Pojo extends DefaultTask {
     }
 }
 
-tasks.register('xsd2java', Xsd2Pojo) {
+def xsd2java = tasks.register('xsd2java', Xsd2Pojo) {
     schemaUri = 'https://schema.elsevier.com/dtds/document/abstracts/xocs-ani515.xsd'
     bindingFile = file('src/main/resources/xocs-ani515.xjb')
     xjcClasspath = configurations.xjc
-    outputDir = jaxbTargetDir
+    outputDir = layout.buildDirectory.dir('generated/sources/xjc')
 }
+
+sourceSets.main.java.srcDir(xsd2java.flatMap { it.outputDir })
 
 tasks.withType(Jar).configureEach {
     outputs.cacheIf { true }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    dependsOn(xsd2java)
 }
 
 tasks.withType(Pmd).configureEach {
