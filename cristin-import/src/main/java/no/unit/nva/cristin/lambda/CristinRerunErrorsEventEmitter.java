@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.lambda;
 
+import static java.util.function.Predicate.not;
 import static nva.commons.core.attempt.Try.attempt;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -11,7 +12,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -83,9 +83,7 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
 
   private List<UnixPath> getSuccessfullyProceededReports(
       Map<UnixPath, EventReference> failedEntries, List<UnixPath> errorReports) {
-    var failedReports = new ArrayList<>(failedEntries.keySet());
-    errorReports.removeAll(failedReports);
-    return errorReports;
+    return errorReports.stream().filter(not(failedEntries::containsKey)).toList();
   }
 
   @JacocoGenerated
