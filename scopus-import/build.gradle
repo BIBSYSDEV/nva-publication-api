@@ -1,57 +1,57 @@
 dependencies {
-    implementation project(":publication-model")
-    implementation libs.tika.core
-    implementation libs.tika.langdetect
-    implementation libs.tika.langdetect.optimaize
-    implementation libs.apache.commons.collections
-    implementation project(":scopus-generate")
-    implementation libs.xsd2java.jakarta
-    implementation nvaCatalog.aws.sdk2.s3
-    implementation nvaCatalog.aws.lambda.events
-    implementation nvaCatalog.aws.sdk.dynamo
-    implementation nvaCatalog.aws.sdk2.secrets
-
-    implementation nvaLibs.s3
-    implementation nvaLibs.secrets
-    implementation nvaLibs.json
-    implementation nvaLibs.doi
-    implementation nvaLibs.core
-    implementation nvaLibs.eventhandlers
-    implementation nvaLibs.apigateway
-    implementation nvaCatalog.nva.language
-    implementation nvaLibs.logutils
-    implementation nvaLibs.auth
-    implementation nvaLibs.identifiers
-    implementation nvaLibs.clients
-
-    implementation nvaCatalog.aws.lambda.core
-    implementation nvaCatalog.aws.lambda.events
-    implementation nvaCatalog.lambda.log4j
-    implementation nvaCatalog.log4j.api
-    implementation nvaCatalog.log4j.core
-    implementation nvaCatalog.log4j.slf4j.impl
-    implementation nvaCatalog.slf4j.api
-    implementation nvaCatalog.jackson.annotations
-    implementation nvaCatalog.jackson.core
-    implementation nvaCatalog.jackson.databind
-    implementation nvaCatalog.jackson.dataformat.xml
-    implementation nvaCatalog.jackson.datatype.jdk8
-    implementation nvaCatalog.jackson.datatype.jsr310
-    implementation nvaCatalog.jackson.datatype.problem
-    implementation nvaCatalog.jackson.module.parameter.names
-    implementation project(":publication-commons")
-    implementation project(":s3-import-commons")
-    implementation project(":expansion")
-
-    testImplementation nvaLibs.testutils
-    testImplementation nvaLibs.json
-
-    testImplementation nvaCatalog.wiremock
-    testImplementation nvaCatalog.wiremock.junit5
-    testImplementation project(":brage-import")
-    testImplementation project(":brage-import")
-    testImplementation project(":publication-testing")
-    testImplementation project(":publication-model-testing")
+    api(libs.tika.core)
+    api(nvaCatalog.aws.lambda.core)
+    api(nvaCatalog.aws.lambda.events)
+    api(nvaCatalog.aws.sdk2.s3)
+    api(nvaCatalog.jackson.annotations)
+    api(nvaCatalog.jackson.databind)
+    api(nvaLibs.apigateway)
+    api(nvaLibs.auth)
+    api(nvaLibs.clients)
+    api(nvaLibs.core)
+    api(nvaLibs.json)
+    api(nvaLibs.secrets)
+    api(project(":expansion"))
+    api(project(":publication-commons"))
+    api(project(":publication-model"))
+    api(project(":scopus-generate"))
+    implementation(libs.apache.commons.collections)
+    implementation(libs.tika.langdetect.optimaize)
+    implementation(libs.xsd2java.jakarta)
+    implementation(nvaCatalog.aws.sdk.s3)
+    implementation(nvaCatalog.aws.sdk2.http.client)
+    implementation(nvaCatalog.aws.sdk2.sdk.core)
+    implementation(nvaCatalog.httpcore4)
+    implementation(nvaCatalog.jackson.core)
+    implementation(nvaCatalog.log4j.core)
+    implementation(nvaCatalog.nva.language)
+    implementation(nvaCatalog.slf4j.api)
+    implementation(nvaLibs.identifiers)
+    implementation(nvaLibs.s3)
+    implementation(project(":s3-import-commons"))
+    runtimeOnly(nvaCatalog.jackson.dataformat.xml)
+    runtimeOnly(nvaCatalog.jackson.datatype.jdk8)
+    runtimeOnly(nvaCatalog.jackson.datatype.jsr310)
+    runtimeOnly(nvaCatalog.jackson.datatype.problem)
+    runtimeOnly(nvaCatalog.jackson.module.parameter.names)
+    runtimeOnly(nvaCatalog.log4j.api)
+    runtimeOnly(nvaCatalog.log4j.slf4j.impl)
+    testImplementation(nvaCatalog.aws.sdk.dynamo)
+    testImplementation(nvaCatalog.aws.sdk2.secrets)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaCatalog.wiremock.core)
+    testImplementation(nvaCatalog.wiremock.junit5)
+    testImplementation(nvaLibs.doi)
+    testImplementation(nvaLibs.logutils)
+    testImplementation(nvaLibs.testutils)
+    testImplementation(project(":publication-model-testing"))
+    testImplementation(project(":publication-testing"))
+    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
+    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
+    testRuntimeOnly(nvaCatalog.wiremock)
 }
 
 test {

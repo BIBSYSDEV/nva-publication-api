@@ -4,7 +4,7 @@ plugins {
 
 nva {
     dependencyAnalysis {
-        enforced = false
+        enforced = true
     }
     generatedCode = [
         'no/scopus/generated/**',

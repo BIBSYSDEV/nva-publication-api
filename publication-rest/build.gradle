@@ -1,71 +1,68 @@
 dependencies {
     //This package is added by SAM template in the runtime environment
-    implementation(project(':publication-commons')) {
+    api(project(':publication-commons')) {
         exclude group: "software.amazon.ion", module: "ion-java"
     }
-    implementation project(':datacite-commons')
-    implementation project(':schema-org-metadata')
-    implementation project(":tickets")
-    implementation project(":publication-event-handlers")
-
-    implementation nvaLibs.apigateway
-    implementation nvaLibs.core
-    implementation nvaLibs.auth
-    implementation nvaLibs.json
-    implementation nvaLibs.s3
-    implementation nvaLibs.identifiers
-    implementation nvaLibs.clients
-    implementation project(":publication-model")
-    implementation nvaLibs.secrets
-
-    implementation libs.nva.doi.partner.data
-
-    implementation libs.jaxb.runtime
-    implementation libs.xsd2java.api
-    implementation libs.xsd2java.jakarta
-    implementation nvaCatalog.jackson.databind
-    implementation nvaCatalog.jackson.core
-    implementation nvaCatalog.lambda.log4j
-    implementation nvaCatalog.log4j.api
-    implementation nvaCatalog.log4j.core
-    implementation nvaCatalog.log4j.slf4j.impl
-    implementation nvaCatalog.slf4j.api
-
-    implementation nvaCatalog.aws.sdk.dynamo
-    implementation nvaCatalog.aws.lambda.core
-    implementation nvaCatalog.httpcore5
-    implementation nvaCatalog.aws.sdk2.secrets
-    implementation nvaCatalog.aws.sdk2.s3
-    implementation nvaCatalog.zalando
-    implementation nvaCatalog.aws.sdk2.eventbridge
-    implementation nvaCatalog.aws.sdk2.urlconnection
-    implementation libs.jakarta.validation.api
-    implementation libs.jakarta.el.api
-    implementation libs.glassfish.el
-    implementation libs.apache.bval
-
-    implementation libs.apache.commons.text
-
-    testImplementation project(":publication-testing")
-    testImplementation project(":tickets-test")
-    testImplementation nvaCatalog.mockito.junit.jupiter
-    testImplementation nvaCatalog.javers
-    testImplementation project(":publication-model-testing")
-    testImplementation nvaLibs.logutils
-    testImplementation nvaLibs.testutils
-    testImplementation nvaCatalog.zalando
-    testImplementation nvaCatalog.wiremock
-    testImplementation nvaCatalog.wiremock.junit5
-    testImplementation(nvaCatalog.httpcore5)
-
+    api(nvaCatalog.aws.lambda.core)
+    api(nvaCatalog.aws.sdk.dynamo)
+    api(nvaCatalog.aws.sdk2.eventbridge)
+    api(nvaCatalog.aws.sdk2.s3)
+    api(nvaCatalog.aws.sdk2.secrets)
+    api(nvaCatalog.jackson.annotations)
+    api(nvaCatalog.jackson.databind)
+    api(nvaLibs.apigateway)
+    api(nvaLibs.auth)
+    api(nvaLibs.clients)
+    api(nvaLibs.core)
+    api(nvaLibs.identifiers)
+    api(nvaLibs.json)
+    api(nvaLibs.secrets)
+    api(project(":publication-model"))
+    compileOnly(nvaCatalog.aws.sdk.apigateway) {
+        because "PMD complains for the com/amazonaws/regions/Regions class"
+    }
+    compileOnly(libs.xsd2java.jakarta)
+    implementation(libs.jakarta.validation.api)
+    implementation(libs.nva.doi.partner.data)
+    implementation(nvaCatalog.aws.sdk2.auth)
+    implementation(nvaCatalog.aws.sdk2.regions)
+    implementation(nvaCatalog.httpcore4)
+    implementation(nvaCatalog.httpcore5)
+    implementation(nvaCatalog.jackson.core)
+    implementation(nvaCatalog.log4j.core)
+    implementation(nvaCatalog.slf4j.api)
+    implementation(project(":publication-event-handlers"))
+    implementation(project(':datacite-commons'))
+    implementation(project(':schema-org-metadata'))
+    runtimeOnly(libs.apache.bval)
+    runtimeOnly(libs.jaxb.runtime)
+    runtimeOnly(libs.xsd2java.api)
+    runtimeOnly(nvaCatalog.aws.sdk2.urlconnection)
+    runtimeOnly(nvaCatalog.log4j.api)
+    runtimeOnly(nvaCatalog.log4j.slf4j.impl)
+    testImplementation(nvaCatalog.aws.java.sdk.core)
     testImplementation(nvaCatalog.aws.dynamodb.local) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
-
-    compileOnly(nvaCatalog.aws.sdk.apigateway) {
-        because "PMD complains for the com/amazonaws/regions/Regions class"
-    }
+    testImplementation(nvaCatalog.commons.lang)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.javers)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaCatalog.mockito.junit.jupiter)
+    testImplementation(nvaCatalog.wiremock.core)
+    testImplementation(nvaCatalog.wiremock.junit5)
+    testImplementation(nvaCatalog.zalando)
+    testImplementation(nvaLibs.logutils)
+    testImplementation(nvaLibs.testutils)
+    testImplementation(project(":publication-model-testing"))
+    testImplementation(project(":publication-testing"))
+    testImplementation(project(":tickets-test"))
+    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
+    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
+    testRuntimeOnly(nvaCatalog.wiremock)
 }
 
 test {

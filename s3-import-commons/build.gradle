@@ -1,60 +1,19 @@
 dependencies {
-    implementation project(":publication-constants")
-    implementation project(":publication-commons")
-    implementation project(":publication-model")
-
-    implementation nvaLibs.s3
-    implementation nvaLibs.core
-    implementation nvaLibs.json
-    implementation nvaLibs.eventhandlers
-    implementation nvaLibs.identifiers
-    implementation nvaLibs.apigateway
-
-    implementation nvaCatalog.jackson.annotations
-    implementation nvaCatalog.jackson.databind
-    implementation nvaCatalog.jackson.core
-
-    implementation nvaCatalog.aws.lambda.core
-
-    implementation nvaCatalog.aws.sdk2.core
-    implementation nvaCatalog.aws.sdk2.eventbridge
-    implementation nvaCatalog.aws.sdk2.urlconnection
-    implementation nvaCatalog.aws.sdk2.s3
-    implementation nvaCatalog.aws.lambda.events
-    implementation nvaCatalog.aws.sdk2.regions
-    implementation nvaCatalog.aws.sdk2.http.client
-    implementation nvaCatalog.aws.sdk.dynamo
-    implementation nvaCatalog.aws.sdk.sqs
-
-    implementation libs.jaxb.runtime
-    implementation libs.xsd2java.api
-    implementation libs.xsd2java.jakarta
-    implementation nvaCatalog.opencsv
-
-    implementation nvaCatalog.aws.ion
-
-    implementation libs.apache.commons.collections
-    implementation nvaCatalog.lambda.log4j
-    implementation nvaCatalog.log4j.api
-    implementation nvaCatalog.log4j.core
-    implementation nvaCatalog.log4j.slf4j.impl
-    implementation nvaCatalog.slf4j.api
-
-    runtimeOnly nvaCatalog.jackson.datatype.jsr310
-    runtimeOnly nvaCatalog.jackson.datatype.jdk8
-
-    testImplementation project(":publication-testing")
-    testImplementation project(":publication-model-testing")
-    testImplementation nvaLibs.testutils
-    testImplementation nvaLibs.logutils
-    testImplementation nvaCatalog.aws.sdk2.utils
-    testImplementation nvaCatalog.aws.sdk2.s3
-    testImplementation nvaCatalog.datafaker
-    testImplementation nvaCatalog.mockito.junit.jupiter
-
-    compileOnly nvaLibs.apigateway
-    compileOnly nvaCatalog.zalando
-
+    api(libs.xsd2java.api)
+    api(nvaCatalog.aws.lambda.core)
+    api(nvaCatalog.aws.lambda.events)
+    api(nvaCatalog.aws.sdk.sqs)
+    api(nvaCatalog.aws.sdk2.eventbridge)
+    api(nvaCatalog.aws.sdk2.regions)
+    api(nvaCatalog.aws.sdk2.s3)
+    api(nvaCatalog.jackson.annotations)
+    api(nvaCatalog.jackson.databind)
+    api(nvaLibs.core)
+    api(nvaLibs.eventhandlers)
+    api(nvaLibs.json)
+    api(nvaLibs.s3)
+    api(project(":publication-commons"))
+    compileOnly(nvaCatalog.zalando)
     compileOnly(nvaCatalog.aws.sdk2.auth) {
         because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "
     }
@@ -64,6 +23,40 @@ dependencies {
     compileOnly(nvaCatalog.commons.validator) {
         because "PMD org/apache/commons/validator/routines/ISBNValidator"
     }
+    compileOnly(nvaLibs.apigateway)
+    implementation(libs.apache.commons.collections)
+    implementation(nvaCatalog.aws.ion)
+    implementation(nvaCatalog.aws.sdk2.aws.core)
+    implementation(nvaCatalog.aws.sdk2.core)
+    implementation(nvaCatalog.aws.sdk2.http.client)
+    implementation(nvaCatalog.aws.sdk2.urlconnection)
+    implementation(nvaCatalog.commons.lang)
+    implementation(nvaCatalog.jackson.core)
+    implementation(nvaCatalog.log4j.core)
+    implementation(nvaCatalog.opencsv)
+    implementation(nvaCatalog.slf4j.api)
+    implementation(nvaLibs.identifiers)
+    implementation(project(":publication-model"))
+    runtimeOnly(libs.jaxb.runtime)
+    runtimeOnly(nvaCatalog.jackson.datatype.jdk8)
+    runtimeOnly(nvaCatalog.jackson.datatype.jsr310)
+    runtimeOnly(nvaCatalog.log4j.api)
+    runtimeOnly(nvaCatalog.log4j.slf4j.impl)
+    testImplementation(nvaCatalog.aws.java.sdk.core)
+    testImplementation(nvaCatalog.aws.sdk.dynamo)
+    testImplementation(nvaCatalog.datafaker)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaCatalog.mockito.junit.jupiter)
+    testImplementation(nvaLibs.apigateway)
+    testImplementation(nvaLibs.logutils)
+    testImplementation(nvaLibs.testutils)
+    testImplementation(project(":publication-model-testing"))
+    testImplementation(project(":publication-testing"))
+    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
+    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
 }
 
 test {

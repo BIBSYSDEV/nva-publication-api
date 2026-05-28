@@ -3,17 +3,21 @@ configurations {
 }
 
 dependencies {
-    xjc libs.xsd2java.xjc
-    xjc libs.xsd2java.impl
-    xjc libs.xsd2java.api
-    xjc libs.xsd2java.activation
-    xjc libs.xsd2java.jakarta
-    implementation libs.xsd2java.xjc
-    implementation libs.xsd2java.impl
-    implementation libs.xsd2java.api
-    implementation libs.xsd2java.activation
-    implementation libs.xsd2java.jakarta
-    testImplementation nvaLibs.testutils
+    api(libs.xsd2java.jakarta)
+    runtimeOnly(libs.xsd2java.api)
+    runtimeOnly(libs.xsd2java.impl)
+    runtimeOnly(libs.xsd2java.xjc)
+    testRuntimeOnly(libs.aws.sdk2.third.party.jackson.core)
+    testRuntimeOnly(libs.jackson.dataformat.cbor)
+    testRuntimeOnly(nvaCatalog.aws.sdk.s3)
+    testRuntimeOnly(nvaCatalog.datafaker)
+    testRuntimeOnly(nvaCatalog.jackson.core)
+    testRuntimeOnly(nvaCatalog.jackson.databind)
+    xjc(libs.xsd2java.activation)
+    xjc(libs.xsd2java.api)
+    xjc(libs.xsd2java.impl)
+    xjc(libs.xsd2java.jakarta)
+    xjc(libs.xsd2java.xjc)
 }
 
 @CacheableTask

@@ -1,47 +1,36 @@
 dependencies {
-    implementation project(":publication-constants")
-    implementation project(":publication-commons")
-    implementation project(":publication-model")
-    implementation project(":publication-model-testing")
-    implementation nvaLibs.core
-    implementation nvaLibs.json
-    implementation nvaLibs.identifiers
-    implementation nvaLibs.s3
-    implementation nvaCatalog.nva.language
-    implementation nvaLibs.clients
-    implementation nvaLibs.auth
-
-    compileOnly nvaLibs.apigateway
-
-    implementation nvaCatalog.junit.jupiter.api
-
-
-    implementation nvaCatalog.aws.sdk.dynamo
-    implementation nvaCatalog.aws.sdk2.s3
-    implementation nvaCatalog.aws.sdk2.sqs
-
-    implementation nvaCatalog.junit.jupiter
-    implementation nvaCatalog.junit.jupiter.api
-    implementation nvaCatalog.junit.jupiter.engine
-    implementation nvaCatalog.junit.jupiter.params
-    implementation nvaCatalog.junit.platform.launcher
-    implementation nvaCatalog.mockito.core
-    implementation nvaCatalog.hamcrest
-    implementation nvaCatalog.hamcrest.core
-    implementation nvaCatalog.datafaker
-    implementation nvaLibs.testutils
-    implementation nvaCatalog.jackson.annotations
-    implementation nvaCatalog.jackson.core
-    implementation nvaCatalog.jackson.databind
-    implementation nvaCatalog.jackson.dataformat.xml
-    implementation nvaCatalog.jackson.datatype.jdk8
-    implementation nvaCatalog.jackson.datatype.jsr310
-    implementation nvaCatalog.jackson.datatype.problem
-    implementation nvaCatalog.jackson.module.parameter.names
+    api(nvaCatalog.aws.sdk.dynamo)
+    api(nvaCatalog.aws.sdk2.sqs)
+    api(nvaCatalog.jackson.annotations)
+    api(nvaCatalog.jackson.core)
+    api(nvaCatalog.junit.jupiter.api)
+    api(nvaLibs.auth)
+    api(nvaLibs.json)
+    api(project(":publication-commons"))
+    api(project(":publication-model"))
+    compileOnly(nvaLibs.apigateway)
+    implementation(nvaCatalog.aws.sdk2.s3)
+    implementation(nvaCatalog.aws.sdk2.sdk.core)
     implementation(nvaCatalog.aws.dynamodb.local) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
-
+    implementation(nvaCatalog.datafaker)
+    implementation(nvaCatalog.httpcore4)
+    implementation(nvaCatalog.jackson.databind)
+    implementation(nvaCatalog.mockito.core)
+    implementation(nvaLibs.core)
+    implementation(nvaLibs.identifiers)
+    implementation(nvaLibs.testutils)
+    implementation(project(":publication-constants"))
+    implementation(project(":publication-model-testing"))
     implementation(nvaCatalog.httpcore5)
+    runtimeOnly(libs.opentest4j)
+    runtimeOnly(nvaCatalog.jackson.dataformat.xml)
+    runtimeOnly(nvaCatalog.jackson.datatype.jdk8)
+    runtimeOnly(nvaCatalog.jackson.datatype.jsr310)
+    runtimeOnly(nvaCatalog.jackson.datatype.problem)
+    runtimeOnly(nvaCatalog.jackson.module.parameter.names)
+    runtimeOnly(nvaCatalog.junit.jupiter.engine)
+    runtimeOnly(nvaCatalog.junit.platform.launcher)
 }

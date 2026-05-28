@@ -1,28 +1,39 @@
 dependencies {
-    implementation(project(':publication-commons'))
-    implementation nvaLibs.core
-    implementation nvaLibs.json
-    implementation nvaLibs.auth
-    implementation nvaLibs.apigateway
-    implementation nvaLibs.identifiers
-    implementation nvaLibs.secrets
-    implementation project(":publication-model")
-    implementation nvaCatalog.aws.sdk.dynamo
-    implementation nvaCatalog.aws.sdk2.sqs
-    implementation nvaCatalog.jena.core
-    implementation nvaCatalog.jena.arq
-    implementation nvaCatalog.lambda.log4j
-    implementation nvaCatalog.log4j.api
-    implementation nvaCatalog.log4j.core
-    implementation nvaCatalog.log4j.slf4j.impl
-    implementation nvaCatalog.slf4j.api
-
-    testImplementation(project(':publication-testing'))
-    testImplementation project(":publication-model-testing")
-    testImplementation project(path: ':tickets-test')
-    testImplementation nvaLibs.testutils
-    testImplementation nvaLibs.logutils
-    testImplementation libs.jsonassert
+    api(libs.titanium.json.ld)
+    api(nvaCatalog.jackson.annotations)
+    api(nvaCatalog.jackson.core)
+    api(nvaCatalog.jackson.databind)
+    api(nvaCatalog.jena.core)
+    api(nvaCatalog.slf4j.api)
+    api(nvaLibs.apigateway)
+    api(nvaLibs.auth)
+    api(nvaLibs.identifiers)
+    api(nvaLibs.json)
+    api(project(":publication-commons"))
+    api(project(":publication-model"))
+    implementation(libs.glassfish.jakarta.json)
+    implementation(libs.joda.time)
+    implementation(nvaCatalog.httpcore4)
+    implementation(nvaCatalog.jena.arq)
+    implementation(nvaCatalog.log4j.core)
+    implementation(nvaLibs.core)
+    runtimeOnly(nvaCatalog.log4j.api)
+    runtimeOnly(nvaCatalog.log4j.slf4j.impl)
+    testFixturesRuntimeOnly(nvaCatalog.jackson.core)
+    testFixturesRuntimeOnly(nvaCatalog.jackson.databind)
+    testImplementation(nvaCatalog.aws.sdk.dynamo)
+    testImplementation(nvaCatalog.aws.sdk2.sqs)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaLibs.logutils)
+    testImplementation(nvaLibs.testutils)
+    testImplementation(project(":publication-model-testing"))
+    testImplementation(project(":publication-testing"))
+    testImplementation(project(":tickets-test"))
+    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
+    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
 }
 
 test {

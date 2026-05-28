@@ -14,14 +14,9 @@ nva {
 }
 
 dependencies {
-    testImplementation nvaCatalog.mockito.core
-    testImplementation nvaCatalog.hamcrest
-    testImplementation nvaCatalog.hamcrest.core
-    testImplementation nvaCatalog.junit.jupiter
-    testImplementation nvaCatalog.junit.jupiter.api
-    testImplementation nvaCatalog.junit.jupiter.engine
-    testImplementation nvaCatalog.junit.jupiter.params
-    testImplementation nvaCatalog.junit.platform.launcher
+    implementation(platform(nvaCatalog.aws.sdk.bom))
+    implementation(platform(nvaCatalog.aws.sdk2.bom))
+    testImplementation(platform(nvaCatalog.junit.bom))
 }
 
 tasks.named('test') {

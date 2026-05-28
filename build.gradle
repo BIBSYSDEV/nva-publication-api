@@ -5,3 +5,22 @@ plugins{
 subprojects{
     apply plugin: 'nva.publication.api.java-conventions'
 }
+
+// DynamoDBLocal ships a shaded copy of ion-java that clashes with the canonical
+// com.amazon.ion:ion-java brought in transitively by nvaLibs.s3.
+// Test-only; revisit when DynamoDBLocal is replaced/updated.
+dependencyAnalysis {
+    issues {
+        project(":s3-import-commons") {
+            onDuplicateClassWarnings {
+                exclude(
+                        "com.amazon.ion.IonReader",
+                        "com.amazon.ion.IonTextReader",
+                        "com.amazon.ion.IonWriter",
+                        "com.amazon.ion.system.IonReaderBuilder",
+                        "com.amazon.ion.system.IonTextWriterBuilder",
+                        )
+            }
+        }
+    }
+}

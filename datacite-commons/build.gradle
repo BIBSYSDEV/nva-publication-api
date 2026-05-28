@@ -1,44 +1,45 @@
 dependencies {
-
-    implementation libs.xsd2java.api
-    implementation libs.nva.doi.partner.data
-    implementation nvaLibs.core
-    implementation nvaLibs.identifiers
-    implementation nvaLibs.apigateway
-    implementation nvaLibs.core
-    implementation nvaLibs.json
-    implementation nvaLibs.secrets
-    implementation nvaLibs.auth
-
-    implementation nvaCatalog.lambda.log4j
-    implementation nvaCatalog.log4j.api
-    implementation nvaCatalog.log4j.core
-    implementation nvaCatalog.log4j.slf4j.impl
-    implementation nvaCatalog.slf4j.api
-    implementation nvaCatalog.jackson.annotations
-    implementation nvaCatalog.jackson.core
-    implementation nvaCatalog.jackson.databind
-    implementation nvaCatalog.jackson.dataformat.xml
-    implementation nvaCatalog.jackson.datatype.jdk8
-    implementation nvaCatalog.jackson.datatype.jsr310
-    implementation nvaCatalog.jackson.datatype.problem
-    implementation nvaCatalog.jackson.module.parameter.names
-
-    implementation project(":publication-model")
-    implementation project(":publication-commons")
-
-    implementation nvaCatalog.aws.sdk.dynamo
-    implementation nvaCatalog.aws.lambda.core
-    implementation nvaCatalog.aws.sdk2.secrets
-    implementation nvaCatalog.aws.sdk2.http.client
-
-    testImplementation project(":publication-model-testing")
-    testImplementation project(":publication-testing")
-    testImplementation nvaLibs.testutils
-    testImplementation(nvaCatalog.wiremock) {
+    api(libs.nva.doi.partner.data)
+    api(nvaCatalog.aws.lambda.core)
+    api(nvaCatalog.aws.sdk2.secrets)
+    api(nvaCatalog.jackson.annotations)
+    api(nvaLibs.apigateway)
+    api(nvaLibs.auth)
+    api(nvaLibs.core)
+    api(nvaLibs.identifiers)
+    api(nvaLibs.json)
+    api(project(":publication-commons"))
+    api(project(":publication-model"))
+    implementation(nvaCatalog.aws.sdk2.utils)
+    implementation(nvaCatalog.jackson.core)
+    implementation(nvaCatalog.jackson.databind)
+    implementation(nvaCatalog.log4j.core)
+    implementation(nvaCatalog.slf4j.api)
+    implementation(nvaLibs.secrets)
+    runtimeOnly(libs.xsd2java.api)
+    runtimeOnly(nvaCatalog.jackson.dataformat.xml)
+    runtimeOnly(nvaCatalog.jackson.datatype.jdk8)
+    runtimeOnly(nvaCatalog.jackson.datatype.jsr310)
+    runtimeOnly(nvaCatalog.jackson.datatype.problem)
+    runtimeOnly(nvaCatalog.jackson.module.parameter.names)
+    runtimeOnly(nvaCatalog.log4j.api)
+    runtimeOnly(nvaCatalog.log4j.slf4j.impl)
+    testImplementation(nvaCatalog.aws.sdk.dynamo)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.httpcore4)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaCatalog.wiremock.core)
+    testImplementation(nvaCatalog.wiremock.junit5) {
         exclude group: 'org.apache.commons', module: 'commons-lang3'
     }
-    testImplementation(nvaCatalog.wiremock.junit5) {
+    testImplementation(nvaCatalog.zalando)
+    testImplementation(nvaLibs.testutils)
+    testImplementation(project(":publication-model-testing"))
+    testImplementation(project(":publication-testing"))
+    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
+    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
+    testRuntimeOnly(nvaCatalog.wiremock) {
         exclude group: 'org.apache.commons', module: 'commons-lang3'
     }
 }

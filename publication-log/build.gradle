@@ -1,29 +1,29 @@
 dependencies {
-
-    implementation project(":publication-commons")
-    implementation project(":publication-model")
-
-    implementation nvaLibs.apigateway
-    implementation nvaLibs.core
-    implementation nvaLibs.json
-    implementation nvaLibs.identifiers
-    implementation nvaLibs.clients
-    implementation nvaCatalog.aws.sdk.dynamo
-
-    implementation nvaCatalog.jackson.core
-    implementation nvaCatalog.jackson.databind
-
-    implementation nvaCatalog.lambda.log4j
-    implementation nvaCatalog.log4j.api
-    implementation nvaCatalog.log4j.core
-    implementation nvaCatalog.log4j.slf4j.impl
-    implementation nvaCatalog.slf4j.api
-
-    testImplementation nvaLibs.testutils
-    testImplementation nvaCatalog.zalando
-
-    testImplementation project(":publication-model-testing")
-    testImplementation project(":publication-testing")
+    api(nvaCatalog.aws.lambda.core)
+    api(nvaCatalog.jackson.annotations)
+    api(nvaCatalog.slf4j.api)
+    api(nvaLibs.apigateway)
+    api(nvaLibs.clients)
+    api(nvaLibs.core)
+    api(nvaLibs.identifiers)
+    api(project(":publication-commons"))
+    api(project(":publication-model"))
+    implementation(nvaCatalog.log4j.core)
+    runtimeOnly(nvaCatalog.jackson.core)
+    runtimeOnly(nvaCatalog.jackson.databind)
+    runtimeOnly(nvaCatalog.log4j.api)
+    runtimeOnly(nvaCatalog.log4j.slf4j.impl)
+    testImplementation(nvaCatalog.aws.sdk.dynamo)
+    testImplementation(nvaCatalog.jackson.core)
+    testImplementation(nvaCatalog.jackson.databind)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaCatalog.zalando)
+    testImplementation(nvaLibs.testutils)
+    testImplementation(project(":publication-model-testing"))
+    testImplementation(project(":publication-testing"))
+    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
+    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
 }
 
 test {
