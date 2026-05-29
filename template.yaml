@@ -154,6 +154,8 @@ Globals:
         EXTERNAL_USER_POOL_URI: !Ref ExternalCognitoAuthorizerUrl
         COGNITO_AUTHORIZER_URLS: !Join [",", !Ref CognitoAuthorizerUrls]
         CRISTIN_UNITS_S3_URI: !Ref CristinUnitsS3ObjectUri
+        LOG_LEVEL: "info"
+        LOG4J_CONFIGURATION_FILE: classpath:nva-log4j2.xml
     Architectures:
       - arm64
 
