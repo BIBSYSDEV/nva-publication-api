@@ -12,6 +12,7 @@ import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
@@ -42,8 +43,7 @@ import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -194,7 +194,7 @@ class FilenameEventEmitterTest {
   @Test
   void handlerLogsAndReturnsFailedEventRequestsWhenEventsFailToBeEmitted() throws IOException {
 
-    final TestAppender appender = LogUtils.getTestingAppender(FilenameEventEmitter.class);
+    var logRecorder = LogRecorder.forClass(FilenameEventEmitter.class);
 
     handler = handlerThatFailsToEmitMessages();
     EventReference importRequest = newImportRequest();
@@ -206,7 +206,7 @@ class FilenameEventEmitterTest {
 
     assertThat(failedResults, containsInAnyOrder(injectedFiles.toArray(URI[]::new)));
     for (URI filename : injectedFiles) {
-      assertThat(appender.getMessages(), containsString(filename.toString()));
+      assertThat(logRecorder.messages(), hasItem(containsString(filename.toString())));
     }
   }
 

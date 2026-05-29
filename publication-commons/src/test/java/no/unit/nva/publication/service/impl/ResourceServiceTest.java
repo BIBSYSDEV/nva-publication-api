@@ -151,8 +151,8 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
-import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
+import nva.commons.logutils.LogRecorder;
+import org.apache.logging.log4j.core.LogEvent;
 import org.hamcrest.Matchers;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
@@ -559,14 +559,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
   @Test
   void markPublicationForDeletionLogsConditionExceptionWhenUpdateConditionFails()
       throws ApiGatewayException {
-    TestAppender testAppender = LogUtils.getTestingAppender(ResourceService.class);
+    var logRecorder = LogRecorder.forClass(ResourceService.class);
     Publication resource = createPublishedResource();
     Executable action =
         () ->
             resourceService.markPublicationForDeletion(
                 UserInstance.fromPublication(resource), resource.getIdentifier());
     assertThrows(BadRequestException.class, action);
-    assertThat(testAppender.getMessages(), containsString(ILLEGAL_DELETE_WHEN_NOT_DRAFT));
+    assertThat(logRecorder.messages(), hasItem(containsString(ILLEGAL_DELETE_WHEN_NOT_DRAFT)));
   }
 
   @Test
@@ -850,11 +850,11 @@ class ResourceServiceTest extends ResourcesLocalTest {
     var resources =
         userResources.stream().map(Resource::fromPublication).map(Entity.class::cast).toList();
 
-    var testAppender = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(ResourceServiceTest.class);
 
     resourceService.refreshResources(resources);
 
-    assertThatFailedBatchScanLogsProperly(testAppender, userResources);
+    assertThatFailedBatchScanLogsProperly(logRecorder, userResources);
   }
 
   @Test
@@ -1073,9 +1073,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
   @Test
   void shouldLogWhenPublicationToRefreshDoesNotExist() {
     var publication = randomPublication();
-    var appender = LogUtils.getTestingAppender(ResourceService.class);
+    var logRecorder = LogRecorder.forClass(ResourceService.class);
     resourceService.refreshResource(publication.getIdentifier());
-    assertThat(appender.getMessages(), Matchers.containsString("Resource to refresh is not found"));
+    assertThat(logRecorder.messages(), hasItem(containsString("Resource to refresh is not found")));
   }
 
   @Test
@@ -2139,12 +2139,14 @@ class ResourceServiceTest extends ResourcesLocalTest {
   }
 
   private void assertThatFailedBatchScanLogsProperly(
-      TestAppender testAppender, Set<Publication> userResources) {
-    assertThat(testAppender.getMessages(), containsString("AmazonDynamoDBException"));
+      LogRecorder logRecorder, Set<Publication> userResources) {
+    var exceptionsThrown =
+        logRecorder.events().stream().map(LogEvent::getThrown).map(Throwable::toString).toList();
+    assertThat(exceptionsThrown, hasItem(containsString("AmazonDynamoDBException")));
     userResources.forEach(
         publication -> {
           var expected = "Resource:" + publication.getIdentifier().toString();
-          assertThat(testAppender.getMessages(), containsString(expected));
+          assertThat(logRecorder.messages(), hasItem(containsString(expected)));
         });
   }
 

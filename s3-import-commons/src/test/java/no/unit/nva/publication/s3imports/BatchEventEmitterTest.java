@@ -7,6 +7,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,8 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import net.datafaker.providers.base.BaseFaker;
 import net.datafaker.providers.base.Lorem;
-import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,7 +64,7 @@ public class BatchEventEmitterTest {
   @Test
   void emitEventLogsNumberOfEntriesInRequestWhenEventEmissionFails(@Mock EventBridgeClient client) {
     eventBridgeClient = eventBridgeClientThrowsExceptionWhenPuttingRequests(client);
-    TestAppender logAppender = LogUtils.getTestingAppender(BatchEventEmitter.class);
+    var logRecorder = LogRecorder.forClass(BatchEventEmitter.class);
     BatchEventEmitter<String> batchEventEmitter = newEventEmitter();
     List<String> eventBodies = generateInputBiggerThanEventEmittersRequestSize();
     batchEventEmitter.addEvents(eventBodies);
@@ -72,8 +72,8 @@ public class BatchEventEmitterTest {
         EventBridgeException.class,
         () -> batchEventEmitter.emitEvents(NUMBER_OF_EVENTS_SENT_PER_REQUEST));
     assertThat(
-        logAppender.getMessages(),
-        containsString(NUMBER_OF_REQUEST_ENTRIES + NUMBER_OF_EVENTS_SENT_PER_REQUEST));
+        logRecorder.messages(),
+        hasItem(containsString(NUMBER_OF_REQUEST_ENTRIES + NUMBER_OF_EVENTS_SENT_PER_REQUEST)));
   }
 
   @ParameterizedTest

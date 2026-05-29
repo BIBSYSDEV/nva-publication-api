@@ -6,6 +6,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -53,7 +54,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -263,7 +264,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
   @Test
   void shouldLogFailureWhenExceptionIsThrown() {
-    final var logger = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(EventBasedBatchScanHandlerTest.class);
     var expectedExceptionMessage = randomString();
     var spiedResourceService = resourceService;
     doThrow(new RuntimeException(expectedExceptionMessage))
@@ -274,7 +275,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     Executable action =
         () -> handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
     assertThrows(RuntimeException.class, action);
-    assertThat(logger.getMessages(), containsString(expectedExceptionMessage));
+    assertThat(logRecorder.messages(), hasItem(containsString(expectedExceptionMessage)));
   }
 
   @Test

@@ -16,7 +16,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_STANDARD;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyString;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
@@ -71,7 +71,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -623,13 +623,12 @@ class CreateTicketHandlerTest extends TicketTestLocal {
             randomString(),
             MANAGE_RESOURCES_STANDARD,
             SUPPORT);
-    var logAppender = LogUtils.getTestingAppender(CreateTicketHandler.class);
+    var logRecorder = LogRecorder.forClass(CreateTicketHandler.class);
     handler.handleRequest(request, output, CONTEXT);
 
     var response = GatewayResponse.fromOutputStream(output, Void.class);
-    var logMessages = logAppender.getMessages();
 
-    assertThat(logMessages, is(emptyString()));
+    assertThat(logRecorder.messages(), is(empty()));
     assertThat(response.getStatusCode(), is(equalTo(HTTP_CREATED)));
   }
 
