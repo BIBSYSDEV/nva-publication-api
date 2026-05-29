@@ -71,7 +71,7 @@ import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import nva.commons.secrets.SecretsReader;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
@@ -404,7 +404,7 @@ public class ContributorExtractorTest {
 
   @Test
   void shouldHandlePiaConnectionException() {
-    var appender = LogUtils.getTestingAppender(PiaConnection.class);
+    var logRecorder = LogRecorder.forClass(PiaConnection.class);
     var document = ScopusGenerator.createWithNumberOfContributorsFromAuthorTp(1).getDocument();
     var authorTp = getFirstAuthor(document);
 
@@ -417,12 +417,12 @@ public class ContributorExtractorTest {
 
     contributorExtractorFromDocument().generateContributors(document);
 
-    assertThat(appender.getMessages(), containsString(PiaConnection.PIA_RESPONSE_ERROR));
+    assertThat(logRecorder.messages(), hasItem(containsString(PiaConnection.PIA_RESPONSE_ERROR)));
   }
 
   @Test
   void shouldHandlePiaBadRequest() {
-    var appender = LogUtils.getTestingAppender(PiaConnection.class);
+    var logRecorder = LogRecorder.forClass(PiaConnection.class);
     var document = ScopusGenerator.createWithNumberOfContributorsFromAuthorTp(1).getDocument();
     var authorTp = getFirstAuthor(document);
 
@@ -435,7 +435,7 @@ public class ContributorExtractorTest {
 
     contributorExtractorFromDocument().generateContributors(document);
 
-    assertThat(appender.getMessages(), containsString(PiaConnection.PIA_RESPONSE_ERROR));
+    assertThat(logRecorder.messages(), hasItem(containsString(PiaConnection.PIA_RESPONSE_ERROR)));
   }
 
   @Test

@@ -1,17 +1,23 @@
-project.ext {
-    jaxbTargetDir = file("$buildDir/generated/sources/xjc")
-}
-
-sourceSets.main.java.srcDirs += jaxbTargetDir
-
 configurations {
     xjc
 }
 
 dependencies {
-    xjc libs.bundles.xsd2java
-    implementation libs.bundles.xsd2java
-    testImplementation nvaLibs.testutils
+    api(libs.xsd2java.jakarta)
+    runtimeOnly(libs.xsd2java.api)
+    runtimeOnly(libs.xsd2java.impl)
+    runtimeOnly(libs.xsd2java.xjc)
+    testRuntimeOnly(libs.aws.sdk2.third.party.jackson.core)
+    testRuntimeOnly(libs.jackson.dataformat.cbor)
+    testRuntimeOnly(nvaCatalog.aws.sdk.s3)
+    testRuntimeOnly(nvaCatalog.datafaker)
+    testRuntimeOnly(nvaCatalog.jackson.core)
+    testRuntimeOnly(nvaCatalog.jackson.databind)
+    xjc(libs.xsd2java.activation)
+    xjc(libs.xsd2java.api)
+    xjc(libs.xsd2java.impl)
+    xjc(libs.xsd2java.jakarta)
+    xjc(libs.xsd2java.xjc)
 }
 
 @CacheableTask
@@ -49,19 +55,17 @@ abstract class Xsd2Pojo extends DefaultTask {
     }
 }
 
-tasks.register('xsd2java', Xsd2Pojo) {
+def xsd2java = tasks.register('xsd2java', Xsd2Pojo) {
     schemaUri = 'https://schema.elsevier.com/dtds/document/abstracts/xocs-ani515.xsd'
     bindingFile = file('src/main/resources/xocs-ani515.xjb')
     xjcClasspath = configurations.xjc
-    outputDir = jaxbTargetDir
+    outputDir = layout.buildDirectory.dir('generated/sources/xjc')
 }
+
+sourceSets.main.java.srcDir(xsd2java.flatMap { it.outputDir })
 
 tasks.withType(Jar).configureEach {
     outputs.cacheIf { true }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    dependsOn(xsd2java)
 }
 
 tasks.withType(Pmd).configureEach {

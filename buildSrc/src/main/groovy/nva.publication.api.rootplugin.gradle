@@ -4,8 +4,12 @@ plugins {
 
 nva {
     dependencyAnalysis {
-        enforced = false
+        enforced = true
     }
+    generatedCode = [
+        'no/scopus/generated/**',
+        'no/unit/nva/model/testing/**'
+    ]
     spectral {
         documents = ['docs/*.yaml']
         rulesetFile = file('.spectral.yaml')

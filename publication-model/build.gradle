@@ -3,22 +3,34 @@ plugins {
 }
 
 dependencies {
-    implementation( nvaLibs.core )
-    implementation( nvaLibs.json )
-    implementation( nvaLibs.identifiers )
-    implementation ( nvaCatalog.commons.validator )
-    implementation( nvaCatalog.jackson.databind )
-    implementation nvaCatalog.bundles.logging
-
-    testImplementation( libs.reflections )
-    testImplementation( nvaCatalog.jena.core )
-    testImplementation( nvaCatalog.jena.arq )
-
-    testImplementation( nvaLibs.testutils )
-    testImplementation( nvaCatalog.javers )
-    testImplementation( libs.swagger.core )
-    testImplementation( nvaLibs.logutils )
-    testImplementation project(":publication-model-testing")
+    api(nvaCatalog.commons.validator)
+    api(nvaCatalog.jackson.annotations)
+    api(nvaCatalog.jackson.databind)
+    api(nvaCatalog.slf4j.api)
+    api(nvaLibs.core)
+    api(nvaLibs.identifiers)
+    api(nvaLibs.json)
+    implementation(nvaCatalog.jackson.core)
+    implementation(nvaCatalog.log4j.core)
+    runtimeOnly(nvaCatalog.log4j.api)
+    runtimeOnly(nvaCatalog.log4j.slf4j.impl)
+    testFixturesRuntimeOnly(nvaCatalog.jackson.core)
+    testImplementation(libs.glassfish.jakarta.json)
+    testImplementation(libs.reflections)
+    testImplementation(libs.swagger.core)
+    testImplementation(libs.swagger.models)
+    testImplementation(libs.titanium.json.ld)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.javers)
+    testImplementation(nvaCatalog.jena.arq)
+    testImplementation(nvaCatalog.jena.core)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaLibs.logutils)
+    testImplementation(nvaLibs.testutils)
+    testImplementation(project(":publication-model-testing"))
+    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
+    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
 }
 
 test {

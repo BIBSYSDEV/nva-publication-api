@@ -7,6 +7,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -24,7 +25,7 @@ import no.unit.nva.publication.model.events.DeleteEntryEvent;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.hamcrest.beans.HasPropertyWithValue;
 import org.hamcrest.core.Every;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,7 +84,7 @@ public class DeleteEntriesEventEmitterTest {
 
   @Test
   void shouldLogErrorWhenEmittingEventsFails() {
-    final var appender = LogUtils.getTestingAppender(DeleteEntriesEventEmitter.class);
+    var logRecorder = LogRecorder.forClass(DeleteEntriesEventEmitter.class);
     eventBridgeClient = new FakeEventBridgeClientThatFailsAllPutEvents(EVENT_BUS_NAME);
     handler = new DeleteEntriesEventEmitter(s3Client, eventBridgeClient);
     var identifiers = createRandomIdentifiers();
@@ -93,7 +94,7 @@ public class DeleteEntriesEventEmitterTest {
             new EventReference(
                 null, null, URI.create("s3://brage-migration-reports-750639270376")));
     handler.handleRequest(input, outputStream, context);
-    assertThat(appender.getMessages(), containsString(identifiers.get(0)));
+    assertThat(logRecorder.messages(), hasItem(containsString(identifiers.get(0))));
   }
 
   @Test

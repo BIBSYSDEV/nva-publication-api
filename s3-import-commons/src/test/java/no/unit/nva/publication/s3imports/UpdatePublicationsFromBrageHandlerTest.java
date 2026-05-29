@@ -8,10 +8,12 @@ import static no.unit.nva.publication.s3imports.Language.ENGLISH;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,7 +41,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -106,14 +108,13 @@ class UpdatePublicationsFromBrageHandlerTest extends ResourcesLocalTest {
     var request = randomRequest(false);
     var publicationIdentifier = SortableIdentifier.next();
     insertFile(request.uri(), randomCsvContent(publicationIdentifier));
-    var logAppender = LogUtils.getTestingAppender(UpdatePublicationsFromBrageHandler.class);
+    var logRecorder = LogRecorder.forClass(UpdatePublicationsFromBrageHandler.class);
 
     handler.handleRequest(stringToStream(request.toJsonString()), output, new FakeContext());
 
-    assertTrue(
-        logAppender
-            .getMessages()
-            .contains("Publication does not exist %s".formatted(publicationIdentifier)));
+    assertThat(
+        logRecorder.messages(),
+        hasItem(containsString("Publication does not exist %s".formatted(publicationIdentifier))));
   }
 
   private static UpdatePublicationsFromBrageRequest randomRequest(boolean dryRun) {
@@ -130,16 +131,16 @@ class UpdatePublicationsFromBrageHandlerTest extends ResourcesLocalTest {
     var publication =
         Resource.fromPublication(randomPublication()).persistNew(resourceService, userInstance());
     insertFile(request.uri(), randomCsvContent(publication.getIdentifier()));
-    var logAppender = LogUtils.getTestingAppender(UpdatePublicationsFromBrageHandler.class);
+    var logRecorder = LogRecorder.forClass(UpdatePublicationsFromBrageHandler.class);
 
     handler.handleRequest(stringToStream(request.toJsonString()), output, new FakeContext());
 
-    assertTrue(
-        logAppender
-            .getMessages()
-            .contains(
-                ("Dublin core does not exist at publication %s")
-                    .formatted(publication.getIdentifier())));
+    assertThat(
+        logRecorder.messages(),
+        hasItem(
+            containsString(
+                "Dublin core does not exist at publication %s"
+                    .formatted(publication.getIdentifier()))));
   }
 
   @Test
@@ -226,11 +227,6 @@ class UpdatePublicationsFromBrageHandlerTest extends ResourcesLocalTest {
 
   private static UserInstance userInstance() {
     return UserInstance.create(randomString(), randomUri());
-  }
-
-  private Publication persistPublicationWithDublinCoreFromArchive(String archive)
-      throws BadRequestException, IOException {
-    return persistPublicationWithDublinCoreFromArchive(archive, randomPublication(), List.of());
   }
 
   private Publication persistPublicationWithDublinCoreFromArchive(

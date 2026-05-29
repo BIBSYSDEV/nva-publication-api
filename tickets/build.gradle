@@ -1,35 +1,43 @@
 dependencies {
-    implementation project(":publication-commons")
-    implementation project(":publication-doi-commons")
-    implementation project(":datacite-commons")
-
-    implementation nvaLibs.apigateway
-    implementation nvaLibs.identifiers
-    implementation nvaLibs.secrets
-    implementation nvaLibs.core
-    implementation nvaLibs.json
-    implementation nvaLibs.auth
-    implementation project(":publication-model")
-    implementation nvaCatalog.aws.sdk.dynamo
-    implementation nvaCatalog.aws.sdk2.secrets
-
-    implementation nvaCatalog.jackson.annotations
-    implementation nvaCatalog.jackson.databind
-
-    implementation nvaCatalog.zalando
-    implementation nvaCatalog.bundles.logging
-
-    runtimeOnly nvaCatalog.jackson.core
-
-    testImplementation project(":publication-model-testing")
-    testImplementation nvaCatalog.jackson.core
-    testImplementation project(':publication-testing')
-    testImplementation nvaLibs.testutils
-    testImplementation project(":tickets-test")
-    testImplementation nvaLibs.logutils
-    testImplementation nvaCatalog.bundles.wiremock
-    compileOnly nvaCatalog.zalando
-    compileOnly nvaCatalog.aws.lambda.core
+    api(nvaCatalog.jackson.annotations)
+    api(nvaLibs.apigateway)
+    api(nvaLibs.core)
+    api(nvaLibs.identifiers)
+    api(nvaLibs.json)
+    api(project(":datacite-commons"))
+    api(project(":publication-commons"))
+    api(project(":publication-model"))
+    compileOnly(nvaCatalog.aws.lambda.core)
+    compileOnly(nvaCatalog.zalando)
+    implementation(nvaCatalog.aws.sdk2.secrets)
+    implementation(nvaCatalog.log4j.core)
+    implementation(nvaCatalog.slf4j.api)
+    implementation(nvaLibs.secrets)
+    runtimeOnly(nvaCatalog.jackson.core)
+    runtimeOnly(nvaCatalog.jackson.databind)
+    runtimeOnly(nvaCatalog.log4j.api)
+    runtimeOnly(nvaCatalog.log4j.slf4j.impl)
+    testImplementation(nvaCatalog.aws.lambda.core)
+    testImplementation(nvaCatalog.aws.sdk.dynamo)
+    testImplementation(nvaCatalog.aws.sdk2.http.client)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.jackson.core)
+    testImplementation(nvaCatalog.jackson.databind)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaCatalog.wiremock.core)
+    testImplementation(nvaCatalog.wiremock.junit5)
+    testImplementation(nvaCatalog.zalando)
+    testImplementation(nvaLibs.auth)
+    testImplementation(nvaLibs.logutils)
+    testImplementation(nvaLibs.testutils)
+    testImplementation(project(":publication-model-testing"))
+    testImplementation(project(":tickets-test"))
+    testImplementation(project(':publication-testing'))
+    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
+    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
+    testRuntimeOnly(nvaCatalog.wiremock)
 }
 
 test {

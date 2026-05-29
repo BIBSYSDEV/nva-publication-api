@@ -189,8 +189,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
+import nva.commons.logutils.LogRecorder;
 import org.apache.http.entity.ContentType;
 import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
@@ -614,7 +613,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
   @Test
   @DisplayName("handler logs error details on unexpected exception")
   void handlerLogsErrorDetailsOnUnexpectedException() throws IOException, ApiGatewayException {
-    final TestAppender appender = createAppenderForLogMonitoring();
+    var logRecorder = LogRecorder.forRoot(UpdatePublicationHandlerTest.class);
     resourceService = serviceFailsOnModifyRequestWithRuntimeError();
     updatePublicationHandler =
         new UpdatePublicationHandler(
@@ -632,7 +631,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     updatePublicationHandler.handleRequest(event, output, context);
     var gatewayResponse = toGatewayResponseProblem();
     assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_INTERNAL_SERVER_ERROR)));
-    assertThat(appender.getMessages(), containsString(SOME_MESSAGE));
+    assertThat(logRecorder.messages(), hasItem(containsString(SOME_MESSAGE)));
   }
 
   @Test
@@ -2990,10 +2989,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     Publication update = savedPublication.copy().build();
     update.getEntityDescription().setMainTitle(randomString());
     return update;
-  }
-
-  private TestAppender createAppenderForLogMonitoring() {
-    return LogUtils.getTestingAppenderForRootLogger();
   }
 
   private ResourceService serviceFailsOnModifyRequestWithRuntimeError() {

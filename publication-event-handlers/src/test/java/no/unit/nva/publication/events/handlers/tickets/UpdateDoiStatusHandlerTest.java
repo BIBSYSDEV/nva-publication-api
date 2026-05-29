@@ -6,6 +6,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -30,8 +31,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
-import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -55,11 +55,11 @@ class UpdateDoiStatusHandlerTest {
   private ByteArrayOutputStream outputStream;
   private Context context;
   private ResourceService resourceService;
-  private TestAppender logger;
+  private LogRecorder logRecorder;
 
   @BeforeEach
   void setUp() throws ApiGatewayException {
-    logger = LogUtils.getTestingAppender(UpdateDoiStatusProcess.class);
+    logRecorder = LogRecorder.forClass(UpdateDoiStatusProcess.class);
     resourceService = mock(ResourceService.class);
     handler = new UpdateDoiStatusHandler(resourceService);
     context = null;
@@ -136,7 +136,7 @@ class UpdateDoiStatusHandlerTest {
 
   @Test
   void handleRequestLogsUnexpectedExceptions() throws ApiGatewayException, IOException {
-    final TestAppender testAppender = LogUtils.getTestingAppender(EventHandler.class);
+    var eventLogRecorder = LogRecorder.forClass(EventHandler.class);
     Publication publication =
         new Builder().withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES).build();
     when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES))
@@ -152,14 +152,14 @@ class UpdateDoiStatusHandlerTest {
               RuntimeException.class,
               () -> handler.handleRequest(eventInputStream, outputStream, context));
       assertThat(actualException.getMessage(), containsString(expectedMessage));
-      assertThat(testAppender.getMessages(), containsString(expectedMessage));
+      assertThat(eventLogRecorder.messages(), hasItem(containsString(expectedMessage)));
     }
   }
 
   @Test
   void handlerLogsExceptionWhenPublicationAlreadyHasDoiAndDoiIsDifferent()
       throws NotFoundException, IOException {
-    final TestAppender testAppender = LogUtils.getTestingAppender(EventHandler.class);
+    var eventLogRecorder = LogRecorder.forClass(EventHandler.class);
     Publication publication =
         new Builder()
             .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
@@ -175,14 +175,16 @@ class UpdateDoiStatusHandlerTest {
               () -> handler.handleRequest(eventInputStream, outputStream, context));
       assertThat(
           actualException.getMessage(), containsString(DOI_DOES_NOT_MATCH_DOI_IN_PUBLICATION));
-      assertThat(testAppender.getMessages(), containsString(DOI_DOES_NOT_MATCH_DOI_IN_PUBLICATION));
+      assertThat(
+          eventLogRecorder.messages(),
+          hasItem(containsString(DOI_DOES_NOT_MATCH_DOI_IN_PUBLICATION)));
     }
   }
 
   @Test
   void handlerLogsExceptionWhenUnknownErrorFetchingPublication()
       throws NotFoundException, IOException {
-    final TestAppender testAppender = LogUtils.getTestingAppender(EventHandler.class);
+    var eventLogRecorder = LogRecorder.forClass(EventHandler.class);
     var unknownExceptionMessage = "Unknown exception: ";
     when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES))
         .thenThrow(new RuntimeException(unknownExceptionMessage));
@@ -193,7 +195,7 @@ class UpdateDoiStatusHandlerTest {
               RuntimeException.class,
               () -> handler.handleRequest(eventInputStream, outputStream, context));
       assertThat(actualException.getMessage(), containsString(unknownExceptionMessage));
-      assertThat(testAppender.getMessages(), containsString(unknownExceptionMessage));
+      assertThat(eventLogRecorder.messages(), hasItem(containsString(unknownExceptionMessage)));
     }
   }
 
@@ -258,13 +260,14 @@ class UpdateDoiStatusHandlerTest {
     handler.handleRequest(eventInputStream, outputStream, context);
 
     assertThat(
-        logger.getMessages(),
-        containsString(
-            String.format(
-                UpdateDoiStatusProcess.UPDATED_PUBLICATION_FORMAT,
-                PUBLICATION_IDENTIFIER_IN_RESOURCES,
-                EXAMPLE_DOI,
-                EXAMPLE_DOI_MODIFIED_DATE)));
+        logRecorder.messages(),
+        hasItem(
+            containsString(
+                String.format(
+                    UpdateDoiStatusProcess.UPDATED_PUBLICATION_FORMAT,
+                    PUBLICATION_IDENTIFIER_IN_RESOURCES,
+                    EXAMPLE_DOI,
+                    EXAMPLE_DOI_MODIFIED_DATE))));
   }
 
   private void verifySuccessfulDoiStatusUpdate(Publication expectedPublicationUpdate) {

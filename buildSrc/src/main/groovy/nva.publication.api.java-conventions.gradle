@@ -4,15 +4,19 @@ plugins {
 }
 
 nva {
+    generatedCode = [
+        'no/scopus/generated/**',
+        'no/unit/nva/model/testing/**'
+    ]
     pmd {
         rulesetFile = rootProject.file('config/pmd/ruleset.xml')
     }
 }
 
 dependencies {
-    testImplementation nvaCatalog.bundles.testing.mockito
-    testImplementation nvaCatalog.bundles.testing.hamcrest
-    testImplementation nvaCatalog.bundles.testing.junit
+    implementation(platform(nvaCatalog.aws.sdk.bom))
+    implementation(platform(nvaCatalog.aws.sdk2.bom))
+    testImplementation(platform(nvaCatalog.junit.bom))
 }
 
 tasks.named('test') {

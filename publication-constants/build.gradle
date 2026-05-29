@@ -1,4 +1,7 @@
 dependencies {
-    implementation nvaLibs.core
-    implementation nvaCatalog.bundles.logging
+    api(nvaLibs.core)
+    implementation(nvaCatalog.log4j.core)
+    implementation(nvaCatalog.slf4j.api)
+    runtimeOnly(nvaCatalog.log4j.api)
+    runtimeOnly(nvaCatalog.log4j.slf4j.impl)
 }

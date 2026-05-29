@@ -1,21 +1,13 @@
 
 dependencies {
-    implementation(project(':publication-commons'))
-    implementation nvaLibs.core
-    implementation nvaLibs.json
-    implementation nvaLibs.apigateway
-    implementation nvaLibs.identifiers
-    implementation nvaLibs.secrets
-    implementation project(":publication-model")
-    implementation project(":publication-model-testing")
-    implementation nvaCatalog.aws.sdk.dynamo
-    implementation nvaCatalog.junit.jupiter.params
-    implementation nvaLibs.testutils
-    testImplementation(project(':publication-testing'))
-    testImplementation nvaLibs.testutils
-    testImplementation libs.jsonassert
-
-    testImplementation(nvaCatalog.aws.dynamodb.local) {
+    api(nvaCatalog.junit.jupiter.params)
+    api(nvaLibs.apigateway)
+    api(project(":publication-model"))
+    api(project(':publication-commons'))
+    implementation(nvaLibs.identifiers)
+    implementation(nvaLibs.testutils)
+    implementation(project(":publication-model-testing"))
+    testRuntimeOnly(nvaCatalog.aws.dynamodb.local) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
         exclude group: 'org.apache.commons', module: 'commons-lang3'

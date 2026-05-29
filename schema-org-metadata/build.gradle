@@ -1,17 +1,33 @@
 dependencies {
-    implementation nvaLibs.core
-    implementation nvaLibs.json
-    implementation project(":publication-model")
-
-    implementation nvaCatalog.bundles.jackson
-
-    implementation (nvaCatalog.bundles.jena) {
+    api(nvaCatalog.jackson.databind)
+    api(nvaCatalog.slf4j.api)
+    api(project(":publication-model"))
+    implementation(libs.glassfish.jakarta.json)
+    implementation(libs.titanium.json.ld)
+    implementation (nvaCatalog.jena.arq) {
         exclude group: 'com.fasterxml.jackson.core', module:'jackson-core'
     }
-    testImplementation nvaLibs.identifiers
-    testImplementation project(':publication-testing')
-    testImplementation project(":publication-model-testing")
-    testImplementation libs.hamcrest.json
+    implementation (nvaCatalog.jena.core) {
+        exclude group: 'com.fasterxml.jackson.core', module:'jackson-core'
+    }
+    implementation(nvaLibs.core)
+    implementation(nvaLibs.json)
+    runtimeOnly(nvaCatalog.jackson.core)
+    runtimeOnly(nvaCatalog.jackson.dataformat.xml)
+    runtimeOnly(nvaCatalog.jackson.datatype.jdk8)
+    runtimeOnly(nvaCatalog.jackson.datatype.jsr310)
+    runtimeOnly(nvaCatalog.jackson.datatype.problem)
+    runtimeOnly(nvaCatalog.jackson.module.parameter.names)
+    testImplementation(libs.hamcrest.json)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.jackson.annotations)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaLibs.identifiers)
+    testImplementation(project(":publication-model-testing"))
+    testImplementation(project(':publication-testing'))
+    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
+    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
 }
 
 test {

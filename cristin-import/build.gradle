@@ -1,69 +1,73 @@
 apply plugin: 'io.freefair.lombok'
 
 dependencies {
-    implementation project(":publication-constants")
-    implementation project(":publication-commons")
-    implementation project(":s3-import-commons")
-    implementation project(":publication-model")
-
-    implementation nvaLibs.s3
-    implementation nvaLibs.core
-    implementation nvaLibs.json
-    implementation nvaLibs.eventhandlers
-    implementation nvaLibs.doi
-    implementation nvaLibs.auth
-    implementation nvaLibs.apigateway
-
-    implementation nvaCatalog.bundles.jackson
-
-    implementation nvaCatalog.hamcrest
-
-    implementation nvaCatalog.aws.sdk.dynamo
-    implementation nvaCatalog.aws.sdk.sqs
-    implementation nvaCatalog.aws.lambda.events
-    implementation nvaCatalog.aws.java.sdk.core
-    implementation nvaCatalog.aws.sdk2.core
-    implementation nvaCatalog.aws.sdk2.http.client
-    implementation nvaCatalog.aws.sdk2.urlconnection
-    implementation nvaCatalog.aws.sdk2.regions
-
-    implementation libs.typesafe.config
-    implementation nvaCatalog.bundles.logging
-
-    implementation nvaCatalog.opencsv
-
-    testImplementation project(":publication-model-testing")
-    testImplementation project(":publication-testing")
-    testImplementation nvaLibs.testutils
-    testImplementation nvaLibs.logutils
-    testImplementation nvaLibs.identifiers
-    testImplementation nvaCatalog.datafaker
-    testImplementation(nvaCatalog.javers) {
-        because "For comparing java objects and detailing the differences in readable way"
-    }
-    testImplementation nvaCatalog.aws.sdk2.s3
-
-    testImplementation nvaCatalog.jackson.core
-
-    compileOnly nvaCatalog.aws.sdk2.eventbridge
-    compileOnly nvaCatalog.aws.sdk2.s3
-
-    compileOnly nvaLibs.apigateway
-    compileOnly nvaCatalog.zalando
-    compileOnly nvaCatalog.aws.lambda.core
-    compileOnly nvaLibs.identifiers
-
+    annotationProcessor(libs.lombok)
+    api(nvaCatalog.aws.lambda.events)
+    api(nvaCatalog.aws.sdk.sqs)
+    api(nvaCatalog.jackson.annotations)
+    api(nvaCatalog.jackson.databind)
+    api(nvaLibs.auth)
+    api(nvaLibs.core)
+    api(nvaLibs.eventhandlers)
+    api(nvaLibs.json)
+    api(nvaLibs.s3)
+    api(project(":publication-commons"))
+    api(project(":publication-model"))
+    api(project(":s3-import-commons"))
+    compileOnly(nvaCatalog.aws.lambda.core)
     compileOnly(nvaCatalog.aws.sdk2.auth) {
         because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "
     }
-
+    compileOnly(nvaCatalog.aws.sdk2.eventbridge)
+    compileOnly(nvaCatalog.aws.sdk2.s3)
     compileOnly(nvaCatalog.commons.validator) {
         because "PMD org/apache/commons/validator/routines/ISBNValidator"
     }
-
-    testImplementation nvaCatalog.bundles.testing.cucumber
-    testImplementation nvaCatalog.bundles.testing.junit
-    testImplementation nvaCatalog.junit.platform.suite
+    compileOnly(nvaCatalog.zalando)
+    compileOnly(nvaLibs.apigateway)
+    compileOnly(nvaLibs.identifiers)
+    implementation(nvaCatalog.aws.sdk2.core)
+    implementation(nvaCatalog.aws.sdk2.http.client)
+    implementation(nvaCatalog.aws.sdk2.urlconnection)
+    implementation(nvaCatalog.aws.sdk2.utils)
+    implementation(nvaCatalog.jackson.core)
+    implementation(nvaCatalog.log4j.core)
+    implementation(nvaCatalog.opencsv)
+    implementation(nvaCatalog.slf4j.api)
+    implementation(nvaLibs.apigateway)
+    implementation(nvaLibs.doi)
+    runtimeOnly(nvaCatalog.jackson.dataformat.xml)
+    runtimeOnly(nvaCatalog.jackson.datatype.jdk8)
+    runtimeOnly(nvaCatalog.jackson.datatype.jsr310)
+    runtimeOnly(nvaCatalog.jackson.datatype.problem)
+    runtimeOnly(nvaCatalog.jackson.module.parameter.names)
+    runtimeOnly(nvaCatalog.log4j.api)
+    runtimeOnly(nvaCatalog.log4j.slf4j.impl)
+    testCompileOnly(nvaCatalog.junit.platform.suite.api)
+    testImplementation(libs.cucumber.datatable)
+    testImplementation(nvaCatalog.aws.java.sdk.core)
+    testImplementation(nvaCatalog.aws.lambda.core)
+    testImplementation(nvaCatalog.aws.sdk.dynamo)
+    testImplementation(nvaCatalog.aws.sdk2.s3)
+    testImplementation(nvaCatalog.cucumber.java)
+    testImplementation(nvaCatalog.datafaker)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.javers) {
+        because "For comparing java objects and detailing the differences in readable way"
+    }
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaLibs.identifiers)
+    testImplementation(nvaLibs.logutils)
+    testImplementation(nvaLibs.testutils)
+    testImplementation(project(":publication-model-testing"))
+    testImplementation(project(":publication-testing"))
+    testRuntimeOnly(nvaCatalog.cucumber.junit.platform.engine)
+    testRuntimeOnly(nvaCatalog.cucumber.picocontainer)
+    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
+    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
+    testRuntimeOnly(nvaCatalog.junit.platform.suite.engine)
 }
 
 test {

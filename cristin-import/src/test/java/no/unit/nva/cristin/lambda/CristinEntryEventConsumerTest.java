@@ -36,6 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -133,8 +134,7 @@ import nva.commons.core.StringUtils;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
+import nva.commons.logutils.LogRecorder;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -240,7 +240,7 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
   @Test
   void shouldLogErrorWhenFailingToStorePublicationToDynamo() throws IOException {
 
-    final TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(CristinEntryEventConsumerTest.class);
     resourceService = resourceServiceThrowingExceptionWhenSavingResource();
     handler =
         new CristinEntryEventConsumer(
@@ -258,8 +258,9 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     var cristinIdentifier = cristinObject.getId();
     assertThat(
-        appender.getMessages(), containsString(ERROR_SAVING_CRISTIN_RESULT + cristinIdentifier));
-    assertThat(appender.getMessages(), containsString(RESOURCE_EXCEPTION_MESSAGE));
+        logRecorder.messages(),
+        hasItem(containsString(ERROR_SAVING_CRISTIN_RESULT + cristinIdentifier)));
+    assertThat(logRecorder.messages(), hasItem(containsString(RESOURCE_EXCEPTION_MESSAGE)));
   }
 
   @Test
@@ -1248,12 +1249,12 @@ class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
   @Test
   void shouldLogErrorMessageWhenFailingWhenProceedingMessage() {
-    var logAppender = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(CristinEntryEventConsumerTest.class);
     var event = new SQSEvent();
     event.setRecords(List.of(new SQSMessage()));
     handler.handleRequest(event, CONTEXT);
 
-    assertTrue(logAppender.getMessages().contains("Could not process message"));
+    assertThat(logRecorder.messages(), hasItem(containsString("Could not process message")));
   }
 
   @Test
