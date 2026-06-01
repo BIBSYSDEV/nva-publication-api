@@ -28,10 +28,6 @@ import com.amazon.ion.IonWriter;
 import com.amazon.ion.system.IonReaderBuilder;
 import com.amazon.ion.system.IonTextWriterBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.sqs.model.BatchResultErrorEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -60,6 +56,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.model.BatchResultErrorEntry;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
 
 class FileEntriesEventEmitterTest {
 
@@ -531,7 +531,7 @@ class FileEntriesEventEmitterTest {
   private FakeAmazonSQS amazonSqsThatThrowsException() {
     return new FakeAmazonSQS() {
       @Override
-      public SendMessageBatchResult sendMessageBatch(
+      public SendMessageBatchResponse sendMessageBatch(
           SendMessageBatchRequest sendMessageBatchRequest) {
 
         throw new UnsupportedOperationException("Total failure");
@@ -542,24 +542,25 @@ class FileEntriesEventEmitterTest {
   private FakeAmazonSQS amazonSqsThatFailsToSendMessages() {
     return new FakeAmazonSQS() {
       @Override
-      public SendMessageBatchResult sendMessageBatch(
+      public SendMessageBatchResponse sendMessageBatch(
           SendMessageBatchRequest sendMessageBatchRequest) {
-        var result = new SendMessageBatchResult();
-        result.setFailed(
-            sendMessageBatchRequest.getEntries().stream()
-                .map(entry -> createFailedResult(entry))
-                .collect(Collectors.toList()));
-        result.setSuccessful(List.of());
-        return result;
+        return SendMessageBatchResponse.builder()
+            .failed(
+                sendMessageBatchRequest.entries().stream()
+                    .map(entry -> createFailedResult(entry))
+                    .collect(Collectors.toList()))
+            .successful(List.of())
+            .build();
       }
     };
   }
 
   private BatchResultErrorEntry createFailedResult(SendMessageBatchRequestEntry entry) {
-    var resultEntry = new BatchResultErrorEntry();
-    resultEntry.setId(entry.getId());
-    resultEntry.setMessage("Failed miserably");
-    return resultEntry;
+    return BatchResultErrorEntry.builder()
+        .id(entry.id())
+        .message("Failed miserably")
+        .senderFault(true)
+        .build();
   }
 
   private FileEntriesEventEmitter newHandler() {
