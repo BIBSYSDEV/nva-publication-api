@@ -62,6 +62,7 @@ dependencies {
     testImplementation(nvaLibs.testutils)
     testImplementation(project(":publication-model-testing"))
     testImplementation(project(":publication-testing"))
+    testImplementation(testFixtures(project(":s3-import-commons")))
     testRuntimeOnly(nvaCatalog.aws.java.sdk.core)
     testRuntimeOnly(nvaCatalog.cucumber.junit.platform.engine)
     testRuntimeOnly(nvaCatalog.cucumber.picocontainer)

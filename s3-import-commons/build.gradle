@@ -42,6 +42,7 @@ dependencies {
     runtimeOnly(nvaCatalog.jackson.datatype.jsr310)
     runtimeOnly(nvaCatalog.log4j.api)
     runtimeOnly(nvaCatalog.log4j.slf4j.impl)
+    testFixturesApi(nvaCatalog.aws.sdk2.sqs)
     testImplementation(nvaCatalog.aws.sdk.dynamo)
     testImplementation(nvaCatalog.datafaker)
     testImplementation(nvaCatalog.hamcrest)
