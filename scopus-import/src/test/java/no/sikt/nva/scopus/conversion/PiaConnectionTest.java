@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Test;
 @WireMockTest(httpsEnabled = true)
 class PiaConnectionTest {
 
+  private static final int MAX_ATTEMPTS = 3;
   private static final String PIA_SECRET_NAME = "someSecretName";
   private static final String PIA_USERNAME_SECRET_KEY = "someUserNameKey";
   private static final String PIA_PASSWORD_SECRET_KEY = "somePasswordNameKey";
@@ -123,6 +124,20 @@ class PiaConnectionTest {
     piaConnection.clearCache();
     piaConnection.fetchCristinOrganizationIdentifier(affiliationId);
     verify(exactly(2), getRequestedFor(urlPathEqualTo("/sentralimport/orgs/matches")));
+  }
+
+  @Test
+  void shouldRetryServerErrorsUpToMaxAttemptsWhenFetchingOrganization() {
+    var affiliationId = randomString();
+    stubFor(
+        WireMock.get(urlPathEqualTo("/sentralimport/orgs/matches"))
+            .withQueryParam("affiliation_id", WireMock.equalTo("SCOPUS:" + affiliationId))
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_UNAVAILABLE)));
+
+    var result = piaConnection.fetchCristinOrganizationIdentifier(affiliationId);
+
+    assertThat(result, is(equalTo(Optional.empty())));
+    verify(exactly(MAX_ATTEMPTS), getRequestedFor(urlPathEqualTo("/sentralimport/orgs/matches")));
   }
 
   private void mockedPiaAffiliationIdSearch(String affiliationId, String response) {

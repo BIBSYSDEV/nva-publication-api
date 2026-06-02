@@ -8,7 +8,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -41,6 +40,7 @@ public class CristinConnection {
   private static final String ORGANIZATION = "organization";
   private static final String APPLICATION_JSON = "application/json";
   private static final String QUERY = "query";
+  private static final String RETRY_NAME = "cristin";
   private final HttpClient httpClient;
   private final Environment environment;
   private final Map<URI, Optional<CristinPerson>> personByCristinIdCache =
@@ -178,9 +178,10 @@ public class CristinConnection {
     return response.body();
   }
 
-  private HttpResponse<String> getCristinResponse(HttpRequest httpRequest)
-      throws IOException, InterruptedException {
-    return httpClient.send(httpRequest, BodyHandlers.ofString());
+  private HttpResponse<String> getCristinResponse(HttpRequest httpRequest) {
+    return HttpRetry.sendWithRetry(
+        RETRY_NAME,
+        () -> attempt(() -> httpClient.send(httpRequest, BodyHandlers.ofString())).orElseThrow());
   }
 
   private HttpRequest createRequest(URI uri) {

@@ -38,6 +38,8 @@ import org.junit.jupiter.api.Test;
 @WireMockTest(httpsEnabled = true)
 class CristinConnectionTest {
 
+  private static final int MAX_ATTEMPTS = 3;
+  private static final int TOO_MANY_REQUESTS = 429;
   private CristinConnection cristinConnection;
 
   @BeforeEach
@@ -147,6 +149,32 @@ class CristinConnectionTest {
     URI cristinId = null;
     var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(cristinId);
     assertThat(actualOrganization, is(nullValue()));
+  }
+
+  @Test
+  void shouldRetryServerErrorsUpToMaxAttemptsWhenFetchingPerson(
+      WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var personUri = getRandomPersonUri(wireMockRuntimeInfo);
+    mockCristinPersonWithStatus(personUri, HttpURLConnection.HTTP_UNAVAILABLE);
+    var actualPerson = cristinConnection.getCristinPersonByCristinId(personUri);
+    assertThat(actualPerson.isEmpty(), is(true));
+    verify(exactly(MAX_ATTEMPTS), getRequestedFor(urlPathEqualTo(personUri.getPath())));
+  }
+
+  @Test
+  void shouldRetryTooManyRequestsUpToMaxAttemptsWhenFetchingPerson(
+      WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var personUri = getRandomPersonUri(wireMockRuntimeInfo);
+    mockCristinPersonWithStatus(personUri, TOO_MANY_REQUESTS);
+    var actualPerson = cristinConnection.getCristinPersonByCristinId(personUri);
+    assertThat(actualPerson.isEmpty(), is(true));
+    verify(exactly(MAX_ATTEMPTS), getRequestedFor(urlPathEqualTo(personUri.getPath())));
+  }
+
+  private void mockCristinPersonWithStatus(URI cristinPersonId, int status) {
+    stubFor(
+        WireMock.get(urlPathEqualTo(cristinPersonId.getPath()))
+            .willReturn(aResponse().withStatus(status)));
   }
 
   @Test

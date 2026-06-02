@@ -8,7 +8,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -49,6 +48,7 @@ public class PiaConnection {
   public static final String PIA_AUTHOR_ID_QUERY_PARAM = "author_id";
   public static final String PIA_AFFILIATION_ID_QUERY_PARAM = "affiliation_id";
   public static final String SCOPUS = "SCOPUS:";
+  private static final String RETRY_NAME = "pia";
   public static final String PIA_RESPONSE_ERROR = "Pia responded with status code";
   private static final String COULD_NOT_GET_ERROR_MESSAGE =
       "Could not get response from Pia for scopus id ";
@@ -241,8 +241,12 @@ public class PiaConnection {
     return response.body();
   }
 
-  private HttpResponse<String> getResponse(URI uri) throws IOException, InterruptedException {
-    return httpClient.send(createRequest(uri), BodyHandlers.ofString());
+  private HttpResponse<String> getResponse(URI uri) {
+    return HttpRetry.sendWithRetry(
+        RETRY_NAME,
+        () ->
+            attempt(() -> httpClient.send(createRequest(uri), BodyHandlers.ofString()))
+                .orElseThrow());
   }
 
   private List<Author> getPiaAuthorResponse(String scopusAuid) {
