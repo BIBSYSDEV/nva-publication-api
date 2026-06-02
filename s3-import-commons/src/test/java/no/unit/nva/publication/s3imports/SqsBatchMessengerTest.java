@@ -11,11 +11,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
-import com.amazonaws.services.sqs.model.SendMessageBatchResultEntry;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -23,50 +18,53 @@ import no.unit.nva.events.models.EventReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchResultEntry;
 
 class SqsBatchMessengerTest {
 
   private static final String QUEUE_URL = randomUri().toString();
-  private AmazonSQS amazonSQS;
+  private SqsClient sqsClient;
   private SqsBatchMessenger sqsBatchMessenger;
 
   @BeforeEach
   void init() {
-    amazonSQS = mock(AmazonSQS.class);
-    sqsBatchMessenger = new SqsBatchMessenger(amazonSQS, QUEUE_URL);
+    sqsClient = mock(SqsClient.class);
+    sqsBatchMessenger = new SqsBatchMessenger(sqsClient, QUEUE_URL);
   }
 
   @Test
   void shouldSplitListOfEventReferencesIntoBatchesNoLargerThanTen() {
     var longListOfEventReferences = listWithTwentyElements();
-    when(amazonSQS.sendMessageBatch(any()))
+    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
         .then(r -> convertArgumentToResponse(r.getArguments()[0]));
     var result = sqsBatchMessenger.sendMessages(longListOfEventReferences);
-    verify(amazonSQS, times(2)).sendMessageBatch(argThat(isNotTooLarge()));
+    verify(sqsClient, times(2)).sendMessageBatch(argThat(isNotTooLarge()));
     assertThat(result.getSuccesses(), containsInAnyOrder(longListOfEventReferences.toArray()));
   }
 
   private static ArgumentMatcher<SendMessageBatchRequest> isNotTooLarge() {
-    return sendMessageBatchRequest -> sendMessageBatchRequest.getEntries().size() >= 10;
+    return sendMessageBatchRequest -> sendMessageBatchRequest.entries().size() >= 10;
   }
 
-  private SendMessageBatchResult convertArgumentToResponse(Object argument) {
+  private SendMessageBatchResponse convertArgumentToResponse(Object argument) {
     if (argument instanceof SendMessageBatchRequest request) {
-      var sendMessageResult = new SendMessageBatchResult();
-      sendMessageResult.setSuccessful(
-          request.getEntries().stream()
-              .map(this::createResponseEntry)
-              .collect(Collectors.toList()));
-      return sendMessageResult;
+      return SendMessageBatchResponse.builder()
+          .successful(
+              request.entries().stream()
+                  .map(this::createResponseEntry)
+                  .collect(Collectors.toList()))
+          .build();
     } else {
-      return new SendMessageBatchResult();
+      return SendMessageBatchResponse.builder().build();
     }
   }
 
   private SendMessageBatchResultEntry createResponseEntry(SendMessageBatchRequestEntry e) {
-    var sendMessageBatchResultEntry = new SendMessageBatchResultEntry();
-    sendMessageBatchResultEntry.withId(e.getId());
-    return sendMessageBatchResultEntry;
+    return SendMessageBatchResultEntry.builder().id(e.id()).build();
   }
 
   private List<EventReference> listWithTwentyElements() {

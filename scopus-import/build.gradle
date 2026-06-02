@@ -18,7 +18,6 @@ dependencies {
     implementation(libs.apache.commons.collections)
     implementation(libs.tika.langdetect.optimaize)
     implementation(libs.xsd2java.jakarta)
-    implementation(nvaCatalog.aws.sdk.s3)
     implementation(nvaCatalog.aws.sdk2.http.client)
     implementation(nvaCatalog.aws.sdk2.sdk.core)
     implementation(nvaCatalog.httpcore4)

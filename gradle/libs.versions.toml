@@ -27,7 +27,6 @@ titanium-json-ld = { strictly = '1.7.0' }
 apache-bval = { group= 'org.apache.bval', name= 'bval-jsr', version.ref= 'apache-bval'}
 apache-commons-collections = { group = 'org.apache.commons', name = 'commons-collections4', version.ref = 'apacheCommonsCollections' }
 apache-commons-text = { group = 'org.apache.commons', name = 'commons-text', version.ref = 'apacheCommonsText' }
-aws-java-sdk-kms = { group = 'com.amazonaws', name = 'aws-java-sdk-kms' }
 aws-sdk2-third-party-jackson-core = { group = 'software.amazon.awssdk', name = 'third-party-jackson-core' }
 cucumber-core = { group = 'io.cucumber', name = 'cucumber-core', version.ref = 'cucumber' }
 cucumber-datatable = { group = 'io.cucumber', name = 'datatable', version.ref = 'cucumber' }

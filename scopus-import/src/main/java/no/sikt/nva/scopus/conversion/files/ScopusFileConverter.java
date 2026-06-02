@@ -12,7 +12,6 @@ import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.AM;
 import static no.sikt.nva.scopus.conversion.files.model.ContentVersion.VOR;
 import static nva.commons.core.attempt.Try.attempt;
 
-import com.amazonaws.services.s3.Headers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -78,6 +77,7 @@ public class ScopusFileConverter {
   public static final String FETCH_FILE_ERROR_MESSAGE = "Could not fetch file: ";
   public static final String COULD_NOT_SAVE_FILE = "Could not save file to s3 {}";
   private static final String CONTENT_DISPOSITION_FILE_NAME_PATTERN = "filename=\"%s\"";
+  private static final String CONTENT_DISPOSITION_HEADER = "Content-Disposition";
   public final String crossRefUri;
   private final HttpClient httpClient;
   private final S3Client s3Client;
@@ -112,7 +112,7 @@ public class ScopusFileConverter {
   private static String getFilename(HttpResponse<InputStream> response) {
     return response
         .headers()
-        .firstValue(Headers.CONTENT_DISPOSITION)
+        .firstValue(CONTENT_DISPOSITION_HEADER)
         .map(ScopusFileConverter::extractFileNameFromContentDisposition)
         .filter(Optional::isPresent)
         .map(Optional::get)

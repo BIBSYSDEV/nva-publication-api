@@ -28,10 +28,6 @@ import com.amazon.ion.IonWriter;
 import com.amazon.ion.system.IonReaderBuilder;
 import com.amazon.ion.system.IonTextWriterBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.sqs.model.BatchResultErrorEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -48,7 +44,7 @@ import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.publication.s3imports.utils.FakeAmazonSQS;
+import no.unit.nva.publication.s3imports.utils.FakeSqsClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
@@ -60,6 +56,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.model.BatchResultErrorEntry;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
 
 class FileEntriesEventEmitterTest {
 
@@ -74,12 +74,12 @@ class FileEntriesEventEmitterTest {
   private ByteArrayOutputStream outputStream;
   private S3Driver s3Driver;
 
-  private FakeAmazonSQS amazonSQS;
+  private FakeSqsClient amazonSQS;
 
   @BeforeEach
   public void init() {
     s3Client = new FakeS3Client();
-    amazonSQS = new FakeAmazonSQS();
+    amazonSQS = new FakeSqsClient();
     s3Driver = new S3Driver(s3Client, "notimportant");
 
     handler = newHandler();
@@ -528,10 +528,10 @@ class FileEntriesEventEmitterTest {
         .collect(Collectors.toList());
   }
 
-  private FakeAmazonSQS amazonSqsThatThrowsException() {
-    return new FakeAmazonSQS() {
+  private FakeSqsClient amazonSqsThatThrowsException() {
+    return new FakeSqsClient() {
       @Override
-      public SendMessageBatchResult sendMessageBatch(
+      public SendMessageBatchResponse sendMessageBatch(
           SendMessageBatchRequest sendMessageBatchRequest) {
 
         throw new UnsupportedOperationException("Total failure");
@@ -539,27 +539,28 @@ class FileEntriesEventEmitterTest {
     };
   }
 
-  private FakeAmazonSQS amazonSqsThatFailsToSendMessages() {
-    return new FakeAmazonSQS() {
+  private FakeSqsClient amazonSqsThatFailsToSendMessages() {
+    return new FakeSqsClient() {
       @Override
-      public SendMessageBatchResult sendMessageBatch(
+      public SendMessageBatchResponse sendMessageBatch(
           SendMessageBatchRequest sendMessageBatchRequest) {
-        var result = new SendMessageBatchResult();
-        result.setFailed(
-            sendMessageBatchRequest.getEntries().stream()
-                .map(entry -> createFailedResult(entry))
-                .collect(Collectors.toList()));
-        result.setSuccessful(List.of());
-        return result;
+        return SendMessageBatchResponse.builder()
+            .failed(
+                sendMessageBatchRequest.entries().stream()
+                    .map(entry -> createFailedResult(entry))
+                    .collect(Collectors.toList()))
+            .successful(List.of())
+            .build();
       }
     };
   }
 
   private BatchResultErrorEntry createFailedResult(SendMessageBatchRequestEntry entry) {
-    var resultEntry = new BatchResultErrorEntry();
-    resultEntry.setId(entry.getId());
-    resultEntry.setMessage("Failed miserably");
-    return resultEntry;
+    return BatchResultErrorEntry.builder()
+        .id(entry.id())
+        .message("Failed miserably")
+        .senderFault(true)
+        .build();
   }
 
   private FileEntriesEventEmitter newHandler() {
@@ -580,8 +581,8 @@ class FileEntriesEventEmitterTest {
   }
 
   //
-  private Stream<EventReference> emittedEvents(FakeAmazonSQS fakeAmazonSQS) {
-    return fakeAmazonSQS.getMessageBodies().stream().map(EventReference::fromJson);
+  private Stream<EventReference> emittedEvents(FakeSqsClient fakeSqsClient) {
+    return fakeSqsClient.getMessageBodies().stream().map(EventReference::fromJson);
   }
 
   private Instant collectTimestampFromEmittedObjects() {

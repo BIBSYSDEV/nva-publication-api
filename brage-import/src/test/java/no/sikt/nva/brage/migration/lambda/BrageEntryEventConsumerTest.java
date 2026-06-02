@@ -25,7 +25,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.services.kms.model.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.*;
@@ -407,7 +406,7 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
 
   @Test
   void shouldCreateNewPublicationWhenPublicationHasCristinIdWhichIsNotPresentInNva()
-      throws IOException, NotFoundException {
+      throws IOException {
     var brageGenerator =
         new NvaBrageMigrationDataGenerator.Builder()
             .withType(TYPE_REPORT_WORKING_PAPER)
