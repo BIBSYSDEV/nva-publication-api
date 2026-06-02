@@ -81,6 +81,10 @@ Parameters:
     Type: String
     Default: "scopus-xml-files-v2"
     Description: Name of bucket for unzipped scopus xml files
+  NibExternalAccountId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/NVA/ExternalAWSAccounts/NIB"
+    Description: AWS account id for NIB, granted read-only access to the selected buckets
   ScopusImportReportBucketName:
     Type: "String"
     Default: "scopus-import-reports"
@@ -2798,6 +2802,52 @@ Resources:
           Value: "false"
       VersioningConfiguration:
         Status: Enabled
+
+  ScopusXmlBucketCrossAccountReadPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ScopusXmlBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: NibReadObjects
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${NibExternalAccountId}:root"
+            Action:
+              - s3:GetObject
+              - s3:GetObjectVersion
+            Resource: !Sub "${ScopusXmlBucket.Arn}/*"
+          - Sid: NibListBucket
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${NibExternalAccountId}:root"
+            Action:
+              - s3:ListBucket
+            Resource: !GetAtt ScopusXmlBucket.Arn
+
+  ScopusZipBucketCrossAccountReadPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ScopusZipBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: NibReadObjects
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${NibExternalAccountId}:root"
+            Action:
+              - s3:GetObject
+              - s3:GetObjectVersion
+            Resource: !Sub "${ScopusZipBucket.Arn}/*"
+          - Sid: NibListBucket
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${NibExternalAccountId}:root"
+            Action:
+              - s3:ListBucket
+            Resource: !GetAtt ScopusZipBucket.Arn
 
   ImportCandidateStorageBucket:
     Type: AWS::S3::Bucket
