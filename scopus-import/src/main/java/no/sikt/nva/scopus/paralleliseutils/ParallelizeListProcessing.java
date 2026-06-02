@@ -4,6 +4,7 @@ import static nva.commons.core.attempt.Try.attempt;
 
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
@@ -36,7 +37,7 @@ public final class ParallelizeListProcessing {
           .toList();
     } catch (InterruptedException exception) {
       Thread.currentThread().interrupt();
-      throw new RuntimeException(exception);
+      throw new CompletionException(exception);
     }
   }
 

@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -103,12 +104,12 @@ class ParallelizeListProcessingTest {
   }
 
   @Test
-  void shouldRethrowAsRuntimeExceptionWhenCallingThreadIsInterrupted() {
+  void shouldRethrowAsCompletionExceptionWhenCallingThreadIsInterrupted() {
     var input = IntStream.range(0, 8).boxed().toList();
     Thread.currentThread().interrupt();
     try {
       assertThrows(
-          RuntimeException.class,
+          CompletionException.class,
           () -> ParallelizeListProcessing.runAsVirtualThreads(input, this::sleepThenReturn, 2));
     } finally {
       Thread.interrupted();
