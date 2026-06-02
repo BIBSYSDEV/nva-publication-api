@@ -1,10 +1,13 @@
 package no.sikt.nva.scopus.conversion;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -144,6 +147,22 @@ class CristinConnectionTest {
     URI cristinId = null;
     var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(cristinId);
     assertThat(actualOrganization, is(nullValue()));
+  }
+
+  @Test
+  void shouldQueryProxyOnceForRepeatedPersonLookupsAndAgainAfterCacheIsCleared(
+      WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var personUri = getRandomPersonUri(wireMockRuntimeInfo);
+    var expectedPerson = createExpectedPerson(personUri);
+    mockCristinPerson(personUri, expectedPerson.toJsonString());
+
+    cristinConnection.getCristinPersonByCristinId(personUri);
+    cristinConnection.getCristinPersonByCristinId(personUri);
+    verify(exactly(1), getRequestedFor(urlPathEqualTo(personUri.getPath())));
+
+    cristinConnection.clearCache();
+    cristinConnection.getCristinPersonByCristinId(personUri);
+    verify(exactly(2), getRequestedFor(urlPathEqualTo(personUri.getPath())));
   }
 
   private static URI getRandomPersonUri(WireMockRuntimeInfo wireMockRuntimeInfo) {
