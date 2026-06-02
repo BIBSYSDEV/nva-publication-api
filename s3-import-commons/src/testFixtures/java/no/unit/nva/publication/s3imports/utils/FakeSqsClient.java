@@ -8,7 +8,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResultEntry;
 
-public class FakeAmazonSQS implements SqsClient {
+public class FakeSqsClient implements SqsClient {
 
   private final List<String> messageBodies = new ArrayList<>();
 

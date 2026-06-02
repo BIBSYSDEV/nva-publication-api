@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.publication.s3imports.utils.FakeAmazonSQS;
+import no.unit.nva.publication.s3imports.utils.FakeSqsClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
@@ -36,7 +36,7 @@ class CristinRerunEventEmitterTest {
       "s3://cristin-import-884807050265/cristinEntries/2024-04"
           + "-19T12:08:24.244309343Z/19843994-c259-4ca8-9143"
           + "-786739318a97.gz";
-  private FakeAmazonSQS sqsClient;
+  private FakeSqsClient sqsClient;
   private FakeS3Client s3Client;
   private CristinRerunErrorsEventEmitter handler;
   private S3Driver s3Driver;
@@ -46,7 +46,7 @@ class CristinRerunEventEmitterTest {
   void init() {
     this.s3Client = new FakeS3Client();
     this.s3Driver = new S3Driver(s3Client, "ignored");
-    this.sqsClient = new FakeAmazonSQS();
+    this.sqsClient = new FakeSqsClient();
     this.output = new ByteArrayOutputStream();
     this.handler = new CristinRerunErrorsEventEmitter(s3Client, sqsClient);
   }
@@ -137,8 +137,8 @@ class CristinRerunEventEmitterTest {
         .replace("CRISTIN_ENTRY_LOCATION", cristinEntryLocation);
   }
 
-  private FakeAmazonSQS amazonSqsThatFailsToSendMessages() {
-    return new FakeAmazonSQS() {
+  private FakeSqsClient amazonSqsThatFailsToSendMessages() {
+    return new FakeSqsClient() {
       @Override
       public SendMessageBatchResponse sendMessageBatch(
           SendMessageBatchRequest sendMessageBatchRequest) {

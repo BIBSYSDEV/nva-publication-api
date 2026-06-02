@@ -44,7 +44,7 @@ import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.publication.s3imports.utils.FakeAmazonSQS;
+import no.unit.nva.publication.s3imports.utils.FakeSqsClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
@@ -74,12 +74,12 @@ class FileEntriesEventEmitterTest {
   private ByteArrayOutputStream outputStream;
   private S3Driver s3Driver;
 
-  private FakeAmazonSQS amazonSQS;
+  private FakeSqsClient amazonSQS;
 
   @BeforeEach
   public void init() {
     s3Client = new FakeS3Client();
-    amazonSQS = new FakeAmazonSQS();
+    amazonSQS = new FakeSqsClient();
     s3Driver = new S3Driver(s3Client, "notimportant");
 
     handler = newHandler();
@@ -528,8 +528,8 @@ class FileEntriesEventEmitterTest {
         .collect(Collectors.toList());
   }
 
-  private FakeAmazonSQS amazonSqsThatThrowsException() {
-    return new FakeAmazonSQS() {
+  private FakeSqsClient amazonSqsThatThrowsException() {
+    return new FakeSqsClient() {
       @Override
       public SendMessageBatchResponse sendMessageBatch(
           SendMessageBatchRequest sendMessageBatchRequest) {
@@ -539,8 +539,8 @@ class FileEntriesEventEmitterTest {
     };
   }
 
-  private FakeAmazonSQS amazonSqsThatFailsToSendMessages() {
-    return new FakeAmazonSQS() {
+  private FakeSqsClient amazonSqsThatFailsToSendMessages() {
+    return new FakeSqsClient() {
       @Override
       public SendMessageBatchResponse sendMessageBatch(
           SendMessageBatchRequest sendMessageBatchRequest) {
@@ -581,8 +581,8 @@ class FileEntriesEventEmitterTest {
   }
 
   //
-  private Stream<EventReference> emittedEvents(FakeAmazonSQS fakeAmazonSQS) {
-    return fakeAmazonSQS.getMessageBodies().stream().map(EventReference::fromJson);
+  private Stream<EventReference> emittedEvents(FakeSqsClient fakeSqsClient) {
+    return fakeSqsClient.getMessageBodies().stream().map(EventReference::fromJson);
   }
 
   private Instant collectTimestampFromEmittedObjects() {
