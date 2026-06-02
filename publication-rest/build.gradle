@@ -40,11 +40,11 @@ dependencies {
     runtimeOnly(nvaCatalog.aws.sdk2.urlconnection)
     runtimeOnly(nvaCatalog.log4j.api)
     runtimeOnly(nvaCatalog.log4j.slf4j.impl)
-    testImplementation(nvaCatalog.aws.java.sdk.core)
     testImplementation(nvaCatalog.aws.dynamodb.local) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
+    testImplementation(nvaCatalog.aws.sdk2.sdk.core)
     testImplementation(nvaCatalog.commons.lang)
     testImplementation(nvaCatalog.hamcrest)
     testImplementation(nvaCatalog.javers)
@@ -60,6 +60,7 @@ dependencies {
     testImplementation(project(":publication-model-testing"))
     testImplementation(project(":publication-testing"))
     testImplementation(project(":tickets-test"))
+    testRuntimeOnly(nvaCatalog.aws.java.sdk.core)
     testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
     testRuntimeOnly(nvaCatalog.junit.platform.launcher)
     testRuntimeOnly(nvaCatalog.wiremock)
