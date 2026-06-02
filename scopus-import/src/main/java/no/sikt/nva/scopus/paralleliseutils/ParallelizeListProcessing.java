@@ -3,6 +3,7 @@ package no.sikt.nva.scopus.paralleliseutils;
 import static nva.commons.core.attempt.Try.attempt;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
@@ -25,12 +26,17 @@ public final class ParallelizeListProcessing {
   public static <I, R> List<R> runAsVirtualThreads(
       List<I> inputList, Function<I, R> job, int maxConcurrency) {
     var concurrencyLimiter = new Semaphore(maxConcurrency);
+    var tasks =
+        inputList.stream()
+            .map(item -> (Callable<R>) () -> runWithLimit(concurrencyLimiter, item, job))
+            .toList();
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-      var futures =
-          inputList.stream()
-              .map(item -> executor.submit(() -> runWithLimit(concurrencyLimiter, item, job)))
-              .toList();
-      return futures.stream().map(ParallelizeListProcessing::waitForFuture).toList();
+      return executor.invokeAll(tasks).stream()
+          .map(ParallelizeListProcessing::waitForFuture)
+          .toList();
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(exception);
     }
   }
 

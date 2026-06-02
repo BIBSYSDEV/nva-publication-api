@@ -102,6 +102,28 @@ class ParallelizeListProcessingTest {
                 someIrrelevantInputListWithElements, this::throwingException));
   }
 
+  @Test
+  void shouldRethrowAsRuntimeExceptionWhenCallingThreadIsInterrupted() {
+    var input = IntStream.range(0, 8).boxed().toList();
+    Thread.currentThread().interrupt();
+    try {
+      assertThrows(
+          RuntimeException.class,
+          () -> ParallelizeListProcessing.runAsVirtualThreads(input, this::sleepThenReturn, 2));
+    } finally {
+      Thread.interrupted();
+    }
+  }
+
+  private Integer sleepThenReturn(Integer value) {
+    try {
+      Thread.sleep(500);
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+    }
+    return value;
+  }
+
   private void awaitQuietly(CountDownLatch latch) {
     try {
       latch.await(2, TimeUnit.SECONDS);
