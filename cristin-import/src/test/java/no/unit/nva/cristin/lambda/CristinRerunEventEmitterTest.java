@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.publication.s3imports.utils.FakeSqsClient;
+import no.unit.nva.publication.service.FakeSqsClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;

@@ -16,6 +16,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.publication.queue.QueueMessageSender;
+import no.unit.nva.publication.queue.SqsMessageSender;
 import no.unit.nva.publication.s3imports.PutSqsMessageResult;
 import no.unit.nva.publication.s3imports.PutSqsMessageResultFailureEntry;
 import no.unit.nva.publication.s3imports.SqsBatchMessenger;
@@ -26,9 +28,7 @@ import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.sqs.SqsClient;
 
 public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
 
@@ -54,14 +54,15 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
             S3Driver.defaultS3Client().build(), new Environment().readEnv("CRISTIN_IMPORT_BUCKET"));
     this.batchMessenger =
         new SqsBatchMessenger(
-            defaultSqsClient(), new Environment().readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL"));
+            SqsMessageSender.defaultSqsMessageSender(),
+            new Environment().readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL"));
   }
 
-  public CristinRerunErrorsEventEmitter(S3Client s3Client, SqsClient sqsClient) {
+  public CristinRerunErrorsEventEmitter(S3Client s3Client, QueueMessageSender messageSender) {
     this.s3Driver = new S3Driver(s3Client, new Environment().readEnv("CRISTIN_IMPORT_BUCKET"));
     this.batchMessenger =
         new SqsBatchMessenger(
-            sqsClient, new Environment().readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL"));
+            messageSender, new Environment().readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL"));
   }
 
   @Override
@@ -84,11 +85,6 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
   private List<UnixPath> getSuccessfullyProceededReports(
       Map<UnixPath, EventReference> failedEntries, List<UnixPath> errorReports) {
     return errorReports.stream().filter(not(failedEntries::containsKey)).toList();
-  }
-
-  @JacocoGenerated
-  private static SqsClient defaultSqsClient() {
-    return SqsClient.builder().httpClient(UrlConnectionHttpClient.create()).build();
   }
 
   private static RerunFailedEntriesEvent getRerunFailedEntriesEvent(InputStream inputStream) {
