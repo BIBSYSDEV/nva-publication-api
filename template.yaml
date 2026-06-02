@@ -84,7 +84,7 @@ Parameters:
   NibExternalAccountId:
     Type: AWS::SSM::Parameter::Value<String>
     Default: "/NVA/ExternalAWSAccounts/NIB"
-    Description: AWS account id for NIB, granted read-only access to the Scopus XML bucket
+    Description: AWS account id for NIB, granted read-only access to the selected buckets
   ScopusImportReportBucketName:
     Type: "String"
     Default: "scopus-import-reports"
