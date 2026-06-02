@@ -32,7 +32,6 @@ dependencies {
     implementation(nvaCatalog.zalando)
     implementation(nvaLibs.secrets)
     implementation(project(":publication-constants"))
-    runtimeOnly(libs.micrometer.observation)
     runtimeOnly(nvaCatalog.jackson.dataformat.xml)
     runtimeOnly(nvaCatalog.jackson.datatype.jdk8)
     runtimeOnly(nvaCatalog.jackson.datatype.jsr310)
