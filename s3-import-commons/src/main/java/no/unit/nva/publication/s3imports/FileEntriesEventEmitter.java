@@ -28,6 +28,8 @@ import java.util.stream.StreamSupport;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.publication.queue.QueueMessageSender;
+import no.unit.nva.publication.queue.SqsMessageSender;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -37,10 +39,8 @@ import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
-import software.amazon.awssdk.services.sqs.SqsClient;
 
 /**
  * The body of the event (field "detail") is of type {@link FileContentsEvent} and it contains the
@@ -69,16 +69,16 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
   private static final String BEGINNING_OF_ARRAY = "[";
   public static final String WRONG_SUBTOPIC = "event does not contain the correct subtopic: ";
 
-  private final SqsClient sqsClient;
+  private final QueueMessageSender messageSender;
   private final S3Client s3Client;
   private final Map<String, String> subtopicToQueueUrl;
 
   @JacocoGenerated
   public FileEntriesEventEmitter() {
-    this(defaultS3Client(), defaultSqsClient());
+    this(defaultS3Client(), SqsMessageSender.defaultSqsMessageSender());
   }
 
-  public FileEntriesEventEmitter(S3Client s3Client, SqsClient sqsClient) {
+  public FileEntriesEventEmitter(S3Client s3Client, QueueMessageSender messageSender) {
     super(EventReference.class);
     this.subtopicToQueueUrl =
         Map.of(
@@ -91,7 +91,7 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
             SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER,
             new Environment().readEnv("BRAGE_IMPORT_PATCH_QUEUE_URL"));
     this.s3Client = s3Client;
-    this.sqsClient = sqsClient;
+    this.messageSender = messageSender;
   }
 
   @Override
@@ -100,10 +100,6 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
     logger.info("Input event: " + input.toJsonString());
     validateEvent(event);
     return attemptToPlaceMessagesOnQueue(input);
-  }
-
-  private static SqsClient defaultSqsClient() {
-    return SqsClient.builder().httpClient(UrlConnectionHttpClient.create()).build();
   }
 
   private PutSqsMessageResult attemptToPlaceMessagesOnQueue(EventReference input) {
@@ -205,7 +201,7 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
   }
 
   private PutSqsMessageResult placeOnQueue(List<EventReference> eventBodies, EventReference input) {
-    var client = new SqsBatchMessenger(sqsClient, inferQueueUrlFromEventReference(input));
+    var client = new SqsBatchMessenger(messageSender, inferQueueUrlFromEventReference(input));
     return client.sendMessages(eventBodies);
   }
 

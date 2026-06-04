@@ -20,7 +20,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.s3.AmazonS3;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -48,6 +47,7 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.s3.S3Client;
 
 class UpdateFileHandlerTest extends ResourcesLocalTest {
 
@@ -63,7 +63,7 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
     this.resourceService = getResourceService(client);
     this.handler =
         new UpdateFileHandler(
-            new FileService(mock(AmazonS3.class), mock(CustomerApiClient.class), resourceService),
+            new FileService(mock(S3Client.class), mock(CustomerApiClient.class), resourceService),
             new Environment());
   }
 
@@ -203,7 +203,7 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
                 FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance)));
     doThrow(new RuntimeException()).when(resourceService).updateFile(any());
     return new UpdateFileHandler(
-        new FileService(mock(AmazonS3.class), mock(CustomerApiClient.class), resourceService),
+        new FileService(mock(S3Client.class), mock(CustomerApiClient.class), resourceService),
         new Environment());
   }
 

@@ -15,10 +15,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.publication.queue.QueueMessageSender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
-import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
@@ -27,12 +27,12 @@ import software.amazon.awssdk.services.sqs.model.SendMessageBatchResultEntry;
 class SqsBatchMessengerTest {
 
   private static final String QUEUE_URL = randomUri().toString();
-  private SqsClient sqsClient;
+  private QueueMessageSender sqsClient;
   private SqsBatchMessenger sqsBatchMessenger;
 
   @BeforeEach
   void init() {
-    sqsClient = mock(SqsClient.class);
+    sqsClient = mock(QueueMessageSender.class);
     sqsBatchMessenger = new SqsBatchMessenger(sqsClient, QUEUE_URL);
   }
 

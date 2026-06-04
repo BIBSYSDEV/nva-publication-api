@@ -1,10 +1,10 @@
 package no.unit.nva.publication.file.upload.restmodel;
 
-import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
