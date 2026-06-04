@@ -9,7 +9,6 @@ dependencies {
     runtimeOnly(libs.xsd2java.xjc)
     testRuntimeOnly(libs.aws.sdk2.third.party.jackson.core)
     testRuntimeOnly(libs.jackson.dataformat.cbor)
-    testRuntimeOnly(nvaCatalog.aws.sdk.s3)
     testRuntimeOnly(nvaCatalog.datafaker)
     testRuntimeOnly(nvaCatalog.jackson.core)
     testRuntimeOnly(nvaCatalog.jackson.databind)
