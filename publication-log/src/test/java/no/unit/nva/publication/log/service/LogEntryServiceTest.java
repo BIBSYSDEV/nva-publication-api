@@ -11,6 +11,7 @@ import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATI
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,11 +35,14 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.FileLogEntry;
+import no.unit.nva.publication.model.business.logentry.LogOrganization;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.LogUser;
+import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -200,6 +204,27 @@ class LogEntryServiceTest extends ResourcesLocalTest {
             Resource.fromPublication(publication).fetchLogEntries(resourceService).getFirst();
     assertEquals(FILE_UPLOADED, logEntry.topic());
     assertNotNull(logEntry.importSource());
+  }
+
+  @Test
+  void shouldPersistPublishedLogEntryAsOrganizationForThirdParty() throws BadRequestException {
+    var publication = createPublishedPublication();
+    var externalUserInstance =
+        UserInstance.createExternalUser(randomResourceOwner(), randomUri(), OTHER);
+    var resource = Resource.fromPublication(publication);
+    resource.setResourceEvent(PublishedResourceEvent.create(externalUserInstance, Instant.now()));
+    resource.setDoi(randomDoi());
+    resourceService.updateResource(resource, externalUserInstance);
+
+    logEntryService.persistLogEntry(Resource.fromPublication(publication));
+
+    var logEntry =
+        (PublicationLogEntry)
+            Resource.fromPublication(publication).fetchLogEntries(resourceService).getFirst();
+
+    assertEquals(PUBLICATION_PUBLISHED, logEntry.topic());
+    assertNotNull(logEntry.importSource());
+    assertInstanceOf(LogOrganization.class, logEntry.performedBy());
   }
 
   @Test

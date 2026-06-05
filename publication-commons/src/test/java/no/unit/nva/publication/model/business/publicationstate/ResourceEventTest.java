@@ -46,7 +46,11 @@ class ResourceEventTest {
                 ImportSource.fromSource(Source.OTHER)),
             PUBLICATION_CREATED),
         Arguments.of(
-            new PublishedResourceEvent(Instant.now(), randomUser(), randomUri(), identifier()),
+            new PublishedResourceEvent(
+                Instant.now(), randomUser(), randomUri(), identifier(), null),
+            PUBLICATION_PUBLISHED),
+        Arguments.of(
+            PublishedResourceEvent.create(randomExternalUserInstance(), Instant.now()),
             PUBLICATION_PUBLISHED),
         Arguments.of(
             new UnpublishedResourceEvent(Instant.now(), randomUser(), randomUri(), identifier()),

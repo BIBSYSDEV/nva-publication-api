@@ -22,6 +22,7 @@ import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent
 import no.unit.nva.publication.model.business.publicationstate.ImportEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEvent;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -101,7 +102,9 @@ public class LogEntryService {
         || resourceEvent instanceof MergedResourceEvent
         || resourceEvent instanceof CreatedResourceEvent event && nonNull(event.importSource())
         || resourceEvent instanceof UpdatedResourceEvent updatedResourceEvent
-            && nonNull(updatedResourceEvent.importSource())) {
+            && nonNull(updatedResourceEvent.importSource())
+        || resourceEvent instanceof PublishedResourceEvent publishedResourceEvent
+            && nonNull(publishedResourceEvent.importSource())) {
       var organization = fetchOrganization(resourceEvent.institution());
       return resourceEvent.toLogEntry(resource.getIdentifier(), organization);
     } else {

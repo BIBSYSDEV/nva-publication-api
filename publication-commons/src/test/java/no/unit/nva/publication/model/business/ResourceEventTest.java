@@ -41,7 +41,11 @@ public class ResourceEventTest {
                 Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next())),
         Arguments.of(
             new PublishedResourceEvent(
-                Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next())),
+                Instant.now(),
+                new User(randomString()),
+                randomUri(),
+                SortableIdentifier.next(),
+                null)),
         Arguments.of(
             new DeletedResourceEvent(
                 Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next())),
