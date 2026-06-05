@@ -8,7 +8,7 @@ import nva.commons.apigateway.MediaType;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 
-public record CreateUploadRequestBody(String filename, String size, String mediaType) {
+public record CreateUploadRequestBody(String filename, String size, String mimetype) {
 
   public CreateMultipartUploadRequest toCreateMultipartUploadRequest(String bucketName) {
     var key = UUID.randomUUID().toString();
@@ -16,7 +16,7 @@ public record CreateUploadRequestBody(String filename, String size, String media
         .bucket(bucketName)
         .key(key)
         .contentDisposition(Filename.toContentDispositionValue(filename()))
-        .contentType(mediaType())
+        .contentType(mimetype())
         .build();
   }
 
@@ -24,7 +24,7 @@ public record CreateUploadRequestBody(String filename, String size, String media
     try {
       requireNonNull(this.filename());
       requireNonNull(this.size());
-      MediaType.parse(this.mediaType());
+      MediaType.parse(this.mimetype());
     } catch (Exception e) {
       throw new BadRequestException("Invalid input");
     }
