@@ -1,7 +1,7 @@
 package no.unit.nva.publication.permissions.file.grant;
 
 import no.unit.nva.model.FileOperation;
-import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -18,7 +18,7 @@ public class FileOwnerGrantStrategy extends FileStrategyBase implements FileGran
   public boolean allowsAction(FileOperation permission) {
     if (currentUserIsFileOwner()) {
       return switch (permission) {
-        case READ_METADATA -> !(file.getFile() instanceof HiddenFile);
+        case READ_METADATA -> FileStatus.from(file.getFile()) != FileStatus.HIDDEN;
         case WRITE_METADATA, DELETE, DOWNLOAD -> !fileIsFinalized();
       };
     }
