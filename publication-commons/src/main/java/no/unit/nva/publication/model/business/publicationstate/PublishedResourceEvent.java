@@ -4,8 +4,6 @@ import java.net.URI;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
-import no.unit.nva.model.ImportSource.Source;
-import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogAgent;
@@ -26,15 +24,7 @@ public record PublishedResourceEvent(
         userInstance.getUser(),
         userInstance.getTopLevelOrgCristinId(),
         SortableIdentifier.next(),
-        userInstance.isExternalClient() ? getImportSource(userInstance) : null);
-  }
-
-  private static ImportSource getImportSource(UserInstance userInstance) {
-    return userInstance
-        .getThirdPartySystem()
-        .map(ThirdPartySystem::toSource)
-        .map(ImportSource::fromSource)
-        .orElse(ImportSource.fromSource(Source.OTHER));
+        userInstance.getImportSource());
   }
 
   @Override
