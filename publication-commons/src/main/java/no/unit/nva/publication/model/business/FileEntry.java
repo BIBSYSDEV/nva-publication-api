@@ -17,10 +17,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.HiddenFile;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.publication.model.business.publicationstate.FileApprovedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileDeletedEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileEvent;
@@ -251,7 +248,7 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
   }
 
   public FileEntry update(File file, UserInstance userInstance) {
-    if (!this.file.canBeConvertedTo(file)) {
+    if (!this.file.canTransitionTo(file)) {
       throw new IllegalStateException(
           "%s cannot be updated to %s"
               .formatted(this.file.getClass().getSimpleName(), file.getClass().getSimpleName()));
@@ -266,18 +263,30 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
       this.setFileEvent(FileTypeUpdatedEvent.create(userInstance.getUser(), Instant.now()));
     }
     if (!file.equals(this.file)) {
-      this.file =
+      var builder =
           this.file
               .copy()
               .withPublisherVersion(file.getPublisherVersion())
               .withLicense(file.getLicense())
               .withEmbargoDate(file.getEmbargoDate().orElse(null))
               .withLegalNote(file.getLegalNote())
-              .withRightsRetentionStrategy(file.getRightsRetentionStrategy())
-              .build(file.getClass());
+              .withRightsRetentionStrategy(file.getRightsRetentionStrategy());
+      this.file = buildAs(builder, FileStatus.from(file));
       this.modifiedDate = Instant.now();
     }
     return this;
+  }
+
+  private static File buildAs(File.Builder builder, FileStatus targetStatus) {
+    return switch (targetStatus) {
+      case UPLOADED -> builder.buildUploadedFile();
+      case PENDING_OPEN -> builder.buildPendingOpenFile();
+      case PENDING_INTERNAL -> builder.buildPendingInternalFile();
+      case OPEN -> builder.buildOpenFile();
+      case INTERNAL -> builder.buildInternalFile();
+      case HIDDEN -> builder.buildHiddenFile();
+      case REJECTED -> builder.buildRejectedFile();
+    };
   }
 
   public void setOwnerAffiliation(URI ownerAffiliation) {
@@ -299,24 +308,24 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
               userInstance.getTopLevelOrgCristinId(),
               Instant.now(),
               importSource));
-      this.file =
+      var builder =
           this.file
               .copy()
               .withPublisherVersion(file.getPublisherVersion())
               .withLicense(file.getLicense())
               .withEmbargoDate(file.getEmbargoDate().orElse(null))
               .withLegalNote(file.getLegalNote())
-              .withRightsRetentionStrategy(file.getRightsRetentionStrategy())
-              .build(file.getClass());
+              .withRightsRetentionStrategy(file.getRightsRetentionStrategy());
+      this.file = buildAs(builder, FileStatus.from(file));
       this.modifiedDate = Instant.now();
     }
     return this;
   }
 
   private boolean pendingFileTypeIsUpdated(File file) {
-    return this.file instanceof PendingFile<?, ?>
-        && file instanceof PendingFile<?, ?>
-        && !this.file.getArtifactType().equals(file.getArtifactType());
+    return this.file.isPending()
+        && file.isPending()
+        && FileStatus.from(this.file) != FileStatus.from(file);
   }
 
   public void importNew(
@@ -332,34 +341,40 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
   }
 
   private boolean shouldHideFile(File file) {
-    return !(this.file instanceof HiddenFile) && file instanceof HiddenFile;
+    return FileStatus.from(this.file) != FileStatus.HIDDEN
+        && FileStatus.from(file) == FileStatus.HIDDEN;
   }
 
   private boolean shouldRetractFile(File file) {
-    return (this.file instanceof OpenFile
-            || this.file instanceof InternalFile
-            || this.file instanceof HiddenFile)
-        && file instanceof PendingFile<?, ?>;
+    return this.file.isFinalized() && file.isPending();
   }
 
   public void approve(ResourceService resourceService, User user) {
-    if (file instanceof PendingFile<?, ?> pendingFile) {
-      this.file = pendingFile.approve();
-      var now = Instant.now();
-      this.modifiedDate = now;
-      this.setFileEvent(FileApprovedEvent.create(user, now));
-      resourceService.updateFile(this);
+    var status = FileStatus.from(file);
+    if (!status.isPending()) {
+      return;
     }
+    if (status == FileStatus.PENDING_OPEN && !file.hasLicense()) {
+      throw new IllegalStateException(
+          FileStatus.CANNOT_APPROVE_FILE_WITHOUT_LICENSE.formatted(file.getIdentifier()));
+    }
+    this.file = status.approve().toFile(file);
+    var now = Instant.now();
+    this.modifiedDate = now;
+    this.setFileEvent(FileApprovedEvent.create(user, now));
+    resourceService.updateFile(this);
   }
 
   public void reject(ResourceService resourceService, User user) {
-    if (file instanceof PendingFile<?, ?> pendingFile) {
-      var now = Instant.now();
-      this.setFileEvent(FileRejectedEvent.create(user, now, file.getArtifactType()));
-      this.modifiedDate = now;
-      this.file = pendingFile.reject();
-      resourceService.updateFile(this);
+    var status = FileStatus.from(file);
+    if (!status.isPending()) {
+      return;
     }
+    var now = Instant.now();
+    this.setFileEvent(FileRejectedEvent.create(user, now, file.getArtifactType()));
+    this.modifiedDate = now;
+    this.file = status.reject().toFile(file);
+    resourceService.updateFile(this);
   }
 
   @JsonIgnore

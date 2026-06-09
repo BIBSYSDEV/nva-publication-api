@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.FileOperation.DELETE;
 import static no.unit.nva.model.FileOperation.DOWNLOAD;
 import static no.unit.nva.model.FileOperation.WRITE_METADATA;
-import static no.unit.nva.model.associatedartifacts.file.File.FINALIZED_FILE_TYPES;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE;
 import static nva.commons.apigateway.AccessRight.MANAGE_DEGREE_EMBARGO;
 
@@ -83,7 +82,7 @@ public class FileStrategyBase {
   }
 
   protected boolean fileIsFinalized() {
-    return FINALIZED_FILE_TYPES.contains(file.getFile().getClass());
+    return file.getFile().isFinalized();
   }
 
   protected boolean isExternalClientWithRelation() {

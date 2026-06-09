@@ -15,7 +15,6 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
@@ -164,8 +163,8 @@ public class AcceptedPublishingRequestEventHandler
 
   public void updateFileAffiliations(
       FilesApprovalEntry ticket, URI ownerAffiliation, ResourceService resourceService) {
-    ticket.getFilesForApproval().stream()
-        .map(PendingFile.class::cast)
+    ticket
+        .getFilesForApproval()
         .forEach(
             file ->
                 updateOwnerAffiliation(
