@@ -11,6 +11,7 @@ import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATI
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,6 +27,7 @@ import no.unit.nva.clients.UserDto;
 import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FileEntry;
@@ -34,8 +36,10 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.FileLogEntry;
+import no.unit.nva.publication.model.business.logentry.LogOrganization;
 import no.unit.nva.publication.model.business.logentry.LogTopic;
 import no.unit.nva.publication.model.business.logentry.LogUser;
+import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
@@ -200,6 +204,47 @@ class LogEntryServiceTest extends ResourcesLocalTest {
             Resource.fromPublication(publication).fetchLogEntries(resourceService).getFirst();
     assertEquals(FILE_UPLOADED, logEntry.topic());
     assertNotNull(logEntry.importSource());
+  }
+
+  @Test
+  void shouldPersistLogEntryAsOrganizationForThirdPartyPublish() throws BadRequestException {
+    // Simulates a third-party client creating a draft and publishing it, which stamps the
+    // PublishedResourceEvent. In production the log entry is then written asynchronously by the
+    // stream-triggered PersistLogEntryEventHandler; here we invoke LogEntryService directly since
+    // that is the unit under test.
+    var externalUserInstance =
+        UserInstance.createExternalUser(randomResourceOwner(), randomUri(), OTHER);
+    var draftPublication =
+        randomPublication(AcademicArticle.class).copy().withStatus(PublicationStatus.DRAFT).build();
+    var publication = resourceService.createPublication(externalUserInstance, draftPublication);
+    Resource.fromPublication(publication).publish(resourceService, externalUserInstance);
+
+    logEntryService.persistLogEntry(Resource.fromPublication(publication));
+
+    var logEntry =
+        (PublicationLogEntry)
+            Resource.fromPublication(publication).fetchLogEntries(resourceService).getFirst();
+
+    var expectedOrganization =
+        LogOrganization.fromCristinId(externalUserInstance.getTopLevelOrgCristinId());
+    assertEquals(PUBLICATION_PUBLISHED, logEntry.topic());
+    assertNotNull(logEntry.importSource());
+    assertEquals(expectedOrganization, logEntry.performedBy());
+  }
+
+  @Test
+  void shouldPersistLogEntryAsPersonForRegularUserPublish() throws BadRequestException {
+    var publication = createPublishedPublication();
+
+    logEntryService.persistLogEntry(Resource.fromPublication(publication));
+
+    var logEntry =
+        (PublicationLogEntry)
+            Resource.fromPublication(publication).fetchLogEntries(resourceService).getFirst();
+
+    assertEquals(PUBLICATION_PUBLISHED, logEntry.topic());
+    assertNull(logEntry.importSource());
+    assertInstanceOf(LogUser.class, logEntry.performedBy());
   }
 
   @Test
