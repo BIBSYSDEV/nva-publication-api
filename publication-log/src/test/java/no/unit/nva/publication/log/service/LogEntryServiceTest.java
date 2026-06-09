@@ -11,7 +11,6 @@ import static no.unit.nva.publication.model.business.logentry.LogTopic.PUBLICATI
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -207,7 +206,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
   }
 
   @Test
-  void shouldPersistPublishedLogEntryAsOrganizationForThirdParty() throws BadRequestException {
+  void shouldPersistLogEntryAsOrganizationForThirdPartyPublish() throws BadRequestException {
     var publication = createPublishedPublication();
     var externalUserInstance =
         UserInstance.createExternalUser(randomResourceOwner(), randomUri(), OTHER);
@@ -222,9 +221,11 @@ class LogEntryServiceTest extends ResourcesLocalTest {
         (PublicationLogEntry)
             Resource.fromPublication(publication).fetchLogEntries(resourceService).getFirst();
 
+    var expectedOrganization =
+        LogOrganization.fromCristinId(externalUserInstance.getTopLevelOrgCristinId());
     assertEquals(PUBLICATION_PUBLISHED, logEntry.topic());
     assertNotNull(logEntry.importSource());
-    assertInstanceOf(LogOrganization.class, logEntry.performedBy());
+    assertEquals(expectedOrganization, logEntry.performedBy());
   }
 
   @Test

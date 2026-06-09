@@ -16,7 +16,7 @@ public record CreatedResourceEvent(
     URI institution,
     SortableIdentifier identifier,
     ImportSource importSource)
-    implements ResourceEvent {
+    implements ResourceEvent, ImportSourceProvider {
 
   public static CreatedResourceEvent create(UserInstance userInstance, Instant date) {
     return new CreatedResourceEvent(
@@ -24,7 +24,7 @@ public record CreatedResourceEvent(
         userInstance.getUser(),
         userInstance.getTopLevelOrgCristinId(),
         SortableIdentifier.next(),
-        userInstance.getImportSource());
+        userInstance.getImportSource().orElse(null));
   }
 
   @Override

@@ -216,14 +216,15 @@ public class UserInstance implements JsonSerializable {
     return isExternalClient() ? Optional.ofNullable(thirdPartySystem) : Optional.empty();
   }
 
-  public ImportSource getImportSource() {
+  public Optional<ImportSource> getImportSource() {
     if (!isExternalClient()) {
-      return null;
+      return Optional.empty();
     }
-    return getThirdPartySystem()
-        .map(ThirdPartySystem::toSource)
-        .map(ImportSource::fromSource)
-        .orElse(ImportSource.fromSource(Source.OTHER));
+    return Optional.of(
+        getThirdPartySystem()
+            .map(ThirdPartySystem::toSource)
+            .map(ImportSource::fromSource)
+            .orElse(ImportSource.fromSource(Source.OTHER)));
   }
 
   @JacocoGenerated

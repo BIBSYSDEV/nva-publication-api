@@ -25,7 +25,7 @@ public record FileUploadedEvent(
         userInstance.getUser(),
         userInstance.getTopLevelOrgCristinId(),
         SortableIdentifier.next(),
-        userInstance.getImportSource());
+        userInstance.getImportSource().orElse(null));
   }
 
   @Override
