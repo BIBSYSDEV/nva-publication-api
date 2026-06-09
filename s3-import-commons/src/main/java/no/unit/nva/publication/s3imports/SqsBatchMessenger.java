@@ -12,10 +12,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.queue.QueueMessageSender;
 import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
@@ -25,12 +25,12 @@ public class SqsBatchMessenger {
 
   public static final int MAX_NUMBER_OF_MESSAGES_PER_BATCH_ALLOWED_BY_AWS = 10;
   private static final Logger logger = LoggerFactory.getLogger(SqsBatchMessenger.class);
-  private final SqsClient client;
+  private final QueueMessageSender client;
   private final String queue;
 
   private final Map<String, EventReference> requestIdToMessageBody;
 
-  public SqsBatchMessenger(SqsClient client, String queue) {
+  public SqsBatchMessenger(QueueMessageSender client, String queue) {
     this.client = client;
     this.queue = queue;
     this.requestIdToMessageBody = new HashMap<>();
