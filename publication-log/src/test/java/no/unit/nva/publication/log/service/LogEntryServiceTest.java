@@ -26,6 +26,7 @@ import no.unit.nva.clients.UserDto;
 import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FileEntry;
@@ -41,7 +42,6 @@ import no.unit.nva.publication.model.business.logentry.PublicationLogEntry;
 import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.DoiRequestedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.PublishedResourceEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
@@ -207,13 +207,16 @@ class LogEntryServiceTest extends ResourcesLocalTest {
 
   @Test
   void shouldPersistLogEntryAsOrganizationForThirdPartyPublish() throws BadRequestException {
-    var publication = createPublishedPublication();
+    // Simulates a third-party client creating a draft and publishing it through the real publish
+    // path, which stamps the PublishedResourceEvent. In production the log entry is then written
+    // asynchronously by the stream-triggered PersistLogEntryEventHandler; here we invoke
+    // LogEntryService directly since that is the unit under test.
     var externalUserInstance =
         UserInstance.createExternalUser(randomResourceOwner(), randomUri(), OTHER);
-    var resource = Resource.fromPublication(publication);
-    resource.setResourceEvent(PublishedResourceEvent.create(externalUserInstance, Instant.now()));
-    resource.setDoi(randomDoi());
-    resourceService.updateResource(resource, externalUserInstance);
+    var draftPublication =
+        randomPublication(AcademicArticle.class).copy().withStatus(PublicationStatus.DRAFT).build();
+    var publication = resourceService.createPublication(externalUserInstance, draftPublication);
+    Resource.fromPublication(publication).publish(resourceService, externalUserInstance);
 
     logEntryService.persistLogEntry(Resource.fromPublication(publication));
 
