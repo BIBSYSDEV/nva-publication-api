@@ -96,7 +96,7 @@ public class LogEntryService {
   private LogEntry createLogEntry(Resource resource, ResourceEvent resourceEvent) {
     var performedBy =
         isPerformedBySystem(resourceEvent)
-            ? fetchOrganization(resourceEvent.institution())
+            ? createLogOrganization(resourceEvent.institution())
             : createLogUser(resourceEvent.user(), resourceEvent.institution());
     return resourceEvent.toLogEntry(resource.getIdentifier(), performedBy);
   }
@@ -106,7 +106,7 @@ public class LogEntryService {
         && nonNull(provider.importSource());
   }
 
-  private LogOrganization fetchOrganization(URI organizationId) {
+  private LogOrganization createLogOrganization(URI organizationId) {
     return cristinClient
         .getOrganization(organizationId)
         .map(LogOrganization::fromCristinOrganization)
@@ -116,11 +116,11 @@ public class LogEntryService {
   private void persistFileLogEntry(FileEntry fileEntry) {
     var fileEvent = fileEntry.getFileEvent();
     if (fileEvent instanceof ImportEvent importEvent) {
-      var organization = fetchOrganization(importEvent.institution());
+      var organization = createLogOrganization(importEvent.institution());
       fileEvent.toLogEntry(fileEntry, organization).persist(resourceService);
     } else if (fileEvent instanceof FileUploadedEvent fileUploadedEvent
         && nonNull(fileUploadedEvent.importSource())) {
-      var organization = fetchOrganization(fileUploadedEvent.institution());
+      var organization = createLogOrganization(fileUploadedEvent.institution());
       fileEvent.toLogEntry(fileEntry, organization).persist(resourceService);
     } else {
       var user = createLogUser(fileEvent.user(), null);

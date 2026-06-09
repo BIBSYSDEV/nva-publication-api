@@ -207,10 +207,10 @@ class LogEntryServiceTest extends ResourcesLocalTest {
 
   @Test
   void shouldPersistLogEntryAsOrganizationForThirdPartyPublish() throws BadRequestException {
-    // Simulates a third-party client creating a draft and publishing it through the real publish
-    // path, which stamps the PublishedResourceEvent. In production the log entry is then written
-    // asynchronously by the stream-triggered PersistLogEntryEventHandler; here we invoke
-    // LogEntryService directly since that is the unit under test.
+    // Simulates a third-party client creating a draft and publishing it, which stamps the
+    // PublishedResourceEvent. In production the log entry is then written asynchronously by the
+    // stream-triggered PersistLogEntryEventHandler; here we invoke LogEntryService directly since
+    // that is the unit under test.
     var externalUserInstance =
         UserInstance.createExternalUser(randomResourceOwner(), randomUri(), OTHER);
     var draftPublication =
