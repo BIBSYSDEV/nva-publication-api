@@ -1,10 +1,13 @@
 package no.sikt.nva.scopus.conversion;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -35,6 +38,8 @@ import org.junit.jupiter.api.Test;
 @WireMockTest(httpsEnabled = true)
 class CristinConnectionTest {
 
+  private static final int MAX_ATTEMPTS = 3;
+  private static final int TOO_MANY_REQUESTS = 429;
   private CristinConnection cristinConnection;
 
   @BeforeEach
@@ -144,6 +149,48 @@ class CristinConnectionTest {
     URI cristinId = null;
     var actualOrganization = cristinConnection.fetchCristinOrganizationByCristinId(cristinId);
     assertThat(actualOrganization, is(nullValue()));
+  }
+
+  @Test
+  void shouldRetryServerErrorsUpToMaxAttemptsWhenFetchingPerson(
+      WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var personUri = getRandomPersonUri(wireMockRuntimeInfo);
+    mockCristinPersonWithStatus(personUri, HttpURLConnection.HTTP_UNAVAILABLE);
+    var actualPerson = cristinConnection.getCristinPersonByCristinId(personUri);
+    assertThat(actualPerson.isEmpty(), is(true));
+    verify(exactly(MAX_ATTEMPTS), getRequestedFor(urlPathEqualTo(personUri.getPath())));
+  }
+
+  @Test
+  void shouldRetryTooManyRequestsUpToMaxAttemptsWhenFetchingPerson(
+      WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var personUri = getRandomPersonUri(wireMockRuntimeInfo);
+    mockCristinPersonWithStatus(personUri, TOO_MANY_REQUESTS);
+    var actualPerson = cristinConnection.getCristinPersonByCristinId(personUri);
+    assertThat(actualPerson.isEmpty(), is(true));
+    verify(exactly(MAX_ATTEMPTS), getRequestedFor(urlPathEqualTo(personUri.getPath())));
+  }
+
+  private void mockCristinPersonWithStatus(URI cristinPersonId, int status) {
+    stubFor(
+        WireMock.get(urlPathEqualTo(cristinPersonId.getPath()))
+            .willReturn(aResponse().withStatus(status)));
+  }
+
+  @Test
+  void shouldQueryProxyOnceForRepeatedPersonLookupsAndAgainAfterCacheIsCleared(
+      WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var personUri = getRandomPersonUri(wireMockRuntimeInfo);
+    var expectedPerson = createExpectedPerson(personUri);
+    mockCristinPerson(personUri, expectedPerson.toJsonString());
+
+    cristinConnection.getCristinPersonByCristinId(personUri);
+    cristinConnection.getCristinPersonByCristinId(personUri);
+    verify(exactly(1), getRequestedFor(urlPathEqualTo(personUri.getPath())));
+
+    cristinConnection.clearCache();
+    cristinConnection.getCristinPersonByCristinId(personUri);
+    verify(exactly(2), getRequestedFor(urlPathEqualTo(personUri.getPath())));
   }
 
   private static URI getRandomPersonUri(WireMockRuntimeInfo wireMockRuntimeInfo) {

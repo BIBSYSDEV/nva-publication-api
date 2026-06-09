@@ -8,13 +8,14 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.unit.nva.commons.json.JsonUtils;
@@ -39,8 +40,16 @@ public class CristinConnection {
   private static final String ORGANIZATION = "organization";
   private static final String APPLICATION_JSON = "application/json";
   private static final String QUERY = "query";
+  private static final String RETRY_NAME = "cristin";
   private final HttpClient httpClient;
   private final Environment environment;
+  private final Map<URI, Optional<CristinPerson>> personByCristinIdCache =
+      new ConcurrentHashMap<>();
+  private final Map<String, Optional<CristinPerson>> personByOrcIdCache = new ConcurrentHashMap<>();
+  private final Map<URI, Optional<CristinOrganization>> organizationByCristinIdCache =
+      new ConcurrentHashMap<>();
+  private final Map<String, Optional<SearchOrganizationResponse>> organizationSearchCache =
+      new ConcurrentHashMap<>();
 
   public CristinConnection(HttpClient httpClient, Environment environment) {
     this.httpClient = httpClient;
@@ -53,6 +62,37 @@ public class CristinConnection {
   }
 
   public Optional<CristinPerson> getCristinPersonByCristinId(URI cristinPersonId) {
+    return isNull(cristinPersonId)
+        ? Optional.empty()
+        : personByCristinIdCache.computeIfAbsent(
+            cristinPersonId, this::fetchCristinPersonByCristinId);
+  }
+
+  public CristinOrganization fetchCristinOrganizationByCristinId(URI cristinOrgId) {
+    return isNull(cristinOrgId)
+        ? null
+        : organizationByCristinIdCache
+            .computeIfAbsent(cristinOrgId, this::fetchOrganizationByCristinId)
+            .orElse(null);
+  }
+
+  public Optional<CristinPerson> getCristinPersonByOrcId(String orcid) {
+    return personByOrcIdCache.computeIfAbsent(orcid, this::fetchCristinPersonByOrcId);
+  }
+
+  public Optional<SearchOrganizationResponse> searchCristinOrganization(String organization) {
+    return organizationSearchCache.computeIfAbsent(
+        organization, this::searchCristinOrganizationByName);
+  }
+
+  public void clearCache() {
+    personByCristinIdCache.clear();
+    personByOrcIdCache.clear();
+    organizationByCristinIdCache.clear();
+    organizationSearchCache.clear();
+  }
+
+  private Optional<CristinPerson> fetchCristinPersonByCristinId(URI cristinPersonId) {
     return attempt(() -> createRequest(cristinPersonId))
         .map(this::getCristinResponse)
         .map(this::getBodyFromPersonResponse)
@@ -60,17 +100,16 @@ public class CristinConnection {
         .toOptional();
   }
 
-  public CristinOrganization fetchCristinOrganizationByCristinId(URI cristinOrgId) {
-    return isNull(cristinOrgId)
-        ? null
-        : attempt(() -> createRequest(cristinOrgId))
+  private Optional<CristinOrganization> fetchOrganizationByCristinId(URI cristinOrgId) {
+    return Optional.ofNullable(
+        attempt(() -> createRequest(cristinOrgId))
             .map(this::getCristinResponse)
             .map(this::getBodyFromOrganizationResponse)
             .map(this::convertToOrganization)
-            .orElse(this::loggExceptionAndReturnNull);
+            .orElse(this::loggExceptionAndReturnNull));
   }
 
-  public Optional<CristinPerson> getCristinPersonByOrcId(String orcid) {
+  private Optional<CristinPerson> fetchCristinPersonByOrcId(String orcid) {
     return attempt(() -> createCristinPersonUri(orcid))
         .map(this::createRequest)
         .map(this::getCristinResponse)
@@ -79,7 +118,8 @@ public class CristinConnection {
         .toOptional();
   }
 
-  public Optional<SearchOrganizationResponse> searchCristinOrganization(String organization) {
+  private Optional<SearchOrganizationResponse> searchCristinOrganizationByName(
+      String organization) {
     return attempt(() -> constructSearchCristinOrganizationUri(organization))
         .map(this::createRequest)
         .map(this::getCristinResponse)
@@ -138,9 +178,10 @@ public class CristinConnection {
     return response.body();
   }
 
-  private HttpResponse<String> getCristinResponse(HttpRequest httpRequest)
-      throws IOException, InterruptedException {
-    return httpClient.send(httpRequest, BodyHandlers.ofString());
+  private HttpResponse<String> getCristinResponse(HttpRequest httpRequest) {
+    return HttpRetry.sendWithRetry(
+        RETRY_NAME,
+        () -> attempt(() -> httpClient.send(httpRequest, BodyHandlers.ofString())).orElseThrow());
   }
 
   private HttpRequest createRequest(URI uri) {
