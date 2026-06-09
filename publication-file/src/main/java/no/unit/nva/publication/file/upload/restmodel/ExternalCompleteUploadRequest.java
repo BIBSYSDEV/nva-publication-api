@@ -2,8 +2,6 @@ package no.unit.nva.publication.file.upload.restmodel;
 
 import static java.util.Objects.requireNonNull;
 
-import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
-import com.amazonaws.services.s3.model.PartETag;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
@@ -11,6 +9,9 @@ import java.time.Instant;
 import java.util.List;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
 
 @JsonTypeName(ExternalCompleteUploadRequest.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -28,11 +29,12 @@ public record ExternalCompleteUploadRequest(
 
   @Override
   public CompleteMultipartUploadRequest toCompleteMultipartUploadRequest(String bucketName) {
-    return new CompleteMultipartUploadRequest()
-        .withBucketName(bucketName)
-        .withKey(key())
-        .withUploadId(uploadId())
-        .withPartETags(partETags());
+    return CompleteMultipartUploadRequest.builder()
+        .bucket(bucketName)
+        .key(key())
+        .uploadId(uploadId())
+        .multipartUpload(CompletedMultipartUpload.builder().parts(completedParts()).build())
+        .build();
   }
 
   @Override
@@ -46,10 +48,10 @@ public record ExternalCompleteUploadRequest(
     }
   }
 
-  private List<PartETag> partETags() {
+  private List<CompletedPart> completedParts() {
     return parts().stream()
         .filter(CompleteUploadPart::hasValue)
-        .map(CompleteUploadPart::toPartETag)
+        .map(CompleteUploadPart::toCompletedPart)
         .toList();
   }
 }
