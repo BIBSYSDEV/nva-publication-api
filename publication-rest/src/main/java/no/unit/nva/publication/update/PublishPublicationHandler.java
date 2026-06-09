@@ -4,9 +4,9 @@ import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.List;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.validation.ValidationException;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.PublishingService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -20,15 +20,20 @@ import nva.commons.core.JacocoGenerated;
 public class PublishPublicationHandler extends ApiGatewayHandler<Void, Void> {
 
   private final PublishingService publishingService;
+  private final IdentityServiceClient identityServiceClient;
 
   @JacocoGenerated
   public PublishPublicationHandler() {
-    this(PublishingService.defaultService(), new Environment());
+    this(PublishingService.defaultService(), IdentityServiceClient.prepare(), new Environment());
   }
 
-  public PublishPublicationHandler(PublishingService publishingService, Environment environment) {
+  public PublishPublicationHandler(
+      PublishingService publishingService,
+      IdentityServiceClient identityServiceClient,
+      Environment environment) {
     super(Void.class, environment);
     this.publishingService = publishingService;
+    this.identityServiceClient = identityServiceClient;
   }
 
   @Override
@@ -41,7 +46,8 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, Void> {
   protected Void processInput(Void unused, RequestInfo requestInfo, Context context)
       throws ApiGatewayException {
     var resourceIdentifier = RequestUtil.getIdentifier(requestInfo);
-    var userInstance = UserInstance.fromRequestInfo(requestInfo);
+    var userInstance =
+        RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
     try {
       publishingService.publishResource(resourceIdentifier, userInstance);
     } catch (Exception e) {
