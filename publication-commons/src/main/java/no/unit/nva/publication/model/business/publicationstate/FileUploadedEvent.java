@@ -17,7 +17,7 @@ public record FileUploadedEvent(
     URI institution,
     SortableIdentifier identifier,
     ImportSource importSource)
-    implements FileEvent {
+    implements FileEvent, ImportSourceProvider {
 
   public static FileUploadedEvent create(UserInstance userInstance, Instant timestamp) {
     return new FileUploadedEvent(
