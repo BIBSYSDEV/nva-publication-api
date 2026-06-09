@@ -144,6 +144,11 @@ public class LogEntryService {
           cristinClient.getOrganization(userDto.institutionCristinId()).orElse(null);
       return LogUser.create(cristinPersonDto, cristinOrganizationDto);
     } catch (Exception e) {
+      logger.warn(
+          "Failed to enrich LogUser for user {} (institution {}); falling back to minimal record",
+          user,
+          institution,
+          e);
       return LogUser.fromResourceEvent(user, institution);
     }
   }
