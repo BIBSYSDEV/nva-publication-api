@@ -8,6 +8,9 @@ nva {
         'no/scopus/generated/**',
         'no/unit/nva/model/testing/**'
     ]
+    java {
+        languageVersion = 25
+    }
     pmd {
         rulesetFile = rootProject.file('config/pmd/ruleset.xml')
     }
