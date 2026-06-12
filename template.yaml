@@ -140,7 +140,7 @@ Globals:
       AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,Location,If-None-Match,If-Match'"
       AllowOrigin: "'*'"
   Function:
-    Runtime: java21
+    Runtime: java25
     Timeout: 20
     MemorySize: 1800 # 1 vCPU
     AutoPublishAlias: live
