@@ -6,7 +6,6 @@ import static no.unit.nva.publication.model.business.TicketEntry.setServiceContr
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.net.URI;
 import java.time.Clock;
 import java.util.List;
@@ -35,6 +34,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.FunctionWithException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 @SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class TicketService extends ServiceWithTransactions {
@@ -52,12 +52,12 @@ public class TicketService extends ServiceWithTransactions {
   private final String tableName;
 
   public TicketService(
-      AmazonDynamoDB client, RawContentRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
+      DynamoDbClient client, RawContentRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
     this(client, DEFAULT_IDENTIFIER_PROVIDER, uriRetriever, cristinUnitsUtil);
   }
 
   protected TicketService(
-      AmazonDynamoDB client,
+      DynamoDbClient client,
       Supplier<SortableIdentifier> identifierProvider,
       RawContentRetriever uriRetriever,
       CristinUnitsUtil cristinUnitsUtil) {

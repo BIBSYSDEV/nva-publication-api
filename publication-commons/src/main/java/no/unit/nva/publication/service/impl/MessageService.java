@@ -1,15 +1,10 @@
 package no.unit.nva.publication.service.impl;
 
-import static java.util.Objects.isNull;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -32,6 +27,9 @@ import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 
 public class MessageService extends ServiceWithTransactions {
 
@@ -47,7 +45,7 @@ public class MessageService extends ServiceWithTransactions {
   private final TicketService ticketService;
 
   public MessageService(
-      AmazonDynamoDB client, UriRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
+      DynamoDbClient client, UriRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
     super(client);
     this.ticketService = new TicketService(client, uriRetriever, cristinUnitsUtil);
     tableName = RESOURCES_TABLE_NAME;
@@ -151,17 +149,16 @@ public class MessageService extends ServiceWithTransactions {
   private Map<String, AttributeValue> fetchMessage(MessageDao queryObject)
       throws NotFoundException {
 
-    GetItemRequest getMessageRequest = getMessageByPrimaryKey(queryObject);
-    GetItemResult queryResult = getClient().getItem(getMessageRequest);
-    Map<String, AttributeValue> item = queryResult.getItem();
+    var getMessageRequest = getMessageByPrimaryKey(queryObject);
+    var queryResult = getClient().getItem(getMessageRequest);
 
-    if (isNull(item) || item.isEmpty()) {
+    if (!queryResult.hasItem()) {
       throw new NotFoundException(MESSAGE_NOT_FOUND_ERROR + queryObject.getIdentifier().toString());
     }
-    return item;
+    return queryResult.item();
   }
 
   private GetItemRequest getMessageByPrimaryKey(MessageDao queryObject) {
-    return new GetItemRequest().withTableName(tableName).withKey(queryObject.primaryKey());
+    return GetItemRequest.builder().tableName(tableName).key(queryObject.primaryKey()).build();
   }
 }

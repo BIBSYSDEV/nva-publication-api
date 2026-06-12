@@ -3,14 +3,14 @@ package no.unit.nva.publication.model.storage;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
-import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
+import software.amazon.awssdk.services.dynamodb.model.Condition;
 
 public interface WithPrimaryKey {
 
@@ -58,8 +58,8 @@ public interface WithPrimaryKey {
   @JsonIgnore
   default Map<String, AttributeValue> primaryKey() {
     final Map<String, AttributeValue> map = new ConcurrentHashMap<>();
-    AttributeValue partKeyValue = new AttributeValue(getPrimaryKeyPartitionKey());
-    AttributeValue sortKeyValue = new AttributeValue(getPrimaryKeySortKey());
+    var partKeyValue = AttributeValue.fromS(getPrimaryKeyPartitionKey());
+    var sortKeyValue = AttributeValue.fromS(getPrimaryKeySortKey());
     map.put(PRIMARY_KEY_PARTITION_KEY_NAME, partKeyValue);
     map.put(PRIMARY_KEY_SORT_KEY_NAME, sortKeyValue);
     return map;
@@ -67,10 +67,11 @@ public interface WithPrimaryKey {
 
   @JsonIgnore
   default Map<String, Condition> primaryKeyPartitionKeyCondition() {
-    Condition condition =
-        new Condition()
-            .withComparisonOperator(ComparisonOperator.EQ)
-            .withAttributeValueList(new AttributeValue(getPrimaryKeyPartitionKey()));
+    var condition =
+        Condition.builder()
+            .comparisonOperator(ComparisonOperator.EQ)
+            .attributeValueList(AttributeValue.fromS(getPrimaryKeyPartitionKey()))
+            .build();
     return Map.of(PRIMARY_KEY_PARTITION_KEY_NAME, condition);
   }
 }

@@ -2,9 +2,6 @@ package no.unit.nva.publication.events.handlers.batch.dynamodb.jobs;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import java.net.URI;
 import java.util.Collection;
 import java.util.List;
@@ -28,6 +25,8 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
 
 public class UpdateVerificationStatusJob extends ServiceWithTransactions
     implements DynamodbResourceBatchJobExecutor {
@@ -45,13 +44,13 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
   public UpdateVerificationStatusJob() {
     this(
         ResourceService.defaultService(), CristinClient.defaultClient(),
-        AmazonDynamoDBClientBuilder.defaultClient(), new Environment().readEnv(TABLE_NAME_ENV));
+        DynamoDbClient.create(), new Environment().readEnv(TABLE_NAME_ENV));
   }
 
   public UpdateVerificationStatusJob(
       ResourceService resourceService,
       CristinClient cristinClient,
-      AmazonDynamoDB dynamoDbClient,
+      DynamoDbClient dynamoDbClient,
       String tableName) {
     super(dynamoDbClient);
     this.resourceService = resourceService;

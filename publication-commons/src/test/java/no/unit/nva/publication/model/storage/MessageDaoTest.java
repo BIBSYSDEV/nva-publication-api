@@ -8,7 +8,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import java.net.URI;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
@@ -28,6 +27,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 
 class MessageDaoTest extends ResourcesLocalTest {
 
@@ -82,8 +83,13 @@ class MessageDaoTest extends ResourcesLocalTest {
   }
 
   private Message fetchMessageFromDatabase(MessageDao queryObject) {
-    return attempt(() -> client.getItem(RESOURCES_TABLE_NAME, queryObject.primaryKey()))
-        .map(GetItemResult::getItem)
+    var getItemRequest =
+        GetItemRequest.builder()
+            .tableName(RESOURCES_TABLE_NAME)
+            .key(queryObject.primaryKey())
+            .build();
+    return attempt(() -> client.getItem(getItemRequest))
+        .map(GetItemResponse::item)
         .map(item -> parseAttributeValuesMap(item, MessageDao.class))
         .map(MessageDao::getMessage)
         .orElseThrow();

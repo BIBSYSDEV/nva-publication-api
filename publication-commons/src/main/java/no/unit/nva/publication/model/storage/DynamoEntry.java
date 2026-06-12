@@ -4,9 +4,6 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -14,6 +11,8 @@ import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import no.unit.nva.publication.storage.model.exceptions.EmptyValueMapException;
+import software.amazon.awssdk.enhanced.dynamodb.document.EnhancedDocument;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -41,21 +40,21 @@ public interface DynamoEntry {
   @Deprecated // Delete after we have migrated all data to compressed
   private static <T> T parseDecompressedAttributeValue(
       Map<String, AttributeValue> valuesMap, Class<T> daoClass) {
-    Item item = ItemUtils.toItem(valuesMap);
-    return attempt(() -> dynamoDbObjectMapper.readValue(item.toJSON(), daoClass)).orElseThrow();
+    var json = EnhancedDocument.fromAttributeValueMap(valuesMap).toJson();
+    return attempt(() -> dynamoDbObjectMapper.readValue(json, daoClass)).orElseThrow();
   }
 
   private static boolean hasByteArrayData(Map<String, AttributeValue> valuesMap) {
     return nonNull(valuesMap.get(CONTAINED_DATA_FIELD_NAME))
-        && nonNull(valuesMap.get(CONTAINED_DATA_FIELD_NAME).getB());
+        && nonNull(valuesMap.get(CONTAINED_DATA_FIELD_NAME).b());
   }
 
   @JsonIgnore
   SortableIdentifier getIdentifier();
 
   default Map<String, AttributeValue> toDynamoFormat() {
-    Item item =
-        attempt(() -> Item.fromJSON(dynamoDbObjectMapper.writeValueAsString(this))).orElseThrow();
-    return ItemUtils.toAttributeValues(item);
+    return attempt(
+            () -> EnhancedDocument.fromJson(dynamoDbObjectMapper.writeValueAsString(this)).toMap())
+        .orElseThrow();
   }
 }

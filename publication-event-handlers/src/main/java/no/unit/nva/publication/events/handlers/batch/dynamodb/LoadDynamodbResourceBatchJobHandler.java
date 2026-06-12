@@ -6,7 +6,6 @@ import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.de
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.Collection;
 import java.util.List;
@@ -23,6 +22,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -188,8 +188,8 @@ public class LoadDynamodbResourceBatchJobHandler
             item -> {
               var dynamoDbKey =
                   new DynamodbResourceBatchDynamoDbKey(
-                      item.get(PRIMARY_KEY_PARTITION_KEY_NAME).getS(),
-                      item.get(PRIMARY_KEY_SORT_KEY_NAME).getS());
+                      item.get(PRIMARY_KEY_PARTITION_KEY_NAME).s(),
+                      item.get(PRIMARY_KEY_SORT_KEY_NAME).s());
               return new BatchWorkItem(dynamoDbKey, jobType);
             })
         .toList();

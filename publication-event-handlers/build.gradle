@@ -1,7 +1,7 @@
 dependencies {
     api(nvaCatalog.aws.lambda.core)
     api(nvaCatalog.aws.lambda.events)
-    api(nvaCatalog.aws.sdk.dynamo)
+    api(nvaCatalog.aws.sdk2.dynamo)
     api(nvaCatalog.aws.sdk2.eventbridge)
     api(nvaCatalog.aws.sdk2.s3)
     api(nvaCatalog.aws.sdk2.secrets)
@@ -39,6 +39,7 @@ dependencies {
     implementation(project(":publication-constants"))
     implementation(project(":publication-log"))
     runtimeOnly(nvaCatalog.aws.apache.client)
+    runtimeOnly(nvaCatalog.aws.sdk.dynamo)
     runtimeOnly(nvaCatalog.log4j.api)
     runtimeOnly(nvaCatalog.log4j.slf4j.impl)
     testImplementation(nvaCatalog.hamcrest)

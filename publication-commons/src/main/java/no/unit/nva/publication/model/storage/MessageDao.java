@@ -3,11 +3,6 @@ package no.unit.nva.publication.model.storage;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -19,6 +14,11 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.Put;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(MessageDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -78,12 +78,12 @@ public class MessageDao extends Dao implements DynamoEntryByIdentifier, JoinWith
     var uniqueIdentifierEntry = new IdentifierEntry(this.getIdentifier().toString());
     var messageEntry = transactionItem(this);
     var identityEntry = transactionItem(uniqueIdentifierEntry);
-    return new TransactWriteItemsRequest().withTransactItems(messageEntry, identityEntry);
+    return TransactWriteItemsRequest.builder().transactItems(messageEntry, identityEntry).build();
   }
 
   @JacocoGenerated
   @Override
-  public void updateExistingEntry(AmazonDynamoDB client) {
+  public void updateExistingEntry(DynamoDbClient client) {
     try {
       client.putItem(this.createPutItemRequest());
     } catch (Exception e) {
@@ -92,7 +92,7 @@ public class MessageDao extends Dao implements DynamoEntryByIdentifier, JoinWith
   }
 
   private PutItemRequest createPutItemRequest() {
-    return new PutItemRequest().withTableName(RESOURCES_TABLE_NAME).withItem(toDynamoFormat());
+    return PutItemRequest.builder().tableName(RESOURCES_TABLE_NAME).item(toDynamoFormat()).build();
   }
 
   @JacocoGenerated
@@ -143,8 +143,9 @@ public class MessageDao extends Dao implements DynamoEntryByIdentifier, JoinWith
   }
 
   private static TransactWriteItem transactionItem(DynamoEntry dynamoEntry) {
-    var put = new Put().withTableName(RESOURCES_TABLE_NAME).withItem(dynamoEntry.toDynamoFormat());
+    var put =
+        Put.builder().tableName(RESOURCES_TABLE_NAME).item(dynamoEntry.toDynamoFormat()).build();
 
-    return new TransactWriteItem().withPut(put);
+    return TransactWriteItem.builder().put(put).build();
   }
 }

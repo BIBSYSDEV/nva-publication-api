@@ -46,7 +46,6 @@ dependencies {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
-    testImplementation(nvaCatalog.aws.sdk.dynamo)
     testImplementation(nvaCatalog.aws.sdk2.sdk.core)
     testImplementation(nvaCatalog.commons.lang)
     testImplementation(nvaCatalog.hamcrest)

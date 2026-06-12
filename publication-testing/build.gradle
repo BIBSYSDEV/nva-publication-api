@@ -1,5 +1,5 @@
 dependencies {
-    api(nvaCatalog.aws.sdk.dynamo)
+    api(nvaCatalog.aws.sdk2.dynamo)
     api(nvaCatalog.aws.sdk2.sqs)
     api(nvaCatalog.jackson.annotations)
     api(nvaCatalog.jackson.core)
@@ -26,6 +26,7 @@ dependencies {
     implementation(project(":publication-model-testing"))
     implementation(nvaCatalog.httpcore5)
     runtimeOnly(libs.opentest4j)
+    runtimeOnly(nvaCatalog.aws.sdk.dynamo)
     runtimeOnly(nvaCatalog.jackson.dataformat.xml)
     runtimeOnly(nvaCatalog.jackson.datatype.jdk8)
     runtimeOnly(nvaCatalog.jackson.datatype.jsr310)

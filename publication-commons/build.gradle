@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    api(nvaCatalog.aws.sdk.dynamo)
+    api(nvaCatalog.aws.sdk2.dynamo)
     api(nvaCatalog.aws.sdk2.s3)
     api(nvaCatalog.aws.sdk2.sqs)
     api(nvaCatalog.jackson.annotations)
@@ -19,8 +19,8 @@ dependencies {
     api(nvaLibs.json)
     api(project(":publication-model"))
     implementation(nvaCatalog.aws.apache.client)
-    implementation(nvaCatalog.aws.java.sdk.core)
     implementation(nvaCatalog.aws.sdk2.aws.core)
+    implementation(nvaCatalog.aws.sdk2.dynamodbenhanced)
     implementation(nvaCatalog.aws.sdk2.http.client)
     implementation(nvaCatalog.aws.sdk2.regions)
     implementation(nvaCatalog.aws.sdk2.sdk.core)
@@ -32,6 +32,7 @@ dependencies {
     implementation(nvaCatalog.zalando)
     implementation(nvaLibs.secrets)
     implementation(project(":publication-constants"))
+    runtimeOnly(nvaCatalog.aws.sdk.dynamo)
     runtimeOnly(nvaCatalog.jackson.dataformat.xml)
     runtimeOnly(nvaCatalog.jackson.datatype.jdk8)
     runtimeOnly(nvaCatalog.jackson.datatype.jsr310)
@@ -57,6 +58,7 @@ dependencies {
     testImplementation(project(":publication-model-testing"))
     testImplementation(project(":publication-testing"))
     testImplementation(project(":tickets-test"))
+    testRuntimeOnly(nvaCatalog.aws.java.sdk.core)
     testRuntimeOnly(nvaCatalog.cucumber.junit.platform.engine)
     testRuntimeOnly(nvaCatalog.cucumber.picocontainer)
     testRuntimeOnly(nvaCatalog.junit.jupiter.engine)

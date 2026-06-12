@@ -4,9 +4,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOME
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -18,6 +15,9 @@ import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(PublishingRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -40,10 +40,11 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
     var queryObject = PublishingRequestCase.createQueryObject(resourceIdentifier, customerId);
     var dao = new PublishingRequestDao(queryObject);
 
-    return new QueryRequest()
-        .withTableName(RESOURCES_TABLE_NAME)
-        .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-        .withKeyConditions(dao.byResource(dao.joinByResourceOrderedType()));
+    return QueryRequest.builder()
+        .tableName(RESOURCES_TABLE_NAME)
+        .indexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+        .keyConditions(dao.byResource(dao.joinByResourceOrderedType()))
+        .build();
   }
 
   public static PublishingRequestDao queryObject(PublishingRequestCase queryObject) {
@@ -71,8 +72,9 @@ public class PublishingRequestDao extends TicketDao implements JoinWithResource,
   public TransactWriteItemsRequest createInsertionTransactionRequest() {
     var publishingRequestInsertionEntry = createPublishingRequestInsertionEntry();
     var identifierEntry = createUniqueIdentifierEntry();
-    return new TransactWriteItemsRequest()
-        .withTransactItems(identifierEntry, publishingRequestInsertionEntry);
+    return TransactWriteItemsRequest.builder()
+        .transactItems(identifierEntry, publishingRequestInsertionEntry)
+        .build();
   }
 
   @Override
