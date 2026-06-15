@@ -7,18 +7,18 @@ glassfish-jakarta-json = { strictly = '2.0.1' }
 glassfish-jaxb = '2.3.1'  # FIXME: Upgrading breaks brage-import
 hamcrest-json = { strictly = '0.3' }
 hamcrestSpotify = { strictly = '1.3.2' }
-jackson-dataformat-cbor = { strictly = '2.21.3' }
+jackson-dataformat-cbor = { strictly = '2.22.0' }
 jakarta-validation-api = { strictly = '3.1.1' }
 jakarta-xml = { strictly = '4.0.5' }
 javax-activation = { strictly = '1.2.0' }
 javax-bind = { strictly = '2.4.0-b180830.0359' }
 joda-time = { strictly = '2.14.2' }
 junit-platform-commons = { strictly = '6.1.0' }
-lombok = { strictly = '1.18.44' }
-nvaDoiPartnerData = { strictly = '0.5.10' }
+lombok = { strictly = '1.18.46' }
+nvaDoiPartnerData = { strictly = '0.5.13' }
 opentest4j = { strictly = '1.3.0' }
 reflections = { strictly = '0.10.2' }
-sun-jaxb = { strictly = '4.0.8' }
+sun-jaxb = { strictly = '4.0.9' }
 swaggerCoreVersion = { strictly = '2.2.50' }
 tika = { strictly = '3.3.1' }
 titanium-json-ld = { strictly = '1.7.0' }
@@ -39,7 +39,7 @@ jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version.re
 joda-time = { group = 'joda-time', name = 'joda-time', version.ref = 'joda-time' }
 junit-platform-commons = { group = 'org.junit.platform', name = 'junit-platform-commons', version.ref = 'junit-platform-commons' }
 lombok = { group = 'org.projectlombok', name = 'lombok', version.ref = 'lombok' }
-nva-doi-partner-data = { group = 'com.github.BIBSYSDEV.nva-doi-partner-data', name = 'datacite-transform', version.ref = 'nvaDoiPartnerData' }
+nva-doi-partner-data = { group = 'com.github.BIBSYSDEV', name = 'nva-doi-partner-data', version.ref = 'nvaDoiPartnerData' }
 opentest4j = { group = 'org.opentest4j', name = 'opentest4j', version.ref = 'opentest4j' }
 reflections = { group = 'org.reflections', name = 'reflections', version.ref = 'reflections' }
 swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.ref = 'swaggerCoreVersion' }
