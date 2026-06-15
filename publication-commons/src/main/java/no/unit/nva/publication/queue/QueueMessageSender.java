@@ -4,9 +4,9 @@ import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
 
 /**
- * Producer-only view of an SQS queue. Unlike {@link QueueClient}, it is not bound to a single
- * queue: the target queue is carried by each {@link SendMessageBatchRequest}, so a sender can
- * publish to any queue.
+ * Queue-agnostic batch producer: the target queue rides on each {@link SendMessageBatchRequest}, so
+ * one sender can publish to any queue. Contrast with {@link QueueClient}, which adds queue-bound
+ * read/delete operations for consuming a single queue.
  */
 public interface QueueMessageSender {
 

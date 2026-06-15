@@ -27,6 +27,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class ResourceEventTest {
 
+  private static final ImportSource NO_IMPORT_SOURCE = null;
+
   public static Stream<Arguments> stateProvider() {
     return Stream.of(
         Arguments.of(
@@ -35,13 +37,17 @@ public class ResourceEventTest {
                 new User(randomString()),
                 randomUri(),
                 SortableIdentifier.next(),
-                null)),
+                NO_IMPORT_SOURCE)),
         Arguments.of(
             new UnpublishedResourceEvent(
                 Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next())),
         Arguments.of(
             new PublishedResourceEvent(
-                Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next())),
+                Instant.now(),
+                new User(randomString()),
+                randomUri(),
+                SortableIdentifier.next(),
+                NO_IMPORT_SOURCE)),
         Arguments.of(
             new DeletedResourceEvent(
                 Instant.now(), new User(randomString()), randomUri(), SortableIdentifier.next())),

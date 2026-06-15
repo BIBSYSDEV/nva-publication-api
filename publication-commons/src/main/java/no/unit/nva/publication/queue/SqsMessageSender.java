@@ -2,7 +2,7 @@ package no.unit.nva.publication.queue;
 
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
@@ -33,7 +33,10 @@ public final class SqsMessageSender implements QueueMessageSender {
   }
 
   private static SqsClient defaultClient() {
-    return SqsClient.builder().region(getRegion()).httpClient(ApacheHttpClient.create()).build();
+    return SqsClient.builder()
+        .region(getRegion())
+        .httpClient(UrlConnectionHttpClient.create())
+        .build();
   }
 
   private static Region getRegion() {
