@@ -23,6 +23,7 @@ dependencies {
     implementation(nvaCatalog.jackson.core)
     implementation(nvaCatalog.log4j.core)
     implementation(nvaCatalog.nva.language)
+    implementation(nvaCatalog.resilience4j.core)
     implementation(nvaCatalog.resilience4j.retry)
     implementation(nvaCatalog.slf4j.api)
     implementation(nvaLibs.identifiers)
