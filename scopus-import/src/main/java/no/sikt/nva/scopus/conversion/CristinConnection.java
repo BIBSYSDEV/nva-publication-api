@@ -13,7 +13,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
 import no.unit.nva.commons.json.JsonUtils;
@@ -41,14 +43,13 @@ public class CristinConnection {
   private static final String RETRY_NAME = "cristin";
   private final HttpClient httpClient;
   private final Environment environment;
-  private final LookupCache<URI, Optional<CristinPerson>> personByCristinIdCache =
-      new LookupCache<>();
-  private final LookupCache<String, Optional<CristinPerson>> personByOrcIdCache =
-      new LookupCache<>();
-  private final LookupCache<URI, Optional<CristinOrganization>> organizationByCristinIdCache =
-      new LookupCache<>();
-  private final LookupCache<String, Optional<SearchOrganizationResponse>> organizationSearchCache =
-      new LookupCache<>();
+  private final Map<URI, Optional<CristinPerson>> personByCristinIdCache =
+      new ConcurrentHashMap<>();
+  private final Map<String, Optional<CristinPerson>> personByOrcIdCache = new ConcurrentHashMap<>();
+  private final Map<URI, Optional<CristinOrganization>> organizationByCristinIdCache =
+      new ConcurrentHashMap<>();
+  private final Map<String, Optional<SearchOrganizationResponse>> organizationSearchCache =
+      new ConcurrentHashMap<>();
 
   public CristinConnection(HttpClient httpClient, Environment environment) {
     this.httpClient = httpClient;
@@ -63,23 +64,25 @@ public class CristinConnection {
   public Optional<CristinPerson> getCristinPersonByCristinId(URI cristinPersonId) {
     return isNull(cristinPersonId)
         ? Optional.empty()
-        : personByCristinIdCache.getOrFetch(cristinPersonId, this::fetchCristinPersonByCristinId);
+        : personByCristinIdCache.computeIfAbsent(
+            cristinPersonId, this::fetchCristinPersonByCristinId);
   }
 
   public CristinOrganization fetchCristinOrganizationByCristinId(URI cristinOrgId) {
     return isNull(cristinOrgId)
         ? null
         : organizationByCristinIdCache
-            .getOrFetch(cristinOrgId, this::fetchOrganizationByCristinId)
+            .computeIfAbsent(cristinOrgId, this::fetchOrganizationByCristinId)
             .orElse(null);
   }
 
   public Optional<CristinPerson> getCristinPersonByOrcId(String orcid) {
-    return personByOrcIdCache.getOrFetch(orcid, this::fetchCristinPersonByOrcId);
+    return personByOrcIdCache.computeIfAbsent(orcid, this::fetchCristinPersonByOrcId);
   }
 
   public Optional<SearchOrganizationResponse> searchCristinOrganization(String organization) {
-    return organizationSearchCache.getOrFetch(organization, this::searchCristinOrganizationByName);
+    return organizationSearchCache.computeIfAbsent(
+        organization, this::searchCristinOrganizationByName);
   }
 
   public void clearCache() {

@@ -19,7 +19,9 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import no.sikt.nva.scopus.conversion.model.pia.Affiliation;
 import no.sikt.nva.scopus.conversion.model.pia.Author;
 import no.unit.nva.commons.json.JsonUtils;
@@ -61,9 +63,8 @@ public class PiaConnection {
   private final transient String piaAuthorization;
   private final String piaHost;
   private final String cristinProxyHost;
-  private final LookupCache<String, Optional<URI>> personIdentifierCache = new LookupCache<>();
-  private final LookupCache<String, Optional<URI>> organizationIdentifierCache =
-      new LookupCache<>();
+  private final Map<String, Optional<URI>> personIdentifierCache = new ConcurrentHashMap<>();
+  private final Map<String, Optional<URI>> organizationIdentifierCache = new ConcurrentHashMap<>();
 
   public PiaConnection(
       HttpClient httpClient, SecretsReader secretsReader, Environment environment) {
@@ -79,12 +80,12 @@ public class PiaConnection {
   }
 
   public Optional<URI> getCristinPersonIdentifier(String scopusAuthorIdentifier) {
-    return personIdentifierCache.getOrFetch(
+    return personIdentifierCache.computeIfAbsent(
         scopusAuthorIdentifier, this::fetchCristinPersonIdentifier);
   }
 
   public Optional<URI> fetchCristinOrganizationIdentifier(String scopusAffiliationIdentifier) {
-    return organizationIdentifierCache.getOrFetch(
+    return organizationIdentifierCache.computeIfAbsent(
         scopusAffiliationIdentifier, this::fetchCristinOrganizationIdentifierFromPia);
   }
 
