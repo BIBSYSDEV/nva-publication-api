@@ -51,12 +51,12 @@ public class ContributorExtractor {
   }
 
   public ContributorsOrganizationsWrapper generateContributors(DocTp document) {
-    clearLookupCaches();
+    clearConnectionCaches();
     var bibrecord = document.getItem().getItem().getBibrecord().getHead();
     return generateContributors(bibrecord.getCorrespondence(), bibrecord.getAuthorGroup());
   }
 
-  private void clearLookupCaches() {
+  private void clearConnectionCaches() {
     piaConnection.clearCache();
     cristinConnection.clearCache();
   }
