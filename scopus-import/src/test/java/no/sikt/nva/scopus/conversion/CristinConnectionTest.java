@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.List;
@@ -34,6 +35,8 @@ import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @WireMockTest(httpsEnabled = true)
 class CristinConnectionTest {
@@ -152,29 +155,62 @@ class CristinConnectionTest {
   }
 
   @Test
-  void shouldRetryServerErrorsUpToMaxAttemptsWhenFetchingPerson(
-      WireMockRuntimeInfo wireMockRuntimeInfo) {
+  void shouldReturnOptionalEmptyWhenOrcIdIsNull() {
+    String orcId = null;
+    var actualPerson = cristinConnection.getCristinPersonByOrcId(orcId);
+    assertThat(actualPerson.isEmpty(), is(equalTo(true)));
+  }
+
+  @Test
+  void shouldReturnOptionalEmptyWhenOrganizationNameIsNull() {
+    String organizationName = null;
+    var searchResponse = cristinConnection.searchCristinOrganization(organizationName);
+    assertThat(searchResponse.isEmpty(), is(equalTo(true)));
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {HttpURLConnection.HTTP_UNAVAILABLE, TOO_MANY_REQUESTS})
+  void shouldRetryTransientFailuresUpToMaxAttemptsWhenFetchingPerson(
+      int transientStatusCode, WireMockRuntimeInfo wireMockRuntimeInfo) {
     var personUri = getRandomPersonUri(wireMockRuntimeInfo);
-    mockCristinPersonWithStatus(personUri, HttpURLConnection.HTTP_UNAVAILABLE);
+    mockCristinPersonWithStatus(personUri, transientStatusCode);
     var actualPerson = cristinConnection.getCristinPersonByCristinId(personUri);
     assertThat(actualPerson.isEmpty(), is(true));
     verify(exactly(MAX_ATTEMPTS), getRequestedFor(urlPathEqualTo(personUri.getPath())));
   }
 
   @Test
-  void shouldRetryTooManyRequestsUpToMaxAttemptsWhenFetchingPerson(
+  void shouldReturnPersonWhenTransientFailureIsFollowedBySuccess(
       WireMockRuntimeInfo wireMockRuntimeInfo) {
     var personUri = getRandomPersonUri(wireMockRuntimeInfo);
-    mockCristinPersonWithStatus(personUri, TOO_MANY_REQUESTS);
+    var expectedPerson = createExpectedPerson(personUri);
+    mockCristinPersonServerErrorThenSuccess(personUri, expectedPerson.toJsonString());
     var actualPerson = cristinConnection.getCristinPersonByCristinId(personUri);
-    assertThat(actualPerson.isEmpty(), is(true));
-    verify(exactly(MAX_ATTEMPTS), getRequestedFor(urlPathEqualTo(personUri.getPath())));
+    assertThat(actualPerson.isPresent(), is(true));
+    assertThat(actualPerson.get(), is(equalTo(expectedPerson)));
+    verify(exactly(2), getRequestedFor(urlPathEqualTo(personUri.getPath())));
   }
 
   private void mockCristinPersonWithStatus(URI cristinPersonId, int status) {
     stubFor(
         WireMock.get(urlPathEqualTo(cristinPersonId.getPath()))
             .willReturn(aResponse().withStatus(status)));
+  }
+
+  private void mockCristinPersonServerErrorThenSuccess(URI cristinPersonId, String response) {
+    var scenario = "retry person fetch";
+    var successState = "succeed";
+    stubFor(
+        WireMock.get(urlPathEqualTo(cristinPersonId.getPath()))
+            .inScenario(scenario)
+            .whenScenarioStateIs(Scenario.STARTED)
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_UNAVAILABLE))
+            .willSetStateTo(successState));
+    stubFor(
+        WireMock.get(urlPathEqualTo(cristinPersonId.getPath()))
+            .inScenario(scenario)
+            .whenScenarioStateIs(successState)
+            .willReturn(aResponse().withBody(response).withStatus(HttpURLConnection.HTTP_OK)));
   }
 
   @Test

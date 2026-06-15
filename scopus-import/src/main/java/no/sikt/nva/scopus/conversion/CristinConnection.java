@@ -77,12 +77,16 @@ public class CristinConnection {
   }
 
   public Optional<CristinPerson> getCristinPersonByOrcId(String orcid) {
-    return personByOrcIdCache.computeIfAbsent(orcid, this::fetchCristinPersonByOrcId);
+    return isNull(orcid)
+        ? Optional.empty()
+        : personByOrcIdCache.computeIfAbsent(orcid, this::fetchCristinPersonByOrcId);
   }
 
   public Optional<SearchOrganizationResponse> searchCristinOrganization(String organization) {
-    return organizationSearchCache.computeIfAbsent(
-        organization, this::searchCristinOrganizationByName);
+    return isNull(organization)
+        ? Optional.empty()
+        : organizationSearchCache.computeIfAbsent(
+            organization, this::searchCristinOrganizationByName);
   }
 
   public void clearCache() {
