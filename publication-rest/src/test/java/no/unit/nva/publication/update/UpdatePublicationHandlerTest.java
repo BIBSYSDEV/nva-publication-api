@@ -137,8 +137,11 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.AssociatedLinkDto;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
@@ -542,6 +545,48 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     assertThat(
         body.getEntityDescription().getMainTitle(),
         is(equalTo(publicationUpdate.getEntityDescription().getMainTitle())));
+  }
+
+  @Test
+  void externalClientCanAddAssociatedLinkViaUpdateAndItRoundTrips()
+      throws IOException, BadRequestException, NotFoundException {
+    publication.setIdentifier(null);
+    var savedPublication = createSamplePublication();
+
+    var associatedLink =
+        new AssociatedLink(randomUri(), randomString(), randomString(), RelationType.SAME_AS);
+    var updatedArtifacts = new ArrayList<>(savedPublication.getAssociatedArtifacts());
+    updatedArtifacts.add(associatedLink);
+    var publicationUpdate =
+        savedPublication.copy().withAssociatedArtifacts(updatedArtifacts).build();
+
+    when(getExternalClientResponse.getCustomerUri()).thenReturn(publication.getPublisher().getId());
+    when(getExternalClientResponse.getActingUser())
+        .thenReturn(publication.getResourceOwner().getOwner().getValue());
+    when(getExternalClientResponse.getCristinUrgUri())
+        .thenReturn(publication.getResourceOwner().getOwnerAffiliation());
+
+    var event =
+        externalClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+    updatePublicationHandler.handleRequest(event, output, context);
+
+    var gatewayResponse =
+        GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
+    assertEquals(SC_OK, gatewayResponse.getStatusCode());
+
+    var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
+    assertThat(
+        body.getAssociatedArtifacts(),
+        hasItem(
+            new AssociatedLinkDto(
+                associatedLink.id(),
+                associatedLink.name(),
+                associatedLink.description(),
+                associatedLink.relation())));
+
+    var persisted =
+        resourceService.getResourceByIdentifier(savedPublication.getIdentifier());
+    assertThat(persisted.getAssociatedArtifacts(), hasItem(associatedLink));
   }
 
   @Test
