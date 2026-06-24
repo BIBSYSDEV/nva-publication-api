@@ -21,7 +21,7 @@ dependencies {
     runtimeOnly(nvaCatalog.log4j.slf4j.impl)
     testFixturesRuntimeOnly(nvaCatalog.jackson.core)
     testFixturesRuntimeOnly(nvaCatalog.jackson.databind)
-    testImplementation(nvaCatalog.aws.sdk.dynamo)
+    testImplementation(nvaCatalog.aws.sdk2.dynamo)
     testImplementation(nvaCatalog.aws.sdk2.sqs)
     testImplementation(nvaCatalog.hamcrest)
     testImplementation(nvaCatalog.junit.jupiter.api)
@@ -32,6 +32,7 @@ dependencies {
     testImplementation(project(":publication-model-testing"))
     testImplementation(project(":publication-testing"))
     testImplementation(project(":tickets-test"))
+    testRuntimeOnly(nvaCatalog.aws.sdk.dynamo)
     testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
     testRuntimeOnly(nvaCatalog.junit.platform.launcher)
 }

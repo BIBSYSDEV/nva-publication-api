@@ -4,7 +4,7 @@ dependencies {
         exclude group: "software.amazon.ion", module: "ion-java"
     }
     api(nvaCatalog.aws.lambda.core)
-    api(nvaCatalog.aws.sdk.dynamo)
+    api(nvaCatalog.aws.sdk2.dynamo)
     api(nvaCatalog.aws.sdk2.eventbridge)
     api(nvaCatalog.aws.sdk2.s3)
     api(nvaCatalog.aws.sdk2.secrets)
@@ -25,6 +25,7 @@ dependencies {
     implementation(libs.jakarta.validation.api)
     implementation(libs.nva.doi.partner.data)
     implementation(nvaCatalog.aws.sdk2.auth)
+    implementation(nvaCatalog.aws.sdk2.dynamodbenhanced)
     implementation(nvaCatalog.aws.sdk2.regions)
     implementation(nvaCatalog.httpcore4)
     implementation(nvaCatalog.httpcore5)
@@ -37,6 +38,7 @@ dependencies {
     runtimeOnly(libs.apache.bval)
     runtimeOnly(libs.jaxb.runtime)
     runtimeOnly(libs.xsd2java.api)
+    runtimeOnly(nvaCatalog.aws.sdk.dynamo)
     runtimeOnly(nvaCatalog.aws.sdk2.urlconnection)
     runtimeOnly(nvaCatalog.log4j.api)
     runtimeOnly(nvaCatalog.log4j.slf4j.impl)

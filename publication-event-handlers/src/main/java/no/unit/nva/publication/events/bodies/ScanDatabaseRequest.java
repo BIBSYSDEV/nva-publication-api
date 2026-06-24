@@ -4,15 +4,17 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.publication.model.storage.KeyField;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 public class ScanDatabaseRequest implements JsonSerializable {
@@ -25,6 +27,7 @@ public class ScanDatabaseRequest implements JsonSerializable {
   public static final String TYPE = "types";
 
   @JsonProperty(START_MARKER)
+  @JsonSerialize(using = StartMarkerSerializer.class)
   private final Map<String, AttributeValue> startMarker;
 
   @JsonProperty(PAGE_SIZE)
@@ -39,7 +42,8 @@ public class ScanDatabaseRequest implements JsonSerializable {
   @JsonCreator
   public ScanDatabaseRequest(
       @JsonProperty(PAGE_SIZE) int pageSize,
-      @JsonProperty(START_MARKER) Map<String, AttributeValue> startMarker,
+      @JsonProperty(START_MARKER) @JsonDeserialize(using = StartMarkerDeserializer.class)
+          Map<String, AttributeValue> startMarker,
       @JsonProperty(TOPIC) String topic,
       @JsonProperty(TYPE) List<KeyField> types) {
     this.pageSize = pageSize;

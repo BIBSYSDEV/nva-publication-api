@@ -24,7 +24,7 @@ dependencies {
     runtimeOnly(nvaCatalog.jackson.module.parameter.names)
     runtimeOnly(nvaCatalog.log4j.api)
     runtimeOnly(nvaCatalog.log4j.slf4j.impl)
-    testImplementation(nvaCatalog.aws.sdk.dynamo)
+    testImplementation(nvaCatalog.aws.sdk2.dynamo)
     testImplementation(nvaCatalog.hamcrest)
     testImplementation(nvaCatalog.httpcore4)
     testImplementation(nvaCatalog.junit.jupiter.api)
@@ -37,6 +37,7 @@ dependencies {
     testImplementation(nvaLibs.testutils)
     testImplementation(project(":publication-model-testing"))
     testImplementation(project(":publication-testing"))
+    testRuntimeOnly(nvaCatalog.aws.sdk.dynamo)
     testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
     testRuntimeOnly(nvaCatalog.junit.platform.launcher)
     testRuntimeOnly(nvaCatalog.wiremock) {

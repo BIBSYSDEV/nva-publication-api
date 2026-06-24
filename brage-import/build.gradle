@@ -30,7 +30,7 @@ dependencies {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
-    testImplementation(nvaCatalog.aws.sdk.dynamo)
+    testImplementation(nvaCatalog.aws.sdk2.dynamo)
     testImplementation(nvaCatalog.cucumber.java)
     testImplementation(nvaCatalog.hamcrest)
     testImplementation(nvaCatalog.httpcore4)
@@ -41,6 +41,7 @@ dependencies {
     testImplementation(nvaLibs.testutils)
     testImplementation(project(":publication-model-testing"))
     testImplementation(project(":publication-testing"))
+    testRuntimeOnly(nvaCatalog.aws.sdk.dynamo)
     testRuntimeOnly(nvaCatalog.cucumber.junit.platform.engine)
     testRuntimeOnly(nvaCatalog.cucumber.picocontainer)
     testRuntimeOnly(nvaCatalog.junit.jupiter.engine)

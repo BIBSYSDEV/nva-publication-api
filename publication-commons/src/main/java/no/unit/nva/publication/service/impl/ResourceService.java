@@ -19,23 +19,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.BatchGetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.KeysAndAttributes;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.PutRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
@@ -99,6 +82,24 @@ import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.BatchGetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.Delete;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes;
+import software.amazon.awssdk.services.dynamodb.model.Put;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
+import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals", "PMD.CouplingBetweenObjects"})
 public class ResourceService extends ServiceWithTransactions {
@@ -134,7 +135,7 @@ public class ResourceService extends ServiceWithTransactions {
   private final CristinUnitsUtil cristinUnitsUtil;
 
   public ResourceService(
-      AmazonDynamoDB dynamoDBClient,
+      DynamoDbClient dynamoDBClient,
       String tableName,
       Clock clock,
       RawContentRetriever uriRetriever,
@@ -242,8 +243,8 @@ public class ResourceService extends ServiceWithTransactions {
     importCandidate.setImportStatus(status);
     importCandidate.setModifiedDate(clockForTimestamps.instant());
     var dao = new ImportCandidateDao(importCandidate, identifier);
-    var put = new Put().withTableName(tableName).withItem(dao.toDynamoFormat());
-    return new TransactWriteItem().withPut(put);
+    var put = Put.builder().tableName(tableName).item(dao.toDynamoFormat()).build();
+    return TransactWriteItem.builder().put(put).build();
   }
 
   public Publication createPublicationFromImportedEntry(
@@ -316,12 +317,12 @@ public class ResourceService extends ServiceWithTransactions {
         readResourceService
             .fetchAllResourceAssociatedEntries(customerId, resourceIdentifier)
             .stream()
-            .map(dao -> new Delete().withTableName(tableName).withKey(dao.primaryKey()))
-            .map(delete -> new TransactWriteItem().withDelete(delete))
+            .map(dao -> Delete.builder().tableName(tableName).key(dao.primaryKey()).build())
+            .map(delete -> TransactWriteItem.builder().delete(delete).build())
             .toList();
     var transactionItems = new ArrayList<>(daoList);
     var sendTransactionRequest =
-        new TransactWriteItemsRequest().withTransactItems(transactionItems);
+        TransactWriteItemsRequest.builder().transactItems(transactionItems).build();
     sendTransactionWriteRequest(sendTransactionRequest);
   }
 
@@ -334,9 +335,9 @@ public class ResourceService extends ServiceWithTransactions {
       int pageSize, Map<String, AttributeValue> startMarker, Collection<KeyField> types) {
     var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker, types);
     var scanResult = getClient().scan(scanRequest);
-    var values = extractDatabaseEntries(scanResult.getItems());
+    var values = extractDatabaseEntries(scanResult.items());
     var isTruncated = thereAreMorePagesToScan(scanResult);
-    return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
+    return new ListingResult<>(values, scanResult.lastEvaluatedKey(), isTruncated);
   }
 
   public ScanResultWrapper scanResourcesRaw(
@@ -355,8 +356,7 @@ public class ResourceService extends ServiceWithTransactions {
             pageSize, startMarker, types, segment, totalSegments);
     var scanResult = getClient().scan(scanRequest);
     var isTruncated = thereAreMorePagesToScan(scanResult);
-    return new ScanResultWrapper(
-        scanResult.getItems(), scanResult.getLastEvaluatedKey(), isTruncated);
+    return new ScanResultWrapper(scanResult.items(), scanResult.lastEvaluatedKey(), isTruncated);
   }
 
   public void refreshResources(List<Entity> dataEntries) {
@@ -372,10 +372,11 @@ public class ResourceService extends ServiceWithTransactions {
 
   private List<Entity> getEntities(Collection<Map<String, AttributeValue>> keys) {
     var batchGetItemRequest =
-        new BatchGetItemRequest()
-            .withRequestItems(Map.of(tableName, new KeysAndAttributes().withKeys(keys)));
+        BatchGetItemRequest.builder()
+            .requestItems(Map.of(tableName, KeysAndAttributes.builder().keys(keys).build()))
+            .build();
     var batchGetItemResult = client.batchGetItem(batchGetItemRequest);
-    var items = batchGetItemResult.getResponses().get(tableName);
+    var items = batchGetItemResult.responses().get(tableName);
     return extractDatabaseEntries(items);
   }
 
@@ -459,7 +460,7 @@ public class ResourceService extends ServiceWithTransactions {
     var partitionKeyValue = FileDao.getFileEntriesByResourceIdentifierPartitionKey(resource);
 
     var queryRequest = createQueryForFilesAssociatedWithResource(partitionKeyValue);
-    return client.query(queryRequest).getItems().stream()
+    return client.query(queryRequest).items().stream()
         .map(FileDao::fromDynamoFormat)
         .map(FileDao::getFileEntry);
   }
@@ -470,14 +471,15 @@ public class ResourceService extends ServiceWithTransactions {
   }
 
   private QueryRequest createQueryForFilesAssociatedWithResource(String partitionKeyValue) {
-    return new QueryRequest()
-        .withTableName(tableName)
-        .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
-        .withKeyConditionExpression("PK3 = :resourceIdentifier AND begins_with(SK3, :type)")
-        .withExpressionAttributeValues(
+    return QueryRequest.builder()
+        .tableName(tableName)
+        .indexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+        .keyConditionExpression("PK3 = :resourceIdentifier AND begins_with(SK3, :type)")
+        .expressionAttributeValues(
             Map.of(
-                ":resourceIdentifier", new AttributeValue().withS(partitionKeyValue),
-                ":type", new AttributeValue().withS(FileDao.TYPE)));
+                ":resourceIdentifier", AttributeValue.fromS(partitionKeyValue),
+                ":type", AttributeValue.fromS(FileDao.TYPE)))
+        .build();
   }
 
   private void mutateResourceIfMissingCristinIdentifier(Resource resource) {
@@ -527,12 +529,13 @@ public class ResourceService extends ServiceWithTransactions {
   public void persistLogEntry(LogEntry logEntry) {
     var dao = LogEntryDao.fromLogEntry(logEntry);
     var put =
-        new Put()
-            .withItem(dao.toDynamoFormat())
-            .withTableName(tableName)
-            .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
-    var transactWriteItem = new TransactWriteItem().withPut(put);
+        Put.builder()
+            .item(dao.toDynamoFormat())
+            .tableName(tableName)
+            .conditionExpression(KEY_NOT_EXISTS_CONDITION)
+            .expressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
+            .build();
+    var transactWriteItem = TransactWriteItem.builder().put(put).build();
     attempt(() -> getClient().transactWriteItems(newTransactWriteItemsRequest(transactWriteItem)));
   }
 
@@ -540,13 +543,13 @@ public class ResourceService extends ServiceWithTransactions {
     var partitionKeyValue = LogEntryDao.getLogEntriesByResourceIdentifierPartitionKey(resource);
 
     var queryRequest =
-        new QueryRequest()
-            .withTableName(tableName)
-            .withKeyConditionExpression("PK0 = :value")
-            .withExpressionAttributeValues(
-                Map.of(":value", new AttributeValue().withS(partitionKeyValue)));
+        QueryRequest.builder()
+            .tableName(tableName)
+            .keyConditionExpression("PK0 = :value")
+            .expressionAttributeValues(Map.of(":value", AttributeValue.fromS(partitionKeyValue)))
+            .build();
 
-    return client.query(queryRequest).getItems().stream()
+    return client.query(queryRequest).items().stream()
         .map(LogEntryDao::fromDynamoFormat)
         .map(LogEntryDao::data)
         .toList();
@@ -559,15 +562,16 @@ public class ResourceService extends ServiceWithTransactions {
 
   public Optional<FileEntry> fetchFile(FileEntry fileEntry) {
     var primaryKey = fileEntry.toDao().primaryKey();
-    var result = client.getItem(new GetItemRequest().withTableName(tableName).withKey(primaryKey));
-    return Optional.ofNullable(result.getItem())
-        .map(FileDao::fromDynamoFormat)
-        .map(FileEntry::fromDao);
+    var result =
+        client.getItem(GetItemRequest.builder().tableName(tableName).key(primaryKey).build());
+    return result.hasItem()
+        ? Optional.of(result.item()).map(FileDao::fromDynamoFormat).map(FileEntry::fromDao)
+        : Optional.empty();
   }
 
   public void deleteFile(FileEntry fileEntry) {
     var primaryKey = fileEntry.toDao().primaryKey();
-    client.deleteItem(new DeleteItemRequest().withTableName(tableName).withKey(primaryKey));
+    client.deleteItem(DeleteItemRequest.builder().tableName(tableName).key(primaryKey).build());
   }
 
   public void updateFile(FileEntry fileEntry) {
@@ -577,20 +581,19 @@ public class ResourceService extends ServiceWithTransactions {
   public ListingResult<PublicationChannel> fetchAllPublicationChannelsByIdentifier(
       SortableIdentifier identifier, Map<String, AttributeValue> startMarker) {
     var queryRequest =
-        new QueryRequest()
-            .withTableName(tableName)
-            .withKeyConditionExpression("PK0 = :value")
-            .withExclusiveStartKey(startMarker)
-            .withExpressionAttributeValues(
+        QueryRequest.builder()
+            .tableName(tableName)
+            .keyConditionExpression("PK0 = :value")
+            .exclusiveStartKey(startMarker)
+            .expressionAttributeValues(
                 Map.of(
-                    ":value",
-                    new AttributeValue().withS("PublicationChannel:%s".formatted(identifier))));
+                    ":value", AttributeValue.fromS("PublicationChannel:%s".formatted(identifier))))
+            .build();
 
     var result = client.query(queryRequest);
     var values = getPublicationChannels(result);
-    var isTruncated =
-        nonNull(result.getLastEvaluatedKey()) && !result.getLastEvaluatedKey().isEmpty();
-    return new ListingResult<>(values, result.getLastEvaluatedKey(), isTruncated);
+    var isTruncated = nonNull(result.lastEvaluatedKey()) && !result.lastEvaluatedKey().isEmpty();
+    return new ListingResult<>(values, result.lastEvaluatedKey(), isTruncated);
   }
 
   public void batchUpdateChannels(List<PublicationChannel> publicationChannels) {
@@ -598,16 +601,17 @@ public class ResourceService extends ServiceWithTransactions {
         publicationChannels.stream()
             .map(PublicationChannel::toDao)
             .map(PublicationChannelDao::toDynamoFormat)
-            .map(item -> new PutRequest().withItem(item))
-            .map(WriteRequest::new)
+            .map(item -> PutRequest.builder().item(item).build())
+            .map(putRequest -> WriteRequest.builder().putRequest(putRequest).build())
             .toList();
     CollectionUtils.partition(writeRequests, 25).stream()
-        .map(items -> new BatchWriteItemRequest().withRequestItems(Map.of(tableName, items)))
+        .map(
+            items -> BatchWriteItemRequest.builder().requestItems(Map.of(tableName, items)).build())
         .forEach(this::writeBatchToDynamo);
   }
 
-  private static List<PublicationChannel> getPublicationChannels(QueryResult result) {
-    return result.getItems().stream()
+  private static List<PublicationChannel> getPublicationChannels(QueryResponse result) {
+    return result.items().stream()
         .map(value -> parseAttributeValuesMap(value, Dao.class))
         .filter(PublicationChannelDao.class::isInstance)
         .map(PublicationChannelDao.class::cast)
@@ -642,7 +646,8 @@ public class ResourceService extends ServiceWithTransactions {
     transactions.addAll(createPublicationChannelsTransaction(resource));
     transactions.addAll(additionalTransactions);
 
-    var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
+    var transactWriteItemsRequest =
+        TransactWriteItemsRequest.builder().transactItems(transactions).build();
     sendTransactionWriteRequest(transactWriteItemsRequest);
 
     return resource;
@@ -678,14 +683,15 @@ public class ResourceService extends ServiceWithTransactions {
   private List<TransactWriteItem> deleteResourceFilesTransaction(SortableIdentifier identifier) {
     var partitionKey = resourceQueryObject(identifier).toDao().getByTypeAndIdentifierPartitionKey();
     var queryRequest =
-        new QueryRequest()
-            .withTableName(tableName)
-            .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
-            .withKeyConditionExpression("#PK3 = :value")
-            .withExpressionAttributeNames(Map.of("#PK3", "PK3"))
-            .withExpressionAttributeValues(Map.of(":value", new AttributeValue(partitionKey)));
+        QueryRequest.builder()
+            .tableName(tableName)
+            .indexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+            .keyConditionExpression("#PK3 = :value")
+            .expressionAttributeNames(Map.of("#PK3", "PK3"))
+            .expressionAttributeValues(Map.of(":value", AttributeValue.fromS(partitionKey)))
+            .build();
 
-    return client.query(queryRequest).getItems().stream()
+    return client.query(queryRequest).items().stream()
         .map(map -> parseAttributeValuesMap(map, Dao.class))
         .filter(FileDao.class::isInstance)
         .map(FileDao.class::cast)
@@ -727,13 +733,14 @@ public class ResourceService extends ServiceWithTransactions {
     return new Owner(userInstance.getUsername(), userInstance.getTopLevelOrgCristinId());
   }
 
-  private boolean thereAreMorePagesToScan(ScanResult scanResult) {
-    return nonNull(scanResult.getLastEvaluatedKey()) && !scanResult.getLastEvaluatedKey().isEmpty();
+  private boolean thereAreMorePagesToScan(ScanResponse scanResult) {
+    return nonNull(scanResult.lastEvaluatedKey()) && !scanResult.lastEvaluatedKey().isEmpty();
   }
 
   private void writeToDynamoInBatches(List<WriteRequest> writeRequests) {
     CollectionUtils.partition(writeRequests, MAX_SIZE_OF_BATCH_REQUEST).stream()
-        .map(items -> new BatchWriteItemRequest().withRequestItems(Map.of(tableName, items)))
+        .map(
+            items -> BatchWriteItemRequest.builder().requestItems(Map.of(tableName, items)).build())
         .forEach(this::writeBatchToDynamo);
   }
 
@@ -749,7 +756,7 @@ public class ResourceService extends ServiceWithTransactions {
   }
 
   private String extractRecordIdentifiers(BatchWriteItemRequest batchWriteItemRequest) {
-    return batchWriteItemRequest.getRequestItems().values().stream()
+    return batchWriteItemRequest.requestItems().values().stream()
         .map(this::extractRecordIdentifiers)
         .collect(Collectors.joining(SEPARATOR_TABLE));
   }
@@ -761,15 +768,15 @@ public class ResourceService extends ServiceWithTransactions {
   }
 
   private String extractPrimaryKeySortKey(WriteRequest writeRequest) {
-    return writeRequest.getPutRequest().getItem().get(PRIMARY_KEY_SORT_KEY_NAME).getS();
+    return writeRequest.putRequest().item().get(PRIMARY_KEY_SORT_KEY_NAME).s();
   }
 
   private List<WriteRequest> createWriteRequestsForBatchJob(List<Entity> refreshedEntries) {
     return refreshedEntries.stream()
         .map(Entity::toDao)
         .map(Dao::toDynamoFormat)
-        .map(item -> new PutRequest().withItem(item))
-        .map(WriteRequest::new)
+        .map(item -> PutRequest.builder().item(item).build())
+        .map(putRequest -> WriteRequest.builder().putRequest(putRequest).build())
         .collect(Collectors.toList());
   }
 
@@ -784,21 +791,21 @@ public class ResourceService extends ServiceWithTransactions {
       Collection<KeyField> types,
       Integer segment,
       Integer totalSegments) {
-    var scanRequest =
-        new ScanRequest()
-            .withTableName(tableName)
-            .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
-            .withLimit(pageSize)
-            .withExclusiveStartKey(startMarker)
-            .withFilterExpression(Dao.scanFilterExpressionForDataEntries(types))
-            .withExpressionAttributeNames(Dao.scanFilterExpressionAttributeNames())
-            .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues(types));
+    var scanRequestBuilder =
+        ScanRequest.builder()
+            .tableName(tableName)
+            .indexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+            .limit(pageSize)
+            .exclusiveStartKey(startMarker)
+            .filterExpression(Dao.scanFilterExpressionForDataEntries(types))
+            .expressionAttributeNames(Dao.scanFilterExpressionAttributeNames())
+            .expressionAttributeValues(Dao.scanFilterExpressionAttributeValues(types));
 
     if (nonNull(segment) && nonNull(totalSegments)) {
-      scanRequest.withSegment(segment).withTotalSegments(totalSegments);
+      scanRequestBuilder.segment(segment).totalSegments(totalSegments);
     }
 
-    return scanRequest;
+    return scanRequestBuilder.build();
   }
 
   private List<Entity> extractDatabaseEntries(Collection<Map<String, AttributeValue>> items) {
@@ -810,7 +817,7 @@ public class ResourceService extends ServiceWithTransactions {
   }
 
   private static boolean isNotLogEntry(Map<String, AttributeValue> map) {
-    return !map.get("SK0").getS().contains("LogEntry");
+    return !map.get("SK0").s().contains("LogEntry");
   }
 
   private static void injectSyntheticCristinIdentifier(Resource resource, int counterValue) {
@@ -842,7 +849,8 @@ public class ResourceService extends ServiceWithTransactions {
     transactions.addAll(createPublicationChannelsTransaction(resource));
     transactions.addAll(createResourceRelationshipTransactions(resource));
 
-    var transactWriteItemsRequest = new TransactWriteItemsRequest().withTransactItems(transactions);
+    var transactWriteItemsRequest =
+        TransactWriteItemsRequest.builder().transactItems(transactions).build();
     sendTransactionWriteRequest(transactWriteItemsRequest);
 
     return resource;
@@ -874,15 +882,19 @@ public class ResourceService extends ServiceWithTransactions {
   }
 
   private TransactWriteItem createPutTransaction(Resource resourceUpdate) {
-    return new TransactWriteItem()
-        .withPut(
-            new Put()
-                .withItem(new ResourceDao(resourceUpdate).toDynamoFormat())
-                .withTableName(tableName));
+    return TransactWriteItem.builder()
+        .put(
+            Put.builder()
+                .item(new ResourceDao(resourceUpdate).toDynamoFormat())
+                .tableName(tableName)
+                .build())
+        .build();
   }
 
   private TransactWriteItem putWithItem(Map<String, AttributeValue> item) {
-    return new TransactWriteItem().withPut(new Put().withItem(item).withTableName(tableName));
+    return TransactWriteItem.builder()
+        .put(Put.builder().item(item).tableName(tableName).build())
+        .build();
   }
 
   private void setCuratingInstitutions(Resource newResource, CristinUnitsUtil cristinUnitsUtil) {
@@ -893,7 +905,11 @@ public class ResourceService extends ServiceWithTransactions {
   }
 
   private ImportCandidate insertResourceFromImportCandidate(ImportCandidateDao importCandidateDao) {
-    client.putItem(tableName, importCandidateDao.toDynamoFormat());
+    client.putItem(
+        PutItemRequest.builder()
+            .tableName(tableName)
+            .item(importCandidateDao.toDynamoFormat())
+            .build());
     return importCandidateDao.getData();
   }
 
@@ -906,27 +922,29 @@ public class ResourceService extends ServiceWithTransactions {
 
   private List<TransactWriteItem> deleteResourceTransactionItems(List<Dao> daos)
       throws BadRequestException {
-    ResourceDao resourceDao = extractResourceDao(daos);
+    var resourceDao = extractResourceDao(daos);
 
-    TransactWriteItem deleteResourceItem = newDeleteTransactionItem(resourceDao);
-    applyDeleteResourceConditions(deleteResourceItem);
+    var deleteResourceItem = applyDeleteResourceConditions(newDeleteTransactionItem(resourceDao));
 
-    TransactWriteItem deleteResourceIdentifierItem =
+    var deleteResourceIdentifierItem =
         newDeleteTransactionItem(IdentifierEntry.create(resourceDao));
 
     return List.of(deleteResourceItem, deleteResourceIdentifierItem);
   }
 
-  private void applyDeleteResourceConditions(TransactWriteItem deleteResource) {
+  private TransactWriteItem applyDeleteResourceConditions(TransactWriteItem deleteResource) {
     Map<String, String> expressionAttributeNames = Map.of("#status", STATUS_FIELD_IN_RESOURCE);
     Map<String, AttributeValue> expressionAttributeValues =
-        Map.of(":publishedStatus", new AttributeValue(DRAFT.getValue()));
+        Map.of(":publishedStatus", AttributeValue.fromS(DRAFT.getValue()));
 
-    deleteResource
-        .getDelete()
-        .withConditionExpression("#status = :publishedStatus")
-        .withExpressionAttributeNames(expressionAttributeNames)
-        .withExpressionAttributeValues(expressionAttributeValues);
+    var deleteWithConditions =
+        deleteResource.delete().toBuilder()
+            .conditionExpression("#status = :publishedStatus")
+            .expressionAttributeNames(expressionAttributeNames)
+            .expressionAttributeValues(expressionAttributeValues)
+            .build();
+
+    return deleteResource.toBuilder().delete(deleteWithConditions).build();
   }
 
   private Resource markResourceForDeletion(Resource resource) throws ApiGatewayException {

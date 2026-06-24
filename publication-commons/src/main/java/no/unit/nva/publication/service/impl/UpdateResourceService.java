@@ -13,13 +13,6 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
 import static nva.commons.core.attempt.Try.attempt;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import java.net.HttpURLConnection;
 import java.time.Clock;
 import java.time.Instant;
@@ -62,6 +55,13 @@ import no.unit.nva.publication.model.utils.CuratingInstitutionsUtil;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.Delete;
+import software.amazon.awssdk.services.dynamodb.model.Put;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class UpdateResourceService extends ServiceWithTransactions {
@@ -80,7 +80,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
   private final CristinUnitsUtil cristinUnitsUtil;
 
   public UpdateResourceService(
-      AmazonDynamoDB client,
+      DynamoDbClient client,
       String tableName,
       Clock clockForTimestamps,
       ReadResourceService readResourceService,
@@ -165,7 +165,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
           createTransactions(resource, userInstance, persistedResource, importSource);
 
       var transactWriteItemsRequest =
-          new TransactWriteItemsRequest().withTransactItems(transactionItems);
+          TransactWriteItemsRequest.builder().transactItems(transactionItems).build();
 
       sendTransactionWriteRequest(transactWriteItemsRequest);
       return resource;
@@ -258,13 +258,15 @@ public class UpdateResourceService extends ServiceWithTransactions {
   }
 
   private TransactWriteItem createDeleteTransaction(ResourceRelationshipDao dao) {
-    return new TransactWriteItem()
-        .withDelete(new Delete().withTableName(tableName).withKey(dao.getPrimaryKey()));
+    return TransactWriteItem.builder()
+        .delete(Delete.builder().tableName(tableName).key(dao.getPrimaryKey()).build())
+        .build();
   }
 
   private TransactWriteItem createPutTransaction(ResourceRelationshipDao dao) {
-    return new TransactWriteItem()
-        .withPut(new Put().withTableName(tableName).withItem(dao.toDynamoFormat()));
+    return TransactWriteItem.builder()
+        .put(Put.builder().tableName(tableName).item(dao.toDynamoFormat()).build())
+        .build();
   }
 
   private Collection<? extends TransactWriteItem> updateFilesTransactions(
@@ -330,7 +332,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     var transactionItems = new ArrayList<TransactWriteItem>();
     transactionItems.add(createPutTransaction(resource));
     var transactWriteItemsRequest =
-        new TransactWriteItemsRequest().withTransactItems(transactionItems);
+        TransactWriteItemsRequest.builder().transactItems(transactionItems).build();
     sendTransactionWriteRequest(transactWriteItemsRequest);
   }
 
@@ -344,9 +346,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
       updateCuratingInstitutions(resource, persistedResource);
 
       var transactWriteItemsRequest =
-          new TransactWriteItemsRequest()
-              .withTransactItems(
-                  createTransactions(resource, userInstance, persistedResource, null));
+          TransactWriteItemsRequest.builder()
+              .transactItems(createTransactions(resource, userInstance, persistedResource, null))
+              .build();
 
       sendTransactionWriteRequest(transactWriteItemsRequest);
       return resource;
@@ -368,7 +370,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
       importCandidate.setModifiedDate(clockForTimestamps.instant());
       var dao = new ImportCandidateDao(importCandidate, persistedImportCandidate.getIdentifier());
       var putItemRequest =
-          new PutItemRequest().withTableName(tableName).withItem(dao.toDynamoFormat());
+          PutItemRequest.builder().tableName(tableName).item(dao.toDynamoFormat()).build();
       client.putItem(putItemRequest);
       return importCandidate;
     }
@@ -389,7 +391,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     transactionItems.add(createPutTransaction(resource));
     transactionItems.addAll(updateExistingPendingTicketsToNotApplicable(existingTicketStream));
 
-    var request = new TransactWriteItemsRequest().withTransactItems(transactionItems);
+    var request = TransactWriteItemsRequest.builder().transactItems(transactionItems).build();
     sendTransactionWriteRequest(request);
   }
 
@@ -398,7 +400,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     var transactions = new ArrayList<TransactWriteItem>();
     transactions.add(createPutTransaction(resource.delete(userInstance, currentTime)));
     transactions.addAll(createSofDeleteFilesTransactions(resource, userInstance));
-    var request = new TransactWriteItemsRequest().withTransactItems(transactions);
+    var request = TransactWriteItemsRequest.builder().transactItems(transactions).build();
     sendTransactionWriteRequest(request);
   }
 
@@ -407,7 +409,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     var updatedImportCandidate = createUpdatedImportCandidate(identifier, status);
     var dao = new ImportCandidateDao(updatedImportCandidate, identifier);
     var putItemRequest =
-        new PutItemRequest().withTableName(tableName).withItem(dao.toDynamoFormat());
+        PutItemRequest.builder().tableName(tableName).item(dao.toDynamoFormat()).build();
     client.putItem(putItemRequest);
     return updatedImportCandidate;
   }
@@ -492,14 +494,15 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     var primaryKeyConditionAttributeValues = primaryKeyEqualityConditionAttributeValues(ticketDao);
     var put =
-        new Put()
-            .withItem(ticketDao.toDynamoFormat())
-            .withTableName(tableName)
-            .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
-            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
-            .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
+        Put.builder()
+            .item(ticketDao.toDynamoFormat())
+            .tableName(tableName)
+            .conditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
+            .expressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
+            .expressionAttributeValues(primaryKeyConditionAttributeValues)
+            .build();
 
-    return new TransactWriteItem().withPut(put);
+    return TransactWriteItem.builder().put(put).build();
   }
 
   private TicketEntry updateToNotApplicable(TicketEntry ticketEntry) {
@@ -544,19 +547,20 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
   private TransactWriteItem createPutTransaction(Resource resourceUpdate) {
 
-    ResourceDao resourceDao = new ResourceDao(resourceUpdate);
+    var resourceDao = new ResourceDao(resourceUpdate);
 
     Map<String, AttributeValue> primaryKeyConditionAttributeValues =
         primaryKeyEqualityConditionAttributeValues(resourceDao);
 
-    Put put =
-        new Put()
-            .withItem(resourceDao.toDynamoFormat())
-            .withTableName(tableName)
-            .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
-            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
-            .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
+    var put =
+        Put.builder()
+            .item(resourceDao.toDynamoFormat())
+            .tableName(tableName)
+            .conditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
+            .expressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
+            .expressionAttributeValues(primaryKeyConditionAttributeValues)
+            .build();
 
-    return new TransactWriteItem().withPut(put);
+    return TransactWriteItem.builder().put(put).build();
   }
 }

@@ -3,11 +3,11 @@ package no.unit.nva.publication.service.impl;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public final class ResourceServiceUtils {
 
@@ -39,9 +39,9 @@ public final class ResourceServiceUtils {
       WithPrimaryKey resourceDao) {
     return Map.of(
         PARTITION_KEY_VALUE_PLACEHOLDER,
-        new AttributeValue(resourceDao.getPrimaryKeyPartitionKey()),
+        AttributeValue.fromS(resourceDao.getPrimaryKeyPartitionKey()),
         SORT_KEY_VALUE_PLACEHOLDER,
-        new AttributeValue(resourceDao.getPrimaryKeySortKey()));
+        AttributeValue.fromS(resourceDao.getPrimaryKeySortKey()));
   }
 
   static <T> Map<String, AttributeValue> conditionValueMapToAttributeValueMap(
@@ -50,7 +50,7 @@ public final class ResourceServiceUtils {
       return valuesMap.entrySet().stream()
           .collect(
               Collectors.toMap(
-                  Entry::getKey, mapEntry -> new AttributeValue((String) mapEntry.getValue())));
+                  Entry::getKey, mapEntry -> AttributeValue.fromS((String) mapEntry.getValue())));
     } else {
       throw new UnsupportedOperationException(UNSUPPORTED_KEY_TYPE_EXCEPTION);
     }
