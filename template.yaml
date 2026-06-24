@@ -162,6 +162,8 @@ Globals:
         LOG4J_CONFIGURATION_FILE: classpath:nva-log4j2.xml
     Architectures:
       - arm64
+    SnapStart:
+      ApplyOn: None
 
 Resources:
   ApiAccessLogGroup:

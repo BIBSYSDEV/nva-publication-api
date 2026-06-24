@@ -82,17 +82,6 @@ public class InternalFile extends File {
   }
 
   @Override
-  public boolean canBeConvertedTo(File file) {
-    return switch (file) {
-      case PendingInternalFile ignore -> true;
-      case PendingOpenFile ignore -> true;
-      case HiddenFile ignore -> true;
-      case InternalFile ignore -> true;
-      default -> false;
-    };
-  }
-
-  @Override
   public String getArtifactType() {
     return TYPE;
   }
