@@ -40,15 +40,25 @@ public class ContributorExtractor {
 
   private final AffiliationGenerator affiliationGenerator;
   private final CristinPersonRetriever cristinPersonRetriever;
+  private final PiaConnection piaConnection;
+  private final CristinConnection cristinConnection;
 
   public ContributorExtractor(PiaConnection piaConnection, CristinConnection cristinConnection) {
+    this.piaConnection = piaConnection;
+    this.cristinConnection = cristinConnection;
     this.affiliationGenerator = new AffiliationGenerator(piaConnection, cristinConnection);
     this.cristinPersonRetriever = new CristinPersonRetriever(cristinConnection, piaConnection);
   }
 
   public ContributorsOrganizationsWrapper generateContributors(DocTp document) {
+    clearConnectionCaches();
     var bibrecord = document.getItem().getItem().getBibrecord().getHead();
     return generateContributors(bibrecord.getCorrespondence(), bibrecord.getAuthorGroup());
+  }
+
+  private void clearConnectionCaches() {
+    piaConnection.clearCache();
+    cristinConnection.clearCache();
   }
 
   public ContributorsOrganizationsWrapper generateContributors(
