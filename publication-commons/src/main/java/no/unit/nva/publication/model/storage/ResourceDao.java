@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.storage;
 
 import static java.util.Objects.nonNull;
+import static java.util.function.Predicate.not;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_PARTITION_KEY_NAME;
@@ -42,6 +43,8 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -80,12 +83,22 @@ public class ResourceDao extends Dao
   }
 
   public ResourceDao(Resource resource) {
-    super(resource);
+    super(withoutFiles(resource));
+    resource.setVersion(getVersion());
     setIdentifier(resource.getIdentifier());
     this.status = resource.getStatus();
     this.modifiedDate = resource.getModifiedDate();
     this.doi = resource.getDoi();
     this.importDetails = resource.getImportDetails();
+  }
+
+  private static Resource withoutFiles(Resource resource) {
+    var nonFileArtifacts =
+        resource.getAssociatedArtifacts().stream().filter(not(File.class::isInstance)).toList();
+    return resource
+        .copy()
+        .withAssociatedArtifactsList(new AssociatedArtifactList(nonFileArtifacts))
+        .build();
   }
 
   public static ResourceDao queryObject(
