@@ -25,7 +25,6 @@ dependencies {
     testCompileOnly(nvaCatalog.junit.platform.suite.api)
     testFixturesRuntimeOnly(nvaCatalog.jackson.core)
     testFixturesRuntimeOnly(nvaCatalog.jackson.databind)
-    testImplementation(libs.junit.platform.commons)
     testImplementation(nvaCatalog.aws.dynamodb.local) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
@@ -36,6 +35,7 @@ dependencies {
     testImplementation(nvaCatalog.httpcore4)
     testImplementation(nvaCatalog.junit.jupiter.api)
     testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaCatalog.junit.platform.commons)
     testImplementation(nvaCatalog.mockito.core)
     testImplementation(nvaLibs.apigateway)
     testImplementation(nvaLibs.testutils)

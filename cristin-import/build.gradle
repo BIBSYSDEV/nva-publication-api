@@ -1,5 +1,9 @@
 apply plugin: 'io.freefair.lombok'
 
+lombok {
+    version = libs.versions.lombok.get()
+}
+
 dependencies {
     annotationProcessor(libs.lombok)
     api(nvaCatalog.aws.lambda.events)
@@ -25,8 +29,8 @@ dependencies {
     compileOnly(nvaCatalog.zalando)
     compileOnly(nvaLibs.apigateway)
     compileOnly(nvaLibs.identifiers)
-    implementation(nvaCatalog.aws.sdk2.core)
     implementation(nvaCatalog.aws.sdk2.http.client)
+    implementation(nvaCatalog.aws.sdk2.sdk.core)
     implementation(nvaCatalog.aws.sdk2.urlconnection)
     implementation(nvaCatalog.aws.sdk2.utils)
     implementation(nvaCatalog.jackson.core)
@@ -44,7 +48,7 @@ dependencies {
     runtimeOnly(nvaCatalog.log4j.api)
     runtimeOnly(nvaCatalog.log4j.slf4j.impl)
     testCompileOnly(nvaCatalog.junit.platform.suite.api)
-    testImplementation(libs.cucumber.datatable)
+    testImplementation(nvaCatalog.cucumber.datatable)
     testImplementation(nvaCatalog.aws.lambda.core)
     testImplementation(nvaCatalog.aws.sdk.dynamo)
     testImplementation(nvaCatalog.aws.sdk2.s3)

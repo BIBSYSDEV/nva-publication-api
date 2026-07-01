@@ -25,9 +25,9 @@ dependencies {
         because "PMD complains about no/unit/nva/identifiers/SortableIdentifier"
     }
     implementation(nvaCatalog.aws.sdk2.aws.core)
-    implementation(nvaCatalog.aws.sdk2.core)
     implementation(nvaCatalog.aws.sdk2.http.client)
     implementation(nvaCatalog.aws.sdk2.regions)
+    implementation(nvaCatalog.aws.sdk2.sdk.core)
     implementation(nvaCatalog.aws.sdk2.urlconnection)
     implementation(nvaCatalog.log4j.core)
     implementation(nvaCatalog.resilience4j.all)
