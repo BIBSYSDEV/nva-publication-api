@@ -38,9 +38,6 @@
     <exclude name="ImplicitFunctionalInterface"/>
 
     <!-- FIXME: Disabled because of the high number of current violations-->
-    <exclude name="UnusedLocalVariable"/>
-
-    <!-- FIXME: Disabled because of the high number of current violations-->
     <exclude name="RelianceOnDefaultCharset"/>
 
     <!-- In TableManager we map ResourceNotFoundException to TableNotFoundException -->

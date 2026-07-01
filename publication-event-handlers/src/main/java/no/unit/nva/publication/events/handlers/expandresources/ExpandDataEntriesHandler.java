@@ -159,10 +159,10 @@ public class ExpandDataEntriesHandler
         Optional.ofNullable(dataEntryUpdateEvent.getOldData())
             .orElseGet(dataEntryUpdateEvent::getNewData);
     return switch (entity) {
-      case Resource resource -> RESOURCE;
-      case TicketEntry ticket -> TICKET;
-      case Message message -> MESSAGE;
-      case FileEntry fileEntry -> FILE;
+      case Resource _ -> RESOURCE;
+      case TicketEntry _ -> TICKET;
+      case Message _ -> MESSAGE;
+      case FileEntry _ -> FILE;
       default -> throw new IllegalStateException("Unexpected value: " + entity);
     };
   }

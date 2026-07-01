@@ -224,13 +224,12 @@ public final class PublicationUpdater {
   private static PublicationInstance<? extends Pages> updateJournalArticle(
       JournalArticle existingJournalArticle, JournalArticle incomingJournalArticle) {
     return switch (existingJournalArticle) {
-      case ProfessionalArticle professionalArticle ->
+      case ProfessionalArticle _ ->
           getProfessionalArticle(existingJournalArticle, incomingJournalArticle);
-      case PopularScienceArticle popularScienceArticle ->
+      case PopularScienceArticle _ ->
           getPopularScienceArticle(existingJournalArticle, incomingJournalArticle);
-      case AcademicArticle academicArticle ->
-          getAcademicArticle(existingJournalArticle, incomingJournalArticle);
-      case AcademicLiteratureReview academicLiteratureReview ->
+      case AcademicArticle _ -> getAcademicArticle(existingJournalArticle, incomingJournalArticle);
+      case AcademicLiteratureReview _ ->
           getAcademicLiteratureReview(existingJournalArticle, incomingJournalArticle);
       case null, default -> existingJournalArticle;
     };
