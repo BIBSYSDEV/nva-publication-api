@@ -37,11 +37,6 @@ dependencies {
     testImplementation(nvaLibs.testutils)
     testImplementation(project(":publication-model-testing"))
     testImplementation(project(":publication-testing"))
-    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
-    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
-    testRuntimeOnly(nvaCatalog.wiremock) {
-        exclude group: 'org.apache.commons', module: 'commons-lang3'
-    }
 }
 
 test {

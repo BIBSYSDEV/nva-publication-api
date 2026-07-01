@@ -59,8 +59,6 @@ dependencies {
     testImplementation(project(":tickets-test"))
     testRuntimeOnly(nvaCatalog.cucumber.junit.platform.engine)
     testRuntimeOnly(nvaCatalog.cucumber.picocontainer)
-    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
-    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
     testRuntimeOnly(nvaCatalog.junit.platform.suite.engine)
 }
 

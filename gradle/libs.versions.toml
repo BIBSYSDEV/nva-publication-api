@@ -24,7 +24,6 @@ titanium-json-ld = { strictly = '1.7.0' }
 apache-bval = { group= 'org.apache.bval', name= 'bval-jsr', version.ref= 'apache-bval'}
 apache-commons-collections = { group = 'org.apache.commons', name = 'commons-collections4', version.ref = 'apacheCommonsCollections' }
 apache-commons-text = { group = 'org.apache.commons', name = 'commons-text', version.ref = 'apacheCommonsText' }
-aws-sdk2-third-party-jackson-core = { group = 'software.amazon.awssdk', name = 'third-party-jackson-core' }
 glassfish-jakarta-json = { group = 'org.glassfish', name = 'jakarta.json', version.ref = 'glassfish-jakarta-json' }
 hamcrest-json = {  group = 'uk.co.datumedge', name = 'hamcrest-json', version.ref = 'hamcrest-json' }
 hamcrest-optional = { group = 'com.spotify', name = 'hamcrest-optional', version.ref = 'hamcrestSpotify' }
