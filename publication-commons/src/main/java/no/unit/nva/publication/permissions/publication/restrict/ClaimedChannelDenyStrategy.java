@@ -29,9 +29,7 @@ public class ClaimedChannelDenyStrategy extends PublicationStrategyBase
   }
 
   private static boolean isDeniedOperation(PublicationOperation operation) {
-    return UPDATE.equals(operation)
-        || UNPUBLISH.equals(operation)
-        || APPROVE_FILES.equals(operation);
+    return UPDATE == operation || UNPUBLISH == operation || APPROVE_FILES == operation;
   }
 
   private boolean isDeniedUserByClaimedChannelWithinScope() {

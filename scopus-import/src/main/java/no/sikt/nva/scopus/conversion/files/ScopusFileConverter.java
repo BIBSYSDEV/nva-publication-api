@@ -207,7 +207,7 @@ public class ScopusFileConverter {
   }
 
   private static boolean hasSameVersion(CrossrefLink crossrefLink, License license) {
-    return license.getContentVersion().equals(crossrefLink.getContentVersion());
+    return license.getContentVersion() == crossrefLink.getContentVersion();
   }
 
   private static boolean isElsevierPlainTextResource(CrossrefLink crossrefLink) {
@@ -303,9 +303,9 @@ public class ScopusFileConverter {
   }
 
   private PublisherVersion determinePublisherVersion(CrossrefLink crossrefLink) {
-    if (VOR.equals(crossrefLink.getContentVersion())) {
+    if (VOR == crossrefLink.getContentVersion()) {
       return PublisherVersion.PUBLISHED_VERSION;
-    } else if (AM.equals(crossrefLink.getContentVersion())) {
+    } else if (AM == crossrefLink.getContentVersion()) {
       return PublisherVersion.ACCEPTED_VERSION;
     } else {
       return null;

@@ -163,7 +163,6 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
     objectNode.set(lowerCaseName, child);
   }
 
-  @SuppressWarnings("PMD.UnnecessaryCaseChange")
   private void addIfHasUpperCase(String name, List<String> fieldNames) {
     if (!name.toLowerCase(Locale.ROOT).equals(name)) {
       fieldNames.add(name);

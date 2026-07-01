@@ -220,7 +220,7 @@ public class AcceptedPublishingRequestEventHandler
 
   private void publishWhenPublicationStatusDraft(
       Resource resource, FilesApprovalEntry filesApprovalEntry) {
-    if (PublicationStatus.DRAFT.equals(resource.getStatus())) {
+    if (PublicationStatus.DRAFT == resource.getStatus()) {
       publishResource(resource, filesApprovalEntry);
     }
   }

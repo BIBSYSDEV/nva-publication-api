@@ -44,7 +44,7 @@ public enum FileOperation {
                     format(
                         ERROR_MESSAGE_TEMPLATE,
                         value,
-                        stream(FileOperation.values())
+                        stream(values())
                             .map(FileOperation::toString)
                             .collect(joining(DELIMITER)))));
   }

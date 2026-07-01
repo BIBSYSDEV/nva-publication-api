@@ -49,7 +49,7 @@ public class LiteraryArtsAudioVisualSubtype {
   public static LiteraryArtsAudioVisualSubtype fromJson(
       @JsonProperty(TYPE_FIELD) LiteraryArtsAudioVisualSubtypeEnum type,
       @JsonProperty(DESCRIPTION_FIELD) String description) {
-    if (LiteraryArtsAudioVisualSubtypeEnum.OTHER.equals(type)) {
+    if (LiteraryArtsAudioVisualSubtypeEnum.OTHER == type) {
       return createOther(description);
     }
     return new LiteraryArtsAudioVisualSubtype(type);

@@ -15,8 +15,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(FilesApprovalThesisDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class FilesApprovalThesisDao extends TicketDao
-    implements JoinWithResource, JsonSerializable {
+public class FilesApprovalThesisDao extends TicketDao implements JsonSerializable {
 
   public static final String TYPE = "FilesApprovalThesis";
 

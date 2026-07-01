@@ -30,9 +30,7 @@ public enum ExhibitionProductionSubtypeEnum {
   @Deprecated
   @JsonCreator
   public static ExhibitionProductionSubtypeEnum parse(String candidate) {
-    return "Other".equalsIgnoreCase(candidate)
-        ? ExhibitionProductionSubtypeEnum.OTHER
-        : inlineableParseMethod(candidate);
+    return "Other".equalsIgnoreCase(candidate) ? OTHER : inlineableParseMethod(candidate);
   }
 
   public static ExhibitionProductionSubtypeEnum inlineableParseMethod(String candidate) {

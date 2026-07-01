@@ -38,7 +38,7 @@ public class DegreeDenyStrategy extends PublicationStrategyBase implements Publi
   }
 
   private static boolean isDeniedOperation(PublicationOperation operation) {
-    return UPDATE.equals(operation) || UNPUBLISH.equals(operation);
+    return UPDATE == operation || UNPUBLISH == operation;
   }
 
   private boolean handleDegree() {

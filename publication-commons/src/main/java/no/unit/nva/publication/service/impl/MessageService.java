@@ -115,12 +115,11 @@ public class MessageService extends ServiceWithTransactions {
 
     var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
     return switch (ticket) {
-      case PublishingRequestCase publishingRequest ->
+      case PublishingRequestCase _ ->
           userInstance.getAccessRights().contains(AccessRight.MANAGE_PUBLISHING_REQUESTS);
-      case GeneralSupportRequest supportRequest ->
-          userInstance.getAccessRights().contains(AccessRight.SUPPORT);
-      case DoiRequest doiRequest -> userInstance.getAccessRights().contains(AccessRight.MANAGE_DOI);
-      case UnpublishRequest unpublishRequest ->
+      case GeneralSupportRequest _ -> userInstance.getAccessRights().contains(AccessRight.SUPPORT);
+      case DoiRequest _ -> userInstance.getAccessRights().contains(AccessRight.MANAGE_DOI);
+      case UnpublishRequest _ ->
           userInstance.getAccessRights().contains(AccessRight.MANAGE_PUBLISHING_REQUESTS);
       default -> false;
     };

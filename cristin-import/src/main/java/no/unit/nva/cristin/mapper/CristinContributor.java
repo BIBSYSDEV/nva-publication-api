@@ -192,6 +192,6 @@ public class CristinContributor implements Comparable<CristinContributor> {
   }
 
   private boolean isVerified() {
-    return ContributorVerificationStatus.VERIFIED.equals(extractVerificationStatus());
+    return ContributorVerificationStatus.VERIFIED == extractVerificationStatus();
   }
 }

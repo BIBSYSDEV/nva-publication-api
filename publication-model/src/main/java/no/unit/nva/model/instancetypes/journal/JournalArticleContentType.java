@@ -56,8 +56,6 @@ public enum JournalArticleContentType {
     return format(
         ERROR_MESSAGE_TEMPLATE,
         value,
-        stream(JournalArticleContentType.values())
-            .map(JournalArticleContentType::toString)
-            .collect(joining(DELIMITER)));
+        stream(values()).map(JournalArticleContentType::toString).collect(joining(DELIMITER)));
   }
 }

@@ -16,7 +16,6 @@ import no.unit.nva.publication.model.storage.FilesApprovalThesisDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.core.JacocoGenerated;
 
-@SuppressWarnings({"PMD.GodClass"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName(FilesApprovalThesis.TYPE)
 public class FilesApprovalThesis extends FilesApprovalEntry {
@@ -36,7 +35,7 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
     var fileApproval =
         createFileApproval(
             resource, userInstance, channelOwnerOrganizationId, channelClaimIdentifier, workflow);
-    return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(workflow)
+    return REGISTRATOR_PUBLISHES_METADATA_AND_FILES == workflow
         ? (FilesApprovalThesis) fileApproval.completeAndApproveFiles(resource, userInstance)
         : (FilesApprovalThesis)
             fileApproval.handleMetadataOnlyWorkflow(resource, userInstance, workflow);
@@ -45,7 +44,7 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
   public static FilesApprovalThesis createForUserInstitution(
       Resource resource, UserInstance userInstance, PublishingWorkflow workflow) {
     var fileApproval = createFileApproval(resource, userInstance, workflow);
-    return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(workflow)
+    return REGISTRATOR_PUBLISHES_METADATA_AND_FILES == workflow
         ? (FilesApprovalThesis) fileApproval.completeAndApproveFiles(resource, userInstance)
         : (FilesApprovalThesis)
             fileApproval.handleMetadataOnlyWorkflow(resource, userInstance, workflow);

@@ -29,7 +29,7 @@ public class ReadTicketGrantStrategy extends TicketStrategyBase implements Ticke
 
   @Override
   public boolean allowsAction(TicketOperation permission) {
-    return permission.equals(READ) && userRelatesToTicket();
+    return permission == READ && userRelatesToTicket();
   }
 
   private boolean userRelatesToTicket() {

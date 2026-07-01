@@ -18,7 +18,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -232,7 +231,7 @@ public class Publication
 
   @Override
   public List<ResearchProject> getProjects() {
-    return nonNull(projects) ? projects : Collections.emptyList();
+    return nonNull(projects) ? projects : emptyList();
   }
 
   @Override
@@ -242,7 +241,7 @@ public class Publication
 
   @Override
   public List<URI> getSubjects() {
-    return nonNull(subjects) ? subjects : Collections.emptyList();
+    return nonNull(subjects) ? subjects : emptyList();
   }
 
   @Override
@@ -282,7 +281,7 @@ public class Publication
 
   @JsonGetter
   public List<PublicationNoteBase> getPublicationNotes() {
-    return nonNull(publicationNotes) ? publicationNotes : Collections.emptyList();
+    return nonNull(publicationNotes) ? publicationNotes : emptyList();
   }
 
   public void setPublicationNotes(List<PublicationNoteBase> publicationNotes) {
@@ -418,7 +417,7 @@ public class Publication
 
   @JsonIgnore
   public boolean isPublishable() {
-    return !DRAFT_FOR_DELETION.equals(getStatus()) && hasMainTitle();
+    return DRAFT_FOR_DELETION != getStatus() && hasMainTitle();
   }
 
   public boolean satisfiesFindableDoiRequirements() {
@@ -435,7 +434,7 @@ public class Publication
 
   @Override
   public List<ImportDetail> getImportDetails() {
-    return nonNull(importDetails) ? importDetails : Collections.emptyList();
+    return nonNull(importDetails) ? importDetails : emptyList();
   }
 
   @Override

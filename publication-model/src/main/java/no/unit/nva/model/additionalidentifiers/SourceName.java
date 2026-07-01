@@ -34,7 +34,6 @@ public record SourceName(String system, String instanceName) {
     return sourceName;
   }
 
-  @SuppressWarnings("PMD.NullAssignment")
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   SourceName(String sourceName) {
     this(

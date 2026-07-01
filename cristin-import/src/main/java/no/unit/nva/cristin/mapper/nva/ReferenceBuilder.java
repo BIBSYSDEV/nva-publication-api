@@ -92,7 +92,6 @@ public class ReferenceBuilder extends CristinMappingModule {
         .build();
   }
 
-  @SuppressWarnings({"PMD.NPathComplexity"})
   private PublicationContext buildPublicationContext()
       throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
     if (isBook(cristinObject)) {
@@ -169,7 +168,7 @@ public class ReferenceBuilder extends CristinMappingModule {
   }
 
   private boolean isWrittenInterview(CristinObject cristinObject) {
-    return CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
+    return CristinSecondaryCategory.WRITTEN_INTERVIEW == cristinObject.getSecondaryCategory();
   }
 
   private PublicationContext buildPublicationContextWhenMainCategoryIsReport()

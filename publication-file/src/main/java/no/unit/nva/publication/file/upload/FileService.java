@@ -224,7 +224,7 @@ public class FileService {
 
   private RightsRetentionStrategy createRightsRetentionStrategy(
       RightsRetentionStrategyConfiguration configuration) {
-    if (RIGHTS_RETENTION_STRATEGY.equals(configuration)) {
+    if (RIGHTS_RETENTION_STRATEGY == configuration) {
       return CustomerRightsRetentionStrategy.create(configuration);
     } else {
       return NullRightsRetentionStrategy.create(configuration);

@@ -8,7 +8,6 @@ public final class ExceptionHandling {
   @JacocoGenerated
   public ExceptionHandling() {}
 
-  @SuppressWarnings("PMD.NPathComplexity")
   public static RuntimeException castToCorrectRuntimeException(Exception exception) {
     if (exception instanceof InvalidIssnRuntimeException) {
       return (InvalidIssnRuntimeException) exception;

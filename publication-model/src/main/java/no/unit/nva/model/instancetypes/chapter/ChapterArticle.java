@@ -24,19 +24,19 @@ public class ChapterArticle implements PublicationInstance<Range> {
   public static ChapterArticle fromJson(
       @JsonProperty(PAGES_FIELD) Range pages,
       @JsonProperty("contentType") ChapterArticleContentType contentType) {
-    if (ChapterArticleContentType.ACADEMIC_CHAPTER.equals(contentType)) {
+    if (ChapterArticleContentType.ACADEMIC_CHAPTER == contentType) {
       return new AcademicChapter(pages);
-    } else if (ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER.equals(contentType)) {
+    } else if (ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER == contentType) {
       return new EncyclopediaChapter(pages);
-    } else if (ChapterArticleContentType.EXHIBITION_CATALOG_CHAPTER.equals(contentType)) {
+    } else if (ChapterArticleContentType.EXHIBITION_CATALOG_CHAPTER == contentType) {
       return new ExhibitionCatalogChapter(pages);
-    } else if (ChapterArticleContentType.INTRODUCTION.equals(contentType)) {
+    } else if (ChapterArticleContentType.INTRODUCTION == contentType) {
       return new Introduction(pages);
-    } else if (ChapterArticleContentType.NON_FICTION_CHAPTER.equals(contentType)) {
+    } else if (ChapterArticleContentType.NON_FICTION_CHAPTER == contentType) {
       return new NonFictionChapter(pages);
-    } else if (ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER.equals(contentType)) {
+    } else if (ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER == contentType) {
       return new PopularScienceChapter(pages);
-    } else if (ChapterArticleContentType.TEXTBOOK_CHAPTER.equals(contentType)) {
+    } else if (ChapterArticleContentType.TEXTBOOK_CHAPTER == contentType) {
       return new TextbookChapter(pages);
     } else if (isNull(contentType)) {
       return new AcademicChapter(pages);

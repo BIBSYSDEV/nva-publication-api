@@ -40,7 +40,7 @@ public enum TicketStatus {
 
   @JsonCreator
   public static TicketStatus parse(String candidate) {
-    return Arrays.stream(TicketStatus.values())
+    return Arrays.stream(values())
         .filter(enumValue -> enumValue.filterByNameOrValue(candidate))
         .collect(SingletonCollector.tryCollect())
         .orElseThrow(fail -> handleParsingError());
@@ -82,7 +82,7 @@ public enum TicketStatus {
   }
 
   private static String validValues() {
-    return Arrays.stream(TicketStatus.values())
+    return Arrays.stream(values())
         .map(TicketStatus::toString)
         .collect(Collectors.joining(SEPARATOR));
   }

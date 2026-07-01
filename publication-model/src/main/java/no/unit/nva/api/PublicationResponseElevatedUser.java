@@ -12,7 +12,6 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactDto;
 import nva.commons.core.JacocoGenerated;
 
-@SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName("Publication")
 public class PublicationResponseElevatedUser extends PublicationResponse {

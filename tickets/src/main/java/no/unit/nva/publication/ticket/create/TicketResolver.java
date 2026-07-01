@@ -50,9 +50,8 @@ public class TicketResolver {
 
     var ticket =
         switch (ticketDto) {
-          case DoiRequestDto ignore -> DoiRequest.create(resource, userInstance);
-          case GeneralSupportRequestDto ignore ->
-              GeneralSupportRequest.create(resource, userInstance);
+          case DoiRequestDto _ -> DoiRequest.create(resource, userInstance);
+          case GeneralSupportRequestDto _ -> GeneralSupportRequest.create(resource, userInstance);
           default -> throw new BadRequestException("Not supported ticket type");
         };
     return ticket.persistNewTicket(ticketService);

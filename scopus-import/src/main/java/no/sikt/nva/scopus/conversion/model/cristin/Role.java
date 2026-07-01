@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-@SuppressWarnings("PMD.ShortClassName")
 @JacocoGenerated
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Role {

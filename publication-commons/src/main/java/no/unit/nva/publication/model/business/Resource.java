@@ -281,7 +281,7 @@ public class Resource implements Entity, Validatable<Resource> {
         .filter(ClaimedPublicationChannel.class::isInstance)
         .map(ClaimedPublicationChannel.class::cast)
         .filter(this::isWithingChannelClaimScope)
-        .filter(publicationChannel -> channelType.equals(publicationChannel.getChannelType()))
+        .filter(publicationChannel -> channelType == publicationChannel.getChannelType())
         .findFirst();
   }
 
@@ -332,7 +332,7 @@ public class Resource implements Entity, Validatable<Resource> {
   }
 
   private static Resource convertToResource(Publication publication) {
-    return Resource.builder()
+    return builder()
         .withIdentifier(publication.getIdentifier())
         .withResourceOwner(Owner.fromResourceOwner(publication.getResourceOwner()))
         .withCreatedDate(publication.getCreatedDate())
@@ -473,7 +473,7 @@ public class Resource implements Entity, Validatable<Resource> {
   }
 
   private boolean isPublished() {
-    return PUBLISHED.equals(this.getStatus());
+    return PUBLISHED == this.getStatus();
   }
 
   public void republish(
@@ -503,7 +503,7 @@ public class Resource implements Entity, Validatable<Resource> {
     return (ticket instanceof FilesApprovalEntry
             || ticket instanceof GeneralSupportRequest
             || ticket instanceof DoiRequest)
-        && NOT_APPLICABLE.equals(ticket.getStatus());
+        && NOT_APPLICABLE == ticket.getStatus();
   }
 
   private void republish(UserInstance userInstance, ResourceService resourceService) {
@@ -512,7 +512,7 @@ public class Resource implements Entity, Validatable<Resource> {
   }
 
   private void republish(UserInstance userInstance) {
-    if (!UNPUBLISHED.equals(this.getStatus())) {
+    if (UNPUBLISHED != this.getStatus()) {
       throw new IllegalStateException("Only unpublished resource can be republished!");
     }
     this.setStatus(PUBLISHED);
@@ -754,7 +754,7 @@ public class Resource implements Entity, Validatable<Resource> {
   }
 
   public ResourceBuilder copy() {
-    return Resource.builder()
+    return builder()
         .withIdentifier(getIdentifier())
         .withStatus(getStatus())
         .withResourceOwner(Owner.fromResourceOwner(extractResourceOwner()))

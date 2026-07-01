@@ -12,7 +12,7 @@ import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class ConfirmedFunding extends UnconfirmedFunding implements Funding {
+public class ConfirmedFunding extends UnconfirmedFunding {
 
   private final URI id;
 

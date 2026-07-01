@@ -63,7 +63,7 @@ public class WarningDetails {
       return false;
     }
     var warningDetail = (WarningDetails) o;
-    return this.warningCode.equals(warningDetail.warningCode);
+    return this.warningCode == warningDetail.warningCode;
   }
 
   @JacocoGenerated

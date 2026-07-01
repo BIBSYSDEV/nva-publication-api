@@ -22,7 +22,7 @@ public enum RightsRetentionStrategyConfiguration {
   }
 
   public static RightsRetentionStrategyConfiguration fromValue(String value) {
-    return Arrays.stream(RightsRetentionStrategyConfiguration.values())
+    return Arrays.stream(values())
         .filter(enumValue -> enumValue.getValue().equalsIgnoreCase(value))
         .collect(SingletonCollector.tryCollect())
         .orElseThrow();

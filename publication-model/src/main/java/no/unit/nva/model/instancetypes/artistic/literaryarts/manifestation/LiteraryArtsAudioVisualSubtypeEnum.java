@@ -27,14 +27,12 @@ public enum LiteraryArtsAudioVisualSubtypeEnum {
   @Deprecated
   @JsonCreator
   public static LiteraryArtsAudioVisualSubtypeEnum parse(String candidate) {
-    return "Other".equalsIgnoreCase(candidate)
-        ? LiteraryArtsAudioVisualSubtypeEnum.OTHER
-        : inlineableParseMethod(candidate);
+    return "Other".equalsIgnoreCase(candidate) ? OTHER : inlineableParseMethod(candidate);
   }
 
   //  @JsonCreator
   public static LiteraryArtsAudioVisualSubtypeEnum inlineableParseMethod(String candidate) {
-    return Arrays.stream(LiteraryArtsAudioVisualSubtypeEnum.values())
+    return Arrays.stream(values())
         .filter(value -> value.getType().equalsIgnoreCase(candidate))
         .collect(SingletonCollector.collect());
   }

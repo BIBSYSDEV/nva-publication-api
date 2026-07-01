@@ -17,10 +17,10 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(DoiRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class DoiRequestDao extends TicketDao implements JoinWithResource, JsonSerializable {
+public class DoiRequestDao extends TicketDao implements JsonSerializable {
 
   public static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX =
-      TicketDao.ALPHABETICALLY_ORDERED_FIRST_TICKET_TYPE;
+      ALPHABETICALLY_ORDERED_FIRST_TICKET_TYPE;
   public static final String TYPE = "DoiRequest";
 
   @JacocoGenerated

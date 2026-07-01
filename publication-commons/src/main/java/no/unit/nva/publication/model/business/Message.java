@@ -18,7 +18,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount"})
 public class Message implements Entity, JsonSerializable {
 
   public static final String TYPE = "Message";
@@ -154,7 +153,7 @@ public class Message implements Entity, JsonSerializable {
 
   @Override
   public String getType() {
-    return Message.TYPE;
+    return TYPE;
   }
 
   @Override
@@ -230,7 +229,7 @@ public class Message implements Entity, JsonSerializable {
   }
 
   public Message copy() {
-    return Message.builder()
+    return builder()
         .withStatus(this.getStatus())
         .withCreatedDate(this.getCreatedDate())
         .withCustomerId(this.getCustomerId())
