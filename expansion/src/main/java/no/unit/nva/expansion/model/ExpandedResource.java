@@ -269,7 +269,7 @@ public final class ExpandedResource implements ExpandedDataEntry {
   }
 
   private static URI extractLicenseFromAssociatedArtifactNode(JsonNode node) {
-    return Optional.ofNullable(node.get(ExpandedResource.LICENSE_FIELD))
+    return Optional.ofNullable(node.get(LICENSE_FIELD))
         .map(JsonNode::asText)
         .map(URI::create)
         .orElse(null);

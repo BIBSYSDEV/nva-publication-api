@@ -104,7 +104,7 @@ public class PublishingRequestCase extends FilesApprovalEntry {
 
   @Override
   public String getType() {
-    return PublishingRequestCase.TYPE;
+    return TYPE;
   }
 
   @Override

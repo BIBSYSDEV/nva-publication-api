@@ -65,8 +65,6 @@ public enum ChapterArticleContentType {
     return format(
         ERROR_MESSAGE_TEMPLATE,
         value,
-        stream(ChapterArticleContentType.values())
-            .map(ChapterArticleContentType::toString)
-            .collect(joining(DELIMITER)));
+        stream(values()).map(ChapterArticleContentType::toString).collect(joining(DELIMITER)));
   }
 }

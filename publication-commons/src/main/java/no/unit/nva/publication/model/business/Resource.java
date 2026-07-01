@@ -332,7 +332,7 @@ public class Resource implements Entity, Validatable<Resource> {
   }
 
   private static Resource convertToResource(Publication publication) {
-    return Resource.builder()
+    return builder()
         .withIdentifier(publication.getIdentifier())
         .withResourceOwner(Owner.fromResourceOwner(publication.getResourceOwner()))
         .withCreatedDate(publication.getCreatedDate())
@@ -754,7 +754,7 @@ public class Resource implements Entity, Validatable<Resource> {
   }
 
   public ResourceBuilder copy() {
-    return Resource.builder()
+    return builder()
         .withIdentifier(getIdentifier())
         .withStatus(getStatus())
         .withResourceOwner(Owner.fromResourceOwner(extractResourceOwner()))

@@ -63,9 +63,6 @@
     <exclude name="ConfusingTernary"/>
     <exclude name="UseExplicitTypes"/>
 
-    <!-- FIXME: Disabled because of the high number of current violations-->
-    <exclude name="UnnecessaryFullyQualifiedName"/>
-
     <!-- This rule does not allow us the following:
             private static final Logger logger=...
          It requires:

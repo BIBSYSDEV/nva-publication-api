@@ -32,54 +32,54 @@ public enum CristinMainCategory {
   }
 
   public static boolean isBook(CristinObject cristinObject) {
-    return CristinMainCategory.BOOK == cristinObject.getMainCategory();
+    return BOOK == cristinObject.getMainCategory();
   }
 
   public static boolean isJournal(CristinObject cristinObject) {
-    return CristinMainCategory.JOURNAL == cristinObject.getMainCategory()
+    return JOURNAL == cristinObject.getMainCategory()
         && CristinSecondaryCategory.WRITTEN_INTERVIEW != cristinObject.getSecondaryCategory()
         && CristinSecondaryCategory.FEATURE_ARTICLE != cristinObject.getSecondaryCategory();
   }
 
   public static boolean isReport(CristinObject cristinObject) {
-    return CristinMainCategory.REPORT == cristinObject.getMainCategory();
+    return REPORT == cristinObject.getMainCategory();
   }
 
   public static boolean isChapter(CristinObject cristinObject) {
-    return CristinMainCategory.CHAPTER == cristinObject.getMainCategory();
+    return CHAPTER == cristinObject.getMainCategory();
   }
 
   public static boolean isEvent(CristinObject cristinObject) {
-    return CristinMainCategory.EVENT == cristinObject.getMainCategory();
+    return EVENT == cristinObject.getMainCategory();
   }
 
   public static boolean isArt(CristinObject cristinObject) {
-    return CristinMainCategory.ARTISTIC_PRODUCTION == cristinObject.getMainCategory();
+    return ARTISTIC_PRODUCTION == cristinObject.getMainCategory();
   }
 
   public static boolean isInformationMaterial(CristinObject cristinObject) {
-    return CristinMainCategory.INFORMATION_MATERIAL == cristinObject.getMainCategory();
+    return INFORMATION_MATERIAL == cristinObject.getMainCategory();
   }
 
   public static boolean isExhibition(CristinObject cristinObject) {
-    return CristinMainCategory.EXHIBITION == cristinObject.getMainCategory();
+    return EXHIBITION == cristinObject.getMainCategory();
   }
 
   public static boolean isMediaContribution(CristinObject cristinObject) {
-    return CristinMainCategory.MEDIA_CONTRIBUTION == cristinObject.getMainCategory()
+    return MEDIA_CONTRIBUTION == cristinObject.getMainCategory()
         || mainAndSecondaryCategoryIndicatesWrittenInterview(cristinObject)
         || mainAndSecondaryCategoryIndicatesFeatureArticle(cristinObject);
   }
 
   private static boolean mainAndSecondaryCategoryIndicatesWrittenInterview(
       CristinObject cristinObject) {
-    return CristinMainCategory.JOURNAL == cristinObject.getMainCategory()
+    return JOURNAL == cristinObject.getMainCategory()
         && CristinSecondaryCategory.WRITTEN_INTERVIEW == cristinObject.getSecondaryCategory();
   }
 
   private static boolean mainAndSecondaryCategoryIndicatesFeatureArticle(
       CristinObject cristinObject) {
-    return CristinMainCategory.JOURNAL == cristinObject.getMainCategory()
+    return JOURNAL == cristinObject.getMainCategory()
         && CristinSecondaryCategory.FEATURE_ARTICLE == cristinObject.getSecondaryCategory();
   }
 

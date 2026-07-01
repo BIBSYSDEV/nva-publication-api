@@ -56,7 +56,6 @@ import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.publication.exception.CandidateAlreadyImportedException;
@@ -702,8 +701,8 @@ public class ResourceService extends ServiceWithTransactions {
       throws BadRequestException {
     var status =
         userInstance.isExternalClient()
-            ? Optional.ofNullable(fromPublication.getStatus()).orElse(PublicationStatus.DRAFT)
-            : PublicationStatus.DRAFT;
+            ? Optional.ofNullable(fromPublication.getStatus()).orElse(DRAFT)
+            : DRAFT;
 
     if (PUBLISHED == status) {
       if (!fromPublication.isPublishable()) {

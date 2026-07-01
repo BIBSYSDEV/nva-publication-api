@@ -94,7 +94,7 @@ public record Customer(
 
     @JsonCreator
     public static Environment fromValue(String value) {
-      return Arrays.stream(Environment.values())
+      return Arrays.stream(values())
           .filter(item -> item.getValue().equals(value))
           .collect(SingletonCollector.collect());
     }

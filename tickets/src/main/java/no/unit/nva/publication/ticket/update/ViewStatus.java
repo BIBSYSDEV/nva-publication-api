@@ -17,7 +17,7 @@ public enum ViewStatus {
 
   @JsonCreator
   public static ViewStatus parse(String candidate) {
-    return Arrays.stream(ViewStatus.values())
+    return Arrays.stream(values())
         .filter(value -> value.toString().equalsIgnoreCase(candidate))
         .collect(SingletonCollector.tryCollect())
         .orElseThrow();

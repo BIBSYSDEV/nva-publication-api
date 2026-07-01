@@ -153,7 +153,7 @@ public class Message implements Entity, JsonSerializable {
 
   @Override
   public String getType() {
-    return Message.TYPE;
+    return TYPE;
   }
 
   @Override
@@ -229,7 +229,7 @@ public class Message implements Entity, JsonSerializable {
   }
 
   public Message copy() {
-    return Message.builder()
+    return builder()
         .withStatus(this.getStatus())
         .withCreatedDate(this.getCreatedDate())
         .withCustomerId(this.getCustomerId())

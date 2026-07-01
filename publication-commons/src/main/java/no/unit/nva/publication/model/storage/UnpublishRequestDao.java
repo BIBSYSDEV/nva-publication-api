@@ -16,7 +16,7 @@ public class UnpublishRequestDao extends TicketDao implements JsonSerializable {
 
   public static final String TYPE = "UnpublishRequest";
   public static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX =
-      TicketDao.ALPHABETICALLY_ORDERED_LAST_TICKET_TYPE;
+      ALPHABETICALLY_ORDERED_LAST_TICKET_TYPE;
 
   @JacocoGenerated
   public UnpublishRequestDao() {

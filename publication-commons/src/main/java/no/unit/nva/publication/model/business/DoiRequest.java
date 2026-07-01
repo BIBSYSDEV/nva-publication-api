@@ -78,7 +78,7 @@ public class DoiRequest extends TicketEntry {
 
   @Override
   public String getType() {
-    return DoiRequest.TYPE;
+    return TYPE;
   }
 
   @Override
@@ -118,7 +118,7 @@ public class DoiRequest extends TicketEntry {
 
   @Override
   public DoiRequest copy() {
-    return DoiRequest.builder()
+    return builder()
         .withIdentifier(getIdentifier())
         .withResourceIdentifier(getResourceIdentifier())
         .withStatus(getStatus())

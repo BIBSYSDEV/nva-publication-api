@@ -148,7 +148,7 @@ public class CristinRerunErrorsEventEmitter implements RequestStreamHandler {
   private EventReference createEventReferenceForLocation(UnixPath reportLocation) {
     String fileContent = s3Driver.getFile(reportLocation);
     URI fileLocation = getFileLocation(fileContent);
-    return CristinRerunErrorsEventEmitter.toEventReference(fileLocation);
+    return toEventReference(fileLocation);
   }
 
   private URI getFileLocation(String content) {

@@ -55,7 +55,7 @@ public final class PublicationServiceConfig {
   @JacocoGenerated
   private static S3Client defaultS3Client() {
     return S3Client.builder()
-        .region(Region.of(PublicationServiceConfig.AWS_REGION))
+        .region(Region.of(AWS_REGION))
         .httpClient(UrlConnectionHttpClient.create())
         .build();
   }

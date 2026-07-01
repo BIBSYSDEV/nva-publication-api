@@ -31,8 +31,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket {
       ResourceService resourceService,
       TicketService ticketService)
       throws NotFoundException {
-    var expandedDoiRequest =
-        ExpandedDoiRequest.fromDoiRequest(doiRequest, resourceService, expansionService);
+    var expandedDoiRequest = fromDoiRequest(doiRequest, resourceService, expansionService);
     expandedDoiRequest.setOrganization(expansionService.getOrganization(doiRequest));
     expandedDoiRequest.setMessages(
         expandMessages(doiRequest.fetchMessages(ticketService), expansionService));

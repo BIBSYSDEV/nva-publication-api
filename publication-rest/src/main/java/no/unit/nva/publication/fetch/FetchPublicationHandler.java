@@ -125,7 +125,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     if (eTagMatches(requestInfo, resource)) {
       statusCode = HttpURLConnection.HTTP_NOT_MODIFIED;
-      return FetchPublicationHandler.NO_BODY;
+      return NO_BODY;
     }
 
     return switch (resource.getStatus()) {

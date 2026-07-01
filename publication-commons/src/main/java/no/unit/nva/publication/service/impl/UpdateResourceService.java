@@ -254,7 +254,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
   }
 
   private Optional<ResourceRelationshipDao> createRelationshipDao(Resource resource) {
-    return ResourceRelationship.fromResource(resource).map(ResourceRelationshipDao::from);
+    return fromResource(resource).map(ResourceRelationshipDao::from);
   }
 
   private TransactWriteItem createDeleteTransaction(ResourceRelationshipDao dao) {

@@ -33,7 +33,7 @@ public record ChannelRegistryEntry(String id, ChannelType type) {
     }
 
     public static ChannelType fromValue(String value) {
-      return Arrays.stream(ChannelType.values())
+      return Arrays.stream(values())
           .filter(type -> type.getValue().equalsIgnoreCase(value))
           .collect(SingletonCollector.collectOrElse(null));
     }

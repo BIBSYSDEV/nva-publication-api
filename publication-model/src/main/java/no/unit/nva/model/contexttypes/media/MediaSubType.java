@@ -27,7 +27,7 @@ public class MediaSubType {
 
   @JsonCreator
   public static MediaSubType fromJsonString(String type) {
-    return MediaSubType.create(MediaSubTypeEnum.parse(type));
+    return create(MediaSubTypeEnum.parse(type));
   }
 
   public static MediaSubType create(MediaSubTypeEnum type) {

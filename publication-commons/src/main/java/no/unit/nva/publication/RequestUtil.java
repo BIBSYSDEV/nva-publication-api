@@ -115,7 +115,7 @@ public final class RequestUtil {
 
   private static UserInstance createDataportenUserInstance(RequestInfo requestInfo)
       throws ApiGatewayException {
-    String owner = RequestUtil.getOwner(requestInfo);
+    String owner = getOwner(requestInfo);
     var customerId = requestInfo.getCurrentCustomer();
     var personCristinId = attempt(requestInfo::getPersonCristinId).toOptional().orElse(null);
     var topLevelOrg =
