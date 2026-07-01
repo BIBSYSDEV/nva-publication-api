@@ -584,8 +584,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 associatedLink.description(),
                 associatedLink.relation())));
 
-    var persisted =
-        resourceService.getResourceByIdentifier(savedPublication.getIdentifier());
+    var persisted = resourceService.getResourceByIdentifier(savedPublication.getIdentifier());
     assertThat(persisted.getAssociatedArtifacts(), hasItem(associatedLink));
   }
 

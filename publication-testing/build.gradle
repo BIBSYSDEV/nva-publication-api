@@ -31,6 +31,4 @@ dependencies {
     runtimeOnly(nvaCatalog.jackson.datatype.jsr310)
     runtimeOnly(nvaCatalog.jackson.datatype.problem)
     runtimeOnly(nvaCatalog.jackson.module.parameter.names)
-    runtimeOnly(nvaCatalog.junit.jupiter.engine)
-    runtimeOnly(nvaCatalog.junit.platform.launcher)
 }

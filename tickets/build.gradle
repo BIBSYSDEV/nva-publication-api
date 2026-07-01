@@ -8,7 +8,6 @@ dependencies {
     api(project(":publication-commons"))
     api(project(":publication-model"))
     compileOnly(nvaCatalog.aws.lambda.core)
-    compileOnly(nvaCatalog.zalando)
     implementation(nvaCatalog.aws.sdk2.secrets)
     implementation(nvaCatalog.log4j.core)
     implementation(nvaCatalog.slf4j.api)
@@ -35,9 +34,6 @@ dependencies {
     testImplementation(project(":publication-model-testing"))
     testImplementation(project(":tickets-test"))
     testImplementation(project(':publication-testing'))
-    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
-    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
-    testRuntimeOnly(nvaCatalog.wiremock)
 }
 
 test {

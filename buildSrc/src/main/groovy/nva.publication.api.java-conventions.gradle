@@ -20,6 +20,8 @@ dependencies {
     implementation(platform(nvaCatalog.aws.sdk.bom))
     implementation(platform(nvaCatalog.aws.sdk2.bom))
     testImplementation(platform(nvaCatalog.junit.bom))
+    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
+    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
 }
 
 tasks.named('test') {
