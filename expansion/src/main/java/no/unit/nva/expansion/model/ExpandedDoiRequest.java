@@ -18,7 +18,6 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(ExpandedDoiRequest.TYPE)
-@SuppressWarnings("PMD.TooManyFields")
 public final class ExpandedDoiRequest extends ExpandedTicket {
 
   public static final String TYPE = "DoiRequest";

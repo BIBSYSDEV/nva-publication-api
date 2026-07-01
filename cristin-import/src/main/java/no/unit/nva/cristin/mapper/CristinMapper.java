@@ -71,12 +71,7 @@ import nva.commons.core.language.LanguageMapper;
 import nva.commons.core.paths.UriWrapper;
 import software.amazon.awssdk.services.s3.S3Client;
 
-@SuppressWarnings({
-  "PMD.GodClass",
-  "PMD.CouplingBetweenObjects",
-  "PMD.ForLoopCanBeForeach",
-  "PMD.ReturnEmptyCollectionRatherThanNull"
-})
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CristinMapper extends CristinMappingModule {
 
   public static final String CRISTIN_INSTITUTION_CODE = "CRIS";

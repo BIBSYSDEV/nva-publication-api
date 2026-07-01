@@ -28,7 +28,6 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields"})
 public class DoiRequest extends TicketEntry {
 
   public static final String RESOURCE_STATUS_FIELD = "resourceStatus";

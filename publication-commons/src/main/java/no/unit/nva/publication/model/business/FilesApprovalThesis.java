@@ -16,7 +16,6 @@ import no.unit.nva.publication.model.storage.FilesApprovalThesisDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import nva.commons.core.JacocoGenerated;
 
-@SuppressWarnings({"PMD.GodClass"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName(FilesApprovalThesis.TYPE)
 public class FilesApprovalThesis extends FilesApprovalEntry {

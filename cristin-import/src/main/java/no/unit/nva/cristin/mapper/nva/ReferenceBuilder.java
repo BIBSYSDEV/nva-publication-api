@@ -92,7 +92,6 @@ public class ReferenceBuilder extends CristinMappingModule {
         .build();
   }
 
-  @SuppressWarnings({"PMD.NPathComplexity"})
   private PublicationContext buildPublicationContext()
       throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
     if (isBook(cristinObject)) {

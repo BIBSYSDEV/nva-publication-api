@@ -100,7 +100,7 @@ import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ResourceService extends ServiceWithTransactions {
 
   public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;

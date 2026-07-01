@@ -72,7 +72,7 @@ public final class PublicationContextMapper {
 
   private PublicationContextMapper() {}
 
-  @SuppressWarnings({"PMD.NPathComplexity", "PMD.CognitiveComplexity"})
+  @SuppressWarnings("PMD.CognitiveComplexity")
   public static PublicationContext buildPublicationContext(Record brageRecord, URI organizationId)
       throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
     if (shouldBeMappedToBook(brageRecord)) {

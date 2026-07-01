@@ -20,7 +20,7 @@ import no.unit.nva.model.funding.Funding;
 import no.unit.nva.publication.model.business.publicationchannel.PublicationChannel;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
 
-@SuppressWarnings({"PMD.TooManyFields", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings("PMD.TooManyFields")
 public final class ResourceBuilder {
 
   private SortableIdentifier identifier;

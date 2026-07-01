@@ -33,7 +33,7 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.FinalizeOverloaded", "PMD.ExcessivePublicCount"})
+@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
   @JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),

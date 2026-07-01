@@ -39,7 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class ExpandDataEntriesHandler
     extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 

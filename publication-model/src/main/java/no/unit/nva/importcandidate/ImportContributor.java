@@ -10,7 +10,6 @@ import java.util.List;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.role.RoleType;
 
-@SuppressWarnings("PMD.UnusedAssignment")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public record ImportContributor(
     Identity identity,

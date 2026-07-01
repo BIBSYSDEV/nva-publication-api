@@ -57,7 +57,7 @@ import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class ScopusConverter {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ScopusConverter.class);

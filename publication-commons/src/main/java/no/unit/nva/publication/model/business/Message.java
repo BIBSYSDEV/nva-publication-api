@@ -18,7 +18,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount"})
 public class Message implements Entity, JsonSerializable {
 
   public static final String TYPE = "Message";

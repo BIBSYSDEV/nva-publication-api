@@ -82,7 +82,6 @@ public final class RequestUtil {
    * @return the owner
    * @throws ApiGatewayException exception thrown if value is missing
    */
-  @SuppressWarnings("PMD.InvalidLogMessageFormat")
   public static String getOwner(RequestInfo requestInfo) throws ApiGatewayException {
     return attempt(requestInfo::getUserName).orElseThrow(fail -> new UnauthorizedException());
   }

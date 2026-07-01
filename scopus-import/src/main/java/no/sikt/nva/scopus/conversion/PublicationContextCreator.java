@@ -36,7 +36,7 @@ import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import nva.commons.core.SingletonCollector;
 
-@SuppressWarnings({"PMD.PrematureDeclaration", "PMD.UnusedLocalVariable", "PMD.GodClass"})
+@SuppressWarnings("PMD.GodClass")
 public class PublicationContextCreator {
 
   private static final String UNSUPPORTED_SOURCE_TYPE = "Unsupported source type %s, in %s";
