@@ -12,17 +12,6 @@ dependencies {
     api(nvaLibs.json)
     api(nvaLibs.s3)
     api(project(":publication-commons"))
-    compileOnly(nvaCatalog.zalando)
-    compileOnly(nvaCatalog.aws.sdk2.auth) {
-        because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "
-    }
-    compileOnly(nvaCatalog.aws.sdk.apigateway) {
-        because "PMD complains for the com/amazonaws/regions/Regions class"
-    }
-    compileOnly(nvaCatalog.commons.validator) {
-        because "PMD org/apache/commons/validator/routines/ISBNValidator"
-    }
-    compileOnly(nvaLibs.apigateway)
     implementation(libs.apache.commons.collections)
     implementation(nvaCatalog.aws.ion)
     implementation(nvaCatalog.aws.sdk2.aws.core)

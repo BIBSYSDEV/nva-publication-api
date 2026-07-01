@@ -18,16 +18,10 @@ dependencies {
     api(project(":publication-model"))
     api(project(":s3-import-commons"))
     compileOnly(nvaCatalog.aws.lambda.core)
-    compileOnly(nvaCatalog.aws.sdk2.auth) {
-        because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "
-    }
-    compileOnly(nvaCatalog.aws.sdk2.eventbridge)
     compileOnly(nvaCatalog.aws.sdk2.s3)
     compileOnly(nvaCatalog.commons.validator) {
         because "PMD org/apache/commons/validator/routines/ISBNValidator"
     }
-    compileOnly(nvaCatalog.zalando)
-    compileOnly(nvaLibs.apigateway)
     compileOnly(nvaLibs.identifiers)
     implementation(nvaCatalog.aws.sdk2.http.client)
     implementation(nvaCatalog.aws.sdk2.sdk.core)
