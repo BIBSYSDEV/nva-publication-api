@@ -168,7 +168,7 @@ public class ReferenceBuilder extends CristinMappingModule {
   }
 
   private boolean isWrittenInterview(CristinObject cristinObject) {
-    return CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
+    return CristinSecondaryCategory.WRITTEN_INTERVIEW == cristinObject.getSecondaryCategory();
   }
 
   private PublicationContext buildPublicationContextWhenMainCategoryIsReport()

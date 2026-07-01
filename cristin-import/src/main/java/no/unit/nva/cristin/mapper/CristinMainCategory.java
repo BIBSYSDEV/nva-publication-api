@@ -32,58 +32,58 @@ public enum CristinMainCategory {
   }
 
   public static boolean isBook(CristinObject cristinObject) {
-    return CristinMainCategory.BOOK.equals(cristinObject.getMainCategory());
+    return CristinMainCategory.BOOK == cristinObject.getMainCategory();
   }
 
   public static boolean isJournal(CristinObject cristinObject) {
-    return CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory())
-        && !CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory())
-        && !CristinSecondaryCategory.FEATURE_ARTICLE.equals(cristinObject.getSecondaryCategory());
+    return CristinMainCategory.JOURNAL == cristinObject.getMainCategory()
+        && CristinSecondaryCategory.WRITTEN_INTERVIEW != cristinObject.getSecondaryCategory()
+        && CristinSecondaryCategory.FEATURE_ARTICLE != cristinObject.getSecondaryCategory();
   }
 
   public static boolean isReport(CristinObject cristinObject) {
-    return CristinMainCategory.REPORT.equals(cristinObject.getMainCategory());
+    return CristinMainCategory.REPORT == cristinObject.getMainCategory();
   }
 
   public static boolean isChapter(CristinObject cristinObject) {
-    return CristinMainCategory.CHAPTER.equals(cristinObject.getMainCategory());
+    return CristinMainCategory.CHAPTER == cristinObject.getMainCategory();
   }
 
   public static boolean isEvent(CristinObject cristinObject) {
-    return CristinMainCategory.EVENT.equals(cristinObject.getMainCategory());
+    return CristinMainCategory.EVENT == cristinObject.getMainCategory();
   }
 
   public static boolean isArt(CristinObject cristinObject) {
-    return CristinMainCategory.ARTISTIC_PRODUCTION.equals(cristinObject.getMainCategory());
+    return CristinMainCategory.ARTISTIC_PRODUCTION == cristinObject.getMainCategory();
   }
 
   public static boolean isInformationMaterial(CristinObject cristinObject) {
-    return CristinMainCategory.INFORMATION_MATERIAL.equals(cristinObject.getMainCategory());
+    return CristinMainCategory.INFORMATION_MATERIAL == cristinObject.getMainCategory();
   }
 
   public static boolean isExhibition(CristinObject cristinObject) {
-    return CristinMainCategory.EXHIBITION.equals(cristinObject.getMainCategory());
+    return CristinMainCategory.EXHIBITION == cristinObject.getMainCategory();
   }
 
   public static boolean isMediaContribution(CristinObject cristinObject) {
-    return CristinMainCategory.MEDIA_CONTRIBUTION.equals(cristinObject.getMainCategory())
+    return CristinMainCategory.MEDIA_CONTRIBUTION == cristinObject.getMainCategory()
         || mainAndSecondaryCategoryIndicatesWrittenInterview(cristinObject)
         || mainAndSecondaryCategoryIndicatesFeatureArticle(cristinObject);
   }
 
   private static boolean mainAndSecondaryCategoryIndicatesWrittenInterview(
       CristinObject cristinObject) {
-    return CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory())
-        && CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
+    return CristinMainCategory.JOURNAL == cristinObject.getMainCategory()
+        && CristinSecondaryCategory.WRITTEN_INTERVIEW == cristinObject.getSecondaryCategory();
   }
 
   private static boolean mainAndSecondaryCategoryIndicatesFeatureArticle(
       CristinObject cristinObject) {
-    return CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory())
-        && CristinSecondaryCategory.FEATURE_ARTICLE.equals(cristinObject.getSecondaryCategory());
+    return CristinMainCategory.JOURNAL == cristinObject.getMainCategory()
+        && CristinSecondaryCategory.FEATURE_ARTICLE == cristinObject.getSecondaryCategory();
   }
 
   public boolean isUnknownCategory() {
-    return UNMAPPED.equals(this);
+    return UNMAPPED == this;
   }
 }

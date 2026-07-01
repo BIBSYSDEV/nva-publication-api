@@ -36,17 +36,17 @@ public class JournalArticle implements PublicationInstance<Range> {
       @JsonProperty(ISSUE_FIELD) String issue,
       @JsonProperty(ARTICLE_NUMBER_FIELD) String articleNumber,
       @JsonProperty(CONTENT_TYPE_FIELD) JournalArticleContentType contentType) {
-    if (JournalArticleContentType.ACADEMIC_ARTICLE.equals(contentType)) {
+    if (JournalArticleContentType.ACADEMIC_ARTICLE == contentType) {
       return new AcademicArticle(pages, volume, issue, articleNumber);
-    } else if (JournalArticleContentType.ACADEMIC_LITERATURE_REVIEW.equals(contentType)) {
+    } else if (JournalArticleContentType.ACADEMIC_LITERATURE_REVIEW == contentType) {
       return new AcademicLiteratureReview(pages, volume, issue, articleNumber);
-    } else if (JournalArticleContentType.CASE_REPORT.equals(contentType)) {
+    } else if (JournalArticleContentType.CASE_REPORT == contentType) {
       return new CaseReport(pages, volume, issue, articleNumber);
-    } else if (JournalArticleContentType.POPULAR_SCIENCE_ARTICLE.equals(contentType)) {
+    } else if (JournalArticleContentType.POPULAR_SCIENCE_ARTICLE == contentType) {
       return new PopularScienceArticle(pages, volume, issue, articleNumber);
-    } else if (JournalArticleContentType.PROFESSIONAL_ARTICLE.equals(contentType)) {
+    } else if (JournalArticleContentType.PROFESSIONAL_ARTICLE == contentType) {
       return new ProfessionalArticle(pages, volume, issue, articleNumber);
-    } else if (JournalArticleContentType.STUDY_PROTOCOL.equals(contentType)) {
+    } else if (JournalArticleContentType.STUDY_PROTOCOL == contentType) {
       return new StudyProtocol(pages, volume, issue, articleNumber);
     } else if (isNull(contentType)) {
       return new AcademicArticle(pages, volume, issue, articleNumber);

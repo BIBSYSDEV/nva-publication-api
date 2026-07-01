@@ -200,7 +200,7 @@ public class ReadResourceService {
   }
 
   private static boolean isNotRemoved(TicketEntry ticket) {
-    return !TicketStatus.REMOVED.equals(ticket.getStatus());
+    return TicketStatus.REMOVED != ticket.getStatus();
   }
 
   private static Optional<Resource> extractResource(

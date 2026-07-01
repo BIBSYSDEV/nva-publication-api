@@ -151,7 +151,7 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
       ContributorVerificationStatus status,
       SortableIdentifier resourceIdentifier) {
     return Optional.of(contributor.identity())
-        .filter(identity -> !status.equals(identity.getVerificationStatus()))
+        .filter(identity -> status != identity.getVerificationStatus())
         .map(identity -> logStatusChange(identity, status, resourceIdentifier))
         .map(identity -> createUpdatedIdentity(identity, status))
         .map(updatedIdentity -> contributor.copy().withIdentity(updatedIdentity).build());

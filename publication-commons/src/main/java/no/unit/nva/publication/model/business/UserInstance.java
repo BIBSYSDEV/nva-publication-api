@@ -121,11 +121,11 @@ public class UserInstance implements JsonSerializable {
   }
 
   public boolean isExternalClient() {
-    return this.userClientType.equals(UserClientType.EXTERNAL);
+    return this.userClientType == UserClientType.EXTERNAL;
   }
 
   public boolean isBackendClient() {
-    return this.userClientType.equals(UserClientType.BACKEND);
+    return this.userClientType == UserClientType.BACKEND;
   }
 
   public static UserInstance fromRequestInfo(RequestInfo requestInfo) throws UnauthorizedException {

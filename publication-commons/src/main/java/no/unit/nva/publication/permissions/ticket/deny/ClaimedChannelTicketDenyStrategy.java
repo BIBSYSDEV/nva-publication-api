@@ -19,7 +19,7 @@ public class ClaimedChannelTicketDenyStrategy extends TicketStrategyBase
 
   @Override
   public boolean deniesAction(TicketOperation operation) {
-    return TRANSFER.equals(operation) && hasClaimedPublicationChannel();
+    return TRANSFER == operation && hasClaimedPublicationChannel();
   }
 
   private boolean hasClaimedPublicationChannel() {

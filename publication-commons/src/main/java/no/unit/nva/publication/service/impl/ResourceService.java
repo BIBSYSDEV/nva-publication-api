@@ -509,7 +509,7 @@ public class ResourceService extends ServiceWithTransactions {
   public void unpublishPublication(Publication publication, UserInstance userInstance)
       throws BadRequestException, NotFoundException {
     var existingPublication = getResourceByIdentifier(publication.getIdentifier()).toPublication();
-    if (!PUBLISHED.equals(existingPublication.getStatus())) {
+    if (PUBLISHED != existingPublication.getStatus()) {
       throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
     }
     var allTicketsForResource = fetchAllTicketsForResource(Resource.fromPublication(publication));
@@ -518,7 +518,7 @@ public class ResourceService extends ServiceWithTransactions {
 
   public void terminateResource(Resource resource, UserInstance userInstance)
       throws BadRequestException {
-    if (!UNPUBLISHED.equals(resource.getStatus())) {
+    if (UNPUBLISHED != resource.getStatus()) {
       throw new BadRequestException(DELETE_PUBLICATION_ERROR_MESSAGE);
     }
     updateResourceService.terminateResource(resource, userInstance);
@@ -705,7 +705,7 @@ public class ResourceService extends ServiceWithTransactions {
             ? Optional.ofNullable(fromPublication.getStatus()).orElse(PublicationStatus.DRAFT)
             : PublicationStatus.DRAFT;
 
-    if (PUBLISHED.equals(status)) {
+    if (PUBLISHED == status) {
       if (!fromPublication.isPublishable()) {
         throw new BadRequestException(NOT_PUBLISHABLE);
       }

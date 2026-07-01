@@ -101,7 +101,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
   public Publication updatePublicationButDoNotChangeStatus(Publication publication) {
     var originalPublication =
         fetchExistingResource(Resource.fromPublication(publication)).toPublication();
-    if (originalPublication.getStatus().equals(publication.getStatus())) {
+    if (originalPublication.getStatus() == publication.getStatus()) {
       return updatePublicationIncludingStatus(publication);
     }
     throw new IllegalStateException(
@@ -114,7 +114,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         attempt(() -> fetchExistingResource(Resource.fromPublication(publication)))
             .map(Resource::toPublication)
             .orElseThrow(failure -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
-    if (persistedPublication.getStatus().equals(DRAFT)) {
+    if (persistedPublication.getStatus() == DRAFT) {
       publication.setStatus(PublicationStatus.DRAFT_FOR_DELETION);
       publication.setModifiedDate(clockForTimestamps.instant());
       var resource = Resource.fromPublication(publication);
@@ -429,9 +429,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
             .getResourceByIdentifier(resourceIdentifier)
             .orElseThrow()
             .toPublication();
-    return DELETED.equals(publication.getStatus())
-        ? deletionStatusIsCompleted()
-        : delete(publication);
+    return DELETED == publication.getStatus() ? deletionStatusIsCompleted() : delete(publication);
   }
 
   private static boolean isContributorsChanged(Resource resource, Resource existingResource) {
@@ -446,7 +444,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
   }
 
   private static boolean isNotImported(ImportCandidate importCandidate) {
-    return !importCandidate.getImportStatus().candidateStatus().equals(CandidateStatus.IMPORTED);
+    return importCandidate.getImportStatus().candidateStatus() != CandidateStatus.IMPORTED;
   }
 
   private Publication updatePublicationIncludingStatus(Publication publicationUpdate) {
@@ -485,7 +483,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
   }
 
   private boolean isPendingTicket(TicketEntry ticketEntry) {
-    return TicketStatus.PENDING.equals(ticketEntry.getStatus());
+    return TicketStatus.PENDING == ticketEntry.getStatus();
   }
 
   private TransactWriteItem createPutTransactionItems(TicketDao ticketDao) {

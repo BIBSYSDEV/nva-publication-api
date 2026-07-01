@@ -56,7 +56,7 @@ public class DoiRequest extends TicketEntry {
   }
 
   public static DoiRequest create(Resource resource, UserInstance userInstance) {
-    if (!PUBLISHED.equals(resource.getStatus())) {
+    if (PUBLISHED != resource.getStatus()) {
       throw new InvalidTicketStatusTransitionException(
           WRONG_PUBLICATION_STATUS_ERROR.formatted(PUBLISHED));
     }

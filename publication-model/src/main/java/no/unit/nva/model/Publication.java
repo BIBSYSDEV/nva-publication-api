@@ -418,7 +418,7 @@ public class Publication
 
   @JsonIgnore
   public boolean isPublishable() {
-    return !DRAFT_FOR_DELETION.equals(getStatus()) && hasMainTitle();
+    return DRAFT_FOR_DELETION != getStatus() && hasMainTitle();
   }
 
   public boolean satisfiesFindableDoiRequirements() {

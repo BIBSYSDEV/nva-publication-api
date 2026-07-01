@@ -194,7 +194,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
   private boolean userWithAccessRequestsUnpublishedResource(
       Resource resource, RequestInfo requestInfo) {
-    return userCanUpdateResource(requestInfo, resource) && UNPUBLISHED.equals(resource.getStatus());
+    return userCanUpdateResource(requestInfo, resource) && UNPUBLISHED == resource.getStatus();
   }
 
   private boolean shouldRedirect(RequestInfo requestInfo) {

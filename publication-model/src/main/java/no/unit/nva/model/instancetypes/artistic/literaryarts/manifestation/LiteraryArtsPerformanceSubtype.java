@@ -48,7 +48,7 @@ public class LiteraryArtsPerformanceSubtype {
   public static LiteraryArtsPerformanceSubtype fromJson(
       @JsonProperty(TYPE_FIELD) LiteraryArtsPerformanceSubtypeEnum type,
       @JsonProperty(DESCRIPTION_FIELD) String description) {
-    if (LiteraryArtsPerformanceSubtypeEnum.OTHER.equals(type)) {
+    if (LiteraryArtsPerformanceSubtypeEnum.OTHER == type) {
       return createOther(description);
     }
     return new LiteraryArtsPerformanceSubtype(type);

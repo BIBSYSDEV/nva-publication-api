@@ -51,7 +51,7 @@ public class GetTicketHandler extends ApiGatewayHandler<Void, TicketDto> {
     if (!ticket.getResourceIdentifier().equals(publicationIdentifier)) {
       throw new NotFoundException(TICKET_NOT_FOUND);
     }
-    if (TicketStatus.REMOVED.equals(ticket.getStatus())) {
+    if (TicketStatus.REMOVED == ticket.getStatus()) {
       throw new GoneException("Ticket has beem removed!");
     }
   }

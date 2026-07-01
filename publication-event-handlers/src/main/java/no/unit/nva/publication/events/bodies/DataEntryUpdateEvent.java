@@ -177,7 +177,7 @@ public class DataEntryUpdateEvent implements JsonSerializable {
   }
 
   private boolean isRemoved() {
-    return !hasNewImage() && OperationType.REMOVE.equals(OperationType.fromValue(action));
+    return !hasNewImage() && OperationType.REMOVE == OperationType.fromValue(action);
   }
 
   private String resolveFileEntryTopic(FileEntry fileEntry) {

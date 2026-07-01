@@ -19,7 +19,7 @@ public class MediaSubType {
   @JsonCreator
   public static MediaSubType fromJson(
       @JsonProperty(TYPE) MediaSubTypeEnum type, @JsonProperty("description") String description) {
-    if (MediaSubTypeEnum.OTHER.equals(type)) {
+    if (MediaSubTypeEnum.OTHER == type) {
       return createOther(description);
     }
     return new MediaSubType(type);

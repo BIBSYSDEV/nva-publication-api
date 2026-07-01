@@ -25,7 +25,7 @@ public class ExhibitionProductionSubtype {
   public static ExhibitionProductionSubtype fromJson(
       @JsonProperty(TYPE) ExhibitionProductionSubtypeEnum type,
       @JsonProperty(DESCRIPTION) String description) {
-    if (ExhibitionProductionSubtypeEnum.OTHER.equals(type)) {
+    if (ExhibitionProductionSubtypeEnum.OTHER == type) {
       return createOther(description);
     }
     return new ExhibitionProductionSubtype(type);

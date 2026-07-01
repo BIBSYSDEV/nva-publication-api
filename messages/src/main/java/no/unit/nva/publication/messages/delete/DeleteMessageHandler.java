@@ -85,7 +85,7 @@ public class DeleteMessageHandler extends ApiGatewayHandler<Void, Void> {
   }
 
   private static boolean allMessagesAreDeleted(List<Message> messages) {
-    return messages.stream().allMatch(message -> DELETED.equals(message.getStatus()));
+    return messages.stream().allMatch(message -> DELETED == message.getStatus());
   }
 
   private void completeTicketWhenGeneralSupportWithNoActiveMessages(

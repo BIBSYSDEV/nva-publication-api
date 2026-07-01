@@ -33,7 +33,7 @@ public class PublishingRequestCase extends FilesApprovalEntry {
   public static PublishingRequestCase create(
       Resource resource, UserInstance userInstance, PublishingWorkflow workflow) {
     var publishingRequestCase = createPublishingRequest(resource, userInstance, workflow);
-    return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(workflow)
+    return REGISTRATOR_PUBLISHES_METADATA_AND_FILES == workflow
         ? (PublishingRequestCase)
             publishingRequestCase.completeAndApproveFiles(resource, userInstance)
         : (PublishingRequestCase)

@@ -351,7 +351,7 @@ public abstract class TicketEntry implements Entity {
   }
 
   public void validateClosingRequirements() throws ApiGatewayException {
-    if (!getStatus().equals(TicketStatus.PENDING)) {
+    if (getStatus() != TicketStatus.PENDING) {
       var errorMessage =
           String.format(
               "Cannot close a ticket that has any other status than %s", TicketStatus.PENDING);
@@ -365,7 +365,7 @@ public abstract class TicketEntry implements Entity {
   }
 
   public boolean isPending() {
-    return TicketStatus.PENDING.equals(getStatus());
+    return TicketStatus.PENDING == getStatus();
   }
 
   public TicketEntry withOwner(String username) {
@@ -395,7 +395,7 @@ public abstract class TicketEntry implements Entity {
   }
 
   private boolean isNotPending() {
-    return !TicketStatus.PENDING.equals(getStatus());
+    return TicketStatus.PENDING != getStatus();
   }
 
   private boolean isNotTicketOwner(UserInstance userInstance) {

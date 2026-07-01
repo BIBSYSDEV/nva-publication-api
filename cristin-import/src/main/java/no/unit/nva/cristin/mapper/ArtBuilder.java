@@ -24,15 +24,15 @@ public class ArtBuilder extends AbstractPublicationInstanceBuilder {
   @Override
   public PublicationInstance<? extends Pages> build() {
     CristinSecondaryCategory secondaryCategory = getCristinObject().getSecondaryCategory();
-    if (CristinSecondaryCategory.FILM_PRODUCTION.equals(secondaryCategory)) {
+    if (CristinSecondaryCategory.FILM_PRODUCTION == secondaryCategory) {
       return createMovingPicture();
     } else if (isMusicalWork(secondaryCategory)) {
       return createMusicPerformance();
-    } else if (CristinSecondaryCategory.VISUAL_ARTS.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.VISUAL_ARTS == secondaryCategory) {
       return createVisualArts();
-    } else if (CristinSecondaryCategory.THEATRICAL_PRODUCTION.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.THEATRICAL_PRODUCTION == secondaryCategory) {
       return createTheatricalProduction();
-    } else if (CristinSecondaryCategory.ARCHITECT_DESIGN.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.ARCHITECT_DESIGN == secondaryCategory) {
       return createArchitecture();
     } else {
       throw unknownSecondaryCategory();

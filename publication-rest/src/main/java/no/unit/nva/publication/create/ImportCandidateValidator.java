@@ -18,7 +18,7 @@ public final class ImportCandidateValidator {
 
   public static void validate(ImportCandidate candidate, CreatePublicationRequest input)
       throws BadRequestException {
-    if (CandidateStatus.IMPORTED.equals(candidate.getImportStatus().candidateStatus())) {
+    if (CandidateStatus.IMPORTED == candidate.getImportStatus().candidateStatus()) {
       throw new BadRequestException(RESOURCE_HAS_ALREADY_BEEN_IMPORTED);
     }
     if (candidate.getScopusIdentifier().isEmpty()) {

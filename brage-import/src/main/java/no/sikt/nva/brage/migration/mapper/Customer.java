@@ -74,7 +74,7 @@ public record Customer(
 
   private Entry<Environment, String> getProductionIdentifier() {
     return identifiers.entrySet().stream()
-        .filter(environmentStringEntry -> PROD.equals(environmentStringEntry.getKey()))
+        .filter(environmentStringEntry -> PROD == environmentStringEntry.getKey())
         .findFirst()
         .orElseThrow();
   }

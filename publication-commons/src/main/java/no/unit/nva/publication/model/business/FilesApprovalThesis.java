@@ -35,7 +35,7 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
     var fileApproval =
         createFileApproval(
             resource, userInstance, channelOwnerOrganizationId, channelClaimIdentifier, workflow);
-    return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(workflow)
+    return REGISTRATOR_PUBLISHES_METADATA_AND_FILES == workflow
         ? (FilesApprovalThesis) fileApproval.completeAndApproveFiles(resource, userInstance)
         : (FilesApprovalThesis)
             fileApproval.handleMetadataOnlyWorkflow(resource, userInstance, workflow);
@@ -44,7 +44,7 @@ public class FilesApprovalThesis extends FilesApprovalEntry {
   public static FilesApprovalThesis createForUserInstitution(
       Resource resource, UserInstance userInstance, PublishingWorkflow workflow) {
     var fileApproval = createFileApproval(resource, userInstance, workflow);
-    return REGISTRATOR_PUBLISHES_METADATA_AND_FILES.equals(workflow)
+    return REGISTRATOR_PUBLISHES_METADATA_AND_FILES == workflow
         ? (FilesApprovalThesis) fileApproval.completeAndApproveFiles(resource, userInstance)
         : (FilesApprovalThesis)
             fileApproval.handleMetadataOnlyWorkflow(resource, userInstance, workflow);

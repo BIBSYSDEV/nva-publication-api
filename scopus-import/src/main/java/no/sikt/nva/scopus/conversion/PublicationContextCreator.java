@@ -138,7 +138,7 @@ public class PublicationContextCreator {
         .map(CitationInfoTp::getCitationType)
         .orElse(Collections.emptyList())
         .stream()
-        .anyMatch(citationType -> CitationtypeAtt.CH.equals(citationType.getCode()));
+        .anyMatch(citationType -> CitationtypeAtt.CH == citationType.getCode());
   }
 
   private boolean isBook() {
