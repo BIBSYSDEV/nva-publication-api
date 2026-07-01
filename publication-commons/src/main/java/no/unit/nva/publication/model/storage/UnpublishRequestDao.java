@@ -12,7 +12,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(UnpublishRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class UnpublishRequestDao extends TicketDao implements JoinWithResource, JsonSerializable {
+public class UnpublishRequestDao extends TicketDao implements JsonSerializable {
 
   public static final String TYPE = "UnpublishRequest";
   public static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX =

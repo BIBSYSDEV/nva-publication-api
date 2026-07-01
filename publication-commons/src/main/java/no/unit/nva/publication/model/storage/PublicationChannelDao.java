@@ -33,7 +33,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PublicationChannelDao.TYPE)
-public class PublicationChannelDao extends Dao implements DynamoEntryByIdentifier {
+public class PublicationChannelDao extends Dao {
 
   public static final String TYPE = "PublicationChannel";
   protected static final String IDENTIFIER = "identifier";

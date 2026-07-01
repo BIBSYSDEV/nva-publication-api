@@ -66,10 +66,6 @@
     <!-- FIXME: Disabled because of the high number of current violations-->
     <exclude name="UnnecessaryFullyQualifiedName"/>
 
-    <!-- FIXME: Disabled because of the high number of current violations-->
-    <exclude name="UnnecessaryInterfaceDeclaration"/>
-
-
     <!-- This rule does not allow us the following:
             private static final Logger logger=...
          It requires:
