@@ -2,7 +2,6 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.RESOURCE_INDEX_IN_QUERY_RESULT;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.publication.service.impl.ResourceService.AWAIT_TIME_BEFORE_FETCH_RETRY;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
@@ -18,25 +17,21 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.attempt.Failure;
-import nva.commons.core.attempt.FunctionWithException;
 
 public class ServiceWithTransactions {
 
   public static final String EMPTY_STRING = "";
   public static final String STATUS_FIELD_IN_RESOURCE = "status";
-  private static final Integer MAX_FETCH_ATTEMPTS = 3;
   private static final int TRANSACTION_BATCH_SIZE = 100;
   private static final String VERSION_FIELD = "version";
   private static final String VERSION_CONDITION_EXPRESSION = "#version = :expectedVersion";
@@ -99,17 +94,6 @@ public class ServiceWithTransactions {
     return new TransactWriteItemsRequest().withTransactItems(transactionItems);
   }
 
-  protected <T extends Entity, E extends Exception> Optional<T> fetchEventualConsistentDataEntry(
-      T dynamoEntry, FunctionWithException<T, T, E> nonEventuallyConsistentFetch) {
-    T savedEntry = null;
-    for (int times = 0; times < MAX_FETCH_ATTEMPTS && savedEntry == null; times++) {
-      savedEntry =
-          attempt(() -> nonEventuallyConsistentFetch.apply(dynamoEntry)).orElse(fail -> null);
-      attempt(this::waitBeforeFetching).orElseThrow();
-    }
-    return Optional.ofNullable(savedEntry);
-  }
-
   protected final AmazonDynamoDB getClient() {
     return client;
   }
@@ -140,12 +124,6 @@ public class ServiceWithTransactions {
               attempt(() -> getClient().transactWriteItems(batchRequest))
                   .orElseThrow(this::handleTransactionFailure);
             });
-  }
-
-  @SuppressWarnings("PMD.DoNotUseThreads")
-  private Void waitBeforeFetching() throws InterruptedException {
-    Thread.sleep(AWAIT_TIME_BEFORE_FETCH_RETRY);
-    return null;
   }
 
   private TransactionFailedException handleTransactionFailure(
