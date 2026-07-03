@@ -47,7 +47,6 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.funding.Funding;
@@ -183,8 +182,9 @@ public class Resource implements Entity, Validatable<Resource> {
   @JsonIgnore
   public Set<File> getPendingFiles() {
     return getAssociatedArtifacts().stream()
-        .filter(PendingFile.class::isInstance)
+        .filter(File.class::isInstance)
         .map(File.class::cast)
+        .filter(File::isPending)
         .collect(Collectors.toSet());
   }
 

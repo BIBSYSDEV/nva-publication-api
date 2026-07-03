@@ -18,7 +18,7 @@ import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
@@ -110,7 +110,7 @@ public class FileRightsRetentionService {
   /** Simple rule: RRS only applies to accepted academic articles that aren't internal */
   private boolean isRightsRetentionRelevant(File file, Resource resource) {
     return PublisherVersion.ACCEPTED_VERSION.equals(file.getPublisherVersion())
-        && !(file instanceof InternalFile)
+        && FileStatus.from(file) != FileStatus.INTERNAL
         && isAcademicArticle(resource);
   }
 

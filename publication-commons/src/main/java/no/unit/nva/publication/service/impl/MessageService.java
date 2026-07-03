@@ -66,8 +66,7 @@ public class MessageService extends ServiceWithTransactions {
     getClient().transactWriteItems(transactionRequest);
 
     markTicketUnreadForEveryone(ticketEntry);
-    return fetchEventualConsistentDataEntry(newMessage, this::extractMessageByIdentifier)
-        .orElseThrow();
+    return newMessage;
   }
 
   public Message getMessage(UserInstance owner, SortableIdentifier identifier)
@@ -138,10 +137,6 @@ public class MessageService extends ServiceWithTransactions {
     } catch (Exception e) {
       logger.info(MESSAGE_TO_REFRESH_NOT_FOUND_MESSAGE, identifier);
     }
-  }
-
-  private Message extractMessageByIdentifier(Message message) {
-    return getMessageByIdentifier(message.getIdentifier()).orElseThrow();
   }
 
   private void markTicketUnreadForEveryone(TicketEntry ticketEntry) {

@@ -241,6 +241,6 @@ public class TicketService extends ServiceWithTransactions {
     sendTransactionWriteRequest(request);
     FunctionWithException<TicketEntry, TicketEntry, NotFoundException> fetchTicketProvider =
         this::fetchTicket;
-    return (T) fetchEventualConsistentDataEntry(ticketEntry, fetchTicketProvider).orElseThrow();
+    return (T) ticketEntry;
   }
 }

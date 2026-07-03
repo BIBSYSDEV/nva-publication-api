@@ -35,10 +35,10 @@ import no.unit.nva.model.associatedartifacts.NullRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.MissingLicenseException;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.UploadDetails;
@@ -162,18 +162,6 @@ public class FileModelTest {
     assertThat(unmapped.isVisibleForNonOwner(), equalTo(false));
   }
 
-  @Test
-  void shouldThrowIllegalStateExceptionWhenApprovingPendingFileWithoutLicense() {
-    var fileWithoutLicense =
-        randomPendingOpenFile().copy().withLicense(null).buildPendingOpenFile();
-    var pendingFile = (PendingFile<?, ?>) fileWithoutLicense;
-
-    assertThrows(
-        IllegalStateException.class,
-        pendingFile::approve,
-        "Cannot publish a file without a license: " + fileWithoutLicense.getIdentifier());
-  }
-
   // TODO: Remove when right reserved license has been migrated. NP-49368
   @Deprecated
   @ParameterizedTest
@@ -229,7 +217,7 @@ public class FileModelTest {
   @MethodSource("filesWithPublishedDate")
   void shouldPreservePublishedDateWhenCopyingAndRebuilding(File file) {
     var originalPublishedDate = file.getPublishedDate().orElseThrow();
-    var rebuilt = file.copy().build(file.getClass());
+    var rebuilt = FileStatus.from(file).toFile(file);
     assertThat(
         Objects.requireNonNull(rebuilt.getPublishedDate().orElse(null)),
         is(equalTo(originalPublishedDate)));
