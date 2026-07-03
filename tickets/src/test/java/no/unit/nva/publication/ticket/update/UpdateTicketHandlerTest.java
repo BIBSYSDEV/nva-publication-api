@@ -51,7 +51,6 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
@@ -691,9 +690,9 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     var ticket = persistPublishingRequestContainingExistingPendingOpenFiles(publication);
     var expectedFilesForApproval =
         publication.getAssociatedArtifacts().stream()
-            .filter(PendingFile.class::isInstance)
-            .map(PendingFile.class::cast)
+            .filter(File.class::isInstance)
             .map(File.class::cast)
+            .filter(File::isPending)
             .map(File::getIdentifier)
             .toArray(UUID[]::new);
 
@@ -1079,8 +1078,9 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
 
   private Set<File> getPendingFiles(Publication publication) {
     return publication.getAssociatedArtifacts().stream()
-        .filter(PendingFile.class::isInstance)
+        .filter(File.class::isInstance)
         .map(File.class::cast)
+        .filter(File::isPending)
         .collect(Collectors.toSet());
   }
 

@@ -7,6 +7,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static nva.commons.core.attempt.Try.attempt;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import java.net.URI;
 import java.time.Clock;
 import java.util.List;
@@ -184,15 +185,27 @@ public class TicketService extends ServiceWithTransactions {
       throws ApiGatewayException {
     var publication =
         resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
-    var existingTicket = fetchTicket(ticketEntry);
+    var existingDao = fetchTicketDao(ticketEntry);
+    var existingTicket = (TicketEntry) existingDao.getData();
     injectAssigneeWhenUnassigned(existingTicket, userInstance);
     var completed =
         attempt(() -> existingTicket.complete(publication, userInstance))
             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
 
-    var putItemRequest = completed.toDao().createPutItemRequest();
-    getClient().putItem(putItemRequest);
+    try {
+      getClient()
+          .putItem(
+              completed.toDao().createPutItemRequestWithVersionCheck(existingDao.getVersion()));
+    } catch (ConditionalCheckFailedException e) {
+      throw new ConflictException("Ticket was modified concurrently, please retry");
+    }
     return completed;
+  }
+
+  private TicketDao fetchTicketDao(TicketEntry ticketEntry) throws NotFoundException {
+    var userInstance = UserInstance.fromTicket(ticketEntry);
+    var queryObject = TicketEntry.createQueryObject(userInstance, ticketEntry.getIdentifier());
+    return queryObject.fetchTicket(getClient()).orElseThrow(TicketService::notFoundException);
   }
 
   protected TicketEntry closeTicket(TicketEntry pendingTicket, UserInstance userInstance)
@@ -241,6 +254,6 @@ public class TicketService extends ServiceWithTransactions {
     sendTransactionWriteRequest(request);
     FunctionWithException<TicketEntry, TicketEntry, NotFoundException> fetchTicketProvider =
         this::fetchTicket;
-    return (T) fetchEventualConsistentDataEntry(ticketEntry, fetchTicketProvider).orElseThrow();
+    return (T) ticketEntry;
   }
 }

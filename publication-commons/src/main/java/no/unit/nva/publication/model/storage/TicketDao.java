@@ -28,6 +28,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
@@ -107,6 +108,16 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         .withConditionExpression(condition.getConditionExpression())
         .withExpressionAttributeNames(condition.getExpressionAttributeNames())
         .withExpressionAttributeValues(condition.getExpressionAttributeValues());
+  }
+
+  public PutItemRequest createPutItemRequestWithVersionCheck(UUID previousVersion) {
+    return new PutItemRequest()
+        .withTableName(RESOURCES_TABLE_NAME)
+        .withItem(toDynamoFormat())
+        .withConditionExpression("#version = :previousVersion")
+        .withExpressionAttributeNames(Map.of("#version", VERSION_FIELD))
+        .withExpressionAttributeValues(
+            Map.of(":previousVersion", new AttributeValue().withS(previousVersion.toString())));
   }
 
   public TransactWriteItem toPutTransactionItem(String tableName) {
