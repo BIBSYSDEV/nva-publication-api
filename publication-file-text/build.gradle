@@ -1,0 +1,21 @@
+dependencies {
+    api(nvaCatalog.aws.lambda.core)
+    api(nvaCatalog.aws.lambda.events)
+    api(nvaCatalog.aws.sdk2.s3)
+    api(nvaCatalog.jackson.databind)
+    api(nvaLibs.core)
+    api(nvaLibs.s3)
+    implementation(nvaCatalog.aws.sdk2.sdk.core)
+    implementation(nvaCatalog.aws.sdk2.urlconnection)
+
+    testImplementation(nvaCatalog.assertj.core)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaLibs.testutils)
+}
+
+test {
+    environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "source-bucket"
+    environment "TEXT_STORAGE_BUCKET_NAME", "text-bucket"
+    environment "AWS_REGION", "eu-west-1"
+}
