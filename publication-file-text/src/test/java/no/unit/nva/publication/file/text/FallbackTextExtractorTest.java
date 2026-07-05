@@ -9,13 +9,14 @@ import org.junit.jupiter.params.provider.ValueSource;
 class FallbackTextExtractorTest {
 
   private static final String APPLICATION_PDF = "application/pdf";
-  private static final String DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  private static final String DOCX =
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   private static final String IMAGE_JPG = "image/jpeg";
   private static final String EMPTY_STRING = "";
   private final FallbackTextExtractor extractor = new FallbackTextExtractor();
 
   @ParameterizedTest
-  @ValueSource(strings = { APPLICATION_PDF, DOCX, IMAGE_JPG,  EMPTY_STRING })
+  @ValueSource(strings = {APPLICATION_PDF, DOCX, IMAGE_JPG, EMPTY_STRING})
   void shouldSupportAnyContentType(String contentType) {
     assertThat(extractor.supports(contentType)).isTrue();
   }

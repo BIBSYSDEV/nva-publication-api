@@ -21,11 +21,12 @@ class TextExtractionHandlerTest {
   private static final String SOURCE_BUCKET = "source-bucket";
   private static final String TEXT_BUCKET = "text-bucket";
   private static final String SOME_KEY = "publications/2024/document.pdf";
-  private static final String SOME_ETAG = "abc123";
+  private static final String SOME_ETAG = "\"abc123\"";
   private static final String PDF_CONTENT_TYPE = "application/pdf";
   private static final String EXTRACTED_TEXT = "The quick brown fox";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-  private static final String TXT_EXTENSION = ".txt";
+  private static final ObjectMetadataSource FIXED_METADATA =
+      (bucket, key) -> new ObjectMetadata(SOME_ETAG, PDF_CONTENT_TYPE);
 
   private FakeS3Client fakeS3Client;
   private TextExtractionConfig config;
@@ -41,39 +42,36 @@ class TextExtractionHandlerTest {
   @Test
   void shouldThrowWhenMessageBodyIsUnparseable() {
     var handler =
-        new TextExtractionHandler(fakeS3Client, config, List.of(new FallbackTextExtractor()));
-    var event = buildSqsEvent("not-valid-json");
+        new TextExtractionHandler(
+            fakeS3Client, FIXED_METADATA, config, List.of(new FallbackTextExtractor()));
 
-    assertThatThrownBy(() -> handler.handleRequest(event, context))
+    assertThatThrownBy(() -> handler.handleRequest(buildSqsEvent("not-valid-json"), context))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   void shouldNotStoreTextWhenExtractionIsFlagged() throws IOException {
     var handler =
-        new TextExtractionHandler(fakeS3Client, config, List.of(new FallbackTextExtractor()));
-    var event =
-        buildSqsEventFromRequest(
-            new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY, SOME_ETAG, PDF_CONTENT_TYPE));
+        new TextExtractionHandler(
+            fakeS3Client, FIXED_METADATA, config, List.of(new FallbackTextExtractor()));
 
-    handler.handleRequest(event, context);
+    handler.handleRequest(
+        buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)), context);
 
-    var textDriver = new S3Driver(fakeS3Client, TEXT_BUCKET);
-    assertThat(textDriver.listAllFiles(UnixPath.ROOT_PATH)).isEmpty();
+    assertThat(new S3Driver(fakeS3Client, TEXT_BUCKET).listAllFiles(UnixPath.ROOT_PATH)).isEmpty();
   }
 
   @Test
   void shouldStoreExtractedTextInTextBucketUnderSameKeyWithTxtSuffix() throws IOException {
-    var successExtractor = extractorThatReturns(EXTRACTED_TEXT);
-    var handler = new TextExtractionHandler(fakeS3Client, config, List.of(successExtractor));
-    var event =
-        buildSqsEventFromRequest(
-            new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY, SOME_ETAG, PDF_CONTENT_TYPE));
+    var handler =
+        new TextExtractionHandler(
+            fakeS3Client, FIXED_METADATA, config, List.of(extractorThatReturns(EXTRACTED_TEXT)));
 
-    handler.handleRequest(event, context);
+    handler.handleRequest(
+        buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)), context);
 
-    var textDriver = new S3Driver(fakeS3Client, TEXT_BUCKET);
-    var storedText = textDriver.getFile(UnixPath.of(SOME_KEY + TXT_EXTENSION));
+    var storedText =
+        new S3Driver(fakeS3Client, TEXT_BUCKET).getFile(UnixPath.of(SOME_KEY + ".txt"));
     assertThat(storedText).isEqualTo(EXTRACTED_TEXT);
   }
 

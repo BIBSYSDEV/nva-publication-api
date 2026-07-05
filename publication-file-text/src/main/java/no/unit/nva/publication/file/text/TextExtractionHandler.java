@@ -22,6 +22,7 @@ public class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
   private static final String TEXT_KEY_SUFFIX = ".txt";
 
   private final S3Client s3Client;
+  private final ObjectMetadataSource metadataSource;
   private final TextExtractionConfig config;
   private final List<TextExtractor> extractors;
 
@@ -33,9 +34,19 @@ public class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
         List.of(new FallbackTextExtractor()));
   }
 
+  @JacocoGenerated
   public TextExtractionHandler(
       S3Client s3Client, TextExtractionConfig config, List<TextExtractor> extractors) {
+    this(s3Client, new S3ObjectMetadataSource(s3Client), config, extractors);
+  }
+
+  public TextExtractionHandler(
+      S3Client s3Client,
+      ObjectMetadataSource metadataSource,
+      TextExtractionConfig config,
+      List<TextExtractor> extractors) {
     this.s3Client = s3Client;
+    this.metadataSource = metadataSource;
     this.config = config;
     this.extractors = extractors;
   }
@@ -48,10 +59,11 @@ public class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
 
   private void processMessage(SQSMessage message) {
     var request = parseRequest(message.getBody());
+    var metadata = metadataSource.fetchMetadata(request.bucket(), request.key());
     var input =
-        new ExtractionInput(request.bucket(), request.key(), request.etag(), request.contentType());
-    var result = dispatch(input);
-    handleResult(result);
+        new ExtractionInput(
+            request.bucket(), request.key(), metadata.etag(), metadata.contentType());
+    handleResult(dispatch(input));
   }
 
   private TextExtractionRequest parseRequest(String body) {

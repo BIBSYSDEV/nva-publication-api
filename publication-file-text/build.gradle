@@ -11,6 +11,8 @@ dependencies {
     testImplementation(nvaCatalog.assertj.core)
     testImplementation(nvaCatalog.junit.jupiter.api)
     testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaCatalog.mockito.junit.jupiter)
     testImplementation(nvaLibs.testutils)
 }
 
