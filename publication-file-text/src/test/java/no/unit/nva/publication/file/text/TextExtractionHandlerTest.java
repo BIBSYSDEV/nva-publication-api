@@ -16,6 +16,7 @@ import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 class TextExtractionHandlerTest {
 
@@ -51,13 +52,33 @@ class TextExtractionHandlerTest {
   }
 
   @Test
-  void shouldThrowWhenContentTypeIsUnsupported() throws JsonProcessingException {
+  void shouldNotThrowWhenContentTypeIsUnsupported() throws JsonProcessingException {
     var handler =
         new TextExtractionHandler(
             fakeS3Client, FIXED_METADATA, config, List.of(new FallbackTextExtractor()));
-    var event = buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY));
 
-    assertThatThrownBy(() -> handler.handleRequest(event, context))
+    assertThatCode(
+            () ->
+                handler.handleRequest(
+                    buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)),
+                    context))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  void shouldThrowWhenExtractionFails() throws JsonProcessingException {
+    var handler =
+        new TextExtractionHandler(
+            fakeS3Client,
+            FIXED_METADATA,
+            config,
+            List.of(extractorThatFlags(ExtractionFailureReason.EXTRACTION_ERROR)));
+
+    assertThatThrownBy(
+            () ->
+                handler.handleRequest(
+                    buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)),
+                    context))
         .isInstanceOf(IllegalStateException.class);
   }
 
@@ -68,7 +89,7 @@ class TextExtractionHandlerTest {
             fakeS3Client,
             FIXED_METADATA,
             config,
-            List.of(extractorThatFlags(ExtractionFailureReason.CORRUPTED_FILE)));
+            List.of(extractorThatFlags(ExtractionFailureReason.PASSWORD_PROTECTED)));
 
     assertThatCode(
             () ->
@@ -78,6 +99,36 @@ class TextExtractionHandlerTest {
         .doesNotThrowAnyException();
 
     assertThat(new S3Driver(fakeS3Client, TEXT_BUCKET).listAllFiles(UnixPath.ROOT_PATH)).isEmpty();
+  }
+
+  @Test
+  void shouldNotStoreTextWhenExtractedTextIsBlank() throws IOException {
+    var handler =
+        new TextExtractionHandler(
+            fakeS3Client, FIXED_METADATA, config, List.of(extractorThatReturns("   ")));
+
+    handler.handleRequest(
+        buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)), context);
+
+    assertThat(new S3Driver(fakeS3Client, TEXT_BUCKET).listAllFiles(UnixPath.ROOT_PATH)).isEmpty();
+  }
+
+  @Test
+  void shouldNotThrowWhenSourceObjectNoLongerExists() throws JsonProcessingException {
+    ObjectMetadataSource sourceNotFound =
+        (bucket, key) -> {
+          throw NoSuchKeyException.builder().build();
+        };
+    var handler =
+        new TextExtractionHandler(
+            fakeS3Client, sourceNotFound, config, List.of(new FallbackTextExtractor()));
+
+    assertThatCode(
+            () ->
+                handler.handleRequest(
+                    buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)),
+                    context))
+        .doesNotThrowAnyException();
   }
 
   @Test

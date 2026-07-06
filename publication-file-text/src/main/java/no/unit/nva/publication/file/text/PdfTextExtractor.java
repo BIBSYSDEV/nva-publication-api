@@ -1,14 +1,13 @@
 package no.unit.nva.publication.file.text;
 
+import static java.util.Objects.nonNull;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParserConfig;
-import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.SAXException;
 
 /** Extracts plain text from PDF files using Apache Tika and PDFBox. */
@@ -33,7 +32,7 @@ public final class PdfTextExtractor implements TextExtractor {
     Path tempFile = null;
     try {
       tempFile = downloadSource.downloadToFile(input);
-      return new ExtractionResult.Extracted(input, extractText(tempFile));
+      return new ExtractionResult.Extracted(input, TikaSupport.extractText(tempFile, createParseContext()));
     } catch (TikaException exception) {
       return tikaFailure(input, exception);
     } catch (IOException | SAXException exception) {
@@ -53,15 +52,12 @@ public final class PdfTextExtractor implements TextExtractor {
   }
 
   private static boolean isPasswordProtected(TikaException exception) {
-    return exception.getCause() instanceof InvalidPasswordException;
-  }
-
-  private static String extractText(Path file) throws TikaException, IOException, SAXException {
-    var handler = new BodyContentHandler(TikaSupport.UNLIMITED_CONTENT);
-    try (var stream = TikaInputStream.get(file)) {
-      TikaSupport.PARSER.parse(stream, handler, new Metadata(), createParseContext());
+    for (Throwable current = exception; nonNull(current); current = current.getCause()) {
+      if (current instanceof InvalidPasswordException) {
+        return true;
+      }
     }
-    return handler.toString();
+    return false;
   }
 
   private static ParseContext createParseContext() {
@@ -71,5 +67,4 @@ public final class PdfTextExtractor implements TextExtractor {
     context.set(PDFParserConfig.class, pdfConfig);
     return context;
   }
-
 }

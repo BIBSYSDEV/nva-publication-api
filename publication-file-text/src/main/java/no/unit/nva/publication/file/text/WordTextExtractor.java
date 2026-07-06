@@ -7,10 +7,7 @@ import java.nio.file.Path;
 import java.util.Set;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.SAXException;
 
 /**
@@ -41,7 +38,7 @@ public final class WordTextExtractor implements TextExtractor {
     Path tempFile = null;
     try {
       tempFile = downloadSource.downloadToFile(input);
-      return new ExtractionResult.Extracted(input, extractText(tempFile));
+      return new ExtractionResult.Extracted(input, TikaSupport.extractText(tempFile, new ParseContext()));
     } catch (TikaException | IOException | SAXException exception) {
       return classifyFailure(input, exception);
     } finally {
@@ -67,11 +64,4 @@ public final class WordTextExtractor implements TextExtractor {
     return false;
   }
 
-  private static String extractText(Path file) throws TikaException, IOException, SAXException {
-    var handler = new BodyContentHandler(TikaSupport.UNLIMITED_CONTENT);
-    try (var stream = TikaInputStream.get(file)) {
-      TikaSupport.PARSER.parse(stream, handler, new Metadata(), new ParseContext());
-    }
-    return handler.toString();
-  }
 }

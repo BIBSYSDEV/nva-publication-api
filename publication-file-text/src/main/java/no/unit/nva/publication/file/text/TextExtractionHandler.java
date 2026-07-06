@@ -14,6 +14,7 @@ import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 public final class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
 
@@ -63,7 +64,16 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, Voi
 
   private void processMessage(SQSMessage message) {
     var request = parseRequest(message.getBody());
-    var metadata = metadataSource.fetchMetadata(request.bucket(), request.key());
+    ObjectMetadata metadata;
+    try {
+      metadata = metadataSource.fetchMetadata(request.bucket(), request.key());
+    } catch (NoSuchKeyException exception) {
+      LOGGER.warn(
+          "Source object no longer exists, skipping: bucket={} key={}",
+          LogSanitizer.sanitize(request.bucket()),
+          LogSanitizer.sanitize(request.key()));
+      return;
+    }
     var input =
         new ExtractionInput(
             request.bucket(), request.key(), metadata.etag(), metadata.contentType());
@@ -94,6 +104,12 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, Voi
   }
 
   private void storeText(ExtractionResult.Extracted extracted) {
+    if (extracted.text().isBlank()) {
+      LOGGER.warn(
+          "Extracted blank text, skipping storage: key={}",
+          LogSanitizer.sanitize(extracted.source().sourceKey()));
+      return;
+    }
     var textKey = extracted.source().sourceKey() + TEXT_KEY_SUFFIX;
     try {
       new S3Driver(s3Client, config.textBucketName())
@@ -112,9 +128,9 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, Voi
         LogSanitizer.sanitize(flagged.source().sourceEtag()),
         flagged.reason(),
         LogSanitizer.sanitize(flagged.detail()));
-    if (flagged.reason() == ExtractionFailureReason.UNSUPPORTED_FORMAT) {
+    if (flagged.reason() == ExtractionFailureReason.EXTRACTION_ERROR) {
       throw new IllegalStateException(
-          "No extractor for content type: " + LogSanitizer.sanitize(flagged.detail()));
+          "Extraction failed: " + LogSanitizer.sanitize(flagged.detail()));
     }
   }
 }

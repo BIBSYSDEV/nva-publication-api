@@ -10,6 +10,9 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 /** Downloads S3 objects to a local temp file via the AWS SDK. */
 public final class S3FileDownloadSource implements FileDownloadSource {
 
+  private static final String TEMP_FILE_PREFIX = "text-extraction-";
+  private static final String TEMP_FILE_SUFFIX = ".bin";
+
   private final S3Client s3Client;
 
   public S3FileDownloadSource(S3Client s3Client) {
@@ -18,7 +21,7 @@ public final class S3FileDownloadSource implements FileDownloadSource {
 
   @Override
   public Path downloadToFile(ExtractionInput input) throws IOException {
-    var tempFile = Files.createTempFile("text-extraction-", ".bin");
+    var tempFile = Files.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
     try {
       s3Client.getObject(
           GetObjectRequest.builder().bucket(input.sourceBucket()).key(input.sourceKey()).build(),
