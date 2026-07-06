@@ -40,6 +40,7 @@ public class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
         List.of(
             new PdfTextExtractor(new S3FileDownloadSource(s3Client)),
             new WordTextExtractor(new S3FileDownloadSource(s3Client)),
+            new LatexTextExtractor(new S3FileDownloadSource(s3Client)),
             new FallbackTextExtractor()));
   }
 
