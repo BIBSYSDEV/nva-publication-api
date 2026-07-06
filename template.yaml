@@ -3120,7 +3120,6 @@ Resources:
         Size: 10240
       Environment:
         Variables:
-          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           TEXT_STORAGE_BUCKET_NAME: !Ref TextStorageBucket
       Events:
         SqsEvent:

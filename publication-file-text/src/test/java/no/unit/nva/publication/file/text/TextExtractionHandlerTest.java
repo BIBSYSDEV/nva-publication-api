@@ -37,7 +37,7 @@ class TextExtractionHandlerTest {
   @BeforeEach
   void setUp() {
     fakeS3Client = new FakeS3Client();
-    config = new TextExtractionConfig(SOURCE_BUCKET, TEXT_BUCKET);
+    config = new TextExtractionConfig(TEXT_BUCKET);
     context = new FakeContext();
   }
 
@@ -160,7 +160,6 @@ class TextExtractionHandlerTest {
   void shouldReadBucketNamesFromEnvironment() {
     var config = TextExtractionConfig.fromEnvironment();
 
-    assertThat(config.sourceBucketName()).isEqualTo(SOURCE_BUCKET);
     assertThat(config.textBucketName()).isEqualTo(TEXT_BUCKET);
   }
 
