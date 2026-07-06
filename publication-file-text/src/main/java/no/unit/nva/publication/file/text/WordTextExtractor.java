@@ -5,10 +5,10 @@ import static java.util.Objects.nonNull;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Set;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.SAXException;
@@ -24,8 +24,6 @@ public final class WordTextExtractor implements TextExtractor {
   private static final Set<String> SUPPORTED_CONTENT_TYPES =
       Set.of(DOCX_CONTENT_TYPE, DOC_CONTENT_TYPE);
   private static final String PASSWORD_PROTECTED_DETAIL = "Password-protected document";
-  private static final int UNLIMITED_CONTENT = -1;
-  private static final AutoDetectParser PARSER = new AutoDetectParser();
 
   private final FileDownloadSource downloadSource;
 
@@ -61,7 +59,7 @@ public final class WordTextExtractor implements TextExtractor {
 
   private static boolean isPasswordProtected(Exception exception) {
     for (Throwable current = exception; nonNull(current); current = current.getCause()) {
-      if (current instanceof org.apache.tika.exception.EncryptedDocumentException
+      if (current instanceof EncryptedDocumentException
           || current instanceof org.apache.poi.EncryptedDocumentException) {
         return true;
       }
@@ -70,9 +68,9 @@ public final class WordTextExtractor implements TextExtractor {
   }
 
   private static String extractText(Path file) throws TikaException, IOException, SAXException {
-    var handler = new BodyContentHandler(UNLIMITED_CONTENT);
+    var handler = new BodyContentHandler(TikaSupport.UNLIMITED_CONTENT);
     try (var stream = TikaInputStream.get(file)) {
-      PARSER.parse(stream, handler, new Metadata(), new ParseContext());
+      TikaSupport.PARSER.parse(stream, handler, new Metadata(), new ParseContext());
     }
     return handler.toString();
   }

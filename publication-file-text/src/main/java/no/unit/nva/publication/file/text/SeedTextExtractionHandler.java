@@ -110,6 +110,8 @@ public final class SeedTextExtractionHandler implements RequestHandler<S3Event, 
     if (!response.failed().isEmpty()) {
       LOGGER.warn(
           "SQS batch had {} failed entries out of {}", response.failed().size(), batchSize);
+      throw new RuntimeException(
+          "SQS batch failed for " + response.failed().size() + " of " + batchSize + " entries");
     }
   }
 

@@ -5,7 +5,6 @@ import java.nio.file.Path;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.SAXException;
@@ -14,8 +13,6 @@ import org.xml.sax.SAXException;
 public final class LatexTextExtractor implements TextExtractor {
 
   private static final String SUPPORTED_CONTENT_TYPE = "application/x-latex";
-  private static final int UNLIMITED_CONTENT = -1;
-  private static final AutoDetectParser PARSER = new AutoDetectParser();
 
   private final FileDownloadSource downloadSource;
 
@@ -43,9 +40,9 @@ public final class LatexTextExtractor implements TextExtractor {
   }
 
   private static String extractText(Path file) throws TikaException, IOException, SAXException {
-    var handler = new BodyContentHandler(UNLIMITED_CONTENT);
+    var handler = new BodyContentHandler(TikaSupport.UNLIMITED_CONTENT);
     try (var stream = TikaInputStream.get(file)) {
-      PARSER.parse(stream, handler, new Metadata(), new ParseContext());
+      TikaSupport.PARSER.parse(stream, handler, new Metadata(), new ParseContext());
     }
     return handler.toString();
   }

@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
+public final class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TextExtractionHandler.class);
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -82,7 +82,7 @@ public class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
     return extractors.stream()
         .filter(extractor -> extractor.supports(input.contentType()))
         .findFirst()
-        .orElseThrow()
+        .orElseGet(FallbackTextExtractor::new)
         .extract(input);
   }
 
@@ -112,5 +112,9 @@ public class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
         LogSanitizer.sanitize(flagged.source().sourceEtag()),
         flagged.reason(),
         LogSanitizer.sanitize(flagged.detail()));
+    if (flagged.reason() == ExtractionFailureReason.UNSUPPORTED_FORMAT) {
+      throw new IllegalStateException(
+          "No extractor for content type: " + LogSanitizer.sanitize(flagged.detail()));
+    }
   }
 }

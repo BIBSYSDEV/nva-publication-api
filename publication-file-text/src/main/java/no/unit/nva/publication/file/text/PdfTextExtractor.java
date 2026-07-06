@@ -6,7 +6,6 @@ import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
@@ -17,8 +16,6 @@ public final class PdfTextExtractor implements TextExtractor {
 
   private static final String SUPPORTED_CONTENT_TYPE = "application/pdf";
   private static final String PASSWORD_PROTECTED_DETAIL = "Password-protected PDF";
-  private static final int UNLIMITED_CONTENT = -1;
-  private static final AutoDetectParser PARSER = new AutoDetectParser();
 
   private final FileDownloadSource downloadSource;
 
@@ -60,9 +57,9 @@ public final class PdfTextExtractor implements TextExtractor {
   }
 
   private static String extractText(Path file) throws TikaException, IOException, SAXException {
-    var handler = new BodyContentHandler(UNLIMITED_CONTENT);
+    var handler = new BodyContentHandler(TikaSupport.UNLIMITED_CONTENT);
     try (var stream = TikaInputStream.get(file)) {
-      PARSER.parse(stream, handler, new Metadata(), createParseContext());
+      TikaSupport.PARSER.parse(stream, handler, new Metadata(), createParseContext());
     }
     return handler.toString();
   }

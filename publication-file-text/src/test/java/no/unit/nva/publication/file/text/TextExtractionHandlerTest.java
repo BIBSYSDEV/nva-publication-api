@@ -1,6 +1,7 @@
 package no.unit.nva.publication.file.text;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
@@ -50,13 +51,31 @@ class TextExtractionHandlerTest {
   }
 
   @Test
-  void shouldNotStoreTextWhenExtractionIsFlagged() throws IOException {
+  void shouldThrowWhenContentTypeIsUnsupported() throws JsonProcessingException {
     var handler =
         new TextExtractionHandler(
             fakeS3Client, FIXED_METADATA, config, List.of(new FallbackTextExtractor()));
+    var event = buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY));
 
-    handler.handleRequest(
-        buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)), context);
+    assertThatThrownBy(() -> handler.handleRequest(event, context))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void shouldNotStoreTextWhenExtractionIsFlaggedWithNonFatalReason() throws IOException {
+    var handler =
+        new TextExtractionHandler(
+            fakeS3Client,
+            FIXED_METADATA,
+            config,
+            List.of(extractorThatFlags(ExtractionFailureReason.CORRUPTED_FILE)));
+
+    assertThatCode(
+            () ->
+                handler.handleRequest(
+                    buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)),
+                    context))
+        .doesNotThrowAnyException();
 
     assertThat(new S3Driver(fakeS3Client, TEXT_BUCKET).listAllFiles(UnixPath.ROOT_PATH)).isEmpty();
   }
@@ -83,7 +102,7 @@ class TextExtractionHandlerTest {
     assertThat(config.textBucketName()).isEqualTo(TEXT_BUCKET);
   }
 
-  private TextExtractor extractorThatReturns(String text) {
+  private static TextExtractor extractorThatReturns(String text) {
     return new TextExtractor() {
       @Override
       public boolean supports(String contentType) {
@@ -93,6 +112,20 @@ class TextExtractionHandlerTest {
       @Override
       public ExtractionResult extract(ExtractionInput input) {
         return new ExtractionResult.Extracted(input, text);
+      }
+    };
+  }
+
+  private static TextExtractor extractorThatFlags(ExtractionFailureReason reason) {
+    return new TextExtractor() {
+      @Override
+      public boolean supports(String contentType) {
+        return true;
+      }
+
+      @Override
+      public ExtractionResult extract(ExtractionInput input) {
+        return new ExtractionResult.Flagged(input, reason, reason.name());
       }
     };
   }

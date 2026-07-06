@@ -1,7 +1,7 @@
 package no.unit.nva.publication.file.text;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -115,7 +115,7 @@ class SeedTextExtractionHandlerTest {
   }
 
   @Test
-  void shouldNotThrowWhenBatchContainsFailedEntries() throws IOException {
+  void shouldThrowWhenBatchContainsFailedEntries() throws IOException {
     var failedEntry =
         BatchResultErrorEntry.builder()
             .id("0")
@@ -127,8 +127,9 @@ class SeedTextExtractionHandlerTest {
         .thenReturn(SendMessageBatchResponse.builder().failed(failedEntry).build());
     insertCsv("publications/doc1.pdf");
 
-    assertThatCode(() -> handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext()))
-        .doesNotThrowAnyException();
+    assertThatThrownBy(
+            () -> handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext()))
+        .isInstanceOf(RuntimeException.class);
   }
 
   @Test
