@@ -7,6 +7,7 @@ dependencies {
     implementation(libs.poi)
     implementation(libs.tika.core)
     implementation(libs.tika.parser.pdf.module)
+    implementation(nvaCatalog.aws.sdk2.sqs)
     implementation(nvaCatalog.aws.sdk2.sdk.core)
     implementation(nvaCatalog.jackson.databind)
     implementation(nvaCatalog.slf4j.api)
@@ -28,4 +29,5 @@ test {
     environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "source-bucket"
     environment "TEXT_STORAGE_BUCKET_NAME", "text-bucket"
     environment "AWS_REGION", "eu-west-1"
+    environment "TEXT_EXTRACTION_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
 }
