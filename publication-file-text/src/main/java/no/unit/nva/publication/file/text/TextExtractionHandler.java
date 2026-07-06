@@ -39,7 +39,7 @@ public class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
         config,
         List.of(
             new PdfTextExtractor(new S3FileDownloadSource(s3Client)),
-            new DocxTextExtractor(new S3FileDownloadSource(s3Client)),
+            new WordTextExtractor(new S3FileDownloadSource(s3Client)),
             new FallbackTextExtractor()));
   }
 

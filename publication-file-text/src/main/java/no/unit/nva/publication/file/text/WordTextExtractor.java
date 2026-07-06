@@ -6,6 +6,7 @@ import static java.util.Objects.nonNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -17,25 +18,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-/** Extracts plain text from OOXML Word documents using Apache Tika. */
-public final class DocxTextExtractor implements TextExtractor {
+/**
+ * Extracts plain text from Word documents in both OOXML (.docx) and legacy binary (.doc) formats.
+ */
+public final class WordTextExtractor implements TextExtractor {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DocxTextExtractor.class);
-  private static final String SUPPORTED_CONTENT_TYPE =
+  private static final Logger LOGGER = LoggerFactory.getLogger(WordTextExtractor.class);
+  private static final String DOCX_CONTENT_TYPE =
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  private static final String DOC_CONTENT_TYPE = "application/msword";
+  private static final Set<String> SUPPORTED_CONTENT_TYPES =
+      Set.of(DOCX_CONTENT_TYPE, DOC_CONTENT_TYPE);
   private static final String PASSWORD_PROTECTED_DETAIL = "Password-protected document";
   private static final int UNLIMITED_CONTENT = -1;
   private static final AutoDetectParser PARSER = new AutoDetectParser();
 
   private final FileDownloadSource downloadSource;
 
-  public DocxTextExtractor(FileDownloadSource downloadSource) {
+  public WordTextExtractor(FileDownloadSource downloadSource) {
     this.downloadSource = downloadSource;
   }
 
   @Override
   public boolean supports(String contentType) {
-    return SUPPORTED_CONTENT_TYPE.equals(contentType);
+    return SUPPORTED_CONTENT_TYPES.contains(contentType);
   }
 
   @Override
