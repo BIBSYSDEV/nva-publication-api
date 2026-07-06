@@ -1,0 +1,93 @@
+package no.unit.nva.publication.file.text;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Objects;
+import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pdf.PDFParserConfig;
+import org.apache.tika.sax.BodyContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
+
+import static java.util.Objects.isNull;
+
+/** Extracts plain text from PDF files using Apache Tika and PDFBox. */
+public final class PdfTextExtractor implements TextExtractor {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(PdfTextExtractor.class);
+  private static final String SUPPORTED_CONTENT_TYPE = "application/pdf";
+  private static final String PASSWORD_PROTECTED_DETAIL = "Password-protected PDF";
+  private static final int UNLIMITED_CONTENT = -1;
+  private static final AutoDetectParser PARSER = new AutoDetectParser();
+
+  private final FileDownloadSource downloadSource;
+
+  public PdfTextExtractor(FileDownloadSource downloadSource) {
+    this.downloadSource = downloadSource;
+  }
+
+  @Override
+  public boolean supports(String contentType) {
+    return SUPPORTED_CONTENT_TYPE.equals(contentType);
+  }
+
+  @Override
+  public ExtractionResult extract(ExtractionInput input) {
+    Path tempFile = null;
+    try {
+      tempFile = downloadSource.downloadToFile(input);
+      return new ExtractionResult.Extracted(input, extractText(tempFile));
+    } catch (TikaException exception) {
+      return tikaFailure(input, exception);
+    } catch (IOException | SAXException exception) {
+      return new ExtractionResult.Flagged(
+          input, ExtractionFailureReason.EXTRACTION_ERROR, exception.getMessage());
+    } finally {
+      deleteTempFile(tempFile);
+    }
+  }
+
+  private static ExtractionResult tikaFailure(ExtractionInput input, TikaException exception) {
+      return isPasswordProtected(exception)
+              ? new ExtractionResult.Flagged(input, ExtractionFailureReason.PASSWORD_PROTECTED, PASSWORD_PROTECTED_DETAIL)
+              : new ExtractionResult.Flagged(input, ExtractionFailureReason.EXTRACTION_ERROR, exception.getMessage());
+  }
+
+  private static boolean isPasswordProtected(TikaException exception) {
+    return exception.getCause() instanceof InvalidPasswordException;
+  }
+
+  private static String extractText(Path file) throws TikaException, IOException, SAXException {
+    var handler = new BodyContentHandler(UNLIMITED_CONTENT);
+    try (var stream = TikaInputStream.get(file)) {
+      PARSER.parse(stream, handler, new Metadata(), createParseContext());
+    }
+    return handler.toString();
+  }
+
+  private static ParseContext createParseContext() {
+    var context = new ParseContext();
+    var pdfConfig = new PDFParserConfig();
+    pdfConfig.setSortByPosition(true);
+    context.set(PDFParserConfig.class, pdfConfig);
+    return context;
+  }
+
+  private static void deleteTempFile(Path tempFile) {
+    if (isNull(tempFile)) {
+      return;
+    }
+    try {
+      Files.deleteIfExists(tempFile);
+    } catch (IOException exception) {
+      LOGGER.warn("Failed to delete temp file: {}", tempFile.getFileName(), exception);
+    }
+  }
+}

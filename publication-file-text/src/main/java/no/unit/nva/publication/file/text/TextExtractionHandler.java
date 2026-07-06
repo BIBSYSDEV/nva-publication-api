@@ -28,10 +28,17 @@ public class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
 
   @JacocoGenerated
   public TextExtractionHandler() {
+    this(S3Driver.defaultS3Client().build(), TextExtractionConfig.fromEnvironment());
+  }
+
+  @JacocoGenerated
+  TextExtractionHandler(S3Client s3Client, TextExtractionConfig config) {
     this(
-        S3Driver.defaultS3Client().build(),
-        TextExtractionConfig.fromEnvironment(),
-        List.of(new FallbackTextExtractor()));
+        s3Client,
+        new S3ObjectMetadataSource(s3Client),
+        config,
+        List.of(
+            new PdfTextExtractor(new S3FileDownloadSource(s3Client)), new FallbackTextExtractor()));
   }
 
   @JacocoGenerated

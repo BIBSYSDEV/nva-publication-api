@@ -38,6 +38,7 @@ swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.re
 swagger-models = { group = 'io.swagger.core.v3', name = 'swagger-models', version.ref = 'swaggerCoreVersion' }
 tika-core = { group = 'org.apache.tika', name = 'tika-core', version.ref = 'tika' }
 tika-langdetect-optimaize = { group = 'org.apache.tika', name = 'tika-langdetect-optimaize', version.ref = 'tika' }
+tika-parsers-standard = { group = 'org.apache.tika', name = 'tika-parsers-standard-package', version.ref = 'tika' }
 titanium-json-ld = { group = 'com.apicatalog', name = 'titanium-json-ld', version.ref = 'titanium-json-ld' }
 xsd2java-activation = { group = 'javax.activation', name = 'javax.activation-api', version.ref = 'javax-activation' }
 xsd2java-api = { group = 'javax.xml.bind', name = 'jaxb-api', version.ref = 'javax-bind' }

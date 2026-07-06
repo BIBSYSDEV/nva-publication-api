@@ -7,6 +7,8 @@ dependencies {
     api(nvaLibs.s3)
     implementation(nvaCatalog.aws.sdk2.sdk.core)
     implementation(nvaCatalog.aws.sdk2.urlconnection)
+    implementation(libs.tika.core)
+    implementation(libs.tika.parsers.standard)
 
     testImplementation(nvaCatalog.assertj.core)
     testImplementation(nvaCatalog.junit.jupiter.api)
