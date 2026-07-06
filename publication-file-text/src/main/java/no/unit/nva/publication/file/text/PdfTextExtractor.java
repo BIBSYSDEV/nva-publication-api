@@ -1,9 +1,10 @@
 package no.unit.nva.publication.file.text;
 
+import static java.util.Objects.isNull;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -15,8 +16,6 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
-
-import static java.util.Objects.isNull;
 
 /** Extracts plain text from PDF files using Apache Tika and PDFBox. */
 public final class PdfTextExtractor implements TextExtractor {
@@ -55,9 +54,11 @@ public final class PdfTextExtractor implements TextExtractor {
   }
 
   private static ExtractionResult tikaFailure(ExtractionInput input, TikaException exception) {
-      return isPasswordProtected(exception)
-              ? new ExtractionResult.Flagged(input, ExtractionFailureReason.PASSWORD_PROTECTED, PASSWORD_PROTECTED_DETAIL)
-              : new ExtractionResult.Flagged(input, ExtractionFailureReason.EXTRACTION_ERROR, exception.getMessage());
+    return isPasswordProtected(exception)
+        ? new ExtractionResult.Flagged(
+            input, ExtractionFailureReason.PASSWORD_PROTECTED, PASSWORD_PROTECTED_DETAIL)
+        : new ExtractionResult.Flagged(
+            input, ExtractionFailureReason.EXTRACTION_ERROR, exception.getMessage());
   }
 
   private static boolean isPasswordProtected(TikaException exception) {

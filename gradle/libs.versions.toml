@@ -13,6 +13,7 @@ javax-bind = { strictly = '2.4.0-b180830.0359' }
 joda-time = { strictly = '2.14.2' }
 lombok = { strictly = '1.18.46' }
 nvaDoiPartnerData = { strictly = '0.5.13' }
+pdfbox = { strictly = '3.0.7' }
 opentest4j = { strictly = '1.3.0' }
 reflections = { strictly = '0.10.2' }
 sun-jaxb = { strictly = '4.0.9' }
@@ -32,12 +33,14 @@ jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version.re
 joda-time = { group = 'joda-time', name = 'joda-time', version.ref = 'joda-time' }
 lombok = { group = 'org.projectlombok', name = 'lombok', version.ref = 'lombok' }
 nva-doi-partner-data = { group = 'com.github.BIBSYSDEV', name = 'nva-doi-partner-data', version.ref = 'nvaDoiPartnerData' }
+pdfbox = { group = 'org.apache.pdfbox', name = 'pdfbox', version.ref = 'pdfbox' }
 opentest4j = { group = 'org.opentest4j', name = 'opentest4j', version.ref = 'opentest4j' }
 reflections = { group = 'org.reflections', name = 'reflections', version.ref = 'reflections' }
 swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.ref = 'swaggerCoreVersion' }
 swagger-models = { group = 'io.swagger.core.v3', name = 'swagger-models', version.ref = 'swaggerCoreVersion' }
 tika-core = { group = 'org.apache.tika', name = 'tika-core', version.ref = 'tika' }
 tika-langdetect-optimaize = { group = 'org.apache.tika', name = 'tika-langdetect-optimaize', version.ref = 'tika' }
+tika-parser-pdf-module = { group = 'org.apache.tika', name = 'tika-parser-pdf-module', version.ref = 'tika' }
 tika-parsers-standard = { group = 'org.apache.tika', name = 'tika-parsers-standard-package', version.ref = 'tika' }
 titanium-json-ld = { group = 'com.apicatalog', name = 'titanium-json-ld', version.ref = 'titanium-json-ld' }
 xsd2java-activation = { group = 'javax.activation', name = 'javax.activation-api', version.ref = 'javax-activation' }

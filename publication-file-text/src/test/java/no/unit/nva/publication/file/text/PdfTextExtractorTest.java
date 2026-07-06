@@ -1,6 +1,7 @@
 package no.unit.nva.publication.file.text;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,8 +47,9 @@ class PdfTextExtractorTest {
 
     var result = extractor.extract(SOME_INPUT);
 
-    assertThat(result).isInstanceOf(ExtractionResult.Flagged.class);
-    assertThat(((ExtractionResult.Flagged) result).reason())
+    assertThat(result)
+        .asInstanceOf(type(ExtractionResult.Flagged.class))
+        .extracting(ExtractionResult.Flagged::reason)
         .isEqualTo(ExtractionFailureReason.EXTRACTION_ERROR);
   }
 
@@ -58,8 +60,9 @@ class PdfTextExtractorTest {
 
     var result = extractor.extract(SOME_INPUT);
 
-    assertThat(result).isInstanceOf(ExtractionResult.Flagged.class);
-    assertThat(((ExtractionResult.Flagged) result).reason())
+    assertThat(result)
+        .asInstanceOf(type(ExtractionResult.Flagged.class))
+        .extracting(ExtractionResult.Flagged::reason)
         .isEqualTo(ExtractionFailureReason.PASSWORD_PROTECTED);
   }
 
@@ -89,32 +92,32 @@ class PdfTextExtractorTest {
   }
 
   private Path validPdfWithText(String text) throws IOException {
-    var document = new PDDocument();
-    var page = new PDPage();
-    document.addPage(page);
-    try (var contentStream = new PDPageContentStream(document, page)) {
-      contentStream.beginText();
-      contentStream.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
-      contentStream.newLineAtOffset(100, 700);
-      contentStream.showText(text);
-      contentStream.endText();
-    }
     var path = tempDir.resolve("valid.pdf");
-    document.save(path.toFile());
-    document.close();
+    try (var document = new PDDocument()) {
+      var page = new PDPage();
+      document.addPage(page);
+      try (var contentStream = new PDPageContentStream(document, page)) {
+        contentStream.beginText();
+        contentStream.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+        contentStream.newLineAtOffset(100, 700);
+        contentStream.showText(text);
+        contentStream.endText();
+      }
+      document.save(path.toFile());
+    }
     return path;
   }
 
   private Path encryptedPdf() throws IOException {
-    var document = new PDDocument();
-    document.addPage(new PDPage());
-    var policy =
-        new StandardProtectionPolicy("owner-secret", "user-secret", new AccessPermission());
-    policy.setEncryptionKeyLength(256);
-    document.protect(policy);
     var path = tempDir.resolve("encrypted.pdf");
-    document.save(path.toFile());
-    document.close();
+    try (var document = new PDDocument()) {
+      document.addPage(new PDPage());
+      var policy =
+          new StandardProtectionPolicy("owner-secret", "user-secret", new AccessPermission());
+      policy.setEncryptionKeyLength(256);
+      document.protect(policy);
+      document.save(path.toFile());
+    }
     return path;
   }
 }
