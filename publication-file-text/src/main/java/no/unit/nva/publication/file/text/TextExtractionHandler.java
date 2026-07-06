@@ -38,7 +38,9 @@ public class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
         new S3ObjectMetadataSource(s3Client),
         config,
         List.of(
-            new PdfTextExtractor(new S3FileDownloadSource(s3Client)), new FallbackTextExtractor()));
+            new PdfTextExtractor(new S3FileDownloadSource(s3Client)),
+            new DocxTextExtractor(new S3FileDownloadSource(s3Client)),
+            new FallbackTextExtractor()));
   }
 
   @JacocoGenerated

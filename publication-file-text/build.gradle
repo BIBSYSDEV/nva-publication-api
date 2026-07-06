@@ -4,6 +4,7 @@ dependencies {
     api(nvaCatalog.aws.sdk2.s3)
     api(nvaCatalog.jackson.annotations)
     implementation(libs.pdfbox)
+    implementation(libs.poi)
     implementation(libs.tika.core)
     implementation(libs.tika.parser.pdf.module)
     implementation(nvaCatalog.aws.sdk2.sdk.core)
@@ -14,6 +15,7 @@ dependencies {
     runtimeOnly(libs.tika.parsers.standard)
     runtimeOnly(nvaCatalog.aws.sdk2.urlconnection)
 
+    testImplementation(libs.poi.ooxml)
     testImplementation(nvaCatalog.assertj.core)
     testImplementation(nvaCatalog.jackson.core)
     testImplementation(nvaCatalog.junit.jupiter.api)
