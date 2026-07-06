@@ -3136,6 +3136,7 @@ Resources:
       Handler: no.unit.nva.publication.file.text.SeedTextExtractionHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
       Timeout: 900
+      MemorySize: 1024
       Environment:
         Variables:
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName

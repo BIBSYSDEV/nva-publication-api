@@ -1,21 +1,16 @@
 package no.unit.nva.publication.file.text;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
-import org.apache.poi.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 /**
@@ -23,7 +18,6 @@ import org.xml.sax.SAXException;
  */
 public final class WordTextExtractor implements TextExtractor {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(WordTextExtractor.class);
   private static final String DOCX_CONTENT_TYPE =
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   private static final String DOC_CONTENT_TYPE = "application/msword";
@@ -53,7 +47,7 @@ public final class WordTextExtractor implements TextExtractor {
     } catch (TikaException | IOException | SAXException exception) {
       return classifyFailure(input, exception);
     } finally {
-      deleteTempFile(tempFile);
+      TempFileSupport.deleteTempFile(tempFile);
     }
   }
 
@@ -67,15 +61,12 @@ public final class WordTextExtractor implements TextExtractor {
 
   private static boolean isPasswordProtected(Exception exception) {
     for (Throwable current = exception; nonNull(current); current = current.getCause()) {
-      if (current instanceof EncryptedDocumentException) {
+      if (current instanceof org.apache.tika.exception.EncryptedDocumentException
+          || current instanceof org.apache.poi.EncryptedDocumentException) {
         return true;
       }
     }
-    return exception instanceof TikaException && isEncryptedMessage(exception.getMessage());
-  }
-
-  private static boolean isEncryptedMessage(String message) {
-    return nonNull(message) && message.contains("encrypted");
+    return false;
   }
 
   private static String extractText(Path file) throws TikaException, IOException, SAXException {
@@ -84,16 +75,5 @@ public final class WordTextExtractor implements TextExtractor {
       PARSER.parse(stream, handler, new Metadata(), new ParseContext());
     }
     return handler.toString();
-  }
-
-  private static void deleteTempFile(Path tempFile) {
-    if (isNull(tempFile)) {
-      return;
-    }
-    try {
-      Files.deleteIfExists(tempFile);
-    } catch (IOException exception) {
-      LOGGER.warn("Failed to delete temp file: {}", tempFile.getFileName(), exception);
-    }
   }
 }

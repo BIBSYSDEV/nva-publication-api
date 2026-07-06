@@ -44,12 +44,6 @@ public class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
             new FallbackTextExtractor()));
   }
 
-  @JacocoGenerated
-  public TextExtractionHandler(
-      S3Client s3Client, TextExtractionConfig config, List<TextExtractor> extractors) {
-    this(s3Client, new S3ObjectMetadataSource(s3Client), config, extractors);
-  }
-
   public TextExtractionHandler(
       S3Client s3Client,
       ObjectMetadataSource metadataSource,
@@ -107,16 +101,16 @@ public class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
     } catch (IOException exception) {
       throw new UncheckedIOException(exception);
     }
-    LOGGER.info("Stored extracted text: key={}", textKey);
+    LOGGER.info("Stored extracted text: key={}", LogSanitizer.sanitize(textKey));
   }
 
   private void logFlag(ExtractionResult.Flagged flagged) {
     LOGGER.warn(
         "Extraction flagged: bucket={} key={} etag={} reason={} detail={}",
-        flagged.source().sourceBucket(),
-        flagged.source().sourceKey(),
-        flagged.source().sourceEtag(),
+        LogSanitizer.sanitize(flagged.source().sourceBucket()),
+        LogSanitizer.sanitize(flagged.source().sourceKey()),
+        LogSanitizer.sanitize(flagged.source().sourceEtag()),
         flagged.reason(),
-        flagged.detail());
+        LogSanitizer.sanitize(flagged.detail()));
   }
 }

@@ -1,9 +1,6 @@
 package no.unit.nva.publication.file.text;
 
-import static java.util.Objects.isNull;
-
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.tika.exception.TikaException;
@@ -13,14 +10,11 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 /** Extracts plain text from PDF files using Apache Tika and PDFBox. */
 public final class PdfTextExtractor implements TextExtractor {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(PdfTextExtractor.class);
   private static final String SUPPORTED_CONTENT_TYPE = "application/pdf";
   private static final String PASSWORD_PROTECTED_DETAIL = "Password-protected PDF";
   private static final int UNLIMITED_CONTENT = -1;
@@ -49,7 +43,7 @@ public final class PdfTextExtractor implements TextExtractor {
       return new ExtractionResult.Flagged(
           input, ExtractionFailureReason.EXTRACTION_ERROR, exception.getMessage());
     } finally {
-      deleteTempFile(tempFile);
+      TempFileSupport.deleteTempFile(tempFile);
     }
   }
 
@@ -81,14 +75,4 @@ public final class PdfTextExtractor implements TextExtractor {
     return context;
   }
 
-  private static void deleteTempFile(Path tempFile) {
-    if (isNull(tempFile)) {
-      return;
-    }
-    try {
-      Files.deleteIfExists(tempFile);
-    } catch (IOException exception) {
-      LOGGER.warn("Failed to delete temp file: {}", tempFile.getFileName(), exception);
-    }
-  }
 }

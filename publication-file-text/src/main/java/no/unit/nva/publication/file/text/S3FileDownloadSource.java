@@ -19,9 +19,14 @@ public final class S3FileDownloadSource implements FileDownloadSource {
   @Override
   public Path downloadToFile(ExtractionInput input) throws IOException {
     var tempFile = Files.createTempFile("text-extraction-", ".bin");
-    s3Client.getObject(
-        GetObjectRequest.builder().bucket(input.sourceBucket()).key(input.sourceKey()).build(),
-        ResponseTransformer.toFile(tempFile));
+    try {
+      s3Client.getObject(
+          GetObjectRequest.builder().bucket(input.sourceBucket()).key(input.sourceKey()).build(),
+          ResponseTransformer.toFile(tempFile));
+    } catch (RuntimeException exception) {
+      TempFileSupport.deleteTempFile(tempFile);
+      throw exception;
+    }
     return tempFile;
   }
 }

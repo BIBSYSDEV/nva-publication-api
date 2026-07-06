@@ -20,6 +20,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
 
 /**
  * Reads a CSV file of S3 object keys uploaded to S3 and enqueues a {@link TextExtractionRequest}
@@ -61,7 +62,11 @@ public final class SeedTextExtractionHandler implements RequestHandler<S3Event, 
     var csvKey = record.getS3().getObject().getKey();
     var keys = readKeys(csvBucket, csvKey);
     enqueueInBatches(keys);
-    LOGGER.info("Seeded {} keys from s3://{}/{}", keys.size(), csvBucket, csvKey);
+    LOGGER.info(
+        "Seeded {} keys from s3://{}/{}",
+        keys.size(),
+        LogSanitizer.sanitize(csvBucket),
+        LogSanitizer.sanitize(csvKey));
   }
 
   private List<String> readKeys(String bucket, String key) {
@@ -92,8 +97,20 @@ public final class SeedTextExtractionHandler implements RequestHandler<S3Event, 
         IntStream.range(0, keys.size())
             .mapToObj(keyIndex -> batchEntry(keyIndex, createTextExtractionRequest(keys, keyIndex)))
             .toList();
-    sqsClient.sendMessageBatch(
-        SendMessageBatchRequest.builder().queueUrl(config.queueUrl()).entries(entries).build());
+    var response =
+        sqsClient.sendMessageBatch(
+            SendMessageBatchRequest.builder()
+                .queueUrl(config.queueUrl())
+                .entries(entries)
+                .build());
+    logBatchFailures(response, entries.size());
+  }
+
+  private static void logBatchFailures(SendMessageBatchResponse response, int batchSize) {
+    if (!response.failed().isEmpty()) {
+      LOGGER.warn(
+          "SQS batch had {} failed entries out of {}", response.failed().size(), batchSize);
+    }
   }
 
   private TextExtractionRequest createTextExtractionRequest(List<String> keys, int keyIndex) {

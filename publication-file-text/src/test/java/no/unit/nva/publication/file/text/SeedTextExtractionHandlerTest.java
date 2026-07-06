@@ -1,6 +1,7 @@
 package no.unit.nva.publication.file.text;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -29,6 +30,7 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.BatchResultErrorEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
 
@@ -110,6 +112,23 @@ class SeedTextExtractionHandlerTest {
     var captor = ArgumentCaptor.forClass(SendMessageBatchRequest.class);
     verify(sqsClient).sendMessageBatch(captor.capture());
     assertThat(captor.getValue().queueUrl()).isEqualTo(QUEUE_URL);
+  }
+
+  @Test
+  void shouldNotThrowWhenBatchContainsFailedEntries() throws IOException {
+    var failedEntry =
+        BatchResultErrorEntry.builder()
+            .id("0")
+            .code("ThrottlingException")
+            .message("Rate exceeded")
+            .senderFault(false)
+            .build();
+    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
+        .thenReturn(SendMessageBatchResponse.builder().failed(failedEntry).build());
+    insertCsv("publications/doc1.pdf");
+
+    assertThatCode(() -> handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext()))
+        .doesNotThrowAnyException();
   }
 
   @Test
