@@ -5,18 +5,24 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.IntStream;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
@@ -29,8 +35,8 @@ import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
 public final class SeedTextExtractionHandler implements RequestHandler<S3Event, Void> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SeedTextExtractionHandler.class);
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   private static final int BATCH_SIZE = 10;
+  private static final String AWS_REGION_ENV = "AWS_REGION";
 
   private final S3Client s3Client;
   private final SqsClient sqsClient;
@@ -40,7 +46,7 @@ public final class SeedTextExtractionHandler implements RequestHandler<S3Event, 
   public SeedTextExtractionHandler() {
     this(
         S3Driver.defaultS3Client().build(),
-        SqsClient.builder().region(Region.of(System.getenv("AWS_REGION"))).build(),
+        SqsClient.builder().region(Region.of(new Environment().readEnv(AWS_REGION_ENV))).build(),
         SeedTextExtractionConfig.fromEnvironment());
   }
 
@@ -59,40 +65,55 @@ public final class SeedTextExtractionHandler implements RequestHandler<S3Event, 
 
   private void processRecord(S3EventNotificationRecord record) {
     var csvBucket = record.getS3().getBucket().getName();
-    var csvKey = record.getS3().getObject().getKey();
-    var keys = readKeys(csvBucket, csvKey);
-    enqueueInBatches(keys);
+    var csvKey = record.getS3().getObject().getUrlDecodedKey();
+    var keysEnqueued = enqueueFromCsv(csvBucket, csvKey);
     LOGGER.info(
         "Seeded {} keys from s3://{}/{}",
-        keys.size(),
+        keysEnqueued,
         LogSanitizer.sanitize(csvBucket),
         LogSanitizer.sanitize(csvKey));
   }
 
-  private List<String> readKeys(String bucket, String key) {
-    return new S3Driver(s3Client, bucket)
-        .getFile(UnixPath.of(key))
-        .lines()
-        .filter(Predicate.not(String::isBlank))
-        .filter(SeedTextExtractionHandler::containsAlphanumeric)
-        .toList();
+  private int enqueueFromCsv(String bucket, String key) {
+    var objectRequest = GetObjectRequest.builder().bucket(bucket).key(key).build();
+    var batch = new ArrayList<String>(BATCH_SIZE);
+    var keysEnqueued = 0;
+    var totalFailures = 0;
+    try {
+      try (var responseStream =
+              s3Client.getObject(objectRequest, ResponseTransformer.toInputStream());
+          var reader =
+              new BufferedReader(new InputStreamReader(responseStream, StandardCharsets.UTF_8))) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+          if (!line.isBlank() && containsAlphanumeric(line)) {
+            batch.add(line);
+            keysEnqueued++;
+            if (batch.size() == BATCH_SIZE) {
+              totalFailures += sendBatch(batch);
+              batch.clear();
+            }
+          }
+        }
+        if (!batch.isEmpty()) {
+          totalFailures += sendBatch(batch);
+        }
+      }
+    } catch (IOException exception) {
+      throw new UncheckedIOException(exception);
+    }
+    if (totalFailures > 0) {
+      throw new IllegalStateException(
+          "SQS batch enqueue had " + totalFailures + " failed entries out of " + keysEnqueued);
+    }
+    return keysEnqueued;
   }
 
   private static boolean containsAlphanumeric(String line) {
     return line.chars().anyMatch(Character::isLetterOrDigit);
   }
 
-  private void enqueueInBatches(List<String> keys) {
-    IntStream.iterate(0, start -> start < keys.size(), start -> start + BATCH_SIZE)
-        .mapToObj(start -> createBatch(keys, start))
-        .forEach(this::sendBatch);
-  }
-
-  private static List<String> createBatch(List<String> keys, int start) {
-    return keys.subList(start, Math.min(start + BATCH_SIZE, keys.size()));
-  }
-
-  private void sendBatch(List<String> keys) {
+  private int sendBatch(List<String> keys) {
     var entries =
         IntStream.range(0, keys.size())
             .mapToObj(keyIndex -> batchEntry(keyIndex, createTextExtractionRequest(keys, keyIndex)))
@@ -103,16 +124,15 @@ public final class SeedTextExtractionHandler implements RequestHandler<S3Event, 
                 .queueUrl(config.queueUrl())
                 .entries(entries)
                 .build());
-    logBatchFailures(response, entries.size());
+    return countBatchFailures(response, entries.size());
   }
 
-  private static void logBatchFailures(SendMessageBatchResponse response, int batchSize) {
+  private static int countBatchFailures(SendMessageBatchResponse response, int batchSize) {
     if (!response.failed().isEmpty()) {
       LOGGER.warn(
           "SQS batch had {} failed entries out of {}", response.failed().size(), batchSize);
-      throw new RuntimeException(
-          "SQS batch failed for " + response.failed().size() + " of " + batchSize + " entries");
     }
+    return response.failed().size();
   }
 
   private TextExtractionRequest createTextExtractionRequest(List<String> keys, int keyIndex) {
@@ -124,7 +144,7 @@ public final class SeedTextExtractionHandler implements RequestHandler<S3Event, 
     try {
       return SendMessageBatchRequestEntry.builder()
           .id(String.valueOf(entryIndex))
-          .messageBody(OBJECT_MAPPER.writeValueAsString(request))
+          .messageBody(JsonUtils.dtoObjectMapper.writeValueAsString(request))
           .build();
     } catch (JsonProcessingException exception) {
       throw new UncheckedIOException(exception);

@@ -2,11 +2,13 @@ package no.unit.nva.publication.file.text;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import no.unit.nva.commons.json.JsonUtils;
+import java.util.ArrayList;
 import java.util.List;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
@@ -16,10 +18,9 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
-public final class TextExtractionHandler implements RequestHandler<SQSEvent, Void> {
+public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQSBatchResponse> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TextExtractionHandler.class);
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   private static final String TEXT_KEY_SUFFIX = ".txt";
 
   private final S3Client s3Client;
@@ -57,9 +58,23 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, Voi
   }
 
   @Override
-  public Void handleRequest(SQSEvent event, Context context) {
-    event.getRecords().forEach(this::processMessage);
-    return null;
+  public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
+    var batchItemFailures = new ArrayList<SQSBatchResponse.BatchItemFailure>();
+    for (var message : event.getRecords()) {
+      try {
+        processMessage(message);
+      } catch (RuntimeException exception) {
+        LOGGER.error(
+            "Failed to process message: id={}",
+            LogSanitizer.sanitize(message.getMessageId()),
+            exception);
+        batchItemFailures.add(
+            SQSBatchResponse.BatchItemFailure.builder()
+                .withItemIdentifier(message.getMessageId())
+                .build());
+      }
+    }
+    return SQSBatchResponse.builder().withBatchItemFailures(batchItemFailures).build();
   }
 
   private void processMessage(SQSMessage message) {
@@ -82,7 +97,7 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, Voi
 
   private TextExtractionRequest parseRequest(String body) {
     try {
-      return OBJECT_MAPPER.readValue(body, TextExtractionRequest.class);
+      return JsonUtils.dtoObjectMapper.readValue(body, TextExtractionRequest.class);
     } catch (IOException exception) {
       throw new IllegalArgumentException("Unparseable SQS message body", exception);
     }
@@ -92,14 +107,23 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, Voi
     return extractors.stream()
         .filter(extractor -> extractor.supports(input.contentType()))
         .findFirst()
-        .orElseGet(FallbackTextExtractor::new)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "No extractor matched — FallbackTextExtractor must be included in the extractor list"))
         .extract(input);
   }
 
   private void handleResult(ExtractionResult result) {
     switch (result) {
       case ExtractionResult.Extracted extracted -> storeText(extracted);
-      case ExtractionResult.Flagged flagged -> logFlag(flagged);
+      case ExtractionResult.Flagged flagged -> {
+        logFlag(flagged);
+        if (flagged.reason() == ExtractionFailureReason.EXTRACTION_ERROR) {
+          throw new IllegalStateException(
+              "Extraction failed: " + LogSanitizer.sanitize(flagged.detail()));
+        }
+      }
     }
   }
 
@@ -128,9 +152,5 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, Voi
         LogSanitizer.sanitize(flagged.source().sourceEtag()),
         flagged.reason(),
         LogSanitizer.sanitize(flagged.detail()));
-    if (flagged.reason() == ExtractionFailureReason.EXTRACTION_ERROR) {
-      throw new IllegalStateException(
-          "Extraction failed: " + LogSanitizer.sanitize(flagged.detail()));
-    }
   }
 }

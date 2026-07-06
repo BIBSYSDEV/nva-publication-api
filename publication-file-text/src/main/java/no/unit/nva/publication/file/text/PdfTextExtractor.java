@@ -1,7 +1,5 @@
 package no.unit.nva.publication.file.text;
 
-import static java.util.Objects.nonNull;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
@@ -37,27 +35,18 @@ public final class PdfTextExtractor implements TextExtractor {
       return tikaFailure(input, exception);
     } catch (IOException | SAXException exception) {
       return new ExtractionResult.Flagged(
-          input, ExtractionFailureReason.EXTRACTION_ERROR, exception.getMessage());
+          input, ExtractionFailureReason.EXTRACTION_ERROR, LogSanitizer.sanitize(exception.getMessage()));
     } finally {
       TempFileSupport.deleteTempFile(tempFile);
     }
   }
 
   private static ExtractionResult tikaFailure(ExtractionInput input, TikaException exception) {
-    return isPasswordProtected(exception)
+    return ExceptionCauses.hasCauseOfType(exception, InvalidPasswordException.class)
         ? new ExtractionResult.Flagged(
             input, ExtractionFailureReason.PASSWORD_PROTECTED, PASSWORD_PROTECTED_DETAIL)
         : new ExtractionResult.Flagged(
-            input, ExtractionFailureReason.EXTRACTION_ERROR, exception.getMessage());
-  }
-
-  private static boolean isPasswordProtected(TikaException exception) {
-    for (Throwable current = exception; nonNull(current); current = current.getCause()) {
-      if (current instanceof InvalidPasswordException) {
-        return true;
-      }
-    }
-    return false;
+            input, ExtractionFailureReason.EXTRACTION_ERROR, LogSanitizer.sanitize(exception.getMessage()));
   }
 
   private static ParseContext createParseContext() {

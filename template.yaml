@@ -3128,6 +3128,8 @@ Resources:
           Properties:
             Queue: !GetAtt TextExtractionQueue.Arn
             BatchSize: 1
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
 
   SeedTextExtractionHandler:
     Type: AWS::Serverless::Function

@@ -1,7 +1,5 @@
 package no.unit.nva.publication.file.text;
 
-import static java.util.Objects.nonNull;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Set;
@@ -47,21 +45,11 @@ public final class WordTextExtractor implements TextExtractor {
   }
 
   private static ExtractionResult classifyFailure(ExtractionInput input, Exception exception) {
-    return isPasswordProtected(exception)
+    return ExceptionCauses.hasCauseOfType(
+            exception, EncryptedDocumentException.class, org.apache.poi.EncryptedDocumentException.class)
         ? new ExtractionResult.Flagged(
             input, ExtractionFailureReason.PASSWORD_PROTECTED, PASSWORD_PROTECTED_DETAIL)
         : new ExtractionResult.Flagged(
-            input, ExtractionFailureReason.EXTRACTION_ERROR, exception.getMessage());
+            input, ExtractionFailureReason.EXTRACTION_ERROR, LogSanitizer.sanitize(exception.getMessage()));
   }
-
-  private static boolean isPasswordProtected(Exception exception) {
-    for (Throwable current = exception; nonNull(current); current = current.getCause()) {
-      if (current instanceof EncryptedDocumentException
-          || current instanceof org.apache.poi.EncryptedDocumentException) {
-        return true;
-      }
-    }
-    return false;
-  }
-
 }

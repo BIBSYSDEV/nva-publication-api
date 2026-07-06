@@ -2,7 +2,6 @@ package no.unit.nva.publication.file.text;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
@@ -26,6 +25,7 @@ class TextExtractionHandlerTest {
   private static final String SOME_ETAG = "\"abc123\"";
   private static final String PDF_CONTENT_TYPE = "application/pdf";
   private static final String EXTRACTED_TEXT = "The quick brown fox";
+  private static final String MESSAGE_ID = "test-message-id";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   private static final ObjectMetadataSource FIXED_METADATA =
       (bucket, key) -> new ObjectMetadata(SOME_ETAG, PDF_CONTENT_TYPE);
@@ -42,31 +42,32 @@ class TextExtractionHandlerTest {
   }
 
   @Test
-  void shouldThrowWhenMessageBodyIsUnparseable() {
+  void shouldReturnBatchItemFailureWhenMessageBodyIsUnparseable() {
     var handler =
         new TextExtractionHandler(
             fakeS3Client, FIXED_METADATA, config, List.of(new FallbackTextExtractor()));
 
-    assertThatThrownBy(() -> handler.handleRequest(buildSqsEvent("not-valid-json"), context))
-        .isInstanceOf(IllegalArgumentException.class);
+    var result = handler.handleRequest(buildSqsEvent("not-valid-json"), context);
+
+    assertThat(result.getBatchItemFailures()).hasSize(1);
+    assertThat(result.getBatchItemFailures().getFirst().getItemIdentifier()).isEqualTo(MESSAGE_ID);
   }
 
   @Test
-  void shouldNotThrowWhenContentTypeIsUnsupported() throws JsonProcessingException {
+  void shouldNotReturnBatchItemFailureWhenContentTypeIsUnsupported() throws JsonProcessingException {
     var handler =
         new TextExtractionHandler(
             fakeS3Client, FIXED_METADATA, config, List.of(new FallbackTextExtractor()));
 
-    assertThatCode(
-            () ->
-                handler.handleRequest(
-                    buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)),
-                    context))
-        .doesNotThrowAnyException();
+    var result =
+        handler.handleRequest(
+            buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)), context);
+
+    assertThat(result.getBatchItemFailures()).isEmpty();
   }
 
   @Test
-  void shouldThrowWhenExtractionFails() throws JsonProcessingException {
+  void shouldReturnBatchItemFailureWhenExtractionFails() throws JsonProcessingException {
     var handler =
         new TextExtractionHandler(
             fakeS3Client,
@@ -74,12 +75,22 @@ class TextExtractionHandlerTest {
             config,
             List.of(extractorThatFlags(ExtractionFailureReason.EXTRACTION_ERROR)));
 
-    assertThatThrownBy(
-            () ->
-                handler.handleRequest(
-                    buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)),
-                    context))
-        .isInstanceOf(IllegalStateException.class);
+    var result =
+        handler.handleRequest(
+            buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)), context);
+
+    assertThat(result.getBatchItemFailures()).hasSize(1);
+  }
+
+  @Test
+  void shouldReturnBatchItemFailureWhenExtractorListIsEmpty() throws JsonProcessingException {
+    var handler = new TextExtractionHandler(fakeS3Client, FIXED_METADATA, config, List.of());
+
+    var result =
+        handler.handleRequest(
+            buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)), context);
+
+    assertThat(result.getBatchItemFailures()).hasSize(1);
   }
 
   @Test
@@ -114,7 +125,8 @@ class TextExtractionHandlerTest {
   }
 
   @Test
-  void shouldNotThrowWhenSourceObjectNoLongerExists() throws JsonProcessingException {
+  void shouldNotReturnBatchItemFailureWhenSourceObjectNoLongerExists()
+      throws JsonProcessingException {
     ObjectMetadataSource sourceNotFound =
         (bucket, key) -> {
           throw NoSuchKeyException.builder().build();
@@ -123,12 +135,11 @@ class TextExtractionHandlerTest {
         new TextExtractionHandler(
             fakeS3Client, sourceNotFound, config, List.of(new FallbackTextExtractor()));
 
-    assertThatCode(
-            () ->
-                handler.handleRequest(
-                    buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)),
-                    context))
-        .doesNotThrowAnyException();
+    var result =
+        handler.handleRequest(
+            buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)), context);
+
+    assertThat(result.getBatchItemFailures()).isEmpty();
   }
 
   @Test
@@ -188,6 +199,7 @@ class TextExtractionHandlerTest {
 
   private SQSEvent buildSqsEvent(String body) {
     var message = new SQSMessage();
+    message.setMessageId(MESSAGE_ID);
     message.setBody(body);
     var event = new SQSEvent();
     event.setRecords(List.of(message));

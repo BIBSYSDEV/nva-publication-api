@@ -129,7 +129,39 @@ class SeedTextExtractionHandlerTest {
 
     assertThatThrownBy(
             () -> handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext()))
-        .isInstanceOf(RuntimeException.class);
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void shouldSendAllBatchesEvenWhenOneBatchHasSqsFailures() throws IOException {
+    var failedEntry =
+        BatchResultErrorEntry.builder()
+            .id("0")
+            .code("ThrottlingException")
+            .message("Rate exceeded")
+            .senderFault(false)
+            .build();
+    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
+        .thenReturn(SendMessageBatchResponse.builder().failed(failedEntry).build())
+        .thenReturn(SendMessageBatchResponse.builder().build())
+        .thenReturn(SendMessageBatchResponse.builder().build());
+    insertCsv(csvWithKeys(25));
+
+    assertThatThrownBy(
+            () -> handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext()))
+        .isInstanceOf(IllegalStateException.class);
+
+    verify(sqsClient, times(3)).sendMessageBatch(any(SendMessageBatchRequest.class));
+  }
+
+  @Test
+  void shouldHandleUrlEncodedCsvKey() throws IOException {
+    var decodedKey = "seed file.csv";
+    new S3Driver(fakeS3Client, CSV_BUCKET).insertFile(UnixPath.of(decodedKey), "publications/doc1.pdf");
+
+    handler().handleRequest(s3Event(CSV_BUCKET, "seed+file.csv"), new FakeContext());
+
+    verify(sqsClient, times(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
   }
 
   @Test

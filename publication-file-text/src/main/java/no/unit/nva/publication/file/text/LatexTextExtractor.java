@@ -30,10 +30,9 @@ public final class LatexTextExtractor implements TextExtractor {
       return new ExtractionResult.Extracted(input, TikaSupport.extractText(tempFile, new ParseContext()));
     } catch (TikaException | IOException | SAXException exception) {
       return new ExtractionResult.Flagged(
-          input, ExtractionFailureReason.EXTRACTION_ERROR, exception.getMessage());
+          input, ExtractionFailureReason.EXTRACTION_ERROR, LogSanitizer.sanitize(exception.getMessage()));
     } finally {
       TempFileSupport.deleteTempFile(tempFile);
     }
   }
-
 }
