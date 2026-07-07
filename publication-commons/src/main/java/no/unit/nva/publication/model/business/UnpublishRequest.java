@@ -36,7 +36,7 @@ public class UnpublishRequest extends TicketEntry {
     // TODO: Who is ticket owner? Currently publication owner to pass tests
     var owner = extractOwner(publication);
 
-    return UnpublishRequest.builder()
+    return builder()
         .withIdentifier(SortableIdentifier.next())
         .withResourceIdentifier(publication.getIdentifier())
         .withStatus(TicketStatus.PENDING)
@@ -84,7 +84,7 @@ public class UnpublishRequest extends TicketEntry {
 
   @Override
   public TicketEntry copy() {
-    return UnpublishRequest.builder()
+    return builder()
         .withIdentifier(getIdentifier())
         .withResourceIdentifier(getResourceIdentifier())
         .withStatus(getStatus())

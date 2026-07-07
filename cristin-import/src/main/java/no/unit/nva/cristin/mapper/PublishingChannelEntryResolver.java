@@ -109,7 +109,7 @@ public class PublishingChannelEntryResolver {
 
   private URI toSeriesUri(ChannelRegistryEntry channelRegistryEntry) {
     var uri = getNsdProxyUri(channelRegistryEntry.getEntryPath(), channelRegistryEntry.id());
-    if (!ChannelType.SERIES.equals(channelRegistryEntry.type())) {
+    if (ChannelType.SERIES != channelRegistryEntry.type()) {
       ErrorReport.exceptionName(WrongChannelTypeException.name())
           .withBody(uri.toString())
           .withCristinId(cristinId)
@@ -131,7 +131,7 @@ public class PublishingChannelEntryResolver {
 
   private URI toJournalUri(ChannelRegistryEntry channelRegistryEntry) {
     var uri = getNsdProxyUri(channelRegistryEntry.getEntryPath(), channelRegistryEntry.id());
-    if (!ChannelType.JOURNAL.equals(channelRegistryEntry.type())) {
+    if (ChannelType.JOURNAL != channelRegistryEntry.type()) {
       ErrorReport.exceptionName(WrongChannelTypeException.class.getSimpleName())
           .withBody(uri.toString())
           .withCristinId(cristinId)

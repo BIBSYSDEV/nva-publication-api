@@ -29,7 +29,7 @@ public class DeleteResourceService extends ServiceWithTransactions {
   public void deleteImportCandidate(ImportCandidate candidate) throws BadMethodException {
     var importCandidate =
         readResourceService.getImportCandidateByIdentifier(candidate.getIdentifier()).orElseThrow();
-    if (CandidateStatus.IMPORTED.equals(importCandidate.getImportStatus().candidateStatus())) {
+    if (CandidateStatus.IMPORTED == importCandidate.getImportStatus().candidateStatus()) {
       throw new BadMethodException(CAN_NOT_DELETE_IMPORT_CANDIDATE_MESSAGE);
     } else {
       var primaryKey = getAttributeValue(importCandidate);

@@ -17,7 +17,6 @@ import java.net.URI;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 
-@SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
   @JsonSubTypes.Type(name = "Resource", value = ResourceDao.class),

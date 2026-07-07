@@ -58,7 +58,6 @@ import no.unit.nva.publication.model.storage.ResourceRelationshipDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 
 @SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class ReadResourceService {
@@ -174,7 +173,7 @@ public class ReadResourceService {
     var queryRequest =
         new QueryRequest()
             .withTableName(RESOURCES_TABLE_NAME)
-            .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+            .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
             .withKeyConditionExpression("PK2 = :value")
             .withExpressionAttributeValues(Map.of(":value", new AttributeValue().withS(value)));
 
@@ -200,7 +199,7 @@ public class ReadResourceService {
   }
 
   private static boolean isNotRemoved(TicketEntry ticket) {
-    return !TicketStatus.REMOVED.equals(ticket.getStatus());
+    return TicketStatus.REMOVED != ticket.getStatus();
   }
 
   private static Optional<Resource> extractResource(

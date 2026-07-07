@@ -72,7 +72,7 @@ public final class PublicationContextMapper {
 
   private PublicationContextMapper() {}
 
-  @SuppressWarnings({"PMD.NPathComplexity", "PMD.CognitiveComplexity"})
+  @SuppressWarnings("PMD.CognitiveComplexity")
   public static PublicationContext buildPublicationContext(Record brageRecord, URI organizationId)
       throws InvalidIsbnException, InvalidUnconfirmedSeriesException, InvalidIssnException {
     if (shouldBeMappedToBook(brageRecord)) {
@@ -314,7 +314,7 @@ public final class PublicationContextMapper {
 
   private static String extractMainTitle(Record brageRecord) {
     return Optional.ofNullable(brageRecord.getEntityDescription())
-        .map(no.sikt.nva.brage.migration.record.EntityDescription::getMainTitle)
+        .map(EntityDescription::getMainTitle)
         .orElse(null);
   }
 
@@ -494,7 +494,7 @@ public final class PublicationContextMapper {
 
   private static PublishingHouse generatePublisher(String publisherPid, String year) {
     return new Publisher(
-        UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
+        UriWrapper.fromUri(CHANNEL_REGISTRY_V_2)
             .addChild(ChannelType.PUBLISHER.getType())
             .addChild(publisherPid)
             .addChild(nonNull(year) ? year : CURRENT_YEAR)
@@ -507,7 +507,7 @@ public final class PublicationContextMapper {
 
   private static PublicationContext generateJournal(String journalPid, String year) {
     return new Journal(
-        UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
+        UriWrapper.fromUri(CHANNEL_REGISTRY_V_2)
             .addChild(ChannelType.SERIAL_PUBLICATION.getType())
             .addChild(journalPid)
             .addChild(nonNull(year) ? year : CURRENT_YEAR)
@@ -516,7 +516,7 @@ public final class PublicationContextMapper {
 
   private static BookSeries generateSeries(String seriesPid, String year) {
     return new Series(
-        UriWrapper.fromUri(PublicationContextMapper.CHANNEL_REGISTRY_V_2)
+        UriWrapper.fromUri(CHANNEL_REGISTRY_V_2)
             .addChild(ChannelType.SERIAL_PUBLICATION.getType())
             .addChild(seriesPid)
             .addChild(nonNull(year) ? year : CURRENT_YEAR)

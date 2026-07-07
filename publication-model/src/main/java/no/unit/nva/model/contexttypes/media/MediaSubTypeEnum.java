@@ -22,13 +22,11 @@ public enum MediaSubTypeEnum {
   @Deprecated
   @JsonCreator
   public static MediaSubTypeEnum parse(String candidate) {
-    return "Other".equalsIgnoreCase(candidate)
-        ? MediaSubTypeEnum.OTHER
-        : inlineableParseMethod(candidate);
+    return "Other".equalsIgnoreCase(candidate) ? OTHER : inlineableParseMethod(candidate);
   }
 
   public static MediaSubTypeEnum inlineableParseMethod(String candidate) {
-    return Arrays.stream(MediaSubTypeEnum.values())
+    return Arrays.stream(values())
         .filter(subType -> subType.value.equalsIgnoreCase(candidate))
         .collect(SingletonCollector.collect());
   }

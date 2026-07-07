@@ -14,7 +14,6 @@ import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithDa
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 
 // TODO: rename class to DynamoJsonToInternalModelEventHandler
-@SuppressWarnings({"PMD.ReturnEmptyCollectionRatherThanNull"})
 public final class DynamodbStreamRecordDaoMapper {
 
   private DynamodbStreamRecordDaoMapper() {}

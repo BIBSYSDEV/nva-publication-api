@@ -122,9 +122,9 @@ public class PendingOpenFile extends File implements PendingFile<OpenFile, Rejec
   @Override
   public boolean canBeConvertedTo(File file) {
     return switch (file) {
-      case PendingInternalFile ignore -> true;
-      case PendingOpenFile ignore -> true;
-      case HiddenFile ignore -> true;
+      case PendingInternalFile _ -> true;
+      case PendingOpenFile _ -> true;
+      case HiddenFile _ -> true;
       default -> false;
     };
   }

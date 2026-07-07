@@ -152,32 +152,31 @@ public class DataEntryUpdateEvent implements JsonSerializable {
   public String getTopic() {
     var type = extractDataEntryType();
     return switch (type) {
-      case Resource resource ->
-          isRemoved() ? RESOURCE_DELETED_EVENT_TOPIC : RESOURCE_UPDATE_EVENT_TOPIC;
-      case DoiRequest doiRequest ->
+      case Resource _ -> isRemoved() ? RESOURCE_DELETED_EVENT_TOPIC : RESOURCE_UPDATE_EVENT_TOPIC;
+      case DoiRequest _ ->
           isRemoved() ? DOI_REQUEST_DELETED_EVENT_TOPIC : DOI_REQUEST_UPDATE_EVENT_TOPIC;
-      case PublishingRequestCase publishingRequestCase ->
+      case PublishingRequestCase _ ->
           isRemoved()
               ? PUBLISHING_REQUEST_DELETED_EVENT_TOPIC
               : PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC;
-      case FilesApprovalThesis filesApprovalThesis ->
+      case FilesApprovalThesis _ ->
           isRemoved()
               ? FILES_APPROVAL_THESIS_DELETED_EVENT_TOPIC
               : FILES_APPROVAL_THESIS_UPDATE_EVENT_TOPIC;
-      case GeneralSupportRequest generalSupportRequest ->
+      case GeneralSupportRequest _ ->
           isRemoved()
               ? GENERAL_SUPPORT_REQUEST_DELETED_EVENT_TOPIC
               : GENERAL_SUPPORT_REQUEST_UPDATE_EVENT_TOPIC;
-      case UnpublishRequest unpublishRequest -> UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC;
-      case Message message -> MESSAGE_UPDATE_EVENT_TOPIC;
+      case UnpublishRequest _ -> UNPUBLISH_REQUEST_UPDATE_EVENT_TOPIC;
+      case Message _ -> MESSAGE_UPDATE_EVENT_TOPIC;
       case FileEntry fileEntry -> resolveFileEntryTopic(fileEntry);
-      case PublicationChannel publicationChannel -> PUBLICATION_CHANNEL_UPDATED_EVENT_TOPIC;
+      case PublicationChannel _ -> PUBLICATION_CHANNEL_UPDATED_EVENT_TOPIC;
       default -> throw new IllegalArgumentException("Unknown entry type: " + type);
     };
   }
 
   private boolean isRemoved() {
-    return !hasNewImage() && OperationType.REMOVE.equals(OperationType.fromValue(action));
+    return !hasNewImage() && OperationType.REMOVE == OperationType.fromValue(action);
   }
 
   private String resolveFileEntryTopic(FileEntry fileEntry) {

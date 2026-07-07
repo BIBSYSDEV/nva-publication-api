@@ -103,7 +103,7 @@ public final class PublicationInstanceMapper {
 
   private PublicationInstanceMapper() {}
 
-  @SuppressWarnings({"PMD.NPathComplexity", "PMD.CognitiveComplexity", "PMD.NcssCount"})
+  @SuppressWarnings({"PMD.CognitiveComplexity", "PMD.NcssCount"})
   public static PublicationInstance<? extends Pages> buildPublicationInstance(Record brageRecord) {
     if (isJournalArticle(brageRecord)) {
       return buildPublicationInstanceWhenJournalArticle(brageRecord);

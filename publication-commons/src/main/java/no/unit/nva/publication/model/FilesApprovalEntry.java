@@ -196,7 +196,7 @@ public abstract class FilesApprovalEntry extends TicketEntry {
   }
 
   protected boolean canPublishMetadataAndNoFilesToApprove(PublishingWorkflow workflow) {
-    return REGISTRATOR_PUBLISHES_METADATA_ONLY.equals(workflow) && getFilesForApproval().isEmpty();
+    return REGISTRATOR_PUBLISHES_METADATA_ONLY == workflow && getFilesForApproval().isEmpty();
   }
 
   protected FilesApprovalEntry handleMetadataOnlyWorkflow(

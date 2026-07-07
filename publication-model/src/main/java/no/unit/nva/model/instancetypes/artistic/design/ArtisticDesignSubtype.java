@@ -19,7 +19,7 @@ public class ArtisticDesignSubtype {
   public static ArtisticDesignSubtype fromJson(
       @JsonProperty(TYPE) ArtisticDesignSubtypeEnum type,
       @JsonProperty("description") String description) {
-    if (ArtisticDesignSubtypeEnum.OTHER.equals(type)) {
+    if (ArtisticDesignSubtypeEnum.OTHER == type) {
       return createOther(description);
     }
     return new ArtisticDesignSubtype(type);

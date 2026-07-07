@@ -38,15 +38,6 @@
     <exclude name="ImplicitFunctionalInterface"/>
 
     <!-- FIXME: Disabled because of the high number of current violations-->
-    <exclude name="UnnecessaryWarningSuppression"/>
-
-    <!-- FIXME: Disabled because of the high number of current violations-->
-    <exclude name="UnusedLocalVariable"/>
-
-    <!-- FIXME: Disabled because of the high number of current violations-->
-    <exclude name="EnumComparison"/>
-
-    <!-- FIXME: Disabled because of the high number of current violations-->
     <exclude name="RelianceOnDefaultCharset"/>
 
     <!-- In TableManager we map ResourceNotFoundException to TableNotFoundException -->
@@ -71,13 +62,6 @@
     <!-- Conflicts with the rule category/java/codestyle.xml/AvoidProtectedMethodInFinalClassNotExtending -->
     <exclude name="ConfusingTernary"/>
     <exclude name="UseExplicitTypes"/>
-
-    <!-- FIXME: Disabled because of the high number of current violations-->
-    <exclude name="UnnecessaryFullyQualifiedName"/>
-
-    <!-- FIXME: Disabled because of the high number of current violations-->
-    <exclude name="UnnecessaryInterfaceDeclaration"/>
-
 
     <!-- This rule does not allow us the following:
             private static final Logger logger=...

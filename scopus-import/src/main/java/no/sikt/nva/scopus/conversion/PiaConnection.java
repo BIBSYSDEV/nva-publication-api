@@ -169,7 +169,7 @@ public class PiaConnection {
   }
 
   private UriWrapper createUriWrapper(String hostString) {
-    return UriWrapper.fromUri(PiaConnection.HTTPS_SCHEME + hostString);
+    return UriWrapper.fromUri(HTTPS_SCHEME + hostString);
   }
 
   private HttpRequest createRequest(URI uri) {

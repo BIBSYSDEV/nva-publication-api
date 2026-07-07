@@ -40,7 +40,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(FileDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public final class FileDao extends Dao implements DynamoEntryByIdentifier, JoinWithResource {
+public final class FileDao extends Dao implements JoinWithResource {
 
   public static final String TYPE = "File";
   private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";

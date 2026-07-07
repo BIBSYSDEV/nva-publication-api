@@ -16,7 +16,6 @@ public class DeletedUploadDenyStrategy extends PublicationStrategyBase
 
   @Override
   public boolean deniesAction(PublicationOperation permission) {
-    return DELETED.equals(resource.getStatus())
-        && permission.equals(PublicationOperation.UPLOAD_FILE);
+    return DELETED == resource.getStatus() && permission == PublicationOperation.UPLOAD_FILE;
   }
 }

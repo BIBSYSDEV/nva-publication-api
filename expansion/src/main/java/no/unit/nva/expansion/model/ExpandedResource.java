@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
-import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.expansion.ExpansionConfig;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -50,7 +49,7 @@ import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.GodClass")
 @JsonTypeName(ExpandedResource.TYPE)
-public final class ExpandedResource implements JsonSerializable, ExpandedDataEntry {
+public final class ExpandedResource implements ExpandedDataEntry {
   // The ExpandedResource differs from ExpandedDoiRequest and ExpandedMessage
   // because it does not extend the Resource or Publication class,
   // but it contains its data as an inner Json Node.
@@ -270,7 +269,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
   }
 
   private static URI extractLicenseFromAssociatedArtifactNode(JsonNode node) {
-    return Optional.ofNullable(node.get(ExpandedResource.LICENSE_FIELD))
+    return Optional.ofNullable(node.get(LICENSE_FIELD))
         .map(JsonNode::asText)
         .map(URI::create)
         .orElse(null);

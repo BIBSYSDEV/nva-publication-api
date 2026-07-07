@@ -75,7 +75,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 @Setter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"status_bestilt", "produkttype"})
-@SuppressWarnings({"PMD.TooManyFields", "PMD.GodClass", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings({"PMD.TooManyFields", "PMD.CouplingBetweenObjects"})
 public class CristinArtisticProduction implements DescriptionExtractor, MovingPictureExtractor {
 
   @JsonIgnore public static final String YES = "J";

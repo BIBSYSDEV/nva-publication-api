@@ -42,12 +42,12 @@ public final class AssociatedArtifactsMerger {
   }
 
   private static boolean hasPublishedVersion(OpenFile openFile) {
-    return PUBLISHED_VERSION.equals(openFile.getPublisherVersion());
+    return PUBLISHED_VERSION == openFile.getPublisherVersion();
   }
 
   private static boolean isUniqueOpenFileWithPublishedVersion(
       AssociatedArtifactList existing, File file) {
-    return PUBLISHED_VERSION.equals(file.getPublisherVersion())
+    return PUBLISHED_VERSION == file.getPublisherVersion()
         && existing.stream()
             .noneMatch(
                 associatedArtifact ->
@@ -63,7 +63,7 @@ public final class AssociatedArtifactsMerger {
             .filter(File.class::isInstance)
             .map(File.class::cast)
             .filter(OpenFile.class::isInstance)
-            .filter(f -> PUBLISHED_VERSION.equals(f.getPublisherVersion()))
+            .filter(f -> PUBLISHED_VERSION == f.getPublisherVersion())
             .count();
     return count != SINGLETON;
   }
