@@ -40,7 +40,11 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
 
   @JacocoGenerated
   TextExtractionHandler(S3Client s3Client, TextExtractionConfig config) {
-    this(s3Client, new S3ObjectMetadataSource(s3Client), config, createDefaultExtractors(s3Client));
+    this(
+        s3Client,
+        new S3ObjectMetadataSource(s3Client),
+        config,
+        TextExtractors.defaultExtractors(new S3FileDownloadSource(s3Client)));
   }
 
   public TextExtractionHandler(
@@ -51,15 +55,6 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
     this.metadataSource = metadataSource;
     this.extractors = extractors;
     this.textStorageDriver = new S3Driver(s3Client, config.textBucketName());
-  }
-
-  @JacocoGenerated
-  private static List<TextExtractor> createDefaultExtractors(S3Client s3Client) {
-    var downloadSource = new S3FileDownloadSource(s3Client);
-    return List.of(
-        new PdfTextExtractor(downloadSource),
-        new WordTextExtractor(downloadSource),
-        new LatexTextExtractor(downloadSource));
   }
 
   @Override
