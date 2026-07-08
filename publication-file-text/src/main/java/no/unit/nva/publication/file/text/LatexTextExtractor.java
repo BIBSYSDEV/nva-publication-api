@@ -1,15 +1,18 @@
 package no.unit.nva.publication.file.text;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.ParseContext;
-import org.xml.sax.SAXException;
+import static java.util.Objects.nonNull;
 
-/** Extracts plain text from LaTeX documents. */
+import java.util.Set;
+import org.apache.tika.parser.ParseContext;
+
+/** Extracts plain text from LaTeX and TeX documents. */
 public final class LatexTextExtractor implements TextExtractor {
 
-  private static final String SUPPORTED_CONTENT_TYPE = "application/x-latex";
+  private static final String LATEX_CONTENT_TYPE = "application/x-latex";
+  private static final String TEX_CONTENT_TYPE = "application/x-tex";
+  private static final String TEXT_TEX_CONTENT_TYPE = "text/x-tex";
+  private static final Set<String> SUPPORTED_CONTENT_TYPES =
+      Set.of(LATEX_CONTENT_TYPE, TEX_CONTENT_TYPE, TEXT_TEX_CONTENT_TYPE);
 
   private final FileDownloadSource downloadSource;
 
@@ -19,20 +22,12 @@ public final class LatexTextExtractor implements TextExtractor {
 
   @Override
   public boolean supports(String contentType) {
-    return SUPPORTED_CONTENT_TYPE.equals(contentType);
+    return nonNull(contentType) && SUPPORTED_CONTENT_TYPES.contains(contentType);
   }
 
   @Override
   public ExtractionResult extract(ExtractionInput input) {
-    Path tempFile = null;
-    try {
-      tempFile = downloadSource.downloadToFile(input);
-      return new ExtractionResult.Extracted(input, TikaSupport.extractText(tempFile, new ParseContext()));
-    } catch (TikaException | IOException | SAXException exception) {
-      return new ExtractionResult.Flagged(
-          input, ExtractionFailureReason.EXTRACTION_ERROR, LogSanitizer.sanitize(exception.getMessage()));
-    } finally {
-      TempFileSupport.deleteTempFile(tempFile);
-    }
+    return TikaExtraction.extract(
+        input, downloadSource, ParseContext::new, TikaExtraction::extractionError);
   }
 }

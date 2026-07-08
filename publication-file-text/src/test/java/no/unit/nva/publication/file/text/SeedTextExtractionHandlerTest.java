@@ -32,6 +32,7 @@ import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.BatchResultErrorEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
 
 class SeedTextExtractionHandlerTest {
@@ -155,9 +156,27 @@ class SeedTextExtractionHandlerTest {
   }
 
   @Test
+  void shouldStripByteOrderMarkAndSurroundingWhitespaceFromCsvLines() throws IOException {
+    insertCsv("\uFEFF" + "publications/doc1.pdf  \n\tpublications/doc2.pdf \r\n");
+
+    handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext());
+
+    var captor = ArgumentCaptor.forClass(SendMessageBatchRequest.class);
+    verify(sqsClient).sendMessageBatch(captor.capture());
+    var bodies =
+        captor.getValue().entries().stream()
+            .map(SendMessageBatchRequestEntry::messageBody)
+            .toList();
+    assertThat(bodies).hasSize(2);
+    assertThat(bodies.getFirst()).contains("\"publications/doc1.pdf\"");
+    assertThat(bodies.getLast()).contains("\"publications/doc2.pdf\"");
+  }
+
+  @Test
   void shouldHandleUrlEncodedCsvKey() throws IOException {
     var decodedKey = "seed file.csv";
-    new S3Driver(fakeS3Client, CSV_BUCKET).insertFile(UnixPath.of(decodedKey), "publications/doc1.pdf");
+    new S3Driver(fakeS3Client, CSV_BUCKET)
+        .insertFile(UnixPath.of(decodedKey), "publications/doc1.pdf");
 
     handler().handleRequest(s3Event(CSV_BUCKET, "seed+file.csv"), new FakeContext());
 
@@ -183,7 +202,7 @@ class SeedTextExtractionHandlerTest {
 
   private static String csvWithKeys(int count) {
     return IntStream.rangeClosed(1, count)
-        .mapToObj(i -> "publications/doc" + i + ".pdf")
+        .mapToObj(keyNumber -> "publications/doc" + keyNumber + ".pdf")
         .collect(Collectors.joining("\n"));
   }
 

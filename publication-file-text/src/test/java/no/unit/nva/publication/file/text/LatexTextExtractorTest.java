@@ -43,11 +43,14 @@ class LatexTextExtractorTest {
   }
 
   @Test
-  void shouldSupportLatexContentType() {
+  void shouldSupportLatexAndTexContentTypes() {
     var extractor = new LatexTextExtractor(ignored -> Path.of("/unused"));
 
     assertThat(extractor.supports("application/x-latex")).isTrue();
+    assertThat(extractor.supports("application/x-tex")).isTrue();
+    assertThat(extractor.supports("text/x-tex")).isTrue();
     assertThat(extractor.supports("application/pdf")).isFalse();
     assertThat(extractor.supports("text/plain")).isFalse();
+    assertThat(extractor.supports(null)).isFalse();
   }
 }

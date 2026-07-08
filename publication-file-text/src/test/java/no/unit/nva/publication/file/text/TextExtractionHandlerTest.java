@@ -5,8 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.List;
 import no.unit.nva.s3.S3Driver;
@@ -24,9 +22,13 @@ class TextExtractionHandlerTest {
   private static final String SOME_KEY = "publications/2024/document.pdf";
   private static final String SOME_ETAG = "\"abc123\"";
   private static final String PDF_CONTENT_TYPE = "application/pdf";
+  private static final String PARAMETERIZED_MIXED_CASE_PDF = "Application/PDF; charset=UTF-8";
   private static final String EXTRACTED_TEXT = "The quick brown fox";
+  private static final String BLANK_TEXT = "   ";
   private static final String MESSAGE_ID = "test-message-id";
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final String TEXT_KEY = SOME_KEY + ".txt";
+  private static final String FLAG_KEY = "flags/" + SOME_KEY + ".json";
+  private static final String TEXT_KEY_SUFFIX = ".txt";
   private static final ObjectMetadataSource FIXED_METADATA =
       (bucket, key) -> new ObjectMetadata(SOME_ETAG, PDF_CONTENT_TYPE);
 
@@ -43,9 +45,7 @@ class TextExtractionHandlerTest {
 
   @Test
   void shouldReturnBatchItemFailureWhenMessageBodyIsUnparseable() {
-    var handler =
-        new TextExtractionHandler(
-            fakeS3Client, FIXED_METADATA, config, List.of(new FallbackTextExtractor()));
+    var handler = handlerWith(FIXED_METADATA, List.of());
 
     var result = handler.handleRequest(buildSqsEvent("not-valid-json"), context);
 
@@ -54,113 +54,138 @@ class TextExtractionHandlerTest {
   }
 
   @Test
-  void shouldNotReturnBatchItemFailureWhenContentTypeIsUnsupported() throws JsonProcessingException {
-    var handler =
-        new TextExtractionHandler(
-            fakeS3Client, FIXED_METADATA, config, List.of(new FallbackTextExtractor()));
+  void shouldNotReturnBatchItemFailureWhenNoExtractorSupportsContentType() {
+    var handler = handlerWith(FIXED_METADATA, List.of());
 
-    var result =
-        handler.handleRequest(
-            buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)), context);
+    var result = handler.handleRequest(extractionRequestEvent(), context);
 
     assertThat(result.getBatchItemFailures()).isEmpty();
   }
 
   @Test
-  void shouldReturnBatchItemFailureWhenExtractionFails() throws JsonProcessingException {
-    var handler =
-        new TextExtractionHandler(
-            fakeS3Client,
-            FIXED_METADATA,
-            config,
-            List.of(extractorThatFlags(ExtractionFailureReason.EXTRACTION_ERROR)));
+  void shouldStoreFlagMarkerWhenNoExtractorSupportsContentType() throws IOException {
+    var handler = handlerWith(FIXED_METADATA, List.of());
 
-    var result =
-        handler.handleRequest(
-            buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)), context);
+    handler.handleRequest(extractionRequestEvent(), context);
 
-    assertThat(result.getBatchItemFailures()).hasSize(1);
+    assertThat(storedFlagMarker())
+        .contains(ExtractionFailureReason.UNSUPPORTED_FORMAT.name())
+        .contains(SOME_KEY)
+        .contains(PDF_CONTENT_TYPE);
+    assertThatNoTextIsStored();
   }
 
   @Test
-  void shouldReturnBatchItemFailureWhenExtractorListIsEmpty() throws JsonProcessingException {
-    var handler = new TextExtractionHandler(fakeS3Client, FIXED_METADATA, config, List.of());
+  void shouldReturnBatchItemFailureWithoutFlagMarkerWhenExtractionFails() throws IOException {
+    var handler =
+        handlerWith(
+            FIXED_METADATA, List.of(extractorThatFlags(ExtractionFailureReason.EXTRACTION_ERROR)));
 
-    var result =
-        handler.handleRequest(
-            buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)), context);
+    var result = handler.handleRequest(extractionRequestEvent(), context);
 
     assertThat(result.getBatchItemFailures()).hasSize(1);
+    assertThat(textBucketDriver().listAllFiles(UnixPath.ROOT_PATH)).isEmpty();
   }
 
   @Test
-  void shouldNotStoreTextWhenExtractionIsFlaggedWithNonFatalReason() throws IOException {
+  void shouldStoreFlagMarkerInsteadOfTextWhenExtractionIsFlaggedWithNonFatalReason()
+      throws IOException {
     var handler =
-        new TextExtractionHandler(
-            fakeS3Client,
+        handlerWith(
             FIXED_METADATA,
-            config,
             List.of(extractorThatFlags(ExtractionFailureReason.PASSWORD_PROTECTED)));
 
-    assertThatCode(
-            () ->
-                handler.handleRequest(
-                    buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)),
-                    context))
+    assertThatCode(() -> handler.handleRequest(extractionRequestEvent(), context))
         .doesNotThrowAnyException();
 
-    assertThat(new S3Driver(fakeS3Client, TEXT_BUCKET).listAllFiles(UnixPath.ROOT_PATH)).isEmpty();
+    assertThat(storedFlagMarker())
+        .contains(ExtractionFailureReason.PASSWORD_PROTECTED.name())
+        .contains("abc123");
+    assertThatNoTextIsStored();
   }
 
   @Test
-  void shouldNotStoreTextWhenExtractedTextIsBlank() throws IOException {
-    var handler =
-        new TextExtractionHandler(
-            fakeS3Client, FIXED_METADATA, config, List.of(extractorThatReturns("   ")));
+  void shouldStoreFlagMarkerInsteadOfTextWhenExtractedTextIsBlank() throws IOException {
+    var handler = handlerWith(FIXED_METADATA, List.of(extractorThatReturns(BLANK_TEXT)));
 
-    handler.handleRequest(
-        buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)), context);
+    handler.handleRequest(extractionRequestEvent(), context);
 
-    assertThat(new S3Driver(fakeS3Client, TEXT_BUCKET).listAllFiles(UnixPath.ROOT_PATH)).isEmpty();
+    assertThat(storedFlagMarker()).contains(ExtractionFailureReason.BLANK_CONTENT.name());
+    assertThatNoTextIsStored();
   }
 
   @Test
-  void shouldNotReturnBatchItemFailureWhenSourceObjectNoLongerExists()
-      throws JsonProcessingException {
+  void shouldNotReturnBatchItemFailureWhenSourceObjectNoLongerExists() {
     ObjectMetadataSource sourceNotFound =
         (bucket, key) -> {
           throw NoSuchKeyException.builder().build();
         };
-    var handler =
-        new TextExtractionHandler(
-            fakeS3Client, sourceNotFound, config, List.of(new FallbackTextExtractor()));
+    var handler = handlerWith(sourceNotFound, List.of());
 
-    var result =
-        handler.handleRequest(
-            buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)), context);
+    var result = handler.handleRequest(extractionRequestEvent(), context);
 
     assertThat(result.getBatchItemFailures()).isEmpty();
   }
 
   @Test
   void shouldStoreExtractedTextInTextBucketUnderSameKeyWithTxtSuffix() throws IOException {
-    var handler =
-        new TextExtractionHandler(
-            fakeS3Client, FIXED_METADATA, config, List.of(extractorThatReturns(EXTRACTED_TEXT)));
+    var handler = handlerWith(FIXED_METADATA, List.of(extractorThatReturns(EXTRACTED_TEXT)));
 
-    handler.handleRequest(
-        buildSqsEventFromRequest(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY)), context);
+    handler.handleRequest(extractionRequestEvent(), context);
 
-    var storedText =
-        new S3Driver(fakeS3Client, TEXT_BUCKET).getFile(UnixPath.of(SOME_KEY + ".txt"));
-    assertThat(storedText).isEqualTo(EXTRACTED_TEXT);
+    assertThat(textBucketDriver().getFile(UnixPath.of(TEXT_KEY))).isEqualTo(EXTRACTED_TEXT);
   }
 
   @Test
-  void shouldReadBucketNamesFromEnvironment() {
-    var config = TextExtractionConfig.fromEnvironment();
+  void shouldExtractWhenStoredContentTypeHasParametersAndMixedCase() throws IOException {
+    ObjectMetadataSource parameterizedMetadata =
+        (bucket, key) -> new ObjectMetadata(SOME_ETAG, PARAMETERIZED_MIXED_CASE_PDF);
+    var handler =
+        handlerWith(
+            parameterizedMetadata, List.of(extractorSupporting(PDF_CONTENT_TYPE, EXTRACTED_TEXT)));
 
-    assertThat(config.textBucketName()).isEqualTo(TEXT_BUCKET);
+    handler.handleRequest(extractionRequestEvent(), context);
+
+    assertThat(textBucketDriver().getFile(UnixPath.of(TEXT_KEY))).isEqualTo(EXTRACTED_TEXT);
+  }
+
+  @Test
+  void shouldReadTextBucketNameFromEnvironment() {
+    var environmentConfig = TextExtractionConfig.fromEnvironment();
+
+    assertThat(environmentConfig.textBucketName()).isEqualTo(TEXT_BUCKET);
+  }
+
+  private TextExtractionHandler handlerWith(
+      ObjectMetadataSource metadataSource, List<TextExtractor> extractors) {
+    return new TextExtractionHandler(fakeS3Client, metadataSource, config, extractors);
+  }
+
+  private S3Driver textBucketDriver() {
+    return new S3Driver(fakeS3Client, TEXT_BUCKET);
+  }
+
+  private String storedFlagMarker() {
+    return textBucketDriver().getFile(UnixPath.of(FLAG_KEY));
+  }
+
+  private void assertThatNoTextIsStored() throws IOException {
+    assertThat(textBucketDriver().listAllFiles(UnixPath.ROOT_PATH))
+        .noneMatch(path -> path.toString().endsWith(TEXT_KEY_SUFFIX));
+  }
+
+  private static TextExtractor extractorSupporting(String supportedContentType, String text) {
+    return new TextExtractor() {
+      @Override
+      public boolean supports(String contentType) {
+        return supportedContentType.equals(contentType);
+      }
+
+      @Override
+      public ExtractionResult extract(ExtractionInput input) {
+        return new ExtractionResult.Extracted(input, text);
+      }
+    };
   }
 
   private static TextExtractor extractorThatReturns(String text) {
@@ -191,9 +216,8 @@ class TextExtractionHandlerTest {
     };
   }
 
-  private SQSEvent buildSqsEventFromRequest(TextExtractionRequest request)
-      throws JsonProcessingException {
-    return buildSqsEvent(OBJECT_MAPPER.writeValueAsString(request));
+  private SQSEvent extractionRequestEvent() {
+    return buildSqsEvent(new TextExtractionRequest(SOURCE_BUCKET, SOME_KEY).toJsonString());
   }
 
   private SQSEvent buildSqsEvent(String body) {

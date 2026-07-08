@@ -20,6 +20,10 @@ class PdfTextExtractorTest {
 
   private static final ExtractionInput SOME_INPUT =
       new ExtractionInput("bucket", "key.pdf", "etag", "application/pdf");
+  private static final float FONT_SIZE = 12;
+  private static final float TEXT_X_OFFSET = 100;
+  private static final float TEXT_Y_OFFSET = 700;
+  private static final int ENCRYPTION_KEY_LENGTH_BITS = 256;
 
   @TempDir Path tempDir;
 
@@ -98,8 +102,8 @@ class PdfTextExtractorTest {
       document.addPage(page);
       try (var contentStream = new PDPageContentStream(document, page)) {
         contentStream.beginText();
-        contentStream.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
-        contentStream.newLineAtOffset(100, 700);
+        contentStream.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), FONT_SIZE);
+        contentStream.newLineAtOffset(TEXT_X_OFFSET, TEXT_Y_OFFSET);
         contentStream.showText(text);
         contentStream.endText();
       }
@@ -114,7 +118,7 @@ class PdfTextExtractorTest {
       document.addPage(new PDPage());
       var policy =
           new StandardProtectionPolicy("owner-secret", "user-secret", new AccessPermission());
-      policy.setEncryptionKeyLength(256);
+      policy.setEncryptionKeyLength(ENCRYPTION_KEY_LENGTH_BITS);
       document.protect(policy);
       document.save(path.toFile());
     }

@@ -1,12 +1,8 @@
 package no.unit.nva.publication.file.text;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParserConfig;
-import org.xml.sax.SAXException;
 
 /** Extracts plain text from PDF files using Apache Tika and PDFBox. */
 public final class PdfTextExtractor implements TextExtractor {
@@ -27,26 +23,18 @@ public final class PdfTextExtractor implements TextExtractor {
 
   @Override
   public ExtractionResult extract(ExtractionInput input) {
-    Path tempFile = null;
-    try {
-      tempFile = downloadSource.downloadToFile(input);
-      return new ExtractionResult.Extracted(input, TikaSupport.extractText(tempFile, createParseContext()));
-    } catch (TikaException exception) {
-      return tikaFailure(input, exception);
-    } catch (IOException | SAXException exception) {
-      return new ExtractionResult.Flagged(
-          input, ExtractionFailureReason.EXTRACTION_ERROR, LogSanitizer.sanitize(exception.getMessage()));
-    } finally {
-      TempFileSupport.deleteTempFile(tempFile);
-    }
+    return TikaExtraction.extract(
+        input,
+        downloadSource,
+        PdfTextExtractor::createParseContext,
+        PdfTextExtractor::classifyFailure);
   }
 
-  private static ExtractionResult tikaFailure(ExtractionInput input, TikaException exception) {
+  private static ExtractionResult classifyFailure(ExtractionInput input, Exception exception) {
     return ExceptionCauses.hasCauseOfType(exception, InvalidPasswordException.class)
         ? new ExtractionResult.Flagged(
             input, ExtractionFailureReason.PASSWORD_PROTECTED, PASSWORD_PROTECTED_DETAIL)
-        : new ExtractionResult.Flagged(
-            input, ExtractionFailureReason.EXTRACTION_ERROR, LogSanitizer.sanitize(exception.getMessage()));
+        : TikaExtraction.extractionError(input, exception);
   }
 
   private static ParseContext createParseContext() {

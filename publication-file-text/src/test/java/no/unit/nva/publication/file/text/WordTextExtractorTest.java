@@ -125,6 +125,13 @@ class WordTextExtractorTest {
     assertThat(extractor.supports("text/plain")).isFalse();
   }
 
+  @Test
+  void shouldNotSupportNullContentType() {
+    var extractor = new WordTextExtractor(ignored -> Path.of("/unused"));
+
+    assertThat(extractor.supports(null)).isFalse();
+  }
+
   private ExtractionInput inputFor(String contentType) {
     var extension = DOCX_CONTENT_TYPE.equals(contentType) ? "docx" : "doc";
     return new ExtractionInput("bucket", "key." + extension, "etag", contentType);

@@ -3079,7 +3079,7 @@ Resources:
   TextExtractionQueue:
     Type: AWS::SQS::Queue
     Properties:
-      VisibilityTimeout: 900 #Equal to or more than TextExtractionHandler Timeout
+      VisibilityTimeout: 5400 #Six times TextExtractionHandler Timeout, per AWS Lambda/SQS guidance
       MessageRetentionPeriod: 1209600 #14 days
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt TextExtractionDLQ.Arn
@@ -3153,6 +3153,34 @@ Resources:
                 Rules:
                   - Name: suffix
                     Value: ".csv"
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt SeedTextExtractionDLQ.Arn
+
+  SeedTextExtractionDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600 #14 days
+
+  SeedTextExtractionDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: SeedTextExtractionDLQAlarm in publication-api
+      AlarmDescription: If this alarm is triggered, a seed CSV run failed after async retries; check SQS messages on SeedTextExtractionDLQ in publication-api
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Statistic: Sum
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt SeedTextExtractionDLQ.QueueName
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SlackSnsArn
 
   TextStorageBucket:
     Type: AWS::S3::Bucket

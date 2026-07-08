@@ -8,7 +8,9 @@ class ExceptionCausesTest {
 
   @Test
   void shouldReturnTrueWhenExceptionIsDirectlyOfMatchingType() {
-    assertThat(ExceptionCauses.hasCauseOfType(new IllegalArgumentException(), IllegalArgumentException.class))
+    assertThat(
+            ExceptionCauses.hasCauseOfType(
+                new IllegalArgumentException(), IllegalArgumentException.class))
         .isTrue();
   }
 
