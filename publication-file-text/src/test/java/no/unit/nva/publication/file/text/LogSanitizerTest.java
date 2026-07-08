@@ -8,6 +8,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class LogSanitizerTest {
 
+  private static final int MAX_SANITIZED_LENGTH = 256;
+  private static final int OVERLONG_VALUE_LENGTH = 300;
+
   @Test
   void shouldReturnEmptyStringForNull() {
     assertThat(LogSanitizer.sanitize(null)).isEmpty();
@@ -32,7 +35,10 @@ class LogSanitizerTest {
 
   @Test
   void shouldTruncateLongValues() {
-    var longValue = "a".repeat(300);
-    assertThat(LogSanitizer.sanitize(longValue)).hasSize(256);
+    var longValue = "a".repeat(OVERLONG_VALUE_LENGTH);
+
+    var sanitized = LogSanitizer.sanitize(longValue);
+
+    assertThat(sanitized).hasSize(MAX_SANITIZED_LENGTH);
   }
 }

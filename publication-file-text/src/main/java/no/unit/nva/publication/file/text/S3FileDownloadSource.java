@@ -8,9 +8,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 /**
- * Downloads S3 objects to fresh temp files. The download is conditional on the ETag recorded in the
- * {@link ExtractionInput}: if the source object was replaced after its metadata was resolved, S3
- * rejects the read and the message is retried with fresh metadata.
+ * Downloads S3 objects to fresh temp files with a single GetObject call. The returned ETag comes
+ * from the same response that produced the bytes, so it always identifies the version that was
+ * actually read.
  */
 public final class S3FileDownloadSource implements FileDownloadSource {
 
@@ -24,21 +24,18 @@ public final class S3FileDownloadSource implements FileDownloadSource {
   }
 
   @Override
-  public Path downloadToFile(ExtractionInput input) throws IOException {
+  public DownloadedObject downloadToFile(String bucket, String key) throws IOException {
     var tempFile = createUniqueNonExistentTempPath();
     try {
-      s3Client.getObject(
-          GetObjectRequest.builder()
-              .bucket(input.sourceBucket())
-              .key(input.sourceKey())
-              .ifMatch(input.sourceEtag())
-              .build(),
-          ResponseTransformer.toFile(tempFile));
+      var response =
+          s3Client.getObject(
+              GetObjectRequest.builder().bucket(bucket).key(key).build(),
+              ResponseTransformer.toFile(tempFile));
+      return new DownloadedObject(tempFile, response.eTag());
     } catch (RuntimeException exception) {
       TempFileSupport.deleteTempFile(tempFile);
       throw exception;
     }
-    return tempFile;
   }
 
   private static Path createUniqueNonExistentTempPath() throws IOException {

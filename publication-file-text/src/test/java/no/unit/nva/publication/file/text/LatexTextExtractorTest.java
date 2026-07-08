@@ -10,25 +10,14 @@ import org.junit.jupiter.api.io.TempDir;
 
 class LatexTextExtractorTest {
 
+  private static final String TEX_CONTENT_TYPE = "application/x-tex";
+  private static final String LATEX_CONTENT_TYPE = "application/x-latex";
+  private static final String PDF_CONTENT_TYPE = "application/pdf";
+  private static final String PLAIN_TEXT_CONTENT_TYPE = "text/plain";
   private static final ExtractionInput SOME_INPUT =
-      new ExtractionInput("bucket", "key.tex", "etag", "application/x-latex");
+      new ExtractionInput("bucket", "key.tex", "etag", TEX_CONTENT_TYPE);
 
   @TempDir Path tempDir;
-
-  @Test
-  void shouldReturnFlaggedWithExtractionErrorWhenDownloadFails() {
-    FileDownloadSource failingSource =
-        ignored -> {
-          throw new IOException("S3 download failed");
-        };
-
-    var result = new LatexTextExtractor(failingSource).extract(SOME_INPUT);
-
-    assertThat(result)
-        .isEqualTo(
-            new ExtractionResult.Flagged(
-                SOME_INPUT, ExtractionFailureReason.EXTRACTION_ERROR, "S3 download failed"));
-  }
 
   @Test
   void shouldExtractTextFromValidLatexDocument() throws IOException {
@@ -36,21 +25,19 @@ class LatexTextExtractorTest {
     var latexFile = tempDir.resolve("document.tex");
     Files.writeString(latexFile, "\\begin{document}\n" + expectedText + "\n\\end{document}");
 
-    var result = new LatexTextExtractor(ignored -> latexFile).extract(SOME_INPUT);
+    var result = new LatexTextExtractor().extract(SOME_INPUT, latexFile);
 
     assertThat(result).isInstanceOf(ExtractionResult.Extracted.class);
     assertThat(((ExtractionResult.Extracted) result).text()).contains(expectedText);
   }
 
   @Test
-  void shouldSupportLatexAndTexContentTypes() {
-    var extractor = new LatexTextExtractor(ignored -> Path.of("/unused"));
+  void shouldSupportTexAndLatexContentTypes() {
+    var extractor = new LatexTextExtractor();
 
-    assertThat(extractor.supports("application/x-latex")).isTrue();
-    assertThat(extractor.supports("application/x-tex")).isTrue();
-    assertThat(extractor.supports("text/x-tex")).isTrue();
-    assertThat(extractor.supports("application/pdf")).isFalse();
-    assertThat(extractor.supports("text/plain")).isFalse();
-    assertThat(extractor.supports(null)).isFalse();
+    assertThat(extractor.supports(TEX_CONTENT_TYPE)).isTrue();
+    assertThat(extractor.supports(LATEX_CONTENT_TYPE)).isTrue();
+    assertThat(extractor.supports(PDF_CONTENT_TYPE)).isFalse();
+    assertThat(extractor.supports(PLAIN_TEXT_CONTENT_TYPE)).isFalse();
   }
 }

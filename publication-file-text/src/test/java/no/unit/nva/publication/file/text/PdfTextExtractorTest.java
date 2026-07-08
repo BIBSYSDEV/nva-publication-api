@@ -18,8 +18,13 @@ import org.junit.jupiter.api.io.TempDir;
 
 class PdfTextExtractorTest {
 
+  private static final String PDF_CONTENT_TYPE = "application/pdf";
+  private static final String DOCX_CONTENT_TYPE =
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  private static final String DOC_CONTENT_TYPE = "application/msword";
+  private static final String PLAIN_TEXT_CONTENT_TYPE = "text/plain";
   private static final ExtractionInput SOME_INPUT =
-      new ExtractionInput("bucket", "key.pdf", "etag", "application/pdf");
+      new ExtractionInput("bucket", "key.pdf", "etag", PDF_CONTENT_TYPE);
   private static final float FONT_SIZE = 12;
   private static final float TEXT_X_OFFSET = 100;
   private static final float TEXT_Y_OFFSET = 700;
@@ -28,41 +33,23 @@ class PdfTextExtractorTest {
   @TempDir Path tempDir;
 
   @Test
-  void shouldReturnFlaggedWithExtractionErrorWhenDownloadFails() {
-    FileDownloadSource failingSource =
-        input -> {
-          throw new IOException("S3 download failed");
-        };
-    var extractor = new PdfTextExtractor(failingSource);
-
-    var result = extractor.extract(SOME_INPUT);
-
-    assertThat(result)
-        .isEqualTo(
-            new ExtractionResult.Flagged(
-                SOME_INPUT, ExtractionFailureReason.EXTRACTION_ERROR, "S3 download failed"));
-  }
-
-  @Test
-  void shouldReturnFlaggedWithExtractionErrorWhenFileIsCorrupted() throws IOException {
+  void shouldReturnFlaggedWithParseErrorWhenFileIsCorrupted() throws IOException {
     var corruptFile = tempDir.resolve("corrupt.pdf");
     Files.writeString(corruptFile, "%PDF-1.4\nnot a valid pdf body");
-    var extractor = new PdfTextExtractor(input -> corruptFile);
 
-    var result = extractor.extract(SOME_INPUT);
+    var result = new PdfTextExtractor().extract(SOME_INPUT, corruptFile);
 
     assertThat(result)
         .asInstanceOf(type(ExtractionResult.Flagged.class))
         .extracting(ExtractionResult.Flagged::reason)
-        .isEqualTo(ExtractionFailureReason.EXTRACTION_ERROR);
+        .isEqualTo(ExtractionFailureReason.PARSE_ERROR);
   }
 
   @Test
   void shouldReturnFlaggedWithPasswordProtectedWhenPdfIsEncrypted() throws IOException {
     var encryptedPdf = encryptedPdf();
-    var extractor = new PdfTextExtractor(input -> encryptedPdf);
 
-    var result = extractor.extract(SOME_INPUT);
+    var result = new PdfTextExtractor().extract(SOME_INPUT, encryptedPdf);
 
     assertThat(result)
         .asInstanceOf(type(ExtractionResult.Flagged.class))
@@ -74,9 +61,8 @@ class PdfTextExtractorTest {
   void shouldExtractTextFromValidPdf() throws IOException {
     var expectedText = "Hello NVA";
     var validPdf = validPdfWithText(expectedText);
-    var extractor = new PdfTextExtractor(input -> validPdf);
 
-    var result = extractor.extract(SOME_INPUT);
+    var result = new PdfTextExtractor().extract(SOME_INPUT, validPdf);
 
     assertThat(result).isInstanceOf(ExtractionResult.Extracted.class);
     assertThat(((ExtractionResult.Extracted) result).text()).contains(expectedText);
@@ -84,15 +70,12 @@ class PdfTextExtractorTest {
 
   @Test
   void shouldSupportOnlyPdfContentType() {
-    var extractor = new PdfTextExtractor(input -> Path.of("/unused"));
+    var extractor = new PdfTextExtractor();
 
-    assertThat(extractor.supports("application/pdf")).isTrue();
-    assertThat(
-            extractor.supports(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
-        .isFalse();
-    assertThat(extractor.supports("application/msword")).isFalse();
-    assertThat(extractor.supports("text/plain")).isFalse();
+    assertThat(extractor.supports(PDF_CONTENT_TYPE)).isTrue();
+    assertThat(extractor.supports(DOCX_CONTENT_TYPE)).isFalse();
+    assertThat(extractor.supports(DOC_CONTENT_TYPE)).isFalse();
+    assertThat(extractor.supports(PLAIN_TEXT_CONTENT_TYPE)).isFalse();
   }
 
   private Path validPdfWithText(String text) throws IOException {

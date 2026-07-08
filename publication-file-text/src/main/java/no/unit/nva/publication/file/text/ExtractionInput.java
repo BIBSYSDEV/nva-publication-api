@@ -1,10 +1,10 @@
 package no.unit.nva.publication.file.text;
 
 /**
- * Identifies the source object to extract text from. {@code contentType} is the normalized media
- * type (lowercase, parameter-free, never null) used for extractor dispatch. {@code sourceEtag} is
- * the object version the metadata was resolved from; downloads are conditional on it, so text is
- * never extracted from a different version than the one dispatched on.
+ * Identifies the source object a downloaded file came from. {@code contentType} is the canonical
+ * media type detected from the downloaded bytes (never null; unknown content is {@code
+ * application/octet-stream}). {@code sourceEtag} is the version the single GetObject actually read,
+ * so it is consistent with both the detected type and the extracted text by construction.
  */
 public record ExtractionInput(
     String sourceBucket, String sourceKey, String sourceEtag, String contentType) {}

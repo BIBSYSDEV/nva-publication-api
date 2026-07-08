@@ -442,6 +442,76 @@ Resources:
                   - sqs:DeleteMessage
                 Resource: !GetAtt UpdateDoiStatusDLQ.Arn
 
+  # Least-privilege roles for the text-extraction functions: these lambdas feed untrusted
+  # user-uploaded bytes to native parsers (Tika/PDFBox/POI), so they must not carry the broad
+  # shared LambdaRole permissions.
+  TextExtractionLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: TextExtraction
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${ResourceStorageBucketName}/*"
+              # ListBucket on the bucket ARN is required so that a missing key surfaces as
+              # 404/NoSuchKey (handled as skip) instead of 403/AccessDenied (poison message).
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::${ResourceStorageBucketName}"
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub "${TextStorageBucket.Arn}/*"
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt TextExtractionQueue.Arn
+
+  SeedTextExtractionLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: SeedTextExtraction
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # String-form ARN is deliberate: SAM wires the S3 event into the bucket resource,
+              # so referencing the bucket via !GetAtt here would create a circular dependency.
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${TextExtractionSeedBucketName}-${AWS::AccountId}/*"
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource:
+                  - !GetAtt TextExtractionQueue.Arn
+                  - !GetAtt SeedTextExtractionDLQ.Arn
+
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -463,6 +533,8 @@ Resources:
         - !Ref LambdaRole
         - !Ref DeleteDraftPublicationLambdaRole
         - !Ref UpdateDoiStatusLambdaRole
+        - !Ref TextExtractionLambdaRole
+        - !Ref SeedTextExtractionLambdaRole
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -3113,7 +3185,7 @@ Resources:
     Properties:
       CodeUri: publication-file-text
       Handler: no.unit.nva.publication.file.text.TextExtractionHandler::handleRequest
-      Role: !GetAtt LambdaRole.Arn
+      Role: !GetAtt TextExtractionLambdaRole.Arn
       Timeout: 900
       MemorySize: 8192
       EphemeralStorage:
@@ -3129,13 +3201,15 @@ Resources:
             BatchSize: 1
             FunctionResponseTypes:
               - ReportBatchItemFailures
+            ScalingConfig:
+              MaximumConcurrency: 20 # Cap fan-out of this 8GB function during bulk seed runs
 
   SeedTextExtractionHandler:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-file-text
       Handler: no.unit.nva.publication.file.text.SeedTextExtractionHandler::handleRequest
-      Role: !GetAtt LambdaRole.Arn
+      Role: !GetAtt SeedTextExtractionLambdaRole.Arn
       Timeout: 900
       MemorySize: 1024
       Environment:

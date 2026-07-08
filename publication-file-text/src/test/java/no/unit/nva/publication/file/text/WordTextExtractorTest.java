@@ -13,69 +13,49 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 class WordTextExtractorTest {
 
   private static final String DOCX_CONTENT_TYPE =
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   private static final String DOC_CONTENT_TYPE = "application/msword";
+  private static final String PDF_CONTENT_TYPE = "application/pdf";
+  private static final String PLAIN_TEXT_CONTENT_TYPE = "text/plain";
 
   @TempDir Path tempDir;
 
-  @ParameterizedTest
-  @ValueSource(strings = {DOCX_CONTENT_TYPE, DOC_CONTENT_TYPE})
-  void shouldReturnFlaggedWithExtractionErrorWhenDownloadFails(String contentType) {
-    var input = inputFor(contentType);
-    FileDownloadSource failingSource =
-        ignored -> {
-          throw new IOException("S3 download failed");
-        };
-
-    var result = new WordTextExtractor(failingSource).extract(input);
-
-    assertThat(result)
-        .isEqualTo(
-            new ExtractionResult.Flagged(
-                input, ExtractionFailureReason.EXTRACTION_ERROR, "S3 download failed"));
-  }
-
   @Test
-  void shouldReturnFlaggedWithExtractionErrorWhenDocxIsCorrupted() throws IOException {
+  void shouldReturnFlaggedWithParseErrorWhenDocxIsCorrupted() throws IOException {
     var corruptFile = tempDir.resolve("corrupt.docx");
     Files.write(corruptFile, ole2MagicBytesOnly());
-    var input = inputFor(DOCX_CONTENT_TYPE);
 
-    var result = new WordTextExtractor(ignored -> corruptFile).extract(input);
+    var result = new WordTextExtractor().extract(inputFor(DOCX_CONTENT_TYPE), corruptFile);
 
     assertThat(result)
         .asInstanceOf(type(ExtractionResult.Flagged.class))
         .extracting(ExtractionResult.Flagged::reason)
-        .isEqualTo(ExtractionFailureReason.EXTRACTION_ERROR);
+        .isEqualTo(ExtractionFailureReason.PARSE_ERROR);
   }
 
   @Test
-  void shouldReturnFlaggedWithExtractionErrorWhenDocIsCorrupted() throws IOException {
+  void shouldReturnFlaggedWithParseErrorWhenDocIsCorrupted() throws IOException {
     var corruptFile = tempDir.resolve("corrupt.doc");
     Files.write(corruptFile, ole2MagicBytesOnly());
-    var input = inputFor(DOC_CONTENT_TYPE);
 
-    var result = new WordTextExtractor(ignored -> corruptFile).extract(input);
+    var result = new WordTextExtractor().extract(inputFor(DOC_CONTENT_TYPE), corruptFile);
 
     assertThat(result)
         .asInstanceOf(type(ExtractionResult.Flagged.class))
         .extracting(ExtractionResult.Flagged::reason)
-        .isEqualTo(ExtractionFailureReason.EXTRACTION_ERROR);
+        .isEqualTo(ExtractionFailureReason.PARSE_ERROR);
   }
 
   @Test
   void shouldReturnFlaggedWithPasswordProtectedWhenDocxIsEncrypted()
       throws IOException, GeneralSecurityException {
     var encryptedDocx = encryptedDocx();
-    var input = inputFor(DOCX_CONTENT_TYPE);
 
-    var result = new WordTextExtractor(ignored -> encryptedDocx).extract(input);
+    var result = new WordTextExtractor().extract(inputFor(DOCX_CONTENT_TYPE), encryptedDocx);
 
     assertThat(result)
         .asInstanceOf(type(ExtractionResult.Flagged.class))
@@ -87,9 +67,8 @@ class WordTextExtractorTest {
   void shouldReturnFlaggedWithPasswordProtectedWhenDocIsEncrypted()
       throws IOException, GeneralSecurityException {
     var encryptedDoc = encryptedDoc();
-    var input = inputFor(DOC_CONTENT_TYPE);
 
-    var result = new WordTextExtractor(ignored -> encryptedDoc).extract(input);
+    var result = new WordTextExtractor().extract(inputFor(DOC_CONTENT_TYPE), encryptedDoc);
 
     assertThat(result)
         .asInstanceOf(type(ExtractionResult.Flagged.class))
@@ -101,9 +80,8 @@ class WordTextExtractorTest {
   void shouldExtractTextFromValidDocx() throws IOException {
     var expectedText = "Hello NVA";
     var validDocx = validDocxWithText(expectedText);
-    var input = inputFor(DOCX_CONTENT_TYPE);
 
-    var result = new WordTextExtractor(ignored -> validDocx).extract(input);
+    var result = new WordTextExtractor().extract(inputFor(DOCX_CONTENT_TYPE), validDocx);
 
     assertThat(result).isInstanceOf(ExtractionResult.Extracted.class);
     assertThat(((ExtractionResult.Extracted) result).text()).contains(expectedText);
@@ -111,7 +89,7 @@ class WordTextExtractorTest {
 
   @Test
   void shouldSupportBothWordContentTypes() {
-    var extractor = new WordTextExtractor(ignored -> Path.of("/unused"));
+    var extractor = new WordTextExtractor();
 
     assertThat(extractor.supports(DOCX_CONTENT_TYPE)).isTrue();
     assertThat(extractor.supports(DOC_CONTENT_TYPE)).isTrue();
@@ -119,17 +97,10 @@ class WordTextExtractorTest {
 
   @Test
   void shouldNotSupportOtherContentTypes() {
-    var extractor = new WordTextExtractor(ignored -> Path.of("/unused"));
+    var extractor = new WordTextExtractor();
 
-    assertThat(extractor.supports("application/pdf")).isFalse();
-    assertThat(extractor.supports("text/plain")).isFalse();
-  }
-
-  @Test
-  void shouldNotSupportNullContentType() {
-    var extractor = new WordTextExtractor(ignored -> Path.of("/unused"));
-
-    assertThat(extractor.supports(null)).isFalse();
+    assertThat(extractor.supports(PDF_CONTENT_TYPE)).isFalse();
+    assertThat(extractor.supports(PLAIN_TEXT_CONTENT_TYPE)).isFalse();
   }
 
   private ExtractionInput inputFor(String contentType) {

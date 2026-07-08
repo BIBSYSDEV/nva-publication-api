@@ -6,7 +6,10 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.function.Function;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
@@ -22,15 +25,17 @@ class TextExtractionHandlerTest {
   private static final String SOME_KEY = "publications/2024/document.pdf";
   private static final String SOME_ETAG = "\"abc123\"";
   private static final String PDF_CONTENT_TYPE = "application/pdf";
-  private static final String PARAMETERIZED_MIXED_CASE_PDF = "Application/PDF; charset=UTF-8";
   private static final String EXTRACTED_TEXT = "The quick brown fox";
   private static final String BLANK_TEXT = "   ";
   private static final String MESSAGE_ID = "test-message-id";
   private static final String TEXT_KEY = SOME_KEY + ".txt";
   private static final String FLAG_KEY = "flags/" + SOME_KEY + ".json";
   private static final String TEXT_KEY_SUFFIX = ".txt";
-  private static final ObjectMetadataSource FIXED_METADATA =
-      (bucket, key) -> new ObjectMetadata(SOME_ETAG, PDF_CONTENT_TYPE);
+  private static final String FLAG_KEY_PREFIX = "flags/";
+  private static final Path UNUSED_FILE = Path.of("/unused");
+  private static final FileDownloadSource FIXED_DOWNLOAD =
+      (bucket, key) -> new DownloadedObject(UNUSED_FILE, SOME_ETAG);
+  private static final ContentTypeDetector FIXED_DETECTOR = (file, filename) -> PDF_CONTENT_TYPE;
 
   private FakeS3Client fakeS3Client;
   private TextExtractionConfig config;
@@ -45,7 +50,7 @@ class TextExtractionHandlerTest {
 
   @Test
   void shouldReturnBatchItemFailureWhenMessageBodyIsUnparseable() {
-    var handler = handlerWith(FIXED_METADATA, List.of());
+    var handler = handlerWith(FIXED_DOWNLOAD, List.of());
 
     var result = handler.handleRequest(buildSqsEvent("not-valid-json"), context);
 
@@ -54,8 +59,25 @@ class TextExtractionHandlerTest {
   }
 
   @Test
-  void shouldNotReturnBatchItemFailureWhenNoExtractorSupportsContentType() {
-    var handler = handlerWith(FIXED_METADATA, List.of());
+  void shouldReturnBatchItemFailureWhenDownloadFails() {
+    FileDownloadSource failingDownload =
+        (bucket, key) -> {
+          throw new IllegalStateException("S3 unavailable");
+        };
+    var handler = handlerWith(failingDownload, List.of(extractor(this::extracted)));
+
+    var result = handler.handleRequest(extractionRequestEvent(), context);
+
+    assertThat(result.getBatchItemFailures()).hasSize(1);
+  }
+
+  @Test
+  void shouldNotReturnBatchItemFailureWhenSourceObjectNoLongerExists() {
+    FileDownloadSource sourceGone =
+        (bucket, key) -> {
+          throw NoSuchKeyException.builder().build();
+        };
+    var handler = handlerWith(sourceGone, List.of());
 
     var result = handler.handleRequest(extractionRequestEvent(), context);
 
@@ -64,10 +86,11 @@ class TextExtractionHandlerTest {
 
   @Test
   void shouldStoreFlagMarkerWhenNoExtractorSupportsContentType() throws IOException {
-    var handler = handlerWith(FIXED_METADATA, List.of());
+    var handler = handlerWith(FIXED_DOWNLOAD, List.of());
 
-    handler.handleRequest(extractionRequestEvent(), context);
+    var result = handler.handleRequest(extractionRequestEvent(), context);
 
+    assertThat(result.getBatchItemFailures()).isEmpty();
     assertThat(storedFlagMarker())
         .contains(ExtractionFailureReason.UNSUPPORTED_FORMAT.name())
         .contains(SOME_KEY)
@@ -76,24 +99,27 @@ class TextExtractionHandlerTest {
   }
 
   @Test
-  void shouldReturnBatchItemFailureWithoutFlagMarkerWhenExtractionFails() throws IOException {
-    var handler =
-        handlerWith(
-            FIXED_METADATA, List.of(extractorThatFlags(ExtractionFailureReason.EXTRACTION_ERROR)));
-
-    var result = handler.handleRequest(extractionRequestEvent(), context);
-
-    assertThat(result.getBatchItemFailures()).hasSize(1);
-    assertThat(textBucketDriver().listAllFiles(UnixPath.ROOT_PATH)).isEmpty();
-  }
-
-  @Test
-  void shouldStoreFlagMarkerInsteadOfTextWhenExtractionIsFlaggedWithNonFatalReason()
+  void shouldStoreFlagMarkerWithoutBatchItemFailureWhenParsingFailsDeterministically()
       throws IOException {
     var handler =
         handlerWith(
-            FIXED_METADATA,
-            List.of(extractorThatFlags(ExtractionFailureReason.PASSWORD_PROTECTED)));
+            FIXED_DOWNLOAD,
+            List.of(extractor(input -> flagged(input, ExtractionFailureReason.PARSE_ERROR))));
+
+    var result = handler.handleRequest(extractionRequestEvent(), context);
+
+    assertThat(result.getBatchItemFailures()).isEmpty();
+    assertThat(storedFlagMarker()).contains(ExtractionFailureReason.PARSE_ERROR.name());
+    assertThatNoTextIsStored();
+  }
+
+  @Test
+  void shouldStoreFlagMarkerInsteadOfTextWhenDocumentIsPasswordProtected() throws IOException {
+    var handler =
+        handlerWith(
+            FIXED_DOWNLOAD,
+            List.of(
+                extractor(input -> flagged(input, ExtractionFailureReason.PASSWORD_PROTECTED))));
 
     assertThatCode(() -> handler.handleRequest(extractionRequestEvent(), context))
         .doesNotThrowAnyException();
@@ -106,7 +132,8 @@ class TextExtractionHandlerTest {
 
   @Test
   void shouldStoreFlagMarkerInsteadOfTextWhenExtractedTextIsBlank() throws IOException {
-    var handler = handlerWith(FIXED_METADATA, List.of(extractorThatReturns(BLANK_TEXT)));
+    var handler =
+        handlerWith(FIXED_DOWNLOAD, List.of(extractor(input -> extracted(input, BLANK_TEXT))));
 
     handler.handleRequest(extractionRequestEvent(), context);
 
@@ -115,21 +142,8 @@ class TextExtractionHandlerTest {
   }
 
   @Test
-  void shouldNotReturnBatchItemFailureWhenSourceObjectNoLongerExists() {
-    ObjectMetadataSource sourceNotFound =
-        (bucket, key) -> {
-          throw NoSuchKeyException.builder().build();
-        };
-    var handler = handlerWith(sourceNotFound, List.of());
-
-    var result = handler.handleRequest(extractionRequestEvent(), context);
-
-    assertThat(result.getBatchItemFailures()).isEmpty();
-  }
-
-  @Test
   void shouldStoreExtractedTextInTextBucketUnderSameKeyWithTxtSuffix() throws IOException {
-    var handler = handlerWith(FIXED_METADATA, List.of(extractorThatReturns(EXTRACTED_TEXT)));
+    var handler = handlerWith(FIXED_DOWNLOAD, List.of(extractor(this::extracted)));
 
     handler.handleRequest(extractionRequestEvent(), context);
 
@@ -137,16 +151,65 @@ class TextExtractionHandlerTest {
   }
 
   @Test
-  void shouldExtractWhenStoredContentTypeHasParametersAndMixedCase() throws IOException {
-    ObjectMetadataSource parameterizedMetadata =
-        (bucket, key) -> new ObjectMetadata(SOME_ETAG, PARAMETERIZED_MIXED_CASE_PDF);
+  void shouldStoreTruncationFlagMarkerAlongsideTruncatedText() throws IOException {
+    var handler = handlerWith(FIXED_DOWNLOAD, List.of(extractor(this::truncatedExtracted)));
+
+    handler.handleRequest(extractionRequestEvent(), context);
+
+    assertThat(textBucketDriver().getFile(UnixPath.of(TEXT_KEY))).isEqualTo(EXTRACTED_TEXT);
+    assertThat(storedFlagMarker()).contains(ExtractionFailureReason.TRUNCATED_CONTENT.name());
+  }
+
+  @Test
+  void shouldDeleteStaleFlagMarkerWhenExtractionSucceedsCompletely() throws IOException {
+    textBucketDriver().insertFile(UnixPath.of(FLAG_KEY), "stale flag");
+    var handler = handlerWith(FIXED_DOWNLOAD, List.of(extractor(this::extracted)));
+
+    handler.handleRequest(extractionRequestEvent(), context);
+
+    assertThat(textBucketDriver().getFile(UnixPath.of(TEXT_KEY))).isEqualTo(EXTRACTED_TEXT);
+    assertThatNoFlagMarkerIsStored();
+  }
+
+  @Test
+  void shouldDeleteStaleTextWhenExtractionIsFlagged() throws IOException {
+    textBucketDriver().insertFile(UnixPath.of(TEXT_KEY), "stale text");
     var handler =
         handlerWith(
-            parameterizedMetadata, List.of(extractorSupporting(PDF_CONTENT_TYPE, EXTRACTED_TEXT)));
+            FIXED_DOWNLOAD,
+            List.of(
+                extractor(input -> flagged(input, ExtractionFailureReason.PASSWORD_PROTECTED))));
 
     handler.handleRequest(extractionRequestEvent(), context);
 
-    assertThat(textBucketDriver().getFile(UnixPath.of(TEXT_KEY))).isEqualTo(EXTRACTED_TEXT);
+    assertThat(storedFlagMarker()).contains(ExtractionFailureReason.PASSWORD_PROTECTED.name());
+    assertThatNoTextIsStored();
+  }
+
+  @Test
+  void shouldDeleteDownloadedTempFileWhenExtractionSucceeds() throws IOException {
+    var tempFile = Files.createTempFile("handler-test-", ".bin");
+    var handler =
+        handlerWith(
+            (bucket, key) -> new DownloadedObject(tempFile, SOME_ETAG),
+            List.of(extractor(this::extracted)));
+
+    handler.handleRequest(extractionRequestEvent(), context);
+
+    assertThat(tempFile).doesNotExist();
+  }
+
+  @Test
+  void shouldDeleteDownloadedTempFileWhenExtractionIsFlagged() throws IOException {
+    var tempFile = Files.createTempFile("handler-test-", ".bin");
+    var handler =
+        handlerWith(
+            (bucket, key) -> new DownloadedObject(tempFile, SOME_ETAG),
+            List.of(extractor(input -> flagged(input, ExtractionFailureReason.PARSE_ERROR))));
+
+    handler.handleRequest(extractionRequestEvent(), context);
+
+    assertThat(tempFile).doesNotExist();
   }
 
   @Test
@@ -157,8 +220,9 @@ class TextExtractionHandlerTest {
   }
 
   private TextExtractionHandler handlerWith(
-      ObjectMetadataSource metadataSource, List<TextExtractor> extractors) {
-    return new TextExtractionHandler(fakeS3Client, metadataSource, config, extractors);
+      FileDownloadSource downloadSource, List<TextExtractor> extractors) {
+    return new TextExtractionHandler(
+        fakeS3Client, downloadSource, FIXED_DETECTOR, config, extractors);
   }
 
   private S3Driver textBucketDriver() {
@@ -174,21 +238,28 @@ class TextExtractionHandlerTest {
         .noneMatch(path -> path.toString().endsWith(TEXT_KEY_SUFFIX));
   }
 
-  private static TextExtractor extractorSupporting(String supportedContentType, String text) {
-    return new TextExtractor() {
-      @Override
-      public boolean supports(String contentType) {
-        return supportedContentType.equals(contentType);
-      }
-
-      @Override
-      public ExtractionResult extract(ExtractionInput input) {
-        return new ExtractionResult.Extracted(input, text);
-      }
-    };
+  private void assertThatNoFlagMarkerIsStored() throws IOException {
+    assertThat(textBucketDriver().listAllFiles(UnixPath.ROOT_PATH))
+        .noneMatch(path -> path.toString().startsWith(FLAG_KEY_PREFIX));
   }
 
-  private static TextExtractor extractorThatReturns(String text) {
+  private ExtractionResult extracted(ExtractionInput input) {
+    return extracted(input, EXTRACTED_TEXT);
+  }
+
+  private ExtractionResult extracted(ExtractionInput input, String text) {
+    return new ExtractionResult.Extracted(input, text, false);
+  }
+
+  private ExtractionResult truncatedExtracted(ExtractionInput input) {
+    return new ExtractionResult.Extracted(input, EXTRACTED_TEXT, true);
+  }
+
+  private static ExtractionResult flagged(ExtractionInput input, ExtractionFailureReason reason) {
+    return new ExtractionResult.Flagged(input, reason, reason.name());
+  }
+
+  private static TextExtractor extractor(Function<ExtractionInput, ExtractionResult> result) {
     return new TextExtractor() {
       @Override
       public boolean supports(String contentType) {
@@ -196,22 +267,8 @@ class TextExtractionHandlerTest {
       }
 
       @Override
-      public ExtractionResult extract(ExtractionInput input) {
-        return new ExtractionResult.Extracted(input, text);
-      }
-    };
-  }
-
-  private static TextExtractor extractorThatFlags(ExtractionFailureReason reason) {
-    return new TextExtractor() {
-      @Override
-      public boolean supports(String contentType) {
-        return true;
-      }
-
-      @Override
-      public ExtractionResult extract(ExtractionInput input) {
-        return new ExtractionResult.Flagged(input, reason, reason.name());
+      public ExtractionResult extract(ExtractionInput input, Path file) {
+        return result.apply(input);
       }
     };
   }

@@ -1,7 +1,6 @@
 package no.unit.nva.publication.file.text;
 
-import static java.util.Objects.nonNull;
-
+import java.nio.file.Path;
 import java.util.Set;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.parser.ParseContext;
@@ -18,21 +17,15 @@ public final class WordTextExtractor implements TextExtractor {
       Set.of(DOCX_CONTENT_TYPE, DOC_CONTENT_TYPE);
   private static final String PASSWORD_PROTECTED_DETAIL = "Password-protected document";
 
-  private final FileDownloadSource downloadSource;
-
-  public WordTextExtractor(FileDownloadSource downloadSource) {
-    this.downloadSource = downloadSource;
-  }
-
   @Override
   public boolean supports(String contentType) {
-    return nonNull(contentType) && SUPPORTED_CONTENT_TYPES.contains(contentType);
+    return SUPPORTED_CONTENT_TYPES.contains(contentType);
   }
 
   @Override
-  public ExtractionResult extract(ExtractionInput input) {
+  public ExtractionResult extract(ExtractionInput input, Path file) {
     return TikaExtraction.extract(
-        input, downloadSource, ParseContext::new, WordTextExtractor::classifyFailure);
+        input, file, ParseContext::new, WordTextExtractor::classifyFailure);
   }
 
   private static ExtractionResult classifyFailure(ExtractionInput input, Exception exception) {
@@ -42,6 +35,6 @@ public final class WordTextExtractor implements TextExtractor {
             org.apache.poi.EncryptedDocumentException.class)
         ? new ExtractionResult.Flagged(
             input, ExtractionFailureReason.PASSWORD_PROTECTED, PASSWORD_PROTECTED_DETAIL)
-        : TikaExtraction.extractionError(input, exception);
+        : TikaExtraction.parseError(input, exception);
   }
 }

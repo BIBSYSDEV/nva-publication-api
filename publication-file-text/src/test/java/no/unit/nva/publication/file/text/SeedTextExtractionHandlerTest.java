@@ -34,6 +34,7 @@ import software.amazon.awssdk.services.sqs.model.BatchResultErrorEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
+import software.amazon.awssdk.services.sqs.model.SqsException;
 
 class SeedTextExtractionHandlerTest {
 
@@ -42,6 +43,9 @@ class SeedTextExtractionHandlerTest {
   private static final String SOURCE_BUCKET = "source-bucket";
   private static final String QUEUE_URL =
       "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue";
+  private static final int MAX_ENTRIES_PER_BATCH = 10;
+  private static final int KEYS_SPANNING_THREE_BATCHES = 25;
+  private static final int EXPECTED_BATCH_COUNT = 3;
 
   private FakeS3Client fakeS3Client;
   private SqsClient sqsClient;
@@ -69,7 +73,7 @@ class SeedTextExtractionHandlerTest {
 
   @Test
   void shouldSendSingleBatchForTenOrFewerKeys() throws IOException {
-    insertCsv(csvWithKeys(10));
+    insertCsv(csvWithKeys(MAX_ENTRIES_PER_BATCH));
 
     handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext());
 
@@ -78,17 +82,18 @@ class SeedTextExtractionHandlerTest {
 
   @Test
   void shouldPartitionKeysIntoBatchesOfTen() throws IOException {
-    insertCsv(csvWithKeys(25));
+    insertCsv(csvWithKeys(KEYS_SPANNING_THREE_BATCHES));
 
     handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext());
 
     var captor = ArgumentCaptor.forClass(SendMessageBatchRequest.class);
-    verify(sqsClient, times(3)).sendMessageBatch(captor.capture());
+    verify(sqsClient, times(EXPECTED_BATCH_COUNT)).sendMessageBatch(captor.capture());
     assertThat(captor.getAllValues())
-        .allSatisfy(batch -> assertThat(batch.entries()).hasSizeLessThanOrEqualTo(10));
+        .allSatisfy(
+            batch -> assertThat(batch.entries()).hasSizeLessThanOrEqualTo(MAX_ENTRIES_PER_BATCH));
     var totalEnqueued =
         captor.getAllValues().stream().mapToInt(batch -> batch.entries().size()).sum();
-    assertThat(totalEnqueued).isEqualTo(25);
+    assertThat(totalEnqueued).isEqualTo(KEYS_SPANNING_THREE_BATCHES);
   }
 
   @Test
@@ -146,13 +151,30 @@ class SeedTextExtractionHandlerTest {
         .thenReturn(SendMessageBatchResponse.builder().failed(failedEntry).build())
         .thenReturn(SendMessageBatchResponse.builder().build())
         .thenReturn(SendMessageBatchResponse.builder().build());
-    insertCsv(csvWithKeys(25));
+    insertCsv(csvWithKeys(KEYS_SPANNING_THREE_BATCHES));
 
     assertThatThrownBy(
             () -> handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext()))
         .isInstanceOf(IllegalStateException.class);
 
-    verify(sqsClient, times(3)).sendMessageBatch(any(SendMessageBatchRequest.class));
+    verify(sqsClient, times(EXPECTED_BATCH_COUNT))
+        .sendMessageBatch(any(SendMessageBatchRequest.class));
+  }
+
+  @Test
+  void shouldContinueRemainingBatchesAndThrowWhenWholeBatchSendFails() throws IOException {
+    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
+        .thenThrow(SqsException.builder().message("SQS unavailable").build())
+        .thenReturn(SendMessageBatchResponse.builder().build())
+        .thenReturn(SendMessageBatchResponse.builder().build());
+    insertCsv(csvWithKeys(KEYS_SPANNING_THREE_BATCHES));
+
+    assertThatThrownBy(
+            () -> handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext()))
+        .isInstanceOf(IllegalStateException.class);
+
+    verify(sqsClient, times(EXPECTED_BATCH_COUNT))
+        .sendMessageBatch(any(SendMessageBatchRequest.class));
   }
 
   @Test

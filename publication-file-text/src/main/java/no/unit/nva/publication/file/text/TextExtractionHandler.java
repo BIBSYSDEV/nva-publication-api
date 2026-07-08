@@ -1,5 +1,6 @@
 package no.unit.nva.publication.file.text;
 
+import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -7,8 +8,11 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
+import com.fasterxml.jackson.core.JsonLocation;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import no.unit.nva.commons.json.JsonUtils;
@@ -27,9 +31,13 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
   private static final String FLAG_KEY_PREFIX = "flags/";
   private static final String FLAG_KEY_SUFFIX = ".json";
   private static final String UNPARSEABLE_MESSAGE_BODY = "Unparseable SQS message body: ";
+  private static final String PARSE_LOCATION_TEMPLATE = " at line %d, column %d";
   private static final String BLANK_CONTENT_DETAIL = "Extracted text was blank";
+  private static final String TRUNCATED_CONTENT_DETAIL =
+      "Truncated at " + TikaSupport.MAX_EXTRACTED_CHARACTERS + " characters";
 
-  private final ObjectMetadataSource metadataSource;
+  private final FileDownloadSource downloadSource;
+  private final ContentTypeDetector contentTypeDetector;
   private final List<TextExtractor> extractors;
   private final S3Driver textStorageDriver;
 
@@ -42,17 +50,20 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
   TextExtractionHandler(S3Client s3Client, TextExtractionConfig config) {
     this(
         s3Client,
-        new S3ObjectMetadataSource(s3Client),
+        new S3FileDownloadSource(s3Client),
+        TikaSupport::detectContentType,
         config,
-        TextExtractors.defaultExtractors(new S3FileDownloadSource(s3Client)));
+        TextExtractors.defaultExtractors());
   }
 
   public TextExtractionHandler(
       S3Client s3Client,
-      ObjectMetadataSource metadataSource,
+      FileDownloadSource downloadSource,
+      ContentTypeDetector contentTypeDetector,
       TextExtractionConfig config,
       List<TextExtractor> extractors) {
-    this.metadataSource = metadataSource;
+    this.downloadSource = downloadSource;
+    this.contentTypeDetector = contentTypeDetector;
     this.extractors = extractors;
     this.textStorageDriver = new S3Driver(s3Client, config.textBucketName());
   }
@@ -79,23 +90,32 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
 
   private void processMessage(SQSMessage message) {
     var request = parseRequest(message.getBody());
-    ObjectMetadata metadata;
+    DownloadedObject downloadedObject;
     try {
-      metadata = metadataSource.fetchMetadata(request.bucket(), request.key());
+      downloadedObject = downloadSource.downloadToFile(request.bucket(), request.key());
     } catch (NoSuchKeyException exception) {
       LOGGER.warn(
           "Source object no longer exists, skipping: bucket={} key={}",
           LogSanitizer.sanitize(request.bucket()),
           LogSanitizer.sanitize(request.key()));
       return;
+    } catch (IOException exception) {
+      throw new UncheckedIOException(exception);
     }
-    var input =
-        new ExtractionInput(
-            request.bucket(),
-            request.key(),
-            metadata.etag(),
-            ContentTypeNormalizer.normalize(metadata.contentType()));
-    handleResult(dispatch(input));
+    try {
+      var contentType =
+          contentTypeDetector.detectContentType(downloadedObject.path(), filenameOf(request.key()));
+      var input =
+          new ExtractionInput(
+              request.bucket(), request.key(), downloadedObject.etag(), contentType);
+      handleResult(dispatch(input, downloadedObject.path()));
+    } finally {
+      TempFileSupport.deleteTempFile(downloadedObject.path());
+    }
+  }
+
+  private static String filenameOf(String key) {
+    return UnixPath.of(key).getLastPathElement();
   }
 
   private TextExtractionRequest parseRequest(String body) {
@@ -103,15 +123,30 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
         .orElseThrow(
             failure ->
                 new IllegalArgumentException(
-                    UNPARSEABLE_MESSAGE_BODY
-                        + LogSanitizer.sanitize(failure.getException().getMessage())));
+                    UNPARSEABLE_MESSAGE_BODY + describeParseFailure(failure.getException())));
   }
 
-  private ExtractionResult dispatch(ExtractionInput input) {
+  private static String describeParseFailure(Exception exception) {
+    if (exception instanceof JsonProcessingException jsonException) {
+      return LogSanitizer.sanitize(jsonException.getOriginalMessage())
+          + parseLocationOf(jsonException);
+    }
+    return LogSanitizer.sanitize(exception.getMessage());
+  }
+
+  private static String parseLocationOf(JsonProcessingException jsonException) {
+    var location = jsonException.getLocation();
+    if (isNull(location) || JsonLocation.NA.equals(location)) {
+      return "";
+    }
+    return PARSE_LOCATION_TEMPLATE.formatted(location.getLineNr(), location.getColumnNr());
+  }
+
+  private ExtractionResult dispatch(ExtractionInput input, Path file) {
     return extractors.stream()
         .filter(extractor -> extractor.supports(input.contentType()))
         .findFirst()
-        .map(extractor -> extractor.extract(input))
+        .map(extractor -> extractor.extract(input, file))
         .orElseGet(
             () ->
                 new ExtractionResult.Flagged(
@@ -121,39 +156,54 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
   private void handleResult(ExtractionResult result) {
     switch (result) {
       case ExtractionResult.Extracted extracted -> storeText(extracted);
-      case ExtractionResult.Flagged flagged -> handleFlag(flagged);
+      case ExtractionResult.Flagged flagged -> storeFlaggedResult(flagged);
     }
-  }
-
-  private void handleFlag(ExtractionResult.Flagged flagged) {
-    logFlag(flagged);
-    if (flagged.reason() == ExtractionFailureReason.EXTRACTION_ERROR) {
-      throw new IllegalStateException(
-          "Extraction failed: " + LogSanitizer.sanitize(flagged.detail()));
-    }
-    storeFlag(flagged.source(), flagged.reason(), flagged.detail());
   }
 
   private void storeText(ExtractionResult.Extracted extracted) {
+    var source = extracted.source();
     if (extracted.text().isBlank()) {
       LOGGER.warn(
           "Extracted blank text, flagging instead of storing: key={}",
-          LogSanitizer.sanitize(extracted.source().sourceKey()));
-      storeFlag(extracted.source(), ExtractionFailureReason.BLANK_CONTENT, BLANK_CONTENT_DETAIL);
+          LogSanitizer.sanitize(source.sourceKey()));
+      storeFlagAndRemoveStaleText(
+          source, ExtractionFailureReason.BLANK_CONTENT, BLANK_CONTENT_DETAIL);
       return;
     }
-    var textKey = extracted.source().sourceKey() + TEXT_KEY_SUFFIX;
+    var textKey = source.sourceKey() + TEXT_KEY_SUFFIX;
     insertFile(textKey, extracted.text());
     LOGGER.info("Stored extracted text: key={}", LogSanitizer.sanitize(textKey));
+    if (extracted.truncated()) {
+      LOGGER.warn(
+          "Stored text is truncated: key={} limit={}",
+          LogSanitizer.sanitize(source.sourceKey()),
+          TikaSupport.MAX_EXTRACTED_CHARACTERS);
+      storeFlag(source, ExtractionFailureReason.TRUNCATED_CONTENT, TRUNCATED_CONTENT_DETAIL);
+    } else {
+      textStorageDriver.deleteFile(UnixPath.of(flagKeyFor(source.sourceKey())));
+    }
+  }
+
+  private void storeFlaggedResult(ExtractionResult.Flagged flagged) {
+    logFlag(flagged);
+    storeFlagAndRemoveStaleText(flagged.source(), flagged.reason(), flagged.detail());
+  }
+
+  private void storeFlagAndRemoveStaleText(
+      ExtractionInput source, ExtractionFailureReason reason, String detail) {
+    storeFlag(source, reason, detail);
+    textStorageDriver.deleteFile(UnixPath.of(source.sourceKey() + TEXT_KEY_SUFFIX));
   }
 
   private void storeFlag(ExtractionInput source, ExtractionFailureReason reason, String detail) {
-    var flag =
-        new ExtractionFlag(
-            source.sourceBucket(), source.sourceKey(), source.sourceEtag(), reason, detail);
-    var flagKey = FLAG_KEY_PREFIX + source.sourceKey() + FLAG_KEY_SUFFIX;
+    var flag = ExtractionFlag.from(source, reason, detail);
+    var flagKey = flagKeyFor(source.sourceKey());
     insertFile(flagKey, flag.toJsonString());
     LOGGER.info("Stored extraction flag: key={}", LogSanitizer.sanitize(flagKey));
+  }
+
+  private static String flagKeyFor(String sourceKey) {
+    return FLAG_KEY_PREFIX + sourceKey + FLAG_KEY_SUFFIX;
   }
 
   private void insertFile(String key, String content) {
