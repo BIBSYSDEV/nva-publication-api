@@ -35,6 +35,7 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
   private static final String BLANK_CONTENT_DETAIL = "Extracted text was blank";
   private static final String TRUNCATED_CONTENT_DETAIL =
       "Truncated at " + TikaSupport.MAX_EXTRACTED_CHARACTERS + " characters";
+  private static final String EMPTY_STRING = "";
 
   private final FileDownloadSource downloadSource;
   private final ContentTypeDetector contentTypeDetector;
@@ -137,7 +138,7 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
   private static String parseLocationOf(JsonProcessingException jsonException) {
     var location = jsonException.getLocation();
     if (isNull(location) || JsonLocation.NA.equals(location)) {
-      return "";
+      return EMPTY_STRING;
     }
     return PARSE_LOCATION_TEMPLATE.formatted(location.getLineNr(), location.getColumnNr());
   }
