@@ -44,6 +44,7 @@ public final class SeedTextExtractionHandler implements RequestHandler<S3Event, 
   private static final String UTF8_BYTE_ORDER_MARK = "\uFEFF";
   private static final String BATCH_FAILURES_MESSAGE_TEMPLATE =
       "SQS batch enqueue had %d failed entries out of %d";
+  private static final String EMPTY_STRING = "";
 
   private final S3Client s3Client;
   private final SqsClient sqsClient;
@@ -113,7 +114,7 @@ public final class SeedTextExtractionHandler implements RequestHandler<S3Event, 
   }
 
   private static String cleanKey(String line) {
-    return line.replace(UTF8_BYTE_ORDER_MARK, "").strip();
+    return line.replace(UTF8_BYTE_ORDER_MARK, EMPTY_STRING).strip();
   }
 
   private static boolean containsAlphanumeric(String line) {
