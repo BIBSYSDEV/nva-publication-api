@@ -47,7 +47,7 @@ import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
-@SuppressWarnings({"PMD.TestClassWithoutTestCases", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings("PMD.TestClassWithoutTestCases")
 @JacocoGenerated
 public class ResourcesLocalTest extends TestDataSource {
 
