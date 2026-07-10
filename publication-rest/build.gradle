@@ -34,7 +34,6 @@ dependencies {
     runtimeOnly(libs.apache.bval)
     runtimeOnly(libs.jaxb.runtime)
     runtimeOnly(libs.xsd2java.api)
-    runtimeOnly(nvaCatalog.aws.sdk.dynamo)
     runtimeOnly(nvaCatalog.aws.sdk2.urlconnection)
     runtimeOnly(nvaCatalog.log4j.api)
     runtimeOnly(nvaCatalog.log4j.slf4j.impl)

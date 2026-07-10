@@ -22,7 +22,6 @@ dependencies {
     testImplementation(nvaLibs.testutils)
     testImplementation(project(":publication-model-testing"))
     testImplementation(project(":publication-testing"))
-    testRuntimeOnly(nvaCatalog.aws.sdk.dynamo)
 }
 
 test {

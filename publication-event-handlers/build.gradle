@@ -39,7 +39,6 @@ dependencies {
     implementation(project(":publication-constants"))
     implementation(project(":publication-log"))
     runtimeOnly(nvaCatalog.aws.apache.client)
-    runtimeOnly(nvaCatalog.aws.sdk.dynamo)
     runtimeOnly(nvaCatalog.log4j.api)
     runtimeOnly(nvaCatalog.log4j.slf4j.impl)
     testImplementation(nvaCatalog.hamcrest)

@@ -61,7 +61,6 @@ dependencies {
     testImplementation(nvaLibs.testutils)
     testImplementation(project(":publication-model-testing"))
     testImplementation(project(":publication-testing"))
-    testRuntimeOnly(nvaCatalog.aws.sdk.dynamo)
     testRuntimeOnly(nvaCatalog.cucumber.junit.platform.engine)
     testRuntimeOnly(nvaCatalog.cucumber.picocontainer)
     testRuntimeOnly(nvaCatalog.junit.platform.suite.engine)

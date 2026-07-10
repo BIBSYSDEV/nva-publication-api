@@ -28,7 +28,6 @@ dependencies {
     testImplementation(project(":publication-model-testing"))
     testImplementation(project(":publication-testing"))
     testImplementation(testFixtures(project(":publication-commons")))
-    testRuntimeOnly(nvaCatalog.aws.sdk.dynamo)
 }
 
 test {

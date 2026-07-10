@@ -32,7 +32,6 @@ dependencies {
     testImplementation(project(":publication-model-testing"))
     testImplementation(project(":publication-testing"))
     testImplementation(project(":tickets-test"))
-    testRuntimeOnly(nvaCatalog.aws.sdk.dynamo)
 }
 
 test {
