@@ -4,8 +4,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
@@ -30,8 +28,6 @@ public final class ResourceServiceUtils {
       primaryKeyEqualityConditionAttributeNames();
 
   public static final String KEY_NOT_EXISTS_CONDITION = keyNotExistsCondition();
-  public static final String UNSUPPORTED_KEY_TYPE_EXCEPTION =
-      "Currently only String values are supported";
 
   private ResourceServiceUtils() {}
 
@@ -42,18 +38,6 @@ public final class ResourceServiceUtils {
         AttributeValue.fromS(resourceDao.getPrimaryKeyPartitionKey()),
         SORT_KEY_VALUE_PLACEHOLDER,
         AttributeValue.fromS(resourceDao.getPrimaryKeySortKey()));
-  }
-
-  static <T> Map<String, AttributeValue> conditionValueMapToAttributeValueMap(
-      Map<String, Object> valuesMap, Class<T> valueClass) {
-    if (String.class.equals(valueClass)) {
-      return valuesMap.entrySet().stream()
-          .collect(
-              Collectors.toMap(
-                  Entry::getKey, mapEntry -> AttributeValue.fromS((String) mapEntry.getValue())));
-    } else {
-      throw new UnsupportedOperationException(UNSUPPORTED_KEY_TYPE_EXCEPTION);
-    }
   }
 
   private static Map<String, String> primaryKeyEqualityConditionAttributeNames() {
