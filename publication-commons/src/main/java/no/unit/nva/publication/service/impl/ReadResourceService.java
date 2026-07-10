@@ -135,17 +135,12 @@ public class ReadResourceService {
   public Optional<ImportCandidate> getImportCandidateByIdentifier(SortableIdentifier identifier) {
     var getItemRequest = getGetItemRequest(identifier);
     var response = client.getItem(getItemRequest);
-    Optional<ImportCandidate> result;
-    if (!response.hasItem()) {
-      result = Optional.empty();
-    } else {
-      result =
-          Optional.of(
-                  DatabaseEntryWithData.fromAttributeValuesMap(
-                      response.item(), ImportCandidateDao.class))
-              .map(ImportCandidateDao::getData);
-    }
-    return result;
+    return response.hasItem()
+        ? Optional.of(
+                DatabaseEntryWithData.fromAttributeValuesMap(
+                    response.item(), ImportCandidateDao.class))
+            .map(ImportCandidateDao::getData)
+        : Optional.empty();
   }
 
   private GetItemRequest getGetItemRequest(SortableIdentifier identifier) {
