@@ -14,8 +14,8 @@ import nva.commons.core.StringUtils;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record SoftwareSourceCode(
-    @JsonProperty(SoftwareSourceCode.SOFTWARE_VERSION_FIELD) String softwareVersion,
-    @JsonProperty(SoftwareSourceCode.CODE_REPOSITORY_FIELD) URI codeRepository)
+    @JsonProperty(SOFTWARE_VERSION_FIELD) String softwareVersion,
+    @JsonProperty(CODE_REPOSITORY_FIELD) URI codeRepository)
     implements PublicationInstance<NullPages>, PublishValidator {
 
   public static final String SOFTWARE_VERSION_FIELD = "softwareVersion";

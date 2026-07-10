@@ -31,14 +31,12 @@ public enum LiteraryArtsSubtypeEnum {
   @Deprecated
   @JsonCreator
   public static LiteraryArtsSubtypeEnum parse(String candidate) {
-    return "Other".equalsIgnoreCase(candidate)
-        ? LiteraryArtsSubtypeEnum.OTHER
-        : inlineableParseMethod(candidate);
+    return "Other".equalsIgnoreCase(candidate) ? OTHER : inlineableParseMethod(candidate);
   }
 
   //  @JsonCreator
   public static LiteraryArtsSubtypeEnum inlineableParseMethod(String candidate) {
-    return Arrays.stream(LiteraryArtsSubtypeEnum.values())
+    return Arrays.stream(values())
         .filter(value -> value.getName().equalsIgnoreCase(candidate))
         .collect(SingletonCollector.collect());
   }

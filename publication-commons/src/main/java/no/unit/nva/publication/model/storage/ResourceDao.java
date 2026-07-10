@@ -50,8 +50,7 @@ import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(ResourceDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class ResourceDao extends Dao
-    implements JoinWithResource, JsonSerializable, DynamoEntryByIdentifier {
+public class ResourceDao extends Dao implements JoinWithResource, JsonSerializable {
 
   public static final String CRISTIN_SOURCE = "Cristin";
   private static final String NVA_SOURCE = "nva";

@@ -44,8 +44,8 @@ dependencies {
     testFixturesApi(project(":publication-model"))
     testFixturesImplementation(nvaLibs.apigateway)
     testFixturesImplementation(nvaLibs.testutils)
-    testImplementation(libs.cucumber.core)
     testImplementation(libs.hamcrest.optional)
+    testImplementation(nvaCatalog.cucumber.core)
     testImplementation(nvaCatalog.cucumber.java)
     testImplementation(nvaCatalog.hamcrest)
     testImplementation(nvaCatalog.javers)
@@ -61,8 +61,6 @@ dependencies {
     testRuntimeOnly(nvaCatalog.aws.java.sdk.core)
     testRuntimeOnly(nvaCatalog.cucumber.junit.platform.engine)
     testRuntimeOnly(nvaCatalog.cucumber.picocontainer)
-    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
-    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
     testRuntimeOnly(nvaCatalog.junit.platform.suite.engine)
 }
 

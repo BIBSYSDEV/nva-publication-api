@@ -16,7 +16,6 @@ import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import software.amazon.awssdk.core.SdkBytes;
 
 // TODO: rename class to DynamoJsonToInternalModelEventHandler
-@SuppressWarnings({"PMD.ReturnEmptyCollectionRatherThanNull"})
 public final class DynamodbStreamRecordDaoMapper {
 
   private DynamodbStreamRecordDaoMapper() {}

@@ -109,7 +109,7 @@ public class FileRightsRetentionService {
 
   /** Simple rule: RRS only applies to accepted academic articles that aren't internal */
   private boolean isRightsRetentionRelevant(File file, Resource resource) {
-    return PublisherVersion.ACCEPTED_VERSION.equals(file.getPublisherVersion())
+    return PublisherVersion.ACCEPTED_VERSION == file.getPublisherVersion()
         && !(file instanceof InternalFile)
         && isAcademicArticle(resource);
   }

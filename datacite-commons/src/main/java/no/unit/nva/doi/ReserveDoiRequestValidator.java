@@ -33,7 +33,7 @@ public final class ReserveDoiRequestValidator {
   }
 
   private static boolean isNotADraft(Resource resource) {
-    return !PublicationStatus.DRAFT.equals(resource.getStatus());
+    return PublicationStatus.DRAFT != resource.getStatus();
   }
 
   private static void validateReserveDoiRequest(UserInstance userInstance, Resource resource)

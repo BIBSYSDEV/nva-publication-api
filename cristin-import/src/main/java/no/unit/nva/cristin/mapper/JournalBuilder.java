@@ -106,19 +106,19 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
     Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
 
     var secondaryCategory = getCristinObject().getSecondaryCategory();
-    if (CristinSecondaryCategory.JOURNAL_ARTICLE.equals(secondaryCategory)) {
+    if (CristinSecondaryCategory.JOURNAL_ARTICLE == secondaryCategory) {
       return new ProfessionalArticle(
           numberOfPages, extractVolume(), extractIssue(), extractArticleNumber());
-    } else if (CristinSecondaryCategory.POPULAR_ARTICLE.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.POPULAR_ARTICLE == secondaryCategory) {
       return new PopularScienceArticle(
           numberOfPages, extractVolume(), extractIssue(), extractArticleNumber());
-    } else if (CristinSecondaryCategory.ARTICLE.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.ARTICLE == secondaryCategory) {
       return new AcademicArticle(
           numberOfPages, extractVolume(), extractIssue(), extractArticleNumber());
-    } else if (CristinSecondaryCategory.ACADEMIC_REVIEW.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.ACADEMIC_REVIEW == secondaryCategory) {
       return new AcademicLiteratureReview(
           numberOfPages, extractVolume(), extractIssue(), extractArticleNumber());
-    } else if (CristinSecondaryCategory.SHORT_COMMUNICATION.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.SHORT_COMMUNICATION == secondaryCategory) {
       return new AcademicArticle(
           numberOfPages, extractVolume(), extractIssue(), extractArticleNumber());
     } else {

@@ -109,13 +109,11 @@ public class FileStrategyBase {
   }
 
   protected boolean isWriteOrDelete(FileOperation permission) {
-    return permission.equals(WRITE_METADATA) || permission.equals(DELETE);
+    return permission == WRITE_METADATA || permission == DELETE;
   }
 
   protected boolean isWriteOrDeleteOrDownload(FileOperation permission) {
-    return permission.equals(WRITE_METADATA)
-        || permission.equals(DELETE)
-        || permission.equals(DOWNLOAD);
+    return permission == WRITE_METADATA || permission == DELETE || permission == DOWNLOAD;
   }
 
   private boolean haveTopLevelRelationForCurrentFile() {

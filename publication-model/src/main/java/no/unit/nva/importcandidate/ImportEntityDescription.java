@@ -15,7 +15,6 @@ import java.util.stream.IntStream;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 
-@SuppressWarnings("PMD.UnusedAssignment")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public record ImportEntityDescription(
     String mainTitle,

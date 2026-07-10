@@ -44,7 +44,7 @@ public enum TicketOperation {
                     format(
                         ERROR_MESSAGE_TEMPLATE,
                         value,
-                        stream(TicketOperation.values())
+                        stream(values())
                             .map(TicketOperation::toString)
                             .collect(joining(DELIMITER)))));
   }

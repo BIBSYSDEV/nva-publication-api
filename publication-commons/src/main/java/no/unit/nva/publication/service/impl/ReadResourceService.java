@@ -47,7 +47,6 @@ import no.unit.nva.publication.model.storage.ResourceRelationshipDao;
 import no.unit.nva.publication.model.storage.TicketDao;
 import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.Condition;
@@ -177,7 +176,7 @@ public class ReadResourceService {
     var queryRequest =
         QueryRequest.builder()
             .tableName(RESOURCES_TABLE_NAME)
-            .indexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+            .indexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
             .keyConditionExpression("PK2 = :value")
             .expressionAttributeValues(Map.of(VALUE_PLACEHOLDER, AttributeValue.fromS(value)))
             .build();
@@ -204,7 +203,7 @@ public class ReadResourceService {
   }
 
   private static boolean isNotRemoved(TicketEntry ticket) {
-    return !TicketStatus.REMOVED.equals(ticket.getStatus());
+    return TicketStatus.REMOVED != ticket.getStatus();
   }
 
   private static Optional<Resource> extractResource(

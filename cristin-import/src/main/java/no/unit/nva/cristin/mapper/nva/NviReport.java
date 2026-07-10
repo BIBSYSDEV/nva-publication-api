@@ -31,7 +31,7 @@ public record NviReport(
   public static NviReport fromPublicationRepresentation(
       PublicationRepresentations publicationRepresentations) {
     var publication = getPublication(publicationRepresentations);
-    return NviReport.builder()
+    return builder()
         .withPublicationIdentifier(publicationRepresentations.getNvaPublicationIdentifier())
         .withCristinIdentifier(
             publicationRepresentations.getCristinObject().getSourceRecordIdentifier())

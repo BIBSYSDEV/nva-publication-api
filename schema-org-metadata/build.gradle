@@ -26,8 +26,6 @@ dependencies {
     testImplementation(nvaLibs.identifiers)
     testImplementation(project(":publication-model-testing"))
     testImplementation(project(':publication-testing'))
-    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
-    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
 }
 
 test {

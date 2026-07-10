@@ -27,14 +27,12 @@ public enum MovingPictureSubtypeEnum {
   @Deprecated
   @JsonCreator
   public static MovingPictureSubtypeEnum parse(String candidate) {
-    return "Other".equalsIgnoreCase(candidate)
-        ? MovingPictureSubtypeEnum.OTHER
-        : inlineableParseMethod(candidate);
+    return "Other".equalsIgnoreCase(candidate) ? OTHER : inlineableParseMethod(candidate);
   }
 
   //    @JsonCreator
   public static MovingPictureSubtypeEnum inlineableParseMethod(String candidate) {
-    return Arrays.stream(MovingPictureSubtypeEnum.values())
+    return Arrays.stream(values())
         .filter(value -> value.getType().equalsIgnoreCase(candidate))
         .collect(SingletonCollector.collect());
   }

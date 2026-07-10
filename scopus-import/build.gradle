@@ -49,9 +49,6 @@ dependencies {
     testImplementation(project(":publication-model-testing"))
     testImplementation(project(":publication-testing"))
     testRuntimeOnly(nvaCatalog.aws.sdk.dynamo)
-    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
-    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
-    testRuntimeOnly(nvaCatalog.wiremock)
 }
 
 test {

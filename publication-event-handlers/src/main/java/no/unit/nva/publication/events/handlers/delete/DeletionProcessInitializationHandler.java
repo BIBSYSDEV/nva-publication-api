@@ -42,8 +42,7 @@ public class DeletionProcessInitializationHandler
   }
 
   private boolean isDraftForDeletion(Publication publication) {
-    return publication != null
-        && publication.getStatus().equals(PublicationStatus.DRAFT_FOR_DELETION);
+    return publication != null && publication.getStatus() == PublicationStatus.DRAFT_FOR_DELETION;
   }
 
   private Publication toPublication(Entity dataEntry) {

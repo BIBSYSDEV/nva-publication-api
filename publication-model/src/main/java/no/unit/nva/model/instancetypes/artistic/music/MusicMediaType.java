@@ -28,9 +28,7 @@ public enum MusicMediaType {
   @Deprecated
   @JsonCreator
   public static MusicMediaType parse(String candidate) {
-    return "Other".equalsIgnoreCase(candidate)
-        ? MusicMediaType.OTHER
-        : inlineableParseMethod(candidate);
+    return "Other".equalsIgnoreCase(candidate) ? OTHER : inlineableParseMethod(candidate);
   }
 
   public static MusicMediaType inlineableParseMethod(String candidate) {
@@ -43,7 +41,7 @@ public enum MusicMediaType {
                     format(
                         ERROR_MESSAGE_TEMPLATE,
                         candidate,
-                        stream(MusicMediaType.values())
+                        stream(values())
                             .map(MusicMediaType::toString)
                             .collect(joining(DELIMITER)))));
   }

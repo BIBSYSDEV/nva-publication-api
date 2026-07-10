@@ -33,8 +33,6 @@ dependencies {
     testImplementation(project(":publication-testing"))
     testImplementation(project(":tickets-test"))
     testRuntimeOnly(nvaCatalog.aws.sdk.dynamo)
-    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
-    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
 }
 
 test {

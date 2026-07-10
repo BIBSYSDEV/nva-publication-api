@@ -49,7 +49,6 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
-import nva.commons.apigateway.MediaType;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 
@@ -145,7 +144,7 @@ public final class FakeUriResponse {
       FakeUriRetriever fakeUriRetriever, int statusCode, Publication publication, String response) {
     var id = PublicationResponse.fromPublication(publication).getId();
     fakeUriRetriever.registerResponse(
-        createNviCandidateUri(id.toString()), statusCode, MediaType.JSON_UTF_8, response);
+        createNviCandidateUri(id.toString()), statusCode, JSON_UTF_8, response);
   }
 
   public static URI constructCristinOrgUri(String identifier) {
@@ -160,7 +159,7 @@ public final class FakeUriResponse {
     fakeUriRetriever.registerResponse(
         toFetchCustomerByCristinIdUri(HARD_CODED_TOP_LEVEL_ORG_URI),
         SC_OK,
-        MediaType.JSON_UTF_8,
+        JSON_UTF_8,
         createCustomerApiResponse());
   }
 

@@ -63,7 +63,7 @@ public final class PublishingRequestResolver {
   }
 
   private static boolean isPending(TicketEntry ticketEntry) {
-    return TicketStatus.PENDING.equals(ticketEntry.getStatus());
+    return TicketStatus.PENDING == ticketEntry.getStatus();
   }
 
   private void handlePublishingRequest(Resource oldImage, Resource newImage)
@@ -232,6 +232,6 @@ public final class PublishingRequestResolver {
 
   private boolean isAlreadyPublished(Resource resource) {
     var status = resource.getStatus();
-    return PUBLISHED.equals(status) || PUBLISHED_METADATA.equals(status);
+    return PUBLISHED == status || PUBLISHED_METADATA == status;
   }
 }

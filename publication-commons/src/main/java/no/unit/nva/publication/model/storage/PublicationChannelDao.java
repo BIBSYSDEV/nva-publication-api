@@ -33,7 +33,7 @@ import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PublicationChannelDao.TYPE)
-public class PublicationChannelDao extends Dao implements DynamoEntryByIdentifier {
+public class PublicationChannelDao extends Dao {
 
   public static final String TYPE = "PublicationChannel";
   protected static final String IDENTIFIER = "identifier";

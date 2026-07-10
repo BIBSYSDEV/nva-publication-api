@@ -12,7 +12,6 @@ public record RecoveryRequest(Integer count, String queueUrl) implements JsonSer
 
   private static final int DEFAULT_MESSAGES_COUNT = 10;
 
-  @SuppressWarnings("PMD.UnusedAssignment")
   public RecoveryRequest {
     count = isNull(count) ? DEFAULT_MESSAGES_COUNT : count;
   }

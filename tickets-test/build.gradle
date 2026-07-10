@@ -7,9 +7,4 @@ dependencies {
     implementation(nvaLibs.identifiers)
     implementation(nvaLibs.testutils)
     implementation(project(":publication-model-testing"))
-    testRuntimeOnly(nvaCatalog.aws.dynamodb.local) {
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
-        exclude group: 'org.apache.commons', module: 'commons-lang3'
-    }
 }

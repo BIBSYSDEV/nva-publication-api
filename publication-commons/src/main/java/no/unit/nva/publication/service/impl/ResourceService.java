@@ -39,7 +39,6 @@ import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ImportSource;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
 import no.unit.nva.publication.exception.CandidateAlreadyImportedException;
@@ -101,7 +100,7 @@ import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ResourceService extends ServiceWithTransactions {
 
   public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
@@ -511,7 +510,7 @@ public class ResourceService extends ServiceWithTransactions {
   public void unpublishPublication(Publication publication, UserInstance userInstance)
       throws BadRequestException, NotFoundException {
     var existingPublication = getResourceByIdentifier(publication.getIdentifier()).toPublication();
-    if (!PUBLISHED.equals(existingPublication.getStatus())) {
+    if (PUBLISHED != existingPublication.getStatus()) {
       throw new BadRequestException(ONLY_PUBLISHED_PUBLICATIONS_CAN_BE_UNPUBLISHED_ERROR_MESSAGE);
     }
     var allTicketsForResource = fetchAllTicketsForResource(Resource.fromPublication(publication));
@@ -520,7 +519,7 @@ public class ResourceService extends ServiceWithTransactions {
 
   public void terminateResource(Resource resource, UserInstance userInstance)
       throws BadRequestException {
-    if (!UNPUBLISHED.equals(resource.getStatus())) {
+    if (UNPUBLISHED != resource.getStatus()) {
       throw new BadRequestException(DELETE_PUBLICATION_ERROR_MESSAGE);
     }
     updateResourceService.terminateResource(resource, userInstance);
@@ -708,10 +707,10 @@ public class ResourceService extends ServiceWithTransactions {
       throws BadRequestException {
     var status =
         userInstance.isExternalClient()
-            ? Optional.ofNullable(fromPublication.getStatus()).orElse(PublicationStatus.DRAFT)
-            : PublicationStatus.DRAFT;
+            ? Optional.ofNullable(fromPublication.getStatus()).orElse(DRAFT)
+            : DRAFT;
 
-    if (PUBLISHED.equals(status)) {
+    if (PUBLISHED == status) {
       if (!fromPublication.isPublishable()) {
         throw new BadRequestException(NOT_PUBLISHABLE);
       }

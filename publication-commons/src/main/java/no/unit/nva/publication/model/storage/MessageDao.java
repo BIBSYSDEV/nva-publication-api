@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(MessageDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class MessageDao extends Dao implements DynamoEntryByIdentifier, JoinWithResource {
+public class MessageDao extends Dao implements JoinWithResource {
 
   public static final String TYPE = "Message";
   private static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX = "z";

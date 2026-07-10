@@ -20,7 +20,7 @@ public enum CristinMediumTypeCode {
   }
 
   public static CristinMediumTypeCode fromValue(String value) {
-    return Arrays.stream(CristinMediumTypeCode.values())
+    return Arrays.stream(values())
         .filter(type -> type.getValue().equalsIgnoreCase(value))
         .collect(SingletonCollector.collect());
   }

@@ -59,10 +59,10 @@ public class UploadedFile extends File {
   @Override
   public boolean canBeConvertedTo(File file) {
     return switch (file) {
-      case UploadedFile ignore -> true;
-      case PendingInternalFile ignore -> true;
-      case PendingOpenFile ignore -> true;
-      case HiddenFile ignore -> true;
+      case UploadedFile _ -> true;
+      case PendingInternalFile _ -> true;
+      case PendingOpenFile _ -> true;
+      case HiddenFile _ -> true;
       default -> false;
     };
   }

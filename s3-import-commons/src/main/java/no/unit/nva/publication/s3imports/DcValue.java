@@ -66,6 +66,6 @@ public class DcValue {
   }
 
   public boolean isAbstract() {
-    return Element.DESCRIPTION.equals(getElement()) && Qualifier.ABSTRACT.equals(getQualifier());
+    return Element.DESCRIPTION == getElement() && Qualifier.ABSTRACT == getQualifier();
   }
 }

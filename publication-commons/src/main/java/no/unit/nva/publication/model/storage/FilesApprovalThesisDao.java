@@ -15,8 +15,7 @@ import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(FilesApprovalThesisDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class FilesApprovalThesisDao extends TicketDao
-    implements JoinWithResource, JsonSerializable {
+public class FilesApprovalThesisDao extends TicketDao implements JsonSerializable {
 
   public static final String TYPE = "FilesApprovalThesis";
 
