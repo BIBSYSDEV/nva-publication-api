@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.storage;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.storage.DataCompressor.compressDaoData;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
@@ -53,7 +54,7 @@ public abstract class Dao implements DynamoEntry, WithPrimaryKey, DynamoEntryByI
 
   protected Dao(Entity data) {
     this.version = UUID.randomUUID();
-    this.data = data;
+    this.data = requireNonNull(data);
   }
 
   public static String orgUriToOrgIdentifier(URI uri) {

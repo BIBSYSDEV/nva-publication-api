@@ -3,7 +3,6 @@ package no.unit.nva.publication.events.handlers.fanout;
 import static java.util.Objects.nonNull;
 
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -15,45 +14,27 @@ import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithDa
 import no.unit.nva.publication.model.storage.importcandidate.ImportCandidateDao;
 import software.amazon.awssdk.core.SdkBytes;
 
-// TODO: rename class to DynamoJsonToInternalModelEventHandler
 public final class DynamodbStreamRecordDaoMapper {
 
   private DynamodbStreamRecordDaoMapper() {}
 
-  /**
-   * Map a DynamodbStreamRecordImage to Publication.
-   *
-   * @param recordImage the record image (old or new)
-   * @return a Dao instance
-   * @throws JsonProcessingException JsonProcessingException
-   */
-  public static Optional<Entity> toEntity(Map<String, AttributeValue> recordImage)
-      throws JsonProcessingException {
+  public static Optional<Entity> toEntity(Map<String, AttributeValue> recordImage) {
     var attributeMap = fromEventMapToDynamodbMap(recordImage);
     var dynamoEntry = DynamoEntry.parseAttributeValuesMap(attributeMap, DynamoEntry.class);
     return Optional.of(dynamoEntry)
-        .filter(entry -> isDao(dynamoEntry))
+        .filter(Dao.class::isInstance)
         .map(Dao.class::cast)
-        .map(Dao::getData)
-        .filter(DynamodbStreamRecordDaoMapper::isResourceUpdate);
+        .map(Dao::getData);
   }
 
-  public static Optional<ImportCandidate> toImportCandidate(Map<String, AttributeValue> recordImage)
-      throws JsonProcessingException {
+  public static Optional<ImportCandidate> toImportCandidate(
+      Map<String, AttributeValue> recordImage) {
     return Optional.ofNullable(fromEventMapToDynamodbMap(recordImage))
         .map(
             attributeMap ->
                 DatabaseEntryWithData.fromAttributeValuesMap(
                     attributeMap, ImportCandidateDao.class))
         .map(ImportCandidateDao::getData);
-  }
-
-  private static boolean isDao(DynamoEntry dynamoEntry) {
-    return dynamoEntry instanceof Dao;
-  }
-
-  private static boolean isResourceUpdate(Object data) {
-    return data instanceof Entity;
   }
 
   private static Map<String, software.amazon.awssdk.services.dynamodb.model.AttributeValue>
