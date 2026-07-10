@@ -35,9 +35,11 @@ public record CounterDao(@JsonProperty("value") int value) {
   }
 
   public static Optional<CounterDao> fromGetItemResponse(GetItemResponse getItemResponse) {
-    return attempt(() -> EnhancedDocument.fromAttributeValueMap(getItemResponse.item()).toJson())
-        .map(CounterDao::toDao)
-        .toOptional();
+    return getItemResponse.hasItem()
+        ? attempt(() -> EnhancedDocument.fromAttributeValueMap(getItemResponse.item()).toJson())
+            .map(CounterDao::toDao)
+            .toOptional()
+        : Optional.empty();
   }
 
   private static CounterDao toDao(String value) throws JsonProcessingException {
