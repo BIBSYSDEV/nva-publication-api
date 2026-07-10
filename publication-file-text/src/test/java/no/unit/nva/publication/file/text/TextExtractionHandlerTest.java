@@ -33,8 +33,14 @@ class TextExtractionHandlerTest {
   private static final String TEXT_KEY_SUFFIX = ".txt";
   private static final String FLAG_KEY_PREFIX = "flags/";
   private static final Path UNUSED_FILE = Path.of("/unused");
+  private static final long OVERSIZED_OBJECT_BYTES = 600_000_000L;
+  private static final long SIZE_LIMIT_BYTES = 400_000_000L;
   private static final FileDownloadSource FIXED_DOWNLOAD =
       (bucket, key) -> new DownloadedObject(UNUSED_FILE, SOME_ETAG);
+  private static final FileDownloadSource OVERSIZED_SOURCE =
+      (bucket, key) -> {
+        throw new FileTooLargeException(OVERSIZED_OBJECT_BYTES, SIZE_LIMIT_BYTES, SOME_ETAG);
+      };
   private static final ContentTypeDetector FIXED_DETECTOR = (file, filename) -> PDF_CONTENT_TYPE;
 
   private FakeS3Client fakeS3Client;
@@ -82,6 +88,33 @@ class TextExtractionHandlerTest {
     var result = handler.handleRequest(extractionRequestEvent(), context);
 
     assertThat(result.getBatchItemFailures()).isEmpty();
+  }
+
+  @Test
+  void shouldStoreFlagMarkerWithoutBatchItemFailureWhenSourceObjectExceedsSizeLimit()
+      throws IOException {
+    var handler = handlerWith(OVERSIZED_SOURCE, List.of());
+
+    var result = handler.handleRequest(extractionRequestEvent(), context);
+
+    assertThat(result.getBatchItemFailures()).isEmpty();
+    assertThat(storedFlagMarker())
+        .contains(ExtractionFailureReason.FILE_TOO_LARGE.name())
+        .contains(String.valueOf(OVERSIZED_OBJECT_BYTES))
+        .contains(String.valueOf(SIZE_LIMIT_BYTES))
+        .contains("abc123");
+    assertThatNoTextIsStored();
+  }
+
+  @Test
+  void shouldDeleteStaleTextWhenSourceObjectExceedsSizeLimit() throws IOException {
+    textBucketDriver().insertFile(UnixPath.of(TEXT_KEY), "stale text");
+    var handler = handlerWith(OVERSIZED_SOURCE, List.of());
+
+    handler.handleRequest(extractionRequestEvent(), context);
+
+    assertThat(storedFlagMarker()).contains(ExtractionFailureReason.FILE_TOO_LARGE.name());
+    assertThatNoTextIsStored();
   }
 
   @Test

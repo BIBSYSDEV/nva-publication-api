@@ -11,7 +11,30 @@ import org.junit.jupiter.api.io.TempDir;
 
 class TempFileSupportTest {
 
+  private static final String SWEEP_TEST_PREFIX = "temp-file-support-sweep-test-";
+  private static final String SWEEP_TEST_SUFFIX = ".sweep";
+  private static final String UNRELATED_SUFFIX = ".keep";
+
   @TempDir Path tempDir;
+
+  @Test
+  void shouldDeleteStaleTempFilesMatchingPrefixAndSuffix() throws IOException {
+    var staleFile = Files.createTempFile(SWEEP_TEST_PREFIX, SWEEP_TEST_SUFFIX);
+
+    TempFileSupport.deleteStaleTempFiles(SWEEP_TEST_PREFIX, SWEEP_TEST_SUFFIX);
+
+    assertThat(staleFile).doesNotExist();
+  }
+
+  @Test
+  void shouldLeaveFilesNotMatchingBothPrefixAndSuffixInPlace() throws IOException {
+    var unrelatedFile = Files.createTempFile(SWEEP_TEST_PREFIX, UNRELATED_SUFFIX);
+
+    TempFileSupport.deleteStaleTempFiles(SWEEP_TEST_PREFIX, SWEEP_TEST_SUFFIX);
+
+    assertThat(unrelatedFile).exists();
+    Files.deleteIfExists(unrelatedFile);
+  }
 
   @Test
   void shouldDeleteExistingFile() throws IOException {

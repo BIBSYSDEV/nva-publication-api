@@ -1,21 +1,15 @@
 package no.unit.nva.publication.file.text;
 
-import static java.util.Objects.isNull;
-import static nva.commons.core.attempt.Try.attempt;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
-import com.fasterxml.jackson.core.JsonLocation;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
@@ -30,12 +24,12 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
   private static final String TEXT_KEY_SUFFIX = ".txt";
   private static final String FLAG_KEY_PREFIX = "flags/";
   private static final String FLAG_KEY_SUFFIX = ".json";
-  private static final String UNPARSEABLE_MESSAGE_BODY = "Unparseable SQS message body: ";
-  private static final String PARSE_LOCATION_TEMPLATE = " at line %d, column %d";
   private static final String BLANK_CONTENT_DETAIL = "Extracted text was blank";
   private static final String TRUNCATED_CONTENT_DETAIL =
       "Truncated at " + TikaSupport.MAX_EXTRACTED_CHARACTERS + " characters";
-  private static final String EMPTY_STRING = "";
+  private static final String FILE_TOO_LARGE_DETAIL_TEMPLATE =
+      "Object is %d bytes; the extraction limit is %d bytes";
+  private static final String UNKNOWN_CONTENT_TYPE = "application/octet-stream";
 
   private final FileDownloadSource downloadSource;
   private final ContentTypeDetector contentTypeDetector;
@@ -90,7 +84,7 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
   }
 
   private void processMessage(SQSMessage message) {
-    var request = parseRequest(message.getBody());
+    var request = TextExtractionRequest.fromJson(message.getBody());
     DownloadedObject downloadedObject;
     try {
       downloadedObject = downloadSource.downloadToFile(request.bucket(), request.key());
@@ -99,6 +93,9 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
           "Source object no longer exists, skipping: bucket={} key={}",
           LogSanitizer.sanitize(request.bucket()),
           LogSanitizer.sanitize(request.key()));
+      return;
+    } catch (FileTooLargeException exception) {
+      flagOversizedSourceObject(request, exception);
       return;
     } catch (IOException exception) {
       throw new UncheckedIOException(exception);
@@ -115,32 +112,20 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
     }
   }
 
+  private void flagOversizedSourceObject(
+      TextExtractionRequest request, FileTooLargeException tooLarge) {
+    var input =
+        new ExtractionInput(
+            request.bucket(), request.key(), tooLarge.getEtag(), UNKNOWN_CONTENT_TYPE);
+    var detail =
+        FILE_TOO_LARGE_DETAIL_TEMPLATE.formatted(
+            tooLarge.getObjectSizeBytes(), tooLarge.getLimitBytes());
+    storeFlaggedResult(
+        new ExtractionResult.Flagged(input, ExtractionFailureReason.FILE_TOO_LARGE, detail));
+  }
+
   private static String filenameOf(String key) {
     return UnixPath.of(key).getLastPathElement();
-  }
-
-  private TextExtractionRequest parseRequest(String body) {
-    return attempt(() -> JsonUtils.dtoObjectMapper.readValue(body, TextExtractionRequest.class))
-        .orElseThrow(
-            failure ->
-                new IllegalArgumentException(
-                    UNPARSEABLE_MESSAGE_BODY + describeParseFailure(failure.getException())));
-  }
-
-  private static String describeParseFailure(Exception exception) {
-    if (exception instanceof JsonProcessingException jsonException) {
-      return LogSanitizer.sanitize(jsonException.getOriginalMessage())
-          + parseLocationOf(jsonException);
-    }
-    return LogSanitizer.sanitize(exception.getMessage());
-  }
-
-  private static String parseLocationOf(JsonProcessingException jsonException) {
-    var location = jsonException.getLocation();
-    if (isNull(location) || JsonLocation.NA.equals(location)) {
-      return EMPTY_STRING;
-    }
-    return PARSE_LOCATION_TEMPLATE.formatted(location.getLineNr(), location.getColumnNr());
   }
 
   private ExtractionResult dispatch(ExtractionInput input, Path file) {

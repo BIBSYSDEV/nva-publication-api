@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 final class TempFileSupport {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TempFileSupport.class);
+  private static final String TEMP_DIRECTORY_SYSTEM_PROPERTY = "java.io.tmpdir";
 
   private TempFileSupport() {
     // NO-OP
@@ -26,5 +27,22 @@ final class TempFileSupport {
     } catch (IOException exception) {
       LOGGER.warn("Failed to delete temp file: {}", tempFile.getFileName(), exception);
     }
+  }
+
+  static void deleteStaleTempFiles(String filenamePrefix, String filenameSuffix) {
+    var tempDirectory = Path.of(System.getProperty(TEMP_DIRECTORY_SYSTEM_PROPERTY));
+    try (var tempDirectoryEntries = Files.list(tempDirectory)) {
+      tempDirectoryEntries
+          .filter(path -> hasPrefixAndSuffix(path, filenamePrefix, filenameSuffix))
+          .forEach(TempFileSupport::deleteTempFile);
+    } catch (IOException exception) {
+      LOGGER.warn("Failed to sweep stale temp files", exception);
+    }
+  }
+
+  private static boolean hasPrefixAndSuffix(
+      Path path, String filenamePrefix, String filenameSuffix) {
+    var filename = path.getFileName().toString();
+    return filename.startsWith(filenamePrefix) && filename.endsWith(filenameSuffix);
   }
 }

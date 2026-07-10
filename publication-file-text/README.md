@@ -72,10 +72,10 @@ Then watch the pipeline drain:
   most 20 concurrent extractions.
 - Extracted text lands in `nva-publication-text-<account-id>` (parameter
   `TextStorageBucketName`) at `<source-key>.txt`.
-- Files that cannot be extracted (unsupported format, blank content,
-  extraction error) get a flag object at `flags/<source-key>.json` instead,
-  recording the reason. Text truncated at the 100 000 000-character limit is
-  stored *and* flagged.
+- Files that cannot be extracted (unsupported format, larger than the 9 GiB
+  source limit, blank content, extraction error) get a flag object at
+  `flags/<source-key>.json` instead, recording the reason. Text truncated at
+  the 100 000 000-character limit is stored *and* flagged.
 
 ### Failure handling and retries
 
@@ -88,6 +88,12 @@ Then watch the pipeline drain:
   produces the same `<key>.txt` — so retries and re-uploads only cost
   duplicate work, never duplicate data. To recover after a dead-lettered run,
   fix the cause and upload the CSV again.
+- **Oversized sources**: objects larger than 9 GiB are rejected before any
+  bytes are transferred (the limit fits the extraction function's 10 GiB
+  ephemeral storage) and flagged `FILE_TOO_LARGE` — deliberately not retried,
+  since a file the function cannot hold on disk can never succeed. Files that
+  big are datasets or media, not text-dense documents, and there is no OCR in
+  this pipeline anyway.
 - **Extraction failures**: a message that keeps failing is retried up to 5
   times by SQS, then moves to `TextExtractionDLQ`, which also has a Slack
   alarm. A source object that no longer exists is logged and skipped, not

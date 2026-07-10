@@ -3188,8 +3188,10 @@ Resources:
       Role: !GetAtt TextExtractionLambdaRole.Arn
       Timeout: 900
       MemorySize: 8192
+      SnapStart:
+        ApplyOn: None # Lambda rejects SnapStart with ephemeral storage above 512 MB; this async worker needs the large /tmp and gains nothing from faster cold starts
       EphemeralStorage:
-        Size: 10240
+        Size: 10240 # Keep in sync with S3FileDownloadSource.MAX_SOURCE_OBJECT_BYTES
       Environment:
         Variables:
           TEXT_STORAGE_BUCKET_NAME: !Ref TextStorageBucket
