@@ -25,7 +25,7 @@ public class UriShortenerLocalDynamoDb {
 
   public void init(String uriMapTableName) {
     setUriMapTableName(uriMapTableName);
-    client = DynamoDBEmbedded.create().dynamoDbClient();
+    client = DynamoDBEmbedded.create(null, true).dynamoDbClient();
     client.createTable(createTableRequest());
     updateWithTimeToLive();
   }

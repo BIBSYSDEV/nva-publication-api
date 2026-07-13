@@ -70,7 +70,7 @@ public class ResourcesLocalTest extends TestDataSource {
     uriRetriever = mock(UriRetriever.class);
     customerService = mock(CustomerService.class);
     channelClaimClient = mock(ChannelClaimClient.class);
-    client = DynamoDBEmbedded.create().dynamoDbClient();
+    client = DynamoDBEmbedded.create(null, true).dynamoDbClient();
     cristinUnitsUtil = new FakeCristinUnitsUtil();
     CreateTableRequest request = createTableRequest(tableName);
     client.createTable(request);
@@ -80,7 +80,7 @@ public class ResourcesLocalTest extends TestDataSource {
     uriRetriever = mock(UriRetriever.class);
     customerService = mock(CustomerService.class);
     channelClaimClient = mock(ChannelClaimClient.class);
-    client = DynamoDBEmbedded.create().dynamoDbClient();
+    client = DynamoDBEmbedded.create(null, true).dynamoDbClient();
     var firstTableRequest = createTableRequest(firstTable);
     var secondTableRequest = createTableRequest(secondTable);
     client.createTable(firstTableRequest);
