@@ -1,6 +1,5 @@
 package no.unit.nva.publication.download.utils;
 
-import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
 import org.junit.jupiter.api.AfterEach;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
@@ -11,6 +10,7 @@ import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.TimeToLiveSpecification;
 import software.amazon.awssdk.services.dynamodb.model.UpdateTimeToLiveRequest;
+import software.amazon.dynamodb.services.local.embedded.DynamoDBEmbedded;
 
 public class UriShortenerLocalDynamoDb {
 

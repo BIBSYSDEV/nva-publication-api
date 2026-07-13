@@ -18,7 +18,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 import static org.mockito.Mockito.mock;
 
-import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +45,7 @@ import software.amazon.awssdk.services.dynamodb.model.Put;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
+import software.amazon.dynamodb.services.local.embedded.DynamoDBEmbedded;
 
 @SuppressWarnings("PMD.TestClassWithoutTestCases")
 @JacocoGenerated

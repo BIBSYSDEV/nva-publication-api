@@ -8,7 +8,7 @@ subprojects{
 
 // DynamoDBLocal ships a shaded copy of ion-java that clashes with the canonical
 // com.amazon.ion:ion-java brought in transitively by nvaLibs.s3.
-// Test-only; revisit when DynamoDBLocal is replaced/updated.
+// Test-only; still the case in software.amazon.dynamodb:DynamoDBLocal 3.3.0.
 dependencyAnalysis {
     issues {
         project(":s3-import-commons") {

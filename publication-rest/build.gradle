@@ -37,10 +37,7 @@ dependencies {
     runtimeOnly(nvaCatalog.aws.sdk2.urlconnection)
     runtimeOnly(nvaCatalog.log4j.api)
     runtimeOnly(nvaCatalog.log4j.slf4j.impl)
-    testImplementation(nvaCatalog.aws.dynamodb.local) {
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
-    }
+    testImplementation(nvaCatalog.aws.sdk2.dynamodblocal)
     testImplementation(nvaCatalog.aws.sdk2.sdk.core)
     testImplementation(nvaCatalog.commons.lang)
     testImplementation(nvaCatalog.hamcrest)
