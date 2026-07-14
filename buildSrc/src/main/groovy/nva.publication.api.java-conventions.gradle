@@ -4,10 +4,8 @@ plugins {
 }
 
 nva {
-    generatedCode = [
-        'no/scopus/generated/**',
-        'no/unit/nva/model/testing/**'
-    ]
+    generatedCode = ['no/scopus/generated/**',
+                     'no/unit/nva/model/testing/**']
     java {
         languageVersion = 25
     }
@@ -17,7 +15,6 @@ nva {
 }
 
 dependencies {
-    implementation(platform(nvaCatalog.aws.sdk.bom))
     implementation(platform(nvaCatalog.aws.sdk2.bom))
     testImplementation(platform(nvaCatalog.junit.bom))
     testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
@@ -26,6 +23,9 @@ dependencies {
 
 tasks.named('test') {
     environment("API_HOST", "localhost")
+    // DynamoDBLocal loads the native sqlite4java library via System.load,
+    // which JDK 24+ (JEP 472) blocks unless native access is granted.
+    jvmArgs '--enable-native-access=ALL-UNNAMED'
 }
 
 tasks.withType(JavaCompile).configureEach {

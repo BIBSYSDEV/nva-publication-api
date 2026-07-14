@@ -25,10 +25,6 @@ dependencies {
     testCompileOnly(nvaCatalog.junit.platform.suite.api)
     testFixturesRuntimeOnly(nvaCatalog.jackson.core)
     testFixturesRuntimeOnly(nvaCatalog.jackson.databind)
-    testImplementation(nvaCatalog.aws.dynamodb.local) {
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
-    }
     testImplementation(nvaCatalog.aws.sdk2.dynamo)
     testImplementation(nvaCatalog.cucumber.java)
     testImplementation(nvaCatalog.hamcrest)
