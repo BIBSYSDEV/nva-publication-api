@@ -17,7 +17,7 @@ dependencies {
     runtimeOnly(nvaCatalog.log4j.api)
     runtimeOnly(nvaCatalog.log4j.slf4j.impl)
     testImplementation(nvaCatalog.aws.lambda.core)
-    testImplementation(nvaCatalog.aws.sdk.dynamo)
+    testImplementation(nvaCatalog.aws.sdk2.dynamo)
     testImplementation(nvaCatalog.aws.sdk2.http.client)
     testImplementation(nvaCatalog.hamcrest)
     testImplementation(nvaCatalog.jackson.core)

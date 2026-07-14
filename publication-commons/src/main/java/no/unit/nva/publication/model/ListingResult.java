@@ -2,13 +2,13 @@ package no.unit.nva.publication.model;
 
 import static java.util.Objects.nonNull;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import no.unit.nva.publication.model.business.Entity;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class ListingResult<T> {
 

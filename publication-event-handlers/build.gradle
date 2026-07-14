@@ -1,7 +1,7 @@
 dependencies {
     api(nvaCatalog.aws.lambda.core)
     api(nvaCatalog.aws.lambda.events)
-    api(nvaCatalog.aws.sdk.dynamo)
+    api(nvaCatalog.aws.sdk2.dynamo)
     api(nvaCatalog.aws.sdk2.eventbridge)
     api(nvaCatalog.aws.sdk2.s3)
     api(nvaCatalog.aws.sdk2.secrets)
@@ -24,6 +24,7 @@ dependencies {
     compileOnly(nvaLibs.identifiers) {
         because "PMD complains about no/unit/nva/identifiers/SortableIdentifier"
     }
+    implementation(libs.aws.lambda.events.sdk.transformer)
     implementation(nvaCatalog.aws.sdk2.aws.core)
     implementation(nvaCatalog.aws.sdk2.http.client)
     implementation(nvaCatalog.aws.sdk2.regions)

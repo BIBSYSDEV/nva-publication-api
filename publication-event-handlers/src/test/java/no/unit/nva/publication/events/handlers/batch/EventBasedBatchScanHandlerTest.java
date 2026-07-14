@@ -23,8 +23,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -61,6 +59,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
@@ -77,7 +77,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
   private FakeEventBridgeClient eventBridgeClient;
   private ResourceService resourceService;
   private TicketService ticketService;
-  private AmazonDynamoDB dynamoDbClient;
+  private DynamoDbClient dynamoDbClient;
 
   @Override
   @BeforeEach

@@ -13,7 +13,7 @@ dependencies {
     runtimeOnly(nvaCatalog.jackson.databind)
     runtimeOnly(nvaCatalog.log4j.api)
     runtimeOnly(nvaCatalog.log4j.slf4j.impl)
-    testImplementation(nvaCatalog.aws.sdk.dynamo)
+    testImplementation(nvaCatalog.aws.sdk2.dynamo)
     testImplementation(nvaCatalog.jackson.core)
     testImplementation(nvaCatalog.jackson.databind)
     testImplementation(nvaCatalog.junit.jupiter.api)

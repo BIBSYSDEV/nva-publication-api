@@ -5,17 +5,14 @@ import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDb
 import static no.unit.nva.publication.model.storage.DynamoEntry.CONTAINED_DATA_FIELD_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -27,6 +24,9 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.enhanced.dynamodb.document.EnhancedDocument;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class DataCompressor {
 
@@ -64,8 +64,7 @@ public class DataCompressor {
 
     var attributeValue =
         attempt(() -> dynamoDbObjectMapper.convertValue(dao, JsonNode.class))
-            .map(DataCompressor::toItem)
-            .map(ItemUtils::toAttributeValues)
+            .map(DataCompressor::toAttributeValues)
             .orElseThrow(failure -> logFailure(failure, dao));
 
     attributeValue.put(CONTAINED_DATA_FIELD_NAME, asBinaryAttributeValue(dao.getData()));
@@ -86,23 +85,23 @@ public class DataCompressor {
   private static <T> Map<String, AttributeValue> toAttributeValueMap(
       DatabaseEntryWithData<T> value) {
     return attempt(() -> dynamoDbObjectMapper.convertValue(value, JsonNode.class))
-        .map(DataCompressor::toItem)
-        .map(ItemUtils::toAttributeValues)
+        .map(DataCompressor::toAttributeValues)
         .orElseThrow();
   }
 
-  private static Item toItem(JsonNode json) throws JsonProcessingException {
-    return Item.fromJSON(dynamoDbObjectMapper.writeValueAsString(json));
+  private static Map<String, AttributeValue> toAttributeValues(JsonNode json)
+      throws JsonProcessingException {
+    return new HashMap<>(
+        EnhancedDocument.fromJson(dynamoDbObjectMapper.writeValueAsString(json)).toMap());
   }
 
   private static ObjectNode toObjectNode(Map<String, AttributeValue> map) {
-    return attempt(() -> ItemUtils.toItem(map))
-        .map(item -> dynamoDbObjectMapper.readValue(item.toJSON(), ObjectNode.class))
-        .orElseThrow();
+    var json = EnhancedDocument.fromAttributeValueMap(map).toJson();
+    return attempt(() -> dynamoDbObjectMapper.readValue(json, ObjectNode.class)).orElseThrow();
   }
 
   private static JsonNode getData(Map<String, AttributeValue> map) {
-    return attempt(() -> map.get(CONTAINED_DATA_FIELD_NAME).getB().array())
+    return attempt(() -> map.get(CONTAINED_DATA_FIELD_NAME).b().asByteArray())
         .map(DataCompressor::decompress)
         .map(bytes -> new String(bytes, StandardCharsets.UTF_8))
         .map(dynamoDbObjectMapper::readTree)
@@ -136,7 +135,7 @@ public class DataCompressor {
             .map(DataCompressor::getBytes)
             .map(DataCompressor::compress)
             .orElseThrow();
-    return new AttributeValue().withB(ByteBuffer.wrap(compressedDataBytes));
+    return AttributeValue.fromB(SdkBytes.fromByteArray(compressedDataBytes));
   }
 
   private static byte[] getBytes(String value) {
@@ -150,7 +149,7 @@ public class DataCompressor {
             .map(DataCompressor::getBytes)
             .map(DataCompressor::compress)
             .orElseThrow();
-    return new AttributeValue().withB(ByteBuffer.wrap(compressedDataBytes));
+    return AttributeValue.fromB(SdkBytes.fromByteArray(compressedDataBytes));
   }
 
   private static <T> JsonNode toJsonNode(T value) {

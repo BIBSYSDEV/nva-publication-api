@@ -24,9 +24,6 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.text.IsEmptyString.emptyString;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -59,6 +56,9 @@ import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 class DaoTest extends ResourcesLocalTest {
 
@@ -205,13 +205,14 @@ class DaoTest extends ResourcesLocalTest {
   @MethodSource("instanceProvider")
   void daoCanBeRetrievedByPrimaryKeyFromDynamo(Dao originalResource) {
     client.putItem(toPutItemRequest(originalResource));
-    GetItemResult getItemResult =
+    var getItemResult =
         client.getItem(
-            new GetItemRequest()
-                .withTableName(RESOURCES_TABLE_NAME)
-                .withKey(originalResource.primaryKey()));
+            GetItemRequest.builder()
+                .tableName(RESOURCES_TABLE_NAME)
+                .key(originalResource.primaryKey())
+                .build());
     Dao retrievedResource =
-        parseAttributeValuesMap(getItemResult.getItem(), originalResource.getClass());
+        parseAttributeValuesMap(getItemResult.item(), originalResource.getClass());
 
     assertThat(originalResource, doesNotHaveEmptyValuesIgnoringFields(IGNORED_FIELDS));
     assertThat(originalResource, is(equalTo(retrievedResource)));
@@ -232,9 +233,16 @@ class DaoTest extends ResourcesLocalTest {
   void toDynamoFormatCreatesADynamoJsonFormatObjectPreservingAllInformation(Dao originalDao) {
 
     Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
-    client.putItem(RESOURCES_TABLE_NAME, dynamoMap);
+    client.putItem(
+        PutItemRequest.builder().tableName(RESOURCES_TABLE_NAME).item(dynamoMap).build());
     Map<String, AttributeValue> savedMap =
-        client.getItem(RESOURCES_TABLE_NAME, originalDao.primaryKey()).getItem();
+        client
+            .getItem(
+                GetItemRequest.builder()
+                    .tableName(RESOURCES_TABLE_NAME)
+                    .key(originalDao.primaryKey())
+                    .build())
+            .item();
     assertThat(dynamoMap, is(equalTo(savedMap)));
 
     Dao retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
