@@ -3262,17 +3262,9 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "${TextStorageBucketName}-${AWS::AccountId}"
-      LifecycleConfiguration:
-        Rules:
-          - Id: ExpireOldObjectVersions
-            Status: Enabled
-            NoncurrentVersionExpiration:
-              NoncurrentDays: !Ref S3NoncurrentVersionExpirationDays
       Tags:
         - Key: IncludedInBackup
-          Value: "true"
-      VersioningConfiguration:
-        Status: Enabled
+          Value: "false" # Unversioned and not backed up: contents are derived and regenerable by re-running the seeder
 
   TextExtractionSeedBucket:
     Type: AWS::S3::Bucket
@@ -3283,12 +3275,6 @@ Resources:
           - Id: DeleteContentAfter3Days
             Status: Enabled
             ExpirationInDays: 3
-          - Id: ExpireOldObjectVersions
-            Status: Enabled
-            NoncurrentVersionExpiration:
-              NoncurrentDays: !Ref S3NoncurrentVersionExpirationDays
       Tags:
         - Key: IncludedInBackup
-          Value: "false"
-      VersioningConfiguration:
-        Status: Enabled
+          Value: "false" # Unversioned and not backed up: seed CSVs are throwaway operational input
