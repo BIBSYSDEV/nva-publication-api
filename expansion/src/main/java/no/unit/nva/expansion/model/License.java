@@ -46,7 +46,7 @@ public record License(URI value, String name, Map<String, String> labels)
     }
 
     public static LicenseType fromUri(URI uri) {
-      return Arrays.stream(LicenseType.values())
+      return Arrays.stream(values())
           .filter(licenseType -> licenseType.hasPathParam(uri))
           .findFirst()
           .orElse(OTHER);

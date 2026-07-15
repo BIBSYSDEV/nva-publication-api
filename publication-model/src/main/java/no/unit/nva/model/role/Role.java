@@ -102,7 +102,7 @@ public enum Role {
   @JsonCreator
   public static Role parse(String value) {
     // TODO: inline "else" method following migration
-    return isDeprecatedRole(value) ? Role.OTHER : inlineableParseMethod(value);
+    return isDeprecatedRole(value) ? OTHER : inlineableParseMethod(value);
   }
 
   private static boolean isDeprecatedRole(String value) {
@@ -119,6 +119,6 @@ public enum Role {
                     format(
                         ERROR_MESSAGE_TEMPLATE,
                         value,
-                        stream(Role.values()).map(Role::toString).collect(joining(DELIMITER)))));
+                        stream(values()).map(Role::toString).collect(joining(DELIMITER)))));
   }
 }

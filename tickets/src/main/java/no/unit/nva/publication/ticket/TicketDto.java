@@ -142,7 +142,7 @@ public abstract class TicketDto implements JsonSerializable {
       Collection<URI> availableInstitutions,
       TicketPermissions ticketPermissions) {
     var messageDtos = messages.stream().map(MessageDto::fromMessage).collect(Collectors.toList());
-    return TicketDto.builder()
+    return builder()
         .withCreatedDate(ticket.getCreatedDate())
         .withStatus(getTicketDtoStatus(ticket))
         .withModifiedDate(ticket.getModifiedDate())

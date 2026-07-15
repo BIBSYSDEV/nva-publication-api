@@ -8,7 +8,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-@SuppressWarnings("PMD.UnusedAssignment")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public record SourceOrganization(
     SourceOrganizationIdentifier identifier,

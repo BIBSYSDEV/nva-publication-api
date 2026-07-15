@@ -44,8 +44,6 @@ public enum Revision {
                     format(
                         ERROR_MESSAGE_TEMPLATE,
                         value,
-                        stream(Revision.values())
-                            .map(Revision::toString)
-                            .collect(joining(DELIMITER)))));
+                        stream(values()).map(Revision::toString).collect(joining(DELIMITER)))));
   }
 }

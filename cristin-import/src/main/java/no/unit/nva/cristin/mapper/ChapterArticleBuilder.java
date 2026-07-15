@@ -21,16 +21,16 @@ public class ChapterArticleBuilder extends AbstractPublicationInstanceBuilder {
   public PublicationInstance<? extends Pages> build() {
 
     CristinSecondaryCategory secondaryCategory = getCristinObject().getSecondaryCategory();
-    if (CristinSecondaryCategory.CHAPTER_ACADEMIC.equals(secondaryCategory)) {
+    if (CristinSecondaryCategory.CHAPTER_ACADEMIC == secondaryCategory) {
       return new AcademicChapter(createChapterPages());
-    } else if (CristinSecondaryCategory.CHAPTER.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.CHAPTER == secondaryCategory) {
       return new NonFictionChapter(createChapterPages());
-    } else if (CristinSecondaryCategory.POPULAR_CHAPTER_ARTICLE.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.POPULAR_CHAPTER_ARTICLE == secondaryCategory) {
       return new PopularScienceChapter(createChapterPages());
-    } else if (CristinSecondaryCategory.LEXICAL_IMPORT.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.LEXICAL_IMPORT == secondaryCategory) {
       return new EncyclopediaChapter(createChapterPages());
-    } else if (CristinSecondaryCategory.FOREWORD.equals(secondaryCategory)
-        || CristinSecondaryCategory.INTRODUCTION.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.FOREWORD == secondaryCategory
+        || CristinSecondaryCategory.INTRODUCTION == secondaryCategory) {
       return new Introduction(createChapterPages());
     } else {
       throw unknownSecondaryCategory();

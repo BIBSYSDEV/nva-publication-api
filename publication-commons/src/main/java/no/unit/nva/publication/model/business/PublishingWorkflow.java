@@ -41,9 +41,7 @@ public enum PublishingWorkflow {
   @JacocoGenerated
   private static RuntimeException throwException(String value) {
     var validValues =
-        stream(PublishingWorkflow.values())
-            .map(PublishingWorkflow::toString)
-            .collect(joining(DELIMITER));
+        stream(values()).map(PublishingWorkflow::toString).collect(joining(DELIMITER));
     return new IllegalArgumentException(format(ERROR_MESSAGE_TEMPLATE, value, validValues));
   }
 }

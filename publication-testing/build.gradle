@@ -1,5 +1,5 @@
 dependencies {
-    api(nvaCatalog.aws.sdk.dynamo)
+    api(nvaCatalog.aws.sdk2.dynamo)
     api(nvaCatalog.aws.sdk2.sqs)
     api(nvaCatalog.jackson.annotations)
     api(nvaCatalog.jackson.core)
@@ -11,10 +11,7 @@ dependencies {
     compileOnly(nvaLibs.apigateway)
     implementation(nvaCatalog.aws.sdk2.s3)
     implementation(nvaCatalog.aws.sdk2.sdk.core)
-    implementation(nvaCatalog.aws.dynamodb.local) {
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
-    }
+    implementation(nvaCatalog.aws.sdk2.dynamodblocal)
     implementation(nvaCatalog.datafaker)
     implementation(nvaCatalog.httpcore4)
     implementation(nvaCatalog.jackson.databind)

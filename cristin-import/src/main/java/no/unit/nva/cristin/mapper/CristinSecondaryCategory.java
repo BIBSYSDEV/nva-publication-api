@@ -85,116 +85,110 @@ public enum CristinSecondaryCategory {
   }
 
   public static boolean isAnthology(CristinObject cristinObject) {
-    return CristinSecondaryCategory.ANTHOLOGY.equals(cristinObject.getSecondaryCategory());
+    return ANTHOLOGY == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isMonograph(CristinObject cristinObject) {
-    return CristinSecondaryCategory.MONOGRAPH.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.TEXTBOOK.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.NON_FICTION_BOOK.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.ENCYCLOPEDIA.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.POPULAR_BOOK.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.REFERENCE_MATERIAL.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.EXHIBITION_CATALOG.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.ACADEMIC_COMMENTARY.equals(
-            cristinObject.getSecondaryCategory());
+    return MONOGRAPH == cristinObject.getSecondaryCategory()
+        || TEXTBOOK == cristinObject.getSecondaryCategory()
+        || NON_FICTION_BOOK == cristinObject.getSecondaryCategory()
+        || ENCYCLOPEDIA == cristinObject.getSecondaryCategory()
+        || POPULAR_BOOK == cristinObject.getSecondaryCategory()
+        || REFERENCE_MATERIAL == cristinObject.getSecondaryCategory()
+        || EXHIBITION_CATALOG == cristinObject.getSecondaryCategory()
+        || ACADEMIC_COMMENTARY == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isJournalLetter(CristinObject cristinObject) {
-    return CristinSecondaryCategory.JOURNAL_LETTER.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.READER_OPINION.equals(cristinObject.getSecondaryCategory());
+    return JOURNAL_LETTER == cristinObject.getSecondaryCategory()
+        || READER_OPINION == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isJournalReview(CristinObject cristinObject) {
-    return CristinSecondaryCategory.JOURNAL_REVIEW.equals(cristinObject.getSecondaryCategory());
+    return JOURNAL_REVIEW == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isJournalLeader(CristinObject cristinObject) {
-    return CristinSecondaryCategory.JOURNAL_LEADER.equals(cristinObject.getSecondaryCategory());
+    return JOURNAL_LEADER == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isAbstract(CristinObject cristinObject) {
-    return CristinSecondaryCategory.ABSTRACT.equals(cristinObject.getSecondaryCategory());
+    return ABSTRACT == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isJournalCorrigendum(CristinObject cristinObject) {
-    return CristinSecondaryCategory.JOURNAL_CORRIGENDUM.equals(
-        cristinObject.getSecondaryCategory());
+    return JOURNAL_CORRIGENDUM == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isJournalArticle(CristinObject cristinObject) {
-    return CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.POPULAR_ARTICLE.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.ARTICLE.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.ACADEMIC_REVIEW.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.SHORT_COMMUNICATION.equals(
-            cristinObject.getSecondaryCategory());
+    return JOURNAL_ARTICLE == cristinObject.getSecondaryCategory()
+        || POPULAR_ARTICLE == cristinObject.getSecondaryCategory()
+        || ARTICLE == cristinObject.getSecondaryCategory()
+        || ACADEMIC_REVIEW == cristinObject.getSecondaryCategory()
+        || SHORT_COMMUNICATION == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isResearchReport(CristinObject cristinObject) {
-    return CristinSecondaryCategory.RESEARCH_REPORT.equals(cristinObject.getSecondaryCategory());
+    return RESEARCH_REPORT == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isDegreePhd(CristinObject cristinObject) {
-    return CristinSecondaryCategory.DEGREE_PHD.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.MAGISTER_THESIS.equals(cristinObject.getSecondaryCategory());
+    return DEGREE_PHD == cristinObject.getSecondaryCategory()
+        || MAGISTER_THESIS == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isDegreeMaster(CristinObject cristinObject) {
-    return CristinSecondaryCategory.DEGREE_MASTER.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.SECOND_DEGREE_THESIS.equals(
-            cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.MEDICAL_THESIS.equals(cristinObject.getSecondaryCategory());
+    return DEGREE_MASTER == cristinObject.getSecondaryCategory()
+        || SECOND_DEGREE_THESIS == cristinObject.getSecondaryCategory()
+        || MEDICAL_THESIS == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isDegreeLicentiate(CristinObject cristinObject) {
-    return CristinSecondaryCategory.DEGREE_LICENTIATE.equals(cristinObject.getSecondaryCategory());
+    return DEGREE_LICENTIATE == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isReportWorkingPaper(CristinObject cristinObject) {
-    return CristinSecondaryCategory.COMPENDIUM.equals(cristinObject.getSecondaryCategory());
+    return COMPENDIUM == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isBriefs(CristinObject cristinObject) {
-    return CristinSecondaryCategory.BRIEFS.equals(cristinObject.getSecondaryCategory());
+    return BRIEFS == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isInterview(CristinObject cristinObject) {
-    return CristinSecondaryCategory.INTERVIEW.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.WRITTEN_INTERVIEW.equals(cristinObject.getSecondaryCategory());
+    return INTERVIEW == cristinObject.getSecondaryCategory()
+        || WRITTEN_INTERVIEW == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isMuseum(CristinObject cristinObject) {
-    return CristinSecondaryCategory.MUSEUM.equals(cristinObject.getSecondaryCategory());
+    return MUSEUM == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isProgramParticipation(CristinObject cristinObject) {
-    return CristinSecondaryCategory.PROGRAM_PARTICIPATION.equals(
-            cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.PROGRAM_MANAGEMENT.equals(cristinObject.getSecondaryCategory());
+    return PROGRAM_PARTICIPATION == cristinObject.getSecondaryCategory()
+        || PROGRAM_MANAGEMENT == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isMediaFeatureArticle(CristinObject cristinObject) {
-    return CristinSecondaryCategory.FEATURE_ARTICLE.equals(cristinObject.getSecondaryCategory());
+    return FEATURE_ARTICLE == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isConferenceLecture(CristinObject cristinObject) {
-    return CristinSecondaryCategory.CONFERENCE_LECTURE.equals(cristinObject.getSecondaryCategory());
+    return CONFERENCE_LECTURE == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isConferencePoster(CristinObject cristinObject) {
-    return CristinSecondaryCategory.CONFERENCE_POSTER.equals(cristinObject.getSecondaryCategory());
+    return CONFERENCE_POSTER == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isLecture(CristinObject cristinObject) {
-    return CristinSecondaryCategory.LECTURE.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.POPULAR_SCIENTIFIC_LECTURE.equals(
-            cristinObject.getSecondaryCategory());
+    return LECTURE == cristinObject.getSecondaryCategory()
+        || POPULAR_SCIENTIFIC_LECTURE == cristinObject.getSecondaryCategory();
   }
 
   public static boolean isOtherPresentation(CristinObject cristinObject) {
-    return CristinSecondaryCategory.OTHER_PRESENTATION.equals(cristinObject.getSecondaryCategory())
-        || CristinSecondaryCategory.INTERNET_EXHIBIT.equals(cristinObject.getSecondaryCategory());
+    return OTHER_PRESENTATION == cristinObject.getSecondaryCategory()
+        || INTERNET_EXHIBIT == cristinObject.getSecondaryCategory();
   }
 
   @JsonValue
@@ -206,7 +200,7 @@ public enum CristinSecondaryCategory {
   }
 
   public boolean isUnknownCategory() {
-    return UNMAPPED.equals(this);
+    return UNMAPPED == this;
   }
 
   public JournalArticleContentType toJournalArticleContentType() {

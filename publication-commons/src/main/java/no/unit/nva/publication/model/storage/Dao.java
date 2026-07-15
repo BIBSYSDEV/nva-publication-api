@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.storage;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 import static no.unit.nva.publication.model.business.TicketEntry.Constants.IDENTIFIER_FIELD;
 import static no.unit.nva.publication.model.storage.DataCompressor.compressDaoData;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
@@ -8,9 +9,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_FORMAT;
 import static nva.commons.core.attempt.Try.attempt;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -28,8 +26,10 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
-@SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
   @JsonSubTypes.Type(name = ResourceDao.TYPE, value = ResourceDao.class),
@@ -54,7 +54,7 @@ public abstract class Dao implements DynamoEntry, WithPrimaryKey, DynamoEntryByI
 
   protected Dao(Entity data) {
     this.version = UUID.randomUUID();
-    this.data = data;
+    this.data = requireNonNull(data);
   }
 
   public static String orgUriToOrgIdentifier(URI uri) {
@@ -161,7 +161,7 @@ public abstract class Dao implements DynamoEntry, WithPrimaryKey, DynamoEntryByI
 
   public abstract TransactWriteItemsRequest createInsertionTransactionRequest();
 
-  public abstract void updateExistingEntry(AmazonDynamoDB client);
+  public abstract void updateExistingEntry(DynamoDbClient client);
 
   public final String dataType() {
     return getData().getType();
@@ -210,19 +210,20 @@ public abstract class Dao implements DynamoEntry, WithPrimaryKey, DynamoEntryByI
     return switch (keyField) {
       case RESOURCE ->
           Map.entry(
-              keyField.getKeyField(), new AttributeValue(ResourceDao.TYPE + KEY_FIELDS_DELIMITER));
+              keyField.getKeyField(),
+              AttributeValue.fromS(ResourceDao.TYPE + KEY_FIELDS_DELIMITER));
       case MESSAGE ->
           Map.entry(
-              keyField.getKeyField(), new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER));
+              keyField.getKeyField(), AttributeValue.fromS(MessageDao.TYPE + KEY_FIELDS_DELIMITER));
       case TICKET ->
           Map.entry(
               keyField.getKeyField(),
-              new AttributeValue(TicketDao.TICKETS_INDEXING_TYPE + KEY_FIELDS_DELIMITER));
+              AttributeValue.fromS(TicketDao.TICKETS_INDEXING_TYPE + KEY_FIELDS_DELIMITER));
       case DOI_REQUEST ->
           Map.entry(
-              keyField.getKeyField(), new AttributeValue("DoiRequest" + KEY_FIELDS_DELIMITER));
+              keyField.getKeyField(), AttributeValue.fromS("DoiRequest" + KEY_FIELDS_DELIMITER));
       case FILE_ENTRY ->
-          Map.entry(keyField.getKeyField(), new AttributeValue("File" + KEY_FIELDS_DELIMITER));
+          Map.entry(keyField.getKeyField(), AttributeValue.fromS("File" + KEY_FIELDS_DELIMITER));
     };
   }
 }

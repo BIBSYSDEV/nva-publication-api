@@ -29,7 +29,7 @@ public class ApproveTicketGrantStrategy extends TicketStrategyBase implements Ti
 
   @Override
   public boolean allowsAction(TicketOperation permission) {
-    if (!permission.equals(APPROVE)) {
+    if (permission != APPROVE) {
       return false;
     }
 

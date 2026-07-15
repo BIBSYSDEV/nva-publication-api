@@ -63,8 +63,6 @@ public enum BookMonographContentType {
     return format(
         ERROR_MESSAGE_TEMPLATE,
         value,
-        stream(BookMonographContentType.values())
-            .map(BookMonographContentType::toString)
-            .collect(joining(DELIMITER)));
+        stream(values()).map(BookMonographContentType::toString).collect(joining(DELIMITER)));
   }
 }

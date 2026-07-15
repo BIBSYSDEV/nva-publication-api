@@ -25,7 +25,7 @@ public class VisualArtsSubtype {
   public static VisualArtsSubtype fromJson(
       @JsonProperty(TYPE_FIELD) VisualArtsSubtypeEnum type,
       @JsonProperty(DESCRIPTION_FIELD) String description) {
-    if (VisualArtsSubtypeEnum.OTHER.equals(type)) {
+    if (VisualArtsSubtypeEnum.OTHER == type) {
       return createOther(description);
     }
     return new VisualArtsSubtype(type);

@@ -22,6 +22,6 @@ public final class TicketDtoStatusMapper {
   }
 
   private static boolean isPending(TicketEntry ticketEntry) {
-    return TicketStatus.PENDING.equals(ticketEntry.getStatus());
+    return TicketStatus.PENDING == ticketEntry.getStatus();
   }
 }

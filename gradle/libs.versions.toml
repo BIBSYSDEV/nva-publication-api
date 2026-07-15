@@ -2,6 +2,7 @@
 apache-bval = { strictly = '3.0.2' }
 apacheCommonsCollections = { strictly = '4.5.0' }
 apacheCommonsText = { strictly = '1.15.0' }
+aws-lambda-events-sdk-transformer = { strictly = '3.1.0' }
 glassfish-jakarta-json = { strictly = '2.0.1' }
 glassfish-jaxb = '2.3.1'  # FIXME: Upgrading breaks brage-import
 hamcrest-json = { strictly = '0.3' }
@@ -26,6 +27,7 @@ titanium-json-ld = { strictly = '1.7.0' }
 apache-bval = { group= 'org.apache.bval', name= 'bval-jsr', version.ref= 'apache-bval'}
 apache-commons-collections = { group = 'org.apache.commons', name = 'commons-collections4', version.ref = 'apacheCommonsCollections' }
 apache-commons-text = { group = 'org.apache.commons', name = 'commons-text', version.ref = 'apacheCommonsText' }
+aws-lambda-events-sdk-transformer = { group = 'com.amazonaws', name = 'aws-lambda-java-events-sdk-transformer', version.ref = 'aws-lambda-events-sdk-transformer' }
 glassfish-jakarta-json = { group = 'org.glassfish', name = 'jakarta.json', version.ref = 'glassfish-jakarta-json' }
 hamcrest-json = {  group = 'uk.co.datumedge', name = 'hamcrest-json', version.ref = 'hamcrest-json' }
 hamcrest-optional = { group = 'com.spotify', name = 'hamcrest-optional', version.ref = 'hamcrestSpotify' }

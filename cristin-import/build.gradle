@@ -44,7 +44,7 @@ dependencies {
     testCompileOnly(nvaCatalog.junit.platform.suite.api)
     testImplementation(nvaCatalog.cucumber.datatable)
     testImplementation(nvaCatalog.aws.lambda.core)
-    testImplementation(nvaCatalog.aws.sdk.dynamo)
+    testImplementation(nvaCatalog.aws.sdk2.dynamo)
     testImplementation(nvaCatalog.aws.sdk2.s3)
     testImplementation(nvaCatalog.aws.sdk2.sqs)
     testImplementation(nvaCatalog.cucumber.java)

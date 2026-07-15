@@ -23,7 +23,7 @@ public record PresignedUri(
   public static final String TYPE = "PresignedUrl";
 
   public static PresignedUri fromS3Key(UUID fileIdentifier) {
-    return PresignedUri.builder().withFileIdentifier(fileIdentifier).build();
+    return builder().withFileIdentifier(fileIdentifier).build();
   }
 
   public static Builder builder() {
@@ -42,7 +42,7 @@ public record PresignedUri(
   }
 
   public PresignedUri fromS3PresignerResponse(PresignedGetObjectRequest response) {
-    return PresignedUri.builder()
+    return builder()
         .withFileIdentifier(fileIdentifier)
         .withSignedUri(attempt(() -> response.url().toURI()).orElseThrow())
         .withExpiration(response.expiration())

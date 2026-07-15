@@ -35,21 +35,21 @@ public class BookBuilder extends AbstractBookReportBuilder {
   private PublicationInstance<? extends Pages> createMonograph() {
 
     var secondaryCategory = getCristinObject().getSecondaryCategory();
-    if (CristinSecondaryCategory.MONOGRAPH.equals(secondaryCategory)) {
+    if (CristinSecondaryCategory.MONOGRAPH == secondaryCategory) {
       return new AcademicMonograph(createMonographPages());
-    } else if (CristinSecondaryCategory.TEXTBOOK.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.TEXTBOOK == secondaryCategory) {
       return new Textbook(createMonographPages());
-    } else if (CristinSecondaryCategory.NON_FICTION_BOOK.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.NON_FICTION_BOOK == secondaryCategory) {
       return new NonFictionMonograph(createMonographPages());
-    } else if (CristinSecondaryCategory.ENCYCLOPEDIA.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.ENCYCLOPEDIA == secondaryCategory) {
       return new Encyclopedia(createMonographPages());
-    } else if (CristinSecondaryCategory.POPULAR_BOOK.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.POPULAR_BOOK == secondaryCategory) {
       return new PopularScienceMonograph(createMonographPages());
-    } else if (CristinSecondaryCategory.REFERENCE_MATERIAL.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.REFERENCE_MATERIAL == secondaryCategory) {
       return new Encyclopedia(createMonographPages());
-    } else if (CristinSecondaryCategory.EXHIBITION_CATALOG.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.EXHIBITION_CATALOG == secondaryCategory) {
       return new ExhibitionCatalog(createMonographPages());
-    } else if (CristinSecondaryCategory.ACADEMIC_COMMENTARY.equals(secondaryCategory)) {
+    } else if (CristinSecondaryCategory.ACADEMIC_COMMENTARY == secondaryCategory) {
       return new AcademicCommentary(createMonographPages());
     } else {
       throw new UnsupportedSecondaryCategoryException();

@@ -44,14 +44,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import com.amazonaws.services.dynamodbv2.model.ItemResponse;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.TransactGetItemsResult;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
@@ -105,6 +97,14 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsResponse;
 
 public class TicketServiceTest extends ResourcesLocalTest {
 
@@ -435,13 +435,13 @@ public class TicketServiceTest extends ResourcesLocalTest {
   @MethodSource("ticketTypeProvider")
   void shouldRetrieveEventuallyConsistentTicket(Class<? extends TicketEntry> ticketType)
       throws ApiGatewayException {
-    var client = mock(AmazonDynamoDB.class);
+    var client = mock(DynamoDbClient.class);
     var expectedTicketEntry = createMockResponsesImitatingEventualConsistency(ticketType, client);
     var service = new TicketService(client, uriRetriever, cristinUnitsUtil);
     var response = randomPublishingRequest().persistNewTicket(service);
     assertThat(response, is(equalTo(expectedTicketEntry)));
     verify(client, times(ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL))
-        .getItem(any());
+        .getItem(any(GetItemRequest.class));
   }
 
   @ParameterizedTest(name = "ticket type:{0}")
@@ -940,25 +940,24 @@ public class TicketServiceTest extends ResourcesLocalTest {
   }
 
   private TicketEntry createMockResponsesImitatingEventualConsistency(
-      Class<? extends TicketEntry> ticketType, AmazonDynamoDB client) {
+      Class<? extends TicketEntry> ticketType, DynamoDbClient client) {
 
     var publication = mockedPublicationResponse();
-    var mockedGetPublicationResponse = new GetItemResult().withItem(publication);
-    new TransactGetItemsResult()
-        .withResponses(new ItemResponse().withItem(mockedPublicationResponse()));
+    var mockedGetPublicationResponse = GetItemResponse.builder().item(publication).build();
     var ticketEntry =
         createUnpersistedTicket(
             randomPublicationWithoutDoi().copy().withStatus(PUBLISHED).build(), ticketType);
     var mockedResponseWhenItemFinallyInPlace =
-        new GetItemResult().withItem(ticketEntry.toDao().toDynamoFormat());
+        GetItemResponse.builder().item(ticketEntry.toDao().toDynamoFormat()).build();
 
-    when(client.transactWriteItems(any())).thenReturn(new TransactWriteItemsResult());
-    when(client.getItem(any()))
+    when(client.transactWriteItems(any(TransactWriteItemsRequest.class)))
+        .thenReturn(TransactWriteItemsResponse.builder().build());
+    when(client.getItem(any(GetItemRequest.class)))
         .thenReturn(mockedGetPublicationResponse)
         .thenThrow(RuntimeException.class)
         .thenReturn(mockedResponseWhenItemFinallyInPlace);
 
-    var queryResult = new QueryResult().withItems(publication);
+    var queryResult = QueryResponse.builder().items(List.of(publication)).build();
     when(client.query(any(QueryRequest.class))).thenReturn(queryResult);
 
     return ticketEntry;
