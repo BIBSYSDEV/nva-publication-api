@@ -7,10 +7,10 @@ downstream.
 Two lambdas, wired together in `template.yaml` under
 `#===Text extraction===`:
 
-| Lambda | Trigger | Role |
-|---|---|---|
-| `SeedTextExtractionHandler` | CSV upload to the seed bucket | Bulk-enqueues one extraction request per object key |
-| `TextExtractionHandler` | `TextExtractionQueue` (SQS, batch size 1, max concurrency 20) | Downloads the object, extracts text, writes the result |
+| Lambda                      | Trigger                                                       | Role                                                   |
+| --------------------------- | ------------------------------------------------------------- | ------------------------------------------------------ |
+| `SeedTextExtractionHandler` | CSV upload to the seed bucket                                 | Bulk-enqueues one extraction request per object key    |
+| `TextExtractionHandler`     | `TextExtractionQueue` (SQS, batch size 1, max concurrency 20) | Downloads the object, extracts text, writes the result |
 
 ## Using SeedTextExtractionHandler on AWS
 
@@ -75,7 +75,7 @@ Then watch the pipeline drain:
 - Files that cannot be extracted (unsupported format, larger than the 9 GiB
   source limit, blank content, extraction error) get a flag object at
   `flags/<source-key>.json` instead, recording the reason. Text truncated at
-  the 100 000 000-character limit is stored *and* flagged.
+  the 100 000 000-character limit is stored _and_ flagged.
 
 ### Failure handling and retries
 
@@ -107,11 +107,11 @@ Then watch the pipeline drain:
 All wiring is in `template.yaml`; nothing is configured by hand in a deployed
 environment.
 
-| Environment variable | Source | Meaning |
-|---|---|---|
-| `NVA_PERSISTED_STORAGE_BUCKET_NAME` | `ResourceStorageBucketName` (SSM `/NVA/PublicationData`) | Bucket every enqueued request points at |
-| `TEXT_EXTRACTION_QUEUE_URL` | `TextExtractionQueue` | Queue the seeder writes to |
-| `AWS_REGION` | Lambda runtime | Region for the SQS client; defaults to `eu-west-1` if absent |
+| Environment variable                | Source                                                   | Meaning                                                      |
+| ----------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
+| `NVA_PERSISTED_STORAGE_BUCKET_NAME` | `ResourceStorageBucketName` (SSM `/NVA/PublicationData`) | Bucket every enqueued request points at                      |
+| `TEXT_EXTRACTION_QUEUE_URL`         | `TextExtractionQueue`                                    | Queue the seeder writes to                                   |
+| `AWS_REGION`                        | Lambda runtime                                           | Region for the SQS client; defaults to `eu-west-1` if absent |
 
 `TextExtractionHandler` additionally reads `TEXT_STORAGE_BUCKET_NAME`
 (`TextStorageBucket`), the bucket extracted text is written to.
