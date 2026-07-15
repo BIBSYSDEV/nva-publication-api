@@ -12,17 +12,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Gatherers;
 import java.util.stream.IntStream;
+import no.unit.nva.publication.queue.QueueMessageSender;
+import no.unit.nva.publication.queue.SqsMessageSender;
 import no.unit.nva.s3.S3Driver;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.exception.SdkException;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
@@ -40,38 +38,28 @@ public final class SeedTextExtractionHandler implements RequestHandler<S3Event, 
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SeedTextExtractionHandler.class);
   private static final int BATCH_SIZE = 10;
-  private static final String AWS_REGION_ENV = "AWS_REGION";
   private static final String UTF8_BYTE_ORDER_MARK = "\uFEFF";
   private static final String BATCH_FAILURES_MESSAGE_TEMPLATE =
       "SQS batch enqueue had %d failed entries out of %d";
   private static final String EMPTY_STRING = "";
 
   private final S3Client s3Client;
-  private final SqsClient sqsClient;
+  private final QueueMessageSender queueMessageSender;
   private final SeedTextExtractionConfig config;
 
   @JacocoGenerated
   public SeedTextExtractionHandler() {
     this(
         S3Driver.defaultS3Client().build(),
-        defaultSqsClient(),
+        SqsMessageSender.defaultSqsMessageSender(),
         SeedTextExtractionConfig.fromEnvironment());
   }
 
   public SeedTextExtractionHandler(
-      S3Client s3Client, SqsClient sqsClient, SeedTextExtractionConfig config) {
+      S3Client s3Client, QueueMessageSender queueMessageSender, SeedTextExtractionConfig config) {
     this.s3Client = s3Client;
-    this.sqsClient = sqsClient;
+    this.queueMessageSender = queueMessageSender;
     this.config = config;
-  }
-
-  @JacocoGenerated
-  private static SqsClient defaultSqsClient() {
-    return SqsClient.builder()
-        .region(
-            new Environment().readEnvOpt(AWS_REGION_ENV).map(Region::of).orElse(Region.EU_WEST_1))
-        .httpClientBuilder(UrlConnectionHttpClient.builder())
-        .build();
   }
 
   @Override
@@ -129,7 +117,7 @@ public final class SeedTextExtractionHandler implements RequestHandler<S3Event, 
     SendMessageBatchResponse response;
     try {
       response =
-          sqsClient.sendMessageBatch(
+          queueMessageSender.sendMessageBatch(
               SendMessageBatchRequest.builder()
                   .queueUrl(config.queueUrl())
                   .entries(entries)

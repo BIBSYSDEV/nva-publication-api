@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import no.unit.nva.publication.queue.QueueMessageSender;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeS3Client;
@@ -29,7 +30,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
-import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.BatchResultErrorEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
@@ -48,15 +48,15 @@ class SeedTextExtractionHandlerTest {
   private static final int EXPECTED_BATCH_COUNT = 3;
 
   private FakeS3Client fakeS3Client;
-  private SqsClient sqsClient;
+  private QueueMessageSender queueMessageSender;
   private SeedTextExtractionConfig config;
 
   @BeforeEach
   void setUp() {
     fakeS3Client = new FakeS3Client();
-    sqsClient = mock(SqsClient.class);
+    queueMessageSender = mock(QueueMessageSender.class);
     config = new SeedTextExtractionConfig(SOURCE_BUCKET, QUEUE_URL);
-    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
+    when(queueMessageSender.sendMessageBatch(any(SendMessageBatchRequest.class)))
         .thenReturn(SendMessageBatchResponse.builder().build());
   }
 
@@ -68,7 +68,7 @@ class SeedTextExtractionHandlerTest {
 
     handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext());
 
-    verifyNoInteractions(sqsClient);
+    verifyNoInteractions(queueMessageSender);
   }
 
   @Test
@@ -77,7 +77,7 @@ class SeedTextExtractionHandlerTest {
 
     handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext());
 
-    verify(sqsClient, times(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
+    verify(queueMessageSender, times(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
   }
 
   @Test
@@ -87,7 +87,7 @@ class SeedTextExtractionHandlerTest {
     handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext());
 
     var captor = ArgumentCaptor.forClass(SendMessageBatchRequest.class);
-    verify(sqsClient, times(EXPECTED_BATCH_COUNT)).sendMessageBatch(captor.capture());
+    verify(queueMessageSender, times(EXPECTED_BATCH_COUNT)).sendMessageBatch(captor.capture());
     assertThat(captor.getAllValues())
         .allSatisfy(
             batch -> assertThat(batch.entries()).hasSizeLessThanOrEqualTo(MAX_ENTRIES_PER_BATCH));
@@ -104,7 +104,7 @@ class SeedTextExtractionHandlerTest {
     handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext());
 
     var captor = ArgumentCaptor.forClass(SendMessageBatchRequest.class);
-    verify(sqsClient).sendMessageBatch(captor.capture());
+    verify(queueMessageSender).sendMessageBatch(captor.capture());
     var body = captor.getValue().entries().getFirst().messageBody();
     assertThat(body).contains(SOURCE_BUCKET).contains(key);
   }
@@ -116,7 +116,7 @@ class SeedTextExtractionHandlerTest {
     handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext());
 
     var captor = ArgumentCaptor.forClass(SendMessageBatchRequest.class);
-    verify(sqsClient).sendMessageBatch(captor.capture());
+    verify(queueMessageSender).sendMessageBatch(captor.capture());
     assertThat(captor.getValue().queueUrl()).isEqualTo(QUEUE_URL);
   }
 
@@ -129,7 +129,7 @@ class SeedTextExtractionHandlerTest {
             .message("Rate exceeded")
             .senderFault(false)
             .build();
-    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
+    when(queueMessageSender.sendMessageBatch(any(SendMessageBatchRequest.class)))
         .thenReturn(SendMessageBatchResponse.builder().failed(failedEntry).build());
     insertCsv("publications/doc1.pdf");
 
@@ -147,7 +147,7 @@ class SeedTextExtractionHandlerTest {
             .message("Rate exceeded")
             .senderFault(false)
             .build();
-    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
+    when(queueMessageSender.sendMessageBatch(any(SendMessageBatchRequest.class)))
         .thenReturn(SendMessageBatchResponse.builder().failed(failedEntry).build())
         .thenReturn(SendMessageBatchResponse.builder().build())
         .thenReturn(SendMessageBatchResponse.builder().build());
@@ -157,13 +157,13 @@ class SeedTextExtractionHandlerTest {
             () -> handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext()))
         .isInstanceOf(IllegalStateException.class);
 
-    verify(sqsClient, times(EXPECTED_BATCH_COUNT))
+    verify(queueMessageSender, times(EXPECTED_BATCH_COUNT))
         .sendMessageBatch(any(SendMessageBatchRequest.class));
   }
 
   @Test
   void shouldContinueRemainingBatchesAndThrowWhenWholeBatchSendFails() throws IOException {
-    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
+    when(queueMessageSender.sendMessageBatch(any(SendMessageBatchRequest.class)))
         .thenThrow(SqsException.builder().message("SQS unavailable").build())
         .thenReturn(SendMessageBatchResponse.builder().build())
         .thenReturn(SendMessageBatchResponse.builder().build());
@@ -173,7 +173,7 @@ class SeedTextExtractionHandlerTest {
             () -> handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext()))
         .isInstanceOf(IllegalStateException.class);
 
-    verify(sqsClient, times(EXPECTED_BATCH_COUNT))
+    verify(queueMessageSender, times(EXPECTED_BATCH_COUNT))
         .sendMessageBatch(any(SendMessageBatchRequest.class));
   }
 
@@ -184,7 +184,7 @@ class SeedTextExtractionHandlerTest {
     handler().handleRequest(s3Event(CSV_BUCKET, CSV_KEY), new FakeContext());
 
     var captor = ArgumentCaptor.forClass(SendMessageBatchRequest.class);
-    verify(sqsClient).sendMessageBatch(captor.capture());
+    verify(queueMessageSender).sendMessageBatch(captor.capture());
     var bodies =
         captor.getValue().entries().stream()
             .map(SendMessageBatchRequestEntry::messageBody)
@@ -202,7 +202,7 @@ class SeedTextExtractionHandlerTest {
 
     handler().handleRequest(s3Event(CSV_BUCKET, "seed+file.csv"), new FakeContext());
 
-    verify(sqsClient, times(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
+    verify(queueMessageSender, times(1)).sendMessageBatch(any(SendMessageBatchRequest.class));
   }
 
   @Test
@@ -214,7 +214,7 @@ class SeedTextExtractionHandlerTest {
   }
 
   private SeedTextExtractionHandler handler() {
-    return new SeedTextExtractionHandler(fakeS3Client, sqsClient, config);
+    return new SeedTextExtractionHandler(fakeS3Client, queueMessageSender, config);
   }
 
   private void insertCsv(String content) throws IOException {

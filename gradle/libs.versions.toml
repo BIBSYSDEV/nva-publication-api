@@ -37,8 +37,6 @@ joda-time = { group = 'joda-time', name = 'joda-time', version.ref = 'joda-time'
 lombok = { group = 'org.projectlombok', name = 'lombok', version.ref = 'lombok' }
 nva-doi-partner-data = { group = 'com.github.BIBSYSDEV', name = 'nva-doi-partner-data', version.ref = 'nvaDoiPartnerData' }
 pdfbox = { group = 'org.apache.pdfbox', name = 'pdfbox', version.ref = 'pdfbox' }
-poi = { group = 'org.apache.poi', name = 'poi', version.ref = 'poi' }
-poi-ooxml = { group = 'org.apache.poi', name = 'poi-ooxml', version.ref = 'poi' }
 opentest4j = { group = 'org.opentest4j', name = 'opentest4j', version.ref = 'opentest4j' }
 reflections = { group = 'org.reflections', name = 'reflections', version.ref = 'reflections' }
 swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.ref = 'swaggerCoreVersion' }
