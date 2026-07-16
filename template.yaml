@@ -129,6 +129,14 @@ Parameters:
     Type: Number
     Default: 60
     Description: Number of days to retain non-current object versions in versioned S3 buckets
+  TextStorageBucketName:
+    Type: String
+    Default: "nva-publication-text"
+    Description: Name of bucket for extracted text content
+  TextExtractionSeedBucketName:
+    Type: String
+    Default: "nva-text-extraction-seed"
+    Description: Name of bucket for seed CSV files that trigger bulk text extraction
 
 Conditions:
   WithSuffix: !Not [!Equals [!Ref Suffix, ""]]
@@ -434,6 +442,76 @@ Resources:
                   - sqs:DeleteMessage
                 Resource: !GetAtt UpdateDoiStatusDLQ.Arn
 
+  # Least-privilege roles for the text-extraction functions: these lambdas feed untrusted
+  # user-uploaded bytes to native parsers (Tika/PDFBox/POI), so they must not carry the broad
+  # shared LambdaRole permissions.
+  TextExtractionLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: TextExtraction
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${ResourceStorageBucketName}/*"
+              # ListBucket on the bucket ARN is required so that a missing key surfaces as
+              # 404/NoSuchKey (handled as skip) instead of 403/AccessDenied (poison message).
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::${ResourceStorageBucketName}"
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub "${TextStorageBucket.Arn}/*"
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt TextExtractionQueue.Arn
+
+  SeedTextExtractionLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: SeedTextExtraction
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # String-form ARN is deliberate: SAM wires the S3 event into the bucket resource,
+              # so referencing the bucket via !GetAtt here would create a circular dependency.
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${TextExtractionSeedBucketName}-${AWS::AccountId}/*"
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource:
+                  - !GetAtt TextExtractionQueue.Arn
+                  - !GetAtt SeedTextExtractionDLQ.Arn
+
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -455,6 +533,8 @@ Resources:
         - !Ref LambdaRole
         - !Ref DeleteDraftPublicationLambdaRole
         - !Ref UpdateDoiStatusLambdaRole
+        - !Ref TextExtractionLambdaRole
+        - !Ref SeedTextExtractionLambdaRole
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -3065,3 +3145,172 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${LoadDynamodbResourceBatchJobHandler}
       RetentionInDays: 14
+
+  #============================Text extraction==========================================================
+
+  TextExtractionQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: 5400 #Six times TextExtractionHandler Timeout, per AWS Lambda/SQS guidance
+      MessageRetentionPeriod: 1209600 #14 days
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt TextExtractionDLQ.Arn
+        maxReceiveCount: 5
+
+  TextExtractionDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600 #14 days
+
+  TextExtractionDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: TextExtractionDLQAlarm in publication-api
+      AlarmDescription: If this alarm is triggered, check SQS messages on TextExtractionDLQ in publication-api
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Statistic: Sum
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt TextExtractionDLQ.QueueName
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SlackSnsArn
+
+  TextExtractionDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: TextExtractionDurationAlarm in publication-api
+      AlarmDescription: If this alarm is triggered, a text extraction is running unusually long and may be approaching its timeout; the last "Extracting" log line in TextExtractionHandler names the file
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Statistic: Maximum
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref TextExtractionHandler
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 600000 # 10 of the 15 available minutes
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SlackSnsArn
+
+  TextExtractionHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-file-text
+      Handler: no.unit.nva.publication.file.text.TextExtractionHandler::handleRequest
+      Role: !GetAtt TextExtractionLambdaRole.Arn
+      Timeout: 900
+      MemorySize: 8192
+      SnapStart:
+        ApplyOn: None # Lambda rejects SnapStart with ephemeral storage above 512 MB; this async worker needs the large /tmp and gains nothing from faster cold starts
+      EphemeralStorage:
+        Size: 10240 # Keep in sync with S3FileDownloadSource.MAX_SOURCE_OBJECT_BYTES
+      Environment:
+        Variables:
+          TEXT_STORAGE_BUCKET_NAME: !Ref TextStorageBucket
+      Events:
+        SqsEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt TextExtractionQueue.Arn
+            BatchSize: 1
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+            ScalingConfig:
+              MaximumConcurrency: 20 # Cap fan-out of this 8GB function during bulk seed runs
+
+  SeedTextExtractionHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-file-text
+      Handler: no.unit.nva.publication.file.text.SeedTextExtractionHandler::handleRequest
+      Role: !GetAtt SeedTextExtractionLambdaRole.Arn
+      Timeout: 900
+      MemorySize: 1024
+      Environment:
+        Variables:
+          NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
+          TEXT_EXTRACTION_QUEUE_URL: !GetAtt TextExtractionQueue.QueueUrl
+      Events:
+        CsvUpload:
+          Type: S3
+          Properties:
+            Bucket: !Ref TextExtractionSeedBucket
+            Events: "s3:ObjectCreated:*"
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: ".csv"
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt SeedTextExtractionDLQ.Arn
+
+  SeedTextExtractionDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600 #14 days
+
+  SeedTextExtractionDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: SeedTextExtractionDLQAlarm in publication-api
+      AlarmDescription: If this alarm is triggered, a seed CSV run failed after async retries; check SQS messages on SeedTextExtractionDLQ in publication-api
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Statistic: Sum
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt SeedTextExtractionDLQ.QueueName
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SlackSnsArn
+
+  SeedTextExtractionDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: SeedTextExtractionDurationAlarm in publication-api
+      AlarmDescription: If this alarm is triggered, a seed run is unusually slow and may be approaching its timeout; check SeedTextExtractionHandler progress logs in publication-api
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Statistic: Maximum
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref SeedTextExtractionHandler
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 600000 # 10 of the 15 available minutes
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SlackSnsArn
+
+  TextStorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${TextStorageBucketName}-${AWS::AccountId}"
+      Tags:
+        - Key: IncludedInBackup
+          Value: "false" # Unversioned and not backed up: contents are derived and regenerable by re-running the seeder
+
+  TextExtractionSeedBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${TextExtractionSeedBucketName}-${AWS::AccountId}"
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteContentAfter3Days
+            Status: Enabled
+            ExpirationInDays: 3
+      Tags:
+        - Key: IncludedInBackup
+          Value: "false" # Unversioned and not backed up: seed CSVs are throwaway operational input
