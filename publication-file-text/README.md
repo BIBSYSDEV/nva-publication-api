@@ -53,10 +53,12 @@ aws s3 cp keys.csv s3://nva-text-extraction-seed-<account-id>/keys.csv
 ```
 
 That is the whole operation. The handler streams the file (memory use is
-bounded by the batch size, so CSV size is unlimited in that respect) and sends
-a `TextExtractionRequest` — `{"bucket": "<persisted-storage-bucket>",
-"key": "<line>"}` — to `TextExtractionQueue` in batches of 10. Seed CSVs are
-deleted automatically after 3 days by a lifecycle rule.
+bounded by the batch size) and sends a `TextExtractionRequest` —
+`{"bucket": "<persisted-storage-bucket>", "key": "<line>"}` — to
+`TextExtractionQueue` in batches of 10. CSVs larger than 25 MiB (a few
+hundred thousand keys) are rejected up front — split bigger runs across
+several files; uploads are independent. Seed CSVs are deleted automatically
+after 3 days by a lifecycle rule.
 
 ### 3. Verify the run
 
@@ -98,9 +100,17 @@ Then watch the pipeline drain:
   times by SQS, then moves to `TextExtractionDLQ`, which also has a Slack
   alarm. A source object that no longer exists is logged and skipped, not
   retried.
-- **Timeout**: the seeder has the Lambda maximum of 900 seconds per CSV,
-  enough for several hundred thousand keys. For larger runs, split the key
-  list across several CSV files — uploads are independent.
+- **Oversized CSVs**: seed CSVs larger than 25 MiB are rejected before any
+  key is read — logged and thrown, so the run dead-letters after the async
+  retries instead of burning repeated 15-minute attempts that can never
+  finish.
+- **Timeouts are visible, not silent**: the seeder logs progress every
+  1 000 enqueued keys and, when less than 30 seconds of Lambda time remain,
+  logs how far it got and aborts with an exception. `TextExtractionHandler`
+  logs `Extracting: bucket=… key=…` before starting each file, so an
+  extraction killed at the platform timeout names its culprit in the last
+  log line. Both functions have Slack alarms on unusually long duration
+  (over 10 of the 15 available minutes).
 
 ### Configuration
 

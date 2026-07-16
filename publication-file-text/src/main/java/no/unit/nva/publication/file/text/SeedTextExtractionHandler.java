@@ -1,5 +1,7 @@
 package no.unit.nva.publication.file.text;
 
+import static java.util.Objects.nonNull;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -33,11 +35,24 @@ import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
  * are skipped. Keys that fail to enqueue — individually or as a whole batch — are each logged, and
  * a run with any failures fails after all batches have been attempted, so the asynchronous retry
  * and on-failure destination see it while every failed key remains identifiable in the logs.
+ *
+ * <p>Runs are observable and bounded: CSVs larger than {@value MAX_CSV_BYTES} bytes are rejected
+ * before any work starts, progress is logged periodically during long runs, and when the remaining
+ * Lambda time drops below a safety margin the run logs how far it got and throws, so a run that
+ * cannot finish is explained in the logs instead of dying silently at the platform timeout.
  */
 public final class SeedTextExtractionHandler implements RequestHandler<S3Event, Void> {
 
+  static final long MAX_CSV_BYTES = 25L * 1024 * 1024;
+
   private static final Logger LOGGER = LoggerFactory.getLogger(SeedTextExtractionHandler.class);
   private static final int BATCH_SIZE = 10;
+  private static final int TIMEOUT_SAFETY_MARGIN_MILLIS = 30_000;
+  private static final int PROGRESS_LOG_INTERVAL_BATCHES = 100;
+  private static final String OVERSIZED_CSV_MESSAGE_TEMPLATE =
+      "Seed CSV is %d bytes, exceeding the %d byte limit";
+  private static final String NEAR_TIMEOUT_MESSAGE =
+      "Aborted near the Lambda timeout before all keys were enqueued";
   private static final String UTF8_BYTE_ORDER_MARK = "\uFEFF";
   private static final String BATCH_FAILURES_MESSAGE_TEMPLATE =
       "SQS batch enqueue had %d failed entries out of %d";
@@ -64,14 +79,15 @@ public final class SeedTextExtractionHandler implements RequestHandler<S3Event, 
 
   @Override
   public Void handleRequest(S3Event event, Context context) {
-    event.getRecords().forEach(this::processRecord);
+    event.getRecords().forEach(record -> processRecord(record, context));
     return null;
   }
 
-  private void processRecord(S3EventNotificationRecord record) {
+  private void processRecord(S3EventNotificationRecord record, Context context) {
     var csvBucket = record.getS3().getBucket().getName();
     var csvKey = record.getS3().getObject().getUrlDecodedKey();
-    var outcome = enqueueFromCsv(csvBucket, csvKey);
+    rejectOversizedCsv(record, csvBucket, csvKey);
+    var outcome = enqueueFromCsv(context, csvBucket, csvKey);
     LOGGER.info(
         "Seeded {} keys from s3://{}/{} ({} failed)",
         outcome.attempted(),
@@ -84,20 +100,68 @@ public final class SeedTextExtractionHandler implements RequestHandler<S3Event, 
     }
   }
 
-  private BatchOutcome enqueueFromCsv(String bucket, String key) {
+  private static void rejectOversizedCsv(
+      S3EventNotificationRecord record, String bucket, String key) {
+    var csvSizeBytes = record.getS3().getObject().getSizeAsLong();
+    if (nonNull(csvSizeBytes) && csvSizeBytes > MAX_CSV_BYTES) {
+      LOGGER.error(
+          "Rejecting oversized seed CSV: s3://{}/{} is {} bytes, limit is {}",
+          LogSanitizer.sanitize(bucket),
+          LogSanitizer.sanitize(key),
+          csvSizeBytes,
+          MAX_CSV_BYTES);
+      throw new IllegalArgumentException(
+          OVERSIZED_CSV_MESSAGE_TEMPLATE.formatted(csvSizeBytes, MAX_CSV_BYTES));
+    }
+  }
+
+  private BatchOutcome enqueueFromCsv(Context context, String bucket, String key) {
     var objectRequest = GetObjectRequest.builder().bucket(bucket).key(key).build();
     try (var reader =
         new BufferedReader(
             new InputStreamReader(s3Client.getObject(objectRequest), StandardCharsets.UTF_8))) {
-      return reader
-          .lines()
-          .map(SeedTextExtractionHandler::cleanKey)
-          .filter(SeedTextExtractionHandler::containsAlphanumeric)
-          .gather(Gatherers.windowFixed(BATCH_SIZE))
-          .map(this::sendBatch)
-          .reduce(BatchOutcome.NONE, BatchOutcome::plus);
+      var batches =
+          reader
+              .lines()
+              .map(SeedTextExtractionHandler::cleanKey)
+              .filter(SeedTextExtractionHandler::containsAlphanumeric)
+              .gather(Gatherers.windowFixed(BATCH_SIZE))
+              .iterator();
+      var outcome = BatchOutcome.NONE;
+      var batchCount = 0;
+      while (batches.hasNext()) {
+        abortWhenNearTimeout(context, outcome, bucket, key);
+        outcome = outcome.plus(sendBatch(batches.next()));
+        batchCount++;
+        logPeriodicProgress(batchCount, outcome, bucket, key);
+      }
+      return outcome;
     } catch (IOException exception) {
       throw new UncheckedIOException(exception);
+    }
+  }
+
+  private static void abortWhenNearTimeout(
+      Context context, BatchOutcome progress, String bucket, String key) {
+    if (context.getRemainingTimeInMillis() < TIMEOUT_SAFETY_MARGIN_MILLIS) {
+      LOGGER.error(
+          "Aborting near timeout: enqueued {} keys ({} failed) so far from s3://{}/{}",
+          progress.attempted(),
+          progress.failed(),
+          LogSanitizer.sanitize(bucket),
+          LogSanitizer.sanitize(key));
+      throw new IllegalStateException(NEAR_TIMEOUT_MESSAGE);
+    }
+  }
+
+  private static void logPeriodicProgress(
+      int batchCount, BatchOutcome progress, String bucket, String key) {
+    if (batchCount % PROGRESS_LOG_INTERVAL_BATCHES == 0) {
+      LOGGER.info(
+          "Enqueued {} keys so far from s3://{}/{}",
+          progress.attempted(),
+          LogSanitizer.sanitize(bucket),
+          LogSanitizer.sanitize(key));
     }
   }
 

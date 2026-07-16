@@ -3180,6 +3180,24 @@ Resources:
       AlarmActions:
         - !Ref SlackSnsArn
 
+  TextExtractionDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: TextExtractionDurationAlarm in publication-api
+      AlarmDescription: If this alarm is triggered, a text extraction is running unusually long and may be approaching its timeout; the last "Extracting" log line in TextExtractionHandler names the file
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Statistic: Maximum
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref TextExtractionHandler
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 600000 # 10 of the 15 available minutes
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SlackSnsArn
+
   TextExtractionHandler:
     Type: AWS::Serverless::Function
     Properties:
@@ -3254,6 +3272,24 @@ Resources:
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SlackSnsArn
+
+  SeedTextExtractionDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: SeedTextExtractionDurationAlarm in publication-api
+      AlarmDescription: If this alarm is triggered, a seed run is unusually slow and may be approaching its timeout; check SeedTextExtractionHandler progress logs in publication-api
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Statistic: Maximum
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref SeedTextExtractionHandler
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 600000 # 10 of the 15 available minutes
       ComparisonOperator: GreaterThanOrEqualToThreshold
       AlarmActions:
         - !Ref SlackSnsArn

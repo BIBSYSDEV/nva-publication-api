@@ -85,6 +85,10 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
 
   private void processMessage(SQSMessage message) {
     var request = TextExtractionRequest.fromJson(message.getBody());
+    LOGGER.info(
+        "Extracting: bucket={} key={}",
+        LogSanitizer.sanitize(request.bucket()),
+        LogSanitizer.sanitize(request.key()));
     DownloadedObject downloadedObject;
     try {
       downloadedObject = downloadSource.downloadToFile(request.bucket(), request.key());
