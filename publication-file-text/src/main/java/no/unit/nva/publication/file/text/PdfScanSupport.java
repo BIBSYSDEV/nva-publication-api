@@ -20,11 +20,18 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Detects image-only (scanned) PDFs from document structure. A fingerprint is returned only when
- * the document provably has no text layer: no font resources on any page or nested form XObject —
- * PDF text cannot be drawn without a font — no interactive form fields, and at least one embedded
- * image. Detection is best-effort: a document that cannot be opened or inspected (for example an
- * encrypted one) yields an empty result, and the caller proceeds with ordinary text extraction,
- * which classifies such documents through its own failure handling.
+ * the document provably has no body-text layer: no font resources on any page or nested form
+ * XObject — PDF text cannot be drawn without a font — no interactive form fields, and at least one
+ * embedded image. Annotations are deliberately ignored: extraction is configured to exclude
+ * annotation text, so a scan carrying markup annotations still counts as image-only. Detection is
+ * best-effort: a document that cannot be opened or inspected (for example an encrypted one) yields
+ * an empty result, and the caller proceeds with ordinary text extraction, which classifies such
+ * documents through its own failure handling.
+ *
+ * <p>Known limitation, accepted as out of scope: fonts referenced only from tiling-pattern
+ * resources are not inspected, so a document drawing its body text exclusively through tiling
+ * patterns would be misclassified as image-only. Such documents are vanishingly rare, and the
+ * misclassification is visible and recoverable — the document is flagged, not dropped.
  */
 final class PdfScanSupport {
 

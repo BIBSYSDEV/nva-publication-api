@@ -6,10 +6,11 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 
 /**
- * Extracts plain text from PDF files using Apache Tika and PDFBox. PDFs that {@link PdfScanSupport}
- * proves to be image-only scans are not parsed for text at all — they are routed to the configured
- * {@link ImageOnlyPdfProcessor}, which decides whether they are flagged as OCR candidates or
- * OCR-processed.
+ * Extracts the body text of PDF files using Apache Tika and PDFBox. Annotation text (sticky notes,
+ * free-text markup and the like) is deliberately never extracted — only body text counts, both for
+ * extraction and for scan detection. PDFs that {@link PdfScanSupport} proves to have no body text
+ * layer are not parsed at all — they are routed to the configured {@link ImageOnlyPdfProcessor},
+ * which decides whether they are flagged as OCR candidates or OCR-processed.
  */
 public final class PdfTextExtractor implements TextExtractor {
 
@@ -51,6 +52,7 @@ public final class PdfTextExtractor implements TextExtractor {
     var context = new ParseContext();
     var pdfConfig = new PDFParserConfig();
     pdfConfig.setSortByPosition(true);
+    pdfConfig.setExtractAnnotationText(false);
     context.set(PDFParserConfig.class, pdfConfig);
     return context;
   }

@@ -19,6 +19,8 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.apache.pdfbox.pdmodel.graphics.form.PDFormXObject;
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationText;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
 import org.apache.pdfbox.pdmodel.interactive.form.PDTextField;
 import org.junit.jupiter.api.Test;
@@ -120,6 +122,44 @@ class PdfTextExtractorTest {
   }
 
   @Test
+  void shouldClassifyScannedPdfCarryingTextAnnotationAsImageOnly() throws IOException {
+    var annotatedScan = imageOnlyPdfWithTextAnnotation("Reviewer note");
+
+    var result = defaultPdfTextExtractor().extract(SOME_INPUT, annotatedScan);
+
+    assertThat(result)
+        .asInstanceOf(type(ExtractionResult.Flagged.class))
+        .extracting(ExtractionResult.Flagged::reason)
+        .isEqualTo(ExtractionFailureReason.IMAGE_ONLY_CONTENT);
+  }
+
+  @Test
+  void shouldExcludeAnnotationTextFromExtractedBodyText() throws IOException {
+    var bodyText = "Hello NVA";
+    var annotationText = "Reviewer note";
+    var annotatedPdf = pdfWithTextAndAnnotation(bodyText, annotationText);
+
+    var result = defaultPdfTextExtractor().extract(SOME_INPUT, annotatedPdf);
+
+    assertThat(result).isInstanceOf(ExtractionResult.Extracted.class);
+    assertThat(((ExtractionResult.Extracted) result).text())
+        .contains(bodyText)
+        .doesNotContain(annotationText);
+  }
+
+  @Test
+  void shouldClassifyScannedPdfWithLinkAnnotationAsImageOnly() throws IOException {
+    var scanWithLink = imageOnlyPdfWithLinkAnnotation();
+
+    var result = defaultPdfTextExtractor().extract(SOME_INPUT, scanWithLink);
+
+    assertThat(result)
+        .asInstanceOf(type(ExtractionResult.Flagged.class))
+        .extracting(ExtractionResult.Flagged::reason)
+        .isEqualTo(ExtractionFailureReason.IMAGE_ONLY_CONTENT);
+  }
+
+  @Test
   void shouldReturnFlaggedWithParseErrorWhenFileIsCorrupted() throws IOException {
     var corruptFile = tempDir.resolve("corrupt.pdf");
     Files.writeString(corruptFile, "%PDF-1.4\nnot a valid pdf body");
@@ -204,6 +244,62 @@ class PdfTextExtractorTest {
       document.save(path.toFile());
     }
     return path;
+  }
+
+  private Path pdfWithTextAndAnnotation(String text, String annotationText) throws IOException {
+    var path = tempDir.resolve("annotated-text.pdf");
+    try (var document = new PDDocument()) {
+      var page = new PDPage();
+      document.addPage(page);
+      try (var contentStream = new PDPageContentStream(document, page)) {
+        contentStream.beginText();
+        contentStream.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), FONT_SIZE);
+        contentStream.newLineAtOffset(TEXT_X_OFFSET, TEXT_Y_OFFSET);
+        contentStream.showText(text);
+        contentStream.endText();
+      }
+      var annotation = new PDAnnotationText();
+      annotation.setContents(annotationText);
+      annotation.setRectangle(new PDRectangle(FORM_WIDTH, FORM_HEIGHT));
+      page.getAnnotations().add(annotation);
+      document.save(path.toFile());
+    }
+    return path;
+  }
+
+  private Path imageOnlyPdfWithTextAnnotation(String note) throws IOException {
+    var path = tempDir.resolve("annotated-scan.pdf");
+    try (var document = new PDDocument()) {
+      var page = imagePage(document);
+      var annotation = new PDAnnotationText();
+      annotation.setContents(note);
+      annotation.setRectangle(new PDRectangle(FORM_WIDTH, FORM_HEIGHT));
+      page.getAnnotations().add(annotation);
+      document.save(path.toFile());
+    }
+    return path;
+  }
+
+  private Path imageOnlyPdfWithLinkAnnotation() throws IOException {
+    var path = tempDir.resolve("linked-scan.pdf");
+    try (var document = new PDDocument()) {
+      var page = imagePage(document);
+      var link = new PDAnnotationLink();
+      link.setRectangle(new PDRectangle(FORM_WIDTH, FORM_HEIGHT));
+      page.getAnnotations().add(link);
+      document.save(path.toFile());
+    }
+    return path;
+  }
+
+  private static PDPage imagePage(PDDocument document) throws IOException {
+    var page = new PDPage();
+    document.addPage(page);
+    var image = LosslessFactory.createFromImage(document, blankBitmap());
+    try (var contentStream = new PDPageContentStream(document, page)) {
+      contentStream.drawImage(image, IMAGE_ORIGIN, IMAGE_ORIGIN);
+    }
+    return page;
   }
 
   private Path pdfWithSingleEmptyPage() throws IOException {

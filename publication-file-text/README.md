@@ -78,6 +78,9 @@ Then watch the pipeline drain:
   source limit, image-only scan, blank content, extraction error) get a flag
   object at `flags/<source-key>.json` instead, recording the reason. Text
   truncated at the 100 000 000-character limit is stored _and_ flagged.
+- Extraction targets body text only: PDF annotation text (sticky notes,
+  free-text markup) is never extracted, and annotations play no part in scan
+  detection — a scan carrying markup annotations still counts as image-only.
 - Scanned PDFs are detected structurally before any parsing — no font
   resources anywhere in the document (PDF text cannot be drawn without a
   font), no interactive form fields, and at least one embedded image — and
