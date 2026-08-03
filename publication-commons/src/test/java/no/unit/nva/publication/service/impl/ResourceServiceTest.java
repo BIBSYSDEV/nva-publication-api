@@ -1869,6 +1869,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     assertFalse(result.items().isEmpty());
     assertTrue(
         result.items().stream().allMatch(item -> item.containsKey(PRIMARY_KEY_PARTITION_KEY_NAME)));
+    assertTrue(result.scannedCount() >= result.items().size());
   }
 
   @Test

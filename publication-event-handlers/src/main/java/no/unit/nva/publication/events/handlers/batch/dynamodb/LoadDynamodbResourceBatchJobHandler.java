@@ -15,6 +15,7 @@ import java.util.UUID;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.publication.model.ScanResultWrapper;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.CollectionUtils;
 import nva.commons.core.Environment;
@@ -41,6 +42,7 @@ public class LoadDynamodbResourceBatchJobHandler
   private static final String TOTAL_SEGMENTS_ENV = "TOTAL_SEGMENTS";
   public static final String DETAIL_TYPE =
       "PublicationService.DataEntry.LoadDynamodbResourceBatchJob";
+  public static final int MAX_SCANNED_ITEMS_PER_SEGMENT = 10_000_000;
 
   private final SqsClient sqsClient;
   private final EventBridgeClient eventBridgeClient;
@@ -145,7 +147,7 @@ public class LoadDynamodbResourceBatchJobHandler
     var scan =
         resourceService.scanResourcesRaw(
             scanPageSize,
-            input.startMarker(),
+            input.toDynamodbStartMarker(),
             input.types(),
             input.segment(),
             input.totalSegments());
@@ -162,8 +164,19 @@ public class LoadDynamodbResourceBatchJobHandler
         workItems.size(),
         messagesQueued);
 
-    if (scan.isTruncated()) {
-      sendEventForNextBatch(input, scan.nextKey(), context);
+    var totalItemsScanned = input.currentItemsProcessed() + scan.scannedCount();
+    if (scan.isTruncated() && totalItemsScanned >= MAX_SCANNED_ITEMS_PER_SEGMENT) {
+      logger.error(
+          "Segment {} of {} for job type {} has scanned {} items, reaching the maximum of {}."
+              + " Stopping the continuation chain to prevent an infinite loop;"
+              + " remaining items in this segment will not be processed.",
+          input.segment(),
+          input.totalSegments(),
+          input.jobType(),
+          totalItemsScanned,
+          MAX_SCANNED_ITEMS_PER_SEGMENT);
+    } else if (scan.isTruncated()) {
+      sendEventForNextBatch(input, scan, context);
     } else {
       logger.info(
           "Completed segment {} of {} for job type: {}",
@@ -258,8 +271,8 @@ public class LoadDynamodbResourceBatchJobHandler
   }
 
   private void sendEventForNextBatch(
-      LoadDynamodbRequest input, Map<String, AttributeValue> lastEvaluatedKey, Context context) {
-    var nextRequest = input.withStartMarker(lastEvaluatedKey);
+      LoadDynamodbRequest input, ScanResultWrapper scan, Context context) {
+    var nextRequest = input.nextPageRequest(scan.nextKey(), scan.scannedCount());
 
     var nextEvent =
         nextRequest.createNewEventEntry(
