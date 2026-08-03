@@ -355,7 +355,8 @@ public class ResourceService extends ServiceWithTransactions {
             pageSize, startMarker, types, segment, totalSegments);
     var scanResult = getClient().scan(scanRequest);
     var isTruncated = thereAreMorePagesToScan(scanResult);
-    return new ScanResultWrapper(scanResult.items(), scanResult.lastEvaluatedKey(), isTruncated);
+    return new ScanResultWrapper(
+        scanResult.items(), scanResult.lastEvaluatedKey(), isTruncated, scanResult.scannedCount());
   }
 
   public void refreshResources(List<Entity> dataEntries) {
