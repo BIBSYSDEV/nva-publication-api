@@ -3146,6 +3146,32 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${LoadDynamodbResourceBatchJobHandler}
       RetentionInDays: 14
 
+  LoadDynamodbResourceBatchJobErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref LoadDynamodbResourceBatchJobLambdaLogGroup
+      FilterPattern: ERROR
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricNamespace: PublicationApi/BatchJob
+          MetricName: LoadDynamodbResourceBatchJobErrors
+
+  LoadDynamodbResourceBatchJobErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: LoadDynamodbResourceBatchJobErrorAlarm in publication-api
+      AlarmDescription: If this alarm is triggered, a batch job logged an error, such as failed SQS sends or a segment stopped at the max scanned items safety limit; check LoadDynamodbResourceBatchJobHandler logs in publication-api (NP-51512)
+      MetricName: LoadDynamodbResourceBatchJobErrors
+      Namespace: PublicationApi/BatchJob
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref SlackSnsArn
+
   #============================Text extraction==========================================================
 
   TextExtractionQueue:
