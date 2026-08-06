@@ -12,7 +12,6 @@ jakarta-xml = { strictly = '4.0.5' }
 javax-activation = { strictly = '1.2.0' }
 javax-bind = { strictly = '2.4.0-b180830.0359' }
 joda-time = { strictly = '2.14.2' }
-lombok = { strictly = '1.18.46' }
 nvaDoiPartnerData = { strictly = '0.5.13' }
 pdfbox = { strictly = '3.0.7' }
 poi = { strictly = '5.5.1' }
@@ -34,7 +33,6 @@ hamcrest-optional = { group = 'com.spotify', name = 'hamcrest-optional', version
 jakarta-validation-api = { group = 'jakarta.validation', name = 'jakarta.validation-api', version.ref = 'jakarta-validation-api' }
 jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version.ref = 'glassfish-jaxb' }
 joda-time = { group = 'joda-time', name = 'joda-time', version.ref = 'joda-time' }
-lombok = { group = 'org.projectlombok', name = 'lombok', version.ref = 'lombok' }
 nva-doi-partner-data = { group = 'com.github.BIBSYSDEV', name = 'nva-doi-partner-data', version.ref = 'nvaDoiPartnerData' }
 pdfbox = { group = 'org.apache.pdfbox', name = 'pdfbox', version.ref = 'pdfbox' }
 opentest4j = { group = 'org.opentest4j', name = 'opentest4j', version.ref = 'opentest4j' }

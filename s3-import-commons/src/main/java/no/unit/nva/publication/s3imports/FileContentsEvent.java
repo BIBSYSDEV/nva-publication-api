@@ -106,10 +106,6 @@ public class FileContentsEvent<T> implements JsonSerializable {
     return new EventReference(getTopic(), getSubtopic(), uri, timestamp);
   }
 
-  public EventReference toCristinNviEventReference() {
-    return new EventReference(getTopic(), getSubtopic(), this.fileUri, timestamp);
-  }
-
   public EventReference toBragePatchEventReference() {
     return new EventReference(getTopic(), getSubtopic(), this.fileUri, timestamp);
   }
