@@ -54,20 +54,10 @@ public class FilenameEventEmitter implements RequestStreamHandler {
 
   public static final String FILENAME_EMISSION_EVENT_TOPIC =
       "PublicationService.DataImport.Filename";
-  public static final String SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER =
-      "PublicationService.CristinData.DataEntry";
-  public static final String SUBTOPIC_SEND_EVENT_TO_CRISTIN_ENTRIES_PATCH_EVENT_CONSUMER =
-      "PublicationService.CristinData.PatchEntry";
-  public static final String SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER =
-      "PublicationService.CristinData.NviPatch";
   public static final String SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER =
       "PublicationService.BrageData.PatchEntry";
   public static final Set<String> SUPPORTED_SUBTOPICS =
-      Set.of(
-          SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
-          SUBTOPIC_SEND_EVENT_TO_CRISTIN_ENTRIES_PATCH_EVENT_CONSUMER,
-          SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER,
-          SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER);
+      Set.of(SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER);
 
   public static final String EXPECTED_BODY_MESSAGE =
       "The expected json body contains only an s3Location.\nThe received body was: ";

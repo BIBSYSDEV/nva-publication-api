@@ -10,7 +10,6 @@ dependencies {
     api(nvaLibs.core)
     api(nvaLibs.eventhandlers)
     api(nvaLibs.json)
-    api(nvaLibs.s3)
     api(project(":publication-commons"))
     implementation(libs.apache.commons.collections)
     implementation(nvaCatalog.aws.ion)
@@ -25,6 +24,7 @@ dependencies {
     implementation(nvaCatalog.opencsv)
     implementation(nvaCatalog.slf4j.api)
     implementation(nvaLibs.identifiers)
+    implementation(nvaLibs.s3)
     implementation(project(":publication-model"))
     runtimeOnly(libs.jaxb.runtime)
     runtimeOnly(nvaCatalog.jackson.datatype.jdk8)
@@ -52,9 +52,6 @@ test {
     environment "EVENT_BUS_NAME", "eventBusName"
     environment "EVENTS_BUCKET", "theEventsBucket"
     environment "TABLE_NAME", "someTable"
-    environment "CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
-    environment "CRISTIN_IMPORT_PATCH_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
-    environment "CRISTIN_IMPORT_NVI_PATCH_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
     environment "BRAGE_IMPORT_PATCH_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
     environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "persistedStorage"
     environment "AWS_REGION", "eu-west-1"

@@ -6,14 +6,12 @@ import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.FILE_EXT
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -28,17 +26,14 @@ import com.amazon.ion.IonWriter;
 import com.amazon.ion.system.IonReaderBuilder;
 import com.amazon.ion.system.IonTextWriterBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
@@ -101,101 +96,50 @@ class FileEntriesEventEmitterTest {
   }
 
   @Test
-  void
-      shouldSendMessageToSqsWithMessagesContainingReferencesPointingToNewEventBodyWhenInputContainsSingleJsonObject()
-          throws IOException {
-    var sampleObject = SampleObject.random();
-    var fileContents = sampleObject.toJsonString();
-    var fileUri = s3Driver.insertFile(randomPath(), fileContents);
-    var input = toInputStream(createInputEventForFile(fileUri));
-    var handler = newHandler();
-    handler.handleRequest(input, outputStream, CONTEXT);
-    List<SampleObject> eventBodiesOfEmittedEventReferences =
-        collectBodiesOfEmittedEventReferences();
-
-    assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(sampleObject));
-  }
-
-  @Test
-  void shouldGenerateSqsMessagesWithBodyContainingAnEntryOfTheInputFileAndReferenceToTheInputFile()
+  void shouldSendOneMessagePerEntryWhenInputContainsManySingleIndependentJsonObjects()
       throws IOException {
-    var fileContents = SampleObject.random();
-    var fileToBeRead = s3Driver.insertFile(randomPath(), fileContents.toJsonString());
-    var input = toInputStream(createInputEventForFile(fileToBeRead));
-    var handler = newHandler();
-    handler.handleRequest(input, outputStream, CONTEXT);
-    var bodyOfEmittedEvent =
-        amazonSQS.getMessageBodies().stream()
-            .map(EventReference::fromJson)
-            .map(EventReference::getUri)
-            .map(eventBodyUri -> s3Driver.readEvent(eventBodyUri))
-            .map(json -> FileContentsEvent.fromJson(json, SampleObject.class))
-            .collect(SingletonCollector.collect());
-    assertThat(bodyOfEmittedEvent.getFileUri(), is(equalTo(fileToBeRead)));
-  }
-
-  @Test
-  void shouldSendMessagePointingToNewEventBodiesWhenInputContainsManySingleIndependentJsonObjects()
-      throws IOException {
-    var firstObject = SampleObject.random();
-    var secondObject = SampleObject.random();
     var fileContents =
-        firstObject.toJsonString() + System.lineSeparator() + secondObject.toJsonString();
+        SampleObject.random().toJsonString()
+            + System.lineSeparator()
+            + SampleObject.random().toJsonString();
     var fileUri = s3Driver.insertFile(randomPath(), fileContents);
     var input = toInputStream(createInputEventForFile(fileUri));
     var handler = newHandler();
     handler.handleRequest(input, outputStream, CONTEXT);
-    List<SampleObject> eventBodiesOfEmittedEventReferences =
-        collectBodiesOfEmittedEventReferences();
-    assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(firstObject, secondObject));
+    assertThat(collectUrisOfEmittedEventReferences(), contains(fileUri, fileUri));
   }
 
   @Test
-  void
-      shouldSendSqsMessagePointingToFilesWithSingleResourcesWhenFileUriExistsAndContainsDataAsJsonArray()
-          throws IOException {
-    var firstObject = SampleObject.random();
-    var secondObject = SampleObject.random();
-    var objectList = List.of(firstObject, secondObject);
+  void shouldSendOneMessagePerEntryWhenFileUriExistsAndContainsDataAsJsonArray()
+      throws IOException {
+    var objectList = List.of(SampleObject.random(), SampleObject.random());
     var fileContents = JsonUtils.dtoObjectMapper.writeValueAsString(objectList);
     var fileUri = s3Driver.insertFile(randomPath(), fileContents);
     var input = toInputStream(createInputEventForFile(fileUri));
     var handler = newHandler();
     handler.handleRequest(input, outputStream, CONTEXT);
-    var eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
-
-    assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(firstObject, secondObject));
+    assertThat(collectUrisOfEmittedEventReferences(), contains(fileUri, fileUri));
   }
 
   @Test
-  void
-      shouldSendMessagesPointingToEventBodiesWhenFileUriExistsAndContainsDataAsIndependentIonObjects()
-          throws IOException {
-    var firstObject = SampleObject.random();
-    var secondObject = SampleObject.random();
-    var fileContents = createNewIonObjectsList(firstObject, secondObject);
-    var fileUri = s3Driver.insertFile(randomPath(), fileContents);
-    var input = toInputStream(createInputEventForFile(fileUri));
-    var handler = newHandler();
-    handler.handleRequest(input, outputStream, CONTEXT);
-    var eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
-
-    assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(firstObject, secondObject));
-  }
-
-  @Test
-  void shouldSendMessagesPointingToEventBodiesWhenFileUriExistsAndContainsDataAsIonArray()
+  void shouldSendOneMessagePerEntryWhenFileUriExistsAndContainsDataAsIndependentIonObjects()
       throws IOException {
-    var firstObject = SampleObject.random();
-    var secondObject = SampleObject.random();
-    var fileContents = createNewIonArray(firstObject, secondObject);
+    var fileContents = createNewIonObjectsList(SampleObject.random(), SampleObject.random());
     var fileUri = s3Driver.insertFile(randomPath(), fileContents);
     var input = toInputStream(createInputEventForFile(fileUri));
     var handler = newHandler();
     handler.handleRequest(input, outputStream, CONTEXT);
-    var eventBodiesOfEmittedEventReferences = collectBodiesOfEmittedEventReferences();
+    assertThat(collectUrisOfEmittedEventReferences(), contains(fileUri, fileUri));
+  }
 
-    assertThat(eventBodiesOfEmittedEventReferences, containsInAnyOrder(firstObject, secondObject));
+  @Test
+  void shouldSendOneMessagePerEntryWhenFileUriExistsAndContainsDataAsIonArray() throws IOException {
+    var fileContents = createNewIonArray(SampleObject.random(), SampleObject.random());
+    var fileUri = s3Driver.insertFile(randomPath(), fileContents);
+    var input = toInputStream(createInputEventForFile(fileUri));
+    var handler = newHandler();
+    handler.handleRequest(input, outputStream, CONTEXT);
+    assertThat(collectUrisOfEmittedEventReferences(), contains(fileUri, fileUri));
   }
 
   @Test
@@ -229,7 +173,7 @@ class FileEntriesEventEmitterTest {
     var fileUri = s3Driver.insertFile(randomPath(), sampleObject.toJsonString());
     var invalidEventReference =
         new EventReference(
-            UNEXPECTED_TOPIC, SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER, fileUri);
+            UNEXPECTED_TOPIC, SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER, fileUri);
     var invalidInputEvent = new AwsEventBridgeEvent<EventReference>();
     invalidInputEvent.setDetail(invalidEventReference);
 
@@ -260,7 +204,7 @@ class FileEntriesEventEmitterTest {
     var eventReference =
         new EventReference(
             FILENAME_EMISSION_EVENT_TOPIC,
-            SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
+            SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER,
             fileUri);
     var inputEvent = new AwsEventBridgeEvent<EventReference>();
     inputEvent.setDetail(eventReference);
@@ -407,28 +351,7 @@ class FileEntriesEventEmitterTest {
   }
 
   @Test
-  void shouldSendMessageWithNviPatchSubtopicAndSqsMessageShouldContainNviEntryS3location()
-      throws IOException {
-    var sampleEntry = SampleObject.random().toJsonString();
-    var fileUri = s3Driver.insertFile(randomPath(), sampleEntry);
-    var inputEvent =
-        createInputEventForFileWithSubtopic(
-            fileUri, SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER);
-    handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
-
-    var eventReferences =
-        amazonSQS.getMessageBodies().stream()
-            .map(EventReference::fromJson)
-            .collect(Collectors.toSet());
-
-    assertThat(eventReferences.iterator().next().getUri(), is(equalTo(fileUri)));
-    assertThat(
-        eventReferences.iterator().next().getSubtopic(),
-        is(equalTo(inputEvent.getDetail().getSubtopic())));
-  }
-
-  @Test
-  void shouldSendMessageWithBragePatchSubtopicAndSqsMessageShouldContainNviEntryS3location()
+  void shouldSendMessageWithBragePatchSubtopicAndSqsMessageShouldContainInputFileS3location()
       throws IOException {
     var sampleEntry = SampleObject.random().toJsonString();
     var fileUri = s3Driver.insertFile(randomPath(), sampleEntry);
@@ -455,23 +378,6 @@ class FileEntriesEventEmitterTest {
     var request = new AwsEventBridgeEvent<EventReference>();
     request.setDetail(eventReference);
     return request;
-  }
-
-  @Test
-  void shouldSendMessagesWithLowerCasedJsonKeyNames() throws IOException {
-    var input = IoUtils.stringFromResources(Path.of("bundle.txt"));
-    var fileUri = s3Driver.insertFile(randomPath(), input);
-    var inputEvent = createInputEventForFile(fileUri);
-    handler.handleRequest(toInputStream(inputEvent), outputStream, CONTEXT);
-    var contentBodyOfEmittedEvent =
-        amazonSQS.getMessageBodies().stream()
-            .map(EventReference::fromJson)
-            .map(EventReference::getUri)
-            .map(eventBodyUri -> s3Driver.readEvent(eventBodyUri))
-            .map(json -> FileContentsEvent.fromJson(json, JsonNode.class))
-            .map(FileContentsEvent::getContents)
-            .collect(Collectors.toList());
-    assertThatContentBodyOfEmittedEventsFieldNamesAreAllLowerCase(contentBodyOfEmittedEvent);
   }
 
   private static PutSqsMessageResult parseOutPut(ByteArrayOutputStream outputStream) {
@@ -501,30 +407,14 @@ class FileEntriesEventEmitterTest {
     return stringAppender.toString();
   }
 
-  private void assertThatContentBodyOfEmittedEventsFieldNamesAreAllLowerCase(
-      List<JsonNode> contents) {
-    contents.forEach(this::assertThatFieldNamesAreLowerCase);
-  }
-
-  private void assertThatFieldNamesAreLowerCase(JsonNode content) {
-    content
-        .fieldNames()
-        .forEachRemaining(name -> assertThat(name, is(equalTo(name.toLowerCase(Locale.ROOT)))));
-    content.elements().forEachRemaining(this::assertThatFieldNamesAreLowerCase);
-  }
-
   private UnixPath randomPath() {
     return UnixPath.of(randomString(), randomString());
   }
 
-  private List<SampleObject> collectBodiesOfEmittedEventReferences() {
-    var s3Driver = new S3Driver(s3Client, "ignored");
+  private List<URI> collectUrisOfEmittedEventReferences() {
     return amazonSQS.getMessageBodies().stream()
         .map(EventReference::fromJson)
         .map(EventReference::getUri)
-        .map(s3Driver::readEvent)
-        .map(json -> FileContentsEvent.fromJson(json, SampleObject.class))
-        .map(FileContentsEvent::getContents)
         .collect(Collectors.toList());
   }
 
@@ -568,16 +458,8 @@ class FileEntriesEventEmitterTest {
   }
 
   private AwsEventBridgeEvent<EventReference> createInputEventForFile(URI fileUri) {
-    var eventReference =
-        new EventReference(
-            FILENAME_EMISSION_EVENT_TOPIC,
-            SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
-            fileUri,
-            Instant.now());
-    var request = new AwsEventBridgeEvent<EventReference>();
-
-    request.setDetail(eventReference);
-    return request;
+    return createInputEventForFileWithSubtopic(
+        fileUri, SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER);
   }
 
   //
