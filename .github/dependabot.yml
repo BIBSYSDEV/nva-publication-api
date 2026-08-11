@@ -1,12 +1,38 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
-
 version: 2
 updates:
   - package-ecosystem: "gradle"
+    directories:
+      - "/"
+      - "/build-logic"
+    schedule:
+      interval: weekly
+      day: 'monday'
+      time: '07:00'
+      timezone: Europe/Oslo
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "build"
+    groups:
+      gradle-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
-    target-branch: "main"
+      interval: weekly
+      day: 'monday'
+      time: '07:00'
+      timezone: Europe/Oslo
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
