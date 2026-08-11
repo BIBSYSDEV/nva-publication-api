@@ -4,11 +4,11 @@ dependencies {
     api(project(":publication-model"))
     implementation(libs.glassfish.jakarta.json)
     implementation(libs.titanium.json.ld)
-    implementation (nvaCatalog.jena.arq) {
-        exclude group: 'com.fasterxml.jackson.core', module:'jackson-core'
+    implementation(nvaCatalog.jena.arq) {
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
     }
-    implementation (nvaCatalog.jena.core) {
-        exclude group: 'com.fasterxml.jackson.core', module:'jackson-core'
+    implementation(nvaCatalog.jena.core) {
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
     }
     implementation(nvaLibs.core)
     implementation(nvaLibs.json)

@@ -72,6 +72,6 @@ test {
     environment "RESOURCE_TABLE_NAME", "publications-table"
     environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "some-persisted-bucket"
     environment "IMPORT_CANDIDATES_STORAGE_BUCKET", "some-candidate-bucket"
-    environment "NVA_EVENT_BUS_NAME" , "some-nva-event-bus"
+    environment "NVA_EVENT_BUS_NAME", "some-nva-event-bus"
     environment "COGNITO_AUTHORIZER_URLS", "http://localhost:3000"
 }

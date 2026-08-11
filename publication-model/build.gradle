@@ -38,8 +38,8 @@ test {
 def modelVersion = '0.23.3'
 
 buildConfig {
-    className("ResourcesBuildConfig")   // forces the class name. Defaults to 'BuildConfig'
-    packageName("no.unit.nva.model.config")  // forces the package. Defaults to '${project.group}'
+    className("ResourcesBuildConfig") // forces the class name. Defaults to 'BuildConfig'
+    packageName("no.unit.nva.model.config") // forces the package. Defaults to '${project.group}'
     useJavaOutput() //forces the output to be Java
     buildConfigField("String", "RESOURCES_MODEL_VERSION", "\"${modelVersion}\"")
 }
