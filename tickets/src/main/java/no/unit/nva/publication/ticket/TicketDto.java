@@ -35,7 +35,7 @@ import no.unit.nva.publication.permissions.ticket.TicketPermissions;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
-@SuppressWarnings({"PMD.ExcessiveParameterList", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
   @JsonSubTypes.Type(DoiRequestDto.class),

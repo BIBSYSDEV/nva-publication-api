@@ -14,12 +14,12 @@ dependencyAnalysis {
         project(":s3-import-commons") {
             onDuplicateClassWarnings {
                 exclude(
-                        "com.amazon.ion.IonReader",
-                        "com.amazon.ion.IonTextReader",
-                        "com.amazon.ion.IonWriter",
-                        "com.amazon.ion.system.IonReaderBuilder",
-                        "com.amazon.ion.system.IonTextWriterBuilder",
-                        )
+                "com.amazon.ion.IonReader",
+                "com.amazon.ion.IonTextReader",
+                "com.amazon.ion.IonWriter",
+                "com.amazon.ion.system.IonReaderBuilder",
+                "com.amazon.ion.system.IonTextWriterBuilder",
+                )
             }
         }
     }
