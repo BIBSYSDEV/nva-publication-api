@@ -2078,12 +2078,7 @@ Resources:
             Pattern:
               detail:
                 topic: ["PublicationService.DataImport.Filename"]
-                subtopic:
-                  [
-                    "PublicationService.CristinData.DataEntry",
-                    "PublicationService.CristinData.PatchEntry",
-                    "PublicationService.BrageData.PatchEntry",
-                  ]
+                subtopic: ["PublicationService.BrageData.PatchEntry"]
 
   DeleteFileEventHandler:
     DependsOn: EventsLambdaManagedPolicy
