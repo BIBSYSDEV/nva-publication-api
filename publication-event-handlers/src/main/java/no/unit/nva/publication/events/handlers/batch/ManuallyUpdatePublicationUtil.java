@@ -138,19 +138,21 @@ public final class ManuallyUpdatePublicationUtil {
   private Resource updateProject(Resource resource, ManuallyUpdatePublicationsRequest request) {
     var oldProjectId = buildProjectUri(request.oldValue());
     var newProjectId = buildProjectUri(request.newValue());
+    var projectsAfterUpdate =
+        withProjectReplaced(resource.getProjects(), oldProjectId, newProjectId);
 
-    resource.setProjects(withProjectMoved(resource.getProjects(), oldProjectId, newProjectId));
+    resource.setProjects(projectsAfterUpdate);
     return resource;
   }
 
-  private List<ResearchProject> withProjectMoved(
+  private List<ResearchProject> withProjectReplaced(
       Collection<ResearchProject> projects, URI oldProjectId, URI newProjectId) {
     if (oldProjectId.equals(newProjectId)) {
       return List.copyOf(projects);
     }
     return containsProjectWithId(projects, newProjectId)
         ? withoutProjectWithId(projects, oldProjectId)
-        : withProjectIdReplaced(projects, oldProjectId, newProjectId);
+        : withFirstProjectIdReplaced(projects, oldProjectId, newProjectId);
   }
 
   private boolean containsProjectWithId(Collection<ResearchProject> projects, URI projectId) {
@@ -162,7 +164,7 @@ public final class ManuallyUpdatePublicationUtil {
     return projects.stream().filter(project -> !projectId.equals(project.getId())).toList();
   }
 
-  private List<ResearchProject> withProjectIdReplaced(
+  private List<ResearchProject> withFirstProjectIdReplaced(
       Collection<ResearchProject> projects, URI oldProjectId, URI newProjectId) {
     var replacedProjects = new ArrayList<ResearchProject>();
     for (var project : projects) {
