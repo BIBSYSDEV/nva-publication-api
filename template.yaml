@@ -2729,9 +2729,6 @@ Resources:
       BucketName: !Sub "${BrageMigrationInputBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
         Rules:
-          - Id: DeleteContentAfter3Days
-            Status: Enabled
-            ExpirationInDays: 3
           - Id: ExpireOldObjectVersions
             Status: Enabled
             NoncurrentVersionExpiration:
