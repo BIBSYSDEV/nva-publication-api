@@ -64,7 +64,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   void setUp() {
     super.init();
     resourceService = getResourceService(client);
-    publicationUtil = ManuallyUpdatePublicationUtil.create(resourceService, new Environment());
+    publicationUtil = ManuallyUpdatePublicationUtil.create(resourceService);
   }
 
   @Test

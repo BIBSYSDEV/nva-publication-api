@@ -89,9 +89,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     uriRetriever = mock(UriRetriever.class);
     handler =
         new ManuallyUpdatePublicationsHandler(
-            SearchService.create(uriRetriever, resourceService),
-            resourceService,
-            new Environment());
+            SearchService.create(uriRetriever, resourceService), resourceService);
   }
 
   @Test

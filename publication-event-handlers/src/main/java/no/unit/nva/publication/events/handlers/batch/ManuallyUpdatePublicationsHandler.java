@@ -8,27 +8,23 @@ import java.io.OutputStream;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.SearchService;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class ManuallyUpdatePublicationsHandler implements RequestStreamHandler {
 
   private final SearchService searchService;
   private final ResourceService resourceService;
-  private final Environment environment;
 
   @JacocoGenerated
   public ManuallyUpdatePublicationsHandler() {
     this.resourceService = ResourceService.defaultService();
     this.searchService = SearchService.create(new UriRetriever(), resourceService);
-    this.environment = new Environment();
   }
 
   public ManuallyUpdatePublicationsHandler(
-      SearchService searchService, ResourceService resourceService, Environment environment) {
+      SearchService searchService, ResourceService resourceService) {
     this.searchService = searchService;
     this.resourceService = resourceService;
-    this.environment = environment;
   }
 
   @Override
@@ -36,7 +32,6 @@ public class ManuallyUpdatePublicationsHandler implements RequestStreamHandler {
       throws IOException {
     var request = ManuallyUpdatePublicationsRequest.fromInputStream(inputStream);
     var publications = searchService.searchPublicationsByParam(request.searchParams());
-    ManuallyUpdatePublicationUtil.create(resourceService, environment)
-        .update(publications, request);
+    ManuallyUpdatePublicationUtil.create(resourceService).update(publications, request);
   }
 }
