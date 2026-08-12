@@ -1,57 +1,33 @@
 package no.unit.nva.publication.events.handlers.batch;
 
-import static java.util.Objects.nonNull;
-
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Corporation;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.ResearchProject;
-import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.contexttypes.Publisher;
-import no.unit.nva.model.contexttypes.PublishingHouse;
-import no.unit.nva.model.contexttypes.Series;
-import no.unit.nva.model.contexttypes.UnconfirmedJournal;
-import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
-import no.unit.nva.model.contexttypes.UnconfirmedSeries;
-import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
-import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("PMD.GodClass")
 public final class ManuallyUpdatePublicationUtil {
 
   private static final Logger logger = LoggerFactory.getLogger(ManuallyUpdatePublicationUtil.class);
-  private static final String API_HOST = "API_HOST";
-  private static final String PUBLICATION_CHANNELS_V2_PATH_PARAM = "publication-channels-v2";
-  private static final String PUBLISHER = "publisher";
-  private static final String SERIAL_PUBLICATION = "serial-publication";
-  private static final String CRISTIN = "cristin";
-  private static final String PERSON = "person";
-  private static final String PROJECT = "project";
-  private static final String LICENSE_PATH_FORMAT = "/associatedArtifacts/%s/license";
   private static final String DRY_RUN_PREFIX = "DRY RUN: would update";
   private static final String UPDATE_PREFIX = "Updating";
   private final ResourceService resourceService;
-  private final Environment environment;
+  private final PublicationChannelUpdater channelUpdater;
+  private final ContributorUpdater contributorUpdater;
+  private final ProjectUpdater projectUpdater;
+  private final FileLicenseUpdater licenseUpdater;
 
   private ManuallyUpdatePublicationUtil(ResourceService resourceService, Environment environment) {
+    var uriProvider = ApiUriProvider.create(environment);
     this.resourceService = resourceService;
-    this.environment = environment;
+    this.channelUpdater = PublicationChannelUpdater.create(uriProvider);
+    this.contributorUpdater = ContributorUpdater.create(uriProvider);
+    this.projectUpdater = ProjectUpdater.create(uriProvider);
+    this.licenseUpdater = FileLicenseUpdater.create(resourceService);
   }
 
   public static ManuallyUpdatePublicationUtil create(
@@ -63,169 +39,54 @@ public final class ManuallyUpdatePublicationUtil {
       List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
     return switch (request.type()) {
       case PUBLISHER ->
-          updateResources(resources, request, this::hasPublisher, this::updatePublisher);
+          updateResources(
+              resources, request, channelUpdater::hasPublisher, channelUpdater::updatePublisher);
       case SERIAL_PUBLICATION ->
           updateResources(
-              resources, request, this::hasSerialPublication, this::updateSeriesOrJournal);
-      case LICENSE -> updateLicenseFiles(resources, request);
+              resources,
+              request,
+              channelUpdater::hasSerialPublication,
+              channelUpdater::updateSeriesOrJournal);
+      case LICENSE -> updateLicenses(resources, request);
       case UNCONFIRMED_PUBLISHER ->
           updateResources(
               resources,
               request,
-              unconfirmedPublisherFilter(request),
-              updateUnconfirmedPublisher());
+              comparingFilter(request, channelUpdater::hasUnconfirmedPublisher),
+              channelUpdater::updateUnconfirmedPublisher);
       case UNCONFIRMED_SERIES ->
           updateResources(
-              resources, request, unconfirmedSeriesFilter(request), updateUnconfirmedSeries());
+              resources,
+              request,
+              comparingFilter(request, channelUpdater::hasUnconfirmedSeries),
+              channelUpdater::updateUnconfirmedSeries);
       case UNCONFIRMED_JOURNAL ->
           updateResources(
               resources,
               request,
-              unconfirmedJournalFilter(request),
-              this::updateUnconfirmedJournalToConfirmed);
+              comparingFilter(request, channelUpdater::hasUnconfirmedJournal),
+              channelUpdater::updateUnconfirmedJournal);
       case CONTRIBUTOR_IDENTIFIER ->
           updateResources(
-              resources, request, this::hasContributor, this::updateContributorIdentifier);
+              resources,
+              request,
+              contributorUpdater::hasContributor,
+              contributorUpdater::updateIdentifier);
       case CONTRIBUTOR_AFFILIATION ->
           updateResources(
               resources,
               request,
-              this::hasContributorWithOrganization,
-              this::updateContributorAffiliation);
-      case PROJECT -> updateResources(resources, request, this::hasProject, this::updateProject);
+              contributorUpdater::hasOrganization,
+              contributorUpdater::updateAffiliation);
+      case PROJECT ->
+          updateResources(
+              resources, request, projectUpdater::hasProject, projectUpdater::updateProject);
     };
   }
 
-  private Resource updateContributorAffiliation(
-      Resource resource, ManuallyUpdatePublicationsRequest request) {
-    var updatedContributors =
-        resource.getEntityDescription().getContributors().stream()
-            .map(contributor -> updateContributor(contributor, request))
-            .toList();
-
-    resource.getEntityDescription().setContributors(updatedContributors);
-    return resource;
-  }
-
-  private Contributor updateContributor(
-      Contributor contributor, ManuallyUpdatePublicationsRequest request) {
-    var updatedAffiliations =
-        contributor.affiliations().stream()
-            .map(corporation -> updateAffiliation(corporation, request))
-            .toList();
-
-    return contributor.copy().withAffiliations(updatedAffiliations).build();
-  }
-
-  private Corporation updateAffiliation(
-      Corporation corporation, ManuallyUpdatePublicationsRequest request) {
-    var organizationToReplace = Organization.fromUri(URI.create(request.oldValue()));
-    if (corporation instanceof Organization organization
-        && organization.equals(organizationToReplace)) {
-      return Organization.fromUri(URI.create(request.newValue()));
-    }
-    return corporation;
-  }
-
-  private boolean hasContributorWithOrganization(Resource resource, String organizationId) {
-    var organization = Organization.fromUri(URI.create(organizationId));
-    return resource.getEntityDescription().getContributors().stream()
-        .anyMatch(contributor -> hasAffiliation(contributor, organization));
-  }
-
-  private boolean hasAffiliation(Contributor contributor, Organization organization) {
-    return contributor.affiliations().stream().anyMatch(organization::equals);
-  }
-
-  private boolean hasProject(Resource resource, String projectIdentifier) {
-    return containsProjectWithId(resource.getProjects(), buildProjectUri(projectIdentifier));
-  }
-
-  private Resource updateProject(Resource resource, ManuallyUpdatePublicationsRequest request) {
-    var oldProjectId = buildProjectUri(request.oldValue());
-    var newProjectId = buildProjectUri(request.newValue());
-    var projectsAfterUpdate =
-        withProjectReplaced(resource.getProjects(), oldProjectId, newProjectId);
-
-    resource.setProjects(projectsAfterUpdate);
-    return resource;
-  }
-
-  private List<ResearchProject> withProjectReplaced(
-      Collection<ResearchProject> projects, URI oldProjectId, URI newProjectId) {
-    if (oldProjectId.equals(newProjectId)) {
-      return List.copyOf(projects);
-    }
-    return containsProjectWithId(projects, newProjectId)
-        ? withoutProjectWithId(projects, oldProjectId)
-        : withFirstProjectIdReplaced(projects, oldProjectId, newProjectId);
-  }
-
-  private boolean containsProjectWithId(Collection<ResearchProject> projects, URI projectId) {
-    return projects.stream().anyMatch(project -> projectId.equals(project.getId()));
-  }
-
-  private List<ResearchProject> withoutProjectWithId(
-      Collection<ResearchProject> projects, URI projectId) {
-    return projects.stream().filter(project -> !projectId.equals(project.getId())).toList();
-  }
-
-  private List<ResearchProject> withFirstProjectIdReplaced(
-      Collection<ResearchProject> projects, URI oldProjectId, URI newProjectId) {
-    var replacedProjects = new ArrayList<ResearchProject>();
-    for (var project : projects) {
-      if (!oldProjectId.equals(project.getId())) {
-        replacedProjects.add(project);
-      } else if (!containsProjectWithId(replacedProjects, newProjectId)) {
-        replacedProjects.add(projectWithId(project, newProjectId));
-      }
-    }
-    return List.copyOf(replacedProjects);
-  }
-
-  private ResearchProject projectWithId(ResearchProject project, URI projectId) {
-    return new ResearchProject.Builder()
-        .withId(projectId)
-        .withName(project.getName())
-        .withApprovals(project.getApprovals())
-        .build();
-  }
-
-  private URI buildProjectUri(String projectIdentifier) {
-    return buildUri(CRISTIN, PROJECT, projectIdentifier);
-  }
-
-  private static boolean hasLicense(String license, FileEntry fileEntry) {
-    var fileLicense = fileEntry.getFile().getLicense();
-    return nonNull(fileLicense) && fileLicense.toString().equals(license);
-  }
-
-  private BiPredicate<Resource, String> unconfirmedJournalFilter(
-      ManuallyUpdatePublicationsRequest request) {
-    return (resource, val) -> unconfirmedJournalFilter(resource, val, request.comparator());
-  }
-
-  private BiFunction<Resource, ManuallyUpdatePublicationsRequest, Resource>
-      updateUnconfirmedSeries() {
-    return (resource, req) ->
-        updateUnconfirmedToConfirmed(resource, req, SERIAL_PUBLICATION, this::createBookWithSeries);
-  }
-
-  private BiPredicate<Resource, String> unconfirmedSeriesFilter(
-      ManuallyUpdatePublicationsRequest request) {
-    return (resource, val) -> unconfirmedSeriesFilter(resource, val, request.comparator());
-  }
-
-  private BiFunction<Resource, ManuallyUpdatePublicationsRequest, Resource>
-      updateUnconfirmedPublisher() {
-    return (resource, req) ->
-        updateUnconfirmedToConfirmed(resource, req, PUBLISHER, this::createBookWithPublisher);
-  }
-
-  private BiPredicate<Resource, String> unconfirmedPublisherFilter(
-      ManuallyUpdatePublicationsRequest request) {
-    return (resource, publisherName) ->
-        unconfirmedPublisherFilter(resource, publisherName, request.comparator());
+  private static BiPredicate<Resource, String> comparingFilter(
+      ManuallyUpdatePublicationsRequest request, ComparingFilter filter) {
+    return (resource, value) -> filter.test(resource, value, request.comparator());
   }
 
   private List<ResourceChange> updateResources(
@@ -245,10 +106,19 @@ public final class ManuallyUpdatePublicationUtil {
     if (request.dryRun()) {
       return changes;
     }
-    matchingResources.forEach(
-        resource ->
-            resourceService.updateResource(
-                resource, UserInstance.fromPublication(resource.toPublication())));
+    matchingResources.forEach(this::persist);
+    return changes;
+  }
+
+  private List<ResourceChange> updateLicenses(
+      List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
+    var changes =
+        resources.stream()
+            .map(resource -> licenseUpdater.updateLicense(resource, request))
+            .filter(ResourceChange::hasChanges)
+            .toList();
+
+    logUpdate(request, changes.size());
     return changes;
   }
 
@@ -268,222 +138,9 @@ public final class ManuallyUpdatePublicationUtil {
     return Resource.fromPublication(resource.toPublication());
   }
 
-  private Resource updateContributorIdentifier(
-      Resource resource, ManuallyUpdatePublicationsRequest request) {
-    var contributors = new ArrayList<>(resource.getEntityDescription().getContributors());
-    var contributorToUpdate =
-        contributors.stream()
-            .filter(contributor -> hasIdentifier(contributor, request.oldValue()))
-            .findFirst()
-            .orElseThrow();
-
-    contributors.remove(contributorToUpdate);
-    contributorToUpdate.identity().setId(buildUri(CRISTIN, PERSON, request.newValue()));
-    contributors.add(contributorToUpdate);
-    resource.getEntityDescription().setContributors(contributors);
-    return resource;
-  }
-
-  private Resource updateUnconfirmedToConfirmed(
-      Resource resource,
-      ManuallyUpdatePublicationsRequest request,
-      String channelType,
-      BiFunction<Book, URI, Book> bookUpdater) {
-    var book = (Book) resource.getEntityDescription().getReference().getPublicationContext();
-    var year = resource.getEntityDescription().getPublicationDate().getYear();
-    var channelUri = buildPublicationChannelUri(channelType, year, request.newValue());
-    var newBook = bookUpdater.apply(book, channelUri);
-    resource.getEntityDescription().getReference().setPublicationContext(newBook);
-    return resource;
-  }
-
-  private Book createBookWithPublisher(Book book, URI publisherUri) {
-    return book.copy().withPublisher(new Publisher(publisherUri)).build();
-  }
-
-  private Book createBookWithSeries(Book book, URI seriesUri) {
-    return book.copy().withSeries(new Series(seriesUri)).build();
-  }
-
-  private Resource updateUnconfirmedJournalToConfirmed(
-      Resource resource, ManuallyUpdatePublicationsRequest request) {
-    var year = resource.getEntityDescription().getPublicationDate().getYear();
-    var journalUri = buildPublicationChannelUri(SERIAL_PUBLICATION, year, request.newValue());
-    resource.getEntityDescription().getReference().setPublicationContext(new Journal(journalUri));
-    return resource;
-  }
-
-  private boolean unconfirmedPublisherFilter(
-      Resource resource, String publisherName, Comparator comparator) {
-    return getPublishingHouse(resource, UnconfirmedPublisher.class)
-        .map(UnconfirmedPublisher::getName)
-        .filter(value -> matches(value, publisherName, comparator))
-        .isPresent();
-  }
-
-  private boolean matches(String actual, String expected, Comparator comparator) {
-    return switch (comparator) {
-      case CONTAINS -> actual.contains(expected);
-      case MATCHES -> actual.equals(expected);
-    };
-  }
-
-  private boolean unconfirmedSeriesFilter(
-      Resource resource, String seriesTitle, Comparator comparator) {
-    return Optional.of(resource.getEntityDescription().getReference().getPublicationContext())
-        .filter(Book.class::isInstance)
-        .map(Book.class::cast)
-        .map(Book::getSeries)
-        .filter(UnconfirmedSeries.class::isInstance)
-        .map(UnconfirmedSeries.class::cast)
-        .map(UnconfirmedSeries::getTitle)
-        .filter(value -> matches(value, seriesTitle, comparator))
-        .isPresent();
-  }
-
-  private boolean unconfirmedJournalFilter(
-      Resource resource, String journalTitle, Comparator comparator) {
-    return Optional.of(resource.getEntityDescription().getReference().getPublicationContext())
-        .filter(UnconfirmedJournal.class::isInstance)
-        .map(UnconfirmedJournal.class::cast)
-        .map(UnconfirmedJournal::getTitle)
-        .filter(value -> matches(value, journalTitle, comparator))
-        .isPresent();
-  }
-
-  private boolean hasContributor(Resource resource, String contributorId) {
-    return Optional.ofNullable(resource.getEntityDescription())
-        .map(EntityDescription::getContributors)
-        .stream()
-        .flatMap(List::stream)
-        .anyMatch(contributor -> hasIdentifier(contributor, contributorId));
-  }
-
-  private boolean hasIdentifier(Contributor contributor, String contributorIdentifier) {
-    return Optional.ofNullable(contributor)
-        .map(Contributor::identity)
-        .map(Identity::getId)
-        .map(UriWrapper::fromUri)
-        .map(UriWrapper::getLastPathElement)
-        .filter(contributorIdentifier::equals)
-        .isPresent();
-  }
-
-  private boolean hasSerialPublication(Resource resource, String value) {
-    var context = resource.getEntityDescription().getReference().getPublicationContext();
-    if (context instanceof Book book && book.getSeries() instanceof Series series) {
-      return series.getId().toString().contains(value);
-    }
-    return context instanceof Journal journal && journal.getId().toString().contains(value);
-  }
-
-  private Resource updateSeriesOrJournal(
-      Resource resource, ManuallyUpdatePublicationsRequest request) {
-    var context = resource.getEntityDescription().getReference().getPublicationContext();
-    var reference = resource.getEntityDescription().getReference();
-
-    if (context instanceof Book book && book.getSeries() instanceof Series series) {
-      var newSeriesUri =
-          URI.create(series.getId().toString().replace(request.oldValue(), request.newValue()));
-      reference.setPublicationContext(book.copy().withSeries(new Series(newSeriesUri)).build());
-    } else if (context instanceof Journal journal) {
-      var newJournalUri =
-          URI.create(journal.getId().toString().replace(request.oldValue(), request.newValue()));
-      reference.setPublicationContext(new Journal(newJournalUri));
-    }
-    return resource;
-  }
-
-  private Resource updatePublisher(Resource resource, ManuallyUpdatePublicationsRequest request) {
-    var book = (Book) resource.getEntityDescription().getReference().getPublicationContext();
-    var publisherUri =
-        getPublishingHouse(resource, Publisher.class)
-            .map(Publisher::getId)
-            .map(URI::toString)
-            .map(uri -> uri.replace(request.oldValue(), request.newValue()))
-            .map(URI::create)
-            .orElseThrow();
-
-    resource
-        .getEntityDescription()
-        .getReference()
-        .setPublicationContext(book.copy().withPublisher(new Publisher(publisherUri)).build());
-    return resource;
-  }
-
-  private boolean hasPublisher(Resource resource, String publisher) {
-    return getPublishingHouse(resource, Publisher.class)
-        .map(Publisher::getId)
-        .map(URI::toString)
-        .filter(uri -> uri.contains(publisher))
-        .isPresent();
-  }
-
-  private <T extends PublishingHouse> Optional<T> getPublishingHouse(
-      Resource resource, Class<T> type) {
-    return Optional.of(resource.getEntityDescription().getReference().getPublicationContext())
-        .filter(Book.class::isInstance)
-        .map(Book.class::cast)
-        .map(Book::getPublisher)
-        .filter(type::isInstance)
-        .map(type::cast);
-  }
-
-  private List<ResourceChange> updateLicenseFiles(
-      List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
-    var changes =
-        resources.stream()
-            .map(resource -> updateLicenseFiles(resource, request))
-            .filter(ResourceChange::hasChanges)
-            .toList();
-
-    logUpdate(request, changes.size());
-    return changes;
-  }
-
-  private ResourceChange updateLicenseFiles(
-      Resource resource, ManuallyUpdatePublicationsRequest request) {
-    var filesToUpdate =
-        resource.getFileEntries().stream()
-            .filter(file -> hasLicense(request.oldValue(), file))
-            .toList();
-    var fieldChanges =
-        filesToUpdate.stream().map(file -> licenseChange(file, request.newValue())).toList();
-
-    if (!request.dryRun()) {
-      filesToUpdate.forEach(file -> updateFileLicense(file, resource, request.newValue()));
-    }
-    return new ResourceChange(resource.getIdentifier().toString(), fieldChanges);
-  }
-
-  private FieldChange licenseChange(FileEntry fileEntry, String newLicense) {
-    return new FieldChange(
-        LICENSE_PATH_FORMAT.formatted(fileEntry.getIdentifier()),
-        fileEntry.getFile().getLicense().toString(),
-        newLicense);
-  }
-
-  private void updateFileLicense(FileEntry fileEntry, Resource resource, String license) {
-    var updatedFile =
-        fileEntry
-            .getFile()
-            .copy()
-            .withLicense(URI.create(license))
-            .build(fileEntry.getFile().getClass());
-    fileEntry.update(
-        updatedFile, UserInstance.fromPublication(resource.toPublication()), resourceService);
-  }
-
-  private URI buildPublicationChannelUri(String type, String year, String pid) {
-    return buildUri(PUBLICATION_CHANNELS_V2_PATH_PARAM, type, pid, year);
-  }
-
-  private URI buildUri(String... pathSegments) {
-    var builder = UriWrapper.fromHost(environment.readEnv(API_HOST));
-    for (String segment : pathSegments) {
-      builder = builder.addChild(segment);
-    }
-    return builder.getUri();
+  private void persist(Resource resource) {
+    resourceService.updateResource(
+        resource, UserInstance.fromPublication(resource.toPublication()));
   }
 
   private void logUpdate(ManuallyUpdatePublicationsRequest request, int resourceCount) {
@@ -494,5 +151,10 @@ public final class ManuallyUpdatePublicationUtil {
         request.oldValue(),
         request.newValue(),
         resourceCount);
+  }
+
+  @FunctionalInterface
+  private interface ComparingFilter {
+    boolean test(Resource resource, String value, Comparator comparator);
   }
 }
