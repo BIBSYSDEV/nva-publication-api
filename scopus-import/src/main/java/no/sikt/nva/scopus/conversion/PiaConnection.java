@@ -8,7 +8,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -20,7 +19,9 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import no.sikt.nva.scopus.conversion.model.pia.Affiliation;
 import no.sikt.nva.scopus.conversion.model.pia.Author;
 import no.unit.nva.commons.json.JsonUtils;
@@ -47,6 +48,7 @@ public class PiaConnection {
   public static final String PIA_AUTHOR_ID_QUERY_PARAM = "author_id";
   public static final String PIA_AFFILIATION_ID_QUERY_PARAM = "affiliation_id";
   public static final String SCOPUS = "SCOPUS:";
+  private static final String RETRY_NAME = "pia";
   public static final String PIA_RESPONSE_ERROR = "Pia responded with status code";
   private static final String COULD_NOT_GET_ERROR_MESSAGE =
       "Could not get response from Pia for scopus id ";
@@ -61,6 +63,8 @@ public class PiaConnection {
   private final transient String piaAuthorization;
   private final String piaHost;
   private final String cristinProxyHost;
+  private final Map<String, Optional<URI>> personIdentifierCache = new ConcurrentHashMap<>();
+  private final Map<String, Optional<URI>> organizationIdentifierCache = new ConcurrentHashMap<>();
 
   public PiaConnection(
       HttpClient httpClient, SecretsReader secretsReader, Environment environment) {
@@ -76,6 +80,21 @@ public class PiaConnection {
   }
 
   public Optional<URI> getCristinPersonIdentifier(String scopusAuthorIdentifier) {
+    return personIdentifierCache.computeIfAbsent(
+        scopusAuthorIdentifier, this::fetchCristinPersonIdentifier);
+  }
+
+  public Optional<URI> fetchCristinOrganizationIdentifier(String scopusAffiliationIdentifier) {
+    return organizationIdentifierCache.computeIfAbsent(
+        scopusAffiliationIdentifier, this::fetchCristinOrganizationIdentifierFromPia);
+  }
+
+  public void clearCache() {
+    personIdentifierCache.clear();
+    organizationIdentifierCache.clear();
+  }
+
+  private Optional<URI> fetchCristinPersonIdentifier(String scopusAuthorIdentifier) {
     return attempt(() -> getPiaAuthorResponse(scopusAuthorIdentifier))
         .map(this::getCristinNumber)
         .map(Optional::orElseThrow)
@@ -83,7 +102,8 @@ public class PiaConnection {
         .toOptional();
   }
 
-  public Optional<URI> fetchCristinOrganizationIdentifier(String scopusAffiliationIdentifier) {
+  private Optional<URI> fetchCristinOrganizationIdentifierFromPia(
+      String scopusAffiliationIdentifier) {
     return attempt(() -> fetchAffiliationList(scopusAffiliationIdentifier))
         .map(this::selectOneAffiliation)
         .map(this::createCristinUriFromCristinOrganization)
@@ -221,8 +241,12 @@ public class PiaConnection {
     return response.body();
   }
 
-  private HttpResponse<String> getResponse(URI uri) throws IOException, InterruptedException {
-    return httpClient.send(createRequest(uri), BodyHandlers.ofString());
+  private HttpResponse<String> getResponse(URI uri) {
+    return HttpRetry.sendWithRetry(
+        RETRY_NAME,
+        () ->
+            attempt(() -> httpClient.send(createRequest(uri), BodyHandlers.ofString()))
+                .orElseThrow());
   }
 
   private List<Author> getPiaAuthorResponse(String scopusAuid) {

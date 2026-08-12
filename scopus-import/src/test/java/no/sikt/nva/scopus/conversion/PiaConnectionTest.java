@@ -1,8 +1,11 @@
 package no.sikt.nva.scopus.conversion;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.conversion.PiaConnection.API_HOST;
 import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_PASSWORD_KEY;
@@ -36,6 +39,7 @@ import org.junit.jupiter.api.Test;
 @WireMockTest(httpsEnabled = true)
 class PiaConnectionTest {
 
+  private static final int MAX_ATTEMPTS = 3;
   private static final String PIA_SECRET_NAME = "someSecretName";
   private static final String PIA_USERNAME_SECRET_KEY = "someUserNameKey";
   private static final String PIA_PASSWORD_SECRET_KEY = "somePasswordNameKey";
@@ -103,6 +107,37 @@ class PiaConnectionTest {
     assertThat(
         affiliationUri.toString(),
         containsString(affiliationsWithInvalidData.getFirst().getUnitIdentifier()));
+  }
+
+  @Test
+  void shouldQueryPiaOnceForRepeatedOrganizationLookupsAndAgainAfterCacheIsCleared() {
+    var affiliationId = randomString();
+    var response =
+        PiaResponseGenerator.convertAffiliationsToJson(
+            PiaResponseGenerator.generateAffiliations(affiliationId));
+    mockedPiaAffiliationIdSearch(affiliationId, response);
+
+    piaConnection.fetchCristinOrganizationIdentifier(affiliationId);
+    piaConnection.fetchCristinOrganizationIdentifier(affiliationId);
+    verify(exactly(1), getRequestedFor(urlPathEqualTo("/sentralimport/orgs/matches")));
+
+    piaConnection.clearCache();
+    piaConnection.fetchCristinOrganizationIdentifier(affiliationId);
+    verify(exactly(2), getRequestedFor(urlPathEqualTo("/sentralimport/orgs/matches")));
+  }
+
+  @Test
+  void shouldRetryServerErrorsUpToMaxAttemptsWhenFetchingOrganization() {
+    var affiliationId = randomString();
+    stubFor(
+        WireMock.get(urlPathEqualTo("/sentralimport/orgs/matches"))
+            .withQueryParam("affiliation_id", WireMock.equalTo("SCOPUS:" + affiliationId))
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_UNAVAILABLE)));
+
+    var result = piaConnection.fetchCristinOrganizationIdentifier(affiliationId);
+
+    assertThat(result, is(equalTo(Optional.empty())));
+    verify(exactly(MAX_ATTEMPTS), getRequestedFor(urlPathEqualTo("/sentralimport/orgs/matches")));
   }
 
   private void mockedPiaAffiliationIdSearch(String affiliationId, String response) {
