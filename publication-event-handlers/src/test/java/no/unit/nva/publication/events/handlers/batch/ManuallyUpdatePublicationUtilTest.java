@@ -55,6 +55,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   private static final String API_HOST = new Environment().readEnv("API_HOST");
   private static final String CRISTIN_PATH = "cristin";
   private static final String PROJECT_PATH = "project";
+  private static final String NON_CRISTIN_PROJECT_PATH = "external-project";
 
   private ManuallyUpdatePublicationUtil publicationUtil;
   private ResourceService resourceService;
@@ -121,7 +122,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
     publicationUtil.update(resources, createProjectUpdateRequest());
 
-    resources.forEach(this::assertResourceIsUnchanged);
+    resources.forEach(resource -> assertThat(fetchProjects(resource), contains(otherProject())));
   }
 
   @Test
@@ -145,6 +146,37 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
     resources.forEach(resource -> assertThat(fetchProjects(resource), contains(newProject())));
   }
 
+  @Test
+  void updateWithIdenticalOldAndNewProjectShouldNotModifyResource() {
+    var resources = createResourcesWithProjects(List.of(this::oldProject));
+
+    publicationUtil.update(
+        resources, createProjectUpdateRequest(OLD_PROJECT_IDENTIFIER, OLD_PROJECT_IDENTIFIER));
+
+    resources.forEach(resource -> assertThat(fetchProjects(resource), contains(oldProject())));
+  }
+
+  @Test
+  void updateWithOldProjectListedTwiceShouldResultInSingleNewProject() {
+    var resources = createResourcesWithProjects(List.of(this::oldProject, this::oldProject));
+
+    publicationUtil.update(resources, createProjectUpdateRequest());
+
+    resources.forEach(
+        resource -> assertThat(fetchProjects(resource), contains(oldProjectWithNewIdentifier())));
+  }
+
+  @Test
+  void updateWithProjectShouldNotModifyProjectOutsideCristinProjectPath() {
+    var resources = createResourcesWithProjects(List.of(this::projectOutsideCristinProjectPath));
+
+    publicationUtil.update(resources, createProjectUpdateRequest());
+
+    resources.forEach(
+        resource ->
+            assertThat(fetchProjects(resource), contains(projectOutsideCristinProjectPath())));
+  }
+
   private List<Resource> createResourcesWithProjects(
       Collection<Supplier<ResearchProject>> projectSuppliers) {
     return IntStream.range(0, 3)
@@ -161,8 +193,26 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   }
 
   private ManuallyUpdatePublicationsRequest createProjectUpdateRequest() {
+    return createProjectUpdateRequest(OLD_PROJECT_IDENTIFIER, NEW_PROJECT_IDENTIFIER);
+  }
+
+  private ManuallyUpdatePublicationsRequest createProjectUpdateRequest(
+      String oldIdentifier, String newIdentifier) {
     return new ManuallyUpdatePublicationsRequest(
-        PROJECT, OLD_PROJECT_IDENTIFIER, NEW_PROJECT_IDENTIFIER, Map.of(), null);
+        PROJECT, oldIdentifier, newIdentifier, Map.of(), null);
+  }
+
+  private ResearchProject projectOutsideCristinProjectPath() {
+    var projectId =
+        UriWrapper.fromHost(API_HOST)
+            .addChild(NON_CRISTIN_PROJECT_PATH)
+            .addChild(OLD_PROJECT_IDENTIFIER)
+            .getUri();
+    return new ResearchProject.Builder()
+        .withId(projectId)
+        .withName(OLD_PROJECT_NAME)
+        .withApprovals(OLD_PROJECT_APPROVALS)
+        .build();
   }
 
   private ResearchProject oldProject() {

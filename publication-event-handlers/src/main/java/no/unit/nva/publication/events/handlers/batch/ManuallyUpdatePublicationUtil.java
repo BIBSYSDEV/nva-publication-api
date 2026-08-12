@@ -132,60 +132,59 @@ public final class ManuallyUpdatePublicationUtil {
   }
 
   private boolean hasProject(Resource resource, String projectIdentifier) {
-    return resource.getProjects().stream()
-        .anyMatch(project -> hasProjectIdentifier(project, projectIdentifier));
-  }
-
-  private boolean hasProjectIdentifier(ResearchProject project, String projectIdentifier) {
-    return Optional.ofNullable(project.getId())
-        .map(UriWrapper::fromUri)
-        .map(UriWrapper::getLastPathElement)
-        .filter(projectIdentifier::equals)
-        .isPresent();
+    return containsProjectWithId(resource.getProjects(), buildProjectUri(projectIdentifier));
   }
 
   private Resource updateProject(Resource resource, ManuallyUpdatePublicationsRequest request) {
-    var oldProjectIdentifier = request.oldValue();
-    var newProjectId = buildUri(CRISTIN, PROJECT, request.newValue());
-    var projects = resource.getProjects();
+    var oldProjectId = buildProjectUri(request.oldValue());
+    var newProjectId = buildProjectUri(request.newValue());
 
-    var updatedProjects =
-        containsProjectWithId(projects, newProjectId)
-            ? withoutProjectWithIdentifier(projects, oldProjectIdentifier)
-            : withReplacedProjectId(projects, oldProjectIdentifier, newProjectId);
-
-    resource.setProjects(updatedProjects);
+    resource.setProjects(withProjectMoved(resource.getProjects(), oldProjectId, newProjectId));
     return resource;
+  }
+
+  private List<ResearchProject> withProjectMoved(
+      Collection<ResearchProject> projects, URI oldProjectId, URI newProjectId) {
+    if (oldProjectId.equals(newProjectId)) {
+      return List.copyOf(projects);
+    }
+    return containsProjectWithId(projects, newProjectId)
+        ? withoutProjectWithId(projects, oldProjectId)
+        : withProjectIdReplaced(projects, oldProjectId, newProjectId);
   }
 
   private boolean containsProjectWithId(Collection<ResearchProject> projects, URI projectId) {
     return projects.stream().anyMatch(project -> projectId.equals(project.getId()));
   }
 
-  private List<ResearchProject> withoutProjectWithIdentifier(
-      Collection<ResearchProject> projects, String projectIdentifier) {
-    return projects.stream()
-        .filter(project -> !hasProjectIdentifier(project, projectIdentifier))
-        .toList();
+  private List<ResearchProject> withoutProjectWithId(
+      Collection<ResearchProject> projects, URI projectId) {
+    return projects.stream().filter(project -> !projectId.equals(project.getId())).toList();
   }
 
-  private List<ResearchProject> withReplacedProjectId(
-      Collection<ResearchProject> projects, String oldProjectIdentifier, URI newProjectId) {
-    return projects.stream()
-        .map(project -> withUpdatedProjectId(project, oldProjectIdentifier, newProjectId))
-        .toList();
-  }
-
-  private ResearchProject withUpdatedProjectId(
-      ResearchProject project, String oldProjectIdentifier, URI newProjectId) {
-    if (!hasProjectIdentifier(project, oldProjectIdentifier)) {
-      return project;
+  private List<ResearchProject> withProjectIdReplaced(
+      Collection<ResearchProject> projects, URI oldProjectId, URI newProjectId) {
+    var replacedProjects = new ArrayList<ResearchProject>();
+    for (var project : projects) {
+      if (!oldProjectId.equals(project.getId())) {
+        replacedProjects.add(project);
+      } else if (!containsProjectWithId(replacedProjects, newProjectId)) {
+        replacedProjects.add(projectWithId(project, newProjectId));
+      }
     }
+    return List.copyOf(replacedProjects);
+  }
+
+  private ResearchProject projectWithId(ResearchProject project, URI projectId) {
     return new ResearchProject.Builder()
-        .withId(newProjectId)
+        .withId(projectId)
         .withName(project.getName())
         .withApprovals(project.getApprovals())
         .build();
+  }
+
+  private URI buildProjectUri(String projectIdentifier) {
+    return buildUri(CRISTIN, PROJECT, projectIdentifier);
   }
 
   private static boolean hasLicense(String license, FileEntry file) {
