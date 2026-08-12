@@ -3,7 +3,6 @@ package no.unit.nva.publication.events.handlers.batch;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -146,14 +145,35 @@ public final class ManuallyUpdatePublicationUtil {
   }
 
   private Resource updateProject(Resource resource, ManuallyUpdatePublicationsRequest request) {
+    var oldProjectIdentifier = request.oldValue();
     var newProjectId = buildUri(CRISTIN, PROJECT, request.newValue());
-    var updatedProjects =
-        resource.getProjects().stream()
-            .map(project -> withUpdatedProjectId(project, request.oldValue(), newProjectId))
-            .toList();
+    var projects = resource.getProjects();
 
-    resource.setProjects(withoutDuplicateProjects(updatedProjects));
+    var updatedProjects =
+        containsProjectWithId(projects, newProjectId)
+            ? withoutProjectWithIdentifier(projects, oldProjectIdentifier)
+            : withReplacedProjectId(projects, oldProjectIdentifier, newProjectId);
+
+    resource.setProjects(updatedProjects);
     return resource;
+  }
+
+  private boolean containsProjectWithId(Collection<ResearchProject> projects, URI projectId) {
+    return projects.stream().anyMatch(project -> projectId.equals(project.getId()));
+  }
+
+  private List<ResearchProject> withoutProjectWithIdentifier(
+      Collection<ResearchProject> projects, String projectIdentifier) {
+    return projects.stream()
+        .filter(project -> !hasProjectIdentifier(project, projectIdentifier))
+        .toList();
+  }
+
+  private List<ResearchProject> withReplacedProjectId(
+      Collection<ResearchProject> projects, String oldProjectIdentifier, URI newProjectId) {
+    return projects.stream()
+        .map(project -> withUpdatedProjectId(project, oldProjectIdentifier, newProjectId))
+        .toList();
   }
 
   private ResearchProject withUpdatedProjectId(
@@ -166,12 +186,6 @@ public final class ManuallyUpdatePublicationUtil {
         .withName(project.getName())
         .withApprovals(project.getApprovals())
         .build();
-  }
-
-  private List<ResearchProject> withoutDuplicateProjects(Collection<ResearchProject> projects) {
-    var uniqueProjects = new LinkedHashMap<URI, ResearchProject>();
-    projects.forEach(project -> uniqueProjects.putIfAbsent(project.getId(), project));
-    return List.copyOf(uniqueProjects.values());
   }
 
   private static boolean hasLicense(String license, FileEntry file) {
