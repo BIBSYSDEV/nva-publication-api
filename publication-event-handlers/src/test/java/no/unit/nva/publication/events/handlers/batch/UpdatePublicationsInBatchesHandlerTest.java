@@ -10,6 +10,9 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -61,6 +64,8 @@ import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
+import org.hamcrest.FeatureMatcher;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -236,6 +241,25 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
           updatedFiles.forEach(file -> assertEquals(newLicense, file.getLicense()));
         });
+  }
+
+  @Test
+  void shouldSkipFilesWithoutLicenseWhenUpdateTypeIsLicense() throws IOException {
+    var license = randomUri();
+    var newLicense = randomUri();
+    var publicationsToUpdate = createMultiplePublicationsWithLicensedAndUnlicensedFile(license);
+    var event =
+        createEvent(ManualUpdateType.LICENSE, license.toString(), newLicense.toString(), MATCHES);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    publicationsToUpdate.forEach(
+        publication ->
+            assertThat(
+                getFiles(getPublicationByIdentifier(publication)),
+                containsInAnyOrder(hasLicense(newLicense), hasLicense(null))));
   }
 
   @Test
@@ -685,6 +709,36 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
                 resourceService.createPublication(
                     UserInstance.fromPublication(publication), publication))
         .orElseThrow();
+  }
+
+  private List<Publication> createMultiplePublicationsWithLicensedAndUnlicensedFile(URI license) {
+    return IntStream.range(0, 10)
+        .boxed()
+        .map(index -> createPublicationWithLicensedAndUnlicensedFile(license))
+        .toList();
+  }
+
+  private Publication createPublicationWithLicensedAndUnlicensedFile(URI license) {
+    var publication = randomPublication();
+    publication.setAssociatedArtifacts(
+        new AssociatedArtifactList(
+            List.of(
+                File.builder().withLicense(license).withIdentifier(randomUUID()).buildOpenFile(),
+                File.builder().withIdentifier(randomUUID()).buildOpenFile())));
+    return attempt(
+            () ->
+                resourceService.createPublication(
+                    UserInstance.fromPublication(publication), publication))
+        .orElseThrow();
+  }
+
+  private Matcher<File> hasLicense(URI license) {
+    return new FeatureMatcher<>(equalTo(license), "file with license", "license") {
+      @Override
+      protected URI featureValueOf(File file) {
+        return file.getLicense();
+      }
+    };
   }
 
   private List<AssociatedArtifact> randomFileWithLicense(URI license) {
