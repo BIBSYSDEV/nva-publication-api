@@ -12,6 +12,8 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -56,6 +58,8 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   private static final String CRISTIN_PATH = "cristin";
   private static final String PROJECT_PATH = "project";
   private static final String NON_CRISTIN_PROJECT_PATH = "external-project";
+  private static final String PROJECT_ID_PATH = "/projects/0/id";
+  private static final String PROJECTS_PATH = "/projects";
 
   private ManuallyUpdatePublicationUtil publicationUtil;
   private ResourceService resourceService;
@@ -177,6 +181,103 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
             assertThat(fetchProjects(resource), contains(projectOutsideCristinProjectPath())));
   }
 
+  @Test
+  void dryRunShouldNotPersistAnyChanges() {
+    var resources = createResourcesWithProjects(List.of(this::oldProject));
+
+    publicationUtil.update(resources, createProjectDryRunRequest());
+
+    resources.forEach(resource -> assertThat(fetchProjects(resource), contains(oldProject())));
+  }
+
+  @Test
+  void dryRunShouldNotModifyResourcesInMemory() {
+    var resources = createResourcesWithProjects(List.of(this::oldProject));
+
+    publicationUtil.update(resources, createProjectDryRunRequest());
+
+    resources.forEach(resource -> assertThat(resource.getProjects(), contains(oldProject())));
+  }
+
+  @Test
+  void dryRunShouldReportFieldChangeForEveryMatchingResource() {
+    var resources = createResourcesWithProjects(List.of(this::oldProject));
+
+    var changes = publicationUtil.update(resources, createProjectDryRunRequest());
+
+    assertEquals(resources.size(), changes.size());
+    changes.forEach(
+        change ->
+            assertThat(
+                change.fieldChanges(),
+                contains(
+                    new FieldChange(
+                        PROJECT_ID_PATH,
+                        projectUri(OLD_PROJECT_IDENTIFIER).toString(),
+                        projectUri(NEW_PROJECT_IDENTIFIER).toString()))));
+  }
+
+  @Test
+  void dryRunShouldReportIdentifierOfMatchingResource() {
+    var resources = createResourcesWithProjects(List.of(this::oldProject));
+
+    var changes = publicationUtil.update(resources, createProjectDryRunRequest());
+
+    var reportedIdentifiers = changes.stream().map(ResourceChange::identifier).toList();
+    resources.forEach(
+        resource -> assertThat(reportedIdentifiers, hasItem(resource.getIdentifier().toString())));
+  }
+
+  @Test
+  void dryRunShouldNotReportChangesForNonMatchingResources() {
+    var resources = createResourcesWithProjects(List.of(this::otherProject));
+
+    var changes = publicationUtil.update(resources, createProjectDryRunRequest());
+
+    assertEquals(List.of(), changes);
+  }
+
+  @Test
+  void dryRunShouldReportWholeProjectListWhenProjectIsRemoved() {
+    var resources = createResourcesWithProjects(List.of(this::oldProject, this::newProject));
+
+    var changes = publicationUtil.update(resources, createProjectDryRunRequest());
+
+    changes.forEach(
+        change -> {
+          var projectListChange = singleFieldChange(change);
+          assertEquals(PROJECTS_PATH, projectListChange.path());
+          assertThat(projectListChange.oldValue(), containsString(OLD_PROJECT_IDENTIFIER));
+          assertThat(projectListChange.newValue(), not(containsString(OLD_PROJECT_IDENTIFIER)));
+          assertThat(projectListChange.newValue(), containsString(NEW_PROJECT_IDENTIFIER));
+        });
+  }
+
+  @Test
+  void updateWithoutDryRunShouldReportSameChangesAsDryRun() {
+    var dryRunResources = createResourcesWithProjects(List.of(this::oldProject));
+    var updatedResources = createResourcesWithProjects(List.of(this::oldProject));
+
+    var dryRunChanges = publicationUtil.update(dryRunResources, createProjectDryRunRequest());
+    var updateChanges = publicationUtil.update(updatedResources, createProjectUpdateRequest());
+
+    assertEquals(fieldChangesOf(dryRunChanges), fieldChangesOf(updateChanges));
+  }
+
+  private List<List<FieldChange>> fieldChangesOf(Collection<ResourceChange> changes) {
+    return changes.stream().map(ResourceChange::fieldChanges).toList();
+  }
+
+  private FieldChange singleFieldChange(ResourceChange change) {
+    assertEquals(1, change.fieldChanges().size());
+    return change.fieldChanges().getFirst();
+  }
+
+  private ManuallyUpdatePublicationsRequest createProjectDryRunRequest() {
+    return new ManuallyUpdatePublicationsRequest(
+        PROJECT, OLD_PROJECT_IDENTIFIER, NEW_PROJECT_IDENTIFIER, Map.of(), null, true);
+  }
+
   private List<Resource> createResourcesWithProjects(
       Collection<Supplier<ResearchProject>> projectSuppliers) {
     return IntStream.range(0, 3)
@@ -199,7 +300,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   private ManuallyUpdatePublicationsRequest createProjectUpdateRequest(
       String oldIdentifier, String newIdentifier) {
     return new ManuallyUpdatePublicationsRequest(
-        PROJECT, oldIdentifier, newIdentifier, Map.of(), null);
+        PROJECT, oldIdentifier, newIdentifier, Map.of(), null, false);
   }
 
   private ResearchProject projectOutsideCristinProjectPath() {
@@ -281,7 +382,8 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
         OLD_AFFILIATION_ID.toString(),
         NEW_AFFILIATION_ID.toString(),
         Map.of(),
-        null);
+        null,
+        false);
   }
 
   private Publication savePublication(Publication publication) {

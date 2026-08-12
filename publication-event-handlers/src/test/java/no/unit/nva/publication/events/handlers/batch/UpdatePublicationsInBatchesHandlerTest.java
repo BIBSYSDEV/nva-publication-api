@@ -10,6 +10,9 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import no.unit.nva.auth.uriretriever.UriRetriever;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -61,6 +65,8 @@ import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
+import org.hamcrest.FeatureMatcher;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -71,6 +77,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   private static final String PUBLISHER = "publisher";
   private static final String CRISTIN = "cristin";
   private static final String API_HOST = new Environment().readEnv("API_HOST");
+  private static final int TOTAL_HITS = 4321;
+  private static final String PUBLISHER_ID_PATH =
+      "/entityDescription/reference/publicationContext/publisher/id";
   private ManuallyUpdatePublicationsHandler handler;
   private ByteArrayOutputStream output;
   private ResourceService resourceService;
@@ -235,6 +244,27 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
           var updatedFiles = getFiles(updatedPublication);
 
           updatedFiles.forEach(file -> assertEquals(newLicense, file.getLicense()));
+        });
+  }
+
+  @Test
+  void shouldSkipFilesWithoutLicenseWhenUpdateTypeIsLicense() throws IOException {
+    var license = randomUri();
+    var newLicense = randomUri();
+    var publicationsToUpdate = createMultiplePublicationsWithFileWithoutLicense(license);
+    var event =
+        createEvent(ManualUpdateType.LICENSE, license.toString(), newLicense.toString(), MATCHES);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    publicationsToUpdate.forEach(
+        publication -> {
+          var updatedFiles = getFiles(getPublicationByIdentifier(publication));
+
+          assertThat(updatedFiles, hasItem(hasLicense(newLicense)));
+          assertThat(updatedFiles, hasItem(hasLicense(null)));
         });
   }
 
@@ -585,6 +615,92 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         });
   }
 
+  @Test
+  void shouldReportSearchHitsAndMatchedResourcesInReport() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER,
+            publisherIdentifier,
+            randomUUID().toString(),
+            MATCHES,
+            true);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate, TOTAL_HITS);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    var report = readReport();
+    assertEquals(TOTAL_HITS, report.totalHits());
+    assertEquals(publicationsToUpdate.size(), report.hitsReturned());
+    assertEquals(publicationsToUpdate.size(), report.resourcesFetched());
+    assertEquals(publicationsToUpdate.size(), report.resourcesMatched());
+  }
+
+  @Test
+  void shouldNotPersistChangesWhenDryRunIsRequested() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER,
+            publisherIdentifier,
+            randomUUID().toString(),
+            MATCHES,
+            true);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    publicationsToUpdate.forEach(
+        publication ->
+            assertEquals(
+                new Publisher(publisherId), getPublisher(getPublicationByIdentifier(publication))));
+  }
+
+  @Test
+  void shouldReportProposedPublisherChangeWhenDryRunIsRequested() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var newPublisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER, publisherIdentifier, newPublisherIdentifier, MATCHES, true);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    var report = readReport();
+    assertTrue(report.dryRun());
+    report
+        .changes()
+        .forEach(
+            change ->
+                assertThat(
+                    change.fieldChanges(),
+                    hasItem(
+                        new FieldChange(
+                            PUBLISHER_ID_PATH,
+                            publisherId.toString(),
+                            publisherId
+                                .toString()
+                                .replace(publisherIdentifier, newPublisherIdentifier)))));
+  }
+
+  private ManuallyUpdatePublicationsReport readReport() throws IOException {
+    return JsonUtils.dtoObjectMapper.readValue(
+        output.toByteArray(), ManuallyUpdatePublicationsReport.class);
+  }
+
   private static URI getSerialPublicationId(PublicationContext updatedPublicationContext) {
     return updatedPublicationContext instanceof Book book
         ? ((Series) book.getSeries()).getId()
@@ -633,9 +749,18 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
   private static InputStream createEvent(
       ManualUpdateType type, String oldValue, String newValue, Comparator comparator) {
+    return createEvent(type, oldValue, newValue, comparator, false);
+  }
+
+  private static InputStream createEvent(
+      ManualUpdateType type,
+      String oldValue,
+      String newValue,
+      Comparator comparator,
+      boolean dryRun) {
     return IoUtils.stringToStream(
         new ManuallyUpdatePublicationsRequest(
-                type, oldValue, newValue, Map.of("publisher", oldValue), comparator)
+                type, oldValue, newValue, Map.of("publisher", oldValue), comparator, dryRun)
             .toJsonString());
   }
 
@@ -687,6 +812,36 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         .orElseThrow();
   }
 
+  private List<Publication> createMultiplePublicationsWithFileWithoutLicense(URI license) {
+    return IntStream.range(0, 10)
+        .boxed()
+        .map(index -> createPublicationWithFileWithoutLicense(license))
+        .toList();
+  }
+
+  private Publication createPublicationWithFileWithoutLicense(URI license) {
+    var publication = randomPublication();
+    publication.setAssociatedArtifacts(
+        new AssociatedArtifactList(
+            List.of(
+                File.builder().withLicense(license).withIdentifier(randomUUID()).buildOpenFile(),
+                File.builder().withIdentifier(randomUUID()).buildOpenFile())));
+    return attempt(
+            () ->
+                resourceService.createPublication(
+                    UserInstance.fromPublication(publication), publication))
+        .orElseThrow();
+  }
+
+  private Matcher<File> hasLicense(URI license) {
+    return new FeatureMatcher<>(equalTo(license), "file with license", "license") {
+      @Override
+      protected URI featureValueOf(File file) {
+        return file.getLicense();
+      }
+    };
+  }
+
   private List<AssociatedArtifact> randomFileWithLicense(URI license) {
     return List.of(
         File.builder().withLicense(license).withIdentifier(randomUUID()).buildOpenFile(),
@@ -736,8 +891,13 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   }
 
   private void mockSearchApiResponseWithPublications(List<Publication> publicationList) {
+    mockSearchApiResponseWithPublications(publicationList, publicationList.size());
+  }
+
+  private void mockSearchApiResponseWithPublications(
+      List<Publication> publicationList, int totalHits) {
     var resourcesWithId = convertToResourcesWithId(publicationList);
-    var responseBody = new SearchResourceApiResponse(publicationList.size(), resourcesWithId);
+    var responseBody = new SearchResourceApiResponse(totalHits, resourcesWithId);
     var response = FakeHttpResponse.create(responseBody.toJsonString(), 200);
     when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
   }

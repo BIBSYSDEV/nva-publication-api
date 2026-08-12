@@ -12,7 +12,8 @@ public record ManuallyUpdatePublicationsRequest(
     String oldValue,
     String newValue,
     Map<String, String> searchParams,
-    Comparator comparator)
+    Comparator comparator,
+    boolean dryRun)
     implements JsonSerializable {
 
   public static ManuallyUpdatePublicationsRequest fromInputStream(InputStream inputStream)

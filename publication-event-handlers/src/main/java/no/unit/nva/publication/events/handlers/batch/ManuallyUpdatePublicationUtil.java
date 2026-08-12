@@ -1,5 +1,7 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import static java.util.Objects.nonNull;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,6 +43,9 @@ public final class ManuallyUpdatePublicationUtil {
   private static final String CRISTIN = "cristin";
   private static final String PERSON = "person";
   private static final String PROJECT = "project";
+  private static final String LICENSE_PATH_FORMAT = "/associatedArtifacts/%s/license";
+  private static final String DRY_RUN_PREFIX = "DRY RUN: would update";
+  private static final String UPDATE_PREFIX = "Updating";
   private final ResourceService resourceService;
   private final Environment environment;
 
@@ -54,8 +59,9 @@ public final class ManuallyUpdatePublicationUtil {
     return new ManuallyUpdatePublicationUtil(resourceService, environment);
   }
 
-  public void update(List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
-    switch (request.type()) {
+  public List<ResourceChange> update(
+      List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
+    return switch (request.type()) {
       case PUBLISHER ->
           updateResources(resources, request, this::hasPublisher, this::updatePublisher);
       case SERIAL_PUBLICATION ->
@@ -87,7 +93,7 @@ public final class ManuallyUpdatePublicationUtil {
               this::hasContributorWithOrganization,
               this::updateContributorAffiliation);
       case PROJECT -> updateResources(resources, request, this::hasProject, this::updateProject);
-    }
+    };
   }
 
   private Resource updateContributorAffiliation(
@@ -189,8 +195,9 @@ public final class ManuallyUpdatePublicationUtil {
     return buildUri(CRISTIN, PROJECT, projectIdentifier);
   }
 
-  private static boolean hasLicense(String license, FileEntry file) {
-    return file.getFile().getLicense().toString().equals(license);
+  private static boolean hasLicense(String license, FileEntry fileEntry) {
+    var fileLicense = fileEntry.getFile().getLicense();
+    return nonNull(fileLicense) && fileLicense.toString().equals(license);
   }
 
   private BiPredicate<Resource, String> unconfirmedJournalFilter(
@@ -221,22 +228,44 @@ public final class ManuallyUpdatePublicationUtil {
         unconfirmedPublisherFilter(resource, publisherName, request.comparator());
   }
 
-  private void updateResources(
+  private List<ResourceChange> updateResources(
       List<Resource> resources,
       ManuallyUpdatePublicationsRequest request,
       BiPredicate<Resource, String> filter,
       BiFunction<Resource, ManuallyUpdatePublicationsRequest, Resource> updater) {
-    var publicationsToUpdate =
-        resources.stream()
-            .filter(resource -> filter.test(resource, request.oldValue()))
-            .map(resource -> updater.apply(resource, request))
+    var matchingResources =
+        resources.stream().filter(resource -> filter.test(resource, request.oldValue())).toList();
+    var changes =
+        matchingResources.stream()
+            .map(resource -> applyAndDescribe(resource, request, updater))
+            .filter(ResourceChange::hasChanges)
             .toList();
 
-    logUpdate(request, publicationsToUpdate);
-    publicationsToUpdate.forEach(
+    logUpdate(request, matchingResources.size());
+    if (request.dryRun()) {
+      return changes;
+    }
+    matchingResources.forEach(
         resource ->
             resourceService.updateResource(
                 resource, UserInstance.fromPublication(resource.toPublication())));
+    return changes;
+  }
+
+  private ResourceChange applyAndDescribe(
+      Resource resource,
+      ManuallyUpdatePublicationsRequest request,
+      BiFunction<Resource, ManuallyUpdatePublicationsRequest, Resource> updater) {
+    var before = PublicationDiff.snapshot(resource.toPublication());
+    var target = request.dryRun() ? copyOf(resource) : resource;
+    var after = PublicationDiff.snapshot(updater.apply(target, request).toPublication());
+
+    return new ResourceChange(
+        resource.getIdentifier().toString(), PublicationDiff.between(before, after));
+  }
+
+  private Resource copyOf(Resource resource) {
+    return Resource.fromPublication(resource.toPublication());
   }
 
   private Resource updateContributorIdentifier(
@@ -400,13 +429,38 @@ public final class ManuallyUpdatePublicationUtil {
         .map(type::cast);
   }
 
-  private void updateLicenseFiles(
+  private List<ResourceChange> updateLicenseFiles(
       List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
-    resources.forEach(
-        resource ->
-            resource.getFileEntries().stream()
-                .filter(file -> hasLicense(request.oldValue(), file))
-                .forEach(file -> updateFileLicense(file, resource, request.newValue())));
+    var changes =
+        resources.stream()
+            .map(resource -> updateLicenseFiles(resource, request))
+            .filter(ResourceChange::hasChanges)
+            .toList();
+
+    logUpdate(request, changes.size());
+    return changes;
+  }
+
+  private ResourceChange updateLicenseFiles(
+      Resource resource, ManuallyUpdatePublicationsRequest request) {
+    var filesToUpdate =
+        resource.getFileEntries().stream()
+            .filter(file -> hasLicense(request.oldValue(), file))
+            .toList();
+    var fieldChanges =
+        filesToUpdate.stream().map(file -> licenseChange(file, request.newValue())).toList();
+
+    if (!request.dryRun()) {
+      filesToUpdate.forEach(file -> updateFileLicense(file, resource, request.newValue()));
+    }
+    return new ResourceChange(resource.getIdentifier().toString(), fieldChanges);
+  }
+
+  private FieldChange licenseChange(FileEntry fileEntry, String newLicense) {
+    return new FieldChange(
+        LICENSE_PATH_FORMAT.formatted(fileEntry.getIdentifier()),
+        fileEntry.getFile().getLicense().toString(),
+        newLicense);
   }
 
   private void updateFileLicense(FileEntry fileEntry, Resource resource, String license) {
@@ -432,12 +486,13 @@ public final class ManuallyUpdatePublicationUtil {
     return builder.getUri();
   }
 
-  private void logUpdate(ManuallyUpdatePublicationsRequest request, List<Resource> resources) {
+  private void logUpdate(ManuallyUpdatePublicationsRequest request, int resourceCount) {
     logger.info(
-        "Updating {} from {} to {} for {} resources",
+        "{} {} from {} to {} for {} resources",
+        request.dryRun() ? DRY_RUN_PREFIX : UPDATE_PREFIX,
         request.type(),
         request.oldValue(),
         request.newValue(),
-        resources.size());
+        resourceCount);
   }
 }

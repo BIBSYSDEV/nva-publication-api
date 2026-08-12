@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.ResourceSearchResult;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.Resource;
@@ -22,6 +23,7 @@ public final class SearchService {
   public static final String RESOURCES = "resources";
   private static final String API_HOST = new Environment().readEnv("API_HOST");
   private static final String CONTENT_TYPE_JSON = "application/json";
+  private static final int HTTP_OK = 200;
   private final UriRetriever uriRetriever;
   private final ResourceService resourceService;
 
@@ -35,9 +37,18 @@ public final class SearchService {
   }
 
   public List<Resource> searchPublicationsByParam(Map<String, String> searchParams) {
+    return searchResourcesByParam(searchParams).resources();
+  }
+
+  public ResourceSearchResult searchResourcesByParam(Map<String, String> searchParams) {
     var uri = searchUriFromSearchParams(searchParams);
     var response = uriRetriever.fetchResponse(uri, CONTENT_TYPE_JSON).orElseThrow();
-    return response.statusCode() == 200 ? processResponse(response) : throwException(response);
+    if (response.statusCode() != HTTP_OK) {
+      throw new SearchServiceException(response);
+    }
+    var searchResponse = toSearchResponse(response);
+    return new ResourceSearchResult(
+        searchResponse.totalHits(), searchResponse.hits().size(), fetchResources(searchResponse));
   }
 
   private static URI searchUriFromSearchParams(Map<String, String> searchParams) {
@@ -48,12 +59,8 @@ public final class SearchService {
         .getUri();
   }
 
-  private List<Resource> throwException(HttpResponse<String> response) {
-    throw new SearchServiceException(response);
-  }
-
-  private List<Resource> processResponse(HttpResponse<String> response) {
-    return getResourcesWithId(response).stream()
+  private List<Resource> fetchResources(SearchResourceApiResponse searchResponse) {
+    return searchResponse.hits().stream()
         .map(ResourceWithId::getIdentifier)
         .map(this::fetchPublication)
         .filter(Optional::isPresent)
@@ -65,11 +72,8 @@ public final class SearchService {
     return Resource.resourceQueryObject(identifier).fetch(resourceService);
   }
 
-  private List<ResourceWithId> getResourcesWithId(HttpResponse<String> response) {
-    return attempt(response::body)
-        .map(SearchResourceApiResponse::fromBody)
-        .map(SearchResourceApiResponse::hits)
-        .orElseThrow();
+  private SearchResourceApiResponse toSearchResponse(HttpResponse<String> response) {
+    return attempt(response::body).map(SearchResourceApiResponse::fromBody).orElseThrow();
   }
 
   public static class SearchServiceException extends RuntimeException {
