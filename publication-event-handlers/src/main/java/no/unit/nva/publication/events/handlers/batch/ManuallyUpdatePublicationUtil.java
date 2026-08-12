@@ -2,6 +2,8 @@ package no.unit.nva.publication.events.handlers.batch;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -11,6 +13,7 @@ import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
@@ -38,6 +41,7 @@ public final class ManuallyUpdatePublicationUtil {
   private static final String SERIAL_PUBLICATION = "serial-publication";
   private static final String CRISTIN = "cristin";
   private static final String PERSON = "person";
+  private static final String PROJECT = "project";
   private final ResourceService resourceService;
   private final Environment environment;
 
@@ -83,6 +87,7 @@ public final class ManuallyUpdatePublicationUtil {
               request,
               this::hasContributorWithOrganization,
               this::updateContributorAffiliation);
+      case PROJECT -> updateResources(resources, request, this::hasProject, this::updateProject);
     }
   }
 
@@ -125,6 +130,48 @@ public final class ManuallyUpdatePublicationUtil {
 
   private boolean hasAffiliation(Contributor contributor, Organization organization) {
     return contributor.affiliations().stream().anyMatch(organization::equals);
+  }
+
+  private boolean hasProject(Resource resource, String projectIdentifier) {
+    return resource.getProjects().stream()
+        .anyMatch(project -> hasProjectIdentifier(project, projectIdentifier));
+  }
+
+  private boolean hasProjectIdentifier(ResearchProject project, String projectIdentifier) {
+    return Optional.ofNullable(project.getId())
+        .map(UriWrapper::fromUri)
+        .map(UriWrapper::getLastPathElement)
+        .filter(projectIdentifier::equals)
+        .isPresent();
+  }
+
+  private Resource updateProject(Resource resource, ManuallyUpdatePublicationsRequest request) {
+    var newProjectId = buildUri(CRISTIN, PROJECT, request.newValue());
+    var updatedProjects =
+        resource.getProjects().stream()
+            .map(project -> withUpdatedProjectId(project, request.oldValue(), newProjectId))
+            .toList();
+
+    resource.setProjects(withoutDuplicateProjects(updatedProjects));
+    return resource;
+  }
+
+  private ResearchProject withUpdatedProjectId(
+      ResearchProject project, String oldProjectIdentifier, URI newProjectId) {
+    if (!hasProjectIdentifier(project, oldProjectIdentifier)) {
+      return project;
+    }
+    return new ResearchProject.Builder()
+        .withId(newProjectId)
+        .withName(project.getName())
+        .withApprovals(project.getApprovals())
+        .build();
+  }
+
+  private List<ResearchProject> withoutDuplicateProjects(Collection<ResearchProject> projects) {
+    var uniqueProjects = new LinkedHashMap<URI, ResearchProject>();
+    projects.forEach(project -> uniqueProjects.putIfAbsent(project.getId(), project));
+    return List.copyOf(uniqueProjects.values());
   }
 
   private static boolean hasLicense(String license, FileEntry file) {

@@ -5,13 +5,17 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWi
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.events.handlers.batch.ManualUpdateType.CONTRIBUTOR_AFFILIATION;
+import static no.unit.nva.publication.events.handlers.batch.ManualUpdateType.PROJECT;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +25,7 @@ import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.ResearchProject;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -34,6 +39,11 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
   private static final URI NEW_AFFILIATION_ID = randomUri();
   private static final URI OLD_AFFILIATION_ID = randomUri();
+  private static final String OLD_PROJECT_IDENTIFIER = randomInteger().toString();
+  private static final String NEW_PROJECT_IDENTIFIER = randomInteger().toString();
+  private static final String API_HOST = new Environment().readEnv("API_HOST");
+  private static final String CRISTIN_PATH = "cristin";
+  private static final String PROJECT_PATH = "project";
 
   private ManuallyUpdatePublicationUtil publicationUtil;
   private ResourceService resourceService;
@@ -82,6 +92,89 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
           assertContainsUpdatedAffiliation(updatedContributor);
           assertOtherAffiliationsUnchanged(updatedContributor, originalAffiliations);
         });
+  }
+
+  @Test
+  void updateWithProjectShouldReplaceMatchingProject() {
+    var resources = createResourcesWithProjects(List.of(OLD_PROJECT_IDENTIFIER));
+
+    publicationUtil.update(resources, createProjectUpdateRequest());
+
+    resources.forEach(
+        resource ->
+            assertThat(fetchProjectIds(resource), contains(projectUri(NEW_PROJECT_IDENTIFIER))));
+  }
+
+  @Test
+  void updateWithNonMatchingProjectShouldNotModifyResource() {
+    var resources = createResourcesWithProjects(List.of(randomInteger().toString()));
+
+    publicationUtil.update(resources, createProjectUpdateRequest());
+
+    resources.forEach(this::assertResourceIsUnchanged);
+  }
+
+  @Test
+  void updateWithMultipleProjectsShouldUpdateOnlyProjectProvidedInRequest() {
+    var otherProjectIdentifier = randomInteger().toString();
+    var resources =
+        createResourcesWithProjects(List.of(OLD_PROJECT_IDENTIFIER, otherProjectIdentifier));
+
+    publicationUtil.update(resources, createProjectUpdateRequest());
+
+    resources.forEach(
+        resource ->
+            assertThat(
+                fetchProjectIds(resource),
+                contains(projectUri(NEW_PROJECT_IDENTIFIER), projectUri(otherProjectIdentifier))));
+  }
+
+  @Test
+  void updateWithProjectShouldNotCreateDuplicateWhenResourceAlreadyHasNewProject() {
+    var resources =
+        createResourcesWithProjects(List.of(OLD_PROJECT_IDENTIFIER, NEW_PROJECT_IDENTIFIER));
+
+    publicationUtil.update(resources, createProjectUpdateRequest());
+
+    resources.forEach(
+        resource ->
+            assertThat(fetchProjectIds(resource), contains(projectUri(NEW_PROJECT_IDENTIFIER))));
+  }
+
+  private List<Resource> createResourcesWithProjects(Collection<String> projectIdentifiers) {
+    return IntStream.range(0, 3)
+        .mapToObj(_ -> createPublicationWithProjects(projectIdentifiers))
+        .map(Resource::fromPublication)
+        .toList();
+  }
+
+  private Publication createPublicationWithProjects(Collection<String> projectIdentifiers) {
+    var publication = randomPublication();
+    publication.setProjects(projectIdentifiers.stream().map(this::projectWithIdentifier).toList());
+    return savePublication(publication);
+  }
+
+  private ManuallyUpdatePublicationsRequest createProjectUpdateRequest() {
+    return new ManuallyUpdatePublicationsRequest(
+        PROJECT, OLD_PROJECT_IDENTIFIER, NEW_PROJECT_IDENTIFIER, Map.of(), null);
+  }
+
+  private ResearchProject projectWithIdentifier(String identifier) {
+    return new ResearchProject.Builder().withId(projectUri(identifier)).build();
+  }
+
+  private URI projectUri(String identifier) {
+    return UriWrapper.fromHost(API_HOST)
+        .addChild(CRISTIN_PATH)
+        .addChild(PROJECT_PATH)
+        .addChild(identifier)
+        .getUri();
+  }
+
+  private List<URI> fetchProjectIds(Resource resource) {
+    return resource.fetch(resourceService).orElseThrow().getProjects().stream()
+        .map(ResearchProject::getId)
+        .toList();
   }
 
   private void assertResourceIsUnchanged(Resource resource) {
