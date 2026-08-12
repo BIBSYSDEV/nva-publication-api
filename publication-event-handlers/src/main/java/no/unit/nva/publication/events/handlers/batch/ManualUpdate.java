@@ -8,5 +8,5 @@ public interface ManualUpdate {
 
   boolean matches(Resource resource, ManuallyUpdatePublicationsRequest request);
 
-  void apply(Resource resource, ManuallyUpdatePublicationsRequest request);
+  ResourceChange apply(Resource resource, ManuallyUpdatePublicationsRequest request);
 }
