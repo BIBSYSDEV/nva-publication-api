@@ -1,3 +1,7 @@
+plugins {
+    id 'nva.publication.api.java-conventions'
+}
+
 dependencies {
     api(nvaCatalog.jackson.databind)
     api(nvaCatalog.slf4j.api)

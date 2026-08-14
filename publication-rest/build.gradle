@@ -1,3 +1,7 @@
+plugins {
+    id 'nva.publication.api.java-conventions'
+}
+
 dependencies {
     //This package is added by SAM template in the runtime environment
     api(project(':publication-commons')) {

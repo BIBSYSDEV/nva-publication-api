@@ -1,3 +1,7 @@
+plugins {
+    id 'nva.publication.api.java-conventions'
+}
+
 dependencies {
     api(libs.titanium.json.ld)
     api(nvaCatalog.jackson.annotations)
