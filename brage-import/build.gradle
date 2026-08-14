@@ -20,8 +20,6 @@ dependencies {
     implementation(nvaCatalog.slf4j.api)
     implementation(nvaLibs.s3)
     implementation(project(":s3-import-commons"))
-    runtimeOnly(nvaCatalog.log4j.api)
-    runtimeOnly(nvaCatalog.log4j.slf4j.impl)
     testCompileOnly(nvaCatalog.junit.platform.suite.api)
     testFixturesRuntimeOnly(nvaCatalog.jackson.core)
     testFixturesRuntimeOnly(nvaCatalog.jackson.databind)

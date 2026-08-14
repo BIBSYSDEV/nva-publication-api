@@ -12,11 +12,7 @@ dependencies {
     }
     implementation(nvaLibs.core)
     implementation(nvaLibs.json)
-    runtimeOnly(nvaCatalog.jackson.core)
     runtimeOnly(nvaCatalog.jackson.dataformat.xml)
-    runtimeOnly(nvaCatalog.jackson.datatype.jdk8)
-    runtimeOnly(nvaCatalog.jackson.datatype.jsr310)
-    runtimeOnly(nvaCatalog.jackson.datatype.problem)
     runtimeOnly(nvaCatalog.jackson.module.parameter.names)
     testImplementation(libs.hamcrest.json)
     testImplementation(nvaCatalog.hamcrest)

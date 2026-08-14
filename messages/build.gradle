@@ -5,8 +5,6 @@ dependencies {
     api(project(":publication-commons"))
     implementation(nvaLibs.identifiers)
     implementation(project(":publication-model"))
-    runtimeOnly(nvaCatalog.jackson.core)
-    runtimeOnly(nvaCatalog.jackson.databind)
     testImplementation(nvaCatalog.aws.sdk2.dynamo)
     testImplementation(nvaCatalog.hamcrest)
     testImplementation(nvaCatalog.jackson.core)

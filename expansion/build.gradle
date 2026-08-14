@@ -17,8 +17,6 @@ dependencies {
     implementation(nvaCatalog.jena.arq)
     implementation(nvaCatalog.log4j.core)
     implementation(nvaLibs.core)
-    runtimeOnly(nvaCatalog.log4j.api)
-    runtimeOnly(nvaCatalog.log4j.slf4j.impl)
     testFixturesRuntimeOnly(nvaCatalog.jackson.core)
     testFixturesRuntimeOnly(nvaCatalog.jackson.databind)
     testImplementation(nvaCatalog.aws.sdk2.dynamo)
