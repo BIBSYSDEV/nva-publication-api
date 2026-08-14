@@ -32,7 +32,6 @@ dependencies {
     implementation(project(':datacite-commons'))
     implementation(project(':schema-org-metadata'))
     runtimeOnly(libs.apache.bval)
-    runtimeOnly(libs.jaxb.runtime)
     runtimeOnly(libs.xsd2java.api)
     runtimeOnly(nvaCatalog.aws.sdk2.urlconnection)
     runtimeOnly(nvaCatalog.log4j.api)
