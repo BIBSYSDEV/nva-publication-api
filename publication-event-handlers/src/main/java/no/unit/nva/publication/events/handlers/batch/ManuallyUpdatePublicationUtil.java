@@ -1,5 +1,7 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import static java.util.Objects.nonNull;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -189,8 +191,9 @@ public final class ManuallyUpdatePublicationUtil {
     return buildUri(CRISTIN, PROJECT, projectIdentifier);
   }
 
-  private static boolean hasLicense(String license, FileEntry file) {
-    return file.getFile().getLicense().toString().equals(license);
+  private static boolean hasLicense(String license, FileEntry fileEntry) {
+    var fileLicense = fileEntry.getFile().getLicense();
+    return nonNull(fileLicense) && fileLicense.toString().equals(license);
   }
 
   private BiPredicate<Resource, String> unconfirmedJournalFilter(
