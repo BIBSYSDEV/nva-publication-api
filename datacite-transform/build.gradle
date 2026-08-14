@@ -56,7 +56,3 @@ sourceSets.main.java.srcDir(xsd2java.flatMap { it.outputDir })
 tasks.withType(Jar).configureEach {
     outputs.cacheIf { true }
 }
-
-tasks.withType(Pmd).configureEach {
-    exclude { '**/generated/*' }
-}
