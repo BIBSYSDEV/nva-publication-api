@@ -16,7 +16,6 @@ dependencies {
     implementation(nvaCatalog.log4j.core)
     implementation(nvaCatalog.slf4j.api)
     implementation(nvaLibs.secrets)
-    runtimeOnly(libs.xsd2java.api)
     testImplementation(nvaCatalog.aws.sdk2.dynamo)
     testImplementation(nvaCatalog.hamcrest)
     testImplementation(nvaCatalog.httpcore4)

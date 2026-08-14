@@ -12,7 +12,6 @@ jakarta-xml = { strictly = '4.0.5' }
 javax-bind = { strictly = '2.4.0-b180830.0359' }
 joda-time = { strictly = '2.14.3' }
 pdfbox = { strictly = '3.0.8' }
-opentest4j = { strictly = '1.3.0' }
 reflections = { strictly = '0.10.2' }
 jaxb-ri = { strictly = '4.0.9' }
 swaggerCoreVersion = { strictly = '2.2.53' }
@@ -33,7 +32,6 @@ jaxb-runtime4 = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version.r
 jaxb-xjc4 = { group = 'org.glassfish.jaxb', name = 'jaxb-xjc', version.ref = 'jaxb-ri' }
 joda-time = { group = 'joda-time', name = 'joda-time', version.ref = 'joda-time' }
 pdfbox = { group = 'org.apache.pdfbox', name = 'pdfbox', version.ref = 'pdfbox' }
-opentest4j = { group = 'org.opentest4j', name = 'opentest4j', version.ref = 'opentest4j' }
 reflections = { group = 'org.reflections', name = 'reflections', version.ref = 'reflections' }
 swagger-core = { group = 'io.swagger.core.v3', name = 'swagger-core', version.ref = 'swaggerCoreVersion' }
 swagger-models = { group = 'io.swagger.core.v3', name = 'swagger-models', version.ref = 'swaggerCoreVersion' }
@@ -43,6 +41,4 @@ tika-parser-pdf-module = { group = 'org.apache.tika', name = 'tika-parser-pdf-mo
 tika-parsers-standard = { group = 'org.apache.tika', name = 'tika-parsers-standard-package', version.ref = 'tika' }
 titanium-json-ld = { group = 'com.apicatalog', name = 'titanium-json-ld', version.ref = 'titanium-json-ld' }
 xsd2java-api = { group = 'javax.xml.bind', name = 'jaxb-api', version.ref = 'javax-bind' }
-xsd2java-impl = { group = 'com.sun.xml.bind', name = 'jaxb-impl', version.ref = 'jaxb-ri' }
 xsd2java-jakarta = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version.ref = 'jakarta-xml' }
-xsd2java-xjc = { group = 'com.sun.xml.bind', name = 'jaxb-xjc', version.ref = 'jaxb-ri' }

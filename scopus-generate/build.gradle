@@ -4,9 +4,7 @@ configurations {
 
 dependencies {
     api(libs.xsd2java.jakarta)
-    runtimeOnly(libs.xsd2java.api)
-    runtimeOnly(libs.xsd2java.impl)
-    runtimeOnly(libs.xsd2java.xjc)
+    runtimeOnly(libs.jaxb.runtime4)
     xjc(libs.jaxb.runtime4)
     xjc(libs.jaxb.xjc4)
 }
