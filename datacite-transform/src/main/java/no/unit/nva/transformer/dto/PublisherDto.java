@@ -1,18 +1,10 @@
 package no.unit.nva.transformer.dto;
 
-public class PublisherDto {
+public final class PublisherDto {
   private final String value;
 
-  @SuppressWarnings("PMD.UnusedPrivateField")
-  private final String lang;
-
-  public PublisherDto(String value, String lang) {
-    this.value = value;
-    this.lang = lang;
-  }
-
   private PublisherDto(Builder builder) {
-    this(builder.value, null);
+    this.value = builder.value;
   }
 
   public String getValue() {

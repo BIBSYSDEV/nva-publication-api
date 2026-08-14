@@ -1,40 +1,18 @@
 package no.unit.nva.transformer.dto;
 
-import java.util.List;
 import org.datacite.schema.kernel_4.Resource.Creators.Creator;
 import org.datacite.schema.kernel_4.Resource.Creators.Creator.CreatorName;
 
-public class CreatorDto {
+public final class CreatorDto {
   public static final String SEPARATOR = ", ";
   public static final int COMMA_SEPARATED_NAME = 2;
   private final String creatorName;
   private String givenName;
   private String familyName;
 
-  @SuppressWarnings("PMD.UnusedPrivateField")
-  private final List<Object> nameIdentifier;
-
-  @SuppressWarnings("PMD.UnusedPrivateField")
-  private final List<Object> affiliation;
-
-  /**
-   * Creates a representation of the DataCiteMetadataDto Creator object that can be transformed to
-   * Datacite Creator.
-   *
-   * @param creatorName A name string.
-   * @param nameIdentifier Not yet in use.
-   * @param affiliation Not yet in use.
-   */
-  public CreatorDto(String creatorName, List<Object> nameIdentifier, List<Object> affiliation) {
-    this.creatorName = creatorName;
-    this.nameIdentifier = nameIdentifier;
-    this.affiliation = affiliation;
-
-    setGivenAndFamilyName();
-  }
-
   private CreatorDto(Builder builder) {
-    this(builder.creatorName, null, null);
+    this.creatorName = builder.creatorName;
+    setGivenAndFamilyName();
   }
 
   private void setGivenAndFamilyName() {

@@ -1,18 +1,10 @@
 package no.unit.nva.transformer.dto;
 
-public class TitleDto {
+public final class TitleDto {
   private final String value;
 
-  @SuppressWarnings("PMD.UnusedPrivateField")
-  private final String type;
-
-  public TitleDto(String value, String type) {
-    this.value = value;
-    this.type = type;
-  }
-
   private TitleDto(Builder builder) {
-    this(builder.value, null);
+    this.value = builder.value;
   }
 
   public String getValue() {
