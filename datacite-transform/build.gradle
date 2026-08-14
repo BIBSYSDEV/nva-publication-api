@@ -1,79 +1,62 @@
-plugins {
-    alias(libs.plugins.xjc)
+configurations {
+    xjc
 }
 
 dependencies {
     api(libs.xsd2java.jakarta)
-    compileOnly(libs.jakarta.annotation.api)
     runtimeOnly(libs.jaxb.runtime4)
+    xjc(libs.xsd2java.activation)
+    xjc(libs.xsd2java.api)
+    xjc(libs.xsd2java.impl)
+    xjc(libs.xsd2java.jakarta)
+    xjc(libs.xsd2java.xjc)
     testImplementation(nvaCatalog.hamcrest)
     testImplementation(nvaCatalog.junit.jupiter.api)
 }
 
-def schemaVersion = '4.6'
-def metadataXsd = 'metadata.xsd'
-def schemaDir = layout.buildDirectory.dir('tmp/schema')
+@CacheableTask
+abstract class Xsd2Pojo extends DefaultTask {
 
-tasks.register('fetchSchema') {
-    def targetDir = schemaDir.get().asFile
-    def version = schemaVersion
-    def rootXsd = metadataXsd
-    outputs.dir(targetDir)
-    doLast {
-        def downloadFile = { String path ->
-            def target = new File(targetDir, path)
-            def cached = target.exists()
-            if (!cached) {
-                target.parentFile.mkdirs()
-                target.withOutputStream { output ->
-                    new URI("https://schema.datacite.org/meta/kernel-${version}/${path}").toURL()
-                    .withInputStream { input -> output << input }
-                }
-            }
-            return new Tuple2<File, Boolean>(target, cached)
-        }
+    @Input
+    abstract Property<String> getSchemaUri();
 
-        def (metadataFile, metadataCached) = downloadFile(rootXsd)
-        def includedUris = new groovy.xml.XmlSlurper().parse(metadataFile).'**'.findAll {
-            it.name() == 'include' || it.name() == 'import'
-        }.collect {
-            it.@'schemaLocation'.text()
-        }
+    @Classpath
+    abstract ConfigurableFileCollection getXjcClasspath()
 
-        def anyCached = metadataCached || includedUris.collect {
-            downloadFile(it).v2
-        }.any {
-            it
-        }
-        if (anyCached) {
-            logger.warn('WARN: Some XSD files were cached from a previous run, to avoid this, run ./gradlew clean')
-        }
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDir()
+
+    @TaskAction
+    void generate() {
+        getOutputDir().get().asFile.mkdirs()
+        def normalizedClasspath = getXjcClasspath().files.toSorted()
+
+        ant.taskdef(
+                name: 'xjc',
+                classname: 'com.sun.tools.xjc.XJC2Task',
+                classpath: normalizedClasspath.collect {
+                    it.absolutePath
+                }.join(File.pathSeparator)
+                )
+        ant.xjc(
+                destdir: getOutputDir().get().asFile,
+                schema: getSchemaUri().get()
+                )
     }
 }
 
-jar {
-    from "${layout.buildDirectory}/classes/java/main"
+def xsd2java = tasks.register('xsd2java', Xsd2Pojo) {
+    schemaUri = 'https://schema.datacite.org/meta/kernel-4.6/metadata.xsd'
+    xjcClasspath = configurations.xjc
+    outputDir = layout.buildDirectory.dir('generated/sources/xjc')
 }
 
-java {
-    withSourcesJar()
+sourceSets.main.java.srcDir(xsd2java.flatMap { it.outputDir })
+
+tasks.withType(Jar).configureEach {
+    outputs.cacheIf { true }
 }
 
-tasks.named('sourcesJar') {
-    dependsOn('xjc')
-}
-
-xjc {
-    addCompilationDependencies = false
-    markGenerated = true
-    useJakarta = true
-    xsdDir.set(schemaDir)
-}
-
-tasks.named('xjc') {
-    dependsOn('fetchSchema')
-}
-
-tasks.named('compileJava') {
-    dependsOn('xjc')
+tasks.withType(Pmd).configureEach {
+    exclude { '**/generated/*' }
 }
