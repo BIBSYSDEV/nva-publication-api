@@ -38,6 +38,8 @@ public class CristinConnection {
   private static final String CRISTIN = "cristin";
   private static final String PERSON = "person";
   private static final String PERSON_MERGED_INTO_ANOTHER = "Cristin person {} is merged into {}";
+  private static final String REFUSED_REDIRECT_TO_OTHER_HOST =
+      "Refusing redirect for cristin person from {} to another host {}";
   private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
   private static final String API_HOST = "API_HOST";
   private static final String ORGANIZATION = "organization";
@@ -148,8 +150,22 @@ public class CristinConnection {
 
   private Optional<URI> extractRedirectLocation(HttpResponse<String> response) {
     return isRedirect(response)
-        ? response.headers().firstValue(LOCATION).map(location -> response.uri().resolve(location))
+        ? response
+            .headers()
+            .firstValue(LOCATION)
+            .map(location -> response.uri().resolve(location))
+            .filter(redirectUri -> isSameHost(redirectUri, response.uri()))
         : Optional.empty();
+  }
+
+  private boolean isSameHost(URI redirectUri, URI requestUri) {
+    var sameHost =
+        requestUri.getScheme().equalsIgnoreCase(redirectUri.getScheme())
+            && requestUri.getAuthority().equalsIgnoreCase(redirectUri.getAuthority());
+    if (!sameHost) {
+      logger.warn(REFUSED_REDIRECT_TO_OTHER_HOST, requestUri, redirectUri);
+    }
+    return sameHost;
   }
 
   private boolean isRedirect(HttpResponse<String> response) {
