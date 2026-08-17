@@ -22,7 +22,7 @@ public final class PublicationEventsConfig {
 
   @JacocoGenerated
   public static CristinClient defaultCristinClient() {
-    return new CristinClient(HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build());
+    return new CristinClient(redirectFollowingHttpClient());
   }
 
   @JacocoGenerated
@@ -31,5 +31,10 @@ public final class PublicationEventsConfig {
         .region(Region.of(AWS_REGION))
         .httpClientBuilder(UrlConnectionHttpClient.builder())
         .build();
+  }
+
+  @JacocoGenerated
+  public static HttpClient redirectFollowingHttpClient() {
+    return HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build();
   }
 }
