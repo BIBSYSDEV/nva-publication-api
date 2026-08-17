@@ -1,11 +1,14 @@
 package no.sikt.nva.scopus.conversion;
 
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+import static java.net.HttpURLConnection.HTTP_MULT_CHOICE;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.isNull;
 import static no.sikt.nva.scopus.ScopusConstants.HTTP_CONNECT_TIMEOUT;
 import static no.sikt.nva.scopus.ScopusConstants.HTTP_REQUEST_TIMEOUT;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.HttpHeaders.LOCATION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
@@ -34,6 +37,7 @@ public class CristinConnection {
   private static final String COULD_NOT_FETCH_ORGANIZATION = "Could not fetch organization: {}";
   private static final String CRISTIN = "cristin";
   private static final String PERSON = "person";
+  private static final String PERSON_MERGED_INTO_ANOTHER = "Cristin person {} is merged into {}";
   private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
   private static final String API_HOST = "API_HOST";
   private static final String ORGANIZATION = "organization";
@@ -55,6 +59,7 @@ public class CristinConnection {
   public Optional<CristinPerson> getCristinPersonByCristinId(URI cristinPersonId) {
     return attempt(() -> createRequest(cristinPersonId))
         .map(this::getCristinResponse)
+        .map(this::followRedirectToMergedPerson)
         .map(this::getBodyFromPersonResponse)
         .map(this::getCristinPersonResponse)
         .toOptional();
@@ -74,6 +79,7 @@ public class CristinConnection {
     return attempt(() -> createCristinPersonUri(orcid))
         .map(this::createRequest)
         .map(this::getCristinResponse)
+        .map(this::followRedirectToMergedPerson)
         .map(this::getBodyFromPersonResponse)
         .map(this::getCristinPersonResponse)
         .toOptional();
@@ -128,6 +134,26 @@ public class CristinConnection {
 
   private CristinPerson getCristinPersonResponse(String json) throws JsonProcessingException {
     return JsonUtils.singleLineObjectMapper.readValue(json, CristinPerson.class);
+  }
+
+  private HttpResponse<String> followRedirectToMergedPerson(HttpResponse<String> response)
+      throws IOException, InterruptedException {
+    var mergedIntoPersonUri = extractRedirectLocation(response);
+    if (mergedIntoPersonUri.isEmpty()) {
+      return response;
+    }
+    logger.info(PERSON_MERGED_INTO_ANOTHER, response.uri(), mergedIntoPersonUri.get());
+    return getCristinResponse(createRequest(mergedIntoPersonUri.get()));
+  }
+
+  private Optional<URI> extractRedirectLocation(HttpResponse<String> response) {
+    return isRedirect(response)
+        ? response.headers().firstValue(LOCATION).map(location -> response.uri().resolve(location))
+        : Optional.empty();
+  }
+
+  private boolean isRedirect(HttpResponse<String> response) {
+    return response.statusCode() >= HTTP_MULT_CHOICE && response.statusCode() < HTTP_BAD_REQUEST;
   }
 
   private String getBodyFromPersonResponse(HttpResponse<String> response) {

@@ -1,6 +1,9 @@
 package no.unit.nva.publication.events.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Redirect;
+import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -16,6 +19,11 @@ public final class PublicationEventsConfig {
   public static final String AWS_REGION = ENVIRONMENT.readEnv("AWS_REGION");
 
   private PublicationEventsConfig() {}
+
+  @JacocoGenerated
+  public static CristinClient defaultCristinClient() {
+    return new CristinClient(HttpClient.newBuilder().followRedirects(Redirect.NORMAL).build());
+  }
 
   @JacocoGenerated
   public static EventBridgeClient defaultEventBridgeClient() {
