@@ -7,18 +7,18 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.business.Resource;
 
-public final class PublicationDiff {
+public final class ResourceDiff {
 
   private static final String ROOT_PATH = "";
   private static final String FIELD_PATH_FORMAT = "%s/%s";
   private static final String INDEX_PATH_FORMAT = "%s/%d";
 
-  private PublicationDiff() {}
+  private ResourceDiff() {}
 
-  public static JsonNode snapshot(Publication publication) {
-    return JsonUtils.dtoObjectMapper.valueToTree(publication);
+  public static JsonNode snapshot(Resource resource) {
+    return JsonUtils.dtoObjectMapper.valueToTree(resource);
   }
 
   public static List<FieldChange> between(JsonNode before, JsonNode after) {

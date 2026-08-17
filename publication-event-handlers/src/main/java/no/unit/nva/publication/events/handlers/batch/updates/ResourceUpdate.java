@@ -3,11 +3,10 @@ package no.unit.nva.publication.events.handlers.batch.updates;
 import static nva.commons.core.attempt.Try.attempt;
 
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.handlers.batch.ManualUpdate;
 import no.unit.nva.publication.events.handlers.batch.ManuallyUpdatePublicationsRequest;
-import no.unit.nva.publication.events.handlers.batch.PublicationDiff;
 import no.unit.nva.publication.events.handlers.batch.ResourceChange;
+import no.unit.nva.publication.events.handlers.batch.ResourceDiff;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -23,10 +22,10 @@ abstract class ResourceUpdate implements ManualUpdate {
   @Override
   public final ResourceChange apply(Resource resource, ManuallyUpdatePublicationsRequest request) {
     var target = request.isDryRun() ? detachedCopyOf(resource) : resource;
-    var before = PublicationDiff.snapshot(target.toPublication());
+    var before = ResourceDiff.snapshot(target);
     var updated = update(target, request);
-    var after = PublicationDiff.snapshot(updated.toPublication());
-    var fieldChanges = PublicationDiff.between(before, after);
+    var after = ResourceDiff.snapshot(updated);
+    var fieldChanges = ResourceDiff.between(before, after);
     var shouldPersist = !request.isDryRun() && !fieldChanges.isEmpty();
 
     if (shouldPersist) {
@@ -39,10 +38,9 @@ abstract class ResourceUpdate implements ManualUpdate {
   protected abstract Resource update(Resource resource, ManuallyUpdatePublicationsRequest request);
 
   private Resource detachedCopyOf(Resource resource) {
-    var snapshot = PublicationDiff.snapshot(resource.toPublication());
-    return Resource.fromPublication(
-        attempt(() -> JsonUtils.dtoObjectMapper.treeToValue(snapshot, Publication.class))
-            .orElseThrow());
+    var snapshot = ResourceDiff.snapshot(resource);
+    return attempt(() -> JsonUtils.dtoObjectMapper.treeToValue(snapshot, Resource.class))
+        .orElseThrow();
   }
 
   private void persist(Resource resource) {
