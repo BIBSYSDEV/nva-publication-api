@@ -27,10 +27,12 @@ abstract class ResourceUpdate implements ManualUpdate {
     var updated = update(target, request);
     var after = PublicationDiff.snapshot(updated.toPublication());
     var fieldChanges = PublicationDiff.between(before, after);
+    var shouldPersist = !request.isDryRun() && !fieldChanges.isEmpty();
 
-    if (!request.isDryRun() && !fieldChanges.isEmpty()) {
+    if (shouldPersist) {
       persist(updated);
     }
+    UpdateLog.logApplied(request, resource, fieldChanges.size(), shouldPersist);
     return new ResourceChange(resource.getIdentifier().toString(), fieldChanges);
   }
 

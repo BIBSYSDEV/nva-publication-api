@@ -45,9 +45,12 @@ public final class FileLicenseUpdate implements ManualUpdate {
     var fieldChanges =
         filesToUpdate.stream().map(fileEntry -> licenseChange(fileEntry, request)).toList();
 
-    if (!request.isDryRun()) {
+    var shouldPersist = !request.isDryRun() && !filesToUpdate.isEmpty();
+
+    if (shouldPersist) {
       filesToUpdate.forEach(fileEntry -> updateFileLicense(fileEntry, resource, request));
     }
+    UpdateLog.logApplied(request, resource, fieldChanges.size(), shouldPersist);
     return new ResourceChange(resource.getIdentifier().toString(), fieldChanges);
   }
 
