@@ -15,6 +15,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -243,6 +244,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
     var changes = publicationUtil.update(resources, createProjectDryRunRequest()).changes();
 
     var reportedIdentifiers = changes.stream().map(ResourceChange::identifier).toList();
+    assertEquals(resources.size(), reportedIdentifiers.size());
     resources.forEach(
         resource -> assertThat(reportedIdentifiers, hasItem(resource.getIdentifier().toString())));
   }
@@ -262,21 +264,23 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
     var changes = publicationUtil.update(resources, createProjectDryRunRequest()).changes();
 
+    assertEquals(resources.size(), changes.size());
     changes.forEach(
         change -> {
           var removal = singleFieldChange(change);
           assertEquals(PROJECT_PATH_AT_INDEX_0, removal.path());
           assertThat(removal.oldValue(), containsString(OLD_PROJECT_IDENTIFIER));
-          assertEquals(null, removal.newValue());
+          assertNull(removal.newValue());
         });
   }
 
   @Test
-  void dryRunShouldNotReportChangesWhenProjectsAreOnlyReordered() {
+  void dryRunShouldReportRemovalAtItsOwnIndexWhenNewProjectComesFirst() {
     var resources = createResourcesWithProjects(List.of(this::newProject, this::oldProject));
 
     var changes = publicationUtil.update(resources, createProjectDryRunRequest()).changes();
 
+    assertEquals(resources.size(), changes.size());
     changes.forEach(
         change -> assertEquals(PROJECT_PATH_AT_INDEX_1, singleFieldChange(change).path()));
   }

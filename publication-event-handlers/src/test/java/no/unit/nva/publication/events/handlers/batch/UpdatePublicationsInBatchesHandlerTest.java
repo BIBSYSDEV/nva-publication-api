@@ -678,6 +678,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     var report = readReport();
     assertTrue(report.dryRun());
+    assertEquals(publicationsToUpdate.size(), report.changes().size());
     report
         .changes()
         .forEach(
