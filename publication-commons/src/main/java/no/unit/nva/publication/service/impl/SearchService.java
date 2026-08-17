@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.net.HttpURLConnection.HTTP_OK;
 import static nva.commons.core.attempt.Try.attempt;
 
 import java.net.URI;
@@ -23,7 +24,6 @@ public final class SearchService {
   public static final String RESOURCES = "resources";
   private static final String API_HOST = new Environment().readEnv("API_HOST");
   private static final String CONTENT_TYPE_JSON = "application/json";
-  private static final int HTTP_OK = 200;
   private final UriRetriever uriRetriever;
   private final ResourceService resourceService;
 
