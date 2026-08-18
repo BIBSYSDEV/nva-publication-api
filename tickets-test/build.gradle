@@ -1,3 +1,6 @@
+plugins {
+    id 'nva.publication.api.java-conventions'
+}
 
 dependencies {
     api(nvaCatalog.junit.jupiter.params)
