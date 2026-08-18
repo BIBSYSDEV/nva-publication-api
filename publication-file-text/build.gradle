@@ -11,12 +11,12 @@ dependencies {
     implementation(libs.tika.parser.pdf.module)
     implementation(nvaCatalog.aws.sdk2.sdk.core)
     implementation(nvaCatalog.aws.sdk2.sqs)
+    implementation(nvaCatalog.jackson.core)
     implementation(nvaCatalog.jackson.databind)
     implementation(nvaCatalog.slf4j.api)
     implementation(nvaLibs.core)
     implementation(nvaLibs.s3)
     runtimeOnly(libs.tika.parsers.standard)
-    runtimeOnly(nvaCatalog.jackson.core)
 
     testImplementation(nvaCatalog.apache.poi.ooxml)
     testImplementation(nvaCatalog.assertj.core)

@@ -4,14 +4,9 @@ configurations {
 
 dependencies {
     api(libs.xsd2java.jakarta)
-    runtimeOnly(libs.xsd2java.api)
-    runtimeOnly(libs.xsd2java.impl)
-    runtimeOnly(libs.xsd2java.xjc)
-    xjc(libs.xsd2java.activation)
-    xjc(libs.xsd2java.api)
-    xjc(libs.xsd2java.impl)
-    xjc(libs.xsd2java.jakarta)
-    xjc(libs.xsd2java.xjc)
+    runtimeOnly(libs.jaxb.runtime4)
+    xjc(libs.jaxb.runtime4)
+    xjc(libs.jaxb.xjc4)
 }
 
 @CacheableTask

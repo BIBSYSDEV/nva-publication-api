@@ -22,10 +22,4 @@ dependencies {
     implementation(project(":publication-constants"))
     implementation(project(":publication-model-testing"))
     implementation(nvaCatalog.httpcore5)
-    runtimeOnly(libs.opentest4j)
-    runtimeOnly(nvaCatalog.jackson.dataformat.xml)
-    runtimeOnly(nvaCatalog.jackson.datatype.jdk8)
-    runtimeOnly(nvaCatalog.jackson.datatype.jsr310)
-    runtimeOnly(nvaCatalog.jackson.datatype.problem)
-    runtimeOnly(nvaCatalog.jackson.module.parameter.names)
 }

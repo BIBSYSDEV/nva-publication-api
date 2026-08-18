@@ -12,8 +12,6 @@ dependencies {
     api(nvaLibs.json)
     implementation(nvaCatalog.jackson.core)
     implementation(nvaCatalog.log4j.core)
-    runtimeOnly(nvaCatalog.log4j.api)
-    runtimeOnly(nvaCatalog.log4j.slf4j.impl)
     testFixturesRuntimeOnly(nvaCatalog.jackson.core)
     testImplementation(libs.glassfish.jakarta.json)
     testImplementation(libs.reflections)
