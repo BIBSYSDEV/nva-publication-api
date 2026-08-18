@@ -1,5 +1,4 @@
 dependencies {
-    api(libs.nva.doi.partner.data)
     api(nvaCatalog.aws.lambda.core)
     api(nvaCatalog.aws.sdk2.secrets)
     api(nvaCatalog.jackson.annotations)
@@ -8,6 +7,7 @@ dependencies {
     api(nvaLibs.core)
     api(nvaLibs.identifiers)
     api(nvaLibs.json)
+    api(project(":datacite-transform"))
     api(project(":publication-commons"))
     api(project(":publication-model"))
     implementation(nvaCatalog.aws.sdk2.utils)

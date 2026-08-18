@@ -8,7 +8,8 @@ nva {
     }
     generatedCode = [
         'no/scopus/generated/**',
-        'no/unit/nva/model/testing/**'
+        'no/unit/nva/model/testing/**',
+        'org/datacite/schema/**'
     ]
     spectral {
         documents = ['docs/*.yaml']
