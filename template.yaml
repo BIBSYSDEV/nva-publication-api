@@ -619,10 +619,7 @@ Resources:
           - Effect: Allow
             Action:
               - s3:GetObject
-              - s3:GetObjectMetadata
               - s3:PutObject
-              - s3:CreateMultipartUpload
-              - s3:CompleteMultipartUpload
               - s3:AbortMultipartUpload
               - s3:ListMultipartUploadParts
             Resource:
