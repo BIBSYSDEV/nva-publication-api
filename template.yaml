@@ -592,12 +592,18 @@ Resources:
           - Effect: Allow
             Action:
               - s3:GetObject
-              - s3:ListBucket
-              - s3:ListBucketMultipartUploads
               - s3:PutObject
               - s3:PutObjectAcl
             Resource:
               - !Sub "arn:aws:s3:::${ResourceStorageBucketName}/*"
+          # ListBucket on the bucket ARN is required so that a missing key surfaces as
+          # 404/NoSuchKey instead of 403/AccessDenied.
+          - Effect: Allow
+            Action:
+              - s3:ListBucket
+              - s3:ListBucketMultipartUploads
+            Resource:
+              - !Sub "arn:aws:s3:::${ResourceStorageBucketName}"
 
   MultipartUploadResourceStorageBucketManagedPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -607,14 +613,15 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
+              - s3:ListBucketMultipartUploads
+            Resource:
+              - !Sub "arn:aws:s3:::${ResourceStorageBucketName}"
+          - Effect: Allow
+            Action:
               - s3:GetObject
-              - s3:GetObjectMetadata
               - s3:PutObject
-              - s3:CreateMultipartUpload
-              - s3:CompleteMultipartUpload
               - s3:AbortMultipartUpload
               - s3:ListMultipartUploadParts
-              - s3:ListBucketMultipartUploads
             Resource:
               - !Sub "arn:aws:s3:::${ResourceStorageBucketName}/*"
 
@@ -728,6 +735,13 @@ Resources:
               - !Sub "${ScopusXmlBucket.Arn}/*"
               - !Sub "${ScopusZipBucket.Arn}/*"
               - !Sub "${ImportCandidateStorageBucket.Arn}/*"
+          - Effect: Allow
+            Action:
+              - s3:ListBucket
+            Resource:
+              - !GetAtt ScopusXmlBucket.Arn
+              - !GetAtt ScopusZipBucket.Arn
+              - !GetAtt ImportCandidateStorageBucket.Arn
 
   #================================ApiGateway handlers====================================================
   NvaCreatePublicationFunction:
@@ -2613,12 +2627,18 @@ Resources:
               - Effect: "Allow"
                 Action:
                   - s3:GetObject
-                  - s3:ListBucket
                   - s3:PutObject
                 Resource:
                   - !Sub "arn:aws:s3:::cristin-import-${AWS::AccountId}/*"
                   - !Sub "arn:aws:s3:::brage-migration-reports-${AWS::AccountId}/*"
                   - !Sub "arn:aws:s3:::brage-migration-input-files-${AWS::AccountId}/*"
+              - Effect: "Allow"
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::cristin-import-${AWS::AccountId}"
+                  - !Sub "arn:aws:s3:::brage-migration-reports-${AWS::AccountId}"
+                  - !Sub "arn:aws:s3:::brage-migration-input-files-${AWS::AccountId}"
 
   #==========================BI=============================================================================
   AnalyticsExportDatabase:
@@ -2702,11 +2722,14 @@ Resources:
               - Effect: "Allow"
                 Action:
                   - s3:GetObject
-                  - s3:ListBucket
                   - s3:PutObject
                 Resource:
-                  - !Sub "arn:aws:s3:::persisted-resources-${AWS::AccountId}/"
                   - !Sub "arn:aws:s3:::persisted-resources-${AWS::AccountId}/*"
+              - Effect: "Allow"
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::persisted-resources-${AWS::AccountId}"
 
   #===========================BasePathMappings========================================================
 
