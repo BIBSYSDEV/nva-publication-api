@@ -39,13 +39,6 @@ public final class PublicationChannels {
     return resource.getEntityDescription().getPublicationDate().getYear();
   }
 
-  public static boolean matches(String actual, String expected, Comparator comparator) {
-    return switch (comparator) {
-      case CONTAINS -> actual.contains(expected);
-      case MATCHES -> actual.equals(expected);
-    };
-  }
-
   public static URI channelUri(String channelPath, String identifier, String year) {
     return UriWrapper.fromHost(API_HOST)
         .addChild(PUBLICATION_CHANNELS_V2_PATH, channelPath, identifier, year)

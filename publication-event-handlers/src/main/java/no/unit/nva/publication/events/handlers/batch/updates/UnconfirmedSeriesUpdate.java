@@ -29,8 +29,7 @@ public final class UnconfirmedSeriesUpdate extends UnconfirmedChannelUpdate {
         .filter(UnconfirmedSeries.class::isInstance)
         .map(UnconfirmedSeries.class::cast)
         .map(UnconfirmedSeries::getTitle)
-        .filter(
-            title -> PublicationChannels.matches(title, request.oldValue(), request.comparator()))
+        .filter(title -> request.comparator().matches(title, request.oldValue()))
         .isPresent();
   }
 

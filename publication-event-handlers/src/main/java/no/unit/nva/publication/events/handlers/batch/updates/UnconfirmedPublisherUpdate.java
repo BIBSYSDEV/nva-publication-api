@@ -25,7 +25,7 @@ public final class UnconfirmedPublisherUpdate extends UnconfirmedChannelUpdate {
   public boolean matches(Resource resource, ManuallyUpdatePublicationsRequest request) {
     return PublicationChannels.publishingHouseOf(resource, UnconfirmedPublisher.class)
         .map(UnconfirmedPublisher::getName)
-        .filter(name -> PublicationChannels.matches(name, request.oldValue(), request.comparator()))
+        .filter(name -> request.comparator().matches(name, request.oldValue()))
         .isPresent();
   }
 

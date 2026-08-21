@@ -28,8 +28,7 @@ public final class UnconfirmedJournalUpdate extends UnconfirmedChannelUpdate {
         .filter(UnconfirmedJournal.class::isInstance)
         .map(UnconfirmedJournal.class::cast)
         .map(UnconfirmedJournal::getTitle)
-        .filter(
-            title -> PublicationChannels.matches(title, request.oldValue(), request.comparator()))
+        .filter(title -> request.comparator().matches(title, request.oldValue()))
         .isPresent();
   }
 
