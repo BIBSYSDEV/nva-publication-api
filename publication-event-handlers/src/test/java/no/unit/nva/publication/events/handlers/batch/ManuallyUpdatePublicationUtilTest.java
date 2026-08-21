@@ -333,6 +333,20 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   }
 
   @Test
+  void updateShouldPersistTheProjectItReportsAsChanged() {
+    var resources = createResourcesWithProjects(List.of(this::oldProject));
+
+    var changes = publicationUtil.update(resources, createProjectUpdateRequest()).changes();
+
+    assertEquals(resources.size(), changes.size());
+    changes.forEach(
+        change ->
+            assertEquals(
+                singleFieldChange(change).newValue(),
+                persistedProjectId(resources, change.identifier())));
+  }
+
+  @Test
   void commitShouldFailWhenDryRunIsRequested() {
     var resource = createResourcesWithProjects(List.of(this::oldProject)).getFirst();
     var projectUpdate = updaterFor(PROJECT);
@@ -362,6 +376,15 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
   private List<String> changedPaths(Collection<FieldChange> fieldChanges) {
     return fieldChanges.stream().map(FieldChange::path).toList();
+  }
+
+  private String persistedProjectId(Collection<Resource> resources, String identifier) {
+    var resource =
+        resources.stream()
+            .filter(candidate -> identifier.equals(candidate.getIdentifier().toString()))
+            .findFirst()
+            .orElseThrow();
+    return fetchProjects(resource).getFirst().getId().toString();
   }
 
   private ResourceService serviceFailingOn(Resource failingResource) {
