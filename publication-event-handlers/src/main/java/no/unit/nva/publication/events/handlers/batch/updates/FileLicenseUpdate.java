@@ -3,9 +3,12 @@ package no.unit.nva.publication.events.handlers.batch.updates;
 import static java.util.Objects.nonNull;
 
 import java.net.URI;
+import java.util.List;
+import no.unit.nva.publication.events.handlers.batch.FieldChange;
 import no.unit.nva.publication.events.handlers.batch.ManualUpdate;
 import no.unit.nva.publication.events.handlers.batch.ManualUpdateType;
 import no.unit.nva.publication.events.handlers.batch.ManuallyUpdatePublicationsRequest;
+import no.unit.nva.publication.events.handlers.batch.ResourceChange;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -13,6 +16,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 
 public final class FileLicenseUpdate implements ManualUpdate {
 
+  private static final String FILE_LICENSE_PATH_FORMAT = "file:%s/license";
   private final ResourceService resourceService;
 
   public FileLicenseUpdate(ResourceService resourceService) {
@@ -31,10 +35,23 @@ public final class FileLicenseUpdate implements ManualUpdate {
   }
 
   @Override
-  public void apply(Resource resource, ManuallyUpdatePublicationsRequest request) {
-    resource.getFileEntries().stream()
-        .filter(fileEntry -> hasLicense(request.oldValue(), fileEntry))
-        .forEach(fileEntry -> updateFileLicense(fileEntry, resource, request.newValue()));
+  public ResourceChange apply(Resource resource, ManuallyUpdatePublicationsRequest request) {
+    var filesToUpdate =
+        request.oldValue().equals(request.newValue())
+            ? List.<FileEntry>of()
+            : resource.getFileEntries().stream()
+                .filter(fileEntry -> hasLicense(request.oldValue(), fileEntry))
+                .toList();
+    var fieldChanges =
+        filesToUpdate.stream().map(fileEntry -> licenseChange(fileEntry, request)).toList();
+
+    var shouldPersist = !request.isDryRun() && !filesToUpdate.isEmpty();
+
+    if (shouldPersist) {
+      filesToUpdate.forEach(fileEntry -> updateFileLicense(fileEntry, resource, request));
+    }
+    UpdateLog.logApplied(request, resource, fieldChanges.size(), shouldPersist);
+    return new ResourceChange(resource.getIdentifier().toString(), fieldChanges);
   }
 
   private static boolean hasLicense(String license, FileEntry fileEntry) {
@@ -42,12 +59,21 @@ public final class FileLicenseUpdate implements ManualUpdate {
     return nonNull(fileLicense) && fileLicense.toString().equals(license);
   }
 
-  private void updateFileLicense(FileEntry fileEntry, Resource resource, String license) {
+  private FieldChange licenseChange(
+      FileEntry fileEntry, ManuallyUpdatePublicationsRequest request) {
+    return new FieldChange(
+        FILE_LICENSE_PATH_FORMAT.formatted(fileEntry.getIdentifier()),
+        fileEntry.getFile().getLicense().toString(),
+        request.newValue());
+  }
+
+  private void updateFileLicense(
+      FileEntry fileEntry, Resource resource, ManuallyUpdatePublicationsRequest request) {
     var updatedFile =
         fileEntry
             .getFile()
             .copy()
-            .withLicense(URI.create(license))
+            .withLicense(URI.create(request.newValue()))
             .build(fileEntry.getFile().getClass());
     fileEntry.update(
         updatedFile, UserInstance.fromPublication(resource.toPublication()), resourceService);

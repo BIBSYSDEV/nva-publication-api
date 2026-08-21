@@ -16,12 +16,9 @@ import no.unit.nva.publication.events.handlers.batch.updates.UnconfirmedPublishe
 import no.unit.nva.publication.events.handlers.batch.updates.UnconfirmedSeriesUpdate;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ResourceService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 final class ManuallyUpdatePublicationUtil {
 
-  private static final Logger logger = LoggerFactory.getLogger(ManuallyUpdatePublicationUtil.class);
   private static final String NO_UPDATE_MESSAGE = "No manual update registered for type %s";
   private final Map<ManualUpdateType, ManualUpdate> updaters;
 
@@ -51,26 +48,21 @@ final class ManuallyUpdatePublicationUtil {
         new FileLicenseUpdate(resourceService));
   }
 
-  void update(List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
+  ManualUpdateResult update(List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
     var updater = updaterFor(request.type());
     var matchingResources =
         resources.stream().filter(resource -> updater.matches(resource, request)).toList();
+    var changes =
+        matchingResources.stream()
+            .map(resource -> updater.apply(resource, request))
+            .filter(ResourceChange::hasChanges)
+            .toList();
 
-    logUpdate(request, matchingResources.size());
-    matchingResources.forEach(resource -> updater.apply(resource, request));
+    return new ManualUpdateResult(matchingResources.size(), changes);
   }
 
   private ManualUpdate updaterFor(ManualUpdateType type) {
     return Optional.ofNullable(updaters.get(type))
         .orElseThrow(() -> new IllegalStateException(NO_UPDATE_MESSAGE.formatted(type)));
-  }
-
-  private void logUpdate(ManuallyUpdatePublicationsRequest request, int resourceCount) {
-    logger.info(
-        "Updating {} from {} to {} for {} resources",
-        request.type(),
-        request.oldValue(),
-        request.newValue(),
-        resourceCount);
   }
 }

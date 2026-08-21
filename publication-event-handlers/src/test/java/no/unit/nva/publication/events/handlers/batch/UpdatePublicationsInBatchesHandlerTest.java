@@ -13,6 +13,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import no.unit.nva.auth.uriretriever.UriRetriever;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -76,6 +78,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   private static final String PUBLISHER = "publisher";
   private static final String CRISTIN = "cristin";
   private static final String API_HOST = new Environment().readEnv("API_HOST");
+  private static final int TOTAL_HITS = 4321;
+  private static final String PUBLISHER_ID_PATH =
+      "/entityDescription/reference/publicationContext/publisher/id";
   private ManuallyUpdatePublicationsHandler handler;
   private ByteArrayOutputStream output;
   private ResourceService resourceService;
@@ -607,6 +612,130 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         });
   }
 
+  @Test
+  void shouldReportSearchHitsAndMatchedResourcesInReport() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER,
+            publisherIdentifier,
+            randomUUID().toString(),
+            MATCHES,
+            true);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate, TOTAL_HITS);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    var report = readReport();
+    assertEquals(TOTAL_HITS, report.totalHits());
+    assertEquals(publicationsToUpdate.size(), report.hitsReturned());
+    assertEquals(publicationsToUpdate.size(), report.resourcesFetched());
+    assertEquals(publicationsToUpdate.size(), report.resourcesMatched());
+  }
+
+  @Test
+  void shouldNotPersistChangesWhenDryRunIsRequested() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER,
+            publisherIdentifier,
+            randomUUID().toString(),
+            MATCHES,
+            true);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    publicationsToUpdate.forEach(
+        publication ->
+            assertEquals(
+                new Publisher(publisherId), getPublisher(getPublicationByIdentifier(publication))));
+  }
+
+  @Test
+  void shouldReportProposedPublisherChangeWhenDryRunIsRequested() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var newPublisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER, publisherIdentifier, newPublisherIdentifier, MATCHES, true);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    var report = readReport();
+    assertTrue(report.dryRun());
+    assertEquals(publicationsToUpdate.size(), report.changes().size());
+    report
+        .changes()
+        .forEach(
+            change ->
+                assertThat(
+                    change.fieldChanges(),
+                    hasItem(
+                        new FieldChange(
+                            PUBLISHER_ID_PATH,
+                            publisherId.toString(),
+                            publisherId
+                                .toString()
+                                .replace(publisherIdentifier, newPublisherIdentifier)))));
+  }
+
+  @Test
+  void shouldNotPersistLicenseChangesWhenDryRunIsRequested() throws IOException {
+    var license = randomUri();
+    var newLicense = randomUri();
+    var publicationsToUpdate = createMultiplePublicationsWithLicense(license);
+    var event =
+        createEvent(
+            ManualUpdateType.LICENSE, license.toString(), newLicense.toString(), MATCHES, true);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    publicationsToUpdate.forEach(
+        publication ->
+            getFiles(getPublicationByIdentifier(publication))
+                .forEach(file -> assertEquals(license, file.getLicense())));
+    assertEquals(publicationsToUpdate.size(), readReport().resourcesChanged());
+  }
+
+  @Test
+  void shouldReportNoChangesWhenLicenseIsAlreadyTheRequestedOne() throws IOException {
+    var license = randomUri();
+    var publicationsToUpdate = createMultiplePublicationsWithLicense(license);
+    var event =
+        createEvent(
+            ManualUpdateType.LICENSE, license.toString(), license.toString(), MATCHES, true);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    var report = readReport();
+    assertEquals(publicationsToUpdate.size(), report.resourcesMatched());
+    assertEquals(0, report.resourcesChanged());
+  }
+
+  private ManuallyUpdatePublicationsReport readReport() throws IOException {
+    return JsonUtils.dtoObjectMapper.readValue(
+        output.toByteArray(), ManuallyUpdatePublicationsReport.class);
+  }
+
   private static URI getSerialPublicationId(PublicationContext updatedPublicationContext) {
     return updatedPublicationContext instanceof Book book
         ? ((Series) book.getSeries()).getId()
@@ -655,9 +784,18 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
   private static InputStream createEvent(
       ManualUpdateType type, String oldValue, String newValue, Comparator comparator) {
+    return createEvent(type, oldValue, newValue, comparator, false);
+  }
+
+  private static InputStream createEvent(
+      ManualUpdateType type,
+      String oldValue,
+      String newValue,
+      Comparator comparator,
+      boolean dryRun) {
     return IoUtils.stringToStream(
         new ManuallyUpdatePublicationsRequest(
-                type, oldValue, newValue, Map.of("publisher", oldValue), comparator)
+                type, oldValue, newValue, Map.of("publisher", oldValue), comparator, dryRun)
             .toJsonString());
   }
 
@@ -788,8 +926,13 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   }
 
   private void mockSearchApiResponseWithPublications(List<Publication> publicationList) {
+    mockSearchApiResponseWithPublications(publicationList, publicationList.size());
+  }
+
+  private void mockSearchApiResponseWithPublications(
+      List<Publication> publicationList, int totalHits) {
     var resourcesWithId = convertToResourcesWithId(publicationList);
-    var responseBody = new SearchResourceApiResponse(publicationList.size(), resourcesWithId);
+    var responseBody = new SearchResourceApiResponse(totalHits, resourcesWithId);
     var response = FakeHttpResponse.create(responseBody.toJsonString(), 200);
     when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
   }
