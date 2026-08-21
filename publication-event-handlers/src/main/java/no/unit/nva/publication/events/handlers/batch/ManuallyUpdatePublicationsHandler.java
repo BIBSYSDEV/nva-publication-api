@@ -18,7 +18,7 @@ public class ManuallyUpdatePublicationsHandler implements RequestStreamHandler {
 
   private static final Logger logger =
       LoggerFactory.getLogger(ManuallyUpdatePublicationsHandler.class);
-  private static final String REPORT_LOG_MESSAGE = "Manual update report: {}";
+  private static final String SUMMARY_LOG_MESSAGE = "Manual update summary: {}";
   private static final String PAGE_LOG_MESSAGE =
       "Page {}: {} hits fetched so far, {} resources changed, {} total hits";
   private static final String LIMIT_REACHED_LOG_MESSAGE =
@@ -45,7 +45,7 @@ public class ManuallyUpdatePublicationsHandler implements RequestStreamHandler {
     var request = ManuallyUpdatePublicationsRequest.fromInputStream(inputStream);
     var report = ManuallyUpdatePublicationsReport.create(request, updateAllPages(request));
 
-    logger.info(REPORT_LOG_MESSAGE, report.toJsonString());
+    logger.info(SUMMARY_LOG_MESSAGE, report.withoutChanges().toJsonString());
     JsonUtils.dtoObjectMapper.writeValue(outputStream, report);
   }
 
@@ -62,6 +62,7 @@ public class ManuallyUpdatePublicationsHandler implements RequestStreamHandler {
           publicationUtil.update(page.resources(), request, progress.remainingChanges(maxChanges));
       progress = progress.plus(page, result);
       logPage(progress);
+      UpdateLog.logChanges(progress.pagesFetched(), result.changes());
       pageUri = progress.limitReached(maxChanges) ? Optional.empty() : page.nextPage();
     }
 

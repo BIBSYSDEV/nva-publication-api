@@ -16,6 +16,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -72,6 +73,7 @@ import no.unit.nva.publication.testing.http.FakeHttpResponse;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
+import nva.commons.logutils.LogRecorder;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
@@ -898,6 +900,45 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     assertTrue(report.limitReached());
   }
 
+  @Test
+  void shouldSearchWithoutFilterWhenSearchParamsAreMissing() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEventWithoutSearchParams(
+            ManualUpdateType.PUBLISHER, publisherIdentifier, randomUUID().toString());
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    assertEquals(publicationsToUpdate.size(), readReport().resourcesChanged());
+    assertThat(
+        capturedSearchUris().getFirst().getQuery(), containsString(SORT_BY_IDENTIFIER_PARAM));
+  }
+
+  @Test
+  void shouldLogChangesPerPageAndKeepSummaryFreeOfChangeDetails() throws IOException {
+    var logRecorder = LogRecorder.forClass(UpdateLog.class);
+    var summaryRecorder = LogRecorder.forClass(ManuallyUpdatePublicationsHandler.class);
+    var publisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER, publisherIdentifier, randomUUID().toString(), MATCHES);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    assertThat(logRecorder.asString(), containsString(PUBLISHER_ID_PATH));
+    assertThat(summaryRecorder.asString(), not(containsString(PUBLISHER_ID_PATH)));
+  }
+
   private long countPublicationsWithPublisher(
       Collection<Publication> publications, URI publisherId) {
     var expectedPublisher = new Publisher(publisherId);
@@ -992,6 +1033,14 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     return IoUtils.stringToStream(
         new ManuallyUpdatePublicationsRequest(
                 type, oldValue, newValue, searchParams, MATCHES, false, NO_LIMIT)
+            .toJsonString());
+  }
+
+  private static InputStream createEventWithoutSearchParams(
+      ManualUpdateType type, String oldValue, String newValue) {
+    return IoUtils.stringToStream(
+        new ManuallyUpdatePublicationsRequest(
+                type, oldValue, newValue, null, MATCHES, false, NO_LIMIT)
             .toJsonString());
   }
 

@@ -36,4 +36,21 @@ public record ManuallyUpdatePublicationsReport(
         progress.resourcesChanged(),
         progress.changes());
   }
+
+  public ManuallyUpdatePublicationsReport withoutChanges() {
+    return new ManuallyUpdatePublicationsReport(
+        dryRun,
+        limit,
+        limitReached,
+        type,
+        oldValue,
+        newValue,
+        totalHits,
+        pagesFetched,
+        hitsReturned,
+        resourcesFetched,
+        resourcesMatched,
+        resourcesChanged,
+        List.of());
+  }
 }
