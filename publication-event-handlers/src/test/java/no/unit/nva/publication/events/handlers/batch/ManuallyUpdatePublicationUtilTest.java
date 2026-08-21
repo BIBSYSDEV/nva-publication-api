@@ -71,6 +71,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   private static final String EMPTY_RIGHTS_HOLDER = "";
   private static final String UPDATE_FAILED_MESSAGE = "Update failed";
   private static final Integer NO_LIMIT = null;
+  private static final Integer NO_PAGE_SIZE = null;
   private static final int SINGLE_CHANGE = 1;
 
   private ManuallyUpdatePublicationUtil publicationUtil;
@@ -453,12 +454,19 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   private ManuallyUpdatePublicationsRequest createProjectUpdateRequest(
       String oldIdentifier, String newIdentifier) {
     return new ManuallyUpdatePublicationsRequest(
-        PROJECT, oldIdentifier, newIdentifier, Map.of(), null, false, NO_LIMIT);
+        PROJECT, oldIdentifier, newIdentifier, Map.of(), null, false, NO_LIMIT, NO_PAGE_SIZE);
   }
 
   private ManuallyUpdatePublicationsRequest createProjectDryRunRequest() {
     return new ManuallyUpdatePublicationsRequest(
-        PROJECT, OLD_PROJECT_IDENTIFIER, NEW_PROJECT_IDENTIFIER, Map.of(), null, true, NO_LIMIT);
+        PROJECT,
+        OLD_PROJECT_IDENTIFIER,
+        NEW_PROJECT_IDENTIFIER,
+        Map.of(),
+        null,
+        true,
+        NO_LIMIT,
+        NO_PAGE_SIZE);
   }
 
   private ResearchProject projectOutsideCristinProjectPath() {
@@ -542,7 +550,8 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
         Map.of(),
         null,
         true,
-        NO_LIMIT);
+        NO_LIMIT,
+        NO_PAGE_SIZE);
   }
 
   private ManuallyUpdatePublicationsRequest createAffiliationUpdateRequest() {
@@ -553,7 +562,8 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
         Map.of(),
         null,
         false,
-        NO_LIMIT);
+        NO_LIMIT,
+        NO_PAGE_SIZE);
   }
 
   private Publication savePublication(Publication publication) {

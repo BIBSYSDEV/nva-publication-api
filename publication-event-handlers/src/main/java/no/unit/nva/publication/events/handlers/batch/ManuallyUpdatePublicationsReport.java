@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import java.util.Collection;
 import java.util.List;
 import no.unit.nva.commons.json.JsonSerializable;
 
@@ -7,6 +8,7 @@ public record ManuallyUpdatePublicationsReport(
     boolean dryRun,
     int limit,
     boolean limitReached,
+    int pageSize,
     ManualUpdateType type,
     String oldValue,
     String newValue,
@@ -21,10 +23,23 @@ public record ManuallyUpdatePublicationsReport(
 
   public static ManuallyUpdatePublicationsReport create(
       ManuallyUpdatePublicationsRequest request, ManualUpdateProgress progress) {
+    return create(request, progress, progress.changes());
+  }
+
+  public static ManuallyUpdatePublicationsReport summary(
+      ManuallyUpdatePublicationsRequest request, ManualUpdateProgress progress) {
+    return create(request, progress, List.of());
+  }
+
+  private static ManuallyUpdatePublicationsReport create(
+      ManuallyUpdatePublicationsRequest request,
+      ManualUpdateProgress progress,
+      Collection<ResourceChange> changes) {
     return new ManuallyUpdatePublicationsReport(
         request.isDryRun(),
         request.maxChanges(),
         progress.limitReached(request.maxChanges()),
+        request.searchPageSize(),
         request.type(),
         request.oldValue(),
         request.newValue(),
@@ -34,23 +49,6 @@ public record ManuallyUpdatePublicationsReport(
         progress.resourcesFetched(),
         progress.resourcesMatched(),
         progress.resourcesChanged(),
-        progress.changes());
-  }
-
-  public ManuallyUpdatePublicationsReport withoutChanges() {
-    return new ManuallyUpdatePublicationsReport(
-        dryRun,
-        limit,
-        limitReached,
-        type,
-        oldValue,
-        newValue,
-        totalHits,
-        pagesFetched,
-        hitsReturned,
-        resourcesFetched,
-        resourcesMatched,
-        resourcesChanged,
-        List.of());
+        List.copyOf(changes));
   }
 }

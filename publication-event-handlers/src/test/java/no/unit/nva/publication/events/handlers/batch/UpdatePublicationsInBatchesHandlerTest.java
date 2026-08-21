@@ -91,6 +91,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   private static final int TWO_PAGES = 2;
   private static final int SINGLE_RESOURCE = 1;
   private static final Integer NO_LIMIT = null;
+  private static final Integer NO_PAGE_SIZE = null;
+  private static final int SMALL_PAGE_SIZE = 4;
+  private static final String SMALL_PAGE_SIZE_PARAM = "size=4";
   private static final String SIZE_PARAM = "size";
   private static final String SINGLE_HIT_PAGE_PARAM = "size=1";
   private static final String SORT_BY_IDENTIFIER_PARAM = "sort=identifier";
@@ -901,6 +904,30 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   }
 
   @Test
+  void shouldRequestPageSizeFromRequest() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER,
+            publisherIdentifier,
+            randomUUID().toString(),
+            MATCHES,
+            false,
+            NO_LIMIT,
+            SMALL_PAGE_SIZE);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    assertThat(capturedSearchUris().getFirst().getQuery(), containsString(SMALL_PAGE_SIZE_PARAM));
+    assertEquals(SMALL_PAGE_SIZE, readReport().pageSize());
+  }
+
+  @Test
   void shouldSearchWithoutFilterWhenSearchParamsAreMissing() throws IOException {
     var publisherIdentifier = randomUUID().toString();
     var publisherId =
@@ -1021,9 +1048,27 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
       Comparator comparator,
       boolean dryRun,
       Integer limit) {
+    return createEvent(type, oldValue, newValue, comparator, dryRun, limit, NO_PAGE_SIZE);
+  }
+
+  private static InputStream createEvent(
+      ManualUpdateType type,
+      String oldValue,
+      String newValue,
+      Comparator comparator,
+      boolean dryRun,
+      Integer limit,
+      Integer pageSize) {
     return IoUtils.stringToStream(
         new ManuallyUpdatePublicationsRequest(
-                type, oldValue, newValue, Map.of("publisher", oldValue), comparator, dryRun, limit)
+                type,
+                oldValue,
+                newValue,
+                Map.of("publisher", oldValue),
+                comparator,
+                dryRun,
+                limit,
+                pageSize)
             .toJsonString());
   }
 
@@ -1032,7 +1077,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     var searchParams = Map.of(PUBLISHER, oldValue, SIZE_PARAM, String.valueOf(size));
     return IoUtils.stringToStream(
         new ManuallyUpdatePublicationsRequest(
-                type, oldValue, newValue, searchParams, MATCHES, false, NO_LIMIT)
+                type, oldValue, newValue, searchParams, MATCHES, false, NO_LIMIT, NO_PAGE_SIZE)
             .toJsonString());
   }
 
@@ -1040,7 +1085,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
       ManualUpdateType type, String oldValue, String newValue) {
     return IoUtils.stringToStream(
         new ManuallyUpdatePublicationsRequest(
-                type, oldValue, newValue, null, MATCHES, false, NO_LIMIT)
+                type, oldValue, newValue, null, MATCHES, false, NO_LIMIT, NO_PAGE_SIZE)
             .toJsonString());
   }
 

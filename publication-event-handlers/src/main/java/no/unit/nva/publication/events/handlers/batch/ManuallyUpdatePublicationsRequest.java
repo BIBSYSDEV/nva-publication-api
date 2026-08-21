@@ -20,7 +20,8 @@ public record ManuallyUpdatePublicationsRequest(
     Map<String, String> searchParams,
     Comparator comparator,
     Boolean dryRun,
-    Integer limit)
+    Integer limit,
+    Integer pageSize)
     implements JsonSerializable {
 
   public static final String MISSING_DRY_RUN_MESSAGE =
@@ -29,15 +30,21 @@ public record ManuallyUpdatePublicationsRequest(
   public static final String INVALID_LIMIT_MESSAGE =
       "Field 'limit' must be a positive number of resources to change before the run stops. "
           + "The search parameter 'size' is accepted as an alias for 'limit'.";
+  public static final String INVALID_PAGE_SIZE_MESSAGE =
+      "Field 'pageSize' must be between %d and %d hits, which is what the search api accepts.";
   public static final int DEFAULT_LIMIT = 10_000;
+  public static final int DEFAULT_PAGE_SIZE = 100;
   private static final String SIZE_PARAM = "size";
   private static final int SMALLEST_LIMIT = 1;
+  private static final int SMALLEST_PAGE_SIZE = 1;
+  private static final int LARGEST_PAGE_SIZE = 1_000;
 
   public ManuallyUpdatePublicationsRequest {
     if (isNull(dryRun)) {
       throw new IllegalArgumentException(MISSING_DRY_RUN_MESSAGE);
     }
     validateLimit(requestedLimit(limit, searchParams));
+    validatePageSize(pageSize);
   }
 
   public static ManuallyUpdatePublicationsRequest fromInputStream(InputStream inputStream)
@@ -60,6 +67,11 @@ public record ManuallyUpdatePublicationsRequest(
     return isNull(requestedLimit) ? DEFAULT_LIMIT : requestedLimit;
   }
 
+  public int searchPageSize() {
+    var requestedPageSize = isNull(pageSize) ? DEFAULT_PAGE_SIZE : pageSize;
+    return Math.min(requestedPageSize, maxChanges());
+  }
+
   private static Integer requestedLimit(Integer limit, Map<String, String> searchParams) {
     return nonNull(limit) ? limit : sizeSearchParam(searchParams);
   }
@@ -80,6 +92,13 @@ public record ManuallyUpdatePublicationsRequest(
   private static void validateLimit(Integer requestedLimit) {
     if (nonNull(requestedLimit) && requestedLimit < SMALLEST_LIMIT) {
       throw new IllegalArgumentException(INVALID_LIMIT_MESSAGE);
+    }
+  }
+
+  private static void validatePageSize(Integer pageSize) {
+    if (nonNull(pageSize) && (pageSize < SMALLEST_PAGE_SIZE || pageSize > LARGEST_PAGE_SIZE)) {
+      throw new IllegalArgumentException(
+          INVALID_PAGE_SIZE_MESSAGE.formatted(SMALLEST_PAGE_SIZE, LARGEST_PAGE_SIZE));
     }
   }
 }

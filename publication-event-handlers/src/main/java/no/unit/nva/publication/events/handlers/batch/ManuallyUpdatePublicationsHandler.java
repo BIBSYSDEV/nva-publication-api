@@ -23,7 +23,6 @@ public class ManuallyUpdatePublicationsHandler implements RequestStreamHandler {
       "Page {}: {} hits fetched so far, {} resources changed, {} total hits";
   private static final String LIMIT_REACHED_LOG_MESSAGE =
       "Stopped after changing {} resources: run again to continue where this run left off";
-  private static final int SEARCH_PAGE_SIZE = 100;
   private final SearchService searchService;
   private final ResourceService resourceService;
 
@@ -43,10 +42,13 @@ public class ManuallyUpdatePublicationsHandler implements RequestStreamHandler {
   public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context)
       throws IOException {
     var request = ManuallyUpdatePublicationsRequest.fromInputStream(inputStream);
-    var report = ManuallyUpdatePublicationsReport.create(request, updateAllPages(request));
+    var progress = updateAllPages(request);
 
-    logger.info(SUMMARY_LOG_MESSAGE, report.withoutChanges().toJsonString());
-    JsonUtils.dtoObjectMapper.writeValue(outputStream, report);
+    logger.info(
+        SUMMARY_LOG_MESSAGE,
+        ManuallyUpdatePublicationsReport.summary(request, progress).toJsonString());
+    JsonUtils.dtoObjectMapper.writeValue(
+        outputStream, ManuallyUpdatePublicationsReport.create(request, progress));
   }
 
   private ManualUpdateProgress updateAllPages(ManuallyUpdatePublicationsRequest request) {
@@ -54,7 +56,7 @@ public class ManuallyUpdatePublicationsHandler implements RequestStreamHandler {
     var maxChanges = request.maxChanges();
     var progress = ManualUpdateProgress.empty();
     var pageUri =
-        Optional.of(searchService.firstPageUri(request.searchParams(), pageSize(request)));
+        Optional.of(searchService.firstPageUri(request.searchParams(), request.searchPageSize()));
 
     while (pageUri.isPresent()) {
       var page = searchService.searchPage(pageUri.get());
@@ -70,10 +72,6 @@ public class ManuallyUpdatePublicationsHandler implements RequestStreamHandler {
       logger.warn(LIMIT_REACHED_LOG_MESSAGE, maxChanges);
     }
     return progress;
-  }
-
-  private static int pageSize(ManuallyUpdatePublicationsRequest request) {
-    return Math.min(SEARCH_PAGE_SIZE, request.maxChanges());
   }
 
   private static void logPage(ManualUpdateProgress progress) {
