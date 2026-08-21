@@ -2,14 +2,16 @@ package no.unit.nva.publication.events.handlers.batch;
 
 import java.util.List;
 import no.unit.nva.commons.json.JsonSerializable;
-import no.unit.nva.publication.model.ResourceSearchResult;
 
 public record ManuallyUpdatePublicationsReport(
     boolean dryRun,
+    int limit,
+    boolean limitReached,
     ManualUpdateType type,
     String oldValue,
     String newValue,
     int totalHits,
+    int pagesFetched,
     int hitsReturned,
     int resourcesFetched,
     int resourcesMatched,
@@ -18,19 +20,20 @@ public record ManuallyUpdatePublicationsReport(
     implements JsonSerializable {
 
   public static ManuallyUpdatePublicationsReport create(
-      ManuallyUpdatePublicationsRequest request,
-      ResourceSearchResult searchResult,
-      ManualUpdateResult updateResult) {
+      ManuallyUpdatePublicationsRequest request, ManualUpdateProgress progress) {
     return new ManuallyUpdatePublicationsReport(
         request.isDryRun(),
+        request.maxChanges(),
+        progress.limitReached(request.maxChanges()),
         request.type(),
         request.oldValue(),
         request.newValue(),
-        searchResult.totalHits(),
-        searchResult.hitsReturned(),
-        searchResult.resources().size(),
-        updateResult.matchedResources(),
-        updateResult.changes().size(),
-        updateResult.changes());
+        progress.totalHits(),
+        progress.pagesFetched(),
+        progress.hitsReturned(),
+        progress.resourcesFetched(),
+        progress.resourcesMatched(),
+        progress.resourcesChanged(),
+        progress.changes());
   }
 }

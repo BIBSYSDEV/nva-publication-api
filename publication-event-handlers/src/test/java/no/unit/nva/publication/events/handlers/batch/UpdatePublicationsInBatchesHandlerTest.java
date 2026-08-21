@@ -6,18 +6,23 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.events.handlers.batch.Comparator.CONTAINS;
 import static no.unit.nva.publication.events.handlers.batch.Comparator.MATCHES;
+import static no.unit.nva.publication.events.handlers.batch.ManuallyUpdatePublicationsRequest.DEFAULT_LIMIT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -25,6 +30,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,6 +76,7 @@ import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
@@ -79,6 +86,15 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   private static final String CRISTIN = "cristin";
   private static final String API_HOST = new Environment().readEnv("API_HOST");
   private static final int TOTAL_HITS = 4321;
+  private static final int TWO_PAGES = 2;
+  private static final int SINGLE_RESOURCE = 1;
+  private static final Integer NO_LIMIT = null;
+  private static final String SIZE_PARAM = "size";
+  private static final String SINGLE_HIT_PAGE_PARAM = "size=1";
+  private static final String SORT_BY_IDENTIFIER_PARAM = "sort=identifier";
+  private static final String NO_AGGREGATION_PARAM = "aggregation=none";
+  private static final URI NEXT_PAGE_URI =
+      URI.create("https://%s/search/resources?sort=identifier&search_after=1".formatted(API_HOST));
   private static final String PUBLISHER_ID_PATH =
       "/entityDescription/reference/publicationContext/publisher/id";
   private ManuallyUpdatePublicationsHandler handler;
@@ -731,6 +747,167 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     assertEquals(0, report.resourcesChanged());
   }
 
+  @Test
+  void shouldFollowSearchAfterCursorUntilPageWithoutCursor() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var firstPage = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var lastPage = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER, publisherIdentifier, randomUUID().toString(), MATCHES);
+
+    mockSearchApiPages(firstPage, lastPage);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    var report = readReport();
+    assertEquals(TWO_PAGES, report.pagesFetched());
+    assertEquals(firstPage.size() + lastPage.size(), report.resourcesChanged());
+  }
+
+  @Test
+  void shouldRequestNextPageUsingCursorProvidedBySearchApi() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var firstPage = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var lastPage = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER, publisherIdentifier, randomUUID().toString(), MATCHES);
+
+    mockSearchApiPages(firstPage, lastPage);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    assertEquals(NEXT_PAGE_URI, capturedSearchUris().getLast());
+  }
+
+  @Test
+  void shouldSortFirstPageByIdentifierWithoutAggregations() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER, publisherIdentifier, randomUUID().toString(), MATCHES);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    var query = capturedSearchUris().getFirst().getQuery();
+    assertThat(query, containsString(SORT_BY_IDENTIFIER_PARAM));
+    assertThat(query, containsString(NO_AGGREGATION_PARAM));
+  }
+
+  @Test
+  void shouldStopChangingResourcesWhenLimitIsReached() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var newPublisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER,
+            publisherIdentifier,
+            newPublisherIdentifier,
+            MATCHES,
+            false,
+            SINGLE_RESOURCE);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    var report = readReport();
+    assertEquals(SINGLE_RESOURCE, report.resourcesChanged());
+    assertTrue(report.limitReached());
+    var newPublisherId =
+        URI.create(publisherId.toString().replace(publisherIdentifier, newPublisherIdentifier));
+    assertEquals(
+        SINGLE_RESOURCE, countPublicationsWithPublisher(publicationsToUpdate, newPublisherId));
+  }
+
+  @Test
+  void shouldNotRequestLargerPagesThanTheRequestedLimit() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER,
+            publisherIdentifier,
+            randomUUID().toString(),
+            MATCHES,
+            false,
+            SINGLE_RESOURCE);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    assertThat(capturedSearchUris().getFirst().getQuery(), containsString(SINGLE_HIT_PAGE_PARAM));
+  }
+
+  @Test
+  void shouldReportDefaultLimitWhenNoLimitIsRequested() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER, publisherIdentifier, randomUUID().toString(), MATCHES);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    var report = readReport();
+    assertFalse(report.limitReached());
+    assertEquals(DEFAULT_LIMIT, report.limit());
+  }
+
+  @Test
+  void shouldTreatSizeSearchParamAsLimit() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var newPublisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEventWithSize(
+            ManualUpdateType.PUBLISHER,
+            publisherIdentifier,
+            newPublisherIdentifier,
+            SINGLE_RESOURCE);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    var report = readReport();
+    assertEquals(SINGLE_RESOURCE, report.limit());
+    assertEquals(SINGLE_RESOURCE, report.resourcesChanged());
+    assertTrue(report.limitReached());
+  }
+
+  private long countPublicationsWithPublisher(
+      Collection<Publication> publications, URI publisherId) {
+    var expectedPublisher = new Publisher(publisherId);
+    return publications.stream()
+        .map(this::getPublicationByIdentifier)
+        .map(UpdatePublicationsInBatchesHandlerTest::getPublisher)
+        .filter(expectedPublisher::equals)
+        .count();
+  }
+
   private ManuallyUpdatePublicationsReport readReport() throws IOException {
     return JsonUtils.dtoObjectMapper.readValue(
         output.toByteArray(), ManuallyUpdatePublicationsReport.class);
@@ -793,9 +970,28 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
       String newValue,
       Comparator comparator,
       boolean dryRun) {
+    return createEvent(type, oldValue, newValue, comparator, dryRun, NO_LIMIT);
+  }
+
+  private static InputStream createEvent(
+      ManualUpdateType type,
+      String oldValue,
+      String newValue,
+      Comparator comparator,
+      boolean dryRun,
+      Integer limit) {
     return IoUtils.stringToStream(
         new ManuallyUpdatePublicationsRequest(
-                type, oldValue, newValue, Map.of("publisher", oldValue), comparator, dryRun)
+                type, oldValue, newValue, Map.of("publisher", oldValue), comparator, dryRun, limit)
+            .toJsonString());
+  }
+
+  private static InputStream createEventWithSize(
+      ManualUpdateType type, String oldValue, String newValue, int size) {
+    var searchParams = Map.of(PUBLISHER, oldValue, SIZE_PARAM, String.valueOf(size));
+    return IoUtils.stringToStream(
+        new ManuallyUpdatePublicationsRequest(
+                type, oldValue, newValue, searchParams, MATCHES, false, NO_LIMIT)
             .toJsonString());
   }
 
@@ -935,6 +1131,23 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     var responseBody = new SearchResourceApiResponse(totalHits, resourcesWithId);
     var response = FakeHttpResponse.create(responseBody.toJsonString(), 200);
     when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
+  }
+
+  private void mockSearchApiPages(List<Publication> firstPage, List<Publication> lastPage) {
+    var totalHits = firstPage.size() + lastPage.size();
+    var firstPageBody =
+        new SearchResourceApiResponse(
+            totalHits, convertToResourcesWithId(firstPage), NEXT_PAGE_URI);
+    var lastPageBody = new SearchResourceApiResponse(totalHits, convertToResourcesWithId(lastPage));
+    when(uriRetriever.fetchResponse(any(), any()))
+        .thenReturn(Optional.of(FakeHttpResponse.create(firstPageBody.toJsonString(), 200)))
+        .thenReturn(Optional.of(FakeHttpResponse.create(lastPageBody.toJsonString(), 200)));
+  }
+
+  private List<URI> capturedSearchUris() {
+    var searchUri = ArgumentCaptor.forClass(URI.class);
+    verify(uriRetriever, atLeastOnce()).fetchResponse(searchUri.capture(), any());
+    return searchUri.getAllValues();
   }
 
   private Publication createPublicationWithPublisher(PublishingHouse publishingHouse) {

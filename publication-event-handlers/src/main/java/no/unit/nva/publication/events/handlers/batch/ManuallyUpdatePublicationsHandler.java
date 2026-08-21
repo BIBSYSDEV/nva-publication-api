@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Optional;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -18,6 +19,11 @@ public class ManuallyUpdatePublicationsHandler implements RequestStreamHandler {
   private static final Logger logger =
       LoggerFactory.getLogger(ManuallyUpdatePublicationsHandler.class);
   private static final String REPORT_LOG_MESSAGE = "Manual update report: {}";
+  private static final String PAGE_LOG_MESSAGE =
+      "Page {}: {} hits fetched so far, {} resources changed, {} total hits";
+  private static final String LIMIT_REACHED_LOG_MESSAGE =
+      "Stopped after changing {} resources: run again to continue where this run left off";
+  private static final int SEARCH_PAGE_SIZE = 100;
   private final SearchService searchService;
   private final ResourceService resourceService;
 
@@ -37,13 +43,44 @@ public class ManuallyUpdatePublicationsHandler implements RequestStreamHandler {
   public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context)
       throws IOException {
     var request = ManuallyUpdatePublicationsRequest.fromInputStream(inputStream);
-    var searchResult = searchService.searchResourcesByParam(request.searchParams());
-    var updateResult =
-        ManuallyUpdatePublicationUtil.create(resourceService)
-            .update(searchResult.resources(), request);
-    var report = ManuallyUpdatePublicationsReport.create(request, searchResult, updateResult);
+    var report = ManuallyUpdatePublicationsReport.create(request, updateAllPages(request));
 
     logger.info(REPORT_LOG_MESSAGE, report.toJsonString());
     JsonUtils.dtoObjectMapper.writeValue(outputStream, report);
+  }
+
+  private ManualUpdateProgress updateAllPages(ManuallyUpdatePublicationsRequest request) {
+    var publicationUtil = ManuallyUpdatePublicationUtil.create(resourceService);
+    var maxChanges = request.maxChanges();
+    var progress = ManualUpdateProgress.empty();
+    var pageUri =
+        Optional.of(searchService.firstPageUri(request.searchParams(), pageSize(request)));
+
+    while (pageUri.isPresent()) {
+      var page = searchService.searchPage(pageUri.get());
+      var result =
+          publicationUtil.update(page.resources(), request, progress.remainingChanges(maxChanges));
+      progress = progress.plus(page, result);
+      logPage(progress);
+      pageUri = progress.limitReached(maxChanges) ? Optional.empty() : page.nextPage();
+    }
+
+    if (progress.limitReached(maxChanges)) {
+      logger.warn(LIMIT_REACHED_LOG_MESSAGE, maxChanges);
+    }
+    return progress;
+  }
+
+  private static int pageSize(ManuallyUpdatePublicationsRequest request) {
+    return Math.min(SEARCH_PAGE_SIZE, request.maxChanges());
+  }
+
+  private static void logPage(ManualUpdateProgress progress) {
+    logger.info(
+        PAGE_LOG_MESSAGE,
+        progress.pagesFetched(),
+        progress.hitsReturned(),
+        progress.resourcesChanged(),
+        progress.totalHits());
   }
 }

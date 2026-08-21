@@ -70,6 +70,8 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   private static final String PROJECT_PATH_AT_INDEX_1 = "/projects/1";
   private static final String EMPTY_RIGHTS_HOLDER = "";
   private static final String UPDATE_FAILED_MESSAGE = "Update failed";
+  private static final Integer NO_LIMIT = null;
+  private static final int SINGLE_CHANGE = 1;
 
   private ManuallyUpdatePublicationUtil publicationUtil;
   private ResourceService resourceService;
@@ -189,6 +191,31 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
     resources.forEach(
         resource ->
             assertThat(fetchProjects(resource), contains(projectOutsideCristinProjectPath())));
+  }
+
+  @Test
+  void updateShouldStopChangingResourcesWhenMaxChangesIsReached() {
+    var resources = createResourcesWithProjects(List.of(this::oldProject));
+
+    var result = publicationUtil.update(resources, createProjectUpdateRequest(), SINGLE_CHANGE);
+
+    assertEquals(SINGLE_CHANGE, result.changes().size());
+    assertEquals(SINGLE_CHANGE, countResourcesWithNewProject(resources));
+  }
+
+  @Test
+  void updateShouldNotCountResourcesLeftUntouchedByMaxChangesAsMatching() {
+    var resources = createResourcesWithProjects(List.of(this::oldProject));
+
+    var result = publicationUtil.update(resources, createProjectUpdateRequest(), SINGLE_CHANGE);
+
+    assertEquals(SINGLE_CHANGE, result.matchedResources());
+  }
+
+  private long countResourcesWithNewProject(Collection<Resource> resources) {
+    return resources.stream()
+        .filter(resource -> fetchProjects(resource).contains(oldProjectWithNewIdentifier()))
+        .count();
   }
 
   @Test
@@ -426,12 +453,12 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   private ManuallyUpdatePublicationsRequest createProjectUpdateRequest(
       String oldIdentifier, String newIdentifier) {
     return new ManuallyUpdatePublicationsRequest(
-        PROJECT, oldIdentifier, newIdentifier, Map.of(), null, false);
+        PROJECT, oldIdentifier, newIdentifier, Map.of(), null, false, NO_LIMIT);
   }
 
   private ManuallyUpdatePublicationsRequest createProjectDryRunRequest() {
     return new ManuallyUpdatePublicationsRequest(
-        PROJECT, OLD_PROJECT_IDENTIFIER, NEW_PROJECT_IDENTIFIER, Map.of(), null, true);
+        PROJECT, OLD_PROJECT_IDENTIFIER, NEW_PROJECT_IDENTIFIER, Map.of(), null, true, NO_LIMIT);
   }
 
   private ResearchProject projectOutsideCristinProjectPath() {
@@ -514,7 +541,8 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
         NEW_AFFILIATION_ID.toString(),
         Map.of(),
         null,
-        true);
+        true,
+        NO_LIMIT);
   }
 
   private ManuallyUpdatePublicationsRequest createAffiliationUpdateRequest() {
@@ -524,7 +552,8 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
         NEW_AFFILIATION_ID.toString(),
         Map.of(),
         null,
-        false);
+        false,
+        NO_LIMIT);
   }
 
   private Publication savePublication(Publication publication) {
