@@ -24,8 +24,9 @@ abstract class ResourceUpdate implements ManualUpdate {
   @Override
   public final List<FieldChange> plan(
       Resource resource, ManuallyUpdatePublicationsRequest request) {
-    var before = ResourceDiff.snapshot(resource);
-    var after = ResourceDiff.snapshot(update(detachedCopyOf(before), request));
+    var target = detachedCopyOf(ResourceDiff.snapshot(resource));
+    var before = ResourceDiff.snapshot(target);
+    var after = ResourceDiff.snapshot(update(target, request));
     return ResourceDiff.between(before, after);
   }
 
@@ -37,7 +38,7 @@ abstract class ResourceUpdate implements ManualUpdate {
 
   protected abstract Resource update(Resource resource, ManuallyUpdatePublicationsRequest request);
 
-  private Resource detachedCopyOf(JsonNode snapshot) {
+  private static Resource detachedCopyOf(JsonNode snapshot) {
     return attempt(() -> JsonUtils.dtoObjectMapper.treeToValue(snapshot, Resource.class))
         .orElseThrow();
   }

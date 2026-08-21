@@ -61,6 +61,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   private static final String PROJECT_ID_PATH = "/projects/0/id";
   private static final String PROJECT_PATH_AT_INDEX_0 = "/projects/0";
   private static final String PROJECT_PATH_AT_INDEX_1 = "/projects/1";
+  private static final String EMPTY_RIGHTS_HOLDER = "";
 
   private ManuallyUpdatePublicationUtil publicationUtil;
   private ResourceService resourceService;
@@ -300,6 +301,17 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   }
 
   @Test
+  void planShouldNotReportChangesCausedBySerializationRoundTrip() {
+    var resource = createResourcesWithProjects(List.of(this::oldProject)).getFirst();
+    resource.setRightsHolder(EMPTY_RIGHTS_HOLDER);
+    var projectUpdate = updaterFor(PROJECT);
+
+    var fieldChanges = projectUpdate.plan(resource, createProjectUpdateRequest());
+
+    assertThat(changedPaths(fieldChanges), contains(PROJECT_ID_PATH));
+  }
+
+  @Test
   void updateWithoutDryRunShouldReportSameChangesAsDryRun() {
     var dryRunResources = createResourcesWithProjects(List.of(this::oldProject));
     var updatedResources = createResourcesWithProjects(List.of(this::oldProject));
@@ -314,6 +326,10 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
   private List<List<FieldChange>> fieldChangesOf(Collection<ResourceChange> changes) {
     return changes.stream().map(ResourceChange::fieldChanges).toList();
+  }
+
+  private List<String> changedPaths(Collection<FieldChange> fieldChanges) {
+    return fieldChanges.stream().map(FieldChange::path).toList();
   }
 
   private FieldChange singleFieldChange(ResourceChange change) {
