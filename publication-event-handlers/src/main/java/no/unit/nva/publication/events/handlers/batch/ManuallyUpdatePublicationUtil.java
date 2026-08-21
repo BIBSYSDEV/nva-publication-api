@@ -65,10 +65,11 @@ final class ManuallyUpdatePublicationUtil {
 
   private static void commitAndLog(
       ManualUpdate updater, UpdatePlan plan, ManuallyUpdatePublicationsRequest request) {
-    if (shouldCommit(plan, request)) {
+    var persisted = shouldCommit(plan, request);
+    if (persisted) {
       updater.commit(plan.resource(), request);
     }
-    UpdateLog.logPlan(request, plan);
+    UpdateLog.logPlan(request, plan, persisted);
   }
 
   private static boolean shouldCommit(UpdatePlan plan, ManuallyUpdatePublicationsRequest request) {

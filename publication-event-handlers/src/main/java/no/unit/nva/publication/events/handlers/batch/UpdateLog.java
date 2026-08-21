@@ -13,19 +13,20 @@ final class UpdateLog {
 
   private UpdateLog() {}
 
-  static void logPlan(ManuallyUpdatePublicationsRequest request, UpdatePlan plan) {
+  static void logPlan(
+      ManuallyUpdatePublicationsRequest request, UpdatePlan plan, boolean persisted) {
     logger.info(
         PLANNED_MESSAGE,
         request.type(),
         plan.resource().getIdentifier(),
         plan.fieldChanges().size(),
-        outcomeOf(request, plan));
+        outcomeOf(request, persisted));
   }
 
-  private static String outcomeOf(ManuallyUpdatePublicationsRequest request, UpdatePlan plan) {
+  private static String outcomeOf(ManuallyUpdatePublicationsRequest request, boolean persisted) {
     if (request.isDryRun()) {
       return DRY_RUN;
     }
-    return plan.hasChanges() ? PERSISTED : NOT_PERSISTED;
+    return persisted ? PERSISTED : NOT_PERSISTED;
   }
 }
