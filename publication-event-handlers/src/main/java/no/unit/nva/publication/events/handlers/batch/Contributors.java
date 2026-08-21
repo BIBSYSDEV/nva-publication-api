@@ -3,6 +3,7 @@ package no.unit.nva.publication.events.handlers.batch;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import no.unit.nva.model.Contributor;
@@ -21,7 +22,7 @@ public final class Contributors {
   public static List<Contributor> of(Resource resource) {
     return Optional.ofNullable(resource.getEntityDescription())
         .map(EntityDescription::getContributors)
-        .orElseGet(List::of);
+        .orElseGet(Collections::emptyList);
   }
 
   public static void setOn(Resource resource, List<Contributor> contributors) {
