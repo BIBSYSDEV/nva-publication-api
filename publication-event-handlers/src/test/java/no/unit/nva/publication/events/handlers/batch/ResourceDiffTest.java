@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 class ResourceDiffTest {
 
   private static final String FIRST_ELEMENT_PATH = "/items/0";
+  private static final String THIRD_ELEMENT_PATH = "/items/2";
   private static final String FIRST_ELEMENT_NAME_PATH = "/items/0/name";
   private static final String RELATED_RESOURCES_FIELD = "relatedResources";
 
@@ -72,6 +73,30 @@ class ResourceDiffTest {
 
     assertEquals(1, changes.size());
     assertNull(changes.getFirst().oldValue());
+  }
+
+  @Test
+  void shouldReportAddedElementAtItsIndexInTheNewArray() {
+    var before = arrayOf("[{\"id\":\"a\"},{\"id\":\"b\"}]");
+    var after = arrayOf("[{\"id\":\"a\"},{\"id\":\"b\"},{\"id\":\"c\"}]");
+
+    var changes = ResourceDiff.between(before, after);
+
+    assertEquals(1, changes.size());
+    assertEquals(THIRD_ELEMENT_PATH, changes.getFirst().path());
+    assertNull(changes.getFirst().oldValue());
+  }
+
+  @Test
+  void shouldNotReportAddedAndRemovedElementOnTheSamePath() {
+    var before = arrayOf("[{\"id\":\"a\"},{\"id\":\"b\"}]");
+    var after = arrayOf("[{\"id\":\"c\"},{\"id\":\"a\"},{\"id\":\"b\"},{\"id\":\"d\"}]");
+
+    var changes = ResourceDiff.between(before, after);
+
+    var distinctPaths = changes.stream().map(FieldChange::path).distinct().toList();
+    assertEquals(2, changes.size());
+    assertEquals(changes.size(), distinctPaths.size());
   }
 
   private JsonNode arrayOf(String itemsJson) {

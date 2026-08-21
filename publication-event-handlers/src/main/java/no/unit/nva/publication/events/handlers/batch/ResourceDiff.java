@@ -56,49 +56,57 @@ public final class ResourceDiff {
   /**
    * Elements present on both sides are paired up regardless of position, so reordering alone is not
    * reported. What is left over is diffed pairwise, which turns a replaced element into a change on
-   * its own fields rather than a change on every element after it.
+   * its own fields rather than a change on every element after it. A changed or removed element is
+   * reported at its index in the old array, an added one at its index in the new array.
    */
   private static void collectArrayChanges(
       String path, JsonNode before, JsonNode after, List<FieldChange> changes) {
-    var added = elementsOf(after);
+    var added = indexedElementsOf(after);
     var removed = elementsWithoutCounterpart(before, added);
 
     for (var position = 0; position < Math.max(removed.size(), added.size()); position++) {
       collectChanges(
-          INDEX_PATH_FORMAT.formatted(path, reportedIndex(removed, position)),
+          INDEX_PATH_FORMAT.formatted(path, reportedIndex(removed, added, position)),
           nodeAt(removed, position),
-          elementAt(added, position),
+          nodeAt(added, position),
           changes);
     }
   }
 
   private static List<IndexedElement> elementsWithoutCounterpart(
-      JsonNode before, List<JsonNode> added) {
+      JsonNode before, List<IndexedElement> added) {
     var removed = new ArrayList<IndexedElement>();
     for (var index = 0; index < before.size(); index++) {
       var element = before.get(index);
-      if (!added.remove(element)) {
+      if (!removeFirstMatching(added, element)) {
         removed.add(new IndexedElement(index, element));
       }
     }
     return removed;
   }
 
-  private static int reportedIndex(List<IndexedElement> removed, int position) {
-    return position < removed.size() ? removed.get(position).index() : position;
+  private static boolean removeFirstMatching(List<IndexedElement> added, JsonNode element) {
+    return added.stream()
+        .filter(candidate -> candidate.node().equals(element))
+        .findFirst()
+        .map(added::remove)
+        .orElse(false);
   }
 
-  private static JsonNode nodeAt(List<IndexedElement> removed, int position) {
-    return position < removed.size() ? removed.get(position).node() : MissingNode.getInstance();
+  private static int reportedIndex(
+      List<IndexedElement> removed, List<IndexedElement> added, int position) {
+    return position < removed.size() ? removed.get(position).index() : added.get(position).index();
   }
 
-  private static JsonNode elementAt(List<JsonNode> added, int position) {
-    return position < added.size() ? added.get(position) : MissingNode.getInstance();
+  private static JsonNode nodeAt(List<IndexedElement> elements, int position) {
+    return position < elements.size() ? elements.get(position).node() : MissingNode.getInstance();
   }
 
-  private static List<JsonNode> elementsOf(JsonNode array) {
-    var elements = new ArrayList<JsonNode>();
-    array.forEach(elements::add);
+  private static List<IndexedElement> indexedElementsOf(JsonNode array) {
+    var elements = new ArrayList<IndexedElement>();
+    for (var index = 0; index < array.size(); index++) {
+      elements.add(new IndexedElement(index, array.get(index)));
+    }
     return elements;
   }
 
