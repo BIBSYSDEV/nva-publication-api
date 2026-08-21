@@ -39,7 +39,7 @@ public record ManuallyUpdatePublicationsRequest(
   public static final String MISSING_SEARCH_PARAMS_MESSAGE =
       "Field 'searchParams' must hold at least one search parameter, to keep a run from sweeping "
           + "the whole archive.";
-  public static final int DEFAULT_LIMIT = 10_000;
+  public static final int DEFAULT_LIMIT = 10;
   public static final int DEFAULT_PAGE_SIZE = 100;
   private static final String SIZE_PARAM = "size";
   private static final int SMALLEST_LIMIT = 1;

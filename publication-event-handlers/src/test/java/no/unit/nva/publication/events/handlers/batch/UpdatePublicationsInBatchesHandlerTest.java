@@ -93,6 +93,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   private static final int TOTAL_HITS = 4321;
   private static final int TWO_PAGES = 2;
   private static final int SINGLE_RESOURCE = 1;
+  private static final int LIMIT_ABOVE_ALL_HITS = 1_000;
   private static final Integer NO_LIMIT = null;
   private static final Integer NO_PAGE_SIZE = null;
   private static final int SMALL_PAGE_SIZE = 4;
@@ -768,7 +769,12 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     var lastPage = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
     var event =
         createEvent(
-            ManualUpdateType.PUBLISHER, publisherIdentifier, randomUUID().toString(), MATCHES);
+            ManualUpdateType.PUBLISHER,
+            publisherIdentifier,
+            randomUUID().toString(),
+            MATCHES,
+            false,
+            LIMIT_ABOVE_ALL_HITS);
 
     mockSearchApiPages(firstPage, lastPage);
 
@@ -788,7 +794,12 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     var lastPage = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
     var event =
         createEvent(
-            ManualUpdateType.PUBLISHER, publisherIdentifier, randomUUID().toString(), MATCHES);
+            ManualUpdateType.PUBLISHER,
+            publisherIdentifier,
+            randomUUID().toString(),
+            MATCHES,
+            false,
+            LIMIT_ABOVE_ALL_HITS);
 
     mockSearchApiPages(firstPage, lastPage);
 
@@ -881,9 +892,31 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
+    assertEquals(DEFAULT_LIMIT, readReport().limit());
+  }
+
+  @Test
+  void shouldReportThatLimitWasNotReachedWhenRunFitsWithinIt() throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER,
+            publisherIdentifier,
+            randomUUID().toString(),
+            MATCHES,
+            false,
+            LIMIT_ABOVE_ALL_HITS);
+
+    mockSearchApiResponseWithPublications(publicationsToUpdate);
+
+    handler.handleRequest(event, output, CONTEXT);
+
     var report = readReport();
     assertFalse(report.limitReached());
-    assertEquals(DEFAULT_LIMIT, report.limit());
+    assertEquals(publicationsToUpdate.size(), report.resourcesChanged());
   }
 
   @Test

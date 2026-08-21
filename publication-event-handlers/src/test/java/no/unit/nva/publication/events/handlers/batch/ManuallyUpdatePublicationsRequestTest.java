@@ -20,6 +20,7 @@ class ManuallyUpdatePublicationsRequestTest {
   private static final int TWO_RESOURCES = 2;
   private static final int SMALL_PAGE_SIZE = 4;
   private static final int TOO_LARGE_PAGE_SIZE = 1_001;
+  private static final int LIMIT_ABOVE_DEFAULT_PAGE_SIZE = 1_000;
   private static final int ZERO_PAGE_SIZE = 0;
   private static final String SIZE_PARAM = "size";
   private static final String BLANK = " ";
@@ -104,7 +105,14 @@ class ManuallyUpdatePublicationsRequestTest {
 
   @Test
   void shouldFallBackToDefaultPageSizeWhenNotProvided() {
-    assertEquals(DEFAULT_PAGE_SIZE, createRequest(true, NO_LIMIT).searchPageSize());
+    var request = createRequest(true, LIMIT_ABOVE_DEFAULT_PAGE_SIZE);
+
+    assertEquals(DEFAULT_PAGE_SIZE, request.searchPageSize());
+  }
+
+  @Test
+  void shouldNotRequestLargerPagesThanTheDefaultLimitAllows() {
+    assertEquals(DEFAULT_LIMIT, createRequest(true, NO_LIMIT).searchPageSize());
   }
 
   @Test
