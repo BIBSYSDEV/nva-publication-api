@@ -286,6 +286,20 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   }
 
   @Test
+  void planShouldLeaveResourceUntouchedWhenDryRunIsNotRequested() {
+    var resources = createResourcesWithProjects(List.of(this::oldProject));
+    var projectUpdate = updaterFor(PROJECT);
+
+    resources.forEach(resource -> projectUpdate.plan(resource, createProjectUpdateRequest()));
+
+    resources.forEach(
+        resource -> {
+          assertThat(resource.getProjects(), contains(oldProject()));
+          assertThat(fetchProjects(resource), contains(oldProject()));
+        });
+  }
+
+  @Test
   void updateWithoutDryRunShouldReportSameChangesAsDryRun() {
     var dryRunResources = createResourcesWithProjects(List.of(this::oldProject));
     var updatedResources = createResourcesWithProjects(List.of(this::oldProject));
@@ -505,5 +519,9 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
   private List<Corporation> copyAffiliations(Contributor contributor) {
     return new ArrayList<>(contributor.affiliations());
+  }
+
+  private ManualUpdate updaterFor(ManualUpdateType type) {
+    return ManuallyUpdatePublicationUtil.updatersByType(resourceService).get(type);
   }
 }

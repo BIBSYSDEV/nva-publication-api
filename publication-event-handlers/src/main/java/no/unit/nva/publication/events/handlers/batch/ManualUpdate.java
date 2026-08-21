@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import java.util.List;
 import no.unit.nva.publication.model.business.Resource;
 
 public interface ManualUpdate {
@@ -8,5 +9,7 @@ public interface ManualUpdate {
 
   boolean matches(Resource resource, ManuallyUpdatePublicationsRequest request);
 
-  ResourceChange apply(Resource resource, ManuallyUpdatePublicationsRequest request);
+  List<FieldChange> plan(Resource resource, ManuallyUpdatePublicationsRequest request);
+
+  void commit(Resource resource, ManuallyUpdatePublicationsRequest request);
 }
