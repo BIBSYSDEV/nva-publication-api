@@ -58,20 +58,25 @@ final class ManuallyUpdatePublicationUtil {
             .map(resource -> new UpdatePlan(resource, updater.plan(resource, request)))
             .toList();
 
-    if (!request.isDryRun()) {
-      plansWithChanges(plans).forEach(plan -> updater.commit(plan.resource(), request));
-    }
-    plans.forEach(plan -> UpdateLog.logPlan(request, plan));
+    plans.forEach(plan -> commitAndLog(updater, plan, request));
 
     return new ManualUpdateResult(matchingResources.size(), changesOf(plans));
   }
 
-  private static List<UpdatePlan> plansWithChanges(Collection<UpdatePlan> plans) {
-    return plans.stream().filter(UpdatePlan::hasChanges).toList();
+  private static void commitAndLog(
+      ManualUpdate updater, UpdatePlan plan, ManuallyUpdatePublicationsRequest request) {
+    if (shouldCommit(plan, request)) {
+      updater.commit(plan.resource(), request);
+    }
+    UpdateLog.logPlan(request, plan);
+  }
+
+  private static boolean shouldCommit(UpdatePlan plan, ManuallyUpdatePublicationsRequest request) {
+    return !request.isDryRun() && plan.hasChanges();
   }
 
   private static List<ResourceChange> changesOf(Collection<UpdatePlan> plans) {
-    return plansWithChanges(plans).stream().map(UpdatePlan::toResourceChange).toList();
+    return plans.stream().filter(UpdatePlan::hasChanges).map(UpdatePlan::toResourceChange).toList();
   }
 
   private ManualUpdate updaterFor(ManualUpdateType type) {

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomApprovals;
 import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithAffiliation;
 import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
@@ -17,6 +18,10 @@ import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -39,6 +44,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,6 +69,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   private static final String PROJECT_PATH_AT_INDEX_0 = "/projects/0";
   private static final String PROJECT_PATH_AT_INDEX_1 = "/projects/1";
   private static final String EMPTY_RIGHTS_HOLDER = "";
+  private static final String UPDATE_FAILED_MESSAGE = "Update failed";
 
   private ManuallyUpdatePublicationUtil publicationUtil;
   private ResourceService resourceService;
@@ -334,12 +341,39 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
     assertThrows(IllegalStateException.class, () -> projectUpdate.commit(resource, dryRunRequest));
   }
 
+  @Test
+  void updateShouldLogCommittedResourcesWhenLaterResourceFailsToCommit() {
+    var logRecorder = LogRecorder.forClass(UpdateLog.class);
+    var resources = createResourcesWithProjects(List.of(this::oldProject));
+    var utilWithFailingService =
+        ManuallyUpdatePublicationUtil.create(serviceFailingOn(resources.get(1)));
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> utilWithFailingService.update(resources, createProjectUpdateRequest()));
+
+    assertThat(
+        logRecorder.asString(), containsString(resources.getFirst().getIdentifier().toString()));
+  }
+
   private List<List<FieldChange>> fieldChangesOf(Collection<ResourceChange> changes) {
     return changes.stream().map(ResourceChange::fieldChanges).toList();
   }
 
   private List<String> changedPaths(Collection<FieldChange> fieldChanges) {
     return fieldChanges.stream().map(FieldChange::path).toList();
+  }
+
+  private ResourceService serviceFailingOn(Resource failingResource) {
+    var failingService = spy(resourceService);
+    doThrow(new IllegalStateException(UPDATE_FAILED_MESSAGE))
+        .when(failingService)
+        .updateResource(argThat(resource -> isSameResource(resource, failingResource)), any());
+    return failingService;
+  }
+
+  private boolean isSameResource(Resource resource, Resource other) {
+    return nonNull(resource) && other.getIdentifier().equals(resource.getIdentifier());
   }
 
   private FieldChange singleFieldChange(ResourceChange change) {
