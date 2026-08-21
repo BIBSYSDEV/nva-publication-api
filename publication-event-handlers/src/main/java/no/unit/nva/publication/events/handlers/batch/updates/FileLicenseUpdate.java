@@ -8,7 +8,6 @@ import no.unit.nva.publication.events.handlers.batch.FieldChange;
 import no.unit.nva.publication.events.handlers.batch.ManualUpdate;
 import no.unit.nva.publication.events.handlers.batch.ManualUpdateType;
 import no.unit.nva.publication.events.handlers.batch.ManuallyUpdatePublicationsRequest;
-import no.unit.nva.publication.events.handlers.batch.ResourceChange;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -35,28 +34,32 @@ public final class FileLicenseUpdate implements ManualUpdate {
   }
 
   @Override
-  public ResourceChange apply(Resource resource, ManuallyUpdatePublicationsRequest request) {
-    var filesToUpdate =
-        request.oldValue().equals(request.newValue())
-            ? List.<FileEntry>of()
-            : resource.getFileEntries().stream()
-                .filter(fileEntry -> hasLicense(request.oldValue(), fileEntry))
-                .toList();
-    var fieldChanges =
-        filesToUpdate.stream().map(fileEntry -> licenseChange(fileEntry, request)).toList();
+  public List<FieldChange> plan(Resource resource, ManuallyUpdatePublicationsRequest request) {
+    return filesToUpdate(resource, request).stream()
+        .map(fileEntry -> licenseChange(fileEntry, request))
+        .toList();
+  }
 
-    var shouldPersist = !request.isDryRun() && !filesToUpdate.isEmpty();
-
-    if (shouldPersist) {
-      filesToUpdate.forEach(fileEntry -> updateFileLicense(fileEntry, resource, request));
-    }
-    UpdateLog.logApplied(request, resource, fieldChanges.size(), shouldPersist);
-    return new ResourceChange(resource.getIdentifier().toString(), fieldChanges);
+  @Override
+  public void commit(Resource resource, ManuallyUpdatePublicationsRequest request) {
+    CommitGuard.rejectDryRun(request);
+    filesToUpdate(resource, request)
+        .forEach(fileEntry -> updateFileLicense(fileEntry, resource, request));
   }
 
   private static boolean hasLicense(String license, FileEntry fileEntry) {
     var fileLicense = fileEntry.getFile().getLicense();
     return nonNull(fileLicense) && fileLicense.toString().equals(license);
+  }
+
+  private static List<FileEntry> filesToUpdate(
+      Resource resource, ManuallyUpdatePublicationsRequest request) {
+    if (request.oldValue().equals(request.newValue())) {
+      return List.of();
+    }
+    return resource.getFileEntries().stream()
+        .filter(fileEntry -> hasLicense(request.oldValue(), fileEntry))
+        .toList();
   }
 
   private FieldChange licenseChange(

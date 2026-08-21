@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,13 +53,31 @@ final class ManuallyUpdatePublicationUtil {
     var updater = updaterFor(request.type());
     var matchingResources =
         resources.stream().filter(resource -> updater.matches(resource, request)).toList();
-    var changes =
+    var plans =
         matchingResources.stream()
-            .map(resource -> updater.apply(resource, request))
-            .filter(ResourceChange::hasChanges)
+            .map(resource -> new UpdatePlan(resource, updater.plan(resource, request)))
             .toList();
 
-    return new ManualUpdateResult(matchingResources.size(), changes);
+    plans.forEach(plan -> commitAndLog(updater, plan, request));
+
+    return new ManualUpdateResult(matchingResources.size(), changesOf(plans));
+  }
+
+  private static void commitAndLog(
+      ManualUpdate updater, UpdatePlan plan, ManuallyUpdatePublicationsRequest request) {
+    var persisted = shouldCommit(plan, request);
+    if (persisted) {
+      updater.commit(plan.resource(), request);
+    }
+    UpdateLog.logPlan(request, plan, persisted);
+  }
+
+  private static boolean shouldCommit(UpdatePlan plan, ManuallyUpdatePublicationsRequest request) {
+    return !request.isDryRun() && plan.hasChanges();
+  }
+
+  private static List<ResourceChange> changesOf(Collection<UpdatePlan> plans) {
+    return plans.stream().filter(UpdatePlan::hasChanges).map(UpdatePlan::toResourceChange).toList();
   }
 
   private ManualUpdate updaterFor(ManualUpdateType type) {

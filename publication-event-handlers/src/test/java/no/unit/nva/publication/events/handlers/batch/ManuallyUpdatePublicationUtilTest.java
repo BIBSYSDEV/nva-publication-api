@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomApprovals;
 import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithAffiliation;
 import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithId;
@@ -16,6 +17,11 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -38,6 +44,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -61,6 +68,8 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   private static final String PROJECT_ID_PATH = "/projects/0/id";
   private static final String PROJECT_PATH_AT_INDEX_0 = "/projects/0";
   private static final String PROJECT_PATH_AT_INDEX_1 = "/projects/1";
+  private static final String EMPTY_RIGHTS_HOLDER = "";
+  private static final String UPDATE_FAILED_MESSAGE = "Update failed";
 
   private ManuallyUpdatePublicationUtil publicationUtil;
   private ResourceService resourceService;
@@ -286,6 +295,31 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   }
 
   @Test
+  void planShouldLeaveResourceUntouchedWhenDryRunIsNotRequested() {
+    var resources = createResourcesWithProjects(List.of(this::oldProject));
+    var projectUpdate = updaterFor(PROJECT);
+
+    resources.forEach(resource -> projectUpdate.plan(resource, createProjectUpdateRequest()));
+
+    resources.forEach(
+        resource -> {
+          assertThat(resource.getProjects(), contains(oldProject()));
+          assertThat(fetchProjects(resource), contains(oldProject()));
+        });
+  }
+
+  @Test
+  void planShouldNotReportChangesCausedBySerializationRoundTrip() {
+    var resource = createResourcesWithProjects(List.of(this::oldProject)).getFirst();
+    resource.setRightsHolder(EMPTY_RIGHTS_HOLDER);
+    var projectUpdate = updaterFor(PROJECT);
+
+    var fieldChanges = projectUpdate.plan(resource, createProjectUpdateRequest());
+
+    assertThat(changedPaths(fieldChanges), contains(PROJECT_ID_PATH));
+  }
+
+  @Test
   void updateWithoutDryRunShouldReportSameChangesAsDryRun() {
     var dryRunResources = createResourcesWithProjects(List.of(this::oldProject));
     var updatedResources = createResourcesWithProjects(List.of(this::oldProject));
@@ -298,8 +332,71 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
     assertEquals(fieldChangesOf(dryRunChanges), fieldChangesOf(updateChanges));
   }
 
+  @Test
+  void updateShouldPersistTheProjectItReportsAsChanged() {
+    var resources = createResourcesWithProjects(List.of(this::oldProject));
+
+    var changes = publicationUtil.update(resources, createProjectUpdateRequest()).changes();
+
+    assertEquals(resources.size(), changes.size());
+    changes.forEach(
+        change ->
+            assertEquals(
+                singleFieldChange(change).newValue(),
+                persistedProjectId(resources, change.identifier())));
+  }
+
+  @Test
+  void commitShouldFailWhenDryRunIsRequested() {
+    var resource = createResourcesWithProjects(List.of(this::oldProject)).getFirst();
+    var projectUpdate = updaterFor(PROJECT);
+    var dryRunRequest = createProjectDryRunRequest();
+
+    assertThrows(IllegalStateException.class, () -> projectUpdate.commit(resource, dryRunRequest));
+  }
+
+  @Test
+  void updateShouldLogCommittedResourcesWhenLaterResourceFailsToCommit() {
+    var logRecorder = LogRecorder.forClass(UpdateLog.class);
+    var resources = createResourcesWithProjects(List.of(this::oldProject));
+    var utilWithFailingService =
+        ManuallyUpdatePublicationUtil.create(serviceFailingOn(resources.get(1)));
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> utilWithFailingService.update(resources, createProjectUpdateRequest()));
+
+    assertThat(
+        logRecorder.asString(), containsString(resources.getFirst().getIdentifier().toString()));
+  }
+
   private List<List<FieldChange>> fieldChangesOf(Collection<ResourceChange> changes) {
     return changes.stream().map(ResourceChange::fieldChanges).toList();
+  }
+
+  private List<String> changedPaths(Collection<FieldChange> fieldChanges) {
+    return fieldChanges.stream().map(FieldChange::path).toList();
+  }
+
+  private String persistedProjectId(Collection<Resource> resources, String identifier) {
+    var resource =
+        resources.stream()
+            .filter(candidate -> identifier.equals(candidate.getIdentifier().toString()))
+            .findFirst()
+            .orElseThrow();
+    return fetchProjects(resource).getFirst().getId().toString();
+  }
+
+  private ResourceService serviceFailingOn(Resource failingResource) {
+    var failingService = spy(resourceService);
+    doThrow(new IllegalStateException(UPDATE_FAILED_MESSAGE))
+        .when(failingService)
+        .updateResource(argThat(resource -> isSameResource(resource, failingResource)), any());
+    return failingService;
+  }
+
+  private boolean isSameResource(Resource resource, Resource other) {
+    return nonNull(resource) && other.getIdentifier().equals(resource.getIdentifier());
   }
 
   private FieldChange singleFieldChange(ResourceChange change) {
@@ -505,5 +602,9 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
   private List<Corporation> copyAffiliations(Contributor contributor) {
     return new ArrayList<>(contributor.affiliations());
+  }
+
+  private ManualUpdate updaterFor(ManualUpdateType type) {
+    return ManuallyUpdatePublicationUtil.updatersByType(resourceService).get(type);
   }
 }
