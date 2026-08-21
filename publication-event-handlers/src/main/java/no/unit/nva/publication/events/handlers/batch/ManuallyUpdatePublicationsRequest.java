@@ -46,6 +46,11 @@ public record ManuallyUpdatePublicationsRequest(
         IoUtils.streamToString(inputStream), ManuallyUpdatePublicationsRequest.class);
   }
 
+  @Override
+  public Map<String, String> searchParams() {
+    return isNull(searchParams) ? Map.of() : searchParams;
+  }
+
   public boolean isDryRun() {
     return Boolean.TRUE.equals(dryRun);
   }

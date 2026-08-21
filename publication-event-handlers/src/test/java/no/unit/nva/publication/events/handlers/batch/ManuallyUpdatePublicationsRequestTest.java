@@ -72,6 +72,16 @@ class ManuallyUpdatePublicationsRequestTest {
     assertThrows(IllegalArgumentException.class, () -> createRequestWithSize(randomString()));
   }
 
+  @Test
+  void shouldTreatMissingSearchParamsAsNoFilter() {
+    var request =
+        new ManuallyUpdatePublicationsRequest(
+            PUBLISHER, randomString(), randomString(), null, null, true, NO_LIMIT);
+
+    assertEquals(Map.of(), request.searchParams());
+    assertEquals(DEFAULT_LIMIT, request.maxChanges());
+  }
+
   private static ManuallyUpdatePublicationsRequest createRequest(Boolean dryRun, Integer limit) {
     return new ManuallyUpdatePublicationsRequest(
         PUBLISHER, randomString(), randomString(), Map.of(), null, dryRun, limit);
