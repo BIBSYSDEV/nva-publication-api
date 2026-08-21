@@ -16,6 +16,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -322,6 +323,15 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
         publicationUtil.update(updatedResources, createProjectUpdateRequest()).changes();
 
     assertEquals(fieldChangesOf(dryRunChanges), fieldChangesOf(updateChanges));
+  }
+
+  @Test
+  void commitShouldFailWhenDryRunIsRequested() {
+    var resource = createResourcesWithProjects(List.of(this::oldProject)).getFirst();
+    var projectUpdate = updaterFor(PROJECT);
+    var dryRunRequest = createProjectDryRunRequest();
+
+    assertThrows(IllegalStateException.class, () -> projectUpdate.commit(resource, dryRunRequest));
   }
 
   private List<List<FieldChange>> fieldChangesOf(Collection<ResourceChange> changes) {

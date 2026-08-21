@@ -42,6 +42,7 @@ public final class FileLicenseUpdate implements ManualUpdate {
 
   @Override
   public void commit(Resource resource, ManuallyUpdatePublicationsRequest request) {
+    CommitGuard.rejectDryRun(request);
     filesToUpdate(resource, request)
         .forEach(fileEntry -> updateFileLicense(fileEntry, resource, request));
   }
@@ -51,7 +52,7 @@ public final class FileLicenseUpdate implements ManualUpdate {
     return nonNull(fileLicense) && fileLicense.toString().equals(license);
   }
 
-  private List<FileEntry> filesToUpdate(
+  private static List<FileEntry> filesToUpdate(
       Resource resource, ManuallyUpdatePublicationsRequest request) {
     if (request.oldValue().equals(request.newValue())) {
       return List.of();

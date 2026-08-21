@@ -32,6 +32,7 @@ abstract class ResourceUpdate implements ManualUpdate {
 
   @Override
   public final void commit(Resource resource, ManuallyUpdatePublicationsRequest request) {
+    CommitGuard.rejectDryRun(request);
     var updated = update(resource, request);
     resourceService.updateResource(updated, UserInstance.fromPublication(updated.toPublication()));
   }
