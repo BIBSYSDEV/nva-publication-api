@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.batch.updates;
 
 import static nva.commons.core.attempt.Try.attempt;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.events.handlers.batch.FieldChange;
@@ -24,7 +25,7 @@ abstract class ResourceUpdate implements ManualUpdate {
   public final List<FieldChange> plan(
       Resource resource, ManuallyUpdatePublicationsRequest request) {
     var before = ResourceDiff.snapshot(resource);
-    var after = ResourceDiff.snapshot(update(detachedCopyOf(resource), request));
+    var after = ResourceDiff.snapshot(update(detachedCopyOf(before), request));
     return ResourceDiff.between(before, after);
   }
 
@@ -36,8 +37,7 @@ abstract class ResourceUpdate implements ManualUpdate {
 
   protected abstract Resource update(Resource resource, ManuallyUpdatePublicationsRequest request);
 
-  private Resource detachedCopyOf(Resource resource) {
-    var snapshot = ResourceDiff.snapshot(resource);
+  private Resource detachedCopyOf(JsonNode snapshot) {
     return attempt(() -> JsonUtils.dtoObjectMapper.treeToValue(snapshot, Resource.class))
         .orElseThrow();
   }
