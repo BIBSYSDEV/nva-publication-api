@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -49,18 +50,31 @@ final class ManuallyUpdatePublicationUtil {
         new FileLicenseUpdate(resourceService));
   }
 
-  ManualUpdateResult update(List<Resource> resources, ManuallyUpdatePublicationsRequest request) {
+  ManualUpdateResult update(
+      Collection<Resource> resources, ManuallyUpdatePublicationsRequest request) {
+    return update(resources, request, request.maxChanges());
+  }
+
+  ManualUpdateResult update(
+      Collection<Resource> resources, ManuallyUpdatePublicationsRequest request, int maxChanges) {
     var updater = updaterFor(request.type());
-    var matchingResources =
-        resources.stream().filter(resource -> updater.matches(resource, request)).toList();
-    var plans =
-        matchingResources.stream()
-            .map(resource -> new UpdatePlan(resource, updater.plan(resource, request)))
-            .toList();
+    var remainingResources = resources.iterator();
+    var matchedResources = 0;
+    var changes = new ArrayList<ResourceChange>();
 
-    plans.forEach(plan -> commitAndLog(updater, plan, request));
+    while (changes.size() < maxChanges && remainingResources.hasNext()) {
+      var resource = remainingResources.next();
+      if (updater.matches(resource, request)) {
+        matchedResources++;
+        var plan = new UpdatePlan(resource, updater.plan(resource, request));
+        commitAndLog(updater, plan, request);
+        if (plan.hasChanges()) {
+          changes.add(plan.toResourceChange());
+        }
+      }
+    }
 
-    return new ManualUpdateResult(matchingResources.size(), changesOf(plans));
+    return new ManualUpdateResult(matchedResources, changes);
   }
 
   private static void commitAndLog(
@@ -74,10 +88,6 @@ final class ManuallyUpdatePublicationUtil {
 
   private static boolean shouldCommit(UpdatePlan plan, ManuallyUpdatePublicationsRequest request) {
     return !request.isDryRun() && plan.hasChanges();
-  }
-
-  private static List<ResourceChange> changesOf(Collection<UpdatePlan> plans) {
-    return plans.stream().filter(UpdatePlan::hasChanges).map(UpdatePlan::toResourceChange).toList();
   }
 
   private ManualUpdate updaterFor(ManualUpdateType type) {
