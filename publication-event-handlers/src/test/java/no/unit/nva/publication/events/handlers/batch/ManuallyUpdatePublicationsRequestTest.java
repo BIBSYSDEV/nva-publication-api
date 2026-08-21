@@ -22,6 +22,8 @@ class ManuallyUpdatePublicationsRequestTest {
   private static final int TOO_LARGE_PAGE_SIZE = 1_001;
   private static final int ZERO_PAGE_SIZE = 0;
   private static final String SIZE_PARAM = "size";
+  private static final String BLANK = " ";
+  private static final Map<String, String> SEARCH_PARAMS = Map.of("query", randomString());
 
   @Test
   void shouldRejectRequestWithoutDryRun() {
@@ -79,13 +81,25 @@ class ManuallyUpdatePublicationsRequestTest {
   }
 
   @Test
-  void shouldTreatMissingSearchParamsAsNoFilter() {
-    var request =
-        new ManuallyUpdatePublicationsRequest(
-            PUBLISHER, randomString(), randomString(), null, null, true, NO_LIMIT, NO_PAGE_SIZE);
+  void shouldRejectMissingSearchParams() {
+    assertThrows(IllegalArgumentException.class, () -> createRequestWithSearchParams(null));
+    assertThrows(IllegalArgumentException.class, () -> createRequestWithSearchParams(Map.of()));
+  }
 
-    assertEquals(Map.of(), request.searchParams());
-    assertEquals(DEFAULT_LIMIT, request.maxChanges());
+  @Test
+  void shouldRejectBlankOldValue() {
+    assertThrows(
+        IllegalArgumentException.class, () -> createRequestWithValues(BLANK, randomString()));
+    assertThrows(
+        IllegalArgumentException.class, () -> createRequestWithValues(null, randomString()));
+  }
+
+  @Test
+  void shouldRejectBlankNewValue() {
+    assertThrows(
+        IllegalArgumentException.class, () -> createRequestWithValues(randomString(), BLANK));
+    assertThrows(
+        IllegalArgumentException.class, () -> createRequestWithValues(randomString(), null));
   }
 
   @Test
@@ -105,7 +119,7 @@ class ManuallyUpdatePublicationsRequestTest {
             PUBLISHER,
             randomString(),
             randomString(),
-            Map.of(),
+            SEARCH_PARAMS,
             null,
             true,
             SINGLE_RESOURCE,
@@ -123,7 +137,33 @@ class ManuallyUpdatePublicationsRequestTest {
 
   private static ManuallyUpdatePublicationsRequest createRequest(Boolean dryRun, Integer limit) {
     return new ManuallyUpdatePublicationsRequest(
-        PUBLISHER, randomString(), randomString(), Map.of(), null, dryRun, limit, NO_PAGE_SIZE);
+        PUBLISHER,
+        randomString(),
+        randomString(),
+        SEARCH_PARAMS,
+        null,
+        dryRun,
+        limit,
+        NO_PAGE_SIZE);
+  }
+
+  private static ManuallyUpdatePublicationsRequest createRequestWithSearchParams(
+      Map<String, String> searchParams) {
+    return new ManuallyUpdatePublicationsRequest(
+        PUBLISHER,
+        randomString(),
+        randomString(),
+        searchParams,
+        null,
+        true,
+        NO_LIMIT,
+        NO_PAGE_SIZE);
+  }
+
+  private static ManuallyUpdatePublicationsRequest createRequestWithValues(
+      String oldValue, String newValue) {
+    return new ManuallyUpdatePublicationsRequest(
+        PUBLISHER, oldValue, newValue, SEARCH_PARAMS, null, true, NO_LIMIT, NO_PAGE_SIZE);
   }
 
   private static ManuallyUpdatePublicationsRequest createRequestWithSize(String size) {
@@ -140,6 +180,6 @@ class ManuallyUpdatePublicationsRequestTest {
 
   private static ManuallyUpdatePublicationsRequest createRequestWithPageSize(int pageSize) {
     return new ManuallyUpdatePublicationsRequest(
-        PUBLISHER, randomString(), randomString(), Map.of(), null, true, NO_LIMIT, pageSize);
+        PUBLISHER, randomString(), randomString(), SEARCH_PARAMS, null, true, NO_LIMIT, pageSize);
   }
 }

@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.batch;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static nva.commons.core.StringUtils.isBlank;
 import static nva.commons.core.attempt.Try.attempt;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -32,6 +33,12 @@ public record ManuallyUpdatePublicationsRequest(
           + "The search parameter 'size' is accepted as an alias for 'limit'.";
   public static final String INVALID_PAGE_SIZE_MESSAGE =
       "Field 'pageSize' must be between %d and %d hits, which is what the search api accepts.";
+  public static final String MISSING_VALUES_MESSAGE =
+      "Fields 'oldValue' and 'newValue' are both required: a blank 'oldValue' matches every "
+          + "resource and would rewrite all of them.";
+  public static final String MISSING_SEARCH_PARAMS_MESSAGE =
+      "Field 'searchParams' must hold at least one search parameter, to keep a run from sweeping "
+          + "the whole archive.";
   public static final int DEFAULT_LIMIT = 10_000;
   public static final int DEFAULT_PAGE_SIZE = 100;
   private static final String SIZE_PARAM = "size";
@@ -43,6 +50,12 @@ public record ManuallyUpdatePublicationsRequest(
     if (isNull(dryRun)) {
       throw new IllegalArgumentException(MISSING_DRY_RUN_MESSAGE);
     }
+    if (isBlank(oldValue) || isBlank(newValue)) {
+      throw new IllegalArgumentException(MISSING_VALUES_MESSAGE);
+    }
+    if (isNull(searchParams) || searchParams.isEmpty()) {
+      throw new IllegalArgumentException(MISSING_SEARCH_PARAMS_MESSAGE);
+    }
     validateLimit(requestedLimit(limit, searchParams));
     validatePageSize(pageSize);
   }
@@ -51,11 +64,6 @@ public record ManuallyUpdatePublicationsRequest(
       throws JsonProcessingException {
     return JsonUtils.dtoObjectMapper.readValue(
         IoUtils.streamToString(inputStream), ManuallyUpdatePublicationsRequest.class);
-  }
-
-  @Override
-  public Map<String, String> searchParams() {
-    return isNull(searchParams) ? Map.of() : searchParams;
   }
 
   public boolean isDryRun() {
@@ -77,8 +85,7 @@ public record ManuallyUpdatePublicationsRequest(
   }
 
   private static Integer sizeSearchParam(Map<String, String> searchParams) {
-    return Optional.ofNullable(searchParams)
-        .map(params -> params.get(SIZE_PARAM))
+    return Optional.ofNullable(searchParams.get(SIZE_PARAM))
         .filter(StringUtils::isNotBlank)
         .map(ManuallyUpdatePublicationsRequest::parseLimit)
         .orElse(null);

@@ -72,6 +72,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   private static final String UPDATE_FAILED_MESSAGE = "Update failed";
   private static final Integer NO_LIMIT = null;
   private static final Integer NO_PAGE_SIZE = null;
+  private static final Map<String, String> SEARCH_PARAMS = Map.of("query", randomString());
   private static final int SINGLE_CHANGE = 1;
 
   private ManuallyUpdatePublicationUtil publicationUtil;
@@ -454,7 +455,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   private ManuallyUpdatePublicationsRequest createProjectUpdateRequest(
       String oldIdentifier, String newIdentifier) {
     return new ManuallyUpdatePublicationsRequest(
-        PROJECT, oldIdentifier, newIdentifier, Map.of(), null, false, NO_LIMIT, NO_PAGE_SIZE);
+        PROJECT, oldIdentifier, newIdentifier, SEARCH_PARAMS, null, false, NO_LIMIT, NO_PAGE_SIZE);
   }
 
   private ManuallyUpdatePublicationsRequest createProjectDryRunRequest() {
@@ -462,7 +463,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
         PROJECT,
         OLD_PROJECT_IDENTIFIER,
         NEW_PROJECT_IDENTIFIER,
-        Map.of(),
+        SEARCH_PARAMS,
         null,
         true,
         NO_LIMIT,
@@ -547,7 +548,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
         CONTRIBUTOR_AFFILIATION,
         OLD_AFFILIATION_ID.toString(),
         NEW_AFFILIATION_ID.toString(),
-        Map.of(),
+        SEARCH_PARAMS,
         null,
         true,
         NO_LIMIT,
@@ -559,7 +560,7 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
         CONTRIBUTOR_AFFILIATION,
         OLD_AFFILIATION_ID.toString(),
         NEW_AFFILIATION_ID.toString(),
-        Map.of(),
+        SEARCH_PARAMS,
         null,
         false,
         NO_LIMIT,

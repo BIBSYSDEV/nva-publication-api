@@ -19,14 +19,17 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -98,6 +101,10 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   private static final String SINGLE_HIT_PAGE_PARAM = "size=1";
   private static final String SORT_BY_IDENTIFIER_PARAM = "sort=identifier";
   private static final String NO_AGGREGATION_PARAM = "aggregation=none";
+  private static final String EVENT_WITHOUT_SEARCH_PARAMS =
+      """
+      {"type":"%s","oldValue":"%s","newValue":"%s","comparator":"MATCHES","dryRun":false}
+      """;
   private static final URI NEXT_PAGE_URI =
       URI.create("https://%s/search/resources?sort=identifier&search_after=1".formatted(API_HOST));
   private static final String PUBLISHER_ID_PATH =
@@ -928,22 +935,14 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   }
 
   @Test
-  void shouldSearchWithoutFilterWhenSearchParamsAreMissing() throws IOException {
-    var publisherIdentifier = randomUUID().toString();
-    var publisherId =
-        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
-    var publicationsToUpdate = createMultiplePublicationsWithPublisher(new Publisher(publisherId));
+  void shouldRejectRequestWithoutSearchParams() {
     var event =
         createEventWithoutSearchParams(
-            ManualUpdateType.PUBLISHER, publisherIdentifier, randomUUID().toString());
+            ManualUpdateType.PUBLISHER, randomUUID().toString(), randomUUID().toString());
 
-    mockSearchApiResponseWithPublications(publicationsToUpdate);
-
-    handler.handleRequest(event, output, CONTEXT);
-
-    assertEquals(publicationsToUpdate.size(), readReport().resourcesChanged());
-    assertThat(
-        capturedSearchUris().getFirst().getQuery(), containsString(SORT_BY_IDENTIFIER_PARAM));
+    assertThrows(
+        JsonProcessingException.class, () -> handler.handleRequest(event, output, CONTEXT));
+    verifyNoInteractions(uriRetriever);
   }
 
   @Test
@@ -1083,10 +1082,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
   private static InputStream createEventWithoutSearchParams(
       ManualUpdateType type, String oldValue, String newValue) {
-    return IoUtils.stringToStream(
-        new ManuallyUpdatePublicationsRequest(
-                type, oldValue, newValue, null, MATCHES, false, NO_LIMIT, NO_PAGE_SIZE)
-            .toJsonString());
+    return IoUtils.stringToStream(EVENT_WITHOUT_SEARCH_PARAMS.formatted(type, oldValue, newValue));
   }
 
   private static URI createChannelIdWithIdentifier(
