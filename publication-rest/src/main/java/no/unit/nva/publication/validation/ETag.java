@@ -41,7 +41,7 @@ public final class ETag {
     if (isBlank(value)) {
       throw new IllegalArgumentException(ETAG_MISSING_VALUE_EXCEPTION);
     }
-    return ETag.create(extractUsername(value), extractVersion(value));
+    return create(extractUsername(value), extractVersion(value));
   }
 
   @JacocoGenerated

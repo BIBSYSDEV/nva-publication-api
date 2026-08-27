@@ -66,7 +66,7 @@ public class PublishingService {
   public void publishResource(SortableIdentifier resourceIdentifier, UserInstance userInstance)
       throws ApiGatewayException {
     var resource = getResource(resourceIdentifier);
-    if (PUBLISHED.equals(resource.getStatus())) {
+    if (PUBLISHED == resource.getStatus()) {
       return;
     }
     validatePermissions(resource, userInstance);

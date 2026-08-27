@@ -70,6 +70,7 @@ public class ImportSource implements JsonSerializable {
     INSPERA,
     WISE_FLOW,
     AVHANDLINGSPORTALEN,
+    SIMULA,
     OTHER
   }
 }

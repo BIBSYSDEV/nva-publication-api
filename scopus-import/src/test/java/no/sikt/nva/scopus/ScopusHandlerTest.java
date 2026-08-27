@@ -188,7 +188,7 @@ import nva.commons.core.StringUtils;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.apache.tika.io.TikaInputStream;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -364,7 +364,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
   @Test
   void shouldLogExceptionMessageWhenExceptionOccurs() {
-    final var appender = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(ScopusHandlerTest.class);
 
     createEmptyPiaMock();
 
@@ -382,12 +382,12 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             mockedSearchService(Collections.emptyList()),
             contributorExtractor);
     scopusHandler.handleRequest(event, CONTEXT);
-    assertThat(appender.getMessages(), containsString(expectedMessage));
+    assertThat(logRecorder.messages(), hasItem(containsString(expectedMessage)));
   }
 
   @Test
   void shouldLogExceptionForUnexpectedError() {
-    final var appender = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(ScopusHandlerTest.class);
 
     createEmptyPiaMock();
     var event = createSqsEvent("invalid URI");
@@ -404,7 +404,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
             mockedSearchService(Collections.emptyList()),
             contributorExtractor);
     scopusHandler.handleRequest(event, CONTEXT);
-    assertThat(appender.getMessages(), containsString(expectedMessage));
+    assertThat(logRecorder.messages(), hasItem(containsString(expectedMessage)));
   }
 
   @Test
@@ -1076,7 +1076,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
   @Test
   void shouldNotCreateImportCandidateWhenMissingPublicationType() throws IOException {
-    final var appender = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(ScopusHandlerTest.class);
 
     createEmptyPiaMock();
     scopusData
@@ -1094,7 +1094,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         String.format(PublicationInstanceCreator.MISSING_CITATION_TYPE_MESSAGE, eid);
 
     assertNull(scopusHandler.handleRequest(event, CONTEXT));
-    assertThat(appender.getMessages(), containsString(expectedMessage));
+    assertThat(logRecorder.messages(), hasItem(containsString(expectedMessage)));
   }
 
   @Test

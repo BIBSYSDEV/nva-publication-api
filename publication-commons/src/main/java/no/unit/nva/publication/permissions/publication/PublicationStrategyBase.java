@@ -137,15 +137,15 @@ public class PublicationStrategyBase {
   }
 
   protected boolean isDraft() {
-    return resource.getStatus().equals(DRAFT);
+    return resource.getStatus() == DRAFT;
   }
 
   protected boolean isUnpublished() {
-    return resource.getStatus().equals(UNPUBLISHED);
+    return resource.getStatus() == UNPUBLISHED;
   }
 
   protected boolean isPublished() {
-    return resource.getStatus().equals(PUBLISHED);
+    return resource.getStatus() == PUBLISHED;
   }
 
   private static Boolean publicationInstanceIsDegree(

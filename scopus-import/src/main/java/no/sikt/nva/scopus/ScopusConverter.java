@@ -57,7 +57,7 @@ import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class ScopusConverter {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ScopusConverter.class);
@@ -234,7 +234,7 @@ public class ScopusConverter {
   }
 
   private boolean isOriginalAbstract(AbstractTp abstractTp) {
-    return YesnoAtt.Y.equals(abstractTp.getOriginal());
+    return YesnoAtt.Y == abstractTp.getOriginal();
   }
 
   private List<String> generateTags() {
@@ -297,7 +297,7 @@ public class ScopusConverter {
    */
   private Optional<TitletextTp> getCitationTextTpWhenErCitationType() {
     var citationtypeAtt = getCitationtypeAtt();
-    return citationtypeAtt.isPresent() && ER.equals(citationtypeAtt.get())
+    return citationtypeAtt.isPresent() && ER == citationtypeAtt.get()
         ? getCitationTitleTextTp()
         : Optional.empty();
   }
@@ -323,11 +323,11 @@ public class ScopusConverter {
   }
 
   private boolean isTitleOriginal(TitletextTp titletextTp) {
-    return nonNull(titletextTp) && titletextTp.getOriginal().equals(YesnoAtt.Y);
+    return nonNull(titletextTp) && titletextTp.getOriginal() == YesnoAtt.Y;
   }
 
   private boolean isTitleNonOriginal(TitletextTp titletextTp) {
-    return nonNull(titletextTp) && titletextTp.getOriginal().equals(YesnoAtt.N);
+    return nonNull(titletextTp) && titletextTp.getOriginal() == YesnoAtt.N;
   }
 
   private Set<AdditionalIdentifierBase> generateAdditionalIdentifiers() {

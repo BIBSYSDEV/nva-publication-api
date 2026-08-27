@@ -1,7 +1,5 @@
 package no.unit.nva.publication.model.storage;
 
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -14,13 +12,15 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(DoiRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class DoiRequestDao extends TicketDao implements JoinWithResource, JsonSerializable {
+public class DoiRequestDao extends TicketDao implements JsonSerializable {
 
   public static final String JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX =
-      TicketDao.ALPHABETICALLY_ORDERED_FIRST_TICKET_TYPE;
+      ALPHABETICALLY_ORDERED_FIRST_TICKET_TYPE;
   public static final String TYPE = "DoiRequest";
 
   @JacocoGenerated
@@ -78,10 +78,12 @@ public class DoiRequestDao extends TicketDao implements JoinWithResource, JsonSe
 
   @Override
   public TransactWriteItemsRequest createInsertionTransactionRequest() {
-    TransactWriteItem doiRequestEntry = createDoiRequestInsertionEntry();
-    TransactWriteItem identifierEntry = createUniqueIdentifierEntry();
+    var doiRequestEntry = createDoiRequestInsertionEntry();
+    var identifierEntry = createUniqueIdentifierEntry();
 
-    return new TransactWriteItemsRequest().withTransactItems(identifierEntry, doiRequestEntry);
+    return TransactWriteItemsRequest.builder()
+        .transactItems(identifierEntry, doiRequestEntry)
+        .build();
   }
 
   @Override

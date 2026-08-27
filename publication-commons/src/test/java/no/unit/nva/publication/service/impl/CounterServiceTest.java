@@ -33,6 +33,13 @@ class CounterServiceTest extends ResourcesLocalTest {
   }
 
   @Test
+  void shouldReturnDefaultCounterValueWhenCounterDoesNotExist() {
+    var fetchedCounter = counterService.fetch();
+
+    assertEquals(CounterDao.fromValue(10_000_000), fetchedCounter);
+  }
+
+  @Test
   void shouldIncreaseCounter() {
     var initialCount = counterService.next();
 

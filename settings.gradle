@@ -1,3 +1,22 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    // Redirect nva.* plugin IDs to the Maven Central artifact, our plugins aren't published to the Gradle Plugin Portal
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id.startsWith('nva.')) {
+                useModule("com.github.bibsysdev:nva-gradle-plugins:${requested.version}")
+            }
+        }
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version "${foojayResolverVersion}"
+}
+
 rootProject.name = 'nva-publication-api'
 include 'publication-model'
 include 'publication-model-testing'
@@ -6,12 +25,12 @@ include 'publication-testing'
 include 'publication-commons'
 include 'messages'
 include 'datacite-commons'
+include 'datacite-transform'
 include 'publication-rest'
 include 's3-import-commons'
 include 'publication-doi-commons'
 include 'expansion'
 include 'publication-event-handlers'
-include 'cristin-import'
 include 'tickets'
 include 'schema-org-metadata'
 include 'brage-import'
@@ -20,6 +39,7 @@ include 'scopus-import'
 include 'tickets-test'
 include 'publication-log'
 include 'publication-file'
+include 'publication-file-text'
 
 dependencyResolutionManagement {
     repositories {

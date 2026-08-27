@@ -7,6 +7,7 @@ import static no.unit.nva.publication.events.handlers.delete.DeleteImportCandida
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -29,7 +30,7 @@ import no.unit.nva.testutils.EventBridgeEventBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -56,7 +57,7 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
 
   @Test
   void shouldDeleteImportCandidateSuccessfully() throws NotFoundException {
-    final var appender = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(DeleteImportCandidateEventConsumerTest.class);
     var importCandidate = persistedImportCandidate();
     var event = emulateImportCandidateDeleteEvent(getScopusIdentifier(importCandidate));
     when(uriRetriever.getRawContent(any(), any()))
@@ -65,7 +66,8 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
     assertThrows(
         NotFoundException.class,
         () -> resourceService.getImportCandidateByIdentifier(importCandidate.getIdentifier()));
-    assertThat(appender.getMessages(), containsString("Import candidate has been deleted:"));
+    assertThat(
+        logRecorder.messages(), hasItem(containsString("Import candidate has been deleted:")));
   }
 
   private Optional<String> createResponse(ImportCandidate importCandidate, int hits) {
@@ -89,14 +91,14 @@ public class DeleteImportCandidateEventConsumerTest extends ResourcesLocalTest {
 
   @Test
   void shouldLogScopusIdentifierWhenZeroHitsInResponseFetchingUniqueImportCandidate() {
-    var appender = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(DeleteImportCandidateEventConsumerTest.class);
     var scopusIdentifier = randomString();
     var event = emulateImportCandidateDeleteEvent(scopusIdentifier);
     when(uriRetriever.getRawContent(any(), any())).thenReturn(emptyResponse());
     handler.handleRequest(event, output, CONTEXT);
     assertThat(
-        appender.getMessages(),
-        containsString(String.format(NO_IMPORT_CANDIDATE_FOUND, scopusIdentifier)));
+        logRecorder.messages(),
+        hasItem(containsString(String.format(NO_IMPORT_CANDIDATE_FOUND, scopusIdentifier))));
   }
 
   private static Optional<String> toResponse(ExpandedImportCandidate importCandidate, int hits) {

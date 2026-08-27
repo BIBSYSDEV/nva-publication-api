@@ -3,14 +3,20 @@ package no.unit.nva.model.instancetypes.researchdata;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hamcrest.Matchers.nullValue;
 
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.validation.ValidationError;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class SoftwareSourceCodeTest {
 
@@ -25,8 +31,19 @@ class SoftwareSourceCodeTest {
   }
 
   @Test
-  void shouldThrowWhenSoftwareVersionIsNull() {
-    assertThrows(NullPointerException.class, () -> new SoftwareSourceCode(null, randomUri()));
+  void shouldAllowNullSoftwareVersionToSupportDraftPublications() {
+    var instance = new SoftwareSourceCode(null, randomUri());
+
+    assertThat(instance.softwareVersion(), is(nullValue()));
+  }
+
+  @Test
+  void shouldDeserializeWithoutSoftwareVersionToSupportDraftPublications() throws Exception {
+    var json = "{\"type\":\"SoftwareSourceCode\"}";
+
+    var deserialized = JsonUtils.dtoObjectMapper.readValue(json, PublicationInstance.class);
+
+    assertThat(deserialized, is(equalTo(new SoftwareSourceCode(null, null))));
   }
 
   @Test
@@ -50,6 +67,29 @@ class SoftwareSourceCodeTest {
 
     assertThat(deserialized, is(equalTo(instance)));
     assertThat(deserialized.getInstanceType(), is(equalTo("SoftwareSourceCode")));
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {" ", "\t", "\n"})
+  void shouldReportValidationErrorWhenSoftwareVersionIsBlank(String blankVersion) {
+    var instance = new SoftwareSourceCode(blankVersion, randomUri());
+
+    var errors = instance.validateForPublish();
+
+    assertThat(
+        errors,
+        contains(
+            new ValidationError(
+                SoftwareSourceCode.SOFTWARE_VERSION_REQUIRED_MESSAGE,
+                SoftwareSourceCode.SOFTWARE_VERSION_POINTER)));
+  }
+
+  @Test
+  void shouldReportNoValidationErrorsWhenSoftwareVersionIsPresent() {
+    var instance = new SoftwareSourceCode("1.2.3", randomUri());
+
+    assertThat(instance.validateForPublish(), is(empty()));
   }
 
   @Test

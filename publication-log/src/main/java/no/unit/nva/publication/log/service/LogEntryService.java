@@ -17,13 +17,10 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.logentry.LogOrganization;
 import no.unit.nva.publication.model.business.logentry.LogUser;
-import no.unit.nva.publication.model.business.publicationstate.CreatedResourceEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileUploadedEvent;
 import no.unit.nva.publication.model.business.publicationstate.ImportEvent;
-import no.unit.nva.publication.model.business.publicationstate.ImportedResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.MergedResourceEvent;
+import no.unit.nva.publication.model.business.publicationstate.ImportSourceProvider;
 import no.unit.nva.publication.model.business.publicationstate.ResourceEvent;
-import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEvent;
 import no.unit.nva.publication.service.impl.ResourceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,27 +87,26 @@ public class LogEntryService {
 
   private void createLogEntry(DoiRequest doiRequest) {
     var ticketEvent = doiRequest.getTicketEvent();
-    var user = createUser(ticketEvent.user(), ticketEvent.institution());
+    var user = createLogUser(ticketEvent.user(), ticketEvent.institution());
     ticketEvent
         .toLogEntry(doiRequest.getResourceIdentifier(), doiRequest.getIdentifier(), user)
         .persist(resourceService);
   }
 
   private LogEntry createLogEntry(Resource resource, ResourceEvent resourceEvent) {
-    if (resourceEvent instanceof ImportedResourceEvent
-        || resourceEvent instanceof MergedResourceEvent
-        || resourceEvent instanceof CreatedResourceEvent event && nonNull(event.importSource())
-        || resourceEvent instanceof UpdatedResourceEvent updatedResourceEvent
-            && nonNull(updatedResourceEvent.importSource())) {
-      var organization = fetchOrganization(resourceEvent.institution());
-      return resourceEvent.toLogEntry(resource.getIdentifier(), organization);
-    } else {
-      var user = createUser(resourceEvent.user(), resourceEvent.institution());
-      return resourceEvent.toLogEntry(resource.getIdentifier(), user);
-    }
+    var performedBy =
+        isPerformedBySystem(resourceEvent)
+            ? createLogOrganization(resourceEvent.institution())
+            : createLogUser(resourceEvent.user(), resourceEvent.institution());
+    return resourceEvent.toLogEntry(resource.getIdentifier(), performedBy);
   }
 
-  private LogOrganization fetchOrganization(URI organizationId) {
+  private static boolean isPerformedBySystem(ResourceEvent resourceEvent) {
+    return resourceEvent instanceof ImportSourceProvider provider
+        && nonNull(provider.importSource());
+  }
+
+  private LogOrganization createLogOrganization(URI organizationId) {
     return cristinClient
         .getOrganization(organizationId)
         .map(LogOrganization::fromCristinOrganization)
@@ -120,14 +116,14 @@ public class LogEntryService {
   private void persistFileLogEntry(FileEntry fileEntry) {
     var fileEvent = fileEntry.getFileEvent();
     if (fileEvent instanceof ImportEvent importEvent) {
-      var organization = fetchOrganization(importEvent.institution());
+      var organization = createLogOrganization(importEvent.institution());
       fileEvent.toLogEntry(fileEntry, organization).persist(resourceService);
     } else if (fileEvent instanceof FileUploadedEvent fileUploadedEvent
         && nonNull(fileUploadedEvent.importSource())) {
-      var organization = fetchOrganization(fileUploadedEvent.institution());
+      var organization = createLogOrganization(fileUploadedEvent.institution());
       fileEvent.toLogEntry(fileEntry, organization).persist(resourceService);
     } else {
-      var user = createUser(fileEvent.user(), null);
+      var user = createLogUser(fileEvent.user(), null);
       fileEvent.toLogEntry(fileEntry, user).persist(resourceService);
     }
     var fileIdentifier = fileEntry.getIdentifier();
@@ -140,7 +136,7 @@ public class LogEntryService {
         resourceIdentifier);
   }
 
-  private LogUser createUser(User user, URI institution) {
+  private LogUser createLogUser(User user, URI institution) {
     try {
       var userDto = getUser(user);
       var cristinPersonDto = cristinClient.getPerson(userDto.cristinId()).orElse(null);
@@ -148,6 +144,11 @@ public class LogEntryService {
           cristinClient.getOrganization(userDto.institutionCristinId()).orElse(null);
       return LogUser.create(cristinPersonDto, cristinOrganizationDto);
     } catch (Exception e) {
+      logger.warn(
+          "Failed to enrich LogUser for user {} (institution {}); falling back to minimal record",
+          user,
+          institution,
+          e);
       return LogUser.fromResourceEvent(user, institution);
     }
   }

@@ -16,7 +16,7 @@ public record ImportedResourceEvent(
     URI institution,
     ImportSource importSource,
     SortableIdentifier identifier)
-    implements ResourceEvent {
+    implements ResourceEvent, ImportSourceProvider {
 
   public static ImportedResourceEvent fromImportSource(
       ImportSource importSource, UserInstance userInstance, Instant date) {

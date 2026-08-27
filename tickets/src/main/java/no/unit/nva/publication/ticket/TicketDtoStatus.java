@@ -24,7 +24,7 @@ public enum TicketDtoStatus {
   }
 
   public static TicketDtoStatus parse(String candidate) {
-    return Arrays.stream(TicketDtoStatus.values())
+    return Arrays.stream(values())
         .filter(enumValue -> enumValue.filterByNameOrValue(candidate))
         .collect(SingletonCollector.tryCollect())
         .orElseThrow(fail -> handleParsingError());

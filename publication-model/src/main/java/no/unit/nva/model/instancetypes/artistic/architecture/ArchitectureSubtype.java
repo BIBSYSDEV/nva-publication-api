@@ -25,7 +25,7 @@ public class ArchitectureSubtype {
   public static ArchitectureSubtype fromJson(
       @JsonProperty(TYPE) ArchitectureSubtypeEnum type,
       @JsonProperty(DESCRIPTION) String description) {
-    if (ArchitectureSubtypeEnum.OTHER.equals(type)) {
+    if (ArchitectureSubtypeEnum.OTHER == type) {
       return createOther(description);
     }
     return new ArchitectureSubtype(type);

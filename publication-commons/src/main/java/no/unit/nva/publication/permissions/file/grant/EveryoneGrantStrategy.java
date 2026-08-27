@@ -19,7 +19,7 @@ public final class EveryoneGrantStrategy extends FileStrategyBase implements Fil
   @Override
   public boolean allowsAction(FileOperation permission) {
     if (FileStatus.from(file.getFile()) == FileStatus.OPEN) {
-      return PUBLISHED.equals(resource.getStatus())
+      return PUBLISHED == resource.getStatus()
           && switch (permission) {
             case READ_METADATA -> true;
             case WRITE_METADATA, DELETE -> false;

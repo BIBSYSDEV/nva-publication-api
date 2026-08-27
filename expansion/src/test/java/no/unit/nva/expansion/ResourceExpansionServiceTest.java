@@ -107,7 +107,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
@@ -548,14 +548,15 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
   @ValueSource(strings = {"Resource", "TicketEntry", "Message"})
   void shouldLogTypeAndIdentifierWhenEntityIsExpanded(String type)
       throws ApiGatewayException, JsonProcessingException {
-    final var logAppender = LogUtils.getTestingAppender(ResourceExpansionServiceImpl.class);
+    var logRecorder = LogRecorder.forClass(ResourceExpansionServiceImpl.class);
 
     var entity = findEntity(type);
 
     expansionService.expandEntry(entity, false);
 
     assertThat(
-        logAppender.getMessages(), containsString(type + ": " + entity.getIdentifier().toString()));
+        logRecorder.messages(),
+        hasItem(containsString(type + ": " + entity.getIdentifier().toString())));
   }
 
   @ParameterizedTest

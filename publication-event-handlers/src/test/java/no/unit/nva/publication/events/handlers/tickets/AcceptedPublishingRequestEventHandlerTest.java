@@ -13,6 +13,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
@@ -28,8 +29,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.services.dynamodbv2.model.OperationType;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,7 +70,7 @@ import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.paths.UnixPath;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -271,11 +272,11 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
             .complete(publication, USER_INSTANCE)
             .persistNewTicket(ticketService);
     var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
-    var logger = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(AcceptedPublishingRequestEventHandlerTest.class);
 
     assertThrows(RuntimeException.class, () -> handler.handleRequest(event, outputStream, CONTEXT));
 
-    assertThat(logger.getMessages(), containsString("Resource is not publishable"));
+    assertThat(logRecorder.messages(), hasItem(containsString("Resource is not publishable")));
   }
 
   @Test
@@ -311,13 +312,14 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
             .persistNewTicket(ticketService);
     var handlerThrowingException = handlerWithResourceServiceThrowingExceptionWhenFetchingTicket();
     var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
-    var logger = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(AcceptedPublishingRequestEventHandlerTest.class);
 
     assertThrows(
         RuntimeException.class,
         () -> handlerThrowingException.handleRequest(event, outputStream, CONTEXT));
 
-    assertThat(logger.getMessages(), containsString("Could not fetch PublishingRequest"));
+    assertThat(
+        logRecorder.messages(), hasItem(containsString("Could not fetch PublishingRequest")));
   }
 
   @Test

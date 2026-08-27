@@ -6,8 +6,6 @@ import static no.unit.nva.publication.model.business.TicketEntry.setServiceContr
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import java.net.URI;
 import java.time.Clock;
 import java.util.List;
@@ -33,11 +31,11 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.FunctionWithException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
-@SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class TicketService extends ServiceWithTransactions {
 
   private static final Logger logger = LoggerFactory.getLogger(TicketService.class);
@@ -53,12 +51,12 @@ public class TicketService extends ServiceWithTransactions {
   private final String tableName;
 
   public TicketService(
-      AmazonDynamoDB client, RawContentRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
+      DynamoDbClient client, RawContentRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
     this(client, DEFAULT_IDENTIFIER_PROVIDER, uriRetriever, cristinUnitsUtil);
   }
 
   protected TicketService(
-      AmazonDynamoDB client,
+      DynamoDbClient client,
       Supplier<SortableIdentifier> identifierProvider,
       RawContentRetriever uriRetriever,
       CristinUnitsUtil cristinUnitsUtil) {
@@ -252,8 +250,6 @@ public class TicketService extends ServiceWithTransactions {
     ticketEntry.validateCreationRequirements(publication);
     var request = ticketEntry.toDao().createInsertionTransactionRequest();
     sendTransactionWriteRequest(request);
-    FunctionWithException<TicketEntry, TicketEntry, NotFoundException> fetchTicketProvider =
-        this::fetchTicket;
     return (T) ticketEntry;
   }
 }

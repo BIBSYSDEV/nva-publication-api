@@ -5,6 +5,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsIterableContaining.hasItems;
@@ -23,7 +24,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Status;
@@ -70,12 +71,12 @@ class PersonApiClientTest {
   @Test
   void shouldReturnBadGatewayWhenResponseIsNotSuccessful()
       throws IOException, InterruptedException {
-    var logger = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(PersonApiClientTest.class);
     personApiClient =
         new PersonApiClient(createMockHttpClientReturningResponse(badRequestResponse()));
     assertThrows(
         BadGatewayException.class, () -> personApiClient.fetchAffiliationsForUser(inputFeideId));
-    assertThat(logger.getMessages(), containsString(errorMessage));
+    assertThat(logRecorder.messages(), hasItem(containsString(errorMessage)));
   }
 
   @SuppressWarnings("unchecked")

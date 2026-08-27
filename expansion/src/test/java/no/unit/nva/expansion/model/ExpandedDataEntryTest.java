@@ -14,6 +14,7 @@ import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
@@ -84,7 +85,7 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
@@ -173,7 +174,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
   @Test
   void shouldExpandImportCandidateCristinOrgWhenAffiliatedWithNvaCustomer() {
-    final var logger = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(ExpandedDataEntryTest.class);
     var importCandidate = randomImportCandidate(BOOK_SAMPLE);
     FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
     importCandidate.getEntityDescription().contributors().stream()
@@ -187,7 +188,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                     .map(Organization::getId))
         .forEach(this::addResponsesForCristinCustomer);
     ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-    assertThat(logger.getMessages(), containsString("is nva customer: true"));
+    assertThat(logRecorder.messages(), hasItem(containsString("is nva customer: true")));
   }
 
   private void addResponsesForCristinCustomer(URI uri) {
@@ -220,7 +221,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
   @Test
   void shouldLogErrorWhenResponseFromChannelRegistryIsNotOk() {
-    final var logger = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(ExpandedDataEntryTest.class);
     var importCandidate = randomImportCandidate(BOOK_SAMPLE);
     FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
     var channelUri =
@@ -231,12 +232,13 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     uriRetriever.registerResponse(
         channelUri, SC_FORBIDDEN, MediaType.ANY_APPLICATION_TYPE, randomString());
     ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-    assertThat(logger.getMessages(), containsString("Not Ok response from channel registry"));
+    assertThat(
+        logRecorder.messages(), hasItem(containsString("Not Ok response from channel registry")));
   }
 
   @Test
   void shouldLogErrorWhenResponseFromChannelRegistryResponseIsNonsense() {
-    final var logger = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(ExpandedDataEntryTest.class);
     var importCandidate = randomImportCandidate(BOOK_SAMPLE);
     FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
     var channelUri =
@@ -247,12 +249,14 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     uriRetriever.registerResponse(
         channelUri, SC_OK, MediaType.ANY_APPLICATION_TYPE, randomString());
     ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
-    assertThat(logger.getMessages(), containsString("Failed to parse channel registry response"));
+    assertThat(
+        logRecorder.messages(),
+        hasItem(containsString("Failed to parse channel registry response")));
   }
 
   @Test
   void shouldExpandImportCandidateJournalSuccessfullyWhenBadResponseFromChannelRegistry() {
-    final var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
+    var logRecorder = LogRecorder.forClass(JournalExpansionServiceImpl.class);
     var journalId = randomUri();
     var journalContext = new Journal(journalId);
     var importCandidate = randomImportCandidate(journalContext);
@@ -264,7 +268,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         is(equalTo(expandedImportCandidate.identifyExpandedEntry())));
     assertThat(
         expandedImportCandidate.getJournal(), is(equalTo(new ExpandedJournal(journalId, null))));
-    assertThat(logAppender.getMessages(), containsString("Not Ok response from channel registry"));
+    assertThat(
+        logRecorder.messages(), hasItem(containsString("Not Ok response from channel registry")));
   }
 
   private void overrideStandardResponseWithNotFoundFromChannelRegistry(
@@ -350,7 +355,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
   @Test
   void shouldLogFailureToParseChannelRegistryResponse() {
-    final var logAppender = LogUtils.getTestingAppender(JournalExpansionServiceImpl.class);
+    var logRecorder = LogRecorder.forClass(JournalExpansionServiceImpl.class);
     var journalId = randomUri();
     var journalContext = new Journal(journalId);
     var importCandidate = randomImportCandidate(journalContext);
@@ -364,7 +369,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     assertThat(
         expandedImportCandidate.getJournal(), is(equalTo(new ExpandedJournal(journalId, null))));
     assertThat(
-        logAppender.getMessages(), containsString("Failed to parse channel registry response"));
+        logRecorder.messages(),
+        hasItem(containsString("Failed to parse channel registry response")));
   }
 
   private void overrideDefaultFakeResponseToReturnNonsensicalResponse(

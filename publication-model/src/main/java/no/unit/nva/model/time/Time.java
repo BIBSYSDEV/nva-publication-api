@@ -33,7 +33,7 @@ public interface Time {
   }
 
   static java.time.Instant convertToInstant(String candidate) {
-    return Time.isInstant(candidate)
+    return isInstant(candidate)
         ? java.time.Instant.parse(candidate)
         : java.time.Instant.parse(candidate + ZEROED_MILLISECONDS_IN_TZ);
   }

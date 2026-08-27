@@ -28,14 +28,12 @@ public enum ArtisticDesignSubtypeEnum {
   @Deprecated
   @JsonCreator
   public static ArtisticDesignSubtypeEnum parse(String candidate) {
-    return "Other".equalsIgnoreCase(candidate)
-        ? ArtisticDesignSubtypeEnum.OTHER
-        : inlineableParseMethod(candidate);
+    return "Other".equalsIgnoreCase(candidate) ? OTHER : inlineableParseMethod(candidate);
   }
 
   // @JsonCreator
   public static ArtisticDesignSubtypeEnum inlineableParseMethod(String candidate) {
-    return Arrays.stream(ArtisticDesignSubtypeEnum.values())
+    return Arrays.stream(values())
         .filter(subType -> subType.getType().equalsIgnoreCase(candidate))
         .collect(SingletonCollector.collect());
   }

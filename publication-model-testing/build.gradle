@@ -1,17 +1,16 @@
-dependencies {
-    implementation project(":publication-model")
-    implementation( nvaLibs.core )
-    implementation( libs.nva.language )
-    implementation( nvaLibs.identifiers )
-    implementation ( nvaLibs.json )
-    implementation( nvaLibs.testutils )
-    implementation( nvaCatalog.datafaker )
-    implementation( nvaCatalog.javers )
-    implementation( nvaCatalog.jackson.annotations )
+plugins {
+    id 'nva.publication.api.java-conventions'
 }
 
-tasks.named('check').configure {
-    dependsOn -= [
-        jacocoTestCoverageVerification
-    ]
+dependencies {
+    api(nvaCatalog.jackson.annotations)
+    api(nvaCatalog.nva.language)
+    api(project(":publication-model"))
+    implementation(nvaCatalog.datafaker)
+    implementation(nvaLibs.core)
+    implementation(nvaLibs.identifiers)
+    implementation(nvaLibs.testutils)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
 }

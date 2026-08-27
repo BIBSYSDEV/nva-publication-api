@@ -16,7 +16,7 @@ public record MergedResourceEvent(
     URI institution,
     ImportSource importSource,
     SortableIdentifier identifier)
-    implements ResourceEvent {
+    implements ResourceEvent, ImportSourceProvider {
 
   public static MergedResourceEvent fromImportSource(
       ImportSource importSource, UserInstance userInstance, Instant date) {

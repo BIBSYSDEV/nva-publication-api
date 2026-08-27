@@ -12,8 +12,11 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
+import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -29,10 +32,13 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import no.unit.nva.clients.CustomerDto;
+import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Reference;
+import no.unit.nva.model.instancetypes.researchdata.SoftwareSourceCode;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -54,10 +60,15 @@ import org.zalando.problem.Problem;
 
 class PublishPublicationHandlerTest extends ResourcesLocalTest {
 
+  private static final String EXTERNAL_CLIENT_ID = "external-client-id";
+  private static final String SCOPES_THIRD_PARTY_PUBLICATION_UPSERT =
+      "https://api.nva.unit.no/scopes/third-party/publication-upsert";
+
   private Context context;
   private ByteArrayOutputStream output;
   private ResourceService resourceService;
   private TicketService ticketService;
+  private IdentityServiceClient identityServiceClient;
   private PublishPublicationHandler handler;
 
   @BeforeEach
@@ -67,12 +78,13 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
     output = new ByteArrayOutputStream();
     resourceService = getResourceService(client);
     ticketService = getTicketService();
-    var identityServiceClient = mock(IdentityServiceClient.class);
+    identityServiceClient = mock(IdentityServiceClient.class);
     when(identityServiceClient.getCustomerById(any()))
         .thenReturn(customerWithWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue()));
     var publishingService =
         new PublishingService(resourceService, ticketService, identityServiceClient);
-    handler = new PublishPublicationHandler(publishingService, new Environment());
+    handler =
+        new PublishPublicationHandler(publishingService, identityServiceClient, new Environment());
   }
 
   @Test
@@ -122,6 +134,28 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
   }
 
   @Test
+  void shouldReturnBadRequestWithStructuredErrorWhenPublishingSoftwareSourceCodeWithoutVersion()
+      throws IOException, BadRequestException {
+    var publication = createSoftwareSourceCodePublicationWithoutVersion();
+    var request = createRequestWithUserWithPermissionsToPublishPublication(publication);
+
+    handler.handleRequest(request, output, context);
+
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    assertEquals(HTTP_BAD_REQUEST, response.getStatusCode());
+
+    var body = dtoObjectMapper.readTree(response.getBody());
+    var errors = body.get("errors");
+    assertThat(errors.isArray(), is(true));
+    assertThat(errors.size(), is(1));
+    assertThat(
+        errors.get(0).get("detail").asText(),
+        is(SoftwareSourceCode.SOFTWARE_VERSION_REQUIRED_MESSAGE));
+    assertThat(
+        errors.get(0).get("pointer").asText(), is(SoftwareSourceCode.SOFTWARE_VERSION_POINTER));
+  }
+
+  @Test
   void shouldAllowMoreThanMaxDynamodbTransactionsOnUpdate()
       throws IOException, BadRequestException {
     var pub = randomNonDegreePublication().copy().withStatus(PublicationStatus.DRAFT).build();
@@ -159,6 +193,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
         new PublishPublicationHandler(
             new PublishingService(
                 resourceService, ticketService, mock(IdentityServiceClient.class)),
+            identityServiceClient,
             new Environment());
     publishPublicationHandler.handleRequest(request, output, context);
 
@@ -171,6 +206,19 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
   void shouldReturnOkWhenPublishingPublication() throws IOException, BadRequestException {
     var publication = createPublication();
     var request = createRequestWithUserWithPermissionsToPublishPublication(publication);
+
+    handler.handleRequest(request, output, context);
+
+    var response = GatewayResponse.fromOutputStream(output, Void.class);
+
+    assertEquals(HTTP_ACCEPTED, response.getStatusCode());
+  }
+
+  @Test
+  void shouldPublishWhenExternalClientOwnsResource()
+      throws IOException, BadRequestException, NotFoundException {
+    var publication = createPublication();
+    var request = createExternalClientRequest(publication);
 
     handler.handleRequest(request, output, context);
 
@@ -201,6 +249,19 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
         .persistNew(resourceService, UserInstance.fromPublication(publication));
   }
 
+  private Publication createSoftwareSourceCodePublicationWithoutVersion()
+      throws BadRequestException {
+    var publication = randomNonDegreePublication().copy().withDoi(null).build();
+    var instanceWithoutVersion = new SoftwareSourceCode(null, randomUri());
+    var reference = new Reference.Builder().withPublicationInstance(instanceWithoutVersion).build();
+    var entityDescription =
+        publication.getEntityDescription().copy().withReference(reference).build();
+    var publicationWithSoftwareSourceCode =
+        publication.copy().withEntityDescription(entityDescription).build();
+    return Resource.fromPublication(publicationWithSoftwareSourceCode)
+        .persistNew(resourceService, UserInstance.fromPublication(publication));
+  }
+
   private InputStream createRequestWithUserWithoutPermissions(
       SortableIdentifier publicationIdentifier) throws JsonProcessingException {
     return new HandlerRequestBuilder<Void>(dtoObjectMapper)
@@ -221,6 +282,23 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
         .withPersonCristinId(randomUri())
         .withTopLevelCristinOrgId(publication.getResourceOwner().getOwnerAffiliation())
         .withAccessRights(publication.getPublisher().getId(), AccessRight.MANAGE_RESOURCES_STANDARD)
+        .build();
+  }
+
+  private InputStream createExternalClientRequest(Publication publication)
+      throws JsonProcessingException, NotFoundException {
+    var externalClientResponse =
+        new GetExternalClientResponse(
+            EXTERNAL_CLIENT_ID,
+            publication.getResourceOwner().getOwner().getValue(),
+            publication.getPublisher().getId(),
+            publication.getResourceOwner().getOwnerAffiliation());
+    when(identityServiceClient.getExternalClient(any())).thenReturn(externalClientResponse);
+
+    return new HandlerRequestBuilder<Void>(dtoObjectMapper)
+        .withPathParameters(publicationIdentifierPathParam(publication.getIdentifier()))
+        .withScope(SCOPES_THIRD_PARTY_PUBLICATION_UPSERT)
+        .withAuthorizerClaim(CLIENT_ID_CLAIM, EXTERNAL_CLIENT_ID)
         .build();
   }
 

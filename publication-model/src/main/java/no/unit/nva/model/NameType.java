@@ -44,8 +44,6 @@ public enum NameType {
                     format(
                         ERROR_MESSAGE_TEMPLATE,
                         value,
-                        stream(NameType.values())
-                            .map(NameType::toString)
-                            .collect(joining(DELIMITER)))));
+                        stream(values()).map(NameType::toString).collect(joining(DELIMITER)))));
   }
 }

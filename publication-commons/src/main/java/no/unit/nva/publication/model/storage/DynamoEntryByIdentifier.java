@@ -5,9 +5,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AN
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_AND_IDENTIFIER_INDEX_SORT_KEY_NAME;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -15,6 +12,9 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 
 public interface DynamoEntryByIdentifier {
 
@@ -32,7 +32,7 @@ public interface DynamoEntryByIdentifier {
 
   Entity getData();
 
-  default Dao fetchByIdentifier(AmazonDynamoDB client, String tableName) throws NotFoundException {
+  default Dao fetchByIdentifier(DynamoDbClient client, String tableName) throws NotFoundException {
     var conditionExpression = "#IndexKey = :IndexKeyValue AND #SortKey = :SortKeyValue";
 
     Map<String, String> expressionAttributeNames =
@@ -42,19 +42,20 @@ public interface DynamoEntryByIdentifier {
 
     Map<String, AttributeValue> expressionAttributeValues =
         Map.of(
-            ":IndexKeyValue", new AttributeValue(this.getByTypeAndIdentifierPartitionKey()),
-            ":SortKeyValue", new AttributeValue(this.getByTypeAndIdentifierSortKey()));
+            ":IndexKeyValue", AttributeValue.fromS(this.getByTypeAndIdentifierPartitionKey()),
+            ":SortKeyValue", AttributeValue.fromS(this.getByTypeAndIdentifierSortKey()));
 
     var query =
-        new QueryRequest()
-            .withTableName(tableName)
-            .withIndexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
-            .withKeyConditionExpression(conditionExpression)
-            .withExpressionAttributeNames(expressionAttributeNames)
-            .withExpressionAttributeValues(expressionAttributeValues);
+        QueryRequest.builder()
+            .tableName(tableName)
+            .indexName(BY_TYPE_AND_IDENTIFIER_INDEX_NAME)
+            .keyConditionExpression(conditionExpression)
+            .expressionAttributeNames(expressionAttributeNames)
+            .expressionAttributeValues(expressionAttributeValues)
+            .build();
 
     var result =
-        client.query(query).getItems().stream()
+        client.query(query).items().stream()
             .collect(SingletonCollector.tryCollect())
             .orElseThrow(fail -> handleGetResourceByIdentifierError(this.getIdentifier()));
 

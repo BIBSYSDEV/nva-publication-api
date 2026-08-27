@@ -17,7 +17,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.s3.AmazonS3;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -43,6 +42,7 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.s3.S3Client;
 
 class DeleteFileHandlerTest extends ResourcesLocalTest {
 
@@ -56,7 +56,7 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
     super.init();
     resourceService = getResourceService(client);
     var fileService =
-        new FileService(mock(AmazonS3.class), mock(CustomerApiClient.class), resourceService);
+        new FileService(mock(S3Client.class), mock(CustomerApiClient.class), resourceService);
     handler = new DeleteFileHandler(fileService, new Environment());
     output = new ByteArrayOutputStream();
   }
@@ -215,7 +215,7 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
                 FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance)));
     doThrow(new RuntimeException()).when(resourceService).updateFile(any());
     return new DeleteFileHandler(
-        new FileService(mock(AmazonS3.class), mock(CustomerApiClient.class), resourceService),
+        new FileService(mock(S3Client.class), mock(CustomerApiClient.class), resourceService),
         new Environment());
   }
 }

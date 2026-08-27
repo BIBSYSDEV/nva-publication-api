@@ -65,7 +65,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class UpdatePublicationHandler
     extends ApiGatewayHandler<PublicationRequest, PublicationResponse> {
 

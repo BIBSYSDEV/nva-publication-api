@@ -4,6 +4,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -26,7 +27,7 @@ import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.hamcrest.Matcher;
 import org.hamcrest.beans.HasPropertyWithValue;
 import org.hamcrest.core.Every;
@@ -79,10 +80,10 @@ public class DeleteImportCandidatesEventEmitterTest {
             ApplicationConstants.EVENT_BUS_NAME);
     s3Driver = new S3Driver(s3Client, "ignoredValue");
     handler = new DeleteImportCandidatesEventEmitter(s3Client, eventBridgeClient);
-    var appender = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(DeleteImportCandidatesEventEmitterTest.class);
     var s3Event = createS3Event(RandomDataGenerator.randomString());
     handler.handleRequest(s3Event, CONTEXT);
-    assertThat(appender.getMessages(), containsString("Not emitted events"));
+    assertThat(logRecorder.messages(), hasItem(containsString("Not emitted events")));
   }
 
   private static Matcher<Iterable<?>> everyItemIs() {

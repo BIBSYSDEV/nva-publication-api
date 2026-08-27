@@ -1,62 +1,58 @@
+plugins {
+    id 'nva.publication.api.java-conventions'
+}
+
 dependencies {
     //This package is added by SAM template in the runtime environment
-    implementation(project(':publication-commons')) {
+    api(project(':publication-commons')) {
         exclude group: "software.amazon.ion", module: "ion-java"
     }
-    implementation project(':datacite-commons')
-    implementation project(':schema-org-metadata')
-    implementation project(":tickets")
-    implementation project(":publication-event-handlers")
-
-    implementation nvaLibs.apigateway
-    implementation nvaLibs.core
-    implementation nvaLibs.auth
-    implementation nvaLibs.json
-    implementation nvaLibs.s3
-    implementation nvaLibs.identifiers
-    implementation nvaLibs.clients
-    implementation project(":publication-model")
-    implementation nvaLibs.secrets
-
-    implementation libs.nva.doi.partner.data
-
-    implementation libs.bundles.jaxb
-    implementation nvaCatalog.jackson.databind
-    implementation nvaCatalog.jackson.core
-    implementation nvaCatalog.bundles.logging
-    implementation libs.bundles.jaxb
-
-    implementation nvaCatalog.aws.sdk.dynamo
-    implementation nvaCatalog.aws.lambda.core
-    implementation nvaCatalog.httpcore5
-    implementation nvaCatalog.aws.sdk2.secrets
-    implementation nvaCatalog.aws.sdk2.s3
-    implementation nvaCatalog.zalando
-    implementation nvaCatalog.aws.sdk2.eventbridge
-    implementation nvaCatalog.aws.sdk2.urlconnection
-    implementation libs.bundles.validation
-
-    implementation libs.apache.commons.text
-
-    testImplementation project(":publication-testing")
-    testImplementation project(":tickets-test")
-    testImplementation libs.mockito.junit.jupiter
-    testImplementation nvaCatalog.javers
-    testImplementation project(":publication-model-testing")
-    testImplementation nvaLibs.logutils
-    testImplementation nvaLibs.testutils
-    testImplementation nvaCatalog.zalando
-    testImplementation nvaCatalog.bundles.wiremock
-    testImplementation(nvaCatalog.httpcore5)
-
-    testImplementation(nvaCatalog.aws.dynamodb.local) {
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
-    }
-
-    compileOnly(nvaCatalog.aws.sdk.apigateway) {
-        because "PMD complains for the com/amazonaws/regions/Regions class"
-    }
+    api(nvaCatalog.aws.lambda.core)
+    api(nvaCatalog.aws.sdk2.dynamo)
+    api(nvaCatalog.aws.sdk2.eventbridge)
+    api(nvaCatalog.aws.sdk2.s3)
+    api(nvaCatalog.aws.sdk2.secrets)
+    api(nvaCatalog.jackson.annotations)
+    api(nvaCatalog.jackson.databind)
+    api(nvaLibs.apigateway)
+    api(nvaLibs.auth)
+    api(nvaLibs.clients)
+    api(nvaLibs.core)
+    api(nvaLibs.identifiers)
+    api(nvaLibs.json)
+    api(nvaLibs.secrets)
+    api(project(":publication-model"))
+    implementation(libs.jakarta.validation.api)
+    implementation(nvaCatalog.aws.sdk2.auth)
+    implementation(nvaCatalog.aws.sdk2.dynamodbenhanced)
+    implementation(nvaCatalog.aws.sdk2.regions)
+    implementation(nvaCatalog.httpcore4)
+    implementation(nvaCatalog.httpcore5)
+    implementation(nvaCatalog.jackson.core)
+    implementation(nvaCatalog.log4j.core)
+    implementation(nvaCatalog.slf4j.api)
+    implementation(project(":datacite-transform"))
+    implementation(project(":publication-event-handlers"))
+    implementation(project(':datacite-commons'))
+    implementation(project(':schema-org-metadata'))
+    runtimeOnly(libs.apache.bval)
+    testImplementation(nvaCatalog.aws.sdk2.dynamodblocal)
+    testImplementation(nvaCatalog.aws.sdk2.sdk.core)
+    testImplementation(nvaCatalog.commons.lang)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.javers)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaCatalog.mockito.junit.jupiter)
+    testImplementation(nvaCatalog.wiremock.core)
+    testImplementation(nvaCatalog.wiremock.junit5)
+    testImplementation(nvaCatalog.zalando)
+    testImplementation(nvaLibs.logutils)
+    testImplementation(nvaLibs.testutils)
+    testImplementation(project(":publication-model-testing"))
+    testImplementation(project(":publication-testing"))
+    testImplementation(project(":tickets-test"))
 }
 
 test {
@@ -75,6 +71,6 @@ test {
     environment "RESOURCE_TABLE_NAME", "publications-table"
     environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "some-persisted-bucket"
     environment "IMPORT_CANDIDATES_STORAGE_BUCKET", "some-candidate-bucket"
-    environment "NVA_EVENT_BUS_NAME" , "some-nva-event-bus"
+    environment "NVA_EVENT_BUS_NAME", "some-nva-event-bus"
     environment "COGNITO_AUTHORIZER_URLS", "http://localhost:3000"
 }

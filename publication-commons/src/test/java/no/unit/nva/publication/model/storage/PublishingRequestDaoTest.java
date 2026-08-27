@@ -113,7 +113,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     var persistedRequest = publishingRequest.persistNewTicket(ticketService);
     var queryResult = client.query(query);
     var retrievedByPublicationIdentifier =
-        queryResult.getItems().stream()
+        queryResult.items().stream()
             .map(item -> parseAttributeValuesMap(item, PublishingRequestDao.class))
             .map(PublishingRequestDao::getData)
             .collect(SingletonCollector.collect());

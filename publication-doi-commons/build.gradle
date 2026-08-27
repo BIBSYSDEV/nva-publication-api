@@ -1,11 +1,17 @@
-dependencies {
-    implementation project(":publication-model")
-    implementation nvaLibs.core
-    implementation nvaLibs.json
-    implementation nvaLibs.identifiers
-    implementation nvaCatalog.bundles.jackson
+plugins {
+    id 'nva.publication.api.java-conventions'
+}
 
-    testImplementation nvaLibs.testutils
-    testImplementation project(":publication-model-testing")
-    testImplementation project(":publication-testing")
+dependencies {
+    api(nvaCatalog.jackson.annotations)
+    api(nvaLibs.identifiers)
+    api(nvaLibs.json)
+    api(project(":publication-model"))
+    implementation(nvaLibs.core)
+    runtimeOnly(nvaCatalog.jackson.dataformat.xml)
+    runtimeOnly(nvaCatalog.jackson.module.parameter.names)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaLibs.testutils)
+    testImplementation(project(":publication-model-testing"))
 }

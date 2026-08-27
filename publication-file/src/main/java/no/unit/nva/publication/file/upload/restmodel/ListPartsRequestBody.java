@@ -2,8 +2,8 @@ package no.unit.nva.publication.file.upload.restmodel;
 
 import static java.util.Objects.requireNonNull;
 
-import com.amazonaws.services.s3.model.ListPartsRequest;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import software.amazon.awssdk.services.s3.model.ListPartsRequest;
 
 public record ListPartsRequestBody(String uploadId, String key) {
 
@@ -17,6 +17,6 @@ public record ListPartsRequestBody(String uploadId, String key) {
   }
 
   public ListPartsRequest toListPartsRequest(String bucketName) {
-    return new ListPartsRequest(bucketName, key(), uploadId());
+    return ListPartsRequest.builder().bucket(bucketName).key(key()).uploadId(uploadId()).build();
   }
 }
