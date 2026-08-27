@@ -61,18 +61,28 @@ public final class RequestUtil {
   }
 
   public static UUID getFileIdentifier(RequestInfo requestInfo) throws ApiGatewayException {
-    return Optional.ofNullable(requestInfo.getPathParameters())
-        .map(params -> params.get(FILE_IDENTIFIER))
-        .map(UUID::fromString)
-        .orElseThrow(() -> new BadRequestException(COULD_NOT_GET_FILE_IDENTIFIER));
+    var fileIdentifier =
+        Optional.ofNullable(requestInfo.getPathParameters())
+            .map(params -> params.get(FILE_IDENTIFIER))
+            .orElseThrow(() -> new BadRequestException(COULD_NOT_GET_FILE_IDENTIFIER));
+    try {
+      return UUID.fromString(fileIdentifier);
+    } catch (IllegalArgumentException e) {
+      throw new BadRequestException(IDENTIFIER_IS_NOT_A_VALID_UUID + fileIdentifier);
+    }
   }
 
   public static SortableIdentifier getFileEntryIdentifier(RequestInfo requestInfo)
       throws ApiGatewayException {
-    return Optional.ofNullable(requestInfo.getPathParameters())
-        .map(params -> params.get(FILE_IDENTIFIER))
-        .map(SortableIdentifier::new)
-        .orElseThrow(() -> new BadRequestException(COULD_NOT_GET_FILE_IDENTIFIER));
+    var fileIdentifier =
+        Optional.ofNullable(requestInfo.getPathParameters())
+            .map(params -> params.get(FILE_IDENTIFIER))
+            .orElseThrow(() -> new BadRequestException(COULD_NOT_GET_FILE_IDENTIFIER));
+    try {
+      return new SortableIdentifier(fileIdentifier);
+    } catch (IllegalArgumentException e) {
+      throw new BadRequestException(IDENTIFIER_IS_NOT_A_VALID_UUID + fileIdentifier);
+    }
   }
 
   /**
