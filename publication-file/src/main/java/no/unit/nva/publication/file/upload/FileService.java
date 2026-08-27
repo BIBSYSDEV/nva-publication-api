@@ -134,9 +134,9 @@ public class FileService {
             .withEmbargoDate(uploadRequest.embargoDate());
     return switch (uploadRequest.fileType()) {
       case OpenFile.TYPE:
-        yield builder.build(OpenFile.class);
+        yield builder.buildOpenFile();
       case InternalFile.TYPE:
-        yield builder.build(InternalFile.class);
+        yield builder.buildInternalFile();
       default:
         throw new BadRequestException("Unknown file type: " + uploadRequest.fileType());
     };

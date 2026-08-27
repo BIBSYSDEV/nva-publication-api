@@ -7,7 +7,6 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.TestingUtils.createGeneralSupportRequest;
 import static no.unit.nva.publication.TestingUtils.createUnpersistedPublication;
 import static no.unit.nva.publication.TestingUtils.createUnpublishRequest;
-import static no.unit.nva.publication.TestingUtils.randomPublicationWithoutDoi;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.publication.model.business.TicketStatus.CLOSED;
@@ -15,8 +14,6 @@ import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.model.business.TicketStatus.REMOVED;
 import static no.unit.nva.publication.model.business.UserInstance.fromTicket;
-import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
@@ -38,17 +35,11 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -73,11 +64,9 @@ import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
-import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.TypeProvider;
@@ -97,18 +86,9 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
-import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
-import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
-import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
-import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
-import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsResponse;
 
 public class TicketServiceTest extends ResourcesLocalTest {
 
-  private static final int ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
   public static final String SOME_ASSIGNEE = "some@user";
   private static final UserInstance USER_INSTANCE =
       UserInstance.create(randomString(), randomUri());
@@ -428,20 +408,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var ticketMessages = ticket.fetchMessages(ticketService);
     assertThat(expectedMessage, is(in(ticketMessages)));
     assertThat(unexpectedMessage, is(not(in(ticketMessages))));
-  }
-
-  @ParameterizedTest(name = "ticket type:{0}")
-  @DisplayName("should retrieve eventually consistent ticket")
-  @MethodSource("ticketTypeProvider")
-  void shouldRetrieveEventuallyConsistentTicket(Class<? extends TicketEntry> ticketType)
-      throws ApiGatewayException {
-    var client = mock(DynamoDbClient.class);
-    var expectedTicketEntry = createMockResponsesImitatingEventualConsistency(ticketType, client);
-    var service = new TicketService(client, uriRetriever, cristinUnitsUtil);
-    var response = randomPublishingRequest().persistNewTicket(service);
-    assertThat(response, is(equalTo(expectedTicketEntry)));
-    verify(client, times(ONE_FOR_PUBLICATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL))
-        .getItem(any(GetItemRequest.class));
   }
 
   @ParameterizedTest(name = "ticket type:{0}")
@@ -937,50 +903,6 @@ public class TicketServiceTest extends ResourcesLocalTest {
         super.persistResource(Resource.fromPublication(publication)).toPublication();
 
     return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
-  }
-
-  private TicketEntry createMockResponsesImitatingEventualConsistency(
-      Class<? extends TicketEntry> ticketType, DynamoDbClient client) {
-
-    var publication = mockedPublicationResponse();
-    var mockedGetPublicationResponse = GetItemResponse.builder().item(publication).build();
-    var ticketEntry =
-        createUnpersistedTicket(
-            randomPublicationWithoutDoi().copy().withStatus(PUBLISHED).build(), ticketType);
-    var mockedResponseWhenItemFinallyInPlace =
-        GetItemResponse.builder().item(ticketEntry.toDao().toDynamoFormat()).build();
-
-    when(client.transactWriteItems(any(TransactWriteItemsRequest.class)))
-        .thenReturn(TransactWriteItemsResponse.builder().build());
-    when(client.getItem(any(GetItemRequest.class)))
-        .thenReturn(mockedGetPublicationResponse)
-        .thenThrow(RuntimeException.class)
-        .thenReturn(mockedResponseWhenItemFinallyInPlace);
-
-    var queryResult = QueryResponse.builder().items(List.of(publication)).build();
-    when(client.query(any(QueryRequest.class))).thenReturn(queryResult);
-
-    return ticketEntry;
-  }
-
-  private Map<String, AttributeValue> mockedPublicationResponse() {
-    var publication = randomPublicationWithoutDoi().copy().withStatus(PUBLISHED).build();
-    var resource = Resource.fromPublication(publication);
-    var dao = new ResourceDao(resource);
-    return dao.toDynamoFormat();
-  }
-
-  private PublishingRequestCase randomPublishingRequest() {
-    var request = new PublishingRequestCase();
-    request.setIdentifier(SortableIdentifier.next());
-    request.setOwner(new User(randomString()));
-    request.setResourceIdentifier(SortableIdentifier.next());
-    request.setStatus(COMPLETED);
-    request.setCreatedDate(randomInstant());
-    request.setModifiedDate(randomInstant());
-    request.setCustomerId(randomUri());
-    request.setStatus(randomElement(TicketStatus.values()));
-    return request;
   }
 
   private static Set<CuratingInstitution> getCuratingInstitutions(Publication publication) {

@@ -6,8 +6,6 @@ import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
-import static no.unit.nva.model.associatedartifacts.file.File.APPROVED_FILE_TYPES;
-import static no.unit.nva.model.associatedartifacts.file.File.FINALIZED_FILE_TYPES;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -18,6 +16,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.model.business.Resource;
@@ -109,12 +108,12 @@ public class PublicationStrategyBase {
 
   protected boolean hasApprovedFiles() {
     return resource.getAssociatedArtifacts().stream()
-        .anyMatch(artifact -> APPROVED_FILE_TYPES.contains(artifact.getClass()));
+        .anyMatch(artifact -> artifact instanceof File file && file.isApproved());
   }
 
   protected boolean hasFinalizedFiles() {
     return resource.getAssociatedArtifacts().stream()
-        .anyMatch(artifact -> FINALIZED_FILE_TYPES.contains(artifact.getClass()));
+        .anyMatch(artifact -> artifact instanceof File file && file.isFinalized());
   }
 
   protected boolean isImportedStudentThesis() {

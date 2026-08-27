@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 
 import java.net.URI;
 import java.util.List;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.publication.events.handlers.batch.FieldChange;
 import no.unit.nva.publication.events.handlers.batch.ManualUpdate;
 import no.unit.nva.publication.events.handlers.batch.ManualUpdateType;
@@ -72,12 +73,12 @@ public final class FileLicenseUpdate implements ManualUpdate {
 
   private void updateFileLicense(
       FileEntry fileEntry, Resource resource, ManuallyUpdatePublicationsRequest request) {
+    var currentFile = fileEntry.getFile();
     var updatedFile =
-        fileEntry
-            .getFile()
+        currentFile
             .copy()
             .withLicense(URI.create(request.newValue()))
-            .build(fileEntry.getFile().getClass());
+            .build(FileStatus.from(currentFile));
     fileEntry.update(
         updatedFile, UserInstance.fromPublication(resource.toPublication()), resourceService);
   }

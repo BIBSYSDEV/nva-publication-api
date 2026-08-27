@@ -14,7 +14,7 @@ public class ViewedBy implements Set<User> {
   private final Set<User> views;
 
   public ViewedBy(Set<User> viewedBy) {
-    this.views = Objects.nonNull(viewedBy) ? viewedBy : new HashSet<>();
+    this.views = Objects.nonNull(viewedBy) ? new HashSet<>(viewedBy) : new HashSet<>();
   }
 
   public static ViewedBy empty() {

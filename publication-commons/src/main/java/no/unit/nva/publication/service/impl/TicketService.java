@@ -31,12 +31,11 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.FunctionWithException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
-@SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class TicketService extends ServiceWithTransactions {
 
   private static final Logger logger = LoggerFactory.getLogger(TicketService.class);
@@ -184,15 +183,27 @@ public class TicketService extends ServiceWithTransactions {
       throws ApiGatewayException {
     var publication =
         resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
-    var existingTicket = fetchTicket(ticketEntry);
+    var existingDao = fetchTicketDao(ticketEntry);
+    var existingTicket = (TicketEntry) existingDao.getData();
     injectAssigneeWhenUnassigned(existingTicket, userInstance);
     var completed =
         attempt(() -> existingTicket.complete(publication, userInstance))
             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
 
-    var putItemRequest = completed.toDao().createPutItemRequest();
-    getClient().putItem(putItemRequest);
+    try {
+      getClient()
+          .putItem(
+              completed.toDao().createPutItemRequestWithVersionCheck(existingDao.getVersion()));
+    } catch (ConditionalCheckFailedException e) {
+      throw new ConflictException("Ticket was modified concurrently, please retry");
+    }
     return completed;
+  }
+
+  private TicketDao fetchTicketDao(TicketEntry ticketEntry) throws NotFoundException {
+    var userInstance = UserInstance.fromTicket(ticketEntry);
+    var queryObject = TicketEntry.createQueryObject(userInstance, ticketEntry.getIdentifier());
+    return queryObject.fetchTicket(getClient()).orElseThrow(TicketService::notFoundException);
   }
 
   protected TicketEntry closeTicket(TicketEntry pendingTicket, UserInstance userInstance)
@@ -239,8 +250,6 @@ public class TicketService extends ServiceWithTransactions {
     ticketEntry.validateCreationRequirements(publication);
     var request = ticketEntry.toDao().createInsertionTransactionRequest();
     sendTransactionWriteRequest(request);
-    FunctionWithException<TicketEntry, TicketEntry, NotFoundException> fetchTicketProvider =
-        this::fetchTicket;
-    return (T) fetchEventualConsistentDataEntry(ticketEntry, fetchTicketProvider).orElseThrow();
+    return (T) ticketEntry;
   }
 }

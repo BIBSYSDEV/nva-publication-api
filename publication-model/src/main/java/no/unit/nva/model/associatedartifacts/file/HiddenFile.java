@@ -80,16 +80,6 @@ public class HiddenFile extends File {
   }
 
   @Override
-  public boolean canBeConvertedTo(File file) {
-    return switch (file) {
-      case PendingInternalFile _ -> true;
-      case PendingOpenFile _ -> true;
-      case HiddenFile _ -> true;
-      default -> false;
-    };
-  }
-
-  @Override
   public String getArtifactType() {
     return TYPE;
   }
