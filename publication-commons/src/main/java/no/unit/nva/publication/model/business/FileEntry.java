@@ -271,22 +271,10 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
               .withEmbargoDate(file.getEmbargoDate().orElse(null))
               .withLegalNote(file.getLegalNote())
               .withRightsRetentionStrategy(file.getRightsRetentionStrategy());
-      this.file = buildAs(builder, FileStatus.from(file));
+      this.file = FileStatus.from(file).toFile(builder);
       this.modifiedDate = Instant.now();
     }
     return this;
-  }
-
-  private static File buildAs(File.Builder builder, FileStatus targetStatus) {
-    return switch (targetStatus) {
-      case UPLOADED -> builder.buildUploadedFile();
-      case PENDING_OPEN -> builder.buildPendingOpenFile();
-      case PENDING_INTERNAL -> builder.buildPendingInternalFile();
-      case OPEN -> builder.buildOpenFile();
-      case INTERNAL -> builder.buildInternalFile();
-      case HIDDEN -> builder.buildHiddenFile();
-      case REJECTED -> builder.buildRejectedFile();
-    };
   }
 
   public void setOwnerAffiliation(URI ownerAffiliation) {
@@ -316,7 +304,7 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
               .withEmbargoDate(file.getEmbargoDate().orElse(null))
               .withLegalNote(file.getLegalNote())
               .withRightsRetentionStrategy(file.getRightsRetentionStrategy());
-      this.file = buildAs(builder, FileStatus.from(file));
+      this.file = FileStatus.from(file).toFile(builder);
       this.modifiedDate = Instant.now();
     }
     return this;

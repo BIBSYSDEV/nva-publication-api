@@ -1,6 +1,5 @@
 package no.unit.nva.model.associatedartifacts.file;
 
-import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 
@@ -91,23 +90,7 @@ public enum FileStatus {
   }
 
   public File toFile(File source) {
-    return switch (this) {
-      case UPLOADED -> source.copy().buildUploadedFile();
-      case PENDING_OPEN -> source.copy().buildPendingOpenFile();
-      case PENDING_INTERNAL -> source.copy().buildPendingInternalFile();
-      case OPEN ->
-          source
-              .copy()
-              .withPublishedDate(source.getPublishedDate().orElseGet(Instant::now))
-              .buildOpenFile();
-      case INTERNAL ->
-          source
-              .copy()
-              .withPublishedDate(source.getPublishedDate().orElseGet(Instant::now))
-              .buildInternalFile();
-      case HIDDEN -> source.copy().buildHiddenFile();
-      case REJECTED -> source.copy().buildRejectedFile();
-    };
+    return toFile(source.copy());
   }
 
   public File toFile(File.Builder builder) {
