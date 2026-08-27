@@ -98,7 +98,7 @@ public final class FileScenarioContext {
     if (HAS_EMBARGO.equals(getFileEmbargoConfig())) {
       addEmbargo(file, getFileClassFromString());
     }
-    return FileStatus.from(getFileClassFromString()).toFile(file);
+    return file.build(FileStatus.from(getFileClassFromString()));
   }
 
   private void addEmbargo(Builder fileBuilder, Class<File> fileType) {

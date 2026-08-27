@@ -75,8 +75,10 @@ public final class FileLicenseUpdate implements ManualUpdate {
       FileEntry fileEntry, Resource resource, ManuallyUpdatePublicationsRequest request) {
     var currentFile = fileEntry.getFile();
     var updatedFile =
-        FileStatus.from(currentFile)
-            .toFile(currentFile.copy().withLicense(URI.create(request.newValue())));
+        currentFile
+            .copy()
+            .withLicense(URI.create(request.newValue()))
+            .build(FileStatus.from(currentFile));
     fileEntry.update(
         updatedFile, UserInstance.fromPublication(resource.toPublication()), resourceService);
   }

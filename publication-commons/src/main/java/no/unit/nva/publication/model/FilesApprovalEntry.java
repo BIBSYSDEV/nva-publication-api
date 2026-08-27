@@ -202,7 +202,7 @@ public abstract class FilesApprovalEntry extends TicketEntry {
       throw new IllegalStateException(
           FileStatus.CANNOT_APPROVE_FILE_WITHOUT_LICENSE.formatted(file.getIdentifier()));
     }
-    return status.approve().toFile(file);
+    return file.copy().build(status.approve());
   }
 
   protected boolean canPublishMetadataAndNoFilesToApprove(PublishingWorkflow workflow) {

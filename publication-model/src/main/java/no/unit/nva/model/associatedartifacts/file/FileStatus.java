@@ -88,20 +88,4 @@ public enum FileStatus {
       default -> throw new IllegalStateException("Cannot reject file with status: " + this);
     };
   }
-
-  public File toFile(File source) {
-    return toFile(source.copy());
-  }
-
-  public File toFile(File.Builder builder) {
-    return switch (this) {
-      case UPLOADED -> builder.buildUploadedFile();
-      case PENDING_OPEN -> builder.buildPendingOpenFile();
-      case PENDING_INTERNAL -> builder.buildPendingInternalFile();
-      case OPEN -> builder.buildOpenFile();
-      case INTERNAL -> builder.buildInternalFile();
-      case HIDDEN -> builder.buildHiddenFile();
-      case REJECTED -> builder.buildRejectedFile();
-    };
-  }
 }

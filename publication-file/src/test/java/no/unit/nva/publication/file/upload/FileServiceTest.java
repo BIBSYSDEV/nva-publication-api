@@ -329,11 +329,11 @@ class FileServiceTest extends ResourcesLocalTest {
     var curator = UserInstanceFixture.getDegreeAndFileCuratorFromPublication(publication);
     var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
-    var originalFile = FileStatus.from(clazz).toFile(randomHiddenFile());
+    var originalFile = randomHiddenFile().copy().build(FileStatus.from(clazz));
     FileEntry.create(originalFile, resource.getIdentifier(), curator)
         .persist(resourceService, UserInstance.fromPublication(publication));
 
-    var updatedFile = FileStatus.from(updatedClazz).toFile(originalFile);
+    var updatedFile = originalFile.copy().build(FileStatus.from(updatedClazz));
 
     assertThrows(
         IllegalStateException.class,
@@ -350,11 +350,11 @@ class FileServiceTest extends ResourcesLocalTest {
     var curator = getDegreeAndFileCuratorFromPublication(publication);
     var resource = Resource.fromPublication(publication).persistNew(resourceService, curator);
 
-    var originalFile = FileStatus.from(clazz).toFile(randomHiddenFile());
+    var originalFile = randomHiddenFile().copy().build(FileStatus.from(clazz));
     FileEntry.create(originalFile, resource.getIdentifier(), curator)
         .persist(resourceService, UserInstance.fromPublication(publication));
 
-    var updatedFile = FileStatus.from(updatedClazz).toFile(originalFile);
+    var updatedFile = originalFile.copy().build(FileStatus.from(updatedClazz));
 
     assertDoesNotThrow(
         () ->

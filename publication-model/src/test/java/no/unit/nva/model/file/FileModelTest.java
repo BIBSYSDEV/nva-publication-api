@@ -217,7 +217,7 @@ public class FileModelTest {
   @MethodSource("filesWithPublishedDate")
   void shouldPreservePublishedDateWhenCopyingAndRebuilding(File file) {
     var originalPublishedDate = file.getPublishedDate().orElseThrow();
-    var rebuilt = FileStatus.from(file).toFile(file);
+    var rebuilt = file.copy().build(FileStatus.from(file));
     assertThat(
         Objects.requireNonNull(rebuilt.getPublishedDate().orElse(null)),
         is(equalTo(originalPublishedDate)));

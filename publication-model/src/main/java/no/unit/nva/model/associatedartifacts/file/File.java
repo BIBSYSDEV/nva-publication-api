@@ -447,6 +447,18 @@ public abstract class File implements JsonSerializable, AssociatedArtifact {
       return this;
     }
 
+    public File build(FileStatus status) {
+      return switch (status) {
+        case UPLOADED -> buildUploadedFile();
+        case PENDING_OPEN -> buildPendingOpenFile();
+        case PENDING_INTERNAL -> buildPendingInternalFile();
+        case OPEN -> buildOpenFile();
+        case INTERNAL -> buildInternalFile();
+        case HIDDEN -> buildHiddenFile();
+        case REJECTED -> buildRejectedFile();
+      };
+    }
+
     public File buildOpenFile() {
       var resolvedPublishedDate = nonNull(publishedDate) ? publishedDate : Instant.now();
       return new OpenFile(

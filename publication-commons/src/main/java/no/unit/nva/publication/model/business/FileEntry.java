@@ -263,15 +263,15 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
       this.setFileEvent(FileTypeUpdatedEvent.create(userInstance.getUser(), Instant.now()));
     }
     if (!file.equals(this.file)) {
-      var builder =
+      this.file =
           this.file
               .copy()
               .withPublisherVersion(file.getPublisherVersion())
               .withLicense(file.getLicense())
               .withEmbargoDate(file.getEmbargoDate().orElse(null))
               .withLegalNote(file.getLegalNote())
-              .withRightsRetentionStrategy(file.getRightsRetentionStrategy());
-      this.file = FileStatus.from(file).toFile(builder);
+              .withRightsRetentionStrategy(file.getRightsRetentionStrategy())
+              .build(FileStatus.from(file));
       this.modifiedDate = Instant.now();
     }
     return this;
@@ -296,15 +296,15 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
               userInstance.getTopLevelOrgCristinId(),
               Instant.now(),
               importSource));
-      var builder =
+      this.file =
           this.file
               .copy()
               .withPublisherVersion(file.getPublisherVersion())
               .withLicense(file.getLicense())
               .withEmbargoDate(file.getEmbargoDate().orElse(null))
               .withLegalNote(file.getLegalNote())
-              .withRightsRetentionStrategy(file.getRightsRetentionStrategy());
-      this.file = FileStatus.from(file).toFile(builder);
+              .withRightsRetentionStrategy(file.getRightsRetentionStrategy())
+              .build(FileStatus.from(file));
       this.modifiedDate = Instant.now();
     }
     return this;
@@ -346,7 +346,7 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
       throw new IllegalStateException(
           FileStatus.CANNOT_APPROVE_FILE_WITHOUT_LICENSE.formatted(file.getIdentifier()));
     }
-    this.file = status.approve().toFile(file);
+    this.file = file.copy().build(status.approve());
     var now = Instant.now();
     this.modifiedDate = now;
     this.setFileEvent(FileApprovedEvent.create(user, now));
@@ -361,7 +361,7 @@ public final class FileEntry implements Entity, QueryObject<FileEntry> {
     var now = Instant.now();
     this.setFileEvent(FileRejectedEvent.create(user, now, file.getArtifactType()));
     this.modifiedDate = now;
-    this.file = status.reject().toFile(file);
+    this.file = file.copy().build(status.reject());
     resourceService.updateFile(this);
   }
 
