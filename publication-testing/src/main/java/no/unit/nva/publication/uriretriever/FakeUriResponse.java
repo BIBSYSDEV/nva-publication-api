@@ -214,7 +214,7 @@ public final class FakeUriResponse {
       case Report report when report.getPublisher() instanceof Publisher publisher ->
           setupFakeResponsesForBookTypes(fakeUriRetriever, report, publisher);
       case ResearchData researchData
-          when researchData.getPublisher() instanceof Publisher publisher -> {
+          when researchData.publisher() instanceof Publisher publisher -> {
         var uri = publisher.getId();
         fakeUriRetriever.registerResponse(uri, SC_OK, APPLICATION_JSON_LD, createPublisher(uri));
       }

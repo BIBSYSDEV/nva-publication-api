@@ -279,7 +279,7 @@ class CristinImportPublicationMergerTest {
     var researchData =
         (ResearchData)
             updatedPublication.getEntityDescription().getReference().getPublicationContext();
-    assertThat(researchData.getPublisher(), is(instanceOf(Publisher.class)));
+    assertThat(researchData.publisher(), is(instanceOf(Publisher.class)));
   }
 
   @Test
