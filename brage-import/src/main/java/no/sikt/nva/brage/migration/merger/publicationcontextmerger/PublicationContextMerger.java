@@ -44,6 +44,10 @@ public class PublicationContextMerger {
     }
   }
 
+  protected boolean prioritizesBragePublisher() {
+    return shouldPrioritizeBragePublisher;
+  }
+
   public PublishingHouse getPublisher(PublishingHouse oldPublisher, PublishingHouse newPublisher) {
     if (shouldPrioritizeBragePublisher) {
       return newPublisher;

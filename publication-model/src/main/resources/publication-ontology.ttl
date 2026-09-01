@@ -306,7 +306,8 @@ nva:LiteraryArtsWeb a rdfs:Class ;
 
 nva:Identity a rdfs:Class ;
   rdfs:comment "" ;
-  rdfs:isDefinedBy nva: .
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Agent .
 
 nva:Approval a rdfs:Class ;
   rdfs:comment "" ;
@@ -590,6 +591,11 @@ nva:MediaContributionPeriodical a rdfs:Class ;
 
 nva:UnconfirmedPublisher a rdfs:Class ;
   rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Publisher .
+
+nva:NullPublisher a rdfs:Class ;
+  rdfs:comment "The absence of a publisher" ;
   rdfs:isDefinedBy nva: ;
   rdfs:subClassOf nva:Publisher .
 
@@ -1868,7 +1874,7 @@ nva:publisher a rdf:Property ;
   rdfs:domain nva:AudioVisualPublication, nva:Book, nva:BroadCast, nva:Degree, nva:GeographicalContent,
               nva:LiteraryArtsAudioVisual, nva:LiteraryArtsMonograph, nva:LiteraryArtsWeb, nva:MusicScore,
               nva:OtherRelease, nva:Publisher, nva:Report, nva:ResearchData;
-  rdfs:range nva:Organization .
+  rdfs:range nva:Agent .
 
 nva:referencedBy a rdf:Property ;
   rdfs:comment "" ;

@@ -11,7 +11,7 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class Identity {
+public class Identity implements Agent {
 
   private URI id;
   private String name;

@@ -1,11 +1,14 @@
 package no.unit.nva.model.testing;
 
 import static java.util.UUID.randomUUID;
+import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomIdentity;
+import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.model.testing.RandomUtils.randomPublicationDate;
 import static no.unit.nva.model.testing.RandomUtils.randomPublicationId;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
@@ -18,7 +21,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Random;
 import no.unit.nva.model.Agent;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Revision;
 import no.unit.nva.model.UnconfirmedCourse;
 import no.unit.nva.model.contexttypes.Anthology;
@@ -31,6 +33,7 @@ import no.unit.nva.model.contexttypes.GeographicalContent;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.MediaContribution;
 import no.unit.nva.model.contexttypes.MediaContributionPeriodical;
+import no.unit.nva.model.contexttypes.NullPublisher;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
@@ -38,6 +41,7 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedMediaContributionPeriodical;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.media.MediaFormat;
 import no.unit.nva.model.contexttypes.media.MediaSubType;
 import no.unit.nva.model.contexttypes.media.MediaSubTypeEnum;
@@ -154,6 +158,18 @@ public class PublicationContextBuilder {
     return new Publisher(randomPublicationChannelsUri());
   }
 
+  public static Agent randomAgent() {
+    int random = randomInteger(5);
+    return switch (random) {
+      case 0 -> new Publisher(randomPublicationChannelsUri());
+      case 1 -> new UnconfirmedPublisher(randomString());
+      case 2 -> new NullPublisher();
+      case 3 -> randomIdentity();
+      case 4 -> randomOrganization();
+      default -> throw new IllegalStateException("Unexpected value: " + random);
+    };
+  }
+
   private static ExhibitionContent randomExhibition() {
     return new ExhibitionContent();
   }
@@ -163,7 +179,7 @@ public class PublicationContextBuilder {
   }
 
   private static ResearchData randomResearchData() {
-    return new ResearchData(randomPublishingHouse());
+    return new ResearchData(randomAgent());
   }
 
   private static PublicationContext randomMediaContributionPeriodical() {
@@ -230,10 +246,6 @@ public class PublicationContextBuilder {
   private static Period randomPeriod(Instant from) {
     Instant to = randomInstant(from);
     return new Period(from, to);
-  }
-
-  private static Agent randomAgent() {
-    return new Organization.Builder().withId(randomUri()).build();
   }
 
   private static Report randomReport()

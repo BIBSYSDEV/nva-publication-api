@@ -93,7 +93,7 @@ public final class EntityDescriptionBuilder {
         .build();
   }
 
-  private static Identity randomIdentity() {
+  public static Identity randomIdentity() {
     return new Identity.Builder()
         .withId(randomUriWithPath("person"))
         .withName(randomString())
