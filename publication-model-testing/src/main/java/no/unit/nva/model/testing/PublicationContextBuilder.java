@@ -21,7 +21,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Random;
 import no.unit.nva.model.Agent;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Revision;
 import no.unit.nva.model.UnconfirmedCourse;
 import no.unit.nva.model.contexttypes.Anthology;
