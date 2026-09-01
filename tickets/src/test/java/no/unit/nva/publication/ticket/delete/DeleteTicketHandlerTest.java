@@ -137,9 +137,7 @@ class DeleteTicketHandlerTest extends ResourcesLocalTest {
     return TicketEntry.createNewTicket(
             publication, PublishingRequestCase.class, SortableIdentifier::next)
         .withOwner(UserInstance.fromPublication(publication).getUsername())
-        .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(TicketEntry.createNewTicket(
-                publication, PublishingRequestCase.class, SortableIdentifier::next)
-            .withOwner(UserInstance.fromPublication(publication).getUsername())));
+        .persistNewTicket(ticketService, publication);
   }
 
   private Publication createPublication() throws BadRequestException {

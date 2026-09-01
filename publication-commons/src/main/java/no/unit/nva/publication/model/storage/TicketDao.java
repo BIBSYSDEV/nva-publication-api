@@ -21,7 +21,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -113,13 +112,13 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         .build();
   }
 
-  protected static TransactWriteItem publicationExistsConditionCheck(SortableIdentifier publicationIdentifier) {
+  protected static TransactWriteItem publicationExistsConditionCheck(
+      SortableIdentifier publicationIdentifier) {
     var conditionCheck =
         ConditionCheck.builder()
             .tableName(RESOURCES_TABLE_NAME)
             .key(new IdentifierEntry(publicationIdentifier.toString()).primaryKey())
             .conditionExpression("attribute_exists(PK0) AND attribute_exists(SK0)")
-            .expressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
             .build();
     return TransactWriteItem.builder().conditionCheck(conditionCheck).build();
   }

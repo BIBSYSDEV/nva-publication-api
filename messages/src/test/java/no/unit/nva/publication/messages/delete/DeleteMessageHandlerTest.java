@@ -143,9 +143,7 @@ class DeleteMessageHandlerTest extends ResourcesLocalTest {
       throws ApiGatewayException {
     return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
         .withOwner(randomString())
-        .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
-            TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
-                .withOwner(randomString())));
+        .persistNewTicket(ticketService, publication);
   }
 
   private InputStream deleteMessageRequest(

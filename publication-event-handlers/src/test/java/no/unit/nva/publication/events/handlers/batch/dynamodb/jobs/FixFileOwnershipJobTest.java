@@ -165,7 +165,7 @@ class FixFileOwnershipJobTest extends ResourcesLocalTest {
         TicketEntry.requestNewTicket(publication, PublishingRequestCase.class)
             .withOwnerAffiliation(ownerAffiliation)
             .withOwner(randomString());
-    ticket.persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(ticket));
+    ticket.persistNewTicket(ticketService, publication);
   }
 
   private UserInstance createUserInstanceWithAffiliation(URI ownerAffiliation, URI customerId) {

@@ -1485,7 +1485,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             userCristinId, resourceService);
     var resource = Resource.fromPublication(publication);
     var userInstance = UserInstance.fromPublication(publication);
-    GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService, publication);
+    GeneralSupportRequest.create(resource, userInstance)
+        .persistNewTicket(ticketService, publication);
     DoiRequest.create(resource, userInstance).persistNewTicket(ticketService, publication);
     var publishingRequestTicket =
         PublishingRequestCase.create(
@@ -1533,12 +1534,13 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             customerId, PUBLISHED, resourceService);
     var userInstance = UserInstance.fromPublication(publication);
     var resource = Resource.fromPublication(publication);
-    GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService, publication);
+    GeneralSupportRequest.create(resource, userInstance)
+        .persistNewTicket(ticketService, publication);
     DoiRequest.create(resource, userInstance).persistNewTicket(ticketService, publication);
     PublishingRequestCase.create(
             resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
         .complete(publication, userInstance)
-        .persistNewTicket(ticketService, publicationWithIdentifier());
+        .persistNewTicket(ticketService, publication);
     var input = createUnpublishHandlerRequest(publication, randomString(), customerId, accessRight);
     updatePublicationHandler.handleRequest(input, output, context);
 

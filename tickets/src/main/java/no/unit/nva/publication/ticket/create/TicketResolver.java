@@ -54,7 +54,7 @@ public class TicketResolver {
           case GeneralSupportRequestDto _ -> GeneralSupportRequest.create(resource, userInstance);
           default -> throw new BadRequestException("Not supported ticket type");
         };
-    return ticket.persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(ticket));
+    return ticket.persistNewTicket(ticketService, resource.toPublication());
   }
 
   private static boolean userHasPermissionToCreateTicket(

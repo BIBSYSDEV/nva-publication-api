@@ -130,7 +130,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var ticket =
         DoiRequest.create(
             Resource.fromPublication(publication), UserInstance.fromPublication(publication));
-    var persistedTicket = ticket.persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(ticket));
+    var persistedTicket = ticket.persistNewTicket(ticketService, publication);
     copyServiceControlledFields(ticket, persistedTicket);
 
     assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
@@ -172,8 +172,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var userInstance = UserInstance.create(randomString(), randomUri());
     var ticket =
         PublishingRequestCase.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY)
-            .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
-                PublishingRequestCase.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY)));
+            .persistNewTicket(ticketService, publication);
 
     copyServiceControlledFields(ticket, ticket);
     assertThat(ticket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
@@ -196,7 +195,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
   void shouldCreateGeneralSupportCaseForAnyPublication() throws ApiGatewayException {
     var publication = persistPublication(owner, DRAFT);
     var ticket = TestingUtils.createGeneralSupportRequest(publication);
-    var persistedTicket = ticket.persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(ticket));
+    var persistedTicket = ticket.persistNewTicket(ticketService, publication);
     copyServiceControlledFields(ticket, persistedTicket);
     assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
     assertThat(persistedTicket, is(equalTo(ticket)));
@@ -220,8 +219,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var userInstance = UserInstance.create(randomString(), randomUri());
     var ticket =
         PublishingRequestCase.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY)
-            .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
-                PublishingRequestCase.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY)));
+            .persistNewTicket(ticketService, publication);
     assertThat(ticket, is(instanceOf(PublishingRequestCase.class)));
   }
 
@@ -278,8 +276,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     publication.setResourceOwner(new ResourceOwner(randomUsername(), randomUri()));
     var ticket = createUnpersistedTicket(publication, ticketType);
 
-    assertDoesNotThrow(() -> ticket.persistNewTicket(ticketService,
-                                                     ticketService.fetchPublicationToEnsureItExists(ticket)));
+    assertDoesNotThrow(() -> ticket.persistNewTicket(ticketService, publication));
   }
 
   @ParameterizedTest(name = "ticket type:{0}")
@@ -292,9 +289,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
     ticketService =
         new TicketService(client, () -> duplicateIdentifier, uriRetriever, cristinUnitsUtil);
     var ticket = createUnpersistedTicket(publication, ticketType);
-    Executable action = () -> ticket.withOwner(randomString()).persistNewTicket(ticketService,
-                                                                                ticketService.fetchPublicationToEnsureItExists(
-                                                                                    ticket.withOwner(randomString())));
+    Executable action =
+        () -> ticket.withOwner(randomString()).persistNewTicket(ticketService, publication);
     assertDoesNotThrow(action);
     assertThrows(TransactionFailedException.class, action);
   }
@@ -309,9 +305,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var persistedTicket =
         createUnpersistedTicket(publication, ticketType)
             .withOwner(randomString())
-            .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
-                createUnpersistedTicket(publication, ticketType)
-                    .withOwner(randomString())));
+            .persistNewTicket(ticketService, publication);
 
     ticketService.updateTicketStatus(persistedTicket, COMPLETED, USER_INSTANCE);
     var updatedTicket = ticketService.fetchTicket(persistedTicket);
@@ -463,8 +457,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
       throws ApiGatewayException {
     var publication = persistPublication(owner, PUBLISHED);
     var ticket = createPersistedTicket(publication, ticketType);
-    ticket.markReadByOwner().persistNewTicket(ticketService,
-                                              ticketService.fetchPublicationToEnsureItExists(ticket.markReadByOwner()));
+    ticket.markReadByOwner().persistNewTicket(ticketService, publication);
     var owner = ticket.getOwner();
     assertThat(ticket.getViewedBy(), hasItem(owner));
     ticket.copy().markUnreadByOwner().persistUpdate(ticketService);
@@ -575,9 +568,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var publicationStatus = validPublicationStatusForTicketApproval(ticketType);
     var publication = persistPublication(owner, publicationStatus);
     var persistedTicket =
-        createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService,
-                                                                          ticketService.fetchPublicationToEnsureItExists(
-                                                                              createUnpersistedTicket(publication, ticketType)));
+        createUnpersistedTicket(publication, ticketType)
+            .persistNewTicket(ticketService, publication);
     ticketService.updateTicketAssignee(persistedTicket, getUsername(publication));
     var updatedTicket = ticketService.fetchTicket(persistedTicket);
 
@@ -606,9 +598,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var persistedTicket =
         createUnpersistedTicket(publication, ticketType)
             .withOwner(UserInstance.fromPublication(publication).getUsername())
-            .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
-                createUnpersistedTicket(publication, ticketType)
-                    .withOwner(UserInstance.fromPublication(publication).getUsername())));
+            .persistNewTicket(ticketService, publication);
     persistedTicket.setAssignee(getUsername(publication));
 
     ticketService.updateTicketAssignee(
@@ -672,9 +662,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var ticket =
         TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
             .withOwner(randomString())
-            .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
-                TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
-                    .withOwner(randomString())));
+            .persistNewTicket(ticketService, publication);
     ticket.remove(UserInstance.fromTicket(ticket)).persistUpdate(ticketService);
 
     var persistedTicket = ticket.fetch(ticketService);
@@ -688,14 +676,12 @@ public class TicketServiceTest extends ResourcesLocalTest {
         persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
     var ticket =
         TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
-            .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
-                TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)));
+            .persistNewTicket(ticketService, publication);
     ticket.remove(UserInstance.fromTicket(ticket)).persistUpdate(ticketService);
 
     var secondTicket =
         TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
-            .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
-                TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)));
+            .persistNewTicket(ticketService, publication);
     assertThat(secondTicket.getStatus(), is(equalTo(PENDING)));
   }
 
@@ -725,9 +711,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var ticket =
         PublishingRequestCase.createNewTicket(publication, ticketType, SortableIdentifier::next)
             .withOwner(randomString())
-            .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
-                PublishingRequestCase.createNewTicket(publication, ticketType, SortableIdentifier::next)
-                    .withOwner(randomString())));
+            .persistNewTicket(ticketService, publication);
     var version = ticket.toDao().getVersion();
     ticketService.refresh(ticket.getIdentifier());
     var updatedTicket = ticketService.fetchTicket(ticket);
@@ -830,14 +814,13 @@ public class TicketServiceTest extends ResourcesLocalTest {
   @DisplayName("should throw exception when persisting ticket for non-existing publication")
   @MethodSource(
       "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
-  void shouldThrowExceptionWhenPersistingTicketForNonExistingPublication(Class<? extends TicketEntry> ticketType,
-                                                                         PublicationStatus publicationStatus)
+  void shouldThrowExceptionWhenPersistingTicketForNonExistingPublication(
+      Class<? extends TicketEntry> ticketType, PublicationStatus publicationStatus)
       throws ApiGatewayException {
     var publication = TicketTestUtils.createNonPersistedPublication(publicationStatus);
     var ticket = TicketEntry.requestNewTicket(publication, ticketType);
 
-    Executable executable = () -> ticket.persistNewTicket(ticketService,
-                                                          ticketService.fetchPublicationToEnsureItExists(ticket));
+    Executable executable = () -> ticket.persistNewTicket(ticketService, publication);
     assertThrows(RuntimeException.class, executable);
   }
 
@@ -874,9 +857,10 @@ public class TicketServiceTest extends ResourcesLocalTest {
             arg ->
                 TicketEntry.requestNewTicket(
                     publication, (Class<? extends TicketEntry>) Arrays.asList(arg).getFirst()))
-        .map(attempt(ticket -> ticket.withOwner(randomString()).persistNewTicket(ticketService,
-                                                                                 ticketService.fetchPublicationToEnsureItExists(
-                                                                                     ticket.withOwner(randomString())))))
+        .map(
+            attempt(
+                ticket ->
+                    ticket.withOwner(randomString()).persistNewTicket(ticketService, publication)))
         .map(Try::orElseThrow)
         .toList();
   }
@@ -894,9 +878,9 @@ public class TicketServiceTest extends ResourcesLocalTest {
 
   private TicketEntry createPersistedTicket(Publication publication, Class<?> ticketType) {
     return attempt(
-            () -> createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService,
-                                                                                    ticketService.fetchPublicationToEnsureItExists(
-                                                                                        createUnpersistedTicket(publication, ticketType))))
+            () ->
+                createUnpersistedTicket(publication, ticketType)
+                    .persistNewTicket(ticketService, publication))
         .orElseThrow();
   }
 

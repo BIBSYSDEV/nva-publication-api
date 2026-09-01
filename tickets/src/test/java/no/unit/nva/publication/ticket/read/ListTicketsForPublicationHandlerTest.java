@@ -223,15 +223,12 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     var userInstance = UserInstance.fromPublication(publication);
     var resource = Resource.fromPublication(publication);
     DoiRequest.create(Resource.fromPublication(publication), userInstance)
-        .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
-            DoiRequest.create(Resource.fromPublication(publication), userInstance)));
+        .persistNewTicket(ticketService, publication);
     PublishingRequestCase.create(
             resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-        .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(PublishingRequestCase.create(
-                resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)));
-    GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService,
-                                                                          ticketService.fetchPublicationToEnsureItExists(
-                                                                              GeneralSupportRequest.create(resource, userInstance)));
+        .persistNewTicket(ticketService, publication);
+    GeneralSupportRequest.create(resource, userInstance)
+        .persistNewTicket(ticketService, publication);
 
     var request = curatorWithAccessRightRequestTicketsForPublication(publication, accessRight);
     handler.handleRequest(request, output, CONTEXT);
@@ -337,12 +334,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
             channelOwnerOrganizationId,
             SortableIdentifier.next(),
             PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-        .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(FilesApprovalThesis.createForChannelOwningInstitution(
-                resource,
-                userInstance,
-                channelOwnerOrganizationId,
-                SortableIdentifier.next(),
-                PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)));
+        .persistNewTicket(ticketService, publication);
 
     var request = userRequestsTickets(publication, contributorId, randomUri());
     handler.handleRequest(request, output, CONTEXT);
@@ -364,8 +356,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     resourceService.updatePublication(publication);
     GeneralSupportRequest.create(
             Resource.fromPublication(publication), UserInstance.fromPublication(publication))
-        .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(GeneralSupportRequest.create(
-                Resource.fromPublication(publication), UserInstance.fromPublication(publication))))
+        .persistNewTicket(ticketService, publication)
         .complete(publication, randomUserInstance())
         .persistUpdate(ticketService);
 
@@ -395,14 +386,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
                 randomUri(),
                 List.of(),
                 contributor.identity().getId()))
-        .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(GeneralSupportRequest.create(
-                Resource.fromPublication(publication),
-                UserInstance.create(
-                    userIdentifier,
-                    randomUri(),
-                    randomUri(),
-                    List.of(),
-                    contributor.identity().getId()))))
+        .persistNewTicket(ticketService, publication)
         .complete(publication, randomUserInstance())
         .persistUpdate(ticketService);
 
@@ -427,10 +411,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
             Resource.fromPublication(publication),
             user,
             PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-        .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(FilesApprovalThesis.createForUserInstitution(
-                Resource.fromPublication(publication),
-                user,
-                PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)))
+        .persistNewTicket(ticketService, publication)
         .complete(publication, user)
         .persistUpdate(ticketService);
 
@@ -477,12 +458,7 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
             channelOwnerOrganizationId,
             SortableIdentifier.next(),
             PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-        .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(FilesApprovalThesis.createForChannelOwningInstitution(
-                resource,
-                userInstance,
-                channelOwnerOrganizationId,
-                SortableIdentifier.next(),
-                PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)));
+        .persistNewTicket(ticketService, publication);
 
     var request = userRequestsTickets(publication, contributorId, channelOwnerOrganizationId);
     handler.handleRequest(request, output, CONTEXT);

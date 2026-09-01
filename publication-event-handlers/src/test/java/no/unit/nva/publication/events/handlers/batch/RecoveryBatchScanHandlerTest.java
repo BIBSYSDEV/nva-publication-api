@@ -94,9 +94,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     var ticket =
         GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
             .withOwner(UserInstance.fromPublication(publication).getUsername())
-            .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
-                GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
-                    .withOwner(UserInstance.fromPublication(publication).getUsername())));
+            .persistNewTicket(ticketService, publication);
     var ticketVersion = ticket.toDao().getVersion();
     putMessageOnRecoveryQueue(ticket.getIdentifier(), "Ticket");
     recoveryBatchScanHandler.handleRequest(createEvent(null), outputStream, CONTEXT);
@@ -115,9 +113,7 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
     var ticket =
         GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
             .withOwner(UserInstance.fromPublication(publication).getUsername())
-            .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
-                GeneralSupportRequest.requestNewTicket(publication, GeneralSupportRequest.class)
-                    .withOwner(UserInstance.fromPublication(publication).getUsername())));
+            .persistNewTicket(ticketService, publication);
     var message =
         messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
     var messageVersion = message.toDao().getVersion();

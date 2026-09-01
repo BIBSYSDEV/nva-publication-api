@@ -237,13 +237,8 @@ public class TicketService extends ServiceWithTransactions {
     return new BadRequestException(exception.getMessage(), exception);
   }
 
-  private Publication fetchPublicationToEnsureItExists(TicketEntry ticketEntry) {
-    return attempt(
-            () -> resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier()))
-        .orElseThrow();
-  }
-
-  private <T extends TicketEntry> T createTicketForPublication(TicketEntry ticketEntry, Publication publication) throws ConflictException {
+  private <T extends TicketEntry> T createTicketForPublication(
+      TicketEntry ticketEntry, Publication publication) throws ConflictException {
 
     setServiceControlledFields(ticketEntry, identifierProvider);
     ticketEntry.validateCreationRequirements(publication);

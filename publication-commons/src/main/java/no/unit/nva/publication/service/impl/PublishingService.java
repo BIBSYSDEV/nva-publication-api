@@ -78,7 +78,8 @@ public class PublishingService {
     }
 
     if (nonNull(publishedResource.getDoi())) {
-      DoiRequest.create(publishedResource, userInstance).persistNewTicket(ticketService, resource.toPublication());
+      DoiRequest.create(publishedResource, userInstance)
+          .persistNewTicket(ticketService, resource.toPublication());
     }
   }
 

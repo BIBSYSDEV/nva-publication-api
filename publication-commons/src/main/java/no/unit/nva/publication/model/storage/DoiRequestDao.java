@@ -82,7 +82,10 @@ public class DoiRequestDao extends TicketDao implements JsonSerializable {
     var identifierEntry = createUniqueIdentifierEntry();
 
     return TransactWriteItemsRequest.builder()
-        .transactItems(identifierEntry, doiRequestEntry, publicationExistsConditionCheck(getResourceIdentifier()))
+        .transactItems(
+            identifierEntry,
+            doiRequestEntry,
+            publicationExistsConditionCheck(getResourceIdentifier()))
         .build();
   }
 

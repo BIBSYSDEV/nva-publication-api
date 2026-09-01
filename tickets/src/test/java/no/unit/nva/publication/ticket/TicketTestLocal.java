@@ -52,16 +52,14 @@ public abstract class TicketTestLocal extends ResourcesLocalTest {
     var ownerAffiliation = publication.getResourceOwner().getOwnerAffiliation();
     var resource = Resource.fromPublication(publication);
     return DoiRequest.create(resource, userInstanceWithTopLevelCristinOrg(ownerAffiliation))
-        .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
-            DoiRequest.create(resource, userInstanceWithTopLevelCristinOrg(ownerAffiliation))));
+        .persistNewTicket(ticketService, publication);
   }
 
   protected TicketEntry createPersistedDoiRequestWithOwnerAffiliation(
       Publication publication, URI ownerAffiliation) throws ApiGatewayException {
     var userInstance = userInstanceWithTopLevelCristinOrg(ownerAffiliation);
     return DoiRequest.create(Resource.fromPublication(publication), userInstance)
-        .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
-            DoiRequest.create(Resource.fromPublication(publication), userInstance)));
+        .persistNewTicket(ticketService, publication);
   }
 
   public static UserInstance userInstanceWithTopLevelCristinOrg(URI topLevelOrgCristinId) {
