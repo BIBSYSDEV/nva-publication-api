@@ -11,6 +11,7 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.model.role.Role.ACTOR;
 import static no.unit.nva.model.role.Role.SUPERVISOR;
+import static no.unit.nva.model.testing.EntityDescriptionBuilder.randomIdentity;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
@@ -37,6 +38,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import no.sikt.nva.brage.migration.model.PublicationRepresentation;
 import no.sikt.nva.brage.migration.record.Record;
+import no.unit.nva.model.Agent;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -268,18 +270,23 @@ class CristinImportPublicationMergerTest {
   @Test
   void shouldUseExistingPublicationContextWhenIncomingResearchDataIsEmpty()
       throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
-    var existingPublication = randomPublication(DataSet.class);
-    var bragePublication = randomPublication(DataSet.class);
-    bragePublication
-        .getEntityDescription()
-        .getReference()
-        .setPublicationContext(new ResearchData(new NullPublisher()));
+    var existingPublisher = new Publisher(randomUri());
+    var existingPublication = researchDataPublishedBy(existingPublisher);
+    var bragePublication = researchDataPublishedBy(new NullPublisher());
     var updatedPublication = mergePublications(existingPublication, bragePublication);
 
-    var researchData =
-        (ResearchData)
-            updatedPublication.getEntityDescription().getReference().getPublicationContext();
-    assertThat(researchData.publisher(), is(instanceOf(Publisher.class)));
+    assertThat(extractResearchData(updatedPublication).publisher(), is(equalTo(existingPublisher)));
+  }
+
+  @Test
+  void shouldKeepExistingResearchDataPublisherWhenItIsNotAPublishingHouse()
+      throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    var existingPublisher = randomIdentity();
+    var existingPublication = researchDataPublishedBy(existingPublisher);
+    var bragePublication = researchDataPublishedBy(new Publisher(randomUri()));
+    var updatedPublication = mergePublications(existingPublication, bragePublication);
+
+    assertThat(extractResearchData(updatedPublication).publisher(), is(equalTo(existingPublisher)));
   }
 
   @Test
@@ -842,6 +849,19 @@ class CristinImportPublicationMergerTest {
     var representation = new PublicationRepresentation(record, bragePublication);
     return new CristinImportPublicationMerger(existingPublication, representation)
         .mergePublications();
+  }
+
+  private static Publication researchDataPublishedBy(Agent publisher) {
+    var publication = randomPublication(DataSet.class);
+    publication
+        .getEntityDescription()
+        .getReference()
+        .setPublicationContext(new ResearchData(publisher));
+    return publication;
+  }
+
+  private static ResearchData extractResearchData(Publication publication) {
+    return (ResearchData) publication.getEntityDescription().getReference().getPublicationContext();
   }
 
   private static Book emptyBook() throws InvalidUnconfirmedSeriesException {
