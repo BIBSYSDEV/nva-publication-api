@@ -218,6 +218,9 @@ public final class FakeUriResponse {
         var uri = publisher.getId();
         fakeUriRetriever.registerResponse(uri, SC_OK, APPLICATION_JSON_LD, createPublisher(uri));
       }
+      case ResearchData ignored -> {
+        /* No faking expected */
+      }
       case Artistic ignored -> {
         /* No faking expected */
       }
