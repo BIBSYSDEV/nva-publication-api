@@ -5,7 +5,6 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED_METADATA;
 import static no.unit.nva.publication.model.business.PublishingRequestCase.createWithFilesForApproval;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.lookUp;
 import static nva.commons.core.attempt.Try.attempt;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -121,10 +120,12 @@ public final class PublishingRequestResolver {
 
   private TicketEntry persistPublishingRequest(
       Resource newImage, PublishingRequestCase publishingRequest) throws ApiGatewayException {
+    var publication = newImage.toPublication();
     return customerAllowsPublishingMetadataAndFiles()
         ? publishingRequest.persistAutoComplete(
-            ticketService, newImage.toPublication(), userInstance)
-        : publishingRequest.persistNewTicket(ticketService);
+        ticketService, publication, userInstance)
+        : publishingRequest.persistNewTicket(ticketService,
+                                             publication);
   }
 
   private void persistPendingPublishingRequest(Resource oldImage, Resource newImage)
@@ -155,7 +156,7 @@ public final class PublishingRequestResolver {
       Resource resource, PublishingWorkflow workflow, Set<File> files) throws ApiGatewayException {
     FilesApprovalThesis.createForUserInstitution(resource, userInstance, workflow)
         .withFilesForApproval(files)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, resource.toPublication());
   }
 
   private void persistFilesApprovalThesis(
@@ -169,7 +170,7 @@ public final class PublishingRequestResolver {
     FilesApprovalThesis.createForChannelOwningInstitution(
             resource, userInstance, organizationId, channelClaimIdentifier, workflow)
         .withFilesForApproval(files)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, resource.toPublication());
   }
 
   private boolean containsNewPublishableFiles(Resource oldImage, Resource newImage) {

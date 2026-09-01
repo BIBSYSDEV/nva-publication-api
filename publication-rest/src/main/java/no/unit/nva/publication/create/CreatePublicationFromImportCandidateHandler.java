@@ -234,7 +234,7 @@ public class CreatePublicationFromImportCandidateHandler
             fileOwner,
             PublishingWorkflow.lookUp(serviceResult.getCustomer().publicationWorkflow()),
             importedResource.getPendingFiles());
-    fileApproval.persistNewTicket(ticketService);
+    fileApproval.persistNewTicket(ticketService, importedResource.toPublication());
     return importedResource;
   }
 

@@ -170,7 +170,8 @@ class FetchPublicationLogHandlerTest extends ResourcesLocalTest {
     var doiRequest =
         (DoiRequest)
             DoiRequest.create(Resource.fromPublication(publication), userInstance)
-                .persistNewTicket(ticketService);
+                .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
+                    DoiRequest.create(Resource.fromPublication(publication), userInstance)));
     doiRequest.setTicketEvent(DoiRequestedEvent.create(userInstance, Instant.now()));
     doiRequest
         .getTicketEvent()

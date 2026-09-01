@@ -31,6 +31,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ConditionCheck;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.Put;
@@ -112,6 +113,17 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         .build();
   }
 
+  protected static TransactWriteItem publicationExistsConditionCheck(SortableIdentifier publicationIdentifier) {
+    var conditionCheck =
+        ConditionCheck.builder()
+            .tableName(RESOURCES_TABLE_NAME)
+            .key(new IdentifierEntry(publicationIdentifier.toString()).primaryKey())
+            .conditionExpression("attribute_exists(PK0) AND attribute_exists(SK0)")
+            .expressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
+            .build();
+    return TransactWriteItem.builder().conditionCheck(conditionCheck).build();
+  }
+
   public PutItemRequest createPutItemRequestWithVersionCheck(UUID previousVersion) {
     return PutItemRequest.builder()
         .tableName(RESOURCES_TABLE_NAME)
@@ -156,7 +168,7 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
     var result =
         client.query(request).items().stream()
             .map(item -> DynamoEntry.parseAttributeValuesMap(item, MessageDao.class))
-            .collect(Collectors.toList());
+            .toList();
     return result.stream();
   }
 

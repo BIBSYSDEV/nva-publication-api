@@ -162,7 +162,10 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                     Resource.fromPublication(persistedPublication),
                     UserInstance.fromPublication(persistedPublication),
                     REGISTRATOR_PUBLISHES_METADATA_ONLY)
-                .persistNewTicket(ticketService);
+                .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(FilesApprovalThesis.createForUserInstitution(
+                        Resource.fromPublication(persistedPublication),
+                        UserInstance.fromPublication(persistedPublication),
+                        REGISTRATOR_PUBLISHES_METADATA_ONLY)));
     var expandedFilesApproval =
         ExpandedFilesApprovalThesis.createEntry(
             filesApprovalThesis, resourceService,
@@ -449,7 +452,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     var doiRequest =
         (DoiRequest)
             TicketEntry.requestNewTicket(publication, DoiRequest.class)
-                .persistNewTicket(ticketService);
+                .persistNewTicket(ticketService, ticketService.fetchPublicationToEnsureItExists(
+                    TicketEntry.requestNewTicket(publication, DoiRequest.class)));
     messageService.createMessage(doiRequest, userInstance, randomString());
     return attempt(
             () ->
@@ -464,7 +468,9 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
 
   private DoiRequest createDoiRequest(Publication publication) throws ApiGatewayException {
     return (DoiRequest)
-        TicketEntry.requestNewTicket(publication, DoiRequest.class).persistNewTicket(ticketService);
+        TicketEntry.requestNewTicket(publication, DoiRequest.class).persistNewTicket(ticketService,
+                                                                                     ticketService.fetchPublicationToEnsureItExists(
+                                                                                         TicketEntry.requestNewTicket(publication, DoiRequest.class)));
   }
 
   private Publication createPublishedPublicationWithoutDoi(Class<?> instanceType)

@@ -35,7 +35,8 @@ public class GeneralSupportRequestDao extends TicketDao implements JsonSerializa
   public TransactWriteItemsRequest createInsertionTransactionRequest() {
     var dataEntry = newPutTransactionItem(this);
     var uniquenessEntry = newPutTransactionItem(new IdentifierEntry(this));
-    return TransactWriteItemsRequest.builder().transactItems(dataEntry, uniquenessEntry).build();
+    return TransactWriteItemsRequest.builder().transactItems(dataEntry, uniquenessEntry,
+                                                             publicationExistsConditionCheck(getResourceIdentifier())).build();
   }
 
   @Override

@@ -78,7 +78,7 @@ public class PublishingService {
     }
 
     if (nonNull(publishedResource.getDoi())) {
-      DoiRequest.create(publishedResource, userInstance).persistNewTicket(ticketService);
+      DoiRequest.create(publishedResource, userInstance).persistNewTicket(ticketService, resource.toPublication());
     }
   }
 
@@ -156,7 +156,7 @@ public class PublishingService {
     } else {
       var ticket =
           PublishingRequestCase.create(resource, userInstance, workflow)
-              .persistNewTicket(ticketService);
+              .persistNewTicket(ticketService, resource.toPublication());
       logPersistedTicket(resource, (FilesApprovalEntry) ticket);
     }
   }
@@ -173,12 +173,12 @@ public class PublishingService {
         var channelClaimIdentifier = getChannelIdentifier(channelClaim.get());
         return FilesApprovalThesis.createForChannelOwningInstitution(
                 resource, userInstance, organizationId, channelClaimIdentifier, workflow)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, resource.toPublication());
       }
     }
 
     return FilesApprovalThesis.createForUserInstitution(resource, userInstance, workflow)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, resource.toPublication());
   }
 
   private static void logPersistedTicket(Resource resource, FilesApprovalEntry ticket) {

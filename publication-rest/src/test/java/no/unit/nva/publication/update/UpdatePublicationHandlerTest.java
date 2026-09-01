@@ -1207,7 +1207,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         TicketEntry.requestNewTicket(persistedPublication, PublishingRequestCase.class)
             .withOwner(publication.getResourceOwner().getOwner().getValue())
             .withOwnerAffiliation(persistedPublication.getResourceOwner().getOwnerAffiliation())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, persistedPublication);
     var updatedPublication = persistedPublication.copy().withAssociatedArtifacts(List.of()).build();
     var input = ownerUpdatesOwnPublication(updatedPublication.getIdentifier(), updatedPublication);
     updatePublicationHandler.handleRequest(input, output, context);
@@ -1238,7 +1238,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 resource,
                 UserInstance.create(username, randomUri()),
                 PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     updatePublicationHandler.handleRequest(event, output, context);
 
     var completedTicket = ticketService.fetchTicket(pendingTicket);
@@ -1485,12 +1485,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             userCristinId, resourceService);
     var resource = Resource.fromPublication(publication);
     var userInstance = UserInstance.fromPublication(publication);
-    GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
-    DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
+    GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService, publication);
+    DoiRequest.create(resource, userInstance).persistNewTicket(ticketService, publication);
     var publishingRequestTicket =
         PublishingRequestCase.create(
                 resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var completedPublishingRequest =
         publishingRequestTicket.complete(publication, UserInstance.create(userName, randomUri()));
     ticketService.updateTicket(completedPublishingRequest);
@@ -1533,12 +1533,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             customerId, PUBLISHED, resourceService);
     var userInstance = UserInstance.fromPublication(publication);
     var resource = Resource.fromPublication(publication);
-    GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
-    DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
+    GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService, publication);
+    DoiRequest.create(resource, userInstance).persistNewTicket(ticketService, publication);
     PublishingRequestCase.create(
             resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
         .complete(publication, userInstance)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, publicationWithIdentifier());
     var input = createUnpublishHandlerRequest(publication, randomString(), customerId, accessRight);
     updatePublicationHandler.handleRequest(input, output, context);
 
@@ -2463,7 +2463,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withOwner(publication.getResourceOwner().getOwner().getValue())
                 .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
     publishingRequest.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication));
-    publishingRequest.persistNewTicket(ticketService);
+    publishingRequest.persistNewTicket(ticketService, publication);
   }
 
   private PublishingRequestCase getPublishingRequestCase(Publication publication) {
@@ -2767,7 +2767,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             publishedPublication, PublishingRequestCase.class, SortableIdentifier::next)
         .withOwner(publication.getResourceOwner().getOwner().getValue())
         .withOwnerAffiliation(publishedPublication.getResourceOwner().getOwnerAffiliation())
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, publishedPublication);
   }
 
   private void persistCompletedPublishingRequest(Publication publishedPublication)
@@ -2777,7 +2777,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 publishedPublication, PublishingRequestCase.class, SortableIdentifier::next)
             .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
             .withOwner(publication.getResourceOwner().getOwner().getValue())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publishedPublication);
     ticketService.updateTicketStatus(
         ticket, TicketStatus.COMPLETED, UserInstance.create(randomString(), randomUri()));
   }
