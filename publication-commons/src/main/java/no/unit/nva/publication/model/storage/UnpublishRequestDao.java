@@ -31,7 +31,12 @@ public class UnpublishRequestDao extends TicketDao implements JsonSerializable {
   public TransactWriteItemsRequest createInsertionTransactionRequest() {
     var dataEntry = newPutTransactionItem(this);
     var uniquenessEntry = newPutTransactionItem(new IdentifierEntry(this));
-    return TransactWriteItemsRequest.builder().transactItems(dataEntry, uniquenessEntry).build();
+    return TransactWriteItemsRequest.builder()
+        .transactItems(
+            dataEntry,
+            uniquenessEntry,
+            publicationIdentifierEntryExistsConditionCheck(getResourceIdentifier()))
+        .build();
   }
 
   @Override

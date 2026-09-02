@@ -112,7 +112,7 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         .build();
   }
 
-  protected static TransactWriteItem publicationExistsConditionCheck(
+  protected static TransactWriteItem publicationIdentifierEntryExistsConditionCheck(
       SortableIdentifier publicationIdentifier) {
     var conditionCheck =
         ConditionCheck.builder()

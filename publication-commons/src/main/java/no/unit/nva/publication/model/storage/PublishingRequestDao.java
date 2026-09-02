@@ -73,7 +73,10 @@ public class PublishingRequestDao extends TicketDao implements JsonSerializable 
     var publishingRequestInsertionEntry = createPublishingRequestInsertionEntry();
     var identifierEntry = createUniqueIdentifierEntry();
     return TransactWriteItemsRequest.builder()
-        .transactItems(identifierEntry, publishingRequestInsertionEntry)
+        .transactItems(
+            identifierEntry,
+            publishingRequestInsertionEntry,
+            publicationIdentifierEntryExistsConditionCheck(getResourceIdentifier()))
         .build();
   }
 

@@ -820,8 +820,21 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var publication = TicketTestUtils.createNonPersistedPublication(publicationStatus);
     var ticket = TicketEntry.requestNewTicket(publication, ticketType);
 
-    Executable executable = () -> ticket.persistNewTicket(ticketService, publication);
-    assertThrows(RuntimeException.class, executable);
+    assertThrows(RuntimeException.class, () -> ticket.persistNewTicket(ticketService, publication));
+  }
+
+  @Test
+  void shouldThrowExceptionWhenPersistingPublishingRequestForNonExistingPublication()
+      throws ApiGatewayException {
+    var publication = createUnpersistedPublication(owner);
+    var resource = Resource.fromPublication(publication);
+    var userInstance = UserInstance.create(randomString(), randomUri());
+    var publishingRequest =
+        PublishingRequestCase.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY);
+
+    assertThrows(
+        RuntimeException.class,
+        () -> publishingRequest.persistNewTicket(ticketService, publication));
   }
 
   private Resource randomPublishedResourceWithPublicationYear(

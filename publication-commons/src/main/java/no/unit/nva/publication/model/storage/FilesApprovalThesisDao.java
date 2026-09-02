@@ -33,7 +33,10 @@ public class FilesApprovalThesisDao extends TicketDao implements JsonSerializabl
     var insertionEntry = createInsertionEntry();
     var identifierEntry = createUniqueIdentifierEntry();
     return TransactWriteItemsRequest.builder()
-        .transactItems(identifierEntry, insertionEntry)
+        .transactItems(
+            identifierEntry,
+            insertionEntry,
+            publicationIdentifierEntryExistsConditionCheck(getResourceIdentifier()))
         .build();
   }
 
