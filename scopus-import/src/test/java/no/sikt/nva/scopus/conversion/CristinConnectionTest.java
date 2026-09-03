@@ -29,11 +29,16 @@ import no.unit.nva.stubs.WiremockHttpClient;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogRecorder;
+import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @WireMockTest(httpsEnabled = true)
 class CristinConnectionTest {
+
+  private static final int TEMPORARY_REDIRECT = 307;
+  private static final URI PERSON_URI_AT_OTHER_HOST =
+      URI.create("https://other.example.com/cristin/person/5647");
 
   private CristinConnection cristinConnection;
 
@@ -79,6 +84,56 @@ class CristinConnectionTest {
     var actualPerson = cristinConnection.getCristinPersonByCristinId(randomPersonUri);
     assertThat(actualPerson.isPresent(), is(equalTo(true)));
     assertThat(actualPerson.get(), is(equalTo(expectedPerson)));
+  }
+
+  @Test
+  void shouldReturnPersonMergedIntoWhenCristinProxyRedirectsToAnotherPerson(
+      WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var requestedPersonUri = getRandomPersonUri(wireMockRuntimeInfo);
+    var mergedIntoPersonUri = getRandomPersonUri(wireMockRuntimeInfo);
+    var expectedPerson = createExpectedPerson(mergedIntoPersonUri);
+    mockCristinPersonRedirect(requestedPersonUri, mergedIntoPersonUri);
+    mockCristinPerson(mergedIntoPersonUri, expectedPerson.toJsonString());
+
+    var actualPerson = cristinConnection.getCristinPersonByCristinId(requestedPersonUri);
+
+    assertThat(actualPerson.isPresent(), is(equalTo(true)));
+    assertThat(actualPerson.get(), is(equalTo(expectedPerson)));
+  }
+
+  @Test
+  void shouldReturnEmptyWhenCristinProxyRedirectsWithoutLocation(
+      WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var logRecorder = LogRecorder.forClass(CristinConnection.class);
+    var requestedPersonUri = getRandomPersonUri(wireMockRuntimeInfo);
+    mockCristinPersonRedirectWithoutLocation(requestedPersonUri);
+
+    var actualPerson = cristinConnection.getCristinPersonByCristinId(requestedPersonUri);
+
+    assertThat(actualPerson.isEmpty(), is(true));
+    assertThat(logRecorder.messages(), hasItem(containsString("Could not fetch cristin person")));
+  }
+
+  @Test
+  void shouldNotFollowRedirectPointingToAnotherHost(WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var logRecorder = LogRecorder.forClass(CristinConnection.class);
+    var requestedPersonUri = getRandomPersonUri(wireMockRuntimeInfo);
+    mockCristinPersonRedirect(requestedPersonUri, PERSON_URI_AT_OTHER_HOST);
+
+    var actualPerson = cristinConnection.getCristinPersonByCristinId(requestedPersonUri);
+
+    assertThat(actualPerson.isEmpty(), is(true));
+    assertThat(logRecorder.messages(), hasItem(containsString("Refusing redirect")));
+  }
+
+  @Test
+  void shouldReturnEmptyWhenPersonMergedIntoAlsoRedirects(WireMockRuntimeInfo wireMockRuntimeInfo) {
+    var requestedPersonUri = getRandomPersonUri(wireMockRuntimeInfo);
+    mockCristinPersonRedirect(requestedPersonUri, requestedPersonUri);
+
+    var actualPerson = cristinConnection.getCristinPersonByCristinId(requestedPersonUri);
+
+    assertThat(actualPerson.isEmpty(), is(true));
   }
 
   @Test
@@ -184,6 +239,21 @@ class CristinConnectionTest {
     stubFor(
         WireMock.get(urlPathEqualTo(cristinId.getPath()))
             .willReturn(aResponse().withBody(organization).withStatus(HttpURLConnection.HTTP_OK)));
+  }
+
+  private void mockCristinPersonRedirect(URI requestedPersonUri, URI mergedIntoPersonUri) {
+    stubFor(
+        WireMock.get(urlPathEqualTo(requestedPersonUri.getPath()))
+            .willReturn(
+                aResponse()
+                    .withStatus(TEMPORARY_REDIRECT)
+                    .withHeader(HttpHeaders.LOCATION, mergedIntoPersonUri.toString())));
+  }
+
+  private void mockCristinPersonRedirectWithoutLocation(URI requestedPersonUri) {
+    stubFor(
+        WireMock.get(urlPathEqualTo(requestedPersonUri.getPath()))
+            .willReturn(aResponse().withStatus(TEMPORARY_REDIRECT)));
   }
 
   private void mockCristinPersonBadRequest() {
