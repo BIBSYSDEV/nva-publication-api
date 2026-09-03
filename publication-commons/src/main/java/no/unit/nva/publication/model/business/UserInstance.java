@@ -227,6 +227,10 @@ public class UserInstance implements JsonSerializable {
             .orElse(ImportSource.fromSource(Source.OTHER)));
   }
 
+  public UserClientType getUserClientType() {
+    return userClientType;
+  }
+
   @JacocoGenerated
   @Override
   public boolean equals(Object o) {
@@ -239,8 +243,8 @@ public class UserInstance implements JsonSerializable {
         && Objects.equals(getPersonAffiliation(), that.getPersonAffiliation())
         && Objects.equals(getPersonCristinId(), that.getPersonCristinId())
         && Objects.equals(getAccessRights(), that.getAccessRights())
-        && userClientType == that.userClientType
-        && getThirdPartySystem() == that.getThirdPartySystem();
+        && Objects.equals(getUserClientType(), that.getUserClientType())
+        && Objects.equals(getThirdPartySystem(), that.getThirdPartySystem());
   }
 
   @JacocoGenerated
@@ -253,7 +257,7 @@ public class UserInstance implements JsonSerializable {
         getPersonAffiliation(),
         getPersonCristinId(),
         getAccessRights(),
-        userClientType,
+        getUserClientType(),
         getThirdPartySystem());
   }
 }
