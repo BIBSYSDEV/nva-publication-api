@@ -230,31 +230,30 @@ public class UserInstance implements JsonSerializable {
   @JacocoGenerated
   @Override
   public boolean equals(Object o) {
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof UserInstance that)) {
       return false;
     }
-    UserInstance that = (UserInstance) o;
-    return Objects.equals(customerId, that.customerId)
-        && Objects.equals(user, that.user)
-        && Objects.equals(topLevelOrgCristinId, that.topLevelOrgCristinId)
-        && Objects.equals(personAffiliation, that.personAffiliation)
-        && Objects.equals(personCristinId, that.personCristinId)
-        && Objects.equals(accessRights, that.accessRights)
+    return Objects.equals(getCustomerId(), that.getCustomerId())
+        && Objects.equals(getUser(), that.getUser())
+        && Objects.equals(getTopLevelOrgCristinId(), that.getTopLevelOrgCristinId())
+        && Objects.equals(getPersonAffiliation(), that.getPersonAffiliation())
+        && Objects.equals(getPersonCristinId(), that.getPersonCristinId())
+        && Objects.equals(getAccessRights(), that.getAccessRights())
         && userClientType == that.userClientType
-        && thirdPartySystem == that.thirdPartySystem;
+        && getThirdPartySystem() == that.getThirdPartySystem();
   }
 
   @JacocoGenerated
   @Override
   public int hashCode() {
     return Objects.hash(
-        customerId,
-        user,
-        topLevelOrgCristinId,
-        personAffiliation,
-        personCristinId,
-        accessRights,
+        getCustomerId(),
+        getUser(),
+        getTopLevelOrgCristinId(),
+        getPersonAffiliation(),
+        getPersonCristinId(),
+        getAccessRights(),
         userClientType,
-        thirdPartySystem);
+        getThirdPartySystem());
   }
 }

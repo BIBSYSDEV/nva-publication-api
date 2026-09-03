@@ -12,8 +12,6 @@ import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
-import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
-import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(DoiRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -77,19 +75,6 @@ public class DoiRequestDao extends TicketDao implements JsonSerializable {
   }
 
   @Override
-  public TransactWriteItemsRequest createInsertionTransactionRequest() {
-    var doiRequestEntry = createDoiRequestInsertionEntry();
-    var identifierEntry = createUniqueIdentifierEntry();
-
-    return TransactWriteItemsRequest.builder()
-        .transactItems(
-            identifierEntry,
-            doiRequestEntry,
-            publicationIdentifierEntryExistsConditionCheck(getResourceIdentifier()))
-        .build();
-  }
-
-  @Override
   @JacocoGenerated
   public int hashCode() {
     return Objects.hash(getData());
@@ -118,14 +103,5 @@ public class DoiRequestDao extends TicketDao implements JsonSerializable {
   @JacocoGenerated
   public String toString() {
     return toJsonString();
-  }
-
-  private TransactWriteItem createDoiRequestInsertionEntry() {
-    return newPutTransactionItem(new DoiRequestDao((DoiRequest) getTicketEntry()));
-  }
-
-  private TransactWriteItem createUniqueIdentifierEntry() {
-    IdentifierEntry identifierEntry = new IdentifierEntry(getData().getIdentifier().toString());
-    return newPutTransactionItem(identifierEntry);
   }
 }

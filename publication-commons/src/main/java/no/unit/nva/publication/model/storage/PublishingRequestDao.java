@@ -16,8 +16,6 @@ import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.JacocoGenerated;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
-import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
-import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(PublishingRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -69,18 +67,6 @@ public class PublishingRequestDao extends TicketDao implements JsonSerializable 
   }
 
   @Override
-  public TransactWriteItemsRequest createInsertionTransactionRequest() {
-    var publishingRequestInsertionEntry = createPublishingRequestInsertionEntry();
-    var identifierEntry = createUniqueIdentifierEntry();
-    return TransactWriteItemsRequest.builder()
-        .transactItems(
-            identifierEntry,
-            publishingRequestInsertionEntry,
-            publicationIdentifierEntryExistsConditionCheck(getResourceIdentifier()))
-        .build();
-  }
-
-  @Override
   @JacocoGenerated
   public int hashCode() {
     return Objects.hash(getData());
@@ -108,15 +94,5 @@ public class PublishingRequestDao extends TicketDao implements JsonSerializable 
   @JacocoGenerated
   public String toString() {
     return toJsonString();
-  }
-
-  private TransactWriteItem createPublishingRequestInsertionEntry() {
-    var dynamoEntry = new PublishingRequestDao(getTicketEntry());
-    return newPutTransactionItem(dynamoEntry);
-  }
-
-  private TransactWriteItem createUniqueIdentifierEntry() {
-    var identifierEntry = new IdentifierEntry(getData().getIdentifier().toString());
-    return newPutTransactionItem(identifierEntry);
   }
 }

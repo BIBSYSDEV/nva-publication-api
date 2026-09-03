@@ -18,6 +18,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -242,7 +243,10 @@ public class TicketService extends ServiceWithTransactions {
 
     setServiceControlledFields(ticketEntry, identifierProvider);
     ticketEntry.validateCreationRequirements(publication);
-    var request = ticketEntry.toDao().createInsertionTransactionRequest();
+    var request =
+        ticketEntry
+            .toDao()
+            .createInsertionTransactionRequest(Resource.fromPublication(publication));
     sendTransactionWriteRequest(request);
     return (T) ticketEntry;
   }

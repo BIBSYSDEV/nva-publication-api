@@ -302,7 +302,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     var ticket =
         TicketEntry.requestNewTicket(persistedPublication, GeneralSupportRequest.class)
             .withOwner(UserInstance.fromPublication(persistedPublication).getUsername())
-            .persistNewTicket(ticketService, publication);
+            .persistNewTicket(ticketService, persistedPublication);
     var message =
         messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
     var request = emulateEventEmittedByDataEntryUpdateHandler(null, message);
@@ -336,7 +336,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     var ticket =
         TicketEntry.requestNewTicket(persistedPublication, GeneralSupportRequest.class)
             .withOwner(UserInstance.fromPublication(persistedPublication).getUsername())
-            .persistNewTicket(ticketService, publication);
+            .persistNewTicket(ticketService, persistedPublication);
     var message = Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
     var request = emulateEventEmittedByDataEntryUpdateHandler(null, message);
 

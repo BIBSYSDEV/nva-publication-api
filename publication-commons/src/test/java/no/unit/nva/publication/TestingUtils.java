@@ -6,6 +6,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 
 import java.net.URI;
+import java.util.List;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
@@ -30,7 +31,7 @@ public final class TestingUtils extends TestDataSource {
   }
 
   public static UserInstance randomUserInstance() {
-    return UserInstance.create(randomString(), randomUri());
+    return UserInstance.create(randomString(), randomUri(), randomUri(), List.of(), randomUri());
   }
 
   public static Publication randomPublicationWithoutDoi() {

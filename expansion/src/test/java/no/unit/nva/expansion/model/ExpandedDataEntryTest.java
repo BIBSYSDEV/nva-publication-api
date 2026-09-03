@@ -162,7 +162,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                     Resource.fromPublication(persistedPublication),
                     UserInstance.fromPublication(persistedPublication),
                     REGISTRATOR_PUBLISHES_METADATA_ONLY)
-                .persistNewTicket(ticketService, publication);
+                .persistNewTicket(ticketService, persistedPublication);
     var expandedFilesApproval =
         ExpandedFilesApprovalThesis.createEntry(
             filesApprovalThesis, resourceService,

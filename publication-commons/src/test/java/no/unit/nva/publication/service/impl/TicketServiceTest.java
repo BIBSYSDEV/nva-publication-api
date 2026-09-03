@@ -18,6 +18,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.everyItem;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -50,7 +51,6 @@ import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.publication.TestingUtils;
@@ -76,6 +76,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
@@ -268,12 +269,11 @@ public class TicketServiceTest extends ResourcesLocalTest {
   }
 
   @ParameterizedTest(name = "ticket type:{0}")
-  @DisplayName("should throw Exception when user is not the resource owner")
+  @DisplayName("should not throw Exception when user is not the resource owner")
   @MethodSource("ticketTypeProvider")
   void shouldNotThrowExceptionWhenTheUserIsNotTheResourceOwner(
       Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
     var publication = persistPublication(owner, PUBLISHED);
-    publication.setResourceOwner(new ResourceOwner(randomUsername(), randomUri()));
     var ticket = createUnpersistedTicket(publication, ticketType);
 
     assertDoesNotThrow(() -> ticket.persistNewTicket(ticketService, publication));
@@ -824,17 +824,15 @@ public class TicketServiceTest extends ResourcesLocalTest {
   }
 
   @Test
-  void shouldThrowExceptionWhenPersistingPublishingRequestForNonExistingPublication()
-      throws ApiGatewayException {
-    var publication = createUnpersistedPublication(owner);
-    var resource = Resource.fromPublication(publication);
-    var userInstance = UserInstance.create(randomString(), randomUri());
-    var publishingRequest =
-        PublishingRequestCase.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY);
+  void shouldLogReasonWhenTransactionFailed() {
+    var logRecorder = LogRecorder.forRoot(ServiceWithTransactions.class);
+    var publication = TicketTestUtils.createNonPersistedPublication(PUBLISHED);
+    var ticket = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class);
 
-    assertThrows(
-        RuntimeException.class,
-        () -> publishingRequest.persistNewTicket(ticketService, publication));
+    assertThrows(RuntimeException.class, () -> ticket.persistNewTicket(ticketService, publication));
+
+    assertThat(logRecorder.asString(), containsString("failed with code"));
+    assertThat(logRecorder.asString(), containsString(publication.getIdentifier().toString()));
   }
 
   private Resource randomPublishedResourceWithPublicationYear(

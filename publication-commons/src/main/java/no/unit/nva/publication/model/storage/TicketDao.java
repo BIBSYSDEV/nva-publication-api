@@ -24,6 +24,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.User;
 import nva.commons.core.JacocoGenerated;
@@ -37,6 +38,7 @@ import software.amazon.awssdk.services.dynamodb.model.Put;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonSubTypes({
   @JsonSubTypes.Type(name = DoiRequestDao.TYPE, value = DoiRequestDao.class),
@@ -110,17 +112,6 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
         .expressionAttributeNames(condition.getExpressionAttributeNames())
         .expressionAttributeValues(condition.getExpressionAttributeValues())
         .build();
-  }
-
-  protected static TransactWriteItem publicationIdentifierEntryExistsConditionCheck(
-      SortableIdentifier publicationIdentifier) {
-    var conditionCheck =
-        ConditionCheck.builder()
-            .tableName(RESOURCES_TABLE_NAME)
-            .key(new IdentifierEntry(publicationIdentifier.toString()).primaryKey())
-            .conditionExpression("attribute_exists(PK0) AND attribute_exists(SK0)")
-            .build();
-    return TransactWriteItem.builder().conditionCheck(conditionCheck).build();
   }
 
   public PutItemRequest createPutItemRequestWithVersionCheck(UUID previousVersion) {
@@ -248,6 +239,30 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
             .expressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
             .build();
     return TransactWriteItem.builder().put(put).build();
+  }
+
+  @Override
+  public TransactWriteItemsRequest createInsertionTransactionRequest() {
+    throw new UnsupportedOperationException();
+  }
+
+  public TransactWriteItemsRequest createInsertionTransactionRequest(Resource resource) {
+    var dataEntry = newPutTransactionItem(this);
+    var uniquenessEntry = newPutTransactionItem(new IdentifierEntry(this));
+    var resourceExistsConditionCheck = resourceExistsConditionCheck(resource);
+    return TransactWriteItemsRequest.builder()
+        .transactItems(dataEntry, uniquenessEntry, resourceExistsConditionCheck)
+        .build();
+  }
+
+  protected static TransactWriteItem resourceExistsConditionCheck(Resource resource) {
+    var conditionCheck =
+        ConditionCheck.builder()
+            .tableName(RESOURCES_TABLE_NAME)
+            .key(resource.toDao().primaryKey())
+            .conditionExpression("attribute_exists(PK0) AND attribute_exists(SK0)")
+            .build();
+    return TransactWriteItem.builder().conditionCheck(conditionCheck).build();
   }
 
   protected TicketEntry getTicketEntry() {
