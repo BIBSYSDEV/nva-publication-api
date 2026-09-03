@@ -7,6 +7,7 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUploadedFile;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -34,6 +35,7 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguratio
 import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
+import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
 import no.unit.nva.publication.model.business.publicationstate.FileTypeUpdatedByImportEvent;
 import no.unit.nva.publication.model.business.publicationstate.FileTypeUpdatedEvent;
@@ -249,6 +251,27 @@ class FileEntryTest {
             randomPendingOpenFile(), userInstance, ImportSource.fromSource(Source.CRISTIN));
 
     assertThat(result, is(sameInstance(fileEntry)));
+  }
+
+  @Test
+  void shouldUpdateUploadedFileWhenIncomingFileIsAlsoUploadedFile() {
+    var storedFile = randomUploadedFile();
+    var userInstance = UserInstance.create(randomString(), randomUri());
+    var fileEntry = FileEntry.create(storedFile, SortableIdentifier.next(), userInstance);
+
+    var incomingFile =
+        storedFile
+            .copy()
+            .withRightsRetentionStrategy(
+                OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, randomString()))
+            .buildUploadedFile();
+
+    fileEntry.update(incomingFile, userInstance);
+
+    assertInstanceOf(UploadedFile.class, fileEntry.getFile());
+    assertThat(
+        fileEntry.getFile().getRightsRetentionStrategy(),
+        is(equalTo(incomingFile.getRightsRetentionStrategy())));
   }
 
   private static UserInstance randomUserInstance() {
