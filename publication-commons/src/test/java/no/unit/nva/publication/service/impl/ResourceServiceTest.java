@@ -1208,7 +1208,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
             .withOwnerAffiliation(randomUri())
             .withOwner(randomString())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     resourceService.markPublicationForDeletion(
         UserInstance.fromPublication(publication), publication.getIdentifier());
 
@@ -1456,7 +1456,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                     userInstance,
                     PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
                     Set.of(file))
-                .persistNewTicket(ticketService);
+                .persistNewTicket(ticketService, publication);
 
     publishingRequest.complete(publication, userInstance).persistUpdate(ticketService);
     publishingRequest.setFinalizedBy(new Username(randomString()));
@@ -1485,7 +1485,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                     userInstance,
                     PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
                     Set.of(file))
-                .persistNewTicket(ticketService);
+                .persistNewTicket(ticketService, publication);
     publishingRequest.complete(publication, userInstance).persistUpdate(ticketService);
     publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
 
@@ -1519,7 +1519,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                     UserInstance.create(randomString(), randomUri()),
                     PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
                     Set.of(file))
-                .persistNewTicket(ticketService);
+                .persistNewTicket(ticketService, publication);
 
     publishingRequest.setFinalizedBy(new Username(randomString()));
     publishingRequest.rejectRejectedFiles(resourceService);
@@ -1546,7 +1546,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
                     userInstance,
                     PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY,
                     Set.of(file))
-                .persistNewTicket(ticketService);
+                .persistNewTicket(ticketService, publication);
     publishingRequest.close(randomUserInstance()).persistUpdate(ticketService);
     publishingRequest = (PublishingRequestCase) publishingRequest.fetch(ticketService);
     publishingRequest.rejectRejectedFiles(resourceService);
@@ -2038,24 +2038,26 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
   private void createTickets(Resource resource, UserInstance userInstance)
       throws ApiGatewayException {
-    GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
-    DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
+    GeneralSupportRequest.create(resource, userInstance)
+        .persistNewTicket(ticketService, resource.toPublication());
+    DoiRequest.create(resource, userInstance)
+        .persistNewTicket(ticketService, resource.toPublication());
     var closedGeneralSupportTicket =
         GeneralSupportRequest.create(resource, userInstance)
-            .persistNewTicket(ticketService)
+            .persistNewTicket(ticketService, resource.toPublication())
             .close(randomUserInstance());
     ticketService.updateTicket(closedGeneralSupportTicket);
     var closedPublishingRequestTicket =
         PublishingRequestCase.create(
             resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
     closedPublishingRequestTicket.setStatus(TicketStatus.COMPLETED);
-    closedPublishingRequestTicket.persistNewTicket(ticketService);
+    closedPublishingRequestTicket.persistNewTicket(ticketService, resource.toPublication());
 
     var pendingPublishingRequestTicket =
         PublishingRequestCase.create(
             resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
     pendingPublishingRequestTicket.setStatus(TicketStatus.PENDING);
-    pendingPublishingRequestTicket.persistNewTicket(ticketService);
+    pendingPublishingRequestTicket.persistNewTicket(ticketService, resource.toPublication());
   }
 
   @Test
@@ -2304,7 +2306,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     return (DoiRequest)
         DoiRequest.create(
                 Resource.fromPublication(publication), UserInstance.fromPublication(publication))
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
   }
 
   private Publication createPublishedResource() throws ApiGatewayException {

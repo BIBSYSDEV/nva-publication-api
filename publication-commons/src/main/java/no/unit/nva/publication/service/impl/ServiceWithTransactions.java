@@ -122,13 +122,14 @@ public class ServiceWithTransactions {
             batch -> {
               var batchRequest = transactWriteItemsRequest.toBuilder().transactItems(batch).build();
               attempt(() -> getClient().transactWriteItems(batchRequest))
-                  .orElseThrow(this::handleTransactionFailure);
+                  .orElseThrow(
+                      failure -> handleTransactionFailure(failure, transactWriteItemsRequest));
             });
   }
 
   private TransactionFailedException handleTransactionFailure(
-      Failure<TransactWriteItemsResponse> fail) {
-    return new TransactionFailedException(fail.getException());
+      Failure<TransactWriteItemsResponse> fail, TransactWriteItemsRequest request) {
+    return new TransactionFailedException(fail.getException(), request);
   }
 
   private boolean onlyResourceExists(List<Dao> daos) {

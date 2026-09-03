@@ -26,6 +26,7 @@ import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.publication.TestDataSource;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.storage.IdentifierEntry;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -95,6 +96,13 @@ public class ResourcesLocalTest extends TestDataSource {
                     .put(
                         Put.builder()
                             .item(resource.toDao().toDynamoFormat())
+                            .tableName(RESOURCES_TABLE_NAME)
+                            .build())
+                    .build(),
+                TransactWriteItem.builder()
+                    .put(
+                        Put.builder()
+                            .item(new IdentifierEntry(resource.toDao()).toDynamoFormat())
                             .tableName(RESOURCES_TABLE_NAME)
                             .build())
                     .build())

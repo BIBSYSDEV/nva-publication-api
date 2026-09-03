@@ -125,7 +125,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     var originalTicket =
         TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
             .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, createdPublication);
     var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
     handler.handleRequest(
@@ -156,7 +156,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     var originalTicket =
         TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
             .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, createdPublication);
     var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
     handler.handleRequest(
@@ -188,7 +188,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     var originalTicket =
         TicketEntry.requestNewTicket(createdPublication, PublishingRequestCase.class)
             .withOwner(UserInstance.fromPublication(createdPublication).getUsername())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, createdPublication);
     var originalTicketDao = fetchTicketDao(originalTicket.getIdentifier());
 
     handler.handleRequest(

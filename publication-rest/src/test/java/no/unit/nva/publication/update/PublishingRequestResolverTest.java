@@ -375,7 +375,7 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
             Resource.fromPublication(publication),
             UserInstance.fromPublication(publication),
             PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, publication);
   }
 
   private void persistFilesApprovalContainingExistingPendingFiles(
@@ -387,6 +387,6 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
             organizationId,
             channelClaimIdentifier,
             PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, publication);
   }
 }

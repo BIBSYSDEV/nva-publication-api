@@ -128,7 +128,7 @@ public abstract class FilesApprovalEntry extends TicketEntry {
   public TicketEntry persistAutoComplete(
       TicketService ticketService, Publication publication, UserInstance userInstance)
       throws ApiGatewayException {
-    return this.complete(publication, userInstance).persistNewTicket(ticketService);
+    return this.complete(publication, userInstance).persistNewTicket(ticketService, publication);
   }
 
   public void rejectRejectedFiles(ResourceService resourceService) {
