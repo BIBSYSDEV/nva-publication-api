@@ -122,7 +122,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     var approvedPublishingRequest =
         pendingPublishingRequest
             .complete(publication, USER_INSTANCE)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
     handler.handleRequest(event, outputStream, CONTEXT);
     var updatedPublication =
@@ -140,7 +140,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     var approvedPublishingRequest =
         pendingPublishingRequest
             .complete(publication, USER_INSTANCE)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
     handler.handleRequest(event, outputStream, CONTEXT);
     var updatedPublication =
@@ -184,7 +184,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     var approvedPublishingRequest =
         pendingPublishingRequest
             .complete(publication, USER_INSTANCE)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
     handler.handleRequest(event, outputStream, CONTEXT);
     var updatedPublication =
@@ -203,7 +203,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     var approvedPublishingRequest =
         pendingPublishingRequest
             .complete(publication, USER_INSTANCE)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
     handler.handleRequest(event, outputStream, CONTEXT);
     var updatedPublication =
@@ -231,7 +231,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     var approvedPublishingRequest =
         pendingPublishingRequest
             .complete(publication, USER_INSTANCE)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
     handler.handleRequest(event, outputStream, CONTEXT);
     var updatedPublication =
@@ -270,7 +270,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     var approvedPublishingRequest =
         pendingPublishingRequest
             .complete(publication, USER_INSTANCE)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
     var logRecorder = LogRecorder.forRoot(AcceptedPublishingRequestEventHandlerTest.class);
 
@@ -290,7 +290,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     var approvedPublishingRequest =
         pendingPublishingRequest
             .complete(publication, USER_INSTANCE)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var handlerThrowingException =
         handlerWithResourceServiceThrowingExceptionWhenUpdatingPublication(publication);
     var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
@@ -309,7 +309,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
     var approvedPublishingRequest =
         pendingPublishingRequest
             .complete(publication, USER_INSTANCE)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var handlerThrowingException = handlerWithResourceServiceThrowingExceptionWhenFetchingTicket();
     var event = createEvent(pendingPublishingRequest, approvedPublishingRequest);
     var logRecorder = LogRecorder.forRoot(AcceptedPublishingRequestEventHandlerTest.class);
@@ -370,7 +370,8 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
   void shouldNotUpdateFileOwnershipAffiliationWhenOldTicketIsNullAndReceivingCompletedTicket()
       throws ApiGatewayException, IOException {
     var publication = createPublicationWithFiles(randomPendingOpenFile(), randomPendingOpenFile());
-    var publishingRequest = completedPublishingRequest(publication).persistNewTicket(ticketService);
+    var publishingRequest =
+        completedPublishingRequest(publication).persistNewTicket(ticketService, publication);
 
     handler.handleRequest(createEvent(null, publishingRequest), outputStream, CONTEXT);
 
@@ -453,7 +454,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                 userInstance,
                 REGISTRATOR_PUBLISHES_METADATA_ONLY)
             .complete(publication, userInstance)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var event = createEvent(null, publishingRequest);
 
     assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, CONTEXT));
@@ -476,7 +477,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
             UserInstance.fromPublication(publication),
             REGISTRATOR_PUBLISHES_METADATA_ONLY,
             Set.of(internalFileToReject, openFileToReject));
-    var ticket = publishingRequest.persistNewTicket(ticketService);
+    var ticket = publishingRequest.persistNewTicket(ticketService, publication);
     ticket.close(UserInstance.create(randomString(), randomUri())).persistUpdate(ticketService);
 
     var closedPublishingRequest = ticketService.fetchTicket(ticket);
@@ -502,7 +503,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
             Resource.fromPublication(publication),
             UserInstance.fromPublication(publication),
             REGISTRATOR_PUBLISHES_METADATA_ONLY);
-    var ticket = publishingRequest.persistNewTicket(ticketService);
+    var ticket = publishingRequest.persistNewTicket(ticketService, publication);
     var event = createEvent(null, ticket);
 
     handler.handleRequest(event, outputStream, CONTEXT);
@@ -523,7 +524,9 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
             PublicationStatus.PUBLISHED, resourceService);
     var filesApprovalThesis = pendingFilesApprovalThesis(publication);
     var approvedTicket =
-        filesApprovalThesis.complete(publication, USER_INSTANCE).persistNewTicket(ticketService);
+        filesApprovalThesis
+            .complete(publication, USER_INSTANCE)
+            .persistNewTicket(ticketService, publication);
     var event = createEvent(filesApprovalThesis, approvedTicket);
 
     assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, CONTEXT));
@@ -539,7 +542,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                 REGISTRATOR_PUBLISHES_METADATA_ONLY,
                 Set.of(file))
             .complete(publication, userInstance)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
   }
 
   private Publication createPublicationWithFiles(File... files) throws ApiGatewayException {
@@ -573,7 +576,7 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                     DoiRequest.create(
                             Resource.fromPublication(publication),
                             UserInstance.fromPublication(publication))
-                        .persistNewTicket(ticketService))
+                        .persistNewTicket(ticketService, publication))
             .orElseThrow();
   }
 
@@ -683,6 +686,6 @@ class AcceptedPublishingRequestEventHandlerTest extends ResourcesLocalTest {
                 .withOwner(UserInstance.fromPublication(publication).getUsername())
                 .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
     publishingRequest.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication));
-    return publishingRequest.persistNewTicket(ticketService);
+    return publishingRequest.persistNewTicket(ticketService, publication);
   }
 }

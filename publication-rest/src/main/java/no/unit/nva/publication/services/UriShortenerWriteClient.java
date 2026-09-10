@@ -63,7 +63,7 @@ public class UriShortenerWriteClient {
 
   private void sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest) {
     attempt(() -> client.transactWriteItems(transactWriteItemsRequest))
-        .orElseThrow(this::handleTransactionFailure);
+        .orElseThrow(failure -> handleTransactionFailure(failure, transactWriteItemsRequest));
   }
 
   private static String keyNotExistsCondition() {
@@ -71,8 +71,8 @@ public class UriShortenerWriteClient {
   }
 
   private TransactionFailedException handleTransactionFailure(
-      Failure<TransactWriteItemsResponse> fail) {
-    return new TransactionFailedException(fail.getException());
+      Failure<TransactWriteItemsResponse> fail, TransactWriteItemsRequest request) {
+    return new TransactionFailedException(fail.getException(), request);
   }
 
   private static Map<String, String> primaryKeyEqualityConditionAttributeNames() {

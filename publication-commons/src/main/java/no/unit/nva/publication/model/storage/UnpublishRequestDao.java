@@ -8,7 +8,6 @@ import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import nva.commons.core.JacocoGenerated;
-import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(UnpublishRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -25,13 +24,6 @@ public class UnpublishRequestDao extends TicketDao implements JsonSerializable {
 
   public UnpublishRequestDao(UnpublishRequest unpublishRequest) {
     super(unpublishRequest);
-  }
-
-  @Override
-  public TransactWriteItemsRequest createInsertionTransactionRequest() {
-    var dataEntry = newPutTransactionItem(this);
-    var uniquenessEntry = newPutTransactionItem(new IdentifierEntry(this));
-    return TransactWriteItemsRequest.builder().transactItems(dataEntry, uniquenessEntry).build();
   }
 
   @Override

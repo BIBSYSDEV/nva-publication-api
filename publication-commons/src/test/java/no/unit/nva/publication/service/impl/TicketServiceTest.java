@@ -18,6 +18,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.everyItem;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -50,7 +51,6 @@ import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
 import no.unit.nva.publication.TestingUtils;
@@ -76,6 +76,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
@@ -130,7 +131,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var ticket =
         DoiRequest.create(
             Resource.fromPublication(publication), UserInstance.fromPublication(publication));
-    var persistedTicket = ticket.persistNewTicket(ticketService);
+    var persistedTicket = ticket.persistNewTicket(ticketService, publication);
     copyServiceControlledFields(ticket, persistedTicket);
 
     assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
@@ -172,7 +173,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var userInstance = UserInstance.create(randomString(), randomUri());
     var ticket =
         PublishingRequestCase.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
 
     copyServiceControlledFields(ticket, ticket);
     assertThat(ticket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
@@ -195,7 +196,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
   void shouldCreateGeneralSupportCaseForAnyPublication() throws ApiGatewayException {
     var publication = persistPublication(owner, DRAFT);
     var ticket = TestingUtils.createGeneralSupportRequest(publication);
-    var persistedTicket = ticket.persistNewTicket(ticketService);
+    var persistedTicket = ticket.persistNewTicket(ticketService, publication);
     copyServiceControlledFields(ticket, persistedTicket);
     assertThat(persistedTicket.getCreatedDate(), is(greaterThanOrEqualTo(now)));
     assertThat(persistedTicket, is(equalTo(ticket)));
@@ -219,7 +220,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var userInstance = UserInstance.create(randomString(), randomUri());
     var ticket =
         PublishingRequestCase.create(resource, userInstance, REGISTRATOR_PUBLISHES_METADATA_ONLY)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     assertThat(ticket, is(instanceOf(PublishingRequestCase.class)));
   }
 
@@ -268,15 +269,14 @@ public class TicketServiceTest extends ResourcesLocalTest {
   }
 
   @ParameterizedTest(name = "ticket type:{0}")
-  @DisplayName("should throw Exception when user is not the resource owner")
+  @DisplayName("should not throw Exception when user is not the resource owner")
   @MethodSource("ticketTypeProvider")
   void shouldNotThrowExceptionWhenTheUserIsNotTheResourceOwner(
       Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
     var publication = persistPublication(owner, PUBLISHED);
-    publication.setResourceOwner(new ResourceOwner(randomUsername(), randomUri()));
     var ticket = createUnpersistedTicket(publication, ticketType);
 
-    assertDoesNotThrow(() -> ticket.persistNewTicket(ticketService));
+    assertDoesNotThrow(() -> ticket.persistNewTicket(ticketService, publication));
   }
 
   @ParameterizedTest(name = "ticket type:{0}")
@@ -289,7 +289,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
     ticketService =
         new TicketService(client, () -> duplicateIdentifier, uriRetriever, cristinUnitsUtil);
     var ticket = createUnpersistedTicket(publication, ticketType);
-    Executable action = () -> ticket.withOwner(randomString()).persistNewTicket(ticketService);
+    Executable action =
+        () -> ticket.withOwner(randomString()).persistNewTicket(ticketService, publication);
     assertDoesNotThrow(action);
     assertThrows(TransactionFailedException.class, action);
   }
@@ -304,7 +305,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var persistedTicket =
         createUnpersistedTicket(publication, ticketType)
             .withOwner(randomString())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
 
     ticketService.updateTicketStatus(persistedTicket, COMPLETED, USER_INSTANCE);
     var updatedTicket = ticketService.fetchTicket(persistedTicket);
@@ -456,7 +457,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
       throws ApiGatewayException {
     var publication = persistPublication(owner, PUBLISHED);
     var ticket = createPersistedTicket(publication, ticketType);
-    ticket.markReadByOwner().persistNewTicket(ticketService);
+    ticket.markReadByOwner().persistNewTicket(ticketService, publication);
     var owner = ticket.getOwner();
     assertThat(ticket.getViewedBy(), hasItem(owner));
     ticket.copy().markUnreadByOwner().persistUpdate(ticketService);
@@ -567,7 +568,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var publicationStatus = validPublicationStatusForTicketApproval(ticketType);
     var publication = persistPublication(owner, publicationStatus);
     var persistedTicket =
-        createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService);
+        createUnpersistedTicket(publication, ticketType)
+            .persistNewTicket(ticketService, publication);
     ticketService.updateTicketAssignee(persistedTicket, getUsername(publication));
     var updatedTicket = ticketService.fetchTicket(persistedTicket);
 
@@ -596,7 +598,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var persistedTicket =
         createUnpersistedTicket(publication, ticketType)
             .withOwner(UserInstance.fromPublication(publication).getUsername())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     persistedTicket.setAssignee(getUsername(publication));
 
     ticketService.updateTicketAssignee(
@@ -660,7 +662,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var ticket =
         TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
             .withOwner(randomString())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     ticket.remove(UserInstance.fromTicket(ticket)).persistUpdate(ticketService);
 
     var persistedTicket = ticket.fetch(ticketService);
@@ -674,12 +676,12 @@ public class TicketServiceTest extends ResourcesLocalTest {
         persistPublication(owner, validPublicationStatusForTicketApproval(ticketType));
     var ticket =
         TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     ticket.remove(UserInstance.fromTicket(ticket)).persistUpdate(ticketService);
 
     var secondTicket =
         TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     assertThat(secondTicket.getStatus(), is(equalTo(PENDING)));
   }
 
@@ -709,7 +711,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var ticket =
         PublishingRequestCase.createNewTicket(publication, ticketType, SortableIdentifier::next)
             .withOwner(randomString())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var version = ticket.toDao().getVersion();
     ticketService.refresh(ticket.getIdentifier());
     var updatedTicket = ticketService.fetchTicket(ticket);
@@ -808,6 +810,31 @@ public class TicketServiceTest extends ResourcesLocalTest {
         BadRequestException.class, () -> ticketService.completeTicket(ticket, userInstance));
   }
 
+  @ParameterizedTest
+  @DisplayName("should throw exception when persisting ticket for non-existing publication")
+  @MethodSource(
+      "no.unit.nva.publication.ticket.test.TicketTestUtils#ticketTypeAndPublicationStatusProvider")
+  void shouldThrowExceptionWhenPersistingTicketForNonExistingPublication(
+      Class<? extends TicketEntry> ticketType, PublicationStatus publicationStatus)
+      throws ApiGatewayException {
+    var publication = TicketTestUtils.createNonPersistedPublication(publicationStatus);
+    var ticket = TicketEntry.requestNewTicket(publication, ticketType);
+
+    assertThrows(RuntimeException.class, () -> ticket.persistNewTicket(ticketService, publication));
+  }
+
+  @Test
+  void shouldLogReasonWhenTransactionFailed() {
+    var logRecorder = LogRecorder.forRoot(ServiceWithTransactions.class);
+    var publication = TicketTestUtils.createNonPersistedPublication(PUBLISHED);
+    var ticket = TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class);
+
+    assertThrows(RuntimeException.class, () -> ticket.persistNewTicket(ticketService, publication));
+
+    assertThat(logRecorder.asString(), containsString("failed with code"));
+    assertThat(logRecorder.asString(), containsString(publication.getIdentifier().toString()));
+  }
+
   private Resource randomPublishedResourceWithPublicationYear(
       UserInstance userInstance, String year) throws BadRequestException {
     var publication = randomPublication();
@@ -841,7 +868,10 @@ public class TicketServiceTest extends ResourcesLocalTest {
             arg ->
                 TicketEntry.requestNewTicket(
                     publication, (Class<? extends TicketEntry>) Arrays.asList(arg).getFirst()))
-        .map(attempt(ticket -> ticket.withOwner(randomString()).persistNewTicket(ticketService)))
+        .map(
+            attempt(
+                ticket ->
+                    ticket.withOwner(randomString()).persistNewTicket(ticketService, publication)))
         .map(Try::orElseThrow)
         .toList();
   }
@@ -859,7 +889,9 @@ public class TicketServiceTest extends ResourcesLocalTest {
 
   private TicketEntry createPersistedTicket(Publication publication, Class<?> ticketType) {
     return attempt(
-            () -> createUnpersistedTicket(publication, ticketType).persistNewTicket(ticketService))
+            () ->
+                createUnpersistedTicket(publication, ticketType)
+                    .persistNewTicket(ticketService, publication))
         .orElseThrow();
   }
 

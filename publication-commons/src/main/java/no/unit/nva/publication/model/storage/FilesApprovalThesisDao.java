@@ -10,8 +10,6 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.TicketEntry;
 import nva.commons.core.JacocoGenerated;
-import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
-import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(FilesApprovalThesisDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -29,15 +27,6 @@ public class FilesApprovalThesisDao extends TicketDao implements JsonSerializabl
   }
 
   @Override
-  public TransactWriteItemsRequest createInsertionTransactionRequest() {
-    var insertionEntry = createInsertionEntry();
-    var identifierEntry = createUniqueIdentifierEntry();
-    return TransactWriteItemsRequest.builder()
-        .transactItems(identifierEntry, insertionEntry)
-        .build();
-  }
-
-  @Override
   public String joinByResourceOrderedType() {
     return joinByResourceContainedOrderedType();
   }
@@ -45,14 +34,5 @@ public class FilesApprovalThesisDao extends TicketDao implements JsonSerializabl
   @JsonIgnore
   private static String joinByResourceContainedOrderedType() {
     return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + FilesApprovalThesis.TYPE;
-  }
-
-  private TransactWriteItem createUniqueIdentifierEntry() {
-    var identifierEntry = new IdentifierEntry(getData().getIdentifier().toString());
-    return newPutTransactionItem(identifierEntry);
-  }
-
-  private TransactWriteItem createInsertionEntry() {
-    return newPutTransactionItem(new FilesApprovalThesisDao(getTicketEntry()));
   }
 }

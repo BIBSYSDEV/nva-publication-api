@@ -360,7 +360,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     var ticketToBeExpanded =
         TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
             .withOwner(UserInstance.fromPublication(publication).getUsername())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     FakeUriResponse.setupFakeForType(ticketToBeExpanded, fakeUriRetriever);
 
     var message = messageService.createMessage(ticketToBeExpanded, owner, randomString());
@@ -384,7 +384,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         GeneralSupportRequest.create(
             Resource.fromPublication(publication), UserInstance.fromPublication(publication));
     generalSupportRequest.setViewedBy(Set.of(owner.getUser()));
-    var ticketToBeExpanded = generalSupportRequest.persistNewTicket(ticketService);
+    var ticketToBeExpanded = generalSupportRequest.persistNewTicket(ticketService, publication);
 
     FakeUriResponse.setupFakeForType(ticketToBeExpanded, fakeUriRetriever);
 
@@ -1037,7 +1037,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             Resource.fromPublication(publication),
             UserInstance.fromPublication(publication),
             PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, publication);
   }
 
   private static List<Contributor> extractContributorsWithId(URI id, Publication publication) {
@@ -1198,7 +1198,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     var differentTicketSameType =
         TicketEntry.requestNewTicket(publication, ticketType)
             .withOwner(UserInstance.fromPublication(publication).getUsername())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var firstUnexpectedMessage =
         ExpandedMessage.createEntry(
             messageService.createMessage(differentTicketSameType, owner, randomString()),
@@ -1207,7 +1207,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     var differentTicketDifferentType =
         TicketEntry.requestNewTicket(publication, differentTicketType)
             .withOwner(UserInstance.fromPublication(publication).getUsername())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var secondUnexpectedMessage =
         ExpandedMessage.createEntry(
             messageService.createMessage(differentTicketDifferentType, owner, randomString()),

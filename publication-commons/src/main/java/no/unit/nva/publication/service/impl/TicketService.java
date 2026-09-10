@@ -18,6 +18,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -86,16 +87,16 @@ public class TicketService extends ServiceWithTransactions {
    * Method should be protected or package-private.
    *
    * @param ticketEntry the ticket entry to be persisted
+   * @param publication
    * @param <T> the TicketEntry class
    * @return the persisted ticket type with service updated fields.
    * @throws ApiGatewayException when an expected error occurs that needs to be sent to the client
    * @deprecated Use TicketEntry#persist instead.
    */
   @Deprecated(since = " TicketEntry#persist")
-  public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry)
+  public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry, Publication publication)
       throws ApiGatewayException {
-    var associatedPublication = fetchPublicationToEnsureItExists(ticketEntry);
-    return createTicketForPublication(associatedPublication, ticketEntry);
+    return createTicketForPublication(ticketEntry, publication);
   }
 
   public TicketEntry fetchTicket(UserInstance userInstance, SortableIdentifier ticketIdentifier)
@@ -237,18 +238,15 @@ public class TicketService extends ServiceWithTransactions {
     return new BadRequestException(exception.getMessage(), exception);
   }
 
-  private Publication fetchPublicationToEnsureItExists(TicketEntry ticketEntry) {
-    return attempt(
-            () -> resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier()))
-        .orElseThrow();
-  }
-
   private <T extends TicketEntry> T createTicketForPublication(
-      Publication publication, TicketEntry ticketEntry) throws ConflictException {
+      TicketEntry ticketEntry, Publication publication) throws ConflictException {
 
     setServiceControlledFields(ticketEntry, identifierProvider);
     ticketEntry.validateCreationRequirements(publication);
-    var request = ticketEntry.toDao().createInsertionTransactionRequest();
+    var request =
+        ticketEntry
+            .toDao()
+            .createInsertionTransactionRequest(Resource.fromPublication(publication));
     sendTransactionWriteRequest(request);
     return (T) ticketEntry;
   }

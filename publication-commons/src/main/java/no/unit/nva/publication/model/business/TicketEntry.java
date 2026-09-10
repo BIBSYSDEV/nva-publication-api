@@ -417,10 +417,10 @@ public abstract class TicketEntry implements Entity {
     return refreshed;
   }
 
-  public final TicketEntry persistNewTicket(TicketService ticketService)
+  public final TicketEntry persistNewTicket(TicketService ticketService, Publication publication)
       throws ApiGatewayException {
     // this is the only place that deprecated should be called.
-    return ticketService.createTicket(this);
+    return ticketService.createTicket(this, publication);
   }
 
   public final TicketEntry markUnreadByOwner() {

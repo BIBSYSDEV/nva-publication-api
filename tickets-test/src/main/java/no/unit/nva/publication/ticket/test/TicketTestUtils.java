@@ -357,7 +357,7 @@ public final class TicketTestUtils {
     return ticket
         .withOwnerAffiliation(ownerAffiliation)
         .withOwner(UserInstance.fromPublication(publication).getUsername())
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, publication);
   }
 
   public static TicketEntry createClosedTicket(
@@ -365,7 +365,7 @@ public final class TicketTestUtils {
       throws ApiGatewayException {
     return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
         .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
-        .persistNewTicket(ticketService)
+        .persistNewTicket(ticketService, publication)
         .close(UserInstance.create("Username", randomUri()));
   }
 
@@ -375,7 +375,7 @@ public final class TicketTestUtils {
     var completedTicket =
         TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
             .withOwner(UserInstance.fromPublication(publication).getUsername())
-            .persistNewTicket(ticketService)
+            .persistNewTicket(ticketService, publication)
             .complete(publication, UserInstance.create("Username", randomUri()));
     completedTicket.persistUpdate(ticketService);
     return completedTicket;

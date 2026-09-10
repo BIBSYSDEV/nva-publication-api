@@ -121,10 +121,10 @@ public final class PublishingRequestResolver {
 
   private TicketEntry persistPublishingRequest(
       Resource newImage, PublishingRequestCase publishingRequest) throws ApiGatewayException {
+    var publication = newImage.toPublication();
     return customerAllowsPublishingMetadataAndFiles()
-        ? publishingRequest.persistAutoComplete(
-            ticketService, newImage.toPublication(), userInstance)
-        : publishingRequest.persistNewTicket(ticketService);
+        ? publishingRequest.persistAutoComplete(ticketService, publication, userInstance)
+        : publishingRequest.persistNewTicket(ticketService, publication);
   }
 
   private void persistPendingPublishingRequest(Resource oldImage, Resource newImage)
@@ -155,7 +155,7 @@ public final class PublishingRequestResolver {
       Resource resource, PublishingWorkflow workflow, Set<File> files) throws ApiGatewayException {
     FilesApprovalThesis.createForUserInstitution(resource, userInstance, workflow)
         .withFilesForApproval(files)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, resource.toPublication());
   }
 
   private void persistFilesApprovalThesis(
@@ -169,7 +169,7 @@ public final class PublishingRequestResolver {
     FilesApprovalThesis.createForChannelOwningInstitution(
             resource, userInstance, organizationId, channelClaimIdentifier, workflow)
         .withFilesForApproval(files)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, resource.toPublication());
   }
 
   private boolean containsNewPublishableFiles(Resource oldImage, Resource newImage) {

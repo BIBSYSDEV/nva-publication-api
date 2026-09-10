@@ -834,7 +834,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     var persistedPublication = resourceService.createPublication(userInstance, publication);
     var ticket =
         GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, persistedPublication);
     var httpRequest = createUpdateTicketOwnershipRequest(ticket, curatingInstitution, SUPPORT);
     handler.handleRequest(httpRequest, output, CONTEXT);
 
@@ -851,7 +851,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     var persistedPublication = resourceService.createPublication(userInstance, publication);
     var ticket =
         GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, persistedPublication);
     var httpRequest = createUpdateTicketOwnershipRequest(ticket, randomUri(), SUPPORT);
     handler.handleRequest(httpRequest, output, CONTEXT);
 
@@ -874,7 +874,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     var persistedPublication = resourceService.createPublication(userInstance, publication);
     var ticket =
         GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, persistedPublication);
     var httpRequest =
         createUpdateTicketOwnershipRequestWithRandomInstitution(
             ticket, curatingInstitution, SUPPORT);
@@ -1064,7 +1064,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                 .withOwner(UserInstance.fromPublication(publication).getUsername())
                 .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
     publishingRequest.withFilesForApproval(getPendingFiles(publication));
-    return publishingRequest.persistNewTicket(ticketService);
+    return publishingRequest.persistNewTicket(ticketService, publication);
   }
 
   private TicketEntry persistFilesApprovalThesisContainingExistingPendingOpenFiles(
@@ -1073,7 +1073,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
             Resource.fromPublication(publication),
             UserInstance.fromPublication(publication),
             PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, publication);
   }
 
   private Set<File> getPendingFiles(Publication publication) {

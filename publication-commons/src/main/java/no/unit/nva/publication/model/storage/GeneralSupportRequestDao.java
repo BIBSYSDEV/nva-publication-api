@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
-import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(GeneralSupportRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -29,13 +28,6 @@ public class GeneralSupportRequestDao extends TicketDao implements JsonSerializa
   @Override
   public URI getCustomerId() {
     return getData().getCustomerId();
-  }
-
-  @Override
-  public TransactWriteItemsRequest createInsertionTransactionRequest() {
-    var dataEntry = newPutTransactionItem(this);
-    var uniquenessEntry = newPutTransactionItem(new IdentifierEntry(this));
-    return TransactWriteItemsRequest.builder().transactItems(dataEntry, uniquenessEntry).build();
   }
 
   @Override

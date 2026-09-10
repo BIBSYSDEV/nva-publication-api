@@ -264,7 +264,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
     var doiRequest = DoiRequest.create(resource, UserInstance.fromPublication(publication));
     doiRequest.setTicketEvent(
         DoiRequestedEvent.create(UserInstance.fromPublication(publication), Instant.now()));
-    return doiRequest.persistNewTicket(ticketService);
+    return doiRequest.persistNewTicket(ticketService, publication);
   }
 
   private Publication createPublishedPublication() throws BadRequestException {

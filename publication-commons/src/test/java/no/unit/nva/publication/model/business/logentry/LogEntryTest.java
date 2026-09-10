@@ -143,7 +143,8 @@ class LogEntryTest extends ResourcesLocalTest {
     var userInstance = UserInstance.fromPublication(publication);
     var persistedResource = persistResource(Resource.fromPublication(publication));
     var doiRequest =
-        DoiRequest.create(persistedResource, userInstance).persistNewTicket(ticketService);
+        DoiRequest.create(persistedResource, userInstance)
+            .persistNewTicket(ticketService, publication);
     var logEntry =
         DoiRequestedEvent.create(userInstance, Instant.now())
             .toLogEntry(
