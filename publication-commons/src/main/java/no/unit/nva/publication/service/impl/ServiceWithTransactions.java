@@ -122,8 +122,7 @@ public class ServiceWithTransactions {
             batch -> {
               var batchRequest = transactWriteItemsRequest.toBuilder().transactItems(batch).build();
               attempt(() -> getClient().transactWriteItems(batchRequest))
-                  .orElseThrow(
-                      failure -> handleTransactionFailure(failure, transactWriteItemsRequest));
+                  .orElseThrow(failure -> handleTransactionFailure(failure, batchRequest));
             });
   }
 
