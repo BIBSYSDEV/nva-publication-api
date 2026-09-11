@@ -170,6 +170,8 @@ Globals:
 Resources:
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 90
 
   #===========================DynamoDB Table========================================================
 
@@ -708,9 +710,11 @@ Resources:
   NvaPublicationApi:
     Type: AWS::Serverless::Api
     Properties:
+      # sourceIp is the client address as long as nothing sits in front of this regional endpoint. With a
+      # CloudFront distribution in front it becomes the edge address, so enable logging on the distribution.
       AccessLogSetting:
         DestinationArn: !GetAtt ApiAccessLogGroup.Arn
-        Format: '{ "apiId": "$context.apiId", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch", "httpMethod": "$context.httpMethod", "path": "$context.path", "status": "$context.status",  "error.message": "$context.error.message" }'
+        Format: '{ "apiId": "$context.apiId", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch", "httpMethod": "$context.httpMethod", "path": "$context.path", "resourcePath": "$context.resourcePath", "status": "$context.status", "sourceIp": "$context.identity.sourceIp", "userAgent": "$context.identity.userAgent", "error.message": "$context.error.message" }'
       StageName: Prod
       EndpointConfiguration: REGIONAL
       DefinitionBody:
