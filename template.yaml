@@ -714,7 +714,7 @@ Resources:
       # CloudFront distribution in front it becomes the edge address, so enable logging on the distribution.
       AccessLogSetting:
         DestinationArn: !GetAtt ApiAccessLogGroup.Arn
-        Format: '{ "apiId": "$context.apiId", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch", "httpMethod": "$context.httpMethod", "path": "$context.path", "resourcePath": "$context.resourcePath", "status": "$context.status", "sourceIp": "$context.identity.sourceIp", "userAgent": "$context.identity.userAgent", "error.message": "$context.error.message" }'
+        Format: '{ "apiId": "$context.apiId", "requestId": "$context.requestId", "integrationId": "$context.integration.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch", "ip": "$context.identity.sourceIp", "httpMethod": "$context.httpMethod", "path": "$context.path", "status": "$context.status", "latency": "$context.integration.latency", "userAgent": "$context.identity.userAgent", "error.message": "$context.error.message" }'
       StageName: Prod
       EndpointConfiguration: REGIONAL
       DefinitionBody:
