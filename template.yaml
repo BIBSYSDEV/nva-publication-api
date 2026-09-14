@@ -1472,7 +1472,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeletionProcessInitializationHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 1
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
