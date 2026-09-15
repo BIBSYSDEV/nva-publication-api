@@ -79,9 +79,9 @@ AdditionalIdentifierBase:
     - type
   type: object
   properties:
-    value:
-      type: string
     sourceName:
+      type: string
+    value:
       type: string
     type:
       type: string
@@ -1120,13 +1120,6 @@ Funding:
     - type
   type: object
   properties:
-    labels:
-      type: object
-      additionalProperties:
-        type: string
-    source:
-      type: string
-      format: uri
     fundingAmount:
       $ref: "#/components/schemas/MonetaryAmount"
     activeFrom:
@@ -1135,6 +1128,13 @@ Funding:
     activeTo:
       type: string
       format: date-time
+    source:
+      type: string
+      format: uri
+    labels:
+      type: object
+      additionalProperties:
+        type: string
     identifier:
       type: string
     type:
@@ -1230,6 +1230,7 @@ ImportSource:
         - INSPERA
         - WISE_FLOW
         - AVHANDLINGSPORTALEN
+        - SIMULA
         - OTHER
     archive:
       type: string
@@ -1260,12 +1261,15 @@ Instant:
   required:
     - type
   type: object
-  properties:
-    value:
-      type: string
-      format: date-time
-    type:
-      type: string
+  allOf:
+    - $ref: "#/components/schemas/Time"
+    - type: object
+      properties:
+        value:
+          type: string
+          format: date-time
+        type:
+          type: string
 InternalFile:
   required:
     - type
@@ -2170,15 +2174,18 @@ Period:
   required:
     - type
   type: object
-  properties:
-    from:
-      type: string
-      format: date-time
-    to:
-      type: string
-      format: date-time
-    type:
-      type: string
+  allOf:
+    - $ref: "#/components/schemas/Time"
+    - type: object
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        type:
+          type: string
 Place:
   required:
     - type

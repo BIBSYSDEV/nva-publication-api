@@ -52,6 +52,7 @@ class MessageServiceTest extends ResourcesLocalTest {
       MESSAGE_CREATION_TIME.plus(Period.ofDays(2));
   public static final Instant THIRD_MESSAGE_CREATION_TIME =
       SECOND_MESSAGE_CREATION_TIME.plus(Period.ofDays(2));
+  public static final URI TOP_LEVEL_ORG_CRISTIN_ID = randomUri();
   private MessageService messageService;
   private ResourceService resourceService;
   private UserInstance owner;
@@ -60,11 +61,10 @@ class MessageServiceTest extends ResourcesLocalTest {
   @BeforeEach
   public void initialize() {
     super.init();
-    var clock = mockClock();
     messageService = getMessageService();
     resourceService = getResourceService(client);
     ticketService = getTicketService();
-    owner = TestingUtils.randomUserInstance();
+    owner = TestingUtils.randomUserInstance(TOP_LEVEL_ORG_CRISTIN_ID);
   }
 
   @DisplayName("should persist message with reference to a ticket")
@@ -173,7 +173,8 @@ class MessageServiceTest extends ResourcesLocalTest {
             PublicationStatus.PUBLISHED, owner, resourceService);
     var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
     var persistedMessage = messageService.createMessage(ticket, owner, randomString());
-    var curator = randomUserInstance(accessRight, owner.getCustomerId());
+    var curator =
+        randomUserInstance(accessRight, owner.getCustomerId(), owner.getTopLevelOrgCristinId());
 
     assertDoesNotThrow(() -> messageService.deleteMessage(curator, persistedMessage));
   }
@@ -222,8 +223,13 @@ class MessageServiceTest extends ResourcesLocalTest {
   }
 
   private UserInstance randomUserInstance(AccessRight accessRight, URI customerId) {
+    return randomUserInstance(accessRight, customerId, randomUri());
+  }
+
+  private UserInstance randomUserInstance(
+      AccessRight accessRight, URI customerId, URI topLevelCristinId) {
     return UserInstance.create(
-        randomString(), customerId, randomUri(), List.of(accessRight), randomUri());
+        randomString(), customerId, randomUri(), List.of(accessRight), topLevelCristinId);
   }
 
   private Message publicationOwnerSendsMessage(TicketEntry ticket, String messageText) {
