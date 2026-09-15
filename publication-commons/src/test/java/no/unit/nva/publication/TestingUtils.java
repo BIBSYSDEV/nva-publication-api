@@ -6,6 +6,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 
 import java.net.URI;
+import java.util.List;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
@@ -17,6 +18,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
+import nva.commons.apigateway.AccessRight;
 
 public final class TestingUtils extends TestDataSource {
 
@@ -35,6 +37,10 @@ public final class TestingUtils extends TestDataSource {
 
   public static UserInstance randomUserInstance(URI topLevelOrgCristinId) {
     return UserInstance.create(randomString(), randomUri(), topLevelOrgCristinId);
+  }
+
+  public static UserInstance randomUserInstance(URI customerId, URI topLevelCristinId, List<AccessRight> accessRights) {
+    return UserInstance.create(randomString(), customerId, randomUri(), accessRights, topLevelCristinId);
   }
 
   public static Publication randomPublicationWithoutDoi() {

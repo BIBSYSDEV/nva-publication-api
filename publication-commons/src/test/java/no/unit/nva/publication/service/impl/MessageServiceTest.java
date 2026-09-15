@@ -29,7 +29,6 @@ import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
@@ -219,17 +218,16 @@ class MessageServiceTest extends ResourcesLocalTest {
   }
 
   private UserInstance randomUserInstance() {
-    return UserInstance.create(new User(randomString()), randomUri());
+    return TestingUtils.randomUserInstance();
   }
 
   private UserInstance randomUserInstance(AccessRight accessRight, URI customerId) {
-    return randomUserInstance(accessRight, customerId, randomUri());
+    return TestingUtils.randomUserInstance(customerId, randomUri(), List.of(accessRight));
   }
 
   private UserInstance randomUserInstance(
       AccessRight accessRight, URI customerId, URI topLevelCristinId) {
-    return UserInstance.create(
-        randomString(), customerId, randomUri(), List.of(accessRight), topLevelCristinId);
+    return TestingUtils.randomUserInstance(customerId, topLevelCristinId, List.of(accessRight));
   }
 
   private Message publicationOwnerSendsMessage(TicketEntry ticket, String messageText) {
