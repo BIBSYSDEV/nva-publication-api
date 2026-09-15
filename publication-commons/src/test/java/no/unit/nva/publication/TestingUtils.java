@@ -33,6 +33,10 @@ public final class TestingUtils extends TestDataSource {
     return UserInstance.create(randomString(), randomUri());
   }
 
+  public static UserInstance randomUserInstance(URI topLevelOrgCristinId) {
+    return UserInstance.create(randomString(), randomUri(), topLevelOrgCristinId);
+  }
+
   public static Publication randomPublicationWithoutDoi() {
     var publication = randomPublication(DegreeBachelor.class).copy().withDoi(null).build();
     publication
