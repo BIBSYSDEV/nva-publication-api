@@ -134,6 +134,9 @@ class ExpandedResourceTest extends ResourcesLocalTest {
   private static final JsonPointer SERIES_ID_JSON_PTR =
       JsonPointer.compile(
           "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/series/id");
+  private static final JsonPointer PARENT_FIRST_CONTRIBUTOR_IDENTITY_JSON_PTR =
+      JsonPointer.compile(
+          "/entityDescription/reference/publicationContext/entityDescription/contributors/0/identity");
   private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
   private FakeUriRetriever fakeUriRetriever;
   private ResourceService resourceService;
@@ -1545,6 +1548,58 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         assertTrue(hasPart.isMissingNode());
       }
     }
+  }
+
+  @Test
+  void
+      shouldChooseLongestNameWhenParentPublicationAndChildPublicationHaveDifferentNamesForSameIdentity()
+          throws Exception {
+    var shortName = "Kjell T Ringen";
+    var longName = "Kjell Tjuvestad Ringen";
+
+    var child = randomPublication(AcademicChapter.class);
+    var childContributor = withName(child.getContributors().getFirst(), shortName);
+    child.getEntityDescription().setContributors(List.of(childContributor));
+
+    var parent = randomPublication(BookAnthology.class);
+    parent.getEntityDescription().setContributors(List.of(withName(childContributor, longName)));
+
+    var persistedChild =
+        Resource.fromPublication(child)
+            .persistNew(resourceService, UserInstance.fromPublication(child));
+    FakeUriResponse.setupFakeForType(
+        persistedChild, fakeUriRetriever, resourceService, false, parent);
+
+    var expandedResource =
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(persistedChild));
+
+    var framedResult = expandedResource.asJsonNode();
+    var identityId = childContributor.identity().getId();
+    var nameNode = findContributorNameNode(framedResult, identityId);
+    assertTrue(nameNode.isTextual(), "identity.name should be a single string but was " + nameNode);
+    assertEquals(longName, nameNode.textValue());
+
+    // The same person in the embedded parent publication must be embedded with the name as well,
+    // not reduced to an id reference
+    var parentContributorIdentity = framedResult.at(PARENT_FIRST_CONTRIBUTOR_IDENTITY_JSON_PTR);
+    assertEquals(identityId.toString(), parentContributorIdentity.at("/id").textValue());
+    assertEquals(longName, parentContributorIdentity.at("/name").textValue());
+  }
+
+  private static Contributor withName(Contributor contributor, String name) {
+    var identity = contributor.identity().copy().withName(name).build();
+    return contributor.copy().withIdentity(identity).build();
+  }
+
+  private static JsonNode findContributorNameNode(JsonNode expandedResource, URI identityId) {
+    return stream(expandedResource.at(JSON_PTR_CONTRIBUTORS).spliterator(), false)
+        .filter(
+            contributor -> identityId.toString().equals(contributor.at("/identity/id").asText()))
+        .map(contributor -> contributor.at("/identity/name"))
+        .findFirst()
+        .orElseThrow(
+            () -> new AssertionError("No contributor with identity id " + identityId + " found"));
   }
 
   private ExpandedResource createExpandedResourceWithAffiliation(URI affiliationUri) {
