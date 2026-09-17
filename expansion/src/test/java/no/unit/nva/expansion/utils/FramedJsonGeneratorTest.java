@@ -1,5 +1,7 @@
 package no.unit.nva.expansion.utils;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.stream.StreamSupport.stream;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLISHER_JSON_PTR;
@@ -14,10 +16,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Set;
 import no.unit.nva.expansion.ExpansionConfig;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -25,6 +27,8 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.ResearchData;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.researchdata.SoftwareSourceCode;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import no.unit.nva.publication.uriretriever.FakeUriRetriever;
 import org.junit.jupiter.api.Test;
 
@@ -43,8 +47,7 @@ class FramedJsonGeneratorTest {
   private static final String CONTEXT_FIELD = "@context";
 
   @Test
-  void shouldChooseLongestNameForAllEntriesWhenSamePersonIsRegisteredTwiceWithDifferentNames()
-      throws JsonProcessingException {
+  void shouldChooseLongestNameForAllEntriesWhenSamePersonIsRegisteredTwiceWithDifferentNames() {
     var identityId = randomUri();
     var publication =
         publicationWithContributors(
@@ -57,8 +60,7 @@ class FramedJsonGeneratorTest {
   }
 
   @Test
-  void shouldChooseLongestNameAndEmbedPublisherWhenPublisherIsSamePersonAsContributor()
-      throws JsonProcessingException {
+  void shouldChooseLongestNameAndEmbedPublisherWhenPublisherIsSamePersonAsContributor() {
     var identityId = randomUri();
     var publisher = identity(identityId, "Mikkel Rev");
     var publication =
@@ -73,8 +75,7 @@ class FramedJsonGeneratorTest {
   }
 
   @Test
-  void shouldEmbedPersonPublisherWithNameWhenPublisherIsNotAContributor()
-      throws JsonProcessingException {
+  void shouldEmbedPersonPublisherWithNameWhenPublisherIsNotAContributor() {
     var publisher = identity(randomUri(), "Ante Fred");
     var publication = researchDataPublication(publisher, contributor(randomUri(), "Inga Fare"));
 
@@ -84,8 +85,7 @@ class FramedJsonGeneratorTest {
   }
 
   @Test
-  void shouldKeepLexicographicallyGreatestNameWhenMergedIdentityHasNamesOfEqualLength()
-      throws JsonProcessingException {
+  void shouldKeepLexicographicallyGreatestNameWhenMergedIdentityHasNamesOfEqualLength() {
     var identityId = randomUri();
     var publication =
         publicationWithContributors(
@@ -98,7 +98,7 @@ class FramedJsonGeneratorTest {
   }
 
   @Test
-  void shouldLeaveIdentityWithoutNameUntouched() throws JsonProcessingException {
+  void shouldLeaveIdentityWithoutNameUntouched() {
     var identityId = randomUri();
     var publication = publicationWithContributors(contributor(identityId, null));
 
@@ -110,7 +110,7 @@ class FramedJsonGeneratorTest {
   }
 
   @Test
-  void shouldNotMergeNamesOfContributorsWithoutIdentityId() throws JsonProcessingException {
+  void shouldNotMergeNamesOfContributorsWithoutIdentityId() {
     var publication =
         publicationWithContributors(contributor(null, "Per Nille"), contributor(null, "Per Sille"));
 
@@ -150,8 +150,8 @@ class FramedJsonGeneratorTest {
   private static Publication withContributors(
       Publication publication, Contributor... contributors) {
     publication.getEntityDescription().setContributors(List.of(contributors));
-    publication.setProjects(List.of());
-    publication.setFundings(Set.of());
+    publication.setProjects(emptyList());
+    publication.setFundings(emptySet());
     return publication;
   }
 
@@ -160,21 +160,22 @@ class FramedJsonGeneratorTest {
   }
 
   private static Contributor contributor(URI identityId, String name) {
-    return randomPublication(AcademicArticle.class)
-        .getContributors()
-        .getFirst()
-        .copy()
+    return new Contributor.Builder()
+        .withRole(new RoleType(Role.CREATOR))
         .withIdentity(identity(identityId, name))
-        .withAffiliations(List.of())
         .build();
   }
 
-  private static JsonNode frame(Publication publication) throws JsonProcessingException {
-    var frame = SearchIndexFrame.getFrameWithContext(FRAME);
-    var generator =
-        new FramedJsonGenerator(
-            List.of(toJsonLd(publication)), frame, FakeUriRetriever.newInstance());
-    return objectMapper.readTree(generator.getFramedJson());
+  private static JsonNode frame(Publication publication) {
+    try {
+      var frame = SearchIndexFrame.getFrameWithContext(FRAME);
+      var generator =
+          new FramedJsonGenerator(
+              List.of(toJsonLd(publication)), frame, FakeUriRetriever.newInstance());
+      return objectMapper.readTree(generator.getFramedJson());
+    } catch (JsonProcessingException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   private static InputStream toJsonLd(Publication publication) throws JsonProcessingException {
