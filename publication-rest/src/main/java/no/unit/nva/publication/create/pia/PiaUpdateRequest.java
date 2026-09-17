@@ -7,15 +7,15 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import nva.commons.core.paths.UriWrapper;
 
 public record PiaUpdateRequest(
-    PiaPublication publication, String cristinId, String externalId, String orcid, int sequenceNr)
+    PiaPublication publication, Integer cristinId, String externalId, String orcid, int sequenceNr)
     implements JsonSerializable {
 
   public static PiaUpdateRequest toPiaRequest(Contributor contributor, String scopusId) {
     return new PiaUpdateRequest(
         createPiaPublication(scopusId),
         extractContributorCristinIdentifier(contributor),
-        contributor.identity().getOrcId(),
         extractScopusAuid(contributor),
+        extractOrcidIdentifier(contributor),
         contributor.sequence());
   }
 
@@ -32,9 +32,19 @@ public record PiaUpdateRequest(
     return extractAuid(contributor).orElseThrow().value();
   }
 
-  private static String extractContributorCristinIdentifier(Contributor contributor) {
-    var cristinId = contributor.identity().getId();
-    return UriWrapper.fromUri(cristinId).getLastPathElement();
+  private static String extractOrcidIdentifier(Contributor contributor) {
+    return Optional.ofNullable(contributor.identity().getOrcId())
+        .map(UriWrapper::fromUri)
+        .map(UriWrapper::getLastPathElement)
+        .orElse(null);
+  }
+
+  private static Integer extractContributorCristinIdentifier(Contributor contributor) {
+    return Optional.ofNullable(contributor.identity().getId())
+        .map(UriWrapper::fromUri)
+        .map(UriWrapper::getLastPathElement)
+        .map(Integer::parseInt)
+        .orElse(null);
   }
 
   private static Optional<AdditionalIdentifier> extractAuid(Contributor contributor) {
