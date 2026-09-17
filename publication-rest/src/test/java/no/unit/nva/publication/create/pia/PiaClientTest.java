@@ -7,6 +7,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_NO_CONTENT;
 import static java.net.HttpURLConnection.HTTP_UNSUPPORTED_TYPE;
@@ -49,14 +50,16 @@ import org.junit.jupiter.api.Test;
  * traceable.
  *
  * <p>The endpoint is {@code POST https://{piaHost}/sentralimport/authors}. It is protected by HTTP
- * basic authentication, requires {@code Content-Type: application/json} and answers {@code 201
- * Created} when the authors were accepted; {@link PiaClient} treats any other status as a failure.
+ * basic authentication, requires {@code Content-Type: application/json} and answers {@code 204
+ * No Content} when the authors were accepted; {@link PiaClient} treats any other status as a failure.
  *
  * <p>The request body is a JSON array of author records, one per contributor, each identifying the
  * publication by its Scopus id. The fields exercised here are {@code cristinId}, which is a JSON
  * number, {@code externalId}, which carries the Scopus AUID, and {@code orcid}, which carries the
  * bare ORCID identifier rather than its URI form; see the individual tests for the constraints PIA
  * puts on them.
+ *
+ * <p>Some documentation can be found in Jira ticket: SMILE-1295
  */
 @WireMockTest(httpsEnabled = true)
 class PiaClientTest {
@@ -67,7 +70,7 @@ class PiaClientTest {
   private static final String EXTERNAL_ID_FIELD = "externalId";
   private static final String ORCID_FIELD = "orcid";
   private static final String CRISTIN_PERSON_URI_TEMPLATE =
-      "https://api.nva.unit.no/cristin/person/%s";
+      "https://example.com/cristin/person/%s";
   private static final String SECRET_NAME = "pia-secret-name";
   private static final String USERNAME_KEY = "pia-username-key";
   private static final String PASSWORD_KEY = "pia-password-key";
@@ -81,7 +84,7 @@ class PiaClientTest {
   @BeforeEach
   void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) {
     piaClient = new PiaClient(piaClientConfig(wireMockRuntimeInfo));
-    stubFor(post(urlEqualTo(PIA_AUTHORS_PATH)).willReturn(aResponse().withStatus(HTTP_CREATED)));
+    stubFor(post(urlEqualTo(PIA_AUTHORS_PATH)).willReturn(aResponse().withStatus(HTTP_NO_CONTENT)));
   }
 
   @Test
@@ -99,7 +102,7 @@ class PiaClientTest {
    * PIA consumes {@code orcid} as the bare identifier value, never as a URI. The field is limited
    * to 20 characters, so posting the full URI form {@code https://orcid.org/0000-0002-4029-1960} is
    * rejected with {@code 400 Bad Request} and a message containing "is too long ... maximum
-   * allowed:
+   * allowed: 20
    */
   @Test
   void shouldSendOrcidAsIdentifierValueAndNotAsUri() {
@@ -149,8 +152,7 @@ class PiaClientTest {
    * {@link PiaClient} accepts as a success, every other one is logged as a failure.
    */
   @Test
-  void shouldReturnSuccessWhenPiaAcceptedAuthorsUpdateWithNoContentInResponse() {
-    stubFor(post(urlEqualTo(PIA_AUTHORS_PATH)).willReturn(aResponse().withStatus(HTTP_NO_CONTENT)));
+  void shouldNotLogErrorWhenPiaAnswersNoContent() {
     var logRecorder = LogRecorder.forClass(PiaClient.class);
 
     piaClient.updateContributor(
@@ -158,6 +160,22 @@ class PiaClientTest {
 
     assertEquals(1, findAll(postRequestedFor(urlEqualTo(PIA_AUTHORS_PATH))).size());
     assertThat(logRecorder.asString(), not(containsString(UPDATE_FAILED_MESSAGE)));
+  }
+
+  @Test
+  void shouldLogStatusCodeAndBodyWhenPiaRejectsAuthorsUpdate() {
+    var responseBody = randomString();
+    stubFor(
+        post(urlEqualTo(PIA_AUTHORS_PATH))
+            .willReturn(aResponse().withStatus(HTTP_BAD_REQUEST).withBody(responseBody)));
+    var logRecorder = LogRecorder.forClass(PiaClient.class);
+
+    piaClient.updateContributor(
+        List.of(contributorWith(randomInteger(), randomString(), randomUri())), randomString());
+
+    assertThat(logRecorder.asString(), containsString(UPDATE_FAILED_MESSAGE));
+    assertThat(logRecorder.asString(), containsString(String.valueOf(HTTP_BAD_REQUEST)));
+    assertThat(logRecorder.asString(), containsString(responseBody));
   }
 
   private static JsonNode sentRequest() {
