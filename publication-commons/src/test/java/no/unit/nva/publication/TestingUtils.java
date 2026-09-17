@@ -18,7 +18,6 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
 import no.unit.nva.publication.model.business.UserInstance;
-import nva.commons.apigateway.AccessRight;
 
 public final class TestingUtils extends TestDataSource {
 
@@ -32,15 +31,7 @@ public final class TestingUtils extends TestDataSource {
   }
 
   public static UserInstance randomUserInstance() {
-    return UserInstance.create(randomString(), randomUri());
-  }
-
-  public static UserInstance randomUserInstance(URI topLevelOrgCristinId) {
-    return UserInstance.create(randomString(), randomUri(), topLevelOrgCristinId);
-  }
-
-  public static UserInstance randomUserInstance(URI customerId, URI topLevelCristinId, List<AccessRight> accessRights) {
-    return UserInstance.create(randomString(), customerId, randomUri(), accessRights, topLevelCristinId);
+    return UserInstance.create(randomString(), randomUri(), randomUri(), List.of(), randomUri());
   }
 
   public static Publication randomPublicationWithoutDoi() {

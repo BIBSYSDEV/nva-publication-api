@@ -75,19 +75,6 @@ public class UserInstance implements JsonSerializable {
   }
 
   public static UserInstance create(
-      String userIdentifier, URI customerId, URI topLevelOrgCristinId) {
-    return new UserInstance(
-        userIdentifier,
-        customerId,
-        topLevelOrgCristinId,
-        null,
-        null,
-        null,
-        UserClientType.INTERNAL,
-        null);
-  }
-
-  public static UserInstance create(
       String userIdentifier,
       URI customerId,
       URI personCristinId,
