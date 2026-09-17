@@ -106,11 +106,11 @@ public class MessageService extends ServiceWithTransactions {
 
   private boolean isCuratorForMessage(Message message, UserInstance userInstance)
       throws NotFoundException {
-    if (!message.getCustomerId().equals(userInstance.getCustomerId())) {
+    var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
+    if (!ticket.getOwnerAffiliation().equals(userInstance.getTopLevelOrgCristinId())) {
       return false;
     }
 
-    var ticket = ticketService.fetchTicketByIdentifier(message.getTicketIdentifier());
     return switch (ticket) {
       case PublishingRequestCase _ ->
           userInstance.getAccessRights().contains(AccessRight.MANAGE_PUBLISHING_REQUESTS);
