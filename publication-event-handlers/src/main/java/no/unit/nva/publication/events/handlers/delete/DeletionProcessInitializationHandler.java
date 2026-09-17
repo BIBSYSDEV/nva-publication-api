@@ -10,23 +10,13 @@ import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
 import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.service.impl.ResourceService;
-import nva.commons.core.JacocoGenerated;
 
 public class DeletionProcessInitializationHandler
     extends DestinationsEventBridgeEventHandler<
         DataEntryUpdateEvent, ResourceDraftedForDeletionEvent> {
 
-  private final ResourceService resourceService;
-
-  @JacocoGenerated
   public DeletionProcessInitializationHandler() {
-    this(ResourceService.defaultService());
-  }
-
-  public DeletionProcessInitializationHandler(ResourceService resourceService) {
     super(DataEntryUpdateEvent.class);
-    this.resourceService = resourceService;
   }
 
   @Override
@@ -46,11 +36,7 @@ public class DeletionProcessInitializationHandler
   }
 
   private Publication toPublication(Entity dataEntry) {
-    Publication publication = null;
-    if (dataEntry instanceof Resource) {
-      publication = dataEntry.toPublication(resourceService);
-    }
-    return publication;
+    return dataEntry instanceof Resource resource ? resource.toPublication() : null;
   }
 
   private ResourceDraftedForDeletionEvent toDeletePublicationEvent(Publication publication) {

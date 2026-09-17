@@ -8,7 +8,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.mockito.Mockito.mock;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
@@ -18,13 +17,11 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
 import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class DeletionProcessInitializationHandlerTest extends ResourcesLocalTest {
+class DeletionProcessInitializationHandlerTest {
 
   private DeletionProcessInitializationHandler handler;
   private ByteArrayOutputStream outputStream;
@@ -32,8 +29,7 @@ class DeletionProcessInitializationHandlerTest extends ResourcesLocalTest {
 
   @BeforeEach
   public void setUp() {
-    super.init();
-    handler = new DeletionProcessInitializationHandler(mock(ResourceService.class));
+    handler = new DeletionProcessInitializationHandler();
     outputStream = new ByteArrayOutputStream();
     context = null;
   }
