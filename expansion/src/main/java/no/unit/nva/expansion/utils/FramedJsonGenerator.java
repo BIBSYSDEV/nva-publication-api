@@ -30,6 +30,7 @@ import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RiotException;
+import org.apache.jena.update.UpdateAction;
 import org.apache.jena.vocabulary.RDF;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,8 @@ public class FramedJsonGenerator {
   private static final String PROJECT_SOURCE_URI =
       "https://example.org/project-ontology.ttl#source";
   private static final Path FUNDING_QUERY_FILE_PATH = Path.of("funding_query.sparql");
+  private static final String DELETE_SHORTER_CONTRIBUTOR_NAMES_UPDATE =
+      IoUtils.stringFromResources(Path.of("deleteShorterContributorNames.sparql"));
   private final String framedJson;
   private final RawContentRetriever uriRetriever;
 
@@ -68,6 +71,7 @@ public class FramedJsonGenerator {
   private Model createModel(List<InputStream> streams) {
     var model = ModelFactory.createDefaultModel();
     streams.forEach(s -> loadDataIntoModel(model, s));
+    deleteShorterContributorNames(model);
     addTopLevelOrganizations(model);
     addContributorOrganizations(model);
     addContributorInstitutions(model);
@@ -125,6 +129,10 @@ public class FramedJsonGenerator {
     var query = IoUtils.stringFromResources(FUNDING_QUERY_FILE_PATH).formatted(publicationUri);
 
     return QueryFactory.create(query);
+  }
+
+  private static void deleteShorterContributorNames(Model model) {
+    UpdateAction.parseExecute(DELETE_SHORTER_CONTRIBUTOR_NAMES_UPDATE, model);
   }
 
   private void loadDataIntoModel(Model model, InputStream inputStream) {

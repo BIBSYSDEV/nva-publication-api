@@ -82,19 +82,45 @@ public final class FakeUriResponse {
     // NO-OP
   }
 
-  /** This setup mutes the anthology identifier to mock the response of the parent publication. */
+  /**
+   * This setup mutes the anthology identifier to mock the response of the parent publication. When
+   * the publication context is an anthology, a random parent publication is persisted.
+   */
   public static void setupFakeForType(
       Publication publication,
       FakeUriRetriever fakeUriRetriever,
       ResourceService resourceService,
       boolean publicationContextRedirects) {
+    setupFakeForType(
+        publication,
+        fakeUriRetriever,
+        resourceService,
+        publicationContextRedirects,
+        randomPublication(BookAnthology.class));
+  }
+
+  /**
+   * Same as {@link #setupFakeForType(Publication, FakeUriRetriever, ResourceService, boolean)}, but
+   * with a caller-supplied parent publication. The parent is only used when the publication context
+   * is an anthology.
+   */
+  public static void setupFakeForType(
+      Publication publication,
+      FakeUriRetriever fakeUriRetriever,
+      ResourceService resourceService,
+      boolean publicationContextRedirects,
+      Publication parentPublication) {
     fakeContributorResponses(publication, fakeUriRetriever);
     fakeOwnerResponse(fakeUriRetriever, publication.getResourceOwner().getOwnerAffiliation());
     fakePendingNviResponse(fakeUriRetriever, publication);
     fakeFundingResponses(fakeUriRetriever, publication);
     fakeProjectResponses(fakeUriRetriever, publication, emptySet());
     fakeContextResponses(
-        publication, fakeUriRetriever, resourceService, publicationContextRedirects);
+        publication,
+        fakeUriRetriever,
+        resourceService,
+        publicationContextRedirects,
+        parentPublication);
     resourceService.updateResource(
         Resource.fromPublication(publication), UserInstance.fromPublication(publication));
   }
@@ -110,7 +136,11 @@ public final class FakeUriResponse {
     fakeFundingResponses(fakeUriRetriever, publication);
     fakeProjectResponses(fakeUriRetriever, publication, emptySet());
     fakeContextResponses(
-        publication, fakeUriRetriever, resourceService, publicationContextRedirects);
+        publication,
+        fakeUriRetriever,
+        resourceService,
+        publicationContextRedirects,
+        randomPublication(BookAnthology.class));
     createFakeCustomerApiResponse(fakeUriRetriever);
   }
 
@@ -174,7 +204,8 @@ public final class FakeUriResponse {
       Publication publication,
       FakeUriRetriever fakeUriRetriever,
       ResourceService resourceService,
-      boolean publicationContextRedirects) {
+      boolean publicationContextRedirects,
+      Publication parentPublication) {
 
     extractPublicationContext(publication)
         .ifPresent(
@@ -183,17 +214,20 @@ public final class FakeUriResponse {
                     fakeUriRetriever,
                     resourceService,
                     publicationContext,
-                    publicationContextRedirects));
+                    publicationContextRedirects,
+                    parentPublication));
   }
 
   private static void selectResponsesToFake(
       FakeUriRetriever fakeUriRetriever,
       ResourceService resourceService,
       PublicationContext publicationContext,
-      boolean publicationContextRedirects) {
+      boolean publicationContextRedirects,
+      Publication parentPublication) {
     switch (publicationContext) {
       case Anthology anthologyContext ->
-          setupFakeResponsesForAnthology(fakeUriRetriever, resourceService, anthologyContext);
+          setupFakeResponsesForAnthology(
+              fakeUriRetriever, resourceService, anthologyContext, parentPublication);
       case Book book when book.getPublisher() instanceof Publisher publisher ->
           setupFakeResponsesForBookTypes(fakeUriRetriever, book, publisher);
       case Degree degree when degree.getPublisher() instanceof Publisher publisher ->
@@ -255,8 +289,8 @@ public final class FakeUriResponse {
   private static void setupFakeResponsesForAnthology(
       FakeUriRetriever fakeUriRetriever,
       ResourceService resourceService,
-      Anthology anthologyContext) {
-    var parentPublication = randomPublication(BookAnthology.class);
+      Anthology anthologyContext,
+      Publication parentPublication) {
     var persistedParent =
         attempt(
                 () ->

@@ -134,6 +134,9 @@ class ExpandedResourceTest extends ResourcesLocalTest {
   private static final JsonPointer SERIES_ID_JSON_PTR =
       JsonPointer.compile(
           "/entityDescription/reference/publicationContext/entityDescription/reference/publicationContext/series/id");
+  private static final JsonPointer PARENT_FIRST_CONTRIBUTOR_IDENTITY_JSON_PTR =
+      JsonPointer.compile(
+          "/entityDescription/reference/publicationContext/entityDescription/contributors/0/identity");
   private static final URI HOST_URI = PublicationServiceConfig.PUBLICATION_HOST_URI;
   private FakeUriRetriever fakeUriRetriever;
   private ResourceService resourceService;
@@ -1545,6 +1548,66 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         assertTrue(hasPart.isMissingNode());
       }
     }
+  }
+
+  @Test
+  void
+      shouldChooseLongestNameWhenParentPublicationAndChildPublicationHaveDifferentNamesForSameIdentity()
+          throws Exception {
+    var shortName = "Kjell T Ringen";
+    var longName = "Kjell Tjuvestad Ringen";
+    var chapter = randomPublication(AcademicChapter.class);
+    var chapterContributor = withName(chapter.getContributors().getFirst(), shortName);
+    chapter.getEntityDescription().setContributors(List.of(chapterContributor));
+    var anthology = randomPublication(BookAnthology.class);
+    anthology
+        .getEntityDescription()
+        .setContributors(List.of(withName(chapterContributor, longName)));
+
+    var framedResult = expandChapterInAnthology(chapter, anthology);
+
+    var identityId = chapterContributor.identity().getId();
+    JsonNode nameNode = findContributorNameNode(framedResult, identityId);
+    assertTrue(nameNode.isTextual(), "identity.name should be a single string but was " + nameNode);
+    assertEquals(longName, nameNode.textValue());
+    assertParentContributorEmbedded(framedResult, identityId, longName);
+  }
+
+  private static Contributor withName(Contributor contributor, String name) {
+    var identity = contributor.identity().copy().withName(name).build();
+    return contributor.copy().withIdentity(identity).build();
+  }
+
+  private JsonNode expandChapterInAnthology(Publication chapter, Publication anthology)
+      throws Exception {
+    var persistedChapter =
+        Resource.fromPublication(chapter)
+            .persistNew(resourceService, UserInstance.fromPublication(chapter));
+    FakeUriResponse.setupFakeForType(
+        persistedChapter, fakeUriRetriever, resourceService, false, anthology);
+    return fromPublication(
+            fakeUriRetriever,
+            resourceService,
+            sqsClient,
+            Resource.fromPublication(persistedChapter))
+        .asJsonNode();
+  }
+
+  private static void assertParentContributorEmbedded(
+      JsonNode framedResult, URI identityId, String expectedName) {
+    var parentContributorIdentity = framedResult.at(PARENT_FIRST_CONTRIBUTOR_IDENTITY_JSON_PTR);
+    assertEquals(identityId.toString(), parentContributorIdentity.at("/id").textValue());
+    assertEquals(expectedName, parentContributorIdentity.at("/name").textValue());
+  }
+
+  private static JsonNode findContributorNameNode(JsonNode expandedResource, URI identityId) {
+    return stream(expandedResource.at(JSON_PTR_CONTRIBUTORS).spliterator(), false)
+        .filter(
+            contributor -> identityId.toString().equals(contributor.at("/identity/id").asText()))
+        .map(contributor -> contributor.at("/identity/name"))
+        .findFirst()
+        .orElseThrow(
+            () -> new AssertionError("No contributor with identity id " + identityId + " found"));
   }
 
   private ExpandedResource createExpandedResourceWithAffiliation(URI affiliationUri) {
