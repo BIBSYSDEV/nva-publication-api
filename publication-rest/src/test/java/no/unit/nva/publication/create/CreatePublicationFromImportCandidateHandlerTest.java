@@ -136,6 +136,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
   public static final String IMPORT_CANDIDATES_TABLE = "import-candidates-table";
   public static final String ACCEPT = "Accept";
   private static final String PUBLICATIONS_TABLE = new Environment().readEnv("TABLE_NAME");
+  private static final String CRISTIN_PERSON_URI_TEMPLATE =
+      "https://api.nva.unit.no/cristin/person/%s";
   private ByteArrayOutputStream output;
   private Context context;
   private ResourceService importCandidateService;
@@ -478,7 +480,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     var auid = randomString();
     var contributorWithAuid = createImportContributorWithAuid(auid, 1);
     var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
-    var cristinId = randomUri();
+    var cristinId = randomCristinPersonId();
     var contributorUpdatedWithCristinId =
         updateContributorWithCristinId(toContributor(contributorWithAuid), cristinId);
     var userInput =
@@ -523,7 +525,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     var auid = randomString();
     var contributorWithAuid = createImportContributorWithAuid(auid, 1);
     var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
-    var cristinId = randomUri();
+    var cristinId = randomCristinPersonId();
     var contributorUpdatedWithCristinId =
         updateContributorWithCristinId(toContributor(contributorWithAuid), cristinId);
     var userInput =
@@ -545,8 +547,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     var contributorWithAuid2 = createImportContributorWithAuid(auid2, 2);
     var importCandidate =
         createPersistedImportCandidate(List.of(contributorWithAuid1, contributorWithAuid2));
-    var cristinId1 = randomUri();
-    var cristinId2 = randomUri();
+    var cristinId1 = randomCristinPersonId();
+    var cristinId2 = randomCristinPersonId();
     var contributorUpdatedWithCristinId1 =
         updateContributorWithCristinId(toContributor(contributorWithAuid1), cristinId1);
     var contributorUpdatedWithCristinId2 =
@@ -575,7 +577,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     var auid = randomString();
     var contributorWithAuid = createImportContributorWithAuid(auid, 1);
     var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
-    var cristinId = randomUri();
+    var cristinId = randomCristinPersonId();
     var contributorUpdatedWithCristinId =
         updateContributorWithCristinId(toContributor(contributorWithAuid), cristinId);
     var userInput =
@@ -817,6 +819,10 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     stubFor(
         WireMock.post(urlMatching("/sentralimport/authors"))
             .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_CREATED)));
+  }
+
+  private static URI randomCristinPersonId() {
+    return URI.create(CRISTIN_PERSON_URI_TEMPLATE.formatted(randomInteger()));
   }
 
   private Contributor updateContributorWithCristinId(
