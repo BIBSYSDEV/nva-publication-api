@@ -43,9 +43,9 @@ public class JavaHttpClientCustomerApiClientTest {
     assertThat(customer.getPublicationWorkflow(), is(equalTo("myWorkflow")));
     assertThat(customer.getAllowFileUploadForTypes(), containsInAnyOrder("someType"));
     assertThat(
-        customer.getRightsRetentionStrategy().getType(),
-        is(equalTo("NullRightsRetentionStrategy")));
-    assertThat(customer.getRightsRetentionStrategy().getId(), is(equalTo("https://example.org/1")));
+        customer.getRightsRetentionStrategy().getType(), is(equalTo("RightsRetentionStrategy")));
+    assertThat(
+        customer.getRightsRetentionStrategy().getPolicyUri(), is(equalTo("https://example.org/1")));
   }
 
   private JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient() {
@@ -119,9 +119,9 @@ public class JavaHttpClientCustomerApiClientTest {
             "allowFileUploadForTypes": ["someType"],
             "publicationWorkflow": "myWorkflow",
             "rightsRetentionStrategy": {
-                "type": "NullRightsRetentionStrategy",
-                 "id": "https://example.org/1"
-                }
+                "type": "RightsRetentionStrategy",
+                "policyUri": "https://example.org/1"
+            }
         }
         """;
     doReturn(response).when(httpResponse).body();

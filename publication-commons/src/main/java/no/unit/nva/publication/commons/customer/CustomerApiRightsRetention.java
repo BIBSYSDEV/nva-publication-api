@@ -5,26 +5,26 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class CustomerApiRightsRetention {
   private static final String FIELD_TYPE = "type";
-  private static final String FIELD_ID = "id";
+  private static final String FIELD_POLICY_URI = "policyUri";
 
   @JsonProperty(FIELD_TYPE)
   private final String type;
 
-  @JsonProperty(FIELD_ID)
-  private final String id;
+  @JsonProperty(FIELD_POLICY_URI)
+  private final String policyUri;
 
   @JsonCreator
   public CustomerApiRightsRetention(
-      @JsonProperty(FIELD_TYPE) String type, @JsonProperty(FIELD_ID) String id) {
+      @JsonProperty(FIELD_TYPE) String type, @JsonProperty(FIELD_POLICY_URI) String policyUri) {
     this.type = type;
-    this.id = id;
+    this.policyUri = policyUri;
   }
 
   public String getType() {
     return type;
   }
 
-  public String getId() {
-    return id;
+  public String getPolicyUri() {
+    return policyUri;
   }
 }
