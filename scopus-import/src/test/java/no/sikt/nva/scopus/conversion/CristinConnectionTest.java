@@ -5,6 +5,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static no.unit.nva.publication.testing.CristinUriGenerator.cristinPersonUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -147,12 +148,7 @@ class CristinConnectionTest {
   }
 
   private static URI getRandomPersonUri(WireMockRuntimeInfo wireMockRuntimeInfo) {
-    var baseUri = wireMockRuntimeInfo.getHttpsBaseUrl();
-    return UriWrapper.fromUri(baseUri)
-        .addChild("cristin")
-        .addChild("person")
-        .addChild(randomString())
-        .getUri();
+    return cristinPersonUri(URI.create(wireMockRuntimeInfo.getHttpsBaseUrl()), randomString());
   }
 
   private CristinOrganization createExpectedOrganization(URI organizationId) {

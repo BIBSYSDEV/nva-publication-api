@@ -1,6 +1,6 @@
 package no.unit.nva.publication.create.pia;
 
-import static java.net.HttpURLConnection.HTTP_CREATED;
+import static java.net.HttpURLConnection.HTTP_NO_CONTENT;
 import static no.unit.nva.publication.create.pia.PiaUpdateRequest.toPiaRequest;
 
 import java.net.URI;
@@ -28,6 +28,8 @@ public class PiaClient {
   private static final String HTTPS_SCHEME = "https://";
   private static final String SENTRALIMPORT = "sentralimport";
   private static final String AUTHORS = "authors";
+  private static final String CONTENT_TYPE = "Content-Type";
+  private static final String APPLICATION_JSON = "application/json";
   private final URI piaUri;
   private final HttpClient httpClient;
   private final String authorization;
@@ -71,8 +73,8 @@ public class PiaClient {
   private void sendRequest(HttpRequest request) {
     try {
       var response = httpClient.send(request, BodyHandlers.ofString());
-      if (response.statusCode() != HTTP_CREATED) {
-        logger.error("Updating PIA failed: {}", response);
+      if (response.statusCode() != HTTP_NO_CONTENT) {
+        logger.error("Updating PIA failed: {} {}", response.statusCode(), response.body());
       }
     } catch (Exception e) {
       Thread.currentThread().interrupt();
@@ -83,6 +85,7 @@ public class PiaClient {
   private HttpRequest createRequest(String jsonPayload) {
     return HttpRequest.newBuilder()
         .header(AUTHORIZATION, authorization)
+        .header(CONTENT_TYPE, APPLICATION_JSON)
         .POST(BodyPublishers.ofString(jsonPayload))
         .uri(piaUri)
         .build();
