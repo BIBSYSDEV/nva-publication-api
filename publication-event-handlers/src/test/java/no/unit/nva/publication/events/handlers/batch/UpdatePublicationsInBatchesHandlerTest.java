@@ -7,6 +7,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.events.handlers.batch.Comparator.CONTAINS;
 import static no.unit.nva.publication.events.handlers.batch.Comparator.MATCHES;
 import static no.unit.nva.publication.events.handlers.batch.ManuallyUpdatePublicationsRequest.DEFAULT_LIMIT;
+import static no.unit.nva.publication.testing.CristinUriGenerator.cristinPersonUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -88,7 +89,6 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   private static final Context CONTEXT = mock(Context.class);
   private static final String SERIAL_PUBLICATION = "serial-publication";
   private static final String PUBLISHER = "publisher";
-  private static final String CRISTIN = "cristin";
   private static final String API_HOST = new Environment().readEnv("API_HOST");
   private static final int TOTAL_HITS = 4321;
   private static final int TWO_PAGES = 2;
@@ -1041,11 +1041,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   }
 
   private static URI createContributorIdentifier(String contributorIdentifier) {
-    return UriWrapper.fromUri(randomUri())
-        .addChild(CRISTIN)
-        .addChild("person")
-        .addChild(contributorIdentifier)
-        .getUri();
+    return cristinPersonUri(randomUri(), contributorIdentifier);
   }
 
   private static String getYear(Publication publication) {

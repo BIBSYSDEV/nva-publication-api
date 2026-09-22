@@ -22,6 +22,7 @@ import static no.unit.nva.publication.create.CreatePublicationFromImportCandidat
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_NOT_PUBLISHABLE;
+import static no.unit.nva.publication.testing.CristinUriGenerator.randomCristinPersonUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -136,8 +137,6 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
   public static final String IMPORT_CANDIDATES_TABLE = "import-candidates-table";
   public static final String ACCEPT = "Accept";
   private static final String PUBLICATIONS_TABLE = new Environment().readEnv("TABLE_NAME");
-  private static final String CRISTIN_PERSON_URI_TEMPLATE =
-      "https://api.nva.unit.no/cristin/person/%s";
   private ByteArrayOutputStream output;
   private Context context;
   private ResourceService importCandidateService;
@@ -480,7 +479,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     var auid = randomString();
     var contributorWithAuid = createImportContributorWithAuid(auid, 1);
     var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
-    var cristinId = randomCristinPersonId();
+    var cristinId = randomCristinPersonUri();
     var contributorUpdatedWithCristinId =
         updateContributorWithCristinId(toContributor(contributorWithAuid), cristinId);
     var userInput =
@@ -525,7 +524,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     var auid = randomString();
     var contributorWithAuid = createImportContributorWithAuid(auid, 1);
     var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
-    var cristinId = randomCristinPersonId();
+    var cristinId = randomCristinPersonUri();
     var contributorUpdatedWithCristinId =
         updateContributorWithCristinId(toContributor(contributorWithAuid), cristinId);
     var userInput =
@@ -547,8 +546,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     var contributorWithAuid2 = createImportContributorWithAuid(auid2, 2);
     var importCandidate =
         createPersistedImportCandidate(List.of(contributorWithAuid1, contributorWithAuid2));
-    var cristinId1 = randomCristinPersonId();
-    var cristinId2 = randomCristinPersonId();
+    var cristinId1 = randomCristinPersonUri();
+    var cristinId2 = randomCristinPersonUri();
     var contributorUpdatedWithCristinId1 =
         updateContributorWithCristinId(toContributor(contributorWithAuid1), cristinId1);
     var contributorUpdatedWithCristinId2 =
@@ -577,7 +576,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     var auid = randomString();
     var contributorWithAuid = createImportContributorWithAuid(auid, 1);
     var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
-    var cristinId = randomCristinPersonId();
+    var cristinId = randomCristinPersonUri();
     var contributorUpdatedWithCristinId =
         updateContributorWithCristinId(toContributor(contributorWithAuid), cristinId);
     var userInput =
@@ -818,11 +817,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
   private void mockPostAuidWriting() {
     stubFor(
         WireMock.post(urlMatching("/sentralimport/authors"))
-            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_CREATED)));
-  }
-
-  private static URI randomCristinPersonId() {
-    return URI.create(CRISTIN_PERSON_URI_TEMPLATE.formatted(randomInteger()));
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_NO_CONTENT)));
   }
 
   private Contributor updateContributorWithCristinId(

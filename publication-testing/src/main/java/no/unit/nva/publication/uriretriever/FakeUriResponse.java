@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.service.CristinOrganizationFixtures.randomCristinOrganization;
 import static no.unit.nva.publication.service.FakeCristinOrganization.asLeafNode;
+import static no.unit.nva.publication.testing.CristinUriGenerator.cristinPersonUri;
 import static nva.commons.apigateway.MediaType.JSON_UTF_8;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
@@ -367,11 +368,7 @@ public final class FakeUriResponse {
   }
 
   private static URI createOwnerUri(String owner) {
-    return UriWrapper.fromHost(API_HOST)
-        .addChild("cristin")
-        .addChild("person")
-        .addChild(extractCristinId(owner))
-        .getUri();
+    return cristinPersonUri(UriWrapper.fromHost(API_HOST).getUri(), extractCristinId(owner));
   }
 
   private static void fakeOwnerResponse(FakeUriRetriever fakeUriRetriever, URI ownerAffiliation) {

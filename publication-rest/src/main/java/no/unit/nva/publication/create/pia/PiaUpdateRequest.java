@@ -1,14 +1,23 @@
 package no.unit.nva.publication.create.pia;
 
+import static nva.commons.core.attempt.Try.attempt;
+
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public record PiaUpdateRequest(
     PiaPublication publication, Integer cristinId, String externalId, String orcid, int sequenceNr)
     implements JsonSerializable {
+
+  private static final Logger logger = LoggerFactory.getLogger(PiaUpdateRequest.class);
+
+  private static final String NOT_NUMERIC_CRISTIN_IDENTIFIER_MESSAGE =
+      "Skipping cristinId for contributor, identity id is not numeric: {}";
 
   public static PiaUpdateRequest toPiaRequest(Contributor contributor, String scopusId) {
     return new PiaUpdateRequest(
@@ -43,8 +52,13 @@ public record PiaUpdateRequest(
     return Optional.ofNullable(contributor.identity().getId())
         .map(UriWrapper::fromUri)
         .map(UriWrapper::getLastPathElement)
-        .map(Integer::parseInt)
+        .flatMap(PiaUpdateRequest::parseCristinIdentifier)
         .orElse(null);
+  }
+
+  private static Optional<Integer> parseCristinIdentifier(String identifier) {
+    return attempt(() -> Integer.parseInt(identifier))
+        .toOptional(failure -> logger.error(NOT_NUMERIC_CRISTIN_IDENTIFIER_MESSAGE, identifier));
   }
 
   private static Optional<AdditionalIdentifier> extractAuid(Contributor contributor) {

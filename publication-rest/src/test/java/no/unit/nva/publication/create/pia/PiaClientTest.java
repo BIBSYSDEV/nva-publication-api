@@ -8,10 +8,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
-import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_NO_CONTENT;
 import static java.net.HttpURLConnection.HTTP_UNSUPPORTED_TYPE;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
+import static no.unit.nva.publication.testing.CristinUriGenerator.cristinPersonUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -20,16 +20,15 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.net.URI;
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpResponse.BodyHandlers;
 import java.util.List;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -50,8 +49,8 @@ import org.junit.jupiter.api.Test;
  * traceable.
  *
  * <p>The endpoint is {@code POST https://{piaHost}/sentralimport/authors}. It is protected by HTTP
- * basic authentication, requires {@code Content-Type: application/json} and answers {@code 204
- * No Content} when the authors were accepted; {@link PiaClient} treats any other status as a failure.
+ * basic authentication, requires {@code Content-Type: application/json} and answers {@code 204 No
+ * Content} when the authors were accepted; {@link PiaClient} treats any other status as a failure.
  *
  * <p>The request body is a JSON array of author records, one per contributor, each identifying the
  * publication by its Scopus id. The fields exercised here are {@code cristinId}, which is a JSON
@@ -69,8 +68,6 @@ class PiaClientTest {
   private static final String CRISTIN_ID_FIELD = "cristinId";
   private static final String EXTERNAL_ID_FIELD = "externalId";
   private static final String ORCID_FIELD = "orcid";
-  private static final String CRISTIN_PERSON_URI_TEMPLATE =
-      "https://example.com/cristin/person/%s";
   private static final String SECRET_NAME = "pia-secret-name";
   private static final String USERNAME_KEY = "pia-username-key";
   private static final String PASSWORD_KEY = "pia-password-key";
@@ -78,6 +75,8 @@ class PiaClientTest {
   private static final String CONTENT_TYPE = "Content-Type";
   private static final String APPLICATION_JSON = "application/json";
   private static final String UPDATE_FAILED_MESSAGE = "Updating PIA failed";
+  private static final String NOT_NUMERIC_CRISTIN_IDENTIFIER_MESSAGE =
+      "Skipping cristinId for contributor, identity id is not numeric";
 
   private PiaClient piaClient;
 
@@ -102,7 +101,7 @@ class PiaClientTest {
    * PIA consumes {@code orcid} as the bare identifier value, never as a URI. The field is limited
    * to 20 characters, so posting the full URI form {@code https://orcid.org/0000-0002-4029-1960} is
    * rejected with {@code 400 Bad Request} and a message containing "is too long ... maximum
-   * allowed: 20
+   * allowed: 20"
    */
   @Test
   void shouldSendOrcidAsIdentifierValueAndNotAsUri() {
@@ -136,15 +135,37 @@ class PiaClientTest {
    * sets the header explicitly instead of relying on a default.
    */
   @Test
-  void shouldReturnUnsupportedMediaTypeWhenRequestHasNoContentTypeHeader(
-      WireMockRuntimeInfo wireMockRuntimeInfo) throws Exception {
+  void shouldSendRequestWithJsonContentTypeHeader() {
     stubPiaAcceptingOnlyJsonContentType();
+    var logRecorder = LogRecorder.forClass(PiaClient.class);
 
-    var response =
-        WiremockHttpClient.create()
-            .send(requestWithoutContentType(wireMockRuntimeInfo), BodyHandlers.ofString());
+    piaClient.updateContributor(
+        List.of(contributorWith(randomInteger(), randomString(), randomUri())), randomString());
 
-    assertEquals(HTTP_UNSUPPORTED_TYPE, response.statusCode());
+    assertEquals(
+        1,
+        findAll(
+                postRequestedFor(urlEqualTo(PIA_AUTHORS_PATH))
+                    .withHeader(CONTENT_TYPE, equalTo(APPLICATION_JSON)))
+            .size());
+    assertThat(logRecorder.asString(), not(containsString(UPDATE_FAILED_MESSAGE)));
+  }
+
+  /**
+   * PIA expects {@code cristinId} as a number, so a contributor whose identity uri does not end in
+   * a number has no cristin identifier to send. The failure is logged and the remaining fields are
+   * sent, rather than failing the import of the publication.
+   */
+  @Test
+  void shouldOmitCristinIdAndLogWhenContributorIdentityIdIsNotNumeric() {
+    var logRecorder = LogRecorder.forClass(PiaUpdateRequest.class);
+    var identityId = cristinPersonUri(randomUri(), randomString());
+    var contributor = contributorWithIdentityId(identityId, randomString(), randomUri());
+
+    assertDoesNotThrow(() -> piaClient.updateContributor(List.of(contributor), randomString()));
+
+    assertFalse(sentRequest().has(CRISTIN_ID_FIELD));
+    assertThat(logRecorder.asString(), containsString(NOT_NUMERIC_CRISTIN_IDENTIFIER_MESSAGE));
   }
 
   /**
@@ -190,21 +211,20 @@ class PiaClientTest {
     stubFor(
         post(urlEqualTo(PIA_AUTHORS_PATH))
             .withHeader(CONTENT_TYPE, equalTo(APPLICATION_JSON))
-            .willReturn(aResponse().withStatus(HTTP_CREATED)));
-  }
-
-  private static HttpRequest requestWithoutContentType(WireMockRuntimeInfo wireMockRuntimeInfo) {
-    return HttpRequest.newBuilder()
-        .uri(URI.create(wireMockRuntimeInfo.getHttpsBaseUrl() + PIA_AUTHORS_PATH))
-        .POST(BodyPublishers.ofString(randomString()))
-        .build();
+            .willReturn(aResponse().withStatus(HTTP_NO_CONTENT)));
   }
 
   private static Contributor contributorWith(
       Integer cristinIdentifier, String scopusAuid, URI orcid) {
+    return contributorWithIdentityId(
+        cristinPersonUri(randomUri(), String.valueOf(cristinIdentifier)), scopusAuid, orcid);
+  }
+
+  private static Contributor contributorWithIdentityId(
+      URI identityId, String scopusAuid, URI orcid) {
     var identity =
         new Identity.Builder()
-            .withId(URI.create(CRISTIN_PERSON_URI_TEMPLATE.formatted(cristinIdentifier)))
+            .withId(identityId)
             .withName(randomString())
             .withOrcId(orcid.toString())
             .withAdditionalIdentifiers(
