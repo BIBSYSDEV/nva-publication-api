@@ -1,11 +1,11 @@
 package no.unit.nva.publication.update;
 
 import no.unit.nva.model.PublicationOperation;
+import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -13,29 +13,29 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 public class RepublishUtil {
 
   private final ResourceService resourceService;
-  private final TicketService ticketService;
+  private final CustomerApiClient customerApiClient;
   private final PublicationPermissions permissionStrategy;
 
   public RepublishUtil(
       ResourceService resourceService,
-      TicketService ticketService,
+      CustomerApiClient customerApiClient,
       PublicationPermissions permissionStrategy) {
     this.resourceService = resourceService;
-    this.ticketService = ticketService;
+    this.customerApiClient = customerApiClient;
     this.permissionStrategy = permissionStrategy;
   }
 
   public static RepublishUtil create(
       ResourceService resourceService,
-      TicketService ticketService,
+      CustomerApiClient customerApiClient,
       PublicationPermissions permissionStrategy) {
-    return new RepublishUtil(resourceService, ticketService, permissionStrategy);
+    return new RepublishUtil(resourceService, customerApiClient, permissionStrategy);
   }
 
   public Resource republish(Resource resource, UserInstance userInstance)
       throws ApiGatewayException {
     validateRepublishing();
-    resource.republish(resourceService, ticketService, userInstance);
+    resource.republish(resourceService, customerApiClient, userInstance);
 
     return resource
         .fetch(resourceService)

@@ -166,6 +166,17 @@ public abstract class TicketEntry implements Entity {
     return ticket;
   }
 
+  /**
+   * Prepares a new ticket for its first write: sets the service-controlled fields and validates.
+   */
+  public final TicketEntry prepareForCreation(
+      Publication publication, Supplier<SortableIdentifier> identifierProvider)
+      throws ConflictException {
+    setServiceControlledFields(this, identifierProvider);
+    validateCreationRequirements(publication);
+    return this;
+  }
+
   public static void setServiceControlledFields(
       TicketEntry ticketEntry, Supplier<SortableIdentifier> identifierProvider) {
     var now = Instant.now();
