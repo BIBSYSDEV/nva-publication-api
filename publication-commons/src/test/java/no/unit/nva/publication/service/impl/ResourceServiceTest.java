@@ -53,6 +53,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -942,6 +944,22 @@ class ResourceServiceTest extends ResourcesLocalTest {
   }
 
   @Test
+  void shouldWriteRepublishedResourceAndReactivatedTicketsInOneTransaction()
+      throws ApiGatewayException {
+    var publication = createPublishedResource();
+    var userInstance = UserInstance.fromPublication(publication);
+    var resource = Resource.fromPublication(publication);
+    createTickets(resource, userInstance);
+    resourceService.unpublishPublication(publication, userInstance);
+    var spiedClient = spy(client);
+
+    resource.republish(getResourceService(spiedClient), userInstance);
+
+    verify(spiedClient, times(1)).transactWriteItems(any(TransactWriteItemsRequest.class));
+    verify(spiedClient, never()).putItem(any(PutItemRequest.class));
+  }
+
+  @Test
   void shouldSetAllNotApplicableTicketsToPendingWhenRepublishingPublication()
       throws ApiGatewayException {
     var publication = createPublishedResource();
@@ -951,7 +969,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     createTickets(resource, userInstance);
 
     resourceService.unpublishPublication(publication, userInstance);
-    resource.republish(resourceService, ticketService, userInstance);
+    resource.republish(resourceService, userInstance);
 
     var tickets =
         resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
@@ -1142,7 +1160,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     Resource.resourceQueryObject(peristedPublication.getIdentifier())
         .fetch(resourceService)
         .orElseThrow()
-        .republish(resourceService, ticketService, userInstance);
+        .republish(resourceService, userInstance);
 
     var republishedResource =
         Resource.resourceQueryObject(peristedPublication.getIdentifier())
@@ -1167,7 +1185,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
             Resource.resourceQueryObject(peristedPublication.getIdentifier())
                 .fetch(resourceService)
                 .orElseThrow()
-                .republish(resourceService, ticketService, userInstance));
+                .republish(resourceService, userInstance));
   }
 
   @Test

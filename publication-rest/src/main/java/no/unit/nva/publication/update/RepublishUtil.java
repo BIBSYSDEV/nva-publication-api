@@ -5,7 +5,6 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -13,29 +12,22 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 public class RepublishUtil {
 
   private final ResourceService resourceService;
-  private final TicketService ticketService;
   private final PublicationPermissions permissionStrategy;
 
-  public RepublishUtil(
-      ResourceService resourceService,
-      TicketService ticketService,
-      PublicationPermissions permissionStrategy) {
+  public RepublishUtil(ResourceService resourceService, PublicationPermissions permissionStrategy) {
     this.resourceService = resourceService;
-    this.ticketService = ticketService;
     this.permissionStrategy = permissionStrategy;
   }
 
   public static RepublishUtil create(
-      ResourceService resourceService,
-      TicketService ticketService,
-      PublicationPermissions permissionStrategy) {
-    return new RepublishUtil(resourceService, ticketService, permissionStrategy);
+      ResourceService resourceService, PublicationPermissions permissionStrategy) {
+    return new RepublishUtil(resourceService, permissionStrategy);
   }
 
   public Resource republish(Resource resource, UserInstance userInstance)
       throws ApiGatewayException {
     validateRepublishing();
-    resource.republish(resourceService, ticketService, userInstance);
+    resource.republish(resourceService, userInstance);
 
     return resource
         .fetch(resourceService)
