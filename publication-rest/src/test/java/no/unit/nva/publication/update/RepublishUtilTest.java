@@ -10,6 +10,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
+import no.unit.nva.publication.service.FakeCustomerApiClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -25,7 +26,8 @@ class RepublishUtilTest extends ResourcesLocalTest {
 
     var resourceService = mock(ResourceService.class);
     var permissionStrategy = mock(PublicationPermissions.class);
-    var republishUtil = RepublishUtil.create(resourceService, permissionStrategy);
+    var republishUtil =
+        RepublishUtil.create(resourceService, new FakeCustomerApiClient(), permissionStrategy);
 
     when(permissionStrategy.allowsAction(REPUBLISH)).thenReturn(true);
     when(resourceService.getResourceByIdentifier(publication.getIdentifier()))

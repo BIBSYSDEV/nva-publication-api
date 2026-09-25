@@ -57,6 +57,7 @@ import no.unit.nva.model.validation.Validatable;
 import no.unit.nva.model.validation.ValidationException;
 import no.unit.nva.model.validation.ValidationResult;
 import no.unit.nva.model.validation.Validator;
+import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
@@ -475,19 +476,30 @@ public class Resource implements Entity, Validatable<Resource> {
     return PUBLISHED == this.getStatus();
   }
 
-  public void republish(ResourceService resourceService, UserInstance userInstance) {
+  public void republish(
+      ResourceService resourceService,
+      CustomerApiClient customerApiClient,
+      UserInstance userInstance) {
     fetch(resourceService)
         .filter(Resource::isNotPublished)
-        .ifPresent(resource -> republish(resourceService, userInstance, resource));
+        .ifPresent(
+            resource -> republish(resourceService, customerApiClient, userInstance, resource));
   }
 
   private void republish(
-      ResourceService resourceService, UserInstance userInstance, Resource resource) {
+      ResourceService resourceService,
+      CustomerApiClient customerApiClient,
+      UserInstance userInstance,
+      Resource resource) {
     var tickets = resourceService.fetchAllTicketsForResource(resource).toList();
     resource.republish(userInstance);
     var reactivatedTickets = reactivateTickets(tickets);
+    var pendingTickets = tickets.stream().filter(TicketEntry::isPending).toList();
+    var uncoveredFileTickets =
+        UncoveredFileTickets.changesFor(resource, pendingTickets, customerApiClient);
 
-    resourceService.updateResourceWithTickets(resource, userInstance, reactivatedTickets);
+    var ticketChanges = reactivatedTickets.followedBy(uncoveredFileTickets);
+    resourceService.updateResourceWithTickets(resource, userInstance, ticketChanges);
   }
 
   private TicketChanges reactivateTickets(Collection<TicketEntry> tickets) {
