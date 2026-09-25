@@ -2,7 +2,6 @@ package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
-import static no.unit.nva.publication.model.business.TicketEntry.setServiceControlledFields;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 
@@ -241,8 +240,7 @@ public class TicketService extends ServiceWithTransactions {
   private <T extends TicketEntry> T createTicketForPublication(
       TicketEntry ticketEntry, Publication publication) throws ConflictException {
 
-    setServiceControlledFields(ticketEntry, identifierProvider);
-    ticketEntry.validateCreationRequirements(publication);
+    ticketEntry.prepareForCreation(publication, identifierProvider);
     var request =
         ticketEntry
             .toDao()
