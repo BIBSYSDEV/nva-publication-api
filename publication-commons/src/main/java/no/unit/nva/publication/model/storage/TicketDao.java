@@ -18,6 +18,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -247,12 +249,18 @@ public abstract class TicketDao extends Dao implements JoinWithResource {
   }
 
   public TransactWriteItemsRequest createInsertionTransactionRequest(Resource resource) {
-    var dataEntry = newPutTransactionItem(this);
-    var uniquenessEntry = newPutTransactionItem(new IdentifierEntry(this));
-    var resourceExistsConditionCheck = resourceExistsConditionCheck(resource);
-    return TransactWriteItemsRequest.builder()
-        .transactItems(dataEntry, uniquenessEntry, resourceExistsConditionCheck)
-        .build();
+    var transactionItems = new ArrayList<>(createInsertionTransactionItems());
+    transactionItems.add(resourceExistsConditionCheck(resource));
+    return TransactWriteItemsRequest.builder().transactItems(transactionItems).build();
+  }
+
+  /**
+   * Insertion items for a transaction that also writes the ticket's resource, so the resource
+   * existence check of {@link #createInsertionTransactionRequest(Resource)} is left out: DynamoDB
+   * does not allow two operations on the same item in one transaction.
+   */
+  public List<TransactWriteItem> createInsertionTransactionItems() {
+    return List.of(newPutTransactionItem(this), newPutTransactionItem(new IdentifierEntry(this)));
   }
 
   protected static TransactWriteItem resourceExistsConditionCheck(Resource resource) {
