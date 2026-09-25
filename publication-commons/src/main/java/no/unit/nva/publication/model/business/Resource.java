@@ -57,6 +57,7 @@ import no.unit.nva.model.validation.Validatable;
 import no.unit.nva.model.validation.ValidationException;
 import no.unit.nva.model.validation.ValidationResult;
 import no.unit.nva.model.validation.Validator;
+import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
@@ -73,7 +74,6 @@ import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEv
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
@@ -477,26 +477,35 @@ public class Resource implements Entity, Validatable<Resource> {
   }
 
   public void republish(
-      ResourceService resourceService, TicketService ticketService, UserInstance userInstance) {
+      ResourceService resourceService,
+      CustomerApiClient customerApiClient,
+      UserInstance userInstance) {
     fetch(resourceService)
         .filter(Resource::isNotPublished)
-        .ifPresent(resource -> republish(resourceService, ticketService, userInstance, resource));
+        .ifPresent(
+            resource -> republish(resourceService, customerApiClient, userInstance, resource));
   }
 
   private void republish(
       ResourceService resourceService,
-      TicketService ticketService,
+      CustomerApiClient customerApiClient,
       UserInstance userInstance,
       Resource resource) {
-    resource.republish(userInstance, resourceService);
-    resourceService
-        .fetchAllTicketsForResource(resource)
-        .filter(this::shouldRepublishTicket)
-        .forEach(
-            ticket -> {
-              ticket.setStatus(PENDING);
-              ticketService.updateTicket(ticket);
-            });
+    var tickets = resourceService.fetchAllTicketsForResource(resource).toList();
+    resource.republish(userInstance);
+    var reactivatedTickets = reactivateTickets(tickets);
+    var pendingTickets = tickets.stream().filter(TicketEntry::isPending).toList();
+    var uncoveredFileTickets =
+        UncoveredFileTickets.changesFor(resource, pendingTickets, customerApiClient);
+
+    var ticketChanges = reactivatedTickets.followedBy(uncoveredFileTickets);
+    resourceService.updateResourceWithTickets(resource, userInstance, ticketChanges);
+  }
+
+  private TicketChanges reactivateTickets(Collection<TicketEntry> tickets) {
+    var ticketsToReactivate = tickets.stream().filter(this::shouldRepublishTicket).toList();
+    ticketsToReactivate.forEach(ticket -> ticket.setStatus(PENDING));
+    return new TicketChanges(ticketsToReactivate, Collections.emptyList());
   }
 
   private boolean shouldRepublishTicket(TicketEntry ticket) {
@@ -504,11 +513,6 @@ public class Resource implements Entity, Validatable<Resource> {
             || ticket instanceof GeneralSupportRequest
             || ticket instanceof DoiRequest)
         && NOT_APPLICABLE == ticket.getStatus();
-  }
-
-  private void republish(UserInstance userInstance, ResourceService resourceService) {
-    republish(userInstance);
-    resourceService.updateResource(this, userInstance);
   }
 
   private void republish(UserInstance userInstance) {

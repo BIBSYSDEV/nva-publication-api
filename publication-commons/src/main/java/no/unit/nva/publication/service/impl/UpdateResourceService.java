@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -43,6 +45,7 @@ import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.ResourceRelationship;
+import no.unit.nva.publication.model.business.TicketChanges;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -155,22 +158,43 @@ public class UpdateResourceService extends ServiceWithTransactions {
   public Resource updateResourceFromImport(
       Resource resource, UserInstance userInstance, ImportSource importSource) {
     var persistedResource = fetchExistingResource(resource);
+    return resource.hasEffectiveChanges(persistedResource)
+        ? writeResourceUpdate(
+            resource, userInstance, persistedResource, importSource, TicketChanges.none())
+        : resource;
+  }
 
-    if (resource.hasEffectiveChanges(persistedResource)) {
-      resource.setCreatedDate(persistedResource.getCreatedDate());
-      resource.setModifiedDate(clockForTimestamps.instant());
+  /**
+   * Updates the resource like {@link #updateResource(Resource, UserInstance)}, and writes the given
+   * changed and new tickets in the same transaction.
+   */
+  public Resource updateResourceWithTickets(
+      Resource resource, UserInstance userInstance, TicketChanges ticketChanges) {
+    return writeResourceUpdate(
+        resource, userInstance, fetchExistingResource(resource), null, ticketChanges);
+  }
 
-      updateCuratingInstitutions(resource, persistedResource);
+  private Resource writeResourceUpdate(
+      Resource resource,
+      UserInstance userInstance,
+      Resource persistedResource,
+      ImportSource importSource,
+      TicketChanges ticketChanges) {
+    resource.setCreatedDate(persistedResource.getCreatedDate());
+    resource.setModifiedDate(clockForTimestamps.instant());
+    updateCuratingInstitutions(resource, persistedResource);
 
-      var transactionItems =
-          createTransactions(resource, userInstance, persistedResource, importSource);
+    var transactionItems =
+        createTransactions(
+            resource,
+            userInstance,
+            persistedResource,
+            importSource,
+            ticketChanges.changedTickets());
+    transactionItems.addAll(newTicketsTransactions(resource, ticketChanges.newTickets()));
 
-      var transactWriteItemsRequest =
-          TransactWriteItemsRequest.builder().transactItems(transactionItems).build();
-
-      sendTransactionWriteRequest(transactWriteItemsRequest);
-      return resource;
-    }
+    sendTransactionWriteRequest(
+        TransactWriteItemsRequest.builder().transactItems(transactionItems).build());
     return resource;
   }
 
@@ -178,10 +202,11 @@ public class UpdateResourceService extends ServiceWithTransactions {
       Resource resource,
       UserInstance userInstance,
       Resource persistedResource,
-      ImportSource importSource) {
+      ImportSource importSource,
+      Collection<TicketEntry> changedTickets) {
     var transactionItems = new ArrayList<TransactWriteItem>();
 
-    var ticketsTransactions = refreshTicketsTransactions(resource);
+    var ticketsTransactions = refreshTicketsTransactions(resource, changedTickets);
     transactionItems.add(createPutTransaction(resource));
     transactionItems.addAll(
         updateFilesTransactions(resource, userInstance, persistedResource, importSource));
@@ -345,22 +370,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
   public Resource updateResource(Resource resource, UserInstance userInstance) {
     var persistedResource = fetchExistingResource(resource);
-
-    if (resource.hasEffectiveChanges(persistedResource)) {
-      resource.setCreatedDate(persistedResource.getCreatedDate());
-      resource.setModifiedDate(clockForTimestamps.instant());
-
-      updateCuratingInstitutions(resource, persistedResource);
-
-      var transactWriteItemsRequest =
-          TransactWriteItemsRequest.builder()
-              .transactItems(createTransactions(resource, userInstance, persistedResource, null))
-              .build();
-
-      sendTransactionWriteRequest(transactWriteItemsRequest);
-      return resource;
-    }
-    return persistedResource;
+    return resource.hasEffectiveChanges(persistedResource)
+        ? writeResourceUpdate(resource, userInstance, persistedResource, null, TicketChanges.none())
+        : persistedResource;
   }
 
   public ImportCandidate updateImportCandidate(ImportCandidate importCandidate)
@@ -462,12 +474,30 @@ public class UpdateResourceService extends ServiceWithTransactions {
     return updateResource(resource, userInstance).toPublication();
   }
 
-  private List<TransactWriteItem> refreshTicketsTransactions(Resource resource) {
+  private List<TransactWriteItem> refreshTicketsTransactions(
+      Resource resource, Collection<TicketEntry> changedTickets) {
+    var changedTicketsByIdentifier =
+        changedTickets.stream()
+            .collect(Collectors.toMap(TicketEntry::getIdentifier, Function.identity()));
     return readResourceService
         .fetchAllTicketsForResource(resource)
+        .map(ticket -> changedTicketsByIdentifier.getOrDefault(ticket.getIdentifier(), ticket))
         .map(TicketEntry::refresh)
         .map(TicketEntry::toDao)
         .map(ticketDao -> ticketDao.toPutTransactionItem(tableName))
+        .toList();
+  }
+
+  private static List<TransactWriteItem> newTicketsTransactions(
+      Resource resource, Collection<TicketEntry> newTickets) {
+    var publication = resource.toPublication();
+    return newTickets.stream()
+        .map(
+            ticket ->
+                attempt(() -> ticket.prepareForCreation(publication, SortableIdentifier::next))
+                    .orElseThrow())
+        .map(TicketEntry::toDao)
+        .flatMap(ticketDao -> ticketDao.createInsertionTransactionItems().stream())
         .toList();
   }
 

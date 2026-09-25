@@ -52,6 +52,7 @@ import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Owner;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.ResourceRelationship;
+import no.unit.nva.publication.model.business.TicketChanges;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
@@ -100,7 +101,7 @@ import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects", "PMD.ExcessivePublicCount"})
 public class ResourceService extends ServiceWithTransactions {
 
   public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
@@ -440,6 +441,11 @@ public class ResourceService extends ServiceWithTransactions {
 
   public Resource updateResource(Resource resource, UserInstance userInstance) {
     return updateResourceService.updateResource(resource, userInstance);
+  }
+
+  public Resource updateResourceWithTickets(
+      Resource resource, UserInstance userInstance, TicketChanges ticketChanges) {
+    return updateResourceService.updateResourceWithTickets(resource, userInstance, ticketChanges);
   }
 
   // update this method according to current needs.

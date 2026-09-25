@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model.business;
 
+import static java.util.Collections.emptyList;
 import static nva.commons.core.attempt.Try.attempt;
 
 import java.net.URI;
@@ -175,6 +176,22 @@ public class UserInstance implements JsonSerializable {
         ticket.getResponsibilityArea(),
         null,
         List.of(),
+        UserClientType.INTERNAL,
+        null);
+  }
+
+  /**
+   * The user who uploaded the file. The uploader's subunit is not stored on the file, so the
+   * top-level institution doubles as person affiliation, making the whole institution responsible.
+   */
+  public static UserInstance fromFileEntry(FileEntry fileEntry) {
+    return new UserInstance(
+        fileEntry.getOwner().toString(),
+        fileEntry.getCustomerId(),
+        fileEntry.getOwnerAffiliation(),
+        fileEntry.getOwnerAffiliation(),
+        null,
+        emptyList(),
         UserClientType.INTERNAL,
         null);
   }

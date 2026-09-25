@@ -57,6 +57,7 @@ import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCE_FILES;
 import static nva.commons.apigateway.AccessRight.SUPPORT;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.hc.core5.http.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static org.apache.hc.core5.http.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
@@ -1964,7 +1965,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
   void
       userWhichHasAccessRightManageResourcesAllAndIsPartOfPublicationCuratingInstitutionsRepublishPublication()
           throws ApiGatewayException, IOException {
-    var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
+    var publication =
+        TicketTestUtils.createPersistedPublication(customerId, PUBLISHED, resourceService);
     var curatingInstitution = randomUri();
     publication.setCuratingInstitutions(
         Set.of(new CuratingInstitution(curatingInstitution, Set.of(randomUri()))));
@@ -1982,6 +1984,18 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     assertThat(gatewayResponse.getStatusCode(), is(equalTo(HTTP_OK)));
     assertThat(republishedPublication.getStatus(), is(equalTo(PUBLISHED)));
+  }
+
+  @Test
+  void shouldReturnBadGatewayAndStayUnpublishedWhenRepublishingAndCustomerIsUnavailable() {
+    var curatingInstitution = randomUri();
+    var publication = createUnpublishedPublicationWithPendingFileCuratedBy(curatingInstitution);
+    stubCustomerApiAsUnavailable();
+
+    var response = editorAtInstitutionRepublishes(publication, curatingInstitution);
+
+    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
+    assertThat(fetchStatus(publication), is(equalTo(UNPUBLISHED)));
   }
 
   @Test
@@ -3117,6 +3131,46 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         .withTopLevelCristinOrgId(topLevelCristinOrgId)
         .withPersonCristinId(randomUri())
         .build();
+  }
+
+  private Publication createUnpublishedPublicationWithPendingFileCuratedBy(
+      URI curatingInstitution) {
+    try {
+      var publication =
+          TicketTestUtils.createPersistedPublicationWithPendingOpenFile(
+              customerId, PUBLISHED, resourceService);
+      publication.setCuratingInstitutions(
+          Set.of(new CuratingInstitution(curatingInstitution, Set.of(randomUri()))));
+      resourceService.unpublishPublication(publication, UserInstance.fromPublication(publication));
+      return publication;
+    } catch (ApiGatewayException exception) {
+      throw new IllegalStateException("Could not set up unpublished publication", exception);
+    }
+  }
+
+  private void stubCustomerApiAsUnavailable() {
+    WireMock.reset();
+    stubSuccessfulTokenResponse();
+    stubCustomerResponseNotFound(customerId);
+  }
+
+  private GatewayResponse<Problem> editorAtInstitutionRepublishes(
+      Publication publication, URI institution) {
+    try {
+      var input =
+          curatorWithAccessRightsRepublishedPublication(
+              publication, randomUri(), institution, MANAGE_RESOURCES_ALL);
+      updatePublicationHandler.handleRequest(input, output, context);
+      return GatewayResponse.fromOutputStream(output, Problem.class);
+    } catch (IOException exception) {
+      throw new IllegalStateException("Could not send republish request", exception);
+    }
+  }
+
+  private PublicationStatus fetchStatus(Publication publication) {
+    return attempt(() -> resourceService.getPublicationByIdentifier(publication.getIdentifier()))
+        .orElseThrow()
+        .getStatus();
   }
 
   private InputStream curatorPublicationOwnerUpdatesPublication(Publication publication)

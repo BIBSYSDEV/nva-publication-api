@@ -242,8 +242,12 @@ public class UpdatePublicationHandler
   private Resource republish(
       Resource resource, PublicationPermissions permissionStrategy, UserInstance userInstance)
       throws ApiGatewayException {
-    return RepublishUtil.create(resourceService, ticketService, permissionStrategy)
-        .republish(resource, userInstance);
+    try {
+      return RepublishUtil.create(resourceService, customerApiClient, permissionStrategy)
+          .republish(resource, userInstance);
+    } catch (CustomerNotAvailableException e) {
+      throw customerApiNotResponding(e);
+    }
   }
 
   private Resource terminatePublication(
@@ -399,9 +403,14 @@ public class UpdatePublicationHandler
     try {
       return customerApiClient.fetch(customerUri);
     } catch (CustomerNotAvailableException e) {
-      logger.error("Problems fetching customer", e);
-      throw new BadGatewayException("Customer API not responding or not responding as expected!");
+      throw customerApiNotResponding(e);
     }
+  }
+
+  private static BadGatewayException customerApiNotResponding(
+      CustomerNotAvailableException exception) {
+    logger.error("Problems fetching customer", exception);
+    return new BadGatewayException("Customer API not responding or not responding as expected!");
   }
 
   @Override
