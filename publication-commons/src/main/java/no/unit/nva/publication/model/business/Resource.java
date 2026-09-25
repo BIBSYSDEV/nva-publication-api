@@ -73,7 +73,6 @@ import no.unit.nva.publication.model.business.publicationstate.UpdatedResourceEv
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.TicketService;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
@@ -476,27 +475,25 @@ public class Resource implements Entity, Validatable<Resource> {
     return PUBLISHED == this.getStatus();
   }
 
-  public void republish(
-      ResourceService resourceService, TicketService ticketService, UserInstance userInstance) {
+  public void republish(ResourceService resourceService, UserInstance userInstance) {
     fetch(resourceService)
         .filter(Resource::isNotPublished)
-        .ifPresent(resource -> republish(resourceService, ticketService, userInstance, resource));
+        .ifPresent(resource -> republish(resourceService, userInstance, resource));
   }
 
   private void republish(
-      ResourceService resourceService,
-      TicketService ticketService,
-      UserInstance userInstance,
-      Resource resource) {
-    resource.republish(userInstance, resourceService);
-    resourceService
-        .fetchAllTicketsForResource(resource)
-        .filter(this::shouldRepublishTicket)
-        .forEach(
-            ticket -> {
-              ticket.setStatus(PENDING);
-              ticketService.updateTicket(ticket);
-            });
+      ResourceService resourceService, UserInstance userInstance, Resource resource) {
+    var tickets = resourceService.fetchAllTicketsForResource(resource).toList();
+    resource.republish(userInstance);
+    var reactivatedTickets = reactivateTickets(tickets);
+
+    resourceService.updateResourceWithTickets(resource, userInstance, reactivatedTickets);
+  }
+
+  private TicketChanges reactivateTickets(Collection<TicketEntry> tickets) {
+    var ticketsToReactivate = tickets.stream().filter(this::shouldRepublishTicket).toList();
+    ticketsToReactivate.forEach(ticket -> ticket.setStatus(PENDING));
+    return new TicketChanges(ticketsToReactivate, Collections.emptyList());
   }
 
   private boolean shouldRepublishTicket(TicketEntry ticket) {
@@ -504,11 +501,6 @@ public class Resource implements Entity, Validatable<Resource> {
             || ticket instanceof GeneralSupportRequest
             || ticket instanceof DoiRequest)
         && NOT_APPLICABLE == ticket.getStatus();
-  }
-
-  private void republish(UserInstance userInstance, ResourceService resourceService) {
-    republish(userInstance);
-    resourceService.updateResource(this, userInstance);
   }
 
   private void republish(UserInstance userInstance) {

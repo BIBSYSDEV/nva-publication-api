@@ -242,7 +242,7 @@ public class UpdatePublicationHandler
   private Resource republish(
       Resource resource, PublicationPermissions permissionStrategy, UserInstance userInstance)
       throws ApiGatewayException {
-    return RepublishUtil.create(resourceService, ticketService, permissionStrategy)
+    return RepublishUtil.create(resourceService, permissionStrategy)
         .republish(resource, userInstance);
   }
 
