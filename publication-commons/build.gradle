@@ -39,6 +39,7 @@ dependencies {
     testFixturesImplementation(nvaLibs.apigateway)
     testFixturesImplementation(nvaLibs.testutils)
     testImplementation(libs.hamcrest.optional)
+    testImplementation(nvaCatalog.assertj.core)
     testImplementation(nvaCatalog.cucumber.core)
     testImplementation(nvaCatalog.cucumber.java)
     testImplementation(nvaCatalog.hamcrest)

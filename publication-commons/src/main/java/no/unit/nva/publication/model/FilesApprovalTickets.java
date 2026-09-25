@@ -2,6 +2,7 @@ package no.unit.nva.publication.model;
 
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
 
+import java.util.HashSet;
 import java.util.Set;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.commons.customer.Customer;
@@ -31,6 +32,14 @@ public final class FilesApprovalTickets {
     return resource.isDegree()
         ? newFilesApprovalThesis(resource, files)
         : newPublishingRequest(resource, files);
+  }
+
+  /** Adds the files to those already on the ticket. */
+  public FilesApprovalEntry withAddedFiles(
+      Resource resource, FilesApprovalEntry ticket, Set<File> files) {
+    var filesForApproval = new HashSet<>(ticket.getFilesForApproval());
+    filesForApproval.addAll(files);
+    return withFiles(resource, ticket, filesForApproval);
   }
 
   /** Replaces the files on the ticket. */
