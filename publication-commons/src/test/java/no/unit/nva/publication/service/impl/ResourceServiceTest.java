@@ -94,6 +94,7 @@ import no.unit.nva.model.additionalidentifiers.SourceName;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
@@ -1930,6 +1931,28 @@ class ResourceServiceTest extends ResourcesLocalTest {
     var updatedFile = updatedResource.getFiles().getFirst();
 
     assertNotEquals(file, updatedFile);
+  }
+
+  @Test
+  void shouldPersistFileTypeChangeWhenHidingFinalizedFile() throws BadRequestException {
+    var openFile = randomOpenFile();
+    var publication = randomPublication();
+    publication.setAssociatedArtifacts(new AssociatedArtifactList(List.of(openFile)));
+    var userInstance = UserInstance.fromPublication(publication);
+    publication = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+
+    publication.setAssociatedArtifacts(
+        new AssociatedArtifactList(List.of(openFile.copy().buildHiddenFile())));
+    resourceService.updateResource(Resource.fromPublication(publication), userInstance);
+
+    var persistedFile =
+        Resource.resourceQueryObject(publication.getIdentifier())
+            .fetch(resourceService)
+            .orElseThrow()
+            .getFiles()
+            .getFirst();
+
+    assertInstanceOf(HiddenFile.class, persistedFile);
   }
 
   @Test
