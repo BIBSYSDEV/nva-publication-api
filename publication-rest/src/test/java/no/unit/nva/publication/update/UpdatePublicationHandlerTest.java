@@ -21,6 +21,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePubl
 import static no.unit.nva.model.testing.PublicationGenerator.randomProjects;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUploadedFile;
@@ -84,6 +85,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -1247,6 +1249,78 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     assertThat(
         completedTicket.getFinalizedBy(),
         is(not(equalTo(publication.getResourceOwner().getOwner()))));
+  }
+
+  @Test
+  void curatorShouldBeAbleToHideOpenFile()
+      throws IOException, NotFoundException, BadRequestException {
+    var openFile = randomOpenFile();
+    var publicationToPersist =
+        randomPublication(AcademicArticle.class)
+            .copy()
+            .withStatus(PUBLISHED)
+            .withAssociatedArtifacts(List.of(openFile))
+            .withPublisher(new Organization.Builder().withId(customerId).build())
+            .build();
+    var owner = UserInstance.fromPublication(publicationToPersist);
+    var persistedPublication =
+        Resource.fromPublication(publicationToPersist).persistNew(resourceService, owner);
+
+    persistedPublication.setAssociatedArtifacts(
+        new AssociatedArtifactList(List.of(openFile.copy().buildHiddenFile())));
+
+    var request =
+        curatorWithAccessRightsUpdatesPublication(
+            persistedPublication,
+            customerId,
+            owner.getTopLevelOrgCristinId(),
+            MANAGE_RESOURCE_FILES,
+            MANAGE_RESOURCES_STANDARD);
+    updatePublicationHandler.handleRequest(request, output, context);
+
+    assertEquals(
+        SC_OK,
+        GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class)
+            .getStatusCode());
+
+    var updatedPublication =
+        resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+
+    assertInstanceOf(HiddenFile.class, updatedPublication.getAssociatedArtifacts().getFirst());
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenFileTransitionIsIllegal() throws IOException, BadRequestException {
+    var hiddenFile = randomHiddenFile();
+    var publicationToPersist =
+        randomPublication(AcademicArticle.class)
+            .copy()
+            .withStatus(PUBLISHED)
+            .withAssociatedArtifacts(List.of(hiddenFile))
+            .withPublisher(new Organization.Builder().withId(customerId).build())
+            .build();
+    var owner = UserInstance.fromPublication(publicationToPersist);
+    var persistedPublication =
+        Resource.fromPublication(publicationToPersist).persistNew(resourceService, owner);
+
+    persistedPublication.setAssociatedArtifacts(
+        new AssociatedArtifactList(List.of(hiddenFile.copy().buildOpenFile())));
+
+    var request =
+        curatorWithAccessRightsUpdatesPublication(
+            persistedPublication,
+            customerId,
+            owner.getTopLevelOrgCristinId(),
+            MANAGE_RESOURCE_FILES,
+            MANAGE_RESOURCES_STANDARD);
+    updatePublicationHandler.handleRequest(request, output, context);
+
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+    assertEquals(SC_BAD_REQUEST, response.getStatusCode());
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(),
+        containsString("HiddenFile cannot be updated to OpenFile"));
   }
 
   @Test

@@ -76,6 +76,7 @@ public class UpdatePublicationHandler
   private static final String ENV_KEY_BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
   public static final String ETAG_DOES_NOT_MATCH_MESSAGE =
       "The provided ETag does not match the current state of the resource.";
+  public static final String ILLEGAL_FILE_TRANSITION_MESSAGE = "%s cannot be updated to %s";
   private final TicketService ticketService;
   private final ResourceService resourceService;
   private final IdentityServiceClient identityServiceClient;
@@ -215,6 +216,7 @@ public class UpdatePublicationHandler
         fetchCustomerOrFailWithBadGateway(customerApiClient, userInstance.getCustomerId());
     authorizeFileEntries(
         existingResource, userInstance, getUpdatedFiles(existingResource, resourceUpdate));
+    validateFileTransitions(existingResource, resourceUpdate);
 
     var updatedFiles = resourceUpdate.getFiles();
     if (!updatedFiles.stream()
@@ -343,6 +345,19 @@ public class UpdatePublicationHandler
         .getInstanceType()
         .map(instanceType -> customer.getAllowFileUploadForTypes().contains(instanceType))
         .orElse(false);
+  }
+
+  private static void validateFileTransitions(Resource existingResource, Resource updatedResource)
+      throws BadRequestException {
+    for (var persistedFile : existingResource.getFiles()) {
+      var updatedFile = updatedResource.getFileByIdentifier(persistedFile.getIdentifier());
+      if (updatedFile.filter(file -> !persistedFile.canTransitionTo(file)).isPresent()) {
+        throw new BadRequestException(
+            ILLEGAL_FILE_TRANSITION_MESSAGE.formatted(
+                persistedFile.getClass().getSimpleName(),
+                updatedFile.orElseThrow().getClass().getSimpleName()));
+      }
+    }
   }
 
   private static void authorizeFileEntries(
