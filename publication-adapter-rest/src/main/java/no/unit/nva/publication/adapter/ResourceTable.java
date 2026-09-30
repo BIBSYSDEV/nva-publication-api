@@ -17,6 +17,8 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_B
 
 import java.util.Collection;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.BillingMode;
@@ -26,18 +28,24 @@ import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.Projection;
 import software.amazon.awssdk.services.dynamodb.model.ProjectionType;
+import software.amazon.awssdk.services.dynamodb.model.ResourceInUseException;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
-import software.amazon.dynamodb.services.local.embedded.DynamoDBEmbedded;
 
-public final class LocalDynamoDb {
+public final class ResourceTable {
 
-    private LocalDynamoDb() {
+    private static final Logger logger = LoggerFactory.getLogger(ResourceTable.class);
+
+    private ResourceTable() {
     }
 
-    public static DynamoDbClient startAndCreateTable(String tableName) {
-        var client = DynamoDBEmbedded.create(null, true).dynamoDbClient();
-        client.createTable(buildCreateTableRequest(tableName));
-        return client;
+    public static void createIfMissing(DynamoDbClient client, String tableName) {
+        try {
+            client.createTable(buildCreateTableRequest(tableName));
+            logger.info("Created table {} with {} global secondary indexes", tableName,
+                        globalSecondaryIndexes().size());
+        } catch (ResourceInUseException e) {
+            logger.info("Table {} already exists", tableName);
+        }
     }
 
     private static CreateTableRequest buildCreateTableRequest(String tableName) {

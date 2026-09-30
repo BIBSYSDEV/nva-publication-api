@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,6 +28,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.dynamodb.services.local.embedded.DynamoDBEmbedded;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -82,7 +85,7 @@ class AdapterApplicationTest {
     static void startAdapter() {
         var mockPort = Integer.parseInt(System.getenv("MOCK_PORT"));
         mocks = MockIntegrations.start(mockPort);
-        adapter = new AdapterApplication(AdapterApplication.buildLocalContainer(),
+        adapter = new AdapterApplication(AdapterApplication.buildContainer(embeddedDynamoDb()),
                                          AdapterApplication.readOpenApi(OPENAPI_PATH))
                       .start(RANDOM_PORT);
         baseUri = "http://localhost:%s".formatted(adapter.port());
@@ -97,7 +100,7 @@ class AdapterApplicationTest {
 
     @Test
     void shouldInstantiateEveryHandlerDeclaredInOpenApi() {
-        var container = AdapterApplication.buildLocalContainer();
+        var container = AdapterApplication.buildContainer(embeddedDynamoDb());
 
         handlerClassesInOpenApi().forEach(handlerClass -> assertDoesNotThrow(
             () -> container.create(handlerClass),
@@ -238,6 +241,12 @@ class AdapterApplicationTest {
 
     private static String emptyIdentifier() {
         return "";
+    }
+
+    private static DynamoDbClient embeddedDynamoDb() {
+        var client = DynamoDBEmbedded.create(null, true).dynamoDbClient();
+        ResourceTable.createIfMissing(client, RESOURCES_TABLE_NAME);
+        return client;
     }
 
     private static Set<String> operationsWithoutHandlerClass() {

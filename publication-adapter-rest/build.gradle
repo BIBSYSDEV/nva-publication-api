@@ -30,14 +30,6 @@ dependencies {
     implementation nvaCatalog.log4j.core
     implementation nvaCatalog.slf4j.api
 
-    implementation(nvaCatalog.aws.sdk2.dynamodblocal) {
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
-        exclude group: 'org.eclipse.jetty'
-        exclude group: 'org.eclipse.jetty.ee10'
-        exclude group: 'org.eclipse.jetty.ee10.websocket'
-    }
-
     implementation libs.javalin
     implementation libs.swagger.core
 
@@ -45,6 +37,14 @@ dependencies {
     testImplementation nvaCatalog.junit.jupiter.api
     testImplementation nvaCatalog.hamcrest
     testImplementation nvaCatalog.mockito.core
+    // Embedded DynamoDB is a test fixture only — the adapter itself talks to a configured endpoint
+    testImplementation(nvaCatalog.aws.sdk2.dynamodblocal) {
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
+        exclude group: 'org.eclipse.jetty'
+        exclude group: 'org.eclipse.jetty.ee10'
+        exclude group: 'org.eclipse.jetty.ee10.websocket'
+    }
     testRuntimeOnly nvaCatalog.junit.jupiter.engine
     testRuntimeOnly nvaCatalog.junit.platform.launcher
 }

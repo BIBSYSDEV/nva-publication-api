@@ -77,8 +77,9 @@ public final class AdapterApplication {
             System.getenv().getOrDefault("MOCK_PORT", String.valueOf(MockIntegrations.DEFAULT_PORT)));
         var openApi = readOpenApi(openApiPath);
         MockIntegrations.start(mockPort);
-        var container = buildLocalContainer();
-        var app = new AdapterApplication(container, openApi);
+        var dynamoDb = DynamoDbClient.create();
+        ResourceTable.createIfMissing(dynamoDb, RESOURCES_TABLE_NAME);
+        var app = new AdapterApplication(buildContainer(dynamoDb), openApi);
         app.start(port);
     }
 
@@ -158,8 +159,7 @@ public final class AdapterApplication {
         return openApiPath.replaceAll("\\{([^/}]+)}", "{$1}");
     }
 
-    static HandlerContainer buildLocalContainer() {
-        var dynamoDb = LocalDynamoDb.startAndCreateTable(RESOURCES_TABLE_NAME);
+    static HandlerContainer buildContainer(DynamoDbClient dynamoDb) {
         var environment = new Environment();
         var uriRetriever = new UriRetriever();
         var cristinUnitsUtil = (CristinUnitsUtil) unitId -> unitId;

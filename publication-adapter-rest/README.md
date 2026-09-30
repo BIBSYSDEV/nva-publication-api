@@ -36,7 +36,7 @@ Manager, etc.).
 | `ApiGatewayProxyRequestBuilder` | HTTP → API Gateway Proxy JSON |
 | `GatewayResponseWriter` | `GatewayResponse` JSON → HTTP |
 | `MockLambdaContext` | Minimal `com.amazonaws.services.lambda.runtime.Context` stub |
-| `LocalDynamoDb` | Starts `DynamoDBEmbedded`, creates `nva-resources` table + all 4 GSIs |
+| `ResourceTable` | Creates `nva-resources` and all 4 GSIs if missing, against whatever endpoint the client is configured for |
 | `HandlerContainer` | Type-based DI: `register(Class, instance)` + `create(Class)` picks the constructor with the most matching parameter types. Override via `registerFactory` for edge cases. |
 | `AuthorizerContextProvider` | Populates `requestContext.authorizer` — pluggable |
 | `TestHeaderAuthorizerProvider` | Reads `X-Adapter-Authorizer` JSON header (local/dev only) |
@@ -44,9 +44,18 @@ Manager, etc.).
 
 ## Running locally
 
-From the repo root:
+Start the backing services first — the adapter no longer embeds a database:
 
 ```bash
+docker compose -f publication-adapter-rest/compose.yaml up -d
+```
+
+Then, from the repo root:
+
+```bash
+AWS_ENDPOINT_URL_DYNAMODB="http://localhost:8000" \
+AWS_ACCESS_KEY_ID="local" \
+AWS_SECRET_ACCESS_KEY="local" \
 OPENAPI_PATH=/absolute/path/to/docs/openapi.yaml \
 ALLOWED_ORIGIN="*" \
 AWS_REGION="eu-west-1" \
@@ -67,8 +76,15 @@ NVA_EVENT_BUS_NAME="local-event-bus" \
 Ports:
 - `8080` — adapter HTTP (override with `PORT`)
 - `8090` — mock integrations for Cognito + Customer API (override with `MOCK_PORT`)
+- `8000` — DynamoDB-compatible database from `compose.yaml`
 
-Embedded DynamoDB runs in-process; state is lost when the JVM exits.
+The adapter creates `nva-resources` and its four GSIs on startup if they are
+missing, so there is no separate bootstrap step. The container runs in-memory,
+so state is lost when it stops.
+
+`AWS_ENDPOINT_URL_DYNAMODB` is the per-service form on purpose. The global
+`AWS_ENDPOINT_URL` would redirect *every* AWS client at once, which becomes wrong
+as soon as a second service is added.
 
 ## Example requests
 
@@ -111,7 +127,7 @@ hits the stub instead of an external service.
    nothing else to do. The container picks the constructor with the most
    matching parameter types, so the handler is instantiated automatically.
 3. **If it needs a new collaborator** — register the type once in
-   `buildLocalContainer()`:
+   `buildContainer()`:
    ```java
    .register(SomeNewClient.class, fakeSomeNewClient())
    ```
@@ -185,7 +201,7 @@ services. Registered: [...]`.
    and the handler answers `303` with a landing-page `Location`.
 2. ~~**Register the missing collaborator types.**~~ Done for everything that
    doesn't need S3 — 13 of 29 operations now route. It took no factories at all,
-   only types registered in `buildLocalContainer()` plus two env vars
+   only types registered in `buildContainer()` plus two env vars
    (`CUSTOM_DOMAIN_BASE_PATH`, `NVA_EVENT_BUS_NAME`). What remains:
    - **7 file-upload + 2 download operations** need S3 (see "No S3" above).
    - **2 message operations** live in a module this one doesn't depend on.
@@ -244,9 +260,12 @@ get without S3, and both directions of drift now fail the build.
 Detailed in "Target: no AWS dependency" below; summarised here to keep the
 roadmap readable.
 
-10. **Replace `DynamoDBEmbedded` with ScyllaDB Alternator.** Handler code is
-    unchanged — the client only needs an endpoint and credentials from config.
-    Same image locally and in Platon.
+10. ~~**Replace `DynamoDBEmbedded` with ScyllaDB Alternator.**~~ Done in part and
+    blocked in part. `DynamoDBEmbedded` is out of the production path — the
+    adapter now builds a `DynamoDbClient` from configuration and creates the
+    table on startup, and embedded DynamoDB is a test-only dependency. Which
+    server it points at is unresolved: Alternator rejects `TransactWriteItems`.
+    See "The blocker: transactions" below.
 11. **Replace the remaining fakes with real services:** MinIO for S3, Keycloak
     for Cognito, Vault for Secrets Manager. The Customer API stub stays a stub,
     but moves behind a URL so the real service can replace it by configuration.
@@ -263,10 +282,9 @@ roadmap readable.
     dual deployment lasts.
 
 ### Out of scope for now
-- **Migrating off the DynamoDB data model.** Moving to Alternator keeps the
-  single-table design and all four GSIs, so it is not needed to leave AWS.
-  Redesigning onto something like PostgreSQL is a separate project — see "What
-  'no AWS' does and does not mean here" below.
+- **Migrating off the DynamoDB data model.** Still out of scope for this module,
+  but no longer optional if no-AWS is firm: the transaction blocker below means
+  the data model and the cloud dependency cannot be separated.
 - **DynamoDB Streams → EventBridge fanout.** The streams feed the event handlers,
   and Alternator's stream support differs from DynamoDB's. Needs CDC (Debezium or
   similar) or a deliberate alternative. Decide before the event-handler adapter
@@ -292,7 +310,7 @@ Platon**. The local stack stops being a simulation and becomes the deployment.
 
 | Needed | Runs in Platon, no AWS |
 |---|---|
-| DynamoDB | ScyllaDB Alternator — DynamoDB wire protocol |
+| DynamoDB | **Unresolved — see below.** Alternator was tried and does not work |
 | S3 | MinIO — S3 wire protocol |
 | Cognito | Keycloak — real OIDC, real login page |
 | Secrets Manager | Vault, which Sikt already runs for Platon |
@@ -300,22 +318,62 @@ Platon**. The local stack stops being a simulation and becomes the deployment.
 | API Gateway | HAProxy ingress plus what this module does itself |
 | Lambda | this adapter, in a plain Deployment |
 
+### The blocker: transactions
+
+**ScyllaDB Alternator cannot back this service.** This was tested, not assumed:
+the adapter was pointed at `scylladb/scylla:6.2` with `--alternator-port 8000`.
+Table creation with all four GSIs succeeded, `GET /by-owner` returned 200 — and
+creating a publication failed with
+
+```
+DynamoDbException: Unsupported operation TransactWriteItems
+```
+
+Alternator does not implement DynamoDB's transaction API, and this codebase is
+built on it: `TransactWriteItems` appears **101 times** across `publication-commons`
+main code — `Dao` and every DAO subclass, `ResourceService`, `UpdateResourceService`,
+`CristinIdentifierCounterService`, and `ServiceWithTransactions`, whose whole
+purpose is batching transactional writes. Pointing at `amazon/dynamodb-local`
+instead made the identical request succeed, which confirms transactions are the
+only difference.
+
+That leaves three options, and the choice is a real decision rather than an
+implementation detail:
+
+1. **Keep DynamoDB.** Everything else on this list can leave AWS; the database
+   cannot. This contradicts a strict no-AWS goal but costs nothing else.
+2. **Move to PostgreSQL.** Real transactions, and the single-table design plus
+   four GSIs get redesigned into something relational. A large project with its
+   own risk, but it is the only option that satisfies both no-AWS and the
+   atomicity the code currently relies on.
+3. **Drop transactions and run on Alternator.** Cheapest to say, worst to live
+   with: the atomic writes exist to keep resources, tickets, files and
+   identifier entries consistent. Giving that up trades a migration project for
+   a class of data-integrity bugs.
+
+My reading is that (2) is the honest answer if no-AWS is firm, and that (1) is
+defensible if the real goal is leaving Lambda and API Gateway rather than leaving
+AWS entirely. What should not happen is drifting into (3) because it looks like
+less work.
+
+Until that is decided, `compose.yaml` runs `amazon/dynamodb-local`. It is free
+but proprietary and test-only, so it is a local development choice, not a
+deployment one — the one place where the local stack is knowingly not the
+production stack.
+
 ### What "no AWS" does and does not mean here
 
 Worth being precise, because the strict reading is a far bigger project.
 
-The AWS **SDK stays** as a client library. MinIO and ScyllaDB Alternator speak
-S3 and DynamoDB over the wire, so `S3Client` and `DynamoDbClient` keep working
-against servers that have nothing to do with Amazon. That is a protocol
-dependency, not a vendor one, and it is what makes this tractable: the DAO
-layer, the single-table design and all four GSIs survive untouched.
+The AWS **SDK stays** as a client library. MinIO speaks S3 over the wire, so
+`S3Client` keeps working against a server that has nothing to do with Amazon.
+That is a protocol dependency, not a vendor one, and it is what makes the file
+handling tractable.
 
-The strict reading — no AWS SDK at all — means rewriting persistence onto
-something like PostgreSQL. Single-table design, four GSIs and the transaction
-patterns in `ServiceWithTransactions` would all have to be redesigned. That is a
-separate project with its own risk, and nothing in this adapter makes it easier
-or harder. If that is the real goal, it should be decided explicitly rather than
-arrived at through this module.
+The same argument was meant to cover DynamoDB, and it does not — see the
+transaction blocker above. That is the difference between the two: S3's protocol
+has a production-grade open source implementation, DynamoDB's does not, at least
+not one covering the parts this code uses.
 
 One genuine leftover: `com.amazonaws:aws-lambda-java-core` supplies the `Context`
 interface that `handleRequest` takes, which is why `MockLambdaContext` exists.
@@ -336,14 +394,14 @@ Every client is pointed somewhere by configuration, never by a code path:
   unchanged.
 
 That rules out a "local mode" flag in the code. It also means the fakes now in
-`buildLocalContainer` are not something to point elsewhere — they are something
+`buildContainer` are not something to point elsewhere — they are something
 to **delete**.
 
 ### The fakes, judged against that bar
 
 | Today | Verdict |
 |---|---|
-| `DynamoDBEmbedded` | Replace with Alternator via endpoint config |
+| `DynamoDBEmbedded` | **Done** — gone from the production path, now a test-only dependency. The adapter builds a client from config and bootstraps the table |
 | `fakeSecretsManagerClient()` — a `Proxy` returning canned credentials | Delete. Real client, Vault-provided secret |
 | `noopEventBridgeClient()` — a `Proxy` swallowing events | Delete. Silently dropping events is not a behaviour to ship |
 | `IdentityServiceClient.unauthorizedIdentityServiceClient()` | Replace with a configured client |
@@ -372,7 +430,7 @@ that can live in production wiring; a stub compiled into the adapter is not.
 
 ### How it fits together
 
-One `compose.yaml` runs Alternator, MinIO, Keycloak and the Customer API stub.
+One `compose.yaml` runs the database, MinIO, Keycloak and the Customer API stub.
 The same images back the integration tests through Testcontainers, which is
 already in `nvaCatalog` (2.0.5), so the demo environment and the test environment
 cannot drift apart. Keep the current in-process tests fast and untagged, and tag
@@ -384,9 +442,10 @@ them.
 
 Order matters, because each step de-risks the next.
 
-1. **Alternator replacing `DynamoDBEmbedded`.** No functional change, which is
-   exactly why it is first — it proves the endpoint-configuration pattern on
-   ground we already have tests for.
+1. ~~**Get `DynamoDBEmbedded` out of the production path.**~~ Done, and it paid
+   for itself immediately: putting a real server behind the endpoint is what
+   surfaced the Alternator transaction blocker, on ground we already had tests
+   for. Which server it points at is now an open decision, not an assumption.
 2. **Vault-backed secrets and a real EventBridge-equivalent, deleting both
    `Proxy` fakes.** Small, and removes the two things that can never ship.
 3. **MinIO and the nine file operations.** The mechanism is established by then,
@@ -413,9 +472,9 @@ Order matters, because each step de-risks the next.
 - **Cognito's `custom:` claims.** `custom:customerId`, `custom:accessRights` and
   the rest need Keycloak protocol mappers to come out under those exact names.
   Commit the realm export so this is reproducible rather than hand-configured.
-- **Alternator is not DynamoDB.** It is close, but transaction and GSI semantics
-  are worth verifying against the existing `publication-commons` test suite early
-  rather than discovering differences during migration.
+- **Alternator is not DynamoDB.** Confirmed the hard way — see the transaction
+  blocker above. The lesson generalises: verify any DynamoDB-compatible candidate
+  against the existing `publication-commons` suite before planning around it.
 
 ## If this were to run in production
 

@@ -1,0 +1,20 @@
+# Local stack for the adapter.
+#
+# NOTE ON dynamodb: this is AWS's own DynamoDB Local, which is free but proprietary
+# and explicitly test-only. It is here because it is the only DynamoDB-compatible
+# server that supports TransactWriteItems, which this codebase depends on in 101
+# places. ScyllaDB Alternator — the open source candidate — was tried and rejects
+# the operation outright ("Unsupported operation TransactWriteItems"), so it cannot
+# back this service without rewriting the persistence layer. See the README section
+# "Target: no AWS dependency" for what that means for leaving AWS.
+#
+# Start with: docker compose -f publication-adapter-rest/compose.yaml up -d
+services:
+  dynamodb:
+    image: amazon/dynamodb-local:2.5.2
+    command: -jar DynamoDBLocal.jar -inMemory -sharedDb
+    ports:
+      - "8000:8000"
+    # No healthcheck: the image ships neither curl nor wget, and a check that cannot
+    # fail is worse than none. The service answers within a second or two; the adapter
+    # creates the table on startup and will fail loudly if it cannot reach this.
