@@ -1,20 +1,117 @@
 # Local stack for the adapter.
 #
-# NOTE ON dynamodb: this is AWS's own DynamoDB Local, which is free but proprietary
-# and explicitly test-only. It is here because it is the only DynamoDB-compatible
-# server that supports TransactWriteItems, which this codebase depends on in 101
-# places. ScyllaDB Alternator — the open source candidate — was tried and rejects
-# the operation outright ("Unsupported operation TransactWriteItems"), so it cannot
-# back this service without rewriting the persistence layer. See the README section
-# "Target: no AWS dependency" for what that means for leaving AWS.
+# Default profile runs AWS's DynamoDB Local: free but proprietary and test-only.
+# It is the default only because it is the one DynamoDB-compatible server known
+# to support TransactWriteItems, which this codebase uses in 101 places.
 #
-# Start with: docker compose -f publication-adapter-rest/compose.yaml up -d
+#   docker compose -f publication-adapter-rest/compose.yaml up -d
+#
+# The "extenddb" profile runs ExtendDB instead: an Apache-2.0 implementation of
+# the DynamoDB wire protocol backed by PostgreSQL, which is the candidate for
+# running this service without AWS. Platon provides managed PostgreSQL, so only
+# the adapter container would need deploying there.
+#
+#   docker compose -f publication-adapter-rest/compose.yaml --profile extenddb up -d
+#
+# ScyllaDB Alternator was evaluated and rejected: it answers TransactWriteItems
+# with "Unsupported operation". See README, "The blocker: transactions".
+name: nva-publication-adapter
+
+x-extenddb-image: &extenddb-image
+  image: ghcr.io/extenddb/extenddb-postgres:latest
+
+x-extenddb-hardening: &extenddb-hardening
+  read_only: true
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=16m
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
 services:
+  # Default backend. No healthcheck: the image ships neither curl nor wget, and a
+  # check that cannot fail is worse than none. The adapter creates the table on
+  # startup and fails loudly if it cannot reach this.
   dynamodb:
     image: amazon/dynamodb-local:2.5.2
     command: -jar DynamoDBLocal.jar -inMemory -sharedDb
+    profiles: ["default"]
     ports:
-      - "8000:8000"
-    # No healthcheck: the image ships neither curl nor wget, and a check that cannot
-    # fail is worse than none. The service answers within a second or two; the adapter
-    # creates the table on startup and will fail loudly if it cannot reach this.
+      - "127.0.0.1:8000:8000"
+
+  postgres:
+    image: postgres:16.10-bookworm
+    profiles: ["extenddb"]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: local
+      POSTGRES_DB: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  # ExtendDB keeps TLS material and config on this volume, owned by uid 10001
+  extenddb-volume-init:
+    <<: *extenddb-image
+    profiles: ["extenddb"]
+    user: "0:0"
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN]
+    security_opt:
+      - no-new-privileges:true
+    entrypoint: ["/bin/sh", "-ec"]
+    command: ["chown -R 10001:10001 /var/lib/extenddb"]
+    volumes:
+      - extenddb-state:/var/lib/extenddb
+    restart: "no"
+
+  extenddb-bootstrap:
+    <<: [*extenddb-image, *extenddb-hardening]
+    profiles: ["extenddb"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      extenddb-volume-init:
+        condition: service_completed_successfully
+    environment:
+      EXTENDDB_PG_PASSWORD: local
+      EXTENDDB_APP_PASSWORD: local
+      EXTENDDB_ADMIN_PASSWORD: localadmin
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        CONFIG=/var/lib/extenddb/extenddb.toml
+        if [ -f "$$CONFIG" ]; then
+          exec extenddb migrate --config "$$CONFIG" --yes --pg-user postgres
+        fi
+        exec extenddb init --config "$$CONFIG" --backend postgres \
+          --pg-host postgres --pg-port 5432 \
+          --pg-user postgres \
+          --extenddb-user extenddb_app \
+          --bind-addr 0.0.0.0 --tls-san localhost --tls-san extenddb
+    volumes:
+      - extenddb-state:/var/lib/extenddb
+    restart: "no"
+
+  extenddb:
+    <<: [*extenddb-image, *extenddb-hardening]
+    profiles: ["extenddb"]
+    depends_on:
+      extenddb-bootstrap:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:18443:18443"
+    volumes:
+      - extenddb-state:/var/lib/extenddb
+    stop_grace_period: 15s
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  extenddb-state:
