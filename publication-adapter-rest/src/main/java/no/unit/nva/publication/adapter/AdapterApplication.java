@@ -6,10 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.http.HandlerType;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.parser.OpenAPIV3Parser;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -60,10 +62,7 @@ public final class AdapterApplication {
         var port = Integer.parseInt(System.getenv().getOrDefault("PORT", String.valueOf(DEFAULT_PORT)));
         var mockPort = Integer.parseInt(
             System.getenv().getOrDefault("MOCK_PORT", String.valueOf(MockIntegrations.DEFAULT_PORT)));
-        var openApi = new OpenAPIV3Parser().read(openApiPath);
-        if (openApi == null) {
-            throw new IllegalStateException("Failed to parse OpenAPI at " + openApiPath);
-        }
+        var openApi = readOpenApi(openApiPath);
         MockIntegrations.start(mockPort);
         var container = buildLocalContainer();
         var app = new AdapterApplication(container, openApi);
@@ -100,6 +99,14 @@ public final class AdapterApplication {
             handler.handleRequest(in, out, new MockLambdaContext());
             var responseJson = out.toString(StandardCharsets.UTF_8);
             responseWriter.write(ctx, responseJson);
+        }
+    }
+
+    private static OpenAPI readOpenApi(String openApiPath) {
+        try {
+            return Yaml.mapper().readValue(new File(openApiPath), OpenAPI.class);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to parse OpenAPI at " + openApiPath, e);
         }
     }
 

@@ -32,7 +32,7 @@ Manager, etc.).
 
 | File | Purpose |
 |---|---|
-| `AdapterApplication` | Main entry: parses OpenAPI, starts WireMock + Javalin + embedded DynamoDB |
+| `AdapterApplication` | Main entry: parses OpenAPI, starts mock integrations + Javalin + embedded DynamoDB |
 | `ApiGatewayProxyRequestBuilder` | HTTP → API Gateway Proxy JSON |
 | `GatewayResponseWriter` | `GatewayResponse` JSON → HTTP |
 | `MockLambdaContext` | Minimal `com.amazonaws.services.lambda.runtime.Context` stub |
@@ -40,7 +40,7 @@ Manager, etc.).
 | `HandlerContainer` | Type-based DI: `register(Class, instance)` + `create(Class)` picks the constructor with the most matching parameter types. Override via `registerFactory` for edge cases. |
 | `AuthorizerContextProvider` | Populates `requestContext.authorizer` — pluggable |
 | `TestHeaderAuthorizerProvider` | Reads `X-Adapter-Authorizer` JSON header (local/dev only) |
-| `MockIntegrations` | WireMock server stubbing Cognito token + Customer API |
+| `MockIntegrations` | Second Javalin instance stubbing Cognito token + Customer API |
 
 ## Running locally
 
@@ -64,7 +64,7 @@ NVA_FRONTEND_DOMAIN="localhost" \
 
 Ports:
 - `8080` — adapter HTTP (override with `PORT`)
-- `8090` — WireMock for Cognito + Customer API (override with `MOCK_PORT`)
+- `8090` — mock integrations for Cognito + Customer API (override with `MOCK_PORT`)
 
 Embedded DynamoDB runs in-process; state is lost when the JVM exits.
 
@@ -96,13 +96,15 @@ curl -X POST http://localhost:8080/ \
 # → 201 Created with full PublicationResponse
 ```
 
-The customer URI in the authorizer **must** point at the WireMock port
+The customer URI in the authorizer **must** point at the mock port
 (`http://localhost:8090/customer/...`) so that `JavaHttpClientCustomerApiClient`
 hits the stub instead of an external service.
 
 ## Adding a handler
 
-1. Add `x-handler-class: <fqn>` to the operation in `docs/openapi.yaml`.
+1. Add `x-handler-class: <fqn>` to the operation in `docs/openapi.yaml`. The file
+   is read with `swagger-core`'s YAML mapper, which does not resolve `$ref` —
+   only `paths`, HTTP methods and extensions are used for routing.
 2. **If the handler only needs types already registered in `HandlerContainer`** —
    nothing else to do. The container picks the constructor with the most
    matching parameter types (which naturally skips `@JacocoGenerated` no-arg
@@ -135,14 +137,20 @@ services. Registered: [...]`.
   a `Proxy`-based fake `SecretsManagerClient`, and `TestHeaderAuthorizerProvider`
   all take shortcuts that are acceptable for a local harness but not for a live
   deployment.
-- **JaCoCo coverage verification is disabled** for this module — it's a harness,
-  not shipping logic.
+- **No code-quality gates.** The module deliberately skips the
+  `nva.publication.api.java-conventions` plugin, so Checkstyle, PMD and JaCoCo
+  don't run here — it's a harness, not shipping logic.
 - **Only two handlers wired:** `FetchPublicationHandler` (GET) and
-  `CreatePublicationHandler` (POST). The remaining ~20 REST operations need
-  factories.
-- **Jetty version alignment:** Javalin 6.7 (Jetty 11), WireMock 3.13.1 (Jetty 11),
-  DynamoDBLocal (Jetty excluded). Upgrading any of these requires re-checking the
-  classpath.
+  `CreatePublicationHandler` (POST), out of 29 operations in `docs/openapi.yaml`.
+  The remaining 27 mostly need new collaborator types registered, not factories.
+- **One handler instance per request.** `HandlerContainer.create()` runs on every
+  call, so each request reflects over the constructor and builds a new handler.
+  Fine for a harness; needs caching before this serves real traffic.
+- **Jetty version alignment:** Javalin 6.7 (Jetty 11) and DynamoDBLocal (Jetty
+  excluded). The Cognito/Customer stubs run on a second Javalin instance rather
+  than WireMock precisely to keep one Jetty on the classpath — `nvaCatalog`'s
+  WireMock 4 pulls a newer Jetty that breaks Javalin's websocket-core with a
+  `NoSuchMethodError` at startup.
 - **No S3.** Intentional — file-download/upload handlers will need either MinIO
   or LocalStack once that scope expands.
 - **No Cognito token validation.** `RestRequestHandler` will still validate the
@@ -153,45 +161,61 @@ services. Registered: [...]`.
 ## Roadmap
 
 ### Short term — broaden the REST surface
-1. **Factory per remaining REST handler.** 22 operations total; 2 done. Most need
-   the same three collaborators (`ResourceService`, a fake Secrets client, a
-   `CustomerApiClient`), so a small shared helper should cover the bulk.
-2. **Integration tests (JUnit)** that boot the adapter on a random port, seed
-   embedded DynamoDB directly, and drive requests via an HTTP client. Restores
-   some of the coverage lost to `jacocoTestCoverageVerification = false`.
-3. **Drop explicit factories for handlers with zero local wiring.** A
-   convention-based fallback that calls the no-arg constructor would work for
-   read-only handlers once they stop reaching for Secrets/S3 at init time.
+1. **Integration test first.** Boot the adapter on a random port, seed embedded
+   DynamoDB directly, drive requests over HTTP. This comes before wiring more
+   handlers: without it there is no way to tell whether handler number 3 through
+   29 actually work, and it gives every later handler a template to be verified
+   against. It also substitutes for the code-quality gates this module skips.
+2. **Register the missing collaborator types.** `HandlerContainer` already picks
+   the constructor with the most matching parameter types, so most of the
+   remaining 27 operations need a type registered in `buildLocalContainer()`,
+   not a factory. Reserve `registerFactory` for handlers that genuinely need
+   per-instance configuration.
+3. **Fail the build on drift.** A test that walks `docs/openapi.yaml` and reports
+   operations without `x-handler-class` (against an explicit allow-list of
+   not-yet-ported ones). Otherwise a handler added to `template.yaml` silently
+   never reaches the adapter — it just logs `Skipping`.
 
 ### Medium term — productionize the adapter
-4. **`JwtAuthorizerProvider`** — decode and validate the `Authorization: Bearer`
+4. **Cache handler instances.** Resolve each handler class once at route
+   registration instead of per request, and confirm the handlers are in fact
+   thread-safe — under Lambda they never were shared across concurrent requests,
+   so that assumption is untested. Blocks anything below.
+5. **`JwtAuthorizerProvider`** — decode and validate the `Authorization: Bearer`
    token against a JWKS endpoint, extract claims, populate `authorizer.claims`.
-   Replaces `TestHeaderAuthorizerProvider` in any real deployment.
-5. **`HeaderClaimsAuthorizerProvider`** — for K8s deployments where Envoy/Kong
-   validates the JWT at the edge and injects `x-user-*` headers. Cheaper than
-   re-validating in the adapter.
-6. **Package as a container image.** Dockerfile + distroless JRE, a small
+   Replaces `TestHeaderAuthorizerProvider` in any real deployment. This is the
+   default; treat it as the one to build.
+6. **`HeaderClaimsAuthorizerProvider`** — only for deployments where Envoy/Kong
+   validates the JWT at the edge. It trusts injected `x-user-*` headers
+   unconditionally, so it is safe *only* if the pod is unreachable from outside
+   the mesh. A network-policy decision, not merely a cheaper alternative to (5).
+7. **Package as a container image.** Dockerfile + distroless JRE, a small
    `entrypoint.sh` that honours `PORT`/`OPENAPI_PATH`.
-7. **Kubernetes manifests** (Deployment + Service + ConfigMap + HPA). One
+8. **Kubernetes manifests** (Deployment + Service + ConfigMap + HPA). One
    Deployment per logical pool: standard REST pod, and a larger pod for
    `UpdatePublicationHandler` (8192 MB Lambda today).
-8. **Observability.** Structured logs (already flowing through log4j2), Prometheus
+9. **Observability.** Structured logs (already flowing through log4j2), Prometheus
    `/metrics` endpoint via Micrometer, OpenTelemetry traces spanning adapter →
    handler → DynamoDB.
 
 ### Long term — replace the mocks with real services
-9. **Swap embedded DynamoDB for real DynamoDB (or ScyllaDB Alternator).** The
-   handler code is unchanged — only the client factory needs an endpoint override
-   and credentials provider.
-10. **Swap WireMock for the real Customer API / Cognito.** Same mechanism: env
+10. **Swap embedded DynamoDB for real DynamoDB (or ScyllaDB Alternator).** The
+    handler code is unchanged — only the client factory needs an endpoint override
+    and credentials provider.
+11. **Swap the stubs for the real Customer API / Cognito.** Same mechanism: env
     vars. The PoC stubs are there to make local smoke-testing possible without
     a dev environment.
-11. **Event handlers** — `publication-adapter-events` as a sibling module.
+12. **Event handlers** — `publication-adapter-events` as a sibling module.
     Applies the same pattern (`EventHandler.handleRequest(in, out, ctx)`) with
-    a Kafka/NATS consumer feeding `AwsEventBridgeEvent` JSON to handlers. This
-    is the bigger piece of work and covers ~40 of the project's handlers.
-12. **Retire `template.yaml` as a deployment artifact** once everything runs in
-    K8s. Keep it only as long as dual deployment (AWS Lambda + K8s) is needed.
+    a Kafka/NATS consumer feeding `AwsEventBridgeEvent` JSON to handlers. Covers
+    the 21 `EventHandler` subclasses in the project. Bigger than the REST side,
+    mostly because delivery semantics (retries, DLQ, ordering) have no direct
+    Kafka/NATS equivalent to EventBridge + SQS.
+13. **Split `template.yaml` rather than retiring it.** It is not only deployment:
+    it also defines API Gateway authorizers, EventBridge rules, DLQs and alarms.
+    Decide per section what moves to K8s manifests and what has to stay in AWS —
+    and expect some of it (68 function definitions today) to stay for as long as
+    dual deployment lasts.
 
 ### Out of scope for now
 - **DynamoDB single-table migration.** If a future decision is "leave AWS

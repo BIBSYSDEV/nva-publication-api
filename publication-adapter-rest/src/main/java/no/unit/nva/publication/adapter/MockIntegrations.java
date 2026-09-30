@@ -1,14 +1,9 @@
 package no.unit.nva.publication.adapter;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.any;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-
-import com.github.tomakehurst.wiremock.WireMockServer;
+import io.javalin.Javalin;
+import io.javalin.http.Context;
+import io.javalin.http.HandlerType;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +13,11 @@ public final class MockIntegrations {
 
     private static final Logger logger = LoggerFactory.getLogger(MockIntegrations.class);
     private static final String TOKEN_PATH = "/oauth2/token";
-    private static final String CUSTOMER_PATH_PATTERN = "/customer/.*";
+    private static final String CUSTOMER_PATH = "/customer/<customerId>";
+    private static final String CATCH_ALL_PATH = "/<path>";
+    private static final String CONTENT_TYPE = "Content-Type";
+    private static final String APPLICATION_JSON = "application/json";
+    private static final String EMPTY_JSON = "{}";
     private static final String FAKE_JWT =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
         + ".eyJzdWIiOiJmYWtlLWJhY2tlbmQiLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6OTk5OTk5OTk5OX0"
@@ -39,38 +38,24 @@ public final class MockIntegrations {
     private MockIntegrations() {
     }
 
-    public static WireMockServer start(int port) {
-        var server = new WireMockServer(options().port(port));
-        server.start();
-        stubCognitoToken(server);
-        stubCustomerApi(server);
-        stubCatchAllOk(server);
+    public static Javalin start(int port) {
+        var server = Javalin.create();
+        server.post(TOKEN_PATH, context -> respondWith(context, FAKE_ACCESS_TOKEN));
+        server.get(CUSTOMER_PATH, context -> respondWith(context, DEFAULT_CUSTOMER_BODY));
+        registerCatchAll(server);
+        server.start(port);
         logger.info("Mock integrations listening on port {} (Cognito + Customer API)", port);
         return server;
     }
 
-    private static void stubCognitoToken(WireMockServer server) {
-        server.stubFor(post(urlPathEqualTo(TOKEN_PATH))
-                           .willReturn(aResponse()
-                                           .withStatus(200)
-                                           .withHeader("Content-Type", "application/json")
-                                           .withBody(FAKE_ACCESS_TOKEN)));
+    private static void registerCatchAll(Javalin server) {
+        Stream.of(HandlerType.GET, HandlerType.POST, HandlerType.PUT, HandlerType.PATCH,
+                  HandlerType.DELETE, HandlerType.HEAD, HandlerType.OPTIONS)
+            .forEach(type -> server.addHttpHandler(type, CATCH_ALL_PATH,
+                                                   context -> respondWith(context, EMPTY_JSON)));
     }
 
-    private static void stubCustomerApi(WireMockServer server) {
-        server.stubFor(get(urlMatching(CUSTOMER_PATH_PATTERN))
-                           .willReturn(aResponse()
-                                           .withStatus(200)
-                                           .withHeader("Content-Type", "application/json")
-                                           .withBody(DEFAULT_CUSTOMER_BODY)));
-    }
-
-    private static void stubCatchAllOk(WireMockServer server) {
-        server.stubFor(any(urlMatching(".*"))
-                           .atPriority(10)
-                           .willReturn(aResponse()
-                                           .withStatus(200)
-                                           .withHeader("Content-Type", "application/json")
-                                           .withBody("{}")));
+    private static void respondWith(Context context, String body) {
+        context.status(200).header(CONTENT_TYPE, APPLICATION_JSON).result(body);
     }
 }

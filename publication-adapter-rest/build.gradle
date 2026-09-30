@@ -37,9 +37,7 @@ dependencies {
     }
 
     implementation libs.javalin
-    implementation libs.swagger.parser
-    implementation libs.classgraph
-    implementation libs.wiremock
+    implementation libs.swagger.core
 }
 
 application {
