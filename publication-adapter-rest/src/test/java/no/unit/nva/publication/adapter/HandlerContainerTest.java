@@ -4,6 +4,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,13 +32,37 @@ class HandlerContainerTest {
     }
 
     @Test
+    void shouldReturnSeparateInstancePerCallSinceHandlersHoldPerRequestState() {
+        var container = containerWithCollaborator();
+
+        var first = container.create(HandlerNeedingCollaborator.class);
+        var second = container.create(HandlerNeedingCollaborator.class);
+
+        assertThat(first, not(sameInstance(second)));
+    }
+
+    @Test
+    void shouldResolveConstructorOnlyOncePerHandlerClass() {
+        var container = containerWithCollaborator();
+
+        container.create(HandlerNeedingCollaborator.class);
+        container.create(HandlerNeedingCollaborator.class);
+
+        assertThat(container.resolvedConstructorCount(), is(1));
+    }
+
+    @Test
     void shouldUseConstructorWithMostRegisteredParameters() {
-        var container = new HandlerContainer()
-                            .register(Environment.class, new Environment())
-                            .register(Collaborator.class, new Collaborator());
+        var container = containerWithCollaborator();
 
         assertThat(container.create(HandlerNeedingCollaborator.class),
                    instanceOf(HandlerNeedingCollaborator.class));
+    }
+
+    private static HandlerContainer containerWithCollaborator() {
+        return new HandlerContainer()
+                   .register(Environment.class, new Environment())
+                   .register(Collaborator.class, new Collaborator());
     }
 
     static final class Collaborator {

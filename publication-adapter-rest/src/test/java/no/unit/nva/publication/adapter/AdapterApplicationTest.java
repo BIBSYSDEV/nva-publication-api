@@ -2,6 +2,7 @@ package no.unit.nva.publication.adapter;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static java.util.Objects.nonNull;
@@ -20,7 +21,10 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -35,6 +39,7 @@ class AdapterApplicationTest {
     private static final int HTTP_NOT_FOUND = 404;
     private static final String OPENAPI_PATH = "../docs/openapi.yaml";
     private static final String HANDLER_CLASS_EXTENSION = "x-handler-class";
+    private static final int CONCURRENT_REQUESTS = 16;
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String ACCEPT = "Accept";
     private static final String APPLICATION_JSON = "application/json";
@@ -104,6 +109,22 @@ class AdapterApplicationTest {
         assertThat("Operations in openapi.yaml have no x-handler-class and are not in "
                    + "KNOWN_UNWIRED_OPERATIONS. Either wire them up, or add them there with a reason.",
                    unwired, is(KNOWN_UNWIRED_OPERATIONS));
+    }
+
+    @Test
+    void shouldHandleConcurrentRequestsWithoutMixingUpResponses() throws InterruptedException {
+        var createdIdentifiers = ConcurrentHashMap.<String>newKeySet();
+
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            IntStream.range(0, CONCURRENT_REQUESTS).forEach(attempt -> executor.submit(() -> {
+                var response = createPublication();
+                assertThat(response.statusCode(), is(HTTP_CREATED));
+                createdIdentifiers.add(identifierOf(response));
+                return null;
+            }));
+        }
+
+        assertThat(createdIdentifiers, hasSize(CONCURRENT_REQUESTS));
     }
 
     @Test

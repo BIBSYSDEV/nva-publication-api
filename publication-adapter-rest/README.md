@@ -156,9 +156,10 @@ services. Registered: [...]`.
 - **13 of 29 operations wired.** Publication CRUD, publish, by-owner, the four
   ticket operations, log and context. `AdapterApplicationTest` asserts that every
   `x-handler-class` in `docs/openapi.yaml` can actually be constructed.
-- **One handler instance per request.** `HandlerContainer.create()` runs on every
-  call, so each request reflects over the constructor and builds a new handler.
-  Fine for a harness; needs caching before this serves real traffic.
+- **One handler instance per request — by necessity, not by accident.** The
+  `nva-commons` handler hierarchy keeps per-request state on the instance
+  (`outputStream`, `allowedOrigin`, `isBase64Encoded`), so instances must not be
+  shared across threads. The constructor lookup is cached; the instance is not.
 - **Jetty version alignment:** Javalin 6.7 (Jetty 11) and DynamoDBLocal (Jetty
   excluded). The Cognito/Customer stubs run on a second Javalin instance rather
   than WireMock precisely to keep one Jetty on the classpath — `nvaCatalog`'s
@@ -198,12 +199,26 @@ With that the short-term list is done: the REST surface is as broad as it can
 get without S3, and both directions of drift now fail the build.
 
 ### Medium term — productionize the adapter
-4. **Cache handler instances — but not before the handlers are thread-safe.**
-   Resolving per request is wasteful, yet caching is currently unsafe:
-   `FetchPublicationHandler` keeps a mutable `statusCode` field that it resets
-   "on each invocation" (line 121). That holds under Lambda, where one instance
-   serves one request at a time, and breaks the moment two threads share the
-   instance. Audit each handler for mutable state before caching anything.
+4. ~~**Cache handler instances.**~~ Investigated and deliberately **not** done —
+   handler instances cannot be shared, and the reason is in `nva-commons`, not
+   in our handlers:
+   - `RestRequestHandler.init()` stores the request's `OutputStream` on the
+     instance (`RestRequestHandler.java:283`), along with `allowedOrigin`.
+   - `ApiGatewayHandler` adds `isBase64Encoded` and
+     `additionalSuccessHeadersSupplier` as instance fields.
+   - Individual handlers add their own, e.g. `FetchPublicationHandler.statusCode`,
+     reset "on each invocation" (line 121).
+
+   Under Lambda one instance serves one request at a time, so this is sound
+   there. Sharing an instance across threads would let concurrent requests write
+   into each other's response. Caching the *instances* therefore requires
+   changing `nva-commons` — a much larger decision than this module.
+
+   What was done instead: `HandlerContainer` caches the resolved `Constructor`
+   per handler class, so the reflective lookup happens once rather than per
+   request, while each request still gets its own instance.
+   `shouldHandleConcurrentRequestsWithoutMixingUpResponses` drives 16 concurrent
+   creates to keep that honest.
 5. **`JwtAuthorizerProvider`** — decode and validate the `Authorization: Bearer`
    token against a JWKS endpoint, extract claims, populate `authorizer.claims`.
    Replaces `TestHeaderAuthorizerProvider` in any real deployment. This is the
@@ -246,3 +261,91 @@ get without S3, and both directions of drift now fail the build.
   The adapter doesn't make that decision any easier or harder — it's orthogonal.
 - **DynamoDB Streams → EventBridge fanout.** Needs CDC (Debezium or similar) or
   a keep-DynamoDB strategy. Decide before the event-handler adapter is built.
+
+## If this were to run in production
+
+Everything below is fine to ignore for a PoC and **not** fine to ignore for real
+traffic. The roadmap above is about breadth — how much of the API the adapter
+covers. This section is about depth: the places where the adapter behaves
+differently from API Gateway + Lambda, and where that difference would be felt.
+
+### The adapter silently changes request semantics
+
+These are the ones that worry me most, because nothing fails loudly — responses
+are simply subtly different from production.
+
+- **`getRemainingTimeInMillis()` returns a hardcoded 30 s**
+  (`MockLambdaContext.java`), while the real functions have `Timeout: 20`
+  (`template.yaml` Globals). Any handler that budgets work against the remaining
+  time believes it has more room than it does, and there is no request timeout in
+  the adapter to catch it. Needs a real deadline, propagated from a server-side
+  timeout.
+- **No request size limit.** `ctx.body()` reads the whole body into a `String`
+  (`ApiGatewayProxyRequestBuilder.addBody`). API Gateway caps payloads at 10 MB
+  and rejects larger ones before any code runs; here a large POST is simply
+  buffered in heap. This is a denial-of-service shape, not a correctness bug.
+- **Binary bodies are corrupted.** `isBase64Encoded` is hardcoded `false` on the
+  way in, and the body is treated as text. Responses handle base64 correctly
+  (`GatewayResponseWriter.writeBody`), so this is an inbound-only gap — it will
+  surface the moment the file-upload handlers are wired.
+- **Only single-value headers.** Query parameters get both
+  `queryStringParameters` and `multiValueQueryStringParameters`, but headers only
+  get the single-value map. A repeated header reaches the handler as one value.
+- **`requestContext` carries only `authorizer`.** No `requestId`,
+  `identity.sourceIp`, `stage`, `domainName` or `requestTimeEpoch`. Nothing in
+  this repo's Java code reads them today (checked), so this is latent rather than
+  broken — but `RequestInfo.getRequestContextParameter` throws rather than
+  returning empty, so a future handler reaching for one fails at runtime instead
+  of at startup.
+- **Error responses bypass the NVA format.** If anything throws before
+  `GatewayResponseWriter.write` runs, the client gets Javalin's default error page
+  rather than the `application/problem+json` body API Gateway would produce.
+  Clients that parse the problem format would see something they don't recognise.
+
+### What API Gateway does today that the adapter does not
+
+Worth an explicit decision per item — some belong in an ingress or service mesh
+rather than in this process.
+
+- **CORS, including `OPTIONS` preflight.** Configured globally in
+  `template.yaml` (`Globals.Api.Cors`) and generated by API Gateway; the adapter
+  registers no `OPTIONS` routes at all, so browser clients would break.
+- **Access logging.** `NvaPublicationApi.AccessLogSetting` logs requestId,
+  sourceIp, latency, status and userAgent per request. The adapter logs a
+  registration line at startup and nothing per request.
+- **Throttling and WAF.** Not in `template.yaml` today, so presumably handled at
+  the account or CloudFront level — worth confirming where, because that layer
+  does not move with the deployment.
+- **Request validation against the OpenAPI schema.** The adapter reads
+  `openapi.yaml` only for routing and `x-handler-class`; `$ref`s are not even
+  resolved. Malformed bodies now reach handler code that previously never saw
+  them.
+- **Authorizer result caching.** API Gateway caches authorizer responses; any
+  replacement for `TestHeaderAuthorizerProvider` should cache JWKS lookups
+  deliberately rather than validating per request.
+
+### Operational basics the adapter has none of
+
+- **Health and readiness endpoints.** Kubernetes needs both, and they must differ:
+  readiness should fail while DynamoDB is unreachable, liveness should not.
+- **Graceful shutdown.** `javalin.stop()` is never wired to SIGTERM, so a rolling
+  deploy drops in-flight requests. Needs a shutdown hook plus a `preStop` delay
+  long enough for endpoint deregistration to propagate.
+- **DynamoDB client tuning.** One shared `DynamoDbClient` with default settings.
+  Under Lambda, concurrency was bounded by the number of function instances; in a
+  pod it is bounded by `maxConcurrency` and the connection pool, which nobody has
+  chosen yet.
+- **JVM warmup.** Lambda's cold start becomes JIT warmup after a deploy. Worth
+  measuring before setting HPA thresholds, or the first pod in a scale-up serves
+  slow requests and triggers more scaling.
+
+### Performance, once it matters
+
+- **Per-request handler construction stays.** The constructor lookup is cached
+  (see roadmap item 4), but each request still builds a handler and its object
+  graph. That is a `nva-commons` constraint, not a choice. If profiling shows it
+  matters, the fix is making the handler hierarchy stateless — a change with
+  reach far beyond this module.
+- **Nothing here has been profiled.** The concurrency test proves correctness
+  under 16 parallel requests, not throughput. Any capacity claim needs real
+  measurements first.
