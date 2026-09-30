@@ -73,7 +73,7 @@ public final class AdapterApplication {
         var javalin = Javalin.create();
         registerRoutes(javalin);
         javalin.start(port);
-        logger.info("Adapter listening on port {}", port);
+        logger.info("Adapter listening on port {}", javalin.port());
         return javalin;
     }
 
@@ -102,7 +102,7 @@ public final class AdapterApplication {
         }
     }
 
-    private static OpenAPI readOpenApi(String openApiPath) {
+    static OpenAPI readOpenApi(String openApiPath) {
         try {
             return Yaml.mapper().readValue(new File(openApiPath), OpenAPI.class);
         } catch (IOException e) {
@@ -134,7 +134,7 @@ public final class AdapterApplication {
         return openApiPath.replaceAll("\\{([^/}]+)}", "{$1}");
     }
 
-    private static HandlerContainer buildLocalContainer() {
+    static HandlerContainer buildLocalContainer() {
         var dynamoDb = LocalDynamoDb.startAndCreateTable(RESOURCES_TABLE_NAME);
         var environment = new Environment();
         var uriRetriever = new UriRetriever();

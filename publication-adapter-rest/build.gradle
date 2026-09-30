@@ -38,8 +38,37 @@ dependencies {
 
     implementation libs.javalin
     implementation libs.swagger.core
+
+    testImplementation platform(nvaCatalog.junit.bom)
+    testImplementation nvaCatalog.junit.jupiter.api
+    testImplementation nvaCatalog.hamcrest
+    testRuntimeOnly nvaCatalog.junit.jupiter.engine
+    testRuntimeOnly nvaCatalog.junit.platform.launcher
 }
 
 application {
     mainClass = 'no.unit.nva.publication.adapter.AdapterApplication'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    // DynamoDBLocal loads sqlite4java via System.load, blocked by JEP 472 without this
+    jvmArgs '--enable-native-access=ALL-UNNAMED'
+    environment 'MOCK_PORT', AdapterTestPorts.MOCK_PORT
+    environment 'COGNITO_HOST', AdapterTestPorts.MOCK_URL
+    environment 'BACKEND_CLIENT_AUTH_URL', AdapterTestPorts.MOCK_URL
+    environment 'EXTERNAL_USER_POOL_URI', "${AdapterTestPorts.MOCK_URL}/external"
+    environment 'ALLOWED_ORIGIN', '*'
+    environment 'AWS_REGION', 'eu-west-1'
+    environment 'ID_NAMESPACE', 'https://www.example.org/publication'
+    environment 'BACKEND_CLIENT_SECRET_NAME', 'secret'
+    environment 'TABLE_NAME', 'nva-resources'
+    environment 'API_HOST', 'localhost'
+    environment 'COGNITO_AUTHORIZER_URLS', 'http://localhost:3000'
+    environment 'NVA_FRONTEND_DOMAIN', 'localhost'
+}
+
+class AdapterTestPorts {
+    static final String MOCK_PORT = '8095'
+    static final String MOCK_URL = "http://localhost:$MOCK_PORT"
 }

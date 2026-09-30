@@ -44,7 +44,7 @@ public final class MockIntegrations {
         server.get(CUSTOMER_PATH, context -> respondWith(context, DEFAULT_CUSTOMER_BODY));
         registerCatchAll(server);
         server.start(port);
-        logger.info("Mock integrations listening on port {} (Cognito + Customer API)", port);
+        logger.info("Mock integrations listening on port {} (Cognito + Customer API)", server.port());
         return server;
     }
 

@@ -139,7 +139,9 @@ services. Registered: [...]`.
   deployment.
 - **No code-quality gates.** The module deliberately skips the
   `nva.publication.api.java-conventions` plugin, so Checkstyle, PMD and JaCoCo
-  don't run here — it's a harness, not shipping logic.
+  don't run here — it's a harness, not shipping logic. JUnit is wired up
+  directly in `build.gradle` instead, along with the env vars the handlers read
+  at construction time.
 - **Only two handlers wired:** `FetchPublicationHandler` (GET) and
   `CreatePublicationHandler` (POST), out of 29 operations in `docs/openapi.yaml`.
   The remaining 27 mostly need new collaborator types registered, not factories.
@@ -161,11 +163,11 @@ services. Registered: [...]`.
 ## Roadmap
 
 ### Short term — broaden the REST surface
-1. **Integration test first.** Boot the adapter on a random port, seed embedded
-   DynamoDB directly, drive requests over HTTP. This comes before wiring more
-   handlers: without it there is no way to tell whether handler number 3 through
-   29 actually work, and it gives every later handler a template to be verified
-   against. It also substitutes for the code-quality gates this module skips.
+1. ~~**Integration test first.**~~ Done — `AdapterApplicationTest` boots the
+   adapter on a random port and drives POST/GET over HTTP. Every handler wired
+   from here on should get a case in it. Note that GET needs an explicit
+   `Accept: application/json`; without it content negotiation picks a text type
+   and the handler answers `303` with a landing-page `Location`.
 2. **Register the missing collaborator types.** `HandlerContainer` already picks
    the constructor with the most matching parameter types, so most of the
    remaining 27 operations need a type registered in `buildLocalContainer()`,
@@ -177,10 +179,12 @@ services. Registered: [...]`.
    never reaches the adapter — it just logs `Skipping`.
 
 ### Medium term — productionize the adapter
-4. **Cache handler instances.** Resolve each handler class once at route
-   registration instead of per request, and confirm the handlers are in fact
-   thread-safe — under Lambda they never were shared across concurrent requests,
-   so that assumption is untested. Blocks anything below.
+4. **Cache handler instances — but not before the handlers are thread-safe.**
+   Resolving per request is wasteful, yet caching is currently unsafe:
+   `FetchPublicationHandler` keeps a mutable `statusCode` field that it resets
+   "on each invocation" (line 121). That holds under Lambda, where one instance
+   serves one request at a time, and breaks the moment two threads share the
+   instance. Audit each handler for mutable state before caching anything.
 5. **`JwtAuthorizerProvider`** — decode and validate the `Authorization: Bearer`
    token against a JWKS endpoint, extract claims, populate `authorizer.claims`.
    Replaces `TestHeaderAuthorizerProvider` in any real deployment. This is the
