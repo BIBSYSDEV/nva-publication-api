@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static java.util.Objects.nonNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +18,9 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -39,6 +42,29 @@ class AdapterApplicationTest {
     private static final String IDENTIFIER_FIELD = "identifier";
     private static final String ID_FIELD = "id";
     private static final ObjectMapper OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
+
+    // Operations deliberately left unwired. Anything else missing x-handler-class is a mistake.
+    private static final Set<String> KNOWN_UNWIRED_OPERATIONS = Set.of(
+        // Need S3 (MinIO or LocalStack) before they can run locally
+        "POST /{publicationIdentifier}/file-upload/create",
+        "POST /{publicationIdentifier}/file-upload/listparts",
+        "POST /{publicationIdentifier}/file-upload/prepare",
+        "POST /{publicationIdentifier}/file-upload/abort",
+        "POST /{publicationIdentifier}/file-upload/complete",
+        "POST /{publicationIdentifier}/file/{fileIdentifier}",
+        "DELETE /{publicationIdentifier}/file/{fileIdentifier}",
+        "GET /{publicationIdentifier}/filelink/{fileIdentifier}",
+        "GET /file/{fileIdentifier}",
+        // Handlers live in a module this one does not depend on
+        "POST /{publicationIdentifier}/ticket/{ticketIdentifier}/message",
+        "DELETE /{publicationIdentifier}/ticket/{ticketIdentifier}/message/{messageIdentifier}",
+        // Construct fine, but would read the resources table instead of import candidates
+        "GET /import-candidate/{importCandidateIdentifier}",
+        "POST /import-candidate/{importCandidateIdentifier}",
+        "PUT /import-candidate/{importCandidateIdentifier}",
+        "GET /import-candidate/{importCandidateIdentifier}/file/{fileIdentifier}",
+        // Needs a real DataCite registrar to do anything useful
+        "POST /{publicationIdentifier}/doi");
 
     private static Javalin mocks;
     private static Javalin adapter;
@@ -69,6 +95,15 @@ class AdapterApplicationTest {
         handlerClassesInOpenApi().forEach(handlerClass -> assertDoesNotThrow(
             () -> container.create(handlerClass),
             "%s is declared in openapi.yaml but cannot be constructed".formatted(handlerClass)));
+    }
+
+    @Test
+    void shouldNotLeaveNewOperationsUnwiredWithoutSayingSo() {
+        var unwired = operationsWithoutHandlerClass();
+
+        assertThat("Operations in openapi.yaml have no x-handler-class and are not in "
+                   + "KNOWN_UNWIRED_OPERATIONS. Either wire them up, or add them there with a reason.",
+                   unwired, is(KNOWN_UNWIRED_OPERATIONS));
     }
 
     @Test
@@ -171,6 +206,19 @@ class AdapterApplicationTest {
 
     private static String emptyIdentifier() {
         return "";
+    }
+
+    private static Set<String> operationsWithoutHandlerClass() {
+        return AdapterApplication.readOpenApi(OPENAPI_PATH).getPaths().entrySet().stream()
+                   .flatMap(path -> path.getValue().readOperationsMap().entrySet().stream()
+                                        .filter(operation -> !declaresHandlerClass(operation.getValue()))
+                                        .map(operation -> "%s %s".formatted(operation.getKey(), path.getKey())))
+                   .collect(Collectors.toSet());
+    }
+
+    private static boolean declaresHandlerClass(Operation operation) {
+        return nonNull(operation.getExtensions())
+               && operation.getExtensions().get(HANDLER_CLASS_EXTENSION) instanceof String;
     }
 
     private static Stream<Class<?>> handlerClassesInOpenApi() {

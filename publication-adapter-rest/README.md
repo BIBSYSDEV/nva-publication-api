@@ -187,10 +187,15 @@ services. Registered: [...]`.
    - **2 message operations** live in a module this one doesn't depend on.
    - **4 import-candidate operations** construct fine but would read the
      resources table; they need their own table before being switched on.
-3. **Fail the build on drift.** A test that walks `docs/openapi.yaml` and reports
-   operations without `x-handler-class` (against an explicit allow-list of
-   not-yet-ported ones). Otherwise a handler added to `template.yaml` silently
-   never reaches the adapter — it just logs `Skipping`.
+3. ~~**Fail the build on drift.**~~ Done — `shouldNotLeaveNewOperationsUnwiredWithoutSayingSo`
+   compares the operations lacking `x-handler-class` against
+   `KNOWN_UNWIRED_OPERATIONS`, which carries a reason per entry. A new operation
+   added to `docs/openapi.yaml` now fails the build instead of silently logging
+   `Skipping`. Its sibling `shouldInstantiateEveryHandlerDeclaredInOpenApi`
+   guards the other direction.
+
+With that the short-term list is done: the REST surface is as broad as it can
+get without S3, and both directions of drift now fail the build.
 
 ### Medium term — productionize the adapter
 4. **Cache handler instances — but not before the handlers are thread-safe.**
