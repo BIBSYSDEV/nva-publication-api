@@ -21,6 +21,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomNonDegreePubl
 import static no.unit.nva.model.testing.PublicationGenerator.randomProjects;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomOpenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUploadedFile;
@@ -84,6 +85,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -137,13 +139,15 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
+import no.unit.nva.model.associatedartifacts.AssociatedLinkDto;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
 import no.unit.nva.model.associatedartifacts.OverriddenRightsRetentionStrategy;
+import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.HiddenFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.degree.DegreeLicentiate;
@@ -189,8 +193,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
+import nva.commons.logutils.LogRecorder;
 import org.apache.http.entity.ContentType;
 import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
@@ -546,6 +549,47 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
   }
 
   @Test
+  void externalClientCanAddAssociatedLinkViaUpdateAndItRoundTrips()
+      throws IOException, BadRequestException, NotFoundException {
+    publication.setIdentifier(null);
+    var savedPublication = createSamplePublication();
+
+    var associatedLink =
+        new AssociatedLink(randomUri(), randomString(), randomString(), RelationType.SAME_AS);
+    var updatedArtifacts = new ArrayList<>(savedPublication.getAssociatedArtifacts());
+    updatedArtifacts.add(associatedLink);
+    var publicationUpdate =
+        savedPublication.copy().withAssociatedArtifacts(updatedArtifacts).build();
+
+    when(getExternalClientResponse.getCustomerUri()).thenReturn(publication.getPublisher().getId());
+    when(getExternalClientResponse.getActingUser())
+        .thenReturn(publication.getResourceOwner().getOwner().getValue());
+    when(getExternalClientResponse.getCristinUrgUri())
+        .thenReturn(publication.getResourceOwner().getOwnerAffiliation());
+
+    var event =
+        externalClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+    updatePublicationHandler.handleRequest(event, output, context);
+
+    var gatewayResponse =
+        GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
+    assertEquals(SC_OK, gatewayResponse.getStatusCode());
+
+    var body = gatewayResponse.getBodyObject(PublicationResponseElevatedUser.class);
+    assertThat(
+        body.getAssociatedArtifacts(),
+        hasItem(
+            new AssociatedLinkDto(
+                associatedLink.id(),
+                associatedLink.name(),
+                associatedLink.description(),
+                associatedLink.relation())));
+
+    var persisted = resourceService.getResourceByIdentifier(savedPublication.getIdentifier());
+    assertThat(persisted.getAssociatedArtifacts(), hasItem(associatedLink));
+  }
+
+  @Test
   void handlerUpdatesPublicationWhenInputIsValidAndUserIsBackendClient()
       throws IOException, BadRequestException {
     publication.setIdentifier(null);
@@ -614,7 +658,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
   @Test
   @DisplayName("handler logs error details on unexpected exception")
   void handlerLogsErrorDetailsOnUnexpectedException() throws IOException, ApiGatewayException {
-    final TestAppender appender = createAppenderForLogMonitoring();
+    var logRecorder = LogRecorder.forRoot(UpdatePublicationHandlerTest.class);
     resourceService = serviceFailsOnModifyRequestWithRuntimeError();
     updatePublicationHandler =
         new UpdatePublicationHandler(
@@ -632,7 +676,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     updatePublicationHandler.handleRequest(event, output, context);
     var gatewayResponse = toGatewayResponseProblem();
     assertThat(gatewayResponse.getStatusCode(), is(equalTo(SC_INTERNAL_SERVER_ERROR)));
-    assertThat(appender.getMessages(), containsString(SOME_MESSAGE));
+    assertThat(logRecorder.messages(), hasItem(containsString(SOME_MESSAGE)));
   }
 
   @Test
@@ -1165,7 +1209,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         TicketEntry.requestNewTicket(persistedPublication, PublishingRequestCase.class)
             .withOwner(publication.getResourceOwner().getOwner().getValue())
             .withOwnerAffiliation(persistedPublication.getResourceOwner().getOwnerAffiliation())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, persistedPublication);
     var updatedPublication = persistedPublication.copy().withAssociatedArtifacts(List.of()).build();
     var input = ownerUpdatesOwnPublication(updatedPublication.getIdentifier(), updatedPublication);
     updatePublicationHandler.handleRequest(input, output, context);
@@ -1196,7 +1240,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 resource,
                 UserInstance.create(username, randomUri()),
                 PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     updatePublicationHandler.handleRequest(event, output, context);
 
     var completedTicket = ticketService.fetchTicket(pendingTicket);
@@ -1205,6 +1249,78 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     assertThat(
         completedTicket.getFinalizedBy(),
         is(not(equalTo(publication.getResourceOwner().getOwner()))));
+  }
+
+  @Test
+  void curatorShouldBeAbleToHideOpenFile()
+      throws IOException, NotFoundException, BadRequestException {
+    var openFile = randomOpenFile();
+    var publicationToPersist =
+        randomPublication(AcademicArticle.class)
+            .copy()
+            .withStatus(PUBLISHED)
+            .withAssociatedArtifacts(List.of(openFile))
+            .withPublisher(new Organization.Builder().withId(customerId).build())
+            .build();
+    var owner = UserInstance.fromPublication(publicationToPersist);
+    var persistedPublication =
+        Resource.fromPublication(publicationToPersist).persistNew(resourceService, owner);
+
+    persistedPublication.setAssociatedArtifacts(
+        new AssociatedArtifactList(List.of(openFile.copy().buildHiddenFile())));
+
+    var request =
+        curatorWithAccessRightsUpdatesPublication(
+            persistedPublication,
+            customerId,
+            owner.getTopLevelOrgCristinId(),
+            MANAGE_RESOURCE_FILES,
+            MANAGE_RESOURCES_STANDARD);
+    updatePublicationHandler.handleRequest(request, output, context);
+
+    assertEquals(
+        SC_OK,
+        GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class)
+            .getStatusCode());
+
+    var updatedPublication =
+        resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
+
+    assertInstanceOf(HiddenFile.class, updatedPublication.getAssociatedArtifacts().getFirst());
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenFileTransitionIsIllegal() throws IOException, BadRequestException {
+    var hiddenFile = randomHiddenFile();
+    var publicationToPersist =
+        randomPublication(AcademicArticle.class)
+            .copy()
+            .withStatus(PUBLISHED)
+            .withAssociatedArtifacts(List.of(hiddenFile))
+            .withPublisher(new Organization.Builder().withId(customerId).build())
+            .build();
+    var owner = UserInstance.fromPublication(publicationToPersist);
+    var persistedPublication =
+        Resource.fromPublication(publicationToPersist).persistNew(resourceService, owner);
+
+    persistedPublication.setAssociatedArtifacts(
+        new AssociatedArtifactList(List.of(hiddenFile.copy().buildOpenFile())));
+
+    var request =
+        curatorWithAccessRightsUpdatesPublication(
+            persistedPublication,
+            customerId,
+            owner.getTopLevelOrgCristinId(),
+            MANAGE_RESOURCE_FILES,
+            MANAGE_RESOURCES_STANDARD);
+    updatePublicationHandler.handleRequest(request, output, context);
+
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+    assertEquals(SC_BAD_REQUEST, response.getStatusCode());
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(),
+        containsString("HiddenFile cannot be updated to OpenFile"));
   }
 
   @Test
@@ -1443,12 +1559,13 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             userCristinId, resourceService);
     var resource = Resource.fromPublication(publication);
     var userInstance = UserInstance.fromPublication(publication);
-    GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
-    DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
+    GeneralSupportRequest.create(resource, userInstance)
+        .persistNewTicket(ticketService, publication);
+    DoiRequest.create(resource, userInstance).persistNewTicket(ticketService, publication);
     var publishingRequestTicket =
         PublishingRequestCase.create(
                 resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var completedPublishingRequest =
         publishingRequestTicket.complete(publication, UserInstance.create(userName, randomUri()));
     ticketService.updateTicket(completedPublishingRequest);
@@ -1491,12 +1608,13 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             customerId, PUBLISHED, resourceService);
     var userInstance = UserInstance.fromPublication(publication);
     var resource = Resource.fromPublication(publication);
-    GeneralSupportRequest.create(resource, userInstance).persistNewTicket(ticketService);
-    DoiRequest.create(resource, userInstance).persistNewTicket(ticketService);
+    GeneralSupportRequest.create(resource, userInstance)
+        .persistNewTicket(ticketService, publication);
+    DoiRequest.create(resource, userInstance).persistNewTicket(ticketService, publication);
     PublishingRequestCase.create(
             resource, userInstance, PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
         .complete(publication, userInstance)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, publication);
     var input = createUnpublishHandlerRequest(publication, randomString(), customerId, accessRight);
     updatePublicationHandler.handleRequest(input, output, context);
 
@@ -2421,7 +2539,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 .withOwner(publication.getResourceOwner().getOwner().getValue())
                 .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
     publishingRequest.withFilesForApproval(TicketTestUtils.getFilesForApproval(publication));
-    publishingRequest.persistNewTicket(ticketService);
+    publishingRequest.persistNewTicket(ticketService, publication);
   }
 
   private PublishingRequestCase getPublishingRequestCase(Publication publication) {
@@ -2669,8 +2787,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
   private static List<File> getUnpublishedFiles(Publication publication) {
     return publication.getAssociatedArtifacts().stream()
-        .filter(PendingFile.class::isInstance)
+        .filter(File.class::isInstance)
         .map(File.class::cast)
+        .filter(File::isPending)
         .toList();
   }
 
@@ -2724,7 +2843,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             publishedPublication, PublishingRequestCase.class, SortableIdentifier::next)
         .withOwner(publication.getResourceOwner().getOwner().getValue())
         .withOwnerAffiliation(publishedPublication.getResourceOwner().getOwnerAffiliation())
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, publishedPublication);
   }
 
   private void persistCompletedPublishingRequest(Publication publishedPublication)
@@ -2734,7 +2853,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 publishedPublication, PublishingRequestCase.class, SortableIdentifier::next)
             .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
             .withOwner(publication.getResourceOwner().getOwner().getValue())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publishedPublication);
     ticketService.updateTicketStatus(
         ticket, TicketStatus.COMPLETED, UserInstance.create(randomString(), randomUri()));
   }
@@ -2990,10 +3109,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     Publication update = savedPublication.copy().build();
     update.getEntityDescription().setMainTitle(randomString());
     return update;
-  }
-
-  private TestAppender createAppenderForLogMonitoring() {
-    return LogUtils.getTestingAppenderForRootLogger();
   }
 
   private ResourceService serviceFailsOnModifyRequestWithRuntimeError() {

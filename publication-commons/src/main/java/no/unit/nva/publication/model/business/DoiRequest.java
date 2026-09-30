@@ -28,7 +28,6 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields"})
 public class DoiRequest extends TicketEntry {
 
   public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
@@ -57,7 +56,7 @@ public class DoiRequest extends TicketEntry {
   }
 
   public static DoiRequest create(Resource resource, UserInstance userInstance) {
-    if (!PUBLISHED.equals(resource.getStatus())) {
+    if (PUBLISHED != resource.getStatus()) {
       throw new InvalidTicketStatusTransitionException(
           WRONG_PUBLICATION_STATUS_ERROR.formatted(PUBLISHED));
     }
@@ -79,7 +78,7 @@ public class DoiRequest extends TicketEntry {
 
   @Override
   public String getType() {
-    return DoiRequest.TYPE;
+    return TYPE;
   }
 
   @Override
@@ -119,7 +118,7 @@ public class DoiRequest extends TicketEntry {
 
   @Override
   public DoiRequest copy() {
-    return DoiRequest.builder()
+    return builder()
         .withIdentifier(getIdentifier())
         .withResourceIdentifier(getResourceIdentifier())
         .withStatus(getStatus())

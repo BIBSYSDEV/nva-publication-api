@@ -291,7 +291,7 @@ class GetTicketHandlerTest extends TicketTestLocal {
       Class<? extends TicketEntry> ticketType, Publication publication) throws ApiGatewayException {
     return TicketEntry.requestNewTicket(publication, ticketType)
         .withOwner(UserInstance.fromPublication(publication).getUsername())
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, publication);
   }
 
   private HandlerRequestBuilder<TicketDto> createHttpRequest(TicketEntry ticket)

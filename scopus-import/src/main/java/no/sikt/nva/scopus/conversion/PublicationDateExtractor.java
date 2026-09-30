@@ -16,7 +16,7 @@ public final class PublicationDateExtractor {
 
   public static PublicationDate extractPublicationDate(DocTp docTp) {
     return getPublicationDateFromOaAccessEffectiveDate(docTp)
-        .orElseGet(() -> PublicationDateExtractor.getPublicationDateFromDateSort(docTp));
+        .orElseGet(() -> getPublicationDateFromDateSort(docTp));
   }
 
   private static Optional<PublicationDate> getPublicationDateFromOaAccessEffectiveDate(

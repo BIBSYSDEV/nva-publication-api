@@ -20,6 +20,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
@@ -66,7 +67,7 @@ import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -193,7 +194,7 @@ class PublicationPermissionStrategyTest {
 
   @Test
   void shouldLogWhenAuthorizingAnOperation() throws JsonProcessingException, UnauthorizedException {
-    var appender = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(PublicationPermissionStrategyTest.class);
 
     var contributorName = randomString();
     var contributorCristinId = randomUri();
@@ -210,9 +211,10 @@ class PublicationPermissionStrategyTest {
             Resource.fromPublication(publication),
             RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient))
         .authorize(UPDATE);
-    assertThat(appender.getMessages(), containsString(contributorName));
-    assertThat(appender.getMessages(), containsString(publication.getIdentifier().toString()));
-    assertThat(appender.getMessages(), containsString("ContributorGrantStrategy"));
+    assertThat(logRecorder.messages(), hasItem(containsString(contributorName)));
+    assertThat(
+        logRecorder.messages(), hasItem(containsString(publication.getIdentifier().toString())));
+    assertThat(logRecorder.messages(), hasItem(containsString("ContributorGrantStrategy")));
   }
 
   private static Function<AccessRight, String> getCognitoGroup(URI institutionId) {

@@ -30,7 +30,7 @@ public record ImportUploadDetails(Source source, String archive, Instant uploade
 
     @JsonCreator
     public static Source fromValue(String value) {
-      return Arrays.stream(Source.values())
+      return Arrays.stream(values())
           .filter(enumValue -> enumValue.getValue().equalsIgnoreCase(value))
           .collect(SingletonCollector.tryCollect())
           .orElseThrow(

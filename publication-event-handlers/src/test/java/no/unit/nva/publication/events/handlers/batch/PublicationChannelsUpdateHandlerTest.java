@@ -3,7 +3,9 @@ package no.unit.nva.publication.events.handlers.batch;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -17,7 +19,7 @@ import no.unit.nva.publication.events.handlers.batch.ChannelUpdateEvent.Publicat
 import no.unit.nva.stubs.FakeContext;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.regions.Region;
@@ -43,11 +45,12 @@ class PublicationChannelsUpdateHandlerTest {
   @Test
   void shouldLogWhenSomethingWentWrongUpdatingPublicationChannels() {
     doThrow(RuntimeException.class).when(service).updateChannels(any());
-    var appender = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(PublicationChannelsUpdateHandlerTest.class);
     handler.handleRequest(event(), output, new FakeContext());
 
-    assertTrue(
-        appender.getMessages().contains("Something went wrong updating publication channels"));
+    assertThat(
+        logRecorder.messages(),
+        hasItem(containsString("Something went wrong updating publication channels")));
   }
 
   private static ChannelUpdateEvent randomChannelUpdateEvent() {

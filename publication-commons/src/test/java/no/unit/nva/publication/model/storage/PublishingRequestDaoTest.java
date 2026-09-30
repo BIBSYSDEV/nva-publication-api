@@ -110,10 +110,10 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
                 UserInstance.fromPublication(publication),
                 PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
             .withOwner(randomString());
-    var persistedRequest = publishingRequest.persistNewTicket(ticketService);
+    var persistedRequest = publishingRequest.persistNewTicket(ticketService, publication);
     var queryResult = client.query(query);
     var retrievedByPublicationIdentifier =
-        queryResult.getItems().stream()
+        queryResult.items().stream()
             .map(item -> parseAttributeValuesMap(item, PublishingRequestDao.class))
             .map(PublishingRequestDao::getData)
             .collect(SingletonCollector.collect());

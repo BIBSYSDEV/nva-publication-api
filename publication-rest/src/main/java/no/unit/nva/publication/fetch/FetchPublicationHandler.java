@@ -125,7 +125,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     if (eTagMatches(requestInfo, resource)) {
       statusCode = HttpURLConnection.HTTP_NOT_MODIFIED;
-      return FetchPublicationHandler.NO_BODY;
+      return NO_BODY;
     }
 
     return switch (resource.getStatus()) {
@@ -194,7 +194,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
   private boolean userWithAccessRequestsUnpublishedResource(
       Resource resource, RequestInfo requestInfo) {
-    return userCanUpdateResource(requestInfo, resource) && UNPUBLISHED.equals(resource.getStatus());
+    return userCanUpdateResource(requestInfo, resource) && UNPUBLISHED == resource.getStatus();
   }
 
   private boolean shouldRedirect(RequestInfo requestInfo) {

@@ -2,7 +2,6 @@ package no.unit.nva.publication.adapter;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.http.HandlerType;
@@ -129,7 +128,7 @@ public final class AdapterApplication {
     }
 
     private static HandlerContainer buildLocalContainer() {
-        AmazonDynamoDB dynamoDb = LocalDynamoDb.startAndCreateTable(RESOURCES_TABLE_NAME);
+        var dynamoDb = LocalDynamoDb.startAndCreateTable(RESOURCES_TABLE_NAME);
         var environment = new Environment();
         var uriRetriever = new UriRetriever();
         var resourceService = new ResourceService(

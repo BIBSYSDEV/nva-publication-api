@@ -18,7 +18,6 @@ import no.sikt.nva.scopus.conversion.model.pia.Affiliation.Builder;
 import no.sikt.nva.scopus.conversion.model.pia.Author;
 import no.sikt.nva.scopus.conversion.model.pia.Publication;
 import no.unit.nva.commons.json.JsonUtils;
-import org.jetbrains.annotations.NotNull;
 
 public class PiaResponseGenerator {
 
@@ -121,7 +120,6 @@ public class PiaResponseGenerator {
         .iterator();
   }
 
-  @NotNull
   private static String createUnitId(String cristinId) {
     return cristinId + "." + randomInteger() + "." + randomInteger();
   }

@@ -25,13 +25,11 @@ public enum LiteraryArtsPerformanceSubtypeEnum {
   @Deprecated
   @JsonCreator
   public static LiteraryArtsPerformanceSubtypeEnum parse(String candidate) {
-    return "Other".equalsIgnoreCase(candidate)
-        ? LiteraryArtsPerformanceSubtypeEnum.OTHER
-        : inlineableParseMethod(candidate);
+    return "Other".equalsIgnoreCase(candidate) ? OTHER : inlineableParseMethod(candidate);
   }
 
   public static LiteraryArtsPerformanceSubtypeEnum inlineableParseMethod(String candidate) {
-    return Arrays.stream(LiteraryArtsPerformanceSubtypeEnum.values())
+    return Arrays.stream(values())
         .filter(value -> value.getName().equals(candidate))
         .collect(SingletonCollector.collect());
   }

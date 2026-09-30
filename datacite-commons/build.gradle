@@ -1,32 +1,38 @@
+plugins {
+    id 'nva.publication.api.java-conventions'
+}
+
 dependencies {
-
-    implementation libs.xsd2java.api
-    implementation libs.nva.doi.partner.data
-    implementation nvaLibs.core
-    implementation nvaLibs.identifiers
-    implementation nvaLibs.apigateway
-    implementation nvaLibs.core
-    implementation nvaLibs.json
-    implementation nvaLibs.secrets
-    implementation nvaLibs.auth
-
-    implementation nvaCatalog.bundles.logging
-    implementation nvaCatalog.bundles.jackson
-
-    implementation project(":publication-model")
-    implementation project(":publication-commons")
-
-    implementation nvaCatalog.aws.sdk.dynamo
-    implementation nvaCatalog.aws.lambda.core
-    implementation nvaCatalog.aws.sdk2.secrets
-    implementation nvaCatalog.aws.sdk2.http.client
-
-    testImplementation project(":publication-model-testing")
-    testImplementation project(":publication-testing")
-    testImplementation nvaLibs.testutils
-    testImplementation(nvaCatalog.bundles.wiremock) {
+    api(nvaCatalog.aws.lambda.core)
+    api(nvaCatalog.aws.sdk2.secrets)
+    api(nvaCatalog.jackson.annotations)
+    api(nvaLibs.apigateway)
+    api(nvaLibs.auth)
+    api(nvaLibs.core)
+    api(nvaLibs.identifiers)
+    api(nvaLibs.json)
+    api(project(":datacite-transform"))
+    api(project(":publication-commons"))
+    api(project(":publication-model"))
+    implementation(nvaCatalog.aws.sdk2.utils)
+    implementation(nvaCatalog.jackson.core)
+    implementation(nvaCatalog.jackson.databind)
+    implementation(nvaCatalog.log4j.core)
+    implementation(nvaCatalog.slf4j.api)
+    implementation(nvaLibs.secrets)
+    testImplementation(nvaCatalog.aws.sdk2.dynamo)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.httpcore4)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaCatalog.wiremock.core)
+    testImplementation(nvaCatalog.wiremock.junit5) {
         exclude group: 'org.apache.commons', module: 'commons-lang3'
     }
+    testImplementation(nvaCatalog.zalando)
+    testImplementation(nvaLibs.testutils)
+    testImplementation(project(":publication-model-testing"))
+    testImplementation(project(":publication-testing"))
 }
 
 test {

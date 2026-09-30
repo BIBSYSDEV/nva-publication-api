@@ -4,23 +4,15 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLD
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_CRISTIN_ENTRIES_PATCH_EVENT_CONSUMER;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUPPORTED_SUBTOPICS;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -30,6 +22,8 @@ import java.util.stream.StreamSupport;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.publication.queue.QueueMessageSender;
+import no.unit.nva.publication.queue.SqsMessageSender;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -45,11 +39,6 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 /**
  * The body of the event (field "detail") is of type {@link FileContentsEvent} and it contains the
  * data of the file located in the s3Location defined in {@link EventReference#getUri()} ()}.
- *
- * <p>In its present form the {@link FileContentsEvent} contains also a field with the name
- * "publicationsOwner" which is specific to the task of importing Cristin records. In the future,
- * this should be replaced by a more generic format such as a {@link Map} annotated with
- * "@JsonAnySetter".
  */
 @JacocoGenerated
 public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqsMessageResult> {
@@ -69,29 +58,23 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
   private static final String BEGINNING_OF_ARRAY = "[";
   public static final String WRONG_SUBTOPIC = "event does not contain the correct subtopic: ";
 
-  private final AmazonSQS amazonSQS;
+  private final QueueMessageSender messageSender;
   private final S3Client s3Client;
   private final Map<String, String> subtopicToQueueUrl;
 
   @JacocoGenerated
   public FileEntriesEventEmitter() {
-    this(defaultS3Client(), defaultSqsClient());
+    this(defaultS3Client(), SqsMessageSender.defaultSqsMessageSender());
   }
 
-  public FileEntriesEventEmitter(S3Client s3Client, AmazonSQS amazonSQS) {
+  public FileEntriesEventEmitter(S3Client s3Client, QueueMessageSender messageSender) {
     super(EventReference.class);
     this.subtopicToQueueUrl =
         Map.of(
-            SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
-            new Environment().readEnv("CRISTIN_IMPORT_DATA_ENTRY_QUEUE_URL"),
-            SUBTOPIC_SEND_EVENT_TO_CRISTIN_ENTRIES_PATCH_EVENT_CONSUMER,
-            new Environment().readEnv("CRISTIN_IMPORT_PATCH_QUEUE_URL"),
-            SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER,
-            new Environment().readEnv("CRISTIN_IMPORT_NVI_PATCH_QUEUE_URL"),
             SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER,
             new Environment().readEnv("BRAGE_IMPORT_PATCH_QUEUE_URL"));
     this.s3Client = s3Client;
-    this.amazonSQS = amazonSQS;
+    this.messageSender = messageSender;
   }
 
   @Override
@@ -102,17 +85,12 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
     return attemptToPlaceMessagesOnQueue(input);
   }
 
-  private static AmazonSQS defaultSqsClient() {
-    return AmazonSQSClientBuilder.defaultClient();
-  }
-
   private PutSqsMessageResult attemptToPlaceMessagesOnQueue(EventReference input) {
     var s3Driver = new S3Driver(s3Client, input.extractBucketName());
     return attempt(() -> fetchFileFromS3(input, s3Driver))
         .map(this::parseContents)
-        .map(this::convertFieldNamesToLowerCase)
         .map(jsonNodes -> generateMessageBodies(input, jsonNodes))
-        .map(fileContentsEventStream -> createEventReferences(fileContentsEventStream, input))
+        .map(this::createEventReferences)
         .map(entries -> placeOnQueue(entries, input))
         .map(result -> storePartialFailuresToS3(result, input))
         .orElseThrow(failure -> storeCompleteFailureReport(failure, input));
@@ -139,39 +117,6 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
     var reportFilename = generateErrorReportUri(input);
     attempt(() -> s3Driver.insertFile(reportFilename.toS3bucketPath(), reportContent))
         .orElseThrow();
-  }
-
-  // This is done because cristin-import JsonIgnoreProperties is case-sensitive, and it seems casing
-  // is arbitary
-  // from cristin-export. This functionality may be removed if JsonIgnoreProperty is removed from
-  // cristinObject.
-  private List<JsonNode> convertFieldNamesToLowerCase(List<JsonNode> jsonNodes) {
-    return jsonNodes.stream().map(this::convertKeysToLowerCase).collect(Collectors.toList());
-  }
-
-  private JsonNode convertKeysToLowerCase(JsonNode jsonNode) {
-    if (jsonNode instanceof ObjectNode) {
-      var objectNode = (ObjectNode) jsonNode;
-      var fieldNames = new ArrayList<String>();
-      objectNode.fieldNames().forEachRemaining(name -> addIfHasUpperCase(name, fieldNames));
-      fieldNames.forEach(name -> setObjectNodeToLowerCase(name, objectNode));
-    }
-    jsonNode.elements().forEachRemaining(this::convertKeysToLowerCase);
-    return jsonNode;
-  }
-
-  private void setObjectNodeToLowerCase(String name, ObjectNode objectNode) {
-    var lowerCaseName = name.toLowerCase(Locale.ROOT);
-    var child = objectNode.get(name);
-    objectNode.remove(name);
-    objectNode.set(lowerCaseName, child);
-  }
-
-  @SuppressWarnings("PMD.UnnecessaryCaseChange")
-  private void addIfHasUpperCase(String name, List<String> fieldNames) {
-    if (!name.toLowerCase(Locale.ROOT).equals(name)) {
-      fieldNames.add(name);
-    }
   }
 
   private UriWrapper generateErrorReportUri(EventReference input) {
@@ -205,7 +150,7 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
   }
 
   private PutSqsMessageResult placeOnQueue(List<EventReference> eventBodies, EventReference input) {
-    var client = new SqsBatchMessenger(amazonSQS, inferQueueUrlFromEventReference(input));
+    var client = new SqsBatchMessenger(messageSender, inferQueueUrlFromEventReference(input));
     return client.sendMessages(eventBodies);
   }
 
@@ -214,25 +159,10 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
   }
 
   private List<EventReference> createEventReferences(
-      Stream<FileContentsEvent<JsonNode>> eventBodies, EventReference input) {
-    var s3Driver = new S3Driver(s3Client, input.extractBucketName());
-    if (SUBTOPIC_SEND_EVENT_TO_NVI_PATCH_EVENT_CONSUMER.equals(input.getSubtopic())) {
-      return eventBodies
-          .map(attempt(FileContentsEvent::toCristinNviEventReference))
-          .map(Try::orElseThrow)
-          .collect(Collectors.toList());
-    }
-    if (SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER.equals(input.getSubtopic())) {
-      return eventBodies
-          .map(attempt(FileContentsEvent::toBragePatchEventReference))
-          .map(Try::orElseThrow)
-          .collect(Collectors.toList());
-    } else {
-      return eventBodies
-          .map(attempt(fileContents -> fileContents.toEventReference(s3Driver)))
-          .map(Try::orElseThrow)
-          .collect(Collectors.toList());
-    }
+      Stream<FileContentsEvent<JsonNode>> eventBodies) {
+    return eventBodies
+        .map(FileContentsEvent::toBragePatchEventReference)
+        .collect(Collectors.toList());
   }
 
   private String fetchFileFromS3(EventReference input, S3Driver s3Driver) {

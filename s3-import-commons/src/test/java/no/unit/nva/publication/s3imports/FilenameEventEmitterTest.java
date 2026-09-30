@@ -6,12 +6,13 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultCloc
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.ERROR_REPORT_FILENAME;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
@@ -42,8 +43,7 @@ import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -113,7 +113,7 @@ class FilenameEventEmitterTest {
     var importRequest =
         new EventReference(
             FILENAME_EMISSION_EVENT_TOPIC,
-            SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
+            SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER,
             s3Location,
             NOW);
     var inputStream = toJsonStream(importRequest);
@@ -147,12 +147,7 @@ class FilenameEventEmitterTest {
 
   @ParameterizedTest(
       name = "should emit suptopic from importRequest when valid subtopics are supplied")
-  @ValueSource(
-      strings = {
-        "PublicationService.CristinData.DataEntry",
-        "PublicationService.CristinData.PatchEntry",
-        "PublicationService.BrageData.PatchEntry"
-      })
+  @ValueSource(strings = {"PublicationService.BrageData.PatchEntry"})
   void shouldEmitSubtopicFromImportRequestIfSupported(String subtopic) {
     var importRequest =
         new EventReference(FILENAME_EMISSION_EVENT_TOPIC, subtopic, SOME_S3_LOCATION, NOW);
@@ -194,7 +189,7 @@ class FilenameEventEmitterTest {
   @Test
   void handlerLogsAndReturnsFailedEventRequestsWhenEventsFailToBeEmitted() throws IOException {
 
-    final TestAppender appender = LogUtils.getTestingAppender(FilenameEventEmitter.class);
+    var logRecorder = LogRecorder.forClass(FilenameEventEmitter.class);
 
     handler = handlerThatFailsToEmitMessages();
     EventReference importRequest = newImportRequest();
@@ -206,7 +201,7 @@ class FilenameEventEmitterTest {
 
     assertThat(failedResults, containsInAnyOrder(injectedFiles.toArray(URI[]::new)));
     for (URI filename : injectedFiles) {
-      assertThat(appender.getMessages(), containsString(filename.toString()));
+      assertThat(logRecorder.messages(), hasItem(containsString(filename.toString())));
     }
   }
 
@@ -308,7 +303,7 @@ class FilenameEventEmitterTest {
   private EventReference newImportRequest() {
     return new EventReference(
         FILENAME_EMISSION_EVENT_TOPIC,
-        SUBTOPIC_SEND_EVENT_TO_FILE_ENTRIES_EVENT_EMITTER,
+        SUBTOPIC_SEND_EVENT_TO_BRAGE_PATCH_EVENT_CONSUMER,
         SOME_S3_LOCATION,
         NOW);
   }

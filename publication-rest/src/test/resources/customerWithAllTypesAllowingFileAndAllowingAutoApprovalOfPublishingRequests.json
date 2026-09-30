@@ -68,8 +68,7 @@
   ],
   "publicationWorkflow": "RegistratorPublishesMetadataAndFiles",
   "rightsRetentionStrategy": {
-    "type": "NullRightsRetentionStrategy",
-    "id": "https://example.org/1"
+    "type": "NullRightsRetentionStrategy"
   },
   "type": "Customer"
 }

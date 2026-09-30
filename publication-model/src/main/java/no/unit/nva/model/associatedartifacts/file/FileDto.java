@@ -11,7 +11,7 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 
 public record FileDto(
     @JsonProperty(File.IDENTIFIER_FIELD) SortableIdentifier identifier,
-    @JsonProperty(FileDto.TYPE_NAME_FIELD) String type,
+    @JsonProperty(TYPE_NAME_FIELD) String type,
     @JsonProperty(File.NAME_FIELD) String name,
     @JsonProperty(File.MIME_TYPE_FIELD) String mimeType,
     @JsonProperty(File.SIZE_FIELD) Long size,
@@ -22,7 +22,7 @@ public record FileDto(
     @JsonProperty(File.LEGAL_NOTE_FIELD) String legalNote,
     @JsonProperty(File.PUBLISHED_DATE_FIELD) Instant publishedDate,
     @JsonProperty(File.UPLOAD_DETAILS_FIELD) UploadDetails uploadDetails,
-    @JsonProperty(FileDto.ALLOWED_OPERATIONS_FIELD) Set<FileOperation> allowedOperations)
+    @JsonProperty(ALLOWED_OPERATIONS_FIELD) Set<FileOperation> allowedOperations)
     implements AssociatedArtifactDto {
 
   public static final String ALLOWED_OPERATIONS_FIELD = "allowedOperations";

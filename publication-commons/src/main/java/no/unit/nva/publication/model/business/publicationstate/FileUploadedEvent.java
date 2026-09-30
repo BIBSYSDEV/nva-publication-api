@@ -4,9 +4,7 @@ import java.net.URI;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.ImportSource;
-import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.publication.model.business.FileEntry;
-import no.unit.nva.publication.model.business.ThirdPartySystem;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.logentry.FileLogEntry;
@@ -19,7 +17,7 @@ public record FileUploadedEvent(
     URI institution,
     SortableIdentifier identifier,
     ImportSource importSource)
-    implements FileEvent {
+    implements FileEvent, ImportSourceProvider {
 
   public static FileUploadedEvent create(UserInstance userInstance, Instant timestamp) {
     return new FileUploadedEvent(
@@ -27,15 +25,7 @@ public record FileUploadedEvent(
         userInstance.getUser(),
         userInstance.getTopLevelOrgCristinId(),
         SortableIdentifier.next(),
-        userInstance.isExternalClient() ? getImportSource(userInstance) : null);
-  }
-
-  private static ImportSource getImportSource(UserInstance userInstance) {
-    return userInstance
-        .getThirdPartySystem()
-        .map(ThirdPartySystem::toSource)
-        .map(ImportSource::fromSource)
-        .orElse(ImportSource.fromSource(Source.OTHER));
+        userInstance.getImportSource().orElse(null));
   }
 
   @Override

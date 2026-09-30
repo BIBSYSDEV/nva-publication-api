@@ -21,7 +21,7 @@ public enum BrageLicense {
 
   @JacocoGenerated
   public static BrageLicense fromValue(String value) {
-    for (BrageLicense license : BrageLicense.values()) {
+    for (BrageLicense license : values()) {
       if (license.getValue().equalsIgnoreCase(value)) {
         return license;
       }

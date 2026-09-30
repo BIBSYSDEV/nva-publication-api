@@ -7,9 +7,11 @@ import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersiste
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -36,6 +38,8 @@ import org.junit.jupiter.api.Test;
 
 class SearchServiceTest extends ResourcesLocalTest {
 
+  private static final int PAGE_SIZE = 100;
+  private static final String PUBLISHER_IDENTIFIER = "publisher-identifier";
   private UriRetriever uriRetriever;
   private ResourceService resourceService;
   private SearchService searchService;
@@ -102,6 +106,51 @@ class SearchServiceTest extends ResourcesLocalTest {
 
     assertThrows(
         SearchServiceException.class, () -> searchService.searchPublicationsByParam(searchParams));
+  }
+
+  @Test
+  void shouldPaginateFirstPageSortedByIdentifierWithoutAggregations() {
+    var uri = searchService.firstPageUri(Map.of(), PAGE_SIZE);
+
+    assertThat(uri.getQuery(), containsString("size=%d".formatted(PAGE_SIZE)));
+    assertThat(uri.getQuery(), containsString("sort=identifier"));
+    assertThat(uri.getQuery(), containsString("aggregation=none"));
+  }
+
+  @Test
+  void shouldReplaceCallerSuppliedPaginationParamsOnFirstPage() {
+    var searchParams = Map.of("publisher", PUBLISHER_IDENTIFIER, "from", "10", "size", "20");
+
+    var uri = searchService.firstPageUri(searchParams, PAGE_SIZE);
+
+    assertThat(uri.getQuery(), containsString("publisher=%s".formatted(PUBLISHER_IDENTIFIER)));
+    assertThat(uri.getQuery(), not(containsString("from=")));
+    assertThat(uri.getQuery(), not(containsString("size=20")));
+  }
+
+  @Test
+  void shouldReturnCursorForNextPageProvidedBySearchApi() throws ApiGatewayException {
+    var publication = createPersistedPublication(PublicationStatus.PUBLISHED, resourceService);
+    var id = createPublicationId(publication.getIdentifier());
+    var nextPage = randomUri();
+    var responseBody = new SearchResourceApiResponse(1, List.of(new ResourceWithId(id)), nextPage);
+    var response = httpResponse(HTTP_OK, responseBody.toJsonString());
+    when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
+
+    var page = searchService.searchPage(randomUri());
+
+    assertThat(page.nextPage(), is(Optional.of(nextPage)));
+  }
+
+  @Test
+  void shouldNotReturnCursorForNextPageWhenPageHasNoHits() {
+    var responseBody = new SearchResourceApiResponse(0, List.of(), randomUri());
+    var response = httpResponse(HTTP_OK, responseBody.toJsonString());
+    when(uriRetriever.fetchResponse(any(), any())).thenReturn(Optional.of(response));
+
+    var page = searchService.searchPage(randomUri());
+
+    assertThat(page.nextPage(), is(Optional.empty()));
   }
 
   private static URI createPublicationId(SortableIdentifier sortableIdentifier) {

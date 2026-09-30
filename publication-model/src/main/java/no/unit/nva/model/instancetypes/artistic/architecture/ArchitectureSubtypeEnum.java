@@ -22,13 +22,11 @@ public enum ArchitectureSubtypeEnum {
   @Deprecated
   @JsonCreator
   public static ArchitectureSubtypeEnum parse(String candidate) {
-    return "Other".equalsIgnoreCase(candidate)
-        ? ArchitectureSubtypeEnum.OTHER
-        : inlineableParseMethod(candidate);
+    return "Other".equalsIgnoreCase(candidate) ? OTHER : inlineableParseMethod(candidate);
   }
 
   public static ArchitectureSubtypeEnum inlineableParseMethod(String candidate) {
-    return Arrays.stream(ArchitectureSubtypeEnum.values())
+    return Arrays.stream(values())
         .filter(subType -> subType.getType().equalsIgnoreCase(candidate))
         .collect(SingletonCollector.collect());
   }

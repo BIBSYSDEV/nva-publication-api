@@ -10,6 +10,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
@@ -74,7 +75,7 @@ import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.paths.UnixPath;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -184,13 +185,15 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     FakeUriResponse.setupFakeForType(publication, fakeUriRetriever, resourceService, false);
     var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, publication);
 
-    var logger = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(ExpandDataEntriesHandlerTest.class);
 
     expandResourceHandler =
         new ExpandDataEntriesHandler(sqsClient, s3Client, createFailingService());
     expandResourceHandler.handleRequest(request, output, CONTEXT);
 
-    assertThat(logger.getMessages(), containsString("DateEntry has been sent to recovery queue"));
+    assertThat(
+        logRecorder.messages(),
+        hasItem(containsString("DateEntry has been sent to recovery queue")));
   }
 
   @Test
@@ -299,7 +302,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     var ticket =
         TicketEntry.requestNewTicket(persistedPublication, GeneralSupportRequest.class)
             .withOwner(UserInstance.fromPublication(persistedPublication).getUsername())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, persistedPublication);
     var message =
         messageService.createMessage(ticket, UserInstance.fromTicket(ticket), randomString());
     var request = emulateEventEmittedByDataEntryUpdateHandler(null, message);
@@ -333,7 +336,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     var ticket =
         TicketEntry.requestNewTicket(persistedPublication, GeneralSupportRequest.class)
             .withOwner(UserInstance.fromPublication(persistedPublication).getUsername())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, persistedPublication);
     var message = Message.create(ticket, UserInstance.fromTicket(ticket), randomString());
     var request = emulateEventEmittedByDataEntryUpdateHandler(null, message);
 

@@ -170,7 +170,7 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
 
   private static boolean statusHasBeenUpdated(
       TicketEntry ticket, UpdateTicketRequest ticketRequest) {
-    return nonNull(ticketRequest.status()) && !ticketRequest.status().equals(ticket.getStatus());
+    return nonNull(ticketRequest.status()) && ticketRequest.status() != ticket.getStatus();
   }
 
   private static boolean assigneeHasBeenUpdated(
@@ -290,9 +290,9 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
 
   private void markTicketForCurator(
       UpdateTicketRequest ticketRequest, TicketEntry ticket, String userName) {
-    if (ViewStatus.READ.equals(ticketRequest.viewStatus())) {
+    if (ViewStatus.READ == ticketRequest.viewStatus()) {
       ticket.markReadByUser(new User(userName)).persistUpdate(ticketService);
-    } else if (ViewStatus.UNREAD.equals(ticketRequest.viewStatus())) {
+    } else if (ViewStatus.UNREAD == ticketRequest.viewStatus()) {
       ticket.markReadByUser(new User(userName)).persistUpdate(ticketService);
     } else {
       throw new UnsupportedOperationException(UNKNOWN_VIEWED_STATUS_MESSAGE);
@@ -305,9 +305,9 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
   }
 
   private void markTicketForOwner(UpdateTicketRequest input, TicketEntry ticket) {
-    if (ViewStatus.READ.equals(input.viewStatus())) {
+    if (ViewStatus.READ == input.viewStatus()) {
       ticket.markReadByOwner().persistUpdate(ticketService);
-    } else if (ViewStatus.UNREAD.equals(input.viewStatus())) {
+    } else if (ViewStatus.UNREAD == input.viewStatus()) {
       ticket.markUnreadByOwner().persistUpdate(ticketService);
     } else {
       throw new UnsupportedOperationException(UNKNOWN_VIEWED_STATUS_MESSAGE);
@@ -316,9 +316,9 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
 
   private void markTicketForAssignee(UpdateTicketRequest input, TicketEntry ticket) {
 
-    if (ViewStatus.READ.equals(input.viewStatus())) {
+    if (ViewStatus.READ == input.viewStatus()) {
       ticket.markReadForAssignee().persistUpdate(ticketService);
-    } else if (ViewStatus.UNREAD.equals(input.viewStatus())) {
+    } else if (ViewStatus.UNREAD == input.viewStatus()) {
       ticket.markUnReadForAssignee().persistUpdate(ticketService);
     } else {
       throw new UnsupportedOperationException(UNKNOWN_VIEWED_STATUS_MESSAGE);
@@ -343,7 +343,7 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
   }
 
   private boolean incomingUpdateIsStatus(TicketEntry ticket, UpdateTicketRequest ticketRequest) {
-    return nonNull(ticketRequest.status()) && !ticket.getStatus().equals(ticketRequest.status());
+    return nonNull(ticketRequest.status()) && ticket.getStatus() != ticketRequest.status();
   }
 
   private boolean hasEffectiveChanges(TicketEntry ticket, UpdateTicketRequest ticketRequest) {
@@ -361,10 +361,10 @@ public class UpdateTicketHandler extends TicketHandler<TicketRequest, Void> {
     var status = input.status();
     var publication = getResource(requestUtils.publicationIdentifier()).toPublication();
     var requestingCustomer = requestUtils.customerId();
-    if (TicketStatus.COMPLETED.equals(status)) {
+    if (TicketStatus.COMPLETED == status) {
       findableDoiTicketSideEffects(requestingCustomer, publication);
     }
-    if (CLOSED.equals(status) && hasDoi(publication)) {
+    if (CLOSED == status && hasDoi(publication)) {
       deleteDoiTicketSideEffects(requestingCustomer, publication);
     }
   }

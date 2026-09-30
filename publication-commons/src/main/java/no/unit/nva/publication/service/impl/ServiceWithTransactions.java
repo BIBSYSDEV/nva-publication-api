@@ -2,57 +2,52 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.model.storage.JoinWithResource.Constants.RESOURCE_INDEX_IN_QUERY_RESULT;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.publication.service.impl.ResourceService.AWAIT_TIME_BEFORE_FETCH_RETRY;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
 import no.unit.nva.publication.model.storage.ResourceDao;
 import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.attempt.Failure;
-import nva.commons.core.attempt.FunctionWithException;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.Delete;
+import software.amazon.awssdk.services.dynamodb.model.Put;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsResponse;
 
 public class ServiceWithTransactions {
 
   public static final String EMPTY_STRING = "";
   public static final String STATUS_FIELD_IN_RESOURCE = "status";
-  private static final Integer MAX_FETCH_ATTEMPTS = 3;
   private static final int TRANSACTION_BATCH_SIZE = 100;
   private static final String VERSION_FIELD = "version";
   private static final String VERSION_CONDITION_EXPRESSION = "#version = :expectedVersion";
   private static final String VERSION_ATTRIBUTE_NAME = "#version";
   private static final String EXPECTED_VERSION_VALUE = ":expectedVersion";
 
-  protected final AmazonDynamoDB client;
+  protected final DynamoDbClient client;
 
-  protected ServiceWithTransactions(AmazonDynamoDB client) {
+  protected ServiceWithTransactions(DynamoDbClient client) {
     this.client = client;
   }
 
   protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(
       T data, String tableName) {
     var put = newPut(data, tableName);
-    return new TransactWriteItem().withPut(put);
+    return TransactWriteItem.builder().put(put).build();
   }
 
   /**
@@ -67,26 +62,26 @@ public class ServiceWithTransactions {
    *     expression that fails if the primary key already exists.
    */
   protected static <T extends DynamoEntry> Put newPut(T data, String tableName) {
-    return new Put()
-        .withItem(data.toDynamoFormat())
-        .withTableName(tableName)
-        .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-        .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+    return Put.builder()
+        .item(data.toDynamoFormat())
+        .tableName(tableName)
+        .conditionExpression(KEY_NOT_EXISTS_CONDITION)
+        .expressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
+        .build();
   }
 
   protected static <T extends Dao> TransactWriteItem newPutTransactionItemWithLocking(
       T dao, UUID expectedVersion, String tableName) {
     var put =
-        new Put()
-            .withTableName(tableName)
-            .withItem(dao.toDynamoFormat())
-            .withConditionExpression(VERSION_CONDITION_EXPRESSION)
-            .withExpressionAttributeNames(Map.of(VERSION_ATTRIBUTE_NAME, VERSION_FIELD))
-            .withExpressionAttributeValues(
-                Map.of(
-                    EXPECTED_VERSION_VALUE,
-                    new AttributeValue().withS(expectedVersion.toString())));
-    return new TransactWriteItem().withPut(put);
+        Put.builder()
+            .tableName(tableName)
+            .item(dao.toDynamoFormat())
+            .conditionExpression(VERSION_CONDITION_EXPRESSION)
+            .expressionAttributeNames(Map.of(VERSION_ATTRIBUTE_NAME, VERSION_FIELD))
+            .expressionAttributeValues(
+                Map.of(EXPECTED_VERSION_VALUE, AttributeValue.fromS(expectedVersion.toString())))
+            .build();
+    return TransactWriteItem.builder().put(put).build();
   }
 
   protected static TransactWriteItemsRequest newTransactWriteItemsRequest(
@@ -96,28 +91,18 @@ public class ServiceWithTransactions {
 
   protected static TransactWriteItemsRequest newTransactWriteItemsRequest(
       List<TransactWriteItem> transactionItems) {
-    return new TransactWriteItemsRequest().withTransactItems(transactionItems);
+    return TransactWriteItemsRequest.builder().transactItems(transactionItems).build();
   }
 
-  protected <T extends Entity, E extends Exception> Optional<T> fetchEventualConsistentDataEntry(
-      T dynamoEntry, FunctionWithException<T, T, E> nonEventuallyConsistentFetch) {
-    T savedEntry = null;
-    for (int times = 0; times < MAX_FETCH_ATTEMPTS && savedEntry == null; times++) {
-      savedEntry =
-          attempt(() -> nonEventuallyConsistentFetch.apply(dynamoEntry)).orElse(fail -> null);
-      attempt(this::waitBeforeFetching).orElseThrow();
-    }
-    return Optional.ofNullable(savedEntry);
-  }
-
-  protected final AmazonDynamoDB getClient() {
+  protected final DynamoDbClient getClient() {
     return client;
   }
 
   protected <T extends WithPrimaryKey> TransactWriteItem newDeleteTransactionItem(T dynamoEntry) {
-    return new TransactWriteItem()
-        .withDelete(
-            new Delete().withTableName(RESOURCES_TABLE_NAME).withKey(dynamoEntry.primaryKey()));
+    return TransactWriteItem.builder()
+        .delete(
+            Delete.builder().tableName(RESOURCES_TABLE_NAME).key(dynamoEntry.primaryKey()).build())
+        .build();
   }
 
   protected ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
@@ -130,27 +115,20 @@ public class ServiceWithTransactions {
   protected void sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest) {
     var counter = new AtomicInteger();
 
-    transactWriteItemsRequest.getTransactItems().stream()
+    transactWriteItemsRequest.transactItems().stream()
         .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / TRANSACTION_BATCH_SIZE))
         .values()
         .forEach(
             batch -> {
-              TransactWriteItemsRequest batchRequest =
-                  transactWriteItemsRequest.clone().withTransactItems(batch);
+              var batchRequest = transactWriteItemsRequest.toBuilder().transactItems(batch).build();
               attempt(() -> getClient().transactWriteItems(batchRequest))
-                  .orElseThrow(this::handleTransactionFailure);
+                  .orElseThrow(failure -> handleTransactionFailure(failure, batchRequest));
             });
   }
 
-  @SuppressWarnings("PMD.DoNotUseThreads")
-  private Void waitBeforeFetching() throws InterruptedException {
-    Thread.sleep(AWAIT_TIME_BEFORE_FETCH_RETRY);
-    return null;
-  }
-
   private TransactionFailedException handleTransactionFailure(
-      Failure<TransactWriteItemsResult> fail) {
-    return new TransactionFailedException(fail.getException());
+      Failure<TransactWriteItemsResponse> fail, TransactWriteItemsRequest request) {
+    return new TransactionFailedException(fail.getException(), request);
   }
 
   private boolean onlyResourceExists(List<Dao> daos) {

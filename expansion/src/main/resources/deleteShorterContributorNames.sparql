@@ -1,0 +1,24 @@
+# Keeps a single name per contributor identity.
+#
+# A contributor identity uses the person URI as node id. When the
+# publication and a related publication loaded into the same model (e.g. the parent anthology of
+# a chapter) spell the name of the same person differently, the identity nodes are merged into one
+# node with several name literals, and JSON-LD framing then yields a list instead of a string.
+#
+# Every name that has a "better" sibling on the same identity is deleted: a longer name wins, and
+# among names of equal length the lexicographically greatest wins. Exactly one name survives.
+
+PREFIX nva: <https://nva.sikt.no/ontology/publication#>
+
+DELETE {
+  ?identity nva:name ?name .
+}
+WHERE {
+  ?contributor nva:identity ?identity .
+  ?identity nva:name ?name, ?otherName .
+  FILTER (?name != ?otherName)
+  FILTER (
+    STRLEN(STR(?otherName)) > STRLEN(STR(?name))
+    || (STRLEN(STR(?otherName)) = STRLEN(STR(?name)) && STR(?otherName) > STR(?name))
+  )
+}

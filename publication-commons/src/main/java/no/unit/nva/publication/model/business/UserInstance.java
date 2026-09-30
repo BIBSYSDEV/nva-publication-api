@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.model.ImportSource;
+import no.unit.nva.model.ImportSource.Source;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
@@ -119,11 +121,11 @@ public class UserInstance implements JsonSerializable {
   }
 
   public boolean isExternalClient() {
-    return this.userClientType.equals(UserClientType.EXTERNAL);
+    return this.userClientType == UserClientType.EXTERNAL;
   }
 
   public boolean isBackendClient() {
-    return this.userClientType.equals(UserClientType.BACKEND);
+    return this.userClientType == UserClientType.BACKEND;
   }
 
   public static UserInstance fromRequestInfo(RequestInfo requestInfo) throws UnauthorizedException {
@@ -162,7 +164,7 @@ public class UserInstance implements JsonSerializable {
   }
 
   public static UserInstance fromMessage(Message message) {
-    return UserInstance.create(message.getOwner(), message.getCustomerId());
+    return create(message.getOwner(), message.getCustomerId());
   }
 
   public static UserInstance fromTicket(TicketEntry ticket) {
@@ -214,34 +216,48 @@ public class UserInstance implements JsonSerializable {
     return isExternalClient() ? Optional.ofNullable(thirdPartySystem) : Optional.empty();
   }
 
+  public Optional<ImportSource> getImportSource() {
+    if (!isExternalClient()) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        getThirdPartySystem()
+            .map(ThirdPartySystem::toSource)
+            .map(ImportSource::fromSource)
+            .orElse(ImportSource.fromSource(Source.OTHER)));
+  }
+
+  public UserClientType getUserClientType() {
+    return userClientType;
+  }
+
   @JacocoGenerated
   @Override
   public boolean equals(Object o) {
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof UserInstance that)) {
       return false;
     }
-    UserInstance that = (UserInstance) o;
-    return Objects.equals(customerId, that.customerId)
-        && Objects.equals(user, that.user)
-        && Objects.equals(topLevelOrgCristinId, that.topLevelOrgCristinId)
-        && Objects.equals(personAffiliation, that.personAffiliation)
-        && Objects.equals(personCristinId, that.personCristinId)
-        && Objects.equals(accessRights, that.accessRights)
-        && userClientType == that.userClientType
-        && thirdPartySystem == that.thirdPartySystem;
+    return Objects.equals(getCustomerId(), that.getCustomerId())
+        && Objects.equals(getUser(), that.getUser())
+        && Objects.equals(getTopLevelOrgCristinId(), that.getTopLevelOrgCristinId())
+        && Objects.equals(getPersonAffiliation(), that.getPersonAffiliation())
+        && Objects.equals(getPersonCristinId(), that.getPersonCristinId())
+        && Objects.equals(getAccessRights(), that.getAccessRights())
+        && Objects.equals(getUserClientType(), that.getUserClientType())
+        && Objects.equals(getThirdPartySystem(), that.getThirdPartySystem());
   }
 
   @JacocoGenerated
   @Override
   public int hashCode() {
     return Objects.hash(
-        customerId,
-        user,
-        topLevelOrgCristinId,
-        personAffiliation,
-        personCristinId,
-        accessRights,
-        userClientType,
-        thirdPartySystem);
+        getCustomerId(),
+        getUser(),
+        getTopLevelOrgCristinId(),
+        getPersonAffiliation(),
+        getPersonCristinId(),
+        getAccessRights(),
+        getUserClientType(),
+        getThirdPartySystem());
   }
 }

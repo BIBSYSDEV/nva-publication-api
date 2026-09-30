@@ -6,7 +6,7 @@ import java.util.List;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 
-public class Report extends Book implements BasicContext {
+public class Report extends Book {
 
   @JsonCreator
   public Report(

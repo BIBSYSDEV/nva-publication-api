@@ -32,10 +32,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class ResourceEventTest {
 
+  private static final ImportSource NO_IMPORT_SOURCE = null;
+
   public static Stream<Arguments> resourceEventProvider() {
     return Stream.of(
         Arguments.of(
-            new CreatedResourceEvent(Instant.now(), randomUser(), randomUri(), identifier(), null),
+            new CreatedResourceEvent(
+                Instant.now(), randomUser(), randomUri(), identifier(), NO_IMPORT_SOURCE),
             PUBLICATION_CREATED),
         Arguments.of(
             new CreatedResourceEvent(
@@ -46,7 +49,11 @@ class ResourceEventTest {
                 ImportSource.fromSource(Source.OTHER)),
             PUBLICATION_CREATED),
         Arguments.of(
-            new PublishedResourceEvent(Instant.now(), randomUser(), randomUri(), identifier()),
+            new PublishedResourceEvent(
+                Instant.now(), randomUser(), randomUri(), identifier(), NO_IMPORT_SOURCE),
+            PUBLICATION_PUBLISHED),
+        Arguments.of(
+            PublishedResourceEvent.create(randomExternalUserInstance(), Instant.now()),
             PUBLICATION_PUBLISHED),
         Arguments.of(
             new UnpublishedResourceEvent(Instant.now(), randomUser(), randomUri(), identifier()),

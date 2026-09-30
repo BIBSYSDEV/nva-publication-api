@@ -126,7 +126,7 @@ public class CrossrefResponse implements JsonSerializable {
     }
 
     public boolean hasUnspecifiedContentVersion() {
-      return ContentVersion.UNSPECIFIED.equals(contentVersion);
+      return ContentVersion.UNSPECIFIED == contentVersion;
     }
   }
 

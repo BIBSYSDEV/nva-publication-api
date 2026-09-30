@@ -15,40 +15,42 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.Projection;
-import com.amazonaws.services.dynamodbv2.model.ProjectionType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import java.util.Collection;
 import java.util.List;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.BillingMode;
+import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.GlobalSecondaryIndex;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.Projection;
+import software.amazon.awssdk.services.dynamodb.model.ProjectionType;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
+import software.amazon.dynamodb.services.local.embedded.DynamoDBEmbedded;
 
 public final class LocalDynamoDb {
 
     private LocalDynamoDb() {
     }
 
-    public static AmazonDynamoDB startAndCreateTable(String tableName) {
-        var client = DynamoDBEmbedded.create().amazonDynamoDB();
+    public static DynamoDbClient startAndCreateTable(String tableName) {
+        var client = DynamoDBEmbedded.create(null, true).dynamoDbClient();
         client.createTable(buildCreateTableRequest(tableName));
         return client;
     }
 
     private static CreateTableRequest buildCreateTableRequest(String tableName) {
-        return new CreateTableRequest()
-            .withTableName(tableName)
-            .withAttributeDefinitions(attributeDefinitions())
-            .withKeySchema(primaryKeySchema())
-            .withGlobalSecondaryIndexes(globalSecondaryIndexes())
-            .withBillingMode(BillingMode.PAY_PER_REQUEST);
+        return CreateTableRequest.builder()
+            .tableName(tableName)
+            .attributeDefinitions(attributeDefinitions())
+            .keySchema(primaryKeySchema())
+            .globalSecondaryIndexes(globalSecondaryIndexes())
+            .billingMode(BillingMode.PAY_PER_REQUEST)
+            .build();
     }
 
-    private static List<GlobalSecondaryIndex> globalSecondaryIndexes() {
+    private static Collection<GlobalSecondaryIndex> globalSecondaryIndexes() {
         return List.of(
             gsi(GSI_1_INDEX_NAME,
                 GSI_1_PARTITION_KEY_NAME,
@@ -65,23 +67,24 @@ public final class LocalDynamoDb {
     }
 
     private static GlobalSecondaryIndex gsi(String indexName, String hashKey, String rangeKey) {
-        return new GlobalSecondaryIndex()
-            .withIndexName(indexName)
-            .withKeySchema(keySchema(hashKey, rangeKey))
-            .withProjection(new Projection().withProjectionType(ProjectionType.ALL));
+        return GlobalSecondaryIndex.builder()
+            .indexName(indexName)
+            .keySchema(keySchema(hashKey, rangeKey))
+            .projection(Projection.builder().projectionType(ProjectionType.ALL).build())
+            .build();
     }
 
-    private static List<KeySchemaElement> primaryKeySchema() {
+    private static Collection<KeySchemaElement> primaryKeySchema() {
         return keySchema(PRIMARY_KEY_PARTITION_KEY_NAME, PRIMARY_KEY_SORT_KEY_NAME);
     }
 
-    private static List<KeySchemaElement> keySchema(String hashKey, String rangeKey) {
+    private static Collection<KeySchemaElement> keySchema(String hashKey, String rangeKey) {
         return List.of(
-            new KeySchemaElement().withAttributeName(hashKey).withKeyType(KeyType.HASH),
-            new KeySchemaElement().withAttributeName(rangeKey).withKeyType(KeyType.RANGE));
+            KeySchemaElement.builder().attributeName(hashKey).keyType(KeyType.HASH).build(),
+            KeySchemaElement.builder().attributeName(rangeKey).keyType(KeyType.RANGE).build());
     }
 
-    private static List<AttributeDefinition> attributeDefinitions() {
+    private static Collection<AttributeDefinition> attributeDefinitions() {
         return List.of(
             attribute(PRIMARY_KEY_PARTITION_KEY_NAME),
             attribute(PRIMARY_KEY_SORT_KEY_NAME),
@@ -96,6 +99,9 @@ public final class LocalDynamoDb {
     }
 
     private static AttributeDefinition attribute(String name) {
-        return new AttributeDefinition().withAttributeName(name).withAttributeType(ScalarAttributeType.S);
+        return AttributeDefinition.builder()
+            .attributeName(name)
+            .attributeType(ScalarAttributeType.S)
+            .build();
     }
 }

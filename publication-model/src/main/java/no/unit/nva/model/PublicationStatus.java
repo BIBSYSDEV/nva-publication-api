@@ -51,7 +51,7 @@ public enum PublicationStatus {
                     format(
                         ERROR_MESSAGE_TEMPLATE,
                         value,
-                        stream(PublicationStatus.values())
+                        stream(values())
                             .map(PublicationStatus::toString)
                             .collect(joining(DELIMITER)))));
   }

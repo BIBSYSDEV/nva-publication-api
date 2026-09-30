@@ -1,4 +1,9 @@
+plugins {
+    id 'nva.publication.api.java-conventions'
+}
+
 dependencies {
-    implementation nvaLibs.core
-    implementation nvaCatalog.bundles.logging
+    api(nvaLibs.core)
+    implementation(nvaCatalog.log4j.core)
+    implementation(nvaCatalog.slf4j.api)
 }

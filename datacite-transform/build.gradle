@@ -1,0 +1,59 @@
+plugins {
+    id 'nva.publication.api.java-conventions'
+}
+
+configurations {
+    xjc
+}
+
+dependencies {
+    api(libs.xsd2java.jakarta)
+    runtimeOnly(libs.jaxb.runtime4)
+    xjc(libs.jaxb.runtime4)
+    xjc(libs.jaxb.xjc4)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+}
+
+@CacheableTask
+abstract class Xsd2Pojo extends DefaultTask {
+
+    @Input
+    abstract Property<String> getSchemaUri();
+
+    @Classpath
+    abstract ConfigurableFileCollection getXjcClasspath()
+
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDir()
+
+    @TaskAction
+    void generate() {
+        getOutputDir().get().asFile.mkdirs()
+        def normalizedClasspath = getXjcClasspath().files.toSorted()
+
+        ant.taskdef(
+                name: 'xjc',
+                classname: 'com.sun.tools.xjc.XJC2Task',
+                classpath: normalizedClasspath.collect {
+                    it.absolutePath
+                }.join(File.pathSeparator)
+                )
+        ant.xjc(
+                destdir: getOutputDir().get().asFile,
+                schema: getSchemaUri().get()
+                )
+    }
+}
+
+def xsd2java = tasks.register('xsd2java', Xsd2Pojo) {
+    schemaUri = 'https://schema.datacite.org/meta/kernel-4.6/metadata.xsd'
+    xjcClasspath = configurations.xjc
+    outputDir = layout.buildDirectory.dir('generated/sources/xjc')
+}
+
+sourceSets.main.java.srcDir(xsd2java.flatMap { it.outputDir })
+
+tasks.withType(Jar).configureEach {
+    outputs.cacheIf { true }
+}

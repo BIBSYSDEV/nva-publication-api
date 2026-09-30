@@ -306,7 +306,8 @@ nva:LiteraryArtsWeb a rdfs:Class ;
 
 nva:Identity a rdfs:Class ;
   rdfs:comment "" ;
-  rdfs:isDefinedBy nva: .
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Agent .
 
 nva:Approval a rdfs:Class ;
   rdfs:comment "" ;
@@ -590,6 +591,11 @@ nva:MediaContributionPeriodical a rdfs:Class ;
 
 nva:UnconfirmedPublisher a rdfs:Class ;
   rdfs:comment "" ;
+  rdfs:isDefinedBy nva: ;
+  rdfs:subClassOf nva:Publisher .
+
+nva:NullPublisher a rdfs:Class ;
+  rdfs:comment "The absence of a publisher" ;
   rdfs:isDefinedBy nva: ;
   rdfs:subClassOf nva:Publisher .
 
@@ -1407,11 +1413,18 @@ nva:formatted a rdf:Property ;
   rdfs:domain nva:Ismn ;
   rdfs:range xsd:string .
 
+nva:alternativeAbstract a rdf:Property ;
+    rdfs:comment "An alternative abstract for a document, typically a translation" ;
+    rdfs:label "Alternative abstract" ;
+    rdfs:isDefinedBy nva: ;
+    rdfs:domain nva:EntityDescription ;
+    rdfs:range rdf:langString .
+
 nva:alternativeTitle a rdf:Property ;
   rdfs:comment "" ;
   rdfs:label "" ;
   rdfs:isDefinedBy nva: ;
-  rdfs:domain nva:Publication ;
+  rdfs:domain nva:EntityDescription ;
   rdfs:range rdf:langString .
 
 nva:orcId a rdf:Property ;
@@ -1861,7 +1874,7 @@ nva:publisher a rdf:Property ;
   rdfs:domain nva:AudioVisualPublication, nva:Book, nva:BroadCast, nva:Degree, nva:GeographicalContent,
               nva:LiteraryArtsAudioVisual, nva:LiteraryArtsMonograph, nva:LiteraryArtsWeb, nva:MusicScore,
               nva:OtherRelease, nva:Publisher, nva:Report, nva:ResearchData;
-  rdfs:range nva:Organization .
+  rdfs:range nva:Agent .
 
 nva:referencedBy a rdf:Property ;
   rdfs:comment "" ;

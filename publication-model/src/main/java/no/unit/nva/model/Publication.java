@@ -18,7 +18,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +34,7 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.model.config.ResourcesBuildConfig;
 import no.unit.nva.model.exceptions.InvalidPublicationStatusTransitionException;
 import no.unit.nva.model.funding.Funding;
@@ -232,7 +231,7 @@ public class Publication
 
   @Override
   public List<ResearchProject> getProjects() {
-    return nonNull(projects) ? projects : Collections.emptyList();
+    return nonNull(projects) ? projects : emptyList();
   }
 
   @Override
@@ -242,7 +241,7 @@ public class Publication
 
   @Override
   public List<URI> getSubjects() {
-    return nonNull(subjects) ? subjects : Collections.emptyList();
+    return nonNull(subjects) ? subjects : emptyList();
   }
 
   @Override
@@ -282,7 +281,7 @@ public class Publication
 
   @JsonGetter
   public List<PublicationNoteBase> getPublicationNotes() {
-    return nonNull(publicationNotes) ? publicationNotes : Collections.emptyList();
+    return nonNull(publicationNotes) ? publicationNotes : emptyList();
   }
 
   public void setPublicationNotes(List<PublicationNoteBase> publicationNotes) {
@@ -418,7 +417,7 @@ public class Publication
 
   @JsonIgnore
   public boolean isPublishable() {
-    return !DRAFT_FOR_DELETION.equals(getStatus()) && hasMainTitle();
+    return DRAFT_FOR_DELETION != getStatus() && hasMainTitle();
   }
 
   public boolean satisfiesFindableDoiRequirements() {
@@ -435,7 +434,7 @@ public class Publication
 
   @Override
   public List<ImportDetail> getImportDetails() {
-    return nonNull(importDetails) ? importDetails : Collections.emptyList();
+    return nonNull(importDetails) ? importDetails : emptyList();
   }
 
   @Override
@@ -468,7 +467,11 @@ public class Publication
   }
 
   public long getPendingOpenFileCount() {
-    return getAssociatedArtifacts().stream().filter(PendingOpenFile.class::isInstance).count();
+    return getAssociatedArtifacts().stream()
+        .filter(File.class::isInstance)
+        .map(File.class::cast)
+        .filter(file -> FileStatus.from(file) == FileStatus.PENDING_OPEN)
+        .count();
   }
 
   @JsonIgnore

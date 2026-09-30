@@ -43,7 +43,6 @@ import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.associatedartifacts.RelationType;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -78,8 +77,9 @@ public final class TicketTestUtils {
 
   public static Set<File> getFilesForApproval(Publication publication) {
     return publication.getAssociatedArtifacts().stream()
-        .filter(PendingFile.class::isInstance)
+        .filter(File.class::isInstance)
         .map(File.class::cast)
+        .filter(File::isPending)
         .collect(Collectors.toSet());
   }
 
@@ -357,7 +357,7 @@ public final class TicketTestUtils {
     return ticket
         .withOwnerAffiliation(ownerAffiliation)
         .withOwner(UserInstance.fromPublication(publication).getUsername())
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, publication);
   }
 
   public static TicketEntry createClosedTicket(
@@ -365,7 +365,7 @@ public final class TicketTestUtils {
       throws ApiGatewayException {
     return TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
         .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation())
-        .persistNewTicket(ticketService)
+        .persistNewTicket(ticketService, publication)
         .close(UserInstance.create("Username", randomUri()));
   }
 
@@ -375,7 +375,7 @@ public final class TicketTestUtils {
     var completedTicket =
         TicketEntry.createNewTicket(publication, ticketType, SortableIdentifier::next)
             .withOwner(UserInstance.fromPublication(publication).getUsername())
-            .persistNewTicket(ticketService)
+            .persistNewTicket(ticketService, publication)
             .complete(publication, UserInstance.create("Username", randomUri()));
     completedTicket.persistUpdate(ticketService);
     return completedTicket;

@@ -7,6 +7,7 @@ import java.util.Collection;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 
 public final class AssociatedArtifactsMerger {
@@ -42,12 +43,12 @@ public final class AssociatedArtifactsMerger {
   }
 
   private static boolean hasPublishedVersion(OpenFile openFile) {
-    return PUBLISHED_VERSION.equals(openFile.getPublisherVersion());
+    return PUBLISHED_VERSION == openFile.getPublisherVersion();
   }
 
   private static boolean isUniqueOpenFileWithPublishedVersion(
       AssociatedArtifactList existing, File file) {
-    return PUBLISHED_VERSION.equals(file.getPublisherVersion())
+    return PUBLISHED_VERSION == file.getPublisherVersion()
         && existing.stream()
             .noneMatch(
                 associatedArtifact ->
@@ -58,13 +59,12 @@ public final class AssociatedArtifactsMerger {
 
   private static boolean hasMultipleOrNoOpenFilesWithPublishedVersion(
       AssociatedArtifactList artifacts) {
-    long count =
-        artifacts.stream()
+    return artifacts.stream()
             .filter(File.class::isInstance)
             .map(File.class::cast)
-            .filter(OpenFile.class::isInstance)
-            .filter(f -> PUBLISHED_VERSION.equals(f.getPublisherVersion()))
-            .count();
-    return count != SINGLETON;
+            .filter(file -> FileStatus.from(file) == FileStatus.OPEN)
+            .filter(f -> PUBLISHED_VERSION == f.getPublisherVersion())
+            .count()
+        != SINGLETON;
   }
 }

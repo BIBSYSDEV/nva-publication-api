@@ -3,16 +3,22 @@ package no.unit.nva.publication.model;
 import static java.util.Objects.nonNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.JacocoGenerated;
 
-public record SearchResourceApiResponse(int totalHits, List<ResourceWithId> hits)
+public record SearchResourceApiResponse(
+    int totalHits, List<ResourceWithId> hits, URI nextSearchAfterResults)
     implements JsonSerializable {
 
   public static final int SINGLE_HIT = 1;
+
+  public SearchResourceApiResponse(int totalHits, List<ResourceWithId> hits) {
+    this(totalHits, hits, null);
+  }
 
   public static SearchResourceApiResponse fromBody(String responseBody)
       throws JsonProcessingException {

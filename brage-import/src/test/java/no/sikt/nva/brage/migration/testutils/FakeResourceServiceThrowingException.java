@@ -2,7 +2,6 @@ package no.sikt.nva.brage.migration.testutils;
 
 import static org.mockito.Mockito.mock;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.time.Clock;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.model.ImportSource;
@@ -12,13 +11,14 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.service.FakeCristinUnitsUtil;
 import no.unit.nva.publication.service.impl.ResourceService;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 public class FakeResourceServiceThrowingException extends ResourceService {
 
   public static final String FAKE_TABLE_NAME = "fake-table-name";
   private int numberOfAttempts = 0;
 
-  public FakeResourceServiceThrowingException(AmazonDynamoDB client) {
+  public FakeResourceServiceThrowingException(DynamoDbClient client) {
     super(
         client,
         FAKE_TABLE_NAME,

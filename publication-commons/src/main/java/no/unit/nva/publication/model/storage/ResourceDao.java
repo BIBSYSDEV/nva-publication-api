@@ -1,6 +1,7 @@
 package no.unit.nva.publication.model.storage;
 
 import static java.util.Objects.nonNull;
+import static java.util.function.Predicate.not;
 import static no.unit.nva.publication.model.storage.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.GSI_1_PARTITION_KEY_NAME;
@@ -13,12 +14,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.SCOPUS_IDENTIFIER_INDEX_FIELD_PREFIX;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
-import com.amazonaws.services.dynamodbv2.model.Condition;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -42,16 +37,23 @@ import no.unit.nva.model.additionalidentifiers.AdditionalIdentifier;
 import no.unit.nva.model.additionalidentifiers.AdditionalIdentifierBase;
 import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.additionalidentifiers.ScopusIdentifier;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
+import software.amazon.awssdk.services.dynamodb.model.Condition;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 @JsonTypeName(ResourceDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class ResourceDao extends Dao
-    implements JoinWithResource, JsonSerializable, DynamoEntryByIdentifier {
+public class ResourceDao extends Dao implements JoinWithResource, JsonSerializable {
 
   public static final String CRISTIN_SOURCE = "Cristin";
   private static final String NVA_SOURCE = "nva";
@@ -80,12 +82,22 @@ public class ResourceDao extends Dao
   }
 
   public ResourceDao(Resource resource) {
-    super(resource);
+    super(withoutFiles(resource));
+    resource.setVersion(getVersion());
     setIdentifier(resource.getIdentifier());
     this.status = resource.getStatus();
     this.modifiedDate = resource.getModifiedDate();
     this.doi = resource.getDoi();
     this.importDetails = resource.getImportDetails();
+  }
+
+  private static Resource withoutFiles(Resource resource) {
+    var nonFileArtifacts =
+        resource.getAssociatedArtifacts().stream().filter(not(File.class::isInstance)).toList();
+    return resource
+        .copy()
+        .withAssociatedArtifactsList(new AssociatedArtifactList(nonFileArtifacts))
+        .build();
   }
 
   public static ResourceDao queryObject(
@@ -125,7 +137,7 @@ public class ResourceDao extends Dao
 
   @JacocoGenerated
   @Override
-  public void updateExistingEntry(AmazonDynamoDB client) {
+  public void updateExistingEntry(DynamoDbClient client) {
     throw new UnsupportedOperationException(
         "Not implemented yet.Call the appropriate resource service method");
   }
@@ -186,13 +198,14 @@ public class ResourceDao extends Dao
     return getData().getOwner();
   }
 
-  public List<TicketDao> fetchAllTickets(AmazonDynamoDB client) {
+  public List<TicketDao> fetchAllTickets(DynamoDbClient client) {
     var queryRequest =
-        new QueryRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
-            .withKeyConditions(joinAllRelatedTicketsForResource());
-    return client.query(queryRequest).getItems().stream()
+        QueryRequest.builder()
+            .tableName(RESOURCES_TABLE_NAME)
+            .indexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+            .keyConditions(joinAllRelatedTicketsForResource())
+            .build();
+    return client.query(queryRequest).items().stream()
         .map(item -> parseAttributeValuesMap(item, TicketDao.class))
         .collect(Collectors.toList());
   }
@@ -222,18 +235,19 @@ public class ResourceDao extends Dao
   }
 
   public QueryRequest createQueryFindByCristinIdentifier() {
-    return new QueryRequest()
-        .withTableName(RESOURCES_TABLE_NAME)
-        .withIndexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME)
-        .withKeyConditions(createConditionsWithCristinIdentifier());
+    return QueryRequest.builder()
+        .tableName(RESOURCES_TABLE_NAME)
+        .indexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME)
+        .keyConditions(createConditionsWithCristinIdentifier())
+        .build();
   }
 
   public Map<String, Condition> createConditionsWithCristinIdentifier() {
-    Condition condition =
-        new Condition()
-            .withComparisonOperator(ComparisonOperator.EQ)
-            .withAttributeValueList(
-                new AttributeValue(getResourceByCristinIdentifierPartitionKey()));
+    var condition =
+        Condition.builder()
+            .comparisonOperator(ComparisonOperator.EQ)
+            .attributeValueList(AttributeValue.fromS(getResourceByCristinIdentifierPartitionKey()))
+            .build();
     return Map.of(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME, condition);
   }
 

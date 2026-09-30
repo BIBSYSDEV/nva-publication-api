@@ -11,8 +11,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import java.util.Map;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Entity;
@@ -27,6 +25,8 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 
 class VersionRefreshServiceTest extends ResourcesLocalTest {
 
@@ -163,15 +163,16 @@ class VersionRefreshServiceTest extends ResourcesLocalTest {
   }
 
   private String fetchVersion(Entity entity) {
-    return fetchRawItem(entity).get(Dao.VERSION_FIELD).getS();
+    return fetchRawItem(entity).get(Dao.VERSION_FIELD).s();
   }
 
   private Map<String, AttributeValue> fetchRawItem(Entity entity) {
     return client
         .getItem(
-            new GetItemRequest()
-                .withTableName(RESOURCES_TABLE_NAME)
-                .withKey(entity.toDao().primaryKey()))
-        .getItem();
+            GetItemRequest.builder()
+                .tableName(RESOURCES_TABLE_NAME)
+                .key(entity.toDao().primaryKey())
+                .build())
+        .item();
   }
 }

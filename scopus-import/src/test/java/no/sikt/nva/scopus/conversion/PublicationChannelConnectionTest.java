@@ -4,7 +4,9 @@ import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -18,7 +20,7 @@ import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse;
 import no.sikt.nva.scopus.conversion.model.PublicationChannelResponse.PublicationChannelHit;
 import no.unit.nva.auth.uriretriever.AuthorizedBackendUriRetriever;
 import no.unit.nva.publication.testing.http.FakeHttpResponse;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -52,11 +54,13 @@ class PublicationChannelConnectionTest {
     when(uriRetriever.fetchResponse(any(), any()))
         .thenReturn(Optional.of(FakeHttpResponse.create(request, response)));
 
-    var appender = LogUtils.getTestingAppender(PublicationChannelConnection.class);
+    var logRecorder = LogRecorder.forClass(PublicationChannelConnection.class);
     publicationChannelConnection.fetchSerialPublication(
         randomString(), randomString(), randomString(), randomString());
 
-    assertTrue(appender.getMessages().contains("Publication channels API responded with 502"));
+    assertThat(
+        logRecorder.messages(),
+        hasItem(containsString("Publication channels API responded with 502")));
   }
 
   private static String responseWithSingleHit() {

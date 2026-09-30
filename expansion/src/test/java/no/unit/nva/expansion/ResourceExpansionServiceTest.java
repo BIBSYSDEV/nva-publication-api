@@ -107,7 +107,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
@@ -360,7 +360,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     var ticketToBeExpanded =
         TicketEntry.requestNewTicket(publication, GeneralSupportRequest.class)
             .withOwner(UserInstance.fromPublication(publication).getUsername())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     FakeUriResponse.setupFakeForType(ticketToBeExpanded, fakeUriRetriever);
 
     var message = messageService.createMessage(ticketToBeExpanded, owner, randomString());
@@ -384,7 +384,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         GeneralSupportRequest.create(
             Resource.fromPublication(publication), UserInstance.fromPublication(publication));
     generalSupportRequest.setViewedBy(Set.of(owner.getUser()));
-    var ticketToBeExpanded = generalSupportRequest.persistNewTicket(ticketService);
+    var ticketToBeExpanded = generalSupportRequest.persistNewTicket(ticketService, publication);
 
     FakeUriResponse.setupFakeForType(ticketToBeExpanded, fakeUriRetriever);
 
@@ -548,14 +548,15 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
   @ValueSource(strings = {"Resource", "TicketEntry", "Message"})
   void shouldLogTypeAndIdentifierWhenEntityIsExpanded(String type)
       throws ApiGatewayException, JsonProcessingException {
-    final var logAppender = LogUtils.getTestingAppender(ResourceExpansionServiceImpl.class);
+    var logRecorder = LogRecorder.forClass(ResourceExpansionServiceImpl.class);
 
     var entity = findEntity(type);
 
     expansionService.expandEntry(entity, false);
 
     assertThat(
-        logAppender.getMessages(), containsString(type + ": " + entity.getIdentifier().toString()));
+        logRecorder.messages(),
+        hasItem(containsString(type + ": " + entity.getIdentifier().toString())));
   }
 
   @ParameterizedTest
@@ -1036,7 +1037,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             Resource.fromPublication(publication),
             UserInstance.fromPublication(publication),
             PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, publication);
   }
 
   private static List<Contributor> extractContributorsWithId(URI id, Publication publication) {
@@ -1197,7 +1198,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     var differentTicketSameType =
         TicketEntry.requestNewTicket(publication, ticketType)
             .withOwner(UserInstance.fromPublication(publication).getUsername())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var firstUnexpectedMessage =
         ExpandedMessage.createEntry(
             messageService.createMessage(differentTicketSameType, owner, randomString()),
@@ -1206,7 +1207,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     var differentTicketDifferentType =
         TicketEntry.requestNewTicket(publication, differentTicketType)
             .withOwner(UserInstance.fromPublication(publication).getUsername())
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var secondUnexpectedMessage =
         ExpandedMessage.createEntry(
             messageService.createMessage(differentTicketDifferentType, owner, randomString()),

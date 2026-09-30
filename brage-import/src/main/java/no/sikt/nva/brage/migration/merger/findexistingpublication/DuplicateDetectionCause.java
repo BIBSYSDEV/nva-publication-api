@@ -19,7 +19,7 @@ public enum DuplicateDetectionCause {
 
   @JacocoGenerated
   public static DuplicateDetectionCause fromValue(String value) {
-    for (DuplicateDetectionCause cause : DuplicateDetectionCause.values()) {
+    for (DuplicateDetectionCause cause : values()) {
       if (cause.getValue().equalsIgnoreCase(value)) {
         return cause;
       }

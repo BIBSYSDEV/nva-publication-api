@@ -31,7 +31,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.SdkClientException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
@@ -84,6 +83,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentMatchers;
 import org.mockito.stubbing.Answer;
 import org.zalando.problem.Problem;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
@@ -356,7 +356,7 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
         buildPublication(PUBLISHED, pendingFileWithoutEmbargo(APPLICATION_PDF, FILE_IDENTIFIER));
     var publicationIdentifier = publication.getIdentifier();
     when(s3Presigner.presignGetObject((GetObjectPresignRequest) any()))
-        .thenThrow(new SdkClientException("test"));
+        .thenThrow(SdkClientException.create("test"));
     var handler = getCreatePresignedDownloadUrlHandler();
 
     handler.handleRequest(

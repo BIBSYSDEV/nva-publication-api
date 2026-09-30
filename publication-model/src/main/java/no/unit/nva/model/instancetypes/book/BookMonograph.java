@@ -25,17 +25,17 @@ public class BookMonograph implements PublicationInstance<MonographPages> {
   public static BookMonograph fromJson(
       @JsonProperty(PAGES_FIELD) MonographPages pages,
       @JsonProperty(CONTENT_TYPE_FIELD) BookMonographContentType contentType) {
-    if (BookMonographContentType.ACADEMIC_MONOGRAPH.equals(contentType)) {
+    if (BookMonographContentType.ACADEMIC_MONOGRAPH == contentType) {
       return new AcademicMonograph(pages);
-    } else if (BookMonographContentType.ENCYCLOPEDIA.equals(contentType)) {
+    } else if (BookMonographContentType.ENCYCLOPEDIA == contentType) {
       return new Encyclopedia(pages);
-    } else if (BookMonographContentType.EXHIBITION_CATALOG.equals(contentType)) {
+    } else if (BookMonographContentType.EXHIBITION_CATALOG == contentType) {
       return new ExhibitionCatalog(pages);
-    } else if (BookMonographContentType.NON_FICTION_MONOGRAPH.equals(contentType)) {
+    } else if (BookMonographContentType.NON_FICTION_MONOGRAPH == contentType) {
       return new NonFictionMonograph(pages);
-    } else if (BookMonographContentType.POPULAR_SCIENCE_MONOGRAPH.equals(contentType)) {
+    } else if (BookMonographContentType.POPULAR_SCIENCE_MONOGRAPH == contentType) {
       return new PopularScienceMonograph(pages);
-    } else if (BookMonographContentType.TEXTBOOK.equals(contentType)) {
+    } else if (BookMonographContentType.TEXTBOOK == contentType) {
       return new Textbook(pages);
     } else if (isNull(contentType)) {
       return new AcademicMonograph(pages);

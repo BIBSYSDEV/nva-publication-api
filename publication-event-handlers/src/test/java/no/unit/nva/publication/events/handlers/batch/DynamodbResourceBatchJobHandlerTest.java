@@ -16,12 +16,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
@@ -43,6 +37,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 @ExtendWith(MockitoExtension.class)
 class DynamodbResourceBatchJobHandlerTest {
@@ -56,7 +55,7 @@ class DynamodbResourceBatchJobHandlerTest {
 
   @Mock private DynamodbResourceBatchJobExecutor mockExecutor;
 
-  @Mock private AmazonDynamoDB mockDynamoDbClient;
+  @Mock private DynamoDbClient mockDynamoDbClient;
 
   @Mock private Context context;
 
@@ -71,8 +70,8 @@ class DynamodbResourceBatchJobHandlerTest {
 
   private static Map<String, AttributeValue> createDynamoItem(String pk, String sk) {
     return Map.of(
-        "PK0", new AttributeValue().withS(pk),
-        "SK0", new AttributeValue().withS(sk));
+        "PK0", AttributeValue.fromS(pk),
+        "SK0", AttributeValue.fromS(sk));
   }
 
   @Test
@@ -109,9 +108,7 @@ class DynamodbResourceBatchJobHandlerTest {
   void shouldReportBatchItemFailureWhenUnsupportedJobType() throws JsonProcessingException {
     handler =
         new DynamodbResourceBatchJobHandler(
-            new HashMap<>(),
-            AmazonDynamoDBClientBuilder.defaultClient(),
-            new Environment().readEnv(TABLE_NAME_ENV));
+            new HashMap<>(), DynamoDbClient.create(), new Environment().readEnv(TABLE_NAME_ENV));
 
     var workItem = createWorkItem(TEST_JOB_NAME, Map.of("name", "John"));
     var sqsEvent = createSqsEvent(workItem);
@@ -165,8 +162,10 @@ class DynamodbResourceBatchJobHandlerTest {
             TEST_JOB_NAME,
             objectMapper.valueToTree(Map.of("title", "Test Publication")));
 
-    var queryResult = new QueryResult();
-    queryResult.setItems(List.of(createDynamoItem("Resource:123", "Resource")));
+    var queryResult =
+        QueryResponse.builder()
+            .items(List.of(createDynamoItem("Resource:123", "Resource")))
+            .build();
     when(mockDynamoDbClient.query(any(QueryRequest.class))).thenReturn(queryResult);
 
     var sqsEvent = createSqsEvent(workItem);
@@ -177,7 +176,10 @@ class DynamodbResourceBatchJobHandlerTest {
     assertThat(response.getBatchItemFailures(), hasSize(0));
 
     verify(mockDynamoDbClient)
-        .query(argThat(request -> BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.getIndexName())));
+        .query(
+            argThat(
+                (QueryRequest request) ->
+                    BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.indexName())));
 
     // Verify the executor was called with resolved primary keys
     ArgumentCaptor<List<BatchWorkItem>> captor = ArgumentCaptor.forClass(List.class);
@@ -319,11 +321,13 @@ class DynamodbResourceBatchJobHandlerTest {
             "Customer:123", "Resource:2024", BY_CUSTOMER_RESOURCE_INDEX_NAME);
     var workItem = new BatchWorkItem(gsiKey, TEST_JOB_NAME);
 
-    var queryResult = new QueryResult();
-    queryResult.setItems(
-        List.of(
-            createDynamoItem("Resource:123", "Resource"),
-            createDynamoItem("Resource:456", "Resource")));
+    var queryResult =
+        QueryResponse.builder()
+            .items(
+                List.of(
+                    createDynamoItem("Resource:123", "Resource"),
+                    createDynamoItem("Resource:456", "Resource")))
+            .build();
 
     when(mockDynamoDbClient.query(any(QueryRequest.class))).thenReturn(queryResult);
 
@@ -333,9 +337,9 @@ class DynamodbResourceBatchJobHandlerTest {
     verify(mockDynamoDbClient)
         .query(
             argThat(
-                request ->
-                    BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.getIndexName())
-                        && TEST_TABLE_NAME.equals(request.getTableName())));
+                (QueryRequest request) ->
+                    BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.indexName())
+                        && TEST_TABLE_NAME.equals(request.tableName())));
 
     ArgumentCaptor<List<BatchWorkItem>> captor = ArgumentCaptor.forClass(List.class);
     verify(mockExecutor).executeBatch(captor.capture());
@@ -357,8 +361,10 @@ class DynamodbResourceBatchJobHandlerTest {
                 "CristinIdentifier#12345", "Resource:2024", RESOURCE_BY_CRISTIN_ID_INDEX_NAME),
             TEST_JOB_NAME);
 
-    var queryResult = new QueryResult();
-    queryResult.setItems(List.of(createDynamoItem("Resource:789", "Resource")));
+    var queryResult =
+        QueryResponse.builder()
+            .items(List.of(createDynamoItem("Resource:789", "Resource")))
+            .build();
 
     when(mockDynamoDbClient.query(any(QueryRequest.class))).thenReturn(queryResult);
 
@@ -384,7 +390,7 @@ class DynamodbResourceBatchJobHandlerTest {
     var workItem = new BatchWorkItem(gsiKey, TEST_JOB_NAME);
 
     when(mockDynamoDbClient.query(any(QueryRequest.class)))
-        .thenThrow(new AmazonDynamoDBException("Query failed"));
+        .thenThrow(DynamoDbException.builder().message("Query failed").build());
 
     var sqsEvent = createSqsEvent(workItem);
     var response = handler.handleRequest(sqsEvent, context);
@@ -401,12 +407,16 @@ class DynamodbResourceBatchJobHandlerTest {
                 "Customer:456", "Resource:Article", BY_CUSTOMER_RESOURCE_INDEX_NAME),
             TEST_JOB_NAME);
 
-    var firstResult = new QueryResult();
-    firstResult.setItems(List.of(createDynamoItem("Resource:001", "Resource")));
-    firstResult.setLastEvaluatedKey(Map.of("dummy", new AttributeValue().withS("key")));
+    var firstResult =
+        QueryResponse.builder()
+            .items(List.of(createDynamoItem("Resource:001", "Resource")))
+            .lastEvaluatedKey(Map.of("dummy", AttributeValue.fromS("key")))
+            .build();
 
-    var secondResult = new QueryResult();
-    secondResult.setItems(List.of(createDynamoItem("Resource:002", "Resource")));
+    var secondResult =
+        QueryResponse.builder()
+            .items(List.of(createDynamoItem("Resource:002", "Resource")))
+            .build();
 
     when(mockDynamoDbClient.query(any(QueryRequest.class)))
         .thenReturn(firstResult)
@@ -436,30 +446,34 @@ class DynamodbResourceBatchJobHandlerTest {
     var workItem1 = new BatchWorkItem(gsiKey1, TEST_JOB_NAME);
     var workItem2 = new BatchWorkItem(gsiKey2, TEST_JOB_NAME);
 
-    var queryResult1 = new QueryResult();
-    queryResult1.setItems(
-        List.of(
-            Map.of(
-                "PK0", new AttributeValue().withS("Resource:AAA"),
-                "SK0", new AttributeValue().withS("Resource"))));
+    var queryResult1 =
+        QueryResponse.builder()
+            .items(
+                List.of(
+                    Map.of(
+                        "PK0", AttributeValue.fromS("Resource:AAA"),
+                        "SK0", AttributeValue.fromS("Resource"))))
+            .build();
 
-    var queryResult2 = new QueryResult();
-    queryResult2.setItems(
-        List.of(
-            Map.of(
-                "PK0", new AttributeValue().withS("Resource:BBB"),
-                "SK0", new AttributeValue().withS("Resource"))));
+    var queryResult2 =
+        QueryResponse.builder()
+            .items(
+                List.of(
+                    Map.of(
+                        "PK0", AttributeValue.fromS("Resource:BBB"),
+                        "SK0", AttributeValue.fromS("Resource"))))
+            .build();
 
     when(mockDynamoDbClient.query(any(QueryRequest.class)))
         .thenAnswer(
             invocation -> {
               QueryRequest request = invocation.getArgument(0);
-              if (BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.getIndexName())) {
+              if (BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.indexName())) {
                 return queryResult1;
-              } else if (RESOURCE_BY_CRISTIN_ID_INDEX_NAME.equals(request.getIndexName())) {
+              } else if (RESOURCE_BY_CRISTIN_ID_INDEX_NAME.equals(request.indexName())) {
                 return queryResult2;
               }
-              return new QueryResult();
+              return QueryResponse.builder().build();
             });
 
     var sqsEvent = createSqsEventWithMultipleMessages(List.of(workItem1, workItem2));
@@ -483,8 +497,7 @@ class DynamodbResourceBatchJobHandlerTest {
             "Customer:NoResults", "Resource:Empty", BY_CUSTOMER_RESOURCE_INDEX_NAME);
     var workItem = new BatchWorkItem(gsiKey, TEST_JOB_NAME);
 
-    var queryResult = new QueryResult();
-    queryResult.setItems(List.of());
+    var queryResult = QueryResponse.builder().items(List.of()).build();
 
     when(mockDynamoDbClient.query(any(QueryRequest.class))).thenReturn(queryResult);
 

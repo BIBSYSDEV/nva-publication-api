@@ -13,7 +13,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.utils.JsonLdFrameUtil;
 import nva.commons.core.ioutils.IoUtils;
 
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class SearchIndexFrame {
 
   public static JsonDocument getFrameWithContext(Path framePath) {

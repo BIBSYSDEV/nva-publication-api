@@ -44,6 +44,9 @@
       "doi": {
         "@embed": "@never",
         "@default": "@null"
+      },
+      "publicationContext": {
+        "@embed": "@always"
       }
     },
     "metadataSource": {

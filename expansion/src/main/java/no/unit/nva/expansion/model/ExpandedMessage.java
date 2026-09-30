@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
-import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Message;
@@ -18,7 +17,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(ExpandedMessage.TYPE)
-public class ExpandedMessage implements JsonSerializable, ExpandedDataEntry {
+public class ExpandedMessage implements ExpandedDataEntry {
 
   public static final String TYPE = "Message";
   public static final String TEXT_JSON_NAME = "text";

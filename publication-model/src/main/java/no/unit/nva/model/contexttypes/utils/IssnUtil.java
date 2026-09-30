@@ -13,7 +13,6 @@ public final class IssnUtil {
    * @return String, validated representation of the ISSN
    * @throws InvalidIssnException Thrown if the ISSN is invalid
    */
-  @SuppressWarnings("PMD.NullAssignment")
   public static String checkIssn(String issn) throws InvalidIssnException {
     if (isNull(issn) || issn.isEmpty()) {
       return null;

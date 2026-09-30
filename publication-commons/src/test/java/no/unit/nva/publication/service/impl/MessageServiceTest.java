@@ -11,11 +11,8 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.net.URI;
-import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
 import java.util.List;
@@ -29,7 +26,6 @@ import no.unit.nva.publication.model.business.MessageStatus;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UnpublishRequest;
-import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
@@ -60,7 +56,6 @@ class MessageServiceTest extends ResourcesLocalTest {
   @BeforeEach
   public void initialize() {
     super.init();
-    var clock = mockClock();
     messageService = getMessageService();
     resourceService = getResourceService(client);
     ticketService = getTicketService();
@@ -173,7 +168,9 @@ class MessageServiceTest extends ResourcesLocalTest {
             PublicationStatus.PUBLISHED, owner, resourceService);
     var ticket = TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService);
     var persistedMessage = messageService.createMessage(ticket, owner, randomString());
-    var curator = randomUserInstance(accessRight, owner.getCustomerId());
+    var curator =
+        randomUserInstance(
+            List.of(accessRight), owner.getCustomerId(), owner.getTopLevelOrgCristinId());
 
     assertDoesNotThrow(() -> messageService.deleteMessage(curator, persistedMessage));
   }
@@ -218,27 +215,22 @@ class MessageServiceTest extends ResourcesLocalTest {
   }
 
   private UserInstance randomUserInstance() {
-    return UserInstance.create(new User(randomString()), randomUri());
+    return randomUserInstance(List.of(), randomUri(), randomUri());
   }
 
   private UserInstance randomUserInstance(AccessRight accessRight, URI customerId) {
+    return randomUserInstance(List.of(accessRight), customerId, randomUri());
+  }
+
+  private UserInstance randomUserInstance(
+      List<AccessRight> accessRights, URI customerId, URI topLevelCristinId) {
     return UserInstance.create(
-        randomString(), customerId, randomUri(), List.of(accessRight), randomUri());
+        randomString(), customerId, randomUri(), accessRights, topLevelCristinId);
   }
 
   private Message publicationOwnerSendsMessage(TicketEntry ticket, String messageText) {
     var userInfo = UserInstance.fromTicket(ticket);
     return messageService.createMessage(ticket, userInfo, messageText);
-  }
-
-  private Clock mockClock() {
-    var clock = mock(Clock.class);
-    when(clock.instant())
-        .thenReturn(PUBLICATION_CREATION_TIME)
-        .thenReturn(MESSAGE_CREATION_TIME)
-        .thenReturn(SECOND_MESSAGE_CREATION_TIME)
-        .thenReturn(THIRD_MESSAGE_CREATION_TIME);
-    return clock;
   }
 
   public static Stream<Arguments> ticketTypeAccessRightsProvider() {

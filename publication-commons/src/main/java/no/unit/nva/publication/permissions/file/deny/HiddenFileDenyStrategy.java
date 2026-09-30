@@ -1,7 +1,7 @@
 package no.unit.nva.publication.permissions.file.deny;
 
 import no.unit.nva.model.FileOperation;
-import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -30,6 +30,6 @@ public final class HiddenFileDenyStrategy extends FileStrategyBase implements Fi
   }
 
   private boolean fileIsHidden() {
-    return file.getFile() instanceof HiddenFile;
+    return FileStatus.from(file.getFile()) == FileStatus.HIDDEN;
   }
 }

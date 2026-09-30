@@ -49,10 +49,11 @@ public class CreateUploadHandler
         RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
     var resourceIdentifier = RequestUtil.getIdentifier(requestInfo);
 
-    var createUploadResponseBody =
+    var createMultipartUploadResponse =
         fileService.initiateMultipartUpload(resourceIdentifier, userInstance, input);
 
-    return CreateUploadResponseBody.fromInitiateMultipartUploadResult(createUploadResponseBody);
+    return CreateUploadResponseBody.fromCreateMultipartUploadResponse(
+        createMultipartUploadResponse);
   }
 
   @Override

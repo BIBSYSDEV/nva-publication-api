@@ -22,6 +22,7 @@ import static no.unit.nva.publication.create.CreatePublicationFromImportCandidat
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_HAS_ALREADY_BEEN_IMPORTED_ERROR_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_MISSING_SCOPUS_IDENTIFIER_ERROR_MESSAGE;
 import static no.unit.nva.publication.create.CreatePublicationFromImportCandidateHandler.RESOURCE_IS_NOT_PUBLISHABLE;
+import static no.unit.nva.publication.testing.CristinUriGenerator.randomCristinPersonUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -478,7 +479,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     var auid = randomString();
     var contributorWithAuid = createImportContributorWithAuid(auid, 1);
     var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
-    var cristinId = randomUri();
+    var cristinId = randomCristinPersonUri();
     var contributorUpdatedWithCristinId =
         updateContributorWithCristinId(toContributor(contributorWithAuid), cristinId);
     var userInput =
@@ -523,7 +524,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     var auid = randomString();
     var contributorWithAuid = createImportContributorWithAuid(auid, 1);
     var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
-    var cristinId = randomUri();
+    var cristinId = randomCristinPersonUri();
     var contributorUpdatedWithCristinId =
         updateContributorWithCristinId(toContributor(contributorWithAuid), cristinId);
     var userInput =
@@ -545,8 +546,8 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     var contributorWithAuid2 = createImportContributorWithAuid(auid2, 2);
     var importCandidate =
         createPersistedImportCandidate(List.of(contributorWithAuid1, contributorWithAuid2));
-    var cristinId1 = randomUri();
-    var cristinId2 = randomUri();
+    var cristinId1 = randomCristinPersonUri();
+    var cristinId2 = randomCristinPersonUri();
     var contributorUpdatedWithCristinId1 =
         updateContributorWithCristinId(toContributor(contributorWithAuid1), cristinId1);
     var contributorUpdatedWithCristinId2 =
@@ -575,7 +576,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     var auid = randomString();
     var contributorWithAuid = createImportContributorWithAuid(auid, 1);
     var importCandidate = createPersistedImportCandidate(List.of(contributorWithAuid));
-    var cristinId = randomUri();
+    var cristinId = randomCristinPersonUri();
     var contributorUpdatedWithCristinId =
         updateContributorWithCristinId(toContributor(contributorWithAuid), cristinId);
     var userInput =
@@ -816,7 +817,7 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
   private void mockPostAuidWriting() {
     stubFor(
         WireMock.post(urlMatching("/sentralimport/authors"))
-            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_CREATED)));
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_NO_CONTENT)));
   }
 
   private Contributor updateContributorWithCristinId(

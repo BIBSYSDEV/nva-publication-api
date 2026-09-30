@@ -23,7 +23,7 @@ public class MusicMediaSubtype {
   public static MusicMediaSubtype fromJson(
       @JsonProperty(TYPE_FIELD) MusicMediaType type,
       @JsonProperty(DESCRIPTION_FIELD) String description) {
-    if (MusicMediaType.OTHER.equals(type)) {
+    if (MusicMediaType.OTHER == type) {
       return createOther(description);
     }
     return new MusicMediaSubtype(type);

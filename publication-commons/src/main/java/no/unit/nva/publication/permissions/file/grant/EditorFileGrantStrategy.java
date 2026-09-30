@@ -3,8 +3,7 @@ package no.unit.nva.publication.permissions.file.grant;
 import static nva.commons.apigateway.AccessRight.MANAGE_RESOURCES_ALL;
 
 import no.unit.nva.model.FileOperation;
-import no.unit.nva.model.associatedartifacts.file.PendingInternalFile;
-import no.unit.nva.model.associatedartifacts.file.PendingOpenFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -30,7 +29,8 @@ public class EditorFileGrantStrategy extends FileStrategyBase implements FileGra
   }
 
   private boolean isAllowedFileType() {
-    return !(file.getFile() instanceof PendingInternalFile
-        || file.getFile() instanceof PendingOpenFile && file.getFile().hasActiveEmbargo());
+    var status = FileStatus.from(file.getFile());
+    return !(status == FileStatus.PENDING_INTERNAL
+        || status == FileStatus.PENDING_OPEN && file.getFile().hasActiveEmbargo());
   }
 }

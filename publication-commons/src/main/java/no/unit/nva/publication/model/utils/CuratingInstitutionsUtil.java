@@ -17,7 +17,6 @@ import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
-import org.jetbrains.annotations.NotNull;
 
 public class CuratingInstitutionsUtil {
 
@@ -52,7 +51,6 @@ public class CuratingInstitutionsUtil {
     return toCuratingInstitutionSet(topLevelMap);
   }
 
-  @NotNull
   private Set<CuratingInstitution> toCuratingInstitutionSet(
       Stream<SimpleEntry<URI, URI>> topLevelMap) {
     return topLevelMap

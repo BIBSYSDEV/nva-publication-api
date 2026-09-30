@@ -2,7 +2,6 @@ package no.unit.nva.publication.model.storage;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
@@ -29,13 +28,6 @@ public class GeneralSupportRequestDao extends TicketDao implements JsonSerializa
   @Override
   public URI getCustomerId() {
     return getData().getCustomerId();
-  }
-
-  @Override
-  public TransactWriteItemsRequest createInsertionTransactionRequest() {
-    var dataEntry = newPutTransactionItem(this);
-    var uniquenessEntry = newPutTransactionItem(new IdentifierEntry(this));
-    return new TransactWriteItemsRequest().withTransactItems(dataEntry, uniquenessEntry);
   }
 
   @Override

@@ -40,7 +40,7 @@ public record ResourceRelationship(
   }
 
   private static boolean isPublished(Resource resource) {
-    return PUBLISHED.equals(resource.getStatus());
+    return PUBLISHED == resource.getStatus();
   }
 
   private static boolean isPublicationId(URI uri) {

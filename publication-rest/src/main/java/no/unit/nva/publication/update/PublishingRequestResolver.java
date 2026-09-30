@@ -13,7 +13,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
@@ -59,11 +58,11 @@ public final class PublishingRequestResolver {
   }
 
   private static Stream<File> getPendingFiles(Resource resource) {
-    return resource.getFiles().stream().filter(PendingFile.class::isInstance);
+    return resource.getFiles().stream().filter(File::isPending);
   }
 
   private static boolean isPending(TicketEntry ticketEntry) {
-    return TicketStatus.PENDING.equals(ticketEntry.getStatus());
+    return TicketStatus.PENDING == ticketEntry.getStatus();
   }
 
   private void handlePublishingRequest(Resource oldImage, Resource newImage)
@@ -89,7 +88,9 @@ public final class PublishingRequestResolver {
   }
 
   private boolean thereAreNoPendingFiles(Resource resource) {
-    return resource.getAssociatedArtifacts().stream().noneMatch(PendingFile.class::isInstance);
+    return resource.getAssociatedArtifacts().stream()
+        .noneMatch(
+            associatedArtifact -> associatedArtifact instanceof File file && file.isPending());
   }
 
   private List<FilesApprovalEntry>
@@ -120,10 +121,10 @@ public final class PublishingRequestResolver {
 
   private TicketEntry persistPublishingRequest(
       Resource newImage, PublishingRequestCase publishingRequest) throws ApiGatewayException {
+    var publication = newImage.toPublication();
     return customerAllowsPublishingMetadataAndFiles()
-        ? publishingRequest.persistAutoComplete(
-            ticketService, newImage.toPublication(), userInstance)
-        : publishingRequest.persistNewTicket(ticketService);
+        ? publishingRequest.persistAutoComplete(ticketService, publication, userInstance)
+        : publishingRequest.persistNewTicket(ticketService, publication);
   }
 
   private void persistPendingPublishingRequest(Resource oldImage, Resource newImage)
@@ -154,7 +155,7 @@ public final class PublishingRequestResolver {
       Resource resource, PublishingWorkflow workflow, Set<File> files) throws ApiGatewayException {
     FilesApprovalThesis.createForUserInstitution(resource, userInstance, workflow)
         .withFilesForApproval(files)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, resource.toPublication());
   }
 
   private void persistFilesApprovalThesis(
@@ -168,7 +169,7 @@ public final class PublishingRequestResolver {
     FilesApprovalThesis.createForChannelOwningInstitution(
             resource, userInstance, organizationId, channelClaimIdentifier, workflow)
         .withFilesForApproval(files)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, resource.toPublication());
   }
 
   private boolean containsNewPublishableFiles(Resource oldImage, Resource newImage) {
@@ -201,7 +202,7 @@ public final class PublishingRequestResolver {
             fileForApproval ->
                 newImage.getFileByIdentifier(fileForApproval.getIdentifier()).orElse(null))
         .filter(Objects::nonNull)
-        .filter(PendingFile.class::isInstance)
+        .filter(File::isPending)
         .collect(Collectors.toSet());
   }
 
@@ -232,6 +233,6 @@ public final class PublishingRequestResolver {
 
   private boolean isAlreadyPublished(Resource resource) {
     var status = resource.getStatus();
-    return PUBLISHED.equals(status) || PUBLISHED_METADATA.equals(status);
+    return PUBLISHED == status || PUBLISHED_METADATA == status;
   }
 }

@@ -37,7 +37,7 @@ import no.unit.nva.model.additionalidentifiers.CristinIdentifier;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
@@ -95,7 +95,7 @@ public class CristinImportPublicationMerger {
   }
 
   private static boolean isCreator(Contributor contributor) {
-    return CREATOR.equals(contributor.role().getType());
+    return CREATOR == contributor.role().getType();
   }
 
   private static boolean isDublinCore(File file) {
@@ -278,18 +278,18 @@ public class CristinImportPublicationMerger {
 
   private List<Contributor> extractSupervisors() {
     return bragePublicationRepresentation.publication().getContributors().stream()
-        .filter(contributor -> SUPERVISOR.equals(contributor.role().getType()))
+        .filter(contributor -> SUPERVISOR == contributor.role().getType())
         .toList();
   }
 
   private boolean incomingPublicationHasSupervisor() {
     return bragePublicationRepresentation.publication().getContributors().stream()
-        .anyMatch(contributor -> SUPERVISOR.equals(contributor.role().getType()));
+        .anyMatch(contributor -> SUPERVISOR == contributor.role().getType());
   }
 
   private boolean isMissingSupervisor(List<Contributor> contributors) {
     return contributors.stream()
-        .noneMatch(contributor -> SUPERVISOR.equals(contributor.role().getType()));
+        .noneMatch(contributor -> SUPERVISOR == contributor.role().getType());
   }
 
   private List<Contributor> existingContributorsWithUpdatedAffiliation() {
@@ -453,10 +453,11 @@ public class CristinImportPublicationMerger {
         .findFirst();
   }
 
-  private List<HiddenFile> extractDublinCore(AssociatedArtifactList associatedArtifactList) {
+  private List<File> extractDublinCore(AssociatedArtifactList associatedArtifactList) {
     return associatedArtifactList.stream()
-        .filter(HiddenFile.class::isInstance)
-        .map(HiddenFile.class::cast)
+        .filter(File.class::isInstance)
+        .map(File.class::cast)
+        .filter(file -> FileStatus.from(file) == FileStatus.HIDDEN)
         .filter(CristinImportPublicationMerger::isDublinCore)
         .toList();
   }

@@ -101,7 +101,7 @@ class PublicationContextTest {
   void shouldReturnNullPublisherWhenResearchDataEffectivelyHasNoPublisher(
       PublishingHouse publishingHouse) {
     var researchData = new ResearchData(publishingHouse);
-    assertThat(researchData.getPublisher(), instanceOf(NullPublisher.class));
+    assertThat(researchData.publisher(), instanceOf(NullPublisher.class));
   }
 
   // TODO: test that every property and class is described in the ontology

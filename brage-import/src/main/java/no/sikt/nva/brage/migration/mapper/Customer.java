@@ -74,7 +74,7 @@ public record Customer(
 
   private Entry<Environment, String> getProductionIdentifier() {
     return identifiers.entrySet().stream()
-        .filter(environmentStringEntry -> PROD.equals(environmentStringEntry.getKey()))
+        .filter(environmentStringEntry -> PROD == environmentStringEntry.getKey())
         .findFirst()
         .orElseThrow();
   }
@@ -94,7 +94,7 @@ public record Customer(
 
     @JsonCreator
     public static Environment fromValue(String value) {
-      return Arrays.stream(Environment.values())
+      return Arrays.stream(values())
           .filter(item -> item.getValue().equals(value))
           .collect(SingletonCollector.collect());
     }

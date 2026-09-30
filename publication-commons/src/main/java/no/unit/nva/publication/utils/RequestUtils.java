@@ -76,11 +76,11 @@ public record RequestUtils(
 
   public boolean isAuthorizedToManage(TicketEntry ticket) {
     return switch (ticket) {
-      case DoiRequest doi -> hasAccessRight(MANAGE_DOI);
-      case PublishingRequestCase publishing -> hasAccessRight(MANAGE_PUBLISHING_REQUESTS);
-      case FilesApprovalThesis thesis -> hasAccessRight(MANAGE_DEGREE);
-      case GeneralSupportRequest support -> hasAccessRight(SUPPORT);
-      case UnpublishRequest unpublish -> true;
+      case DoiRequest _ -> hasAccessRight(MANAGE_DOI);
+      case PublishingRequestCase _ -> hasAccessRight(MANAGE_PUBLISHING_REQUESTS);
+      case FilesApprovalThesis _ -> hasAccessRight(MANAGE_DEGREE);
+      case GeneralSupportRequest _ -> hasAccessRight(SUPPORT);
+      case UnpublishRequest _ -> true;
       case null, default -> false;
     };
   }

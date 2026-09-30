@@ -3,7 +3,6 @@ package no.unit.nva.expansion.utils;
 import java.nio.file.Path;
 import nva.commons.core.ioutils.IoUtils;
 
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class AffiliationQueries {
 
   public static final String TOP_LEVEL_ORGANIZATION =

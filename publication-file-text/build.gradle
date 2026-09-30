@@ -1,0 +1,40 @@
+plugins {
+    id 'nva.publication.api.java-conventions'
+}
+
+dependencies {
+    api(nvaCatalog.aws.lambda.core)
+    api(nvaCatalog.aws.lambda.events)
+    api(nvaCatalog.aws.sdk2.s3)
+    api(nvaCatalog.jackson.annotations)
+    api(nvaLibs.json)
+    api(project(":publication-commons"))
+    implementation(libs.pdfbox)
+    implementation(nvaCatalog.apache.poi)
+    implementation(libs.tika.core)
+    implementation(libs.tika.parser.pdf.module)
+    implementation(nvaCatalog.aws.sdk2.sdk.core)
+    implementation(nvaCatalog.aws.sdk2.sqs)
+    implementation(nvaCatalog.jackson.core)
+    implementation(nvaCatalog.jackson.databind)
+    implementation(nvaCatalog.slf4j.api)
+    implementation(nvaLibs.core)
+    implementation(nvaLibs.s3)
+    runtimeOnly(libs.tika.parsers.standard)
+
+    testImplementation(nvaCatalog.apache.poi.ooxml)
+    testImplementation(nvaCatalog.assertj.core)
+    testImplementation(nvaCatalog.aws.sdk2.aws.core)
+    testImplementation(nvaCatalog.aws.sdk2.http.client)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaLibs.testutils)
+}
+
+test {
+    environment "NVA_PERSISTED_STORAGE_BUCKET_NAME", "source-bucket"
+    environment "TEXT_STORAGE_BUCKET_NAME", "text-bucket"
+    environment "AWS_REGION", "eu-west-1"
+    environment "TEXT_EXTRACTION_QUEUE_URL", "https://sqs.eu-west-1.amazonaws.com/someAccount/someQueue"
+}

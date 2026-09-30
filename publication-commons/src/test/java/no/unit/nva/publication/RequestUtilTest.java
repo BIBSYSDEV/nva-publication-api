@@ -116,6 +116,22 @@ class RequestUtilTest {
   }
 
   @Test
+  void shouldThrowBadRequestExceptionWhenGetFileIdentifierReceivesMalformedIdentifier() {
+    var requestInfo = getRequestInfo();
+    requestInfo.setPathParameters(Map.of(FILE_IDENTIFIER, "undefined"));
+
+    assertThrows(BadRequestException.class, () -> getFileIdentifier(requestInfo));
+  }
+
+  @Test
+  void shouldThrowBadRequestExceptionWhenGetFileEntryIdentifierReceivesMalformedIdentifier() {
+    var requestInfo = getRequestInfo();
+    requestInfo.setPathParameters(Map.of(FILE_IDENTIFIER, "undefined"));
+
+    assertThrows(BadRequestException.class, () -> getFileEntryIdentifier(requestInfo));
+  }
+
+  @Test
   void canGetOwnerFromRequest() throws Exception {
     var requestInfo = getRequestInfo();
     requestInfo.setRequestContext(getRequestContextForClaim(INJECT_NVA_USERNAME_CLAIM, VALUE));

@@ -22,7 +22,6 @@ import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStream
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord;
-import com.fasterxml.jackson.databind.JavaType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -219,17 +218,7 @@ class DynamodbStreamToEventBridgeHandlerTest {
   }
 
   private static Map<String, AttributeValue> publicationDynamoDbFormat(Entity publication) {
-    var dao = publication.toDao().toDynamoFormat();
-    var string = attempt(() -> dtoObjectMapper.writeValueAsString(dao)).orElseThrow();
-    return (Map<String, AttributeValue>)
-        attempt(() -> dtoObjectMapper.readValue(string, dynamoMapStructureAsJacksonType()))
-            .orElseThrow();
-  }
-
-  private static JavaType dynamoMapStructureAsJacksonType() {
-    return dtoObjectMapper
-        .getTypeFactory()
-        .constructParametricType(Map.class, String.class, AttributeValue.class);
+    return DynamoDbEventTestFactory.toEventImage(publication.toDao().toDynamoFormat());
   }
 
   private DataEntryUpdateEvent extractPersistedDataEntryUpdateEvent() {

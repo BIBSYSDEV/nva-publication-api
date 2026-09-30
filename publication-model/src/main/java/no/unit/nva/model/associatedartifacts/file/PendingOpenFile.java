@@ -1,7 +1,5 @@
 package no.unit.nva.model.associatedartifacts.file;
 
-import static java.util.Objects.isNull;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -15,7 +13,7 @@ import no.unit.nva.model.associatedartifacts.RightsRetentionStrategy;
 @SuppressWarnings("PMD.ExcessiveParameterList")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName(PendingOpenFile.TYPE)
-public class PendingOpenFile extends File implements PendingFile<OpenFile, RejectedFile> {
+public class PendingOpenFile extends File {
   public static final String TYPE = "PendingOpenFile";
 
   /**
@@ -66,45 +64,6 @@ public class PendingOpenFile extends File implements PendingFile<OpenFile, Rejec
   }
 
   @Override
-  public RejectedFile reject() {
-    return new RejectedFile(
-        getIdentifier(),
-        getName(),
-        getMimeType(),
-        getSize(),
-        getLicense(),
-        getPublisherVersion(),
-        getEmbargoDate().orElse(null),
-        getRightsRetentionStrategy(),
-        getLegalNote(),
-        getUploadDetails());
-  }
-
-  @Override
-  public OpenFile approve() {
-    if (isNotApprovable()) {
-      throw new IllegalStateException(CANNOT_PUBLISH_FILE_MESSAGE.formatted(getIdentifier()));
-    }
-    return new OpenFile(
-        getIdentifier(),
-        getName(),
-        getMimeType(),
-        getSize(),
-        getLicense(),
-        getPublisherVersion(),
-        getEmbargoDate().orElse(null),
-        getRightsRetentionStrategy(),
-        getLegalNote(),
-        Instant.now(),
-        getUploadDetails());
-  }
-
-  @Override
-  public boolean isNotApprovable() {
-    return isNull(getLicense());
-  }
-
-  @Override
   public Builder copy() {
     return builder()
         .withIdentifier(this.getIdentifier())
@@ -117,16 +76,6 @@ public class PendingOpenFile extends File implements PendingFile<OpenFile, Rejec
         .withRightsRetentionStrategy(this.getRightsRetentionStrategy())
         .withLegalNote(this.getLegalNote())
         .withUploadDetails(this.getUploadDetails());
-  }
-
-  @Override
-  public boolean canBeConvertedTo(File file) {
-    return switch (file) {
-      case PendingInternalFile ignore -> true;
-      case PendingOpenFile ignore -> true;
-      case HiddenFile ignore -> true;
-      default -> false;
-    };
   }
 
   @Override

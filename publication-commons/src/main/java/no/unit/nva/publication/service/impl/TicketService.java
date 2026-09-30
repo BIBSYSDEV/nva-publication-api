@@ -6,7 +6,6 @@ import static no.unit.nva.publication.model.business.TicketEntry.setServiceContr
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.net.URI;
 import java.time.Clock;
 import java.util.List;
@@ -19,6 +18,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
 import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.TicketStatus;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -32,11 +32,11 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.FunctionWithException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
-@SuppressWarnings({"PMD.CouplingBetweenObjects"})
 public class TicketService extends ServiceWithTransactions {
 
   private static final Logger logger = LoggerFactory.getLogger(TicketService.class);
@@ -52,12 +52,12 @@ public class TicketService extends ServiceWithTransactions {
   private final String tableName;
 
   public TicketService(
-      AmazonDynamoDB client, RawContentRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
+      DynamoDbClient client, RawContentRetriever uriRetriever, CristinUnitsUtil cristinUnitsUtil) {
     this(client, DEFAULT_IDENTIFIER_PROVIDER, uriRetriever, cristinUnitsUtil);
   }
 
   protected TicketService(
-      AmazonDynamoDB client,
+      DynamoDbClient client,
       Supplier<SortableIdentifier> identifierProvider,
       RawContentRetriever uriRetriever,
       CristinUnitsUtil cristinUnitsUtil) {
@@ -87,16 +87,16 @@ public class TicketService extends ServiceWithTransactions {
    * Method should be protected or package-private.
    *
    * @param ticketEntry the ticket entry to be persisted
+   * @param publication
    * @param <T> the TicketEntry class
    * @return the persisted ticket type with service updated fields.
    * @throws ApiGatewayException when an expected error occurs that needs to be sent to the client
    * @deprecated Use TicketEntry#persist instead.
    */
   @Deprecated(since = " TicketEntry#persist")
-  public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry)
+  public <T extends TicketEntry> T createTicket(TicketEntry ticketEntry, Publication publication)
       throws ApiGatewayException {
-    var associatedPublication = fetchPublicationToEnsureItExists(ticketEntry);
-    return createTicketForPublication(associatedPublication, ticketEntry);
+    return createTicketForPublication(ticketEntry, publication);
   }
 
   public TicketEntry fetchTicket(UserInstance userInstance, SortableIdentifier ticketIdentifier)
@@ -184,15 +184,27 @@ public class TicketService extends ServiceWithTransactions {
       throws ApiGatewayException {
     var publication =
         resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier());
-    var existingTicket = fetchTicket(ticketEntry);
+    var existingDao = fetchTicketDao(ticketEntry);
+    var existingTicket = (TicketEntry) existingDao.getData();
     injectAssigneeWhenUnassigned(existingTicket, userInstance);
     var completed =
         attempt(() -> existingTicket.complete(publication, userInstance))
             .orElseThrow(fail -> handlerTicketUpdateFailure(fail.getException()));
 
-    var putItemRequest = completed.toDao().createPutItemRequest();
-    getClient().putItem(putItemRequest);
+    try {
+      getClient()
+          .putItem(
+              completed.toDao().createPutItemRequestWithVersionCheck(existingDao.getVersion()));
+    } catch (ConditionalCheckFailedException e) {
+      throw new ConflictException("Ticket was modified concurrently, please retry");
+    }
     return completed;
+  }
+
+  private TicketDao fetchTicketDao(TicketEntry ticketEntry) throws NotFoundException {
+    var userInstance = UserInstance.fromTicket(ticketEntry);
+    var queryObject = TicketEntry.createQueryObject(userInstance, ticketEntry.getIdentifier());
+    return queryObject.fetchTicket(getClient()).orElseThrow(TicketService::notFoundException);
   }
 
   protected TicketEntry closeTicket(TicketEntry pendingTicket, UserInstance userInstance)
@@ -226,21 +238,16 @@ public class TicketService extends ServiceWithTransactions {
     return new BadRequestException(exception.getMessage(), exception);
   }
 
-  private Publication fetchPublicationToEnsureItExists(TicketEntry ticketEntry) {
-    return attempt(
-            () -> resourceService.getPublicationByIdentifier(ticketEntry.getResourceIdentifier()))
-        .orElseThrow();
-  }
-
   private <T extends TicketEntry> T createTicketForPublication(
-      Publication publication, TicketEntry ticketEntry) throws ConflictException {
+      TicketEntry ticketEntry, Publication publication) throws ConflictException {
 
     setServiceControlledFields(ticketEntry, identifierProvider);
     ticketEntry.validateCreationRequirements(publication);
-    var request = ticketEntry.toDao().createInsertionTransactionRequest();
+    var request =
+        ticketEntry
+            .toDao()
+            .createInsertionTransactionRequest(Resource.fromPublication(publication));
     sendTransactionWriteRequest(request);
-    FunctionWithException<TicketEntry, TicketEntry, NotFoundException> fetchTicketProvider =
-        this::fetchTicket;
-    return (T) fetchEventualConsistentDataEntry(ticketEntry, fetchTicketProvider).orElseThrow();
+    return (T) ticketEntry;
   }
 }

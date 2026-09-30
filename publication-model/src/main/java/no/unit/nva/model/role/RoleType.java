@@ -21,7 +21,7 @@ public class RoleType {
   @JsonCreator
   public static RoleType fromJson(
       @JsonProperty(TYPE_FIELD) Role type, @JsonProperty(DESCRIPTION_FIELD) String description) {
-    return Role.OTHER.equals(type) && StringUtils.isNotBlank(description)
+    return Role.OTHER == type && StringUtils.isNotBlank(description)
         ? new RoleTypeOther(Role.OTHER, description)
         : new RoleType(type);
   }

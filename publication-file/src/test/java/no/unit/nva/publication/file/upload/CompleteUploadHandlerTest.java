@@ -20,12 +20,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
-import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -56,6 +50,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.zalando.problem.Problem;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 public class CompleteUploadHandlerTest extends ResourcesLocalTest {
 
@@ -69,14 +69,14 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
   private CompleteUploadHandler handler;
   private ByteArrayOutputStream outputStream;
   private Context context;
-  private AmazonS3Client s3client;
+  private S3Client s3client;
   private ResourceService resourceService;
 
   /** Setup test env. */
   @BeforeEach
   void setUp() {
     super.init();
-    s3client = mock(AmazonS3Client.class);
+    s3client = mock(S3Client.class);
     resourceService = getResourceService(client);
     handler =
         new CompleteUploadHandler(
@@ -134,7 +134,7 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
     var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
     when(s3client.completeMultipartUpload(Mockito.any(CompleteMultipartUploadRequest.class)))
-        .thenThrow(AmazonS3Exception.class);
+        .thenThrow(S3Exception.class);
 
     handler.handleRequest(request(resource.getIdentifier(), userInstance), outputStream, context);
     var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
@@ -157,7 +157,7 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
     assertThat(completeUploadRequestBody, is(notNullValue()));
     assertThat(
         completeUploadRequestBody.parts(),
-        not(hasSize(completeMultipartUploadRequest.getPartETags().size())));
+        not(hasSize(completeMultipartUploadRequest.multipartUpload().parts().size())));
     assertThat(completeMultipartUploadRequest, is(notNullValue()));
   }
 
@@ -178,7 +178,7 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
     assertThat(completeMultipartUploadRequest, is(notNullValue()));
     assertThat(
         completeUploadRequestBody.parts(),
-        hasSize(completeMultipartUploadRequest.getPartETags().size()));
+        hasSize(completeMultipartUploadRequest.multipartUpload().parts().size()));
   }
 
   @Test
@@ -201,18 +201,17 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
   }
 
   private void mockS3(String filename) {
-    var completeMultipartUploadResult = new CompleteMultipartUploadResult();
-    completeMultipartUploadResult.setKey(UUID.randomUUID().toString());
+    var completeMultipartUploadResponse =
+        CompleteMultipartUploadResponse.builder().key(UUID.randomUUID().toString()).build();
     when(s3client.completeMultipartUpload(Mockito.any(CompleteMultipartUploadRequest.class)))
-        .thenReturn(completeMultipartUploadResult);
-    var s3object = new S3Object();
-    s3object.setKey(randomString());
-    var metadata = new ObjectMetadata();
-    metadata.setContentLength(12345);
-    metadata.setContentDisposition(filename);
-    metadata.setContentType("application/pdf");
-    s3object.setObjectMetadata(metadata);
-    when(s3client.getObjectMetadata(any())).thenReturn(metadata);
+        .thenReturn(completeMultipartUploadResponse);
+    var metadata =
+        HeadObjectResponse.builder()
+            .contentLength(12345L)
+            .contentDisposition(filename)
+            .contentType("application/pdf")
+            .build();
+    when(s3client.headObject(any(HeadObjectRequest.class))).thenReturn(metadata);
   }
 
   private InputStream request(SortableIdentifier identifier, UserInstance userInstance)

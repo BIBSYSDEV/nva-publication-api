@@ -65,7 +65,7 @@ public class MessageDto implements JsonSerializable {
   }
 
   private static String getMessageText(Message message) {
-    return MessageStatus.ACTIVE.equals(message.getStatus()) ? message.getText() : NO_TEXT;
+    return MessageStatus.ACTIVE == message.getStatus() ? message.getText() : NO_TEXT;
   }
 
   public static URI constructMessageId(Message message) {

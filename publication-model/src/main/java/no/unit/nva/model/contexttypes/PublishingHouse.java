@@ -2,6 +2,7 @@ package no.unit.nva.model.contexttypes;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import no.unit.nva.model.Agent;
 
 /** Marker pattern interface. */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -10,6 +11,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   @JsonSubTypes.Type(name = "UnconfirmedPublisher", value = UnconfirmedPublisher.class),
   @JsonSubTypes.Type(name = "NullPublisher", value = NullPublisher.class)
 })
-public interface PublishingHouse {
+public interface PublishingHouse extends Agent {
   boolean isValid();
 }

@@ -29,7 +29,7 @@ public final class ApplicationConstants {
   @JacocoGenerated
   public static S3Client defaultS3Client() {
     return S3Client.builder()
-        .region(ApplicationConstants.AWS_REGION)
+        .region(AWS_REGION)
         .httpClient(UrlConnectionHttpClient.create())
         .build();
   }
@@ -37,7 +37,7 @@ public final class ApplicationConstants {
   @JacocoGenerated
   public static EventBridgeClient defaultEventBridgeClient() {
     return EventBridgeClient.builder()
-        .region(ApplicationConstants.AWS_REGION)
+        .region(AWS_REGION)
         .httpClient(UrlConnectionHttpClient.create())
         .build();
   }

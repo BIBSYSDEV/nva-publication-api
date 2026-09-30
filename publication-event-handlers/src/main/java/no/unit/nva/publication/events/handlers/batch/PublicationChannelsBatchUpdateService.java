@@ -1,6 +1,5 @@
 package no.unit.nva.publication.events.handlers.batch;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import java.util.ArrayList;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -11,6 +10,7 @@ import no.unit.nva.publication.model.business.publicationchannel.PublicationChan
 import no.unit.nva.publication.service.impl.ResourceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class PublicationChannelsBatchUpdateService {
 

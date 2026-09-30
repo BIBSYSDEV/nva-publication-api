@@ -6,49 +6,25 @@ import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.util.Collections;
-import java.util.Objects;
 import java.util.Set;
-import nva.commons.core.JacocoGenerated;
+import no.unit.nva.model.Agent;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class ResearchData implements PublicationContext {
+@JsonTypeInfo(use = Id.NAME, property = "type")
+public record ResearchData(@JsonProperty(PUBLISHER_FIELD) Agent publisher)
+    implements PublicationContext {
 
   public static final String PUBLISHER_FIELD = "publisher";
 
-  @JsonProperty(PUBLISHER_FIELD)
-  private final PublishingHouse publisher;
-
-  public ResearchData(@JsonProperty(PUBLISHER_FIELD) PublishingHouse publisher) {
-    this.publisher = publisher;
-  }
-
-  public PublishingHouse getPublisher() {
+  @Override
+  public Agent publisher() {
     return isEffectivelyNullPublisher() ? new NullPublisher() : publisher;
   }
 
   private boolean isEffectivelyNullPublisher() {
-    return isNull(publisher) || !publisher.isValid();
-  }
-
-  @JacocoGenerated
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof ResearchData)) {
-      return false;
-    }
-    ResearchData that = (ResearchData) o;
-    return Objects.equals(publisher, that.publisher);
-  }
-
-  @JacocoGenerated
-  @Override
-  public int hashCode() {
-    return Objects.hash(publisher);
+    return isNull(publisher) || publisher instanceof PublishingHouse pub && !pub.isValid();
   }
 
   @JsonIgnore

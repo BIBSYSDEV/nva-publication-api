@@ -51,7 +51,6 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.PendingFile;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
@@ -691,9 +690,9 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     var ticket = persistPublishingRequestContainingExistingPendingOpenFiles(publication);
     var expectedFilesForApproval =
         publication.getAssociatedArtifacts().stream()
-            .filter(PendingFile.class::isInstance)
-            .map(PendingFile.class::cast)
+            .filter(File.class::isInstance)
             .map(File.class::cast)
+            .filter(File::isPending)
             .map(File::getIdentifier)
             .toArray(UUID[]::new);
 
@@ -835,7 +834,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     var persistedPublication = resourceService.createPublication(userInstance, publication);
     var ticket =
         GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, persistedPublication);
     var httpRequest = createUpdateTicketOwnershipRequest(ticket, curatingInstitution, SUPPORT);
     handler.handleRequest(httpRequest, output, CONTEXT);
 
@@ -852,7 +851,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     var persistedPublication = resourceService.createPublication(userInstance, publication);
     var ticket =
         GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, persistedPublication);
     var httpRequest = createUpdateTicketOwnershipRequest(ticket, randomUri(), SUPPORT);
     handler.handleRequest(httpRequest, output, CONTEXT);
 
@@ -875,7 +874,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
     var persistedPublication = resourceService.createPublication(userInstance, publication);
     var ticket =
         GeneralSupportRequest.create(Resource.fromPublication(persistedPublication), userInstance)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, persistedPublication);
     var httpRequest =
         createUpdateTicketOwnershipRequestWithRandomInstitution(
             ticket, curatingInstitution, SUPPORT);
@@ -1065,7 +1064,7 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
                 .withOwner(UserInstance.fromPublication(publication).getUsername())
                 .withOwnerAffiliation(publication.getResourceOwner().getOwnerAffiliation());
     publishingRequest.withFilesForApproval(getPendingFiles(publication));
-    return publishingRequest.persistNewTicket(ticketService);
+    return publishingRequest.persistNewTicket(ticketService, publication);
   }
 
   private TicketEntry persistFilesApprovalThesisContainingExistingPendingOpenFiles(
@@ -1074,13 +1073,14 @@ public class UpdateTicketHandlerTest extends TicketTestLocal {
             Resource.fromPublication(publication),
             UserInstance.fromPublication(publication),
             PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY)
-        .persistNewTicket(ticketService);
+        .persistNewTicket(ticketService, publication);
   }
 
   private Set<File> getPendingFiles(Publication publication) {
     return publication.getAssociatedArtifacts().stream()
-        .filter(PendingFile.class::isInstance)
+        .filter(File.class::isInstance)
         .map(File.class::cast)
+        .filter(File::isPending)
         .collect(Collectors.toSet());
   }
 

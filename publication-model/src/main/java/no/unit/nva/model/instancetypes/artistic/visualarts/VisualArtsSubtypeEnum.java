@@ -31,13 +31,11 @@ public enum VisualArtsSubtypeEnum {
   @Deprecated
   @JsonCreator
   public static VisualArtsSubtypeEnum parse(String candidate) {
-    return "Other".equalsIgnoreCase(candidate)
-        ? VisualArtsSubtypeEnum.OTHER
-        : inlineableParseMethod(candidate);
+    return "Other".equalsIgnoreCase(candidate) ? OTHER : inlineableParseMethod(candidate);
   }
 
   public static VisualArtsSubtypeEnum inlineableParseMethod(String candidate) {
-    return Arrays.stream(VisualArtsSubtypeEnum.values())
+    return Arrays.stream(values())
         .filter(value -> value.getType().equals(candidate))
         .collect(SingletonCollector.collect());
   }

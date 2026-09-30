@@ -6,10 +6,14 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -24,7 +28,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -38,6 +44,7 @@ import no.unit.nva.publication.model.storage.KeyField;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeEventBridgeClient;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,6 +66,8 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
   private static final String PROCESSING_DISABLED = "false";
   private static final int SQS_BATCH_SIZE = 10;
   private static final int SCAN_PAGE_SIZE = 1000;
+  private static final int SMALL_SCAN_PAGE_SIZE = 10;
+  private static final int MAX_EXPECTED_CONTINUATION_EVENTS = 50;
   private static final int TOTAL_SEGMENTS = 2;
   private static final int SEGMENT = 0;
   private static final int ONE_TOTAL_SEGMENTS = 1;
@@ -129,7 +138,7 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
   }
 
   @Test
-  void shouldTriggerNextBatchWhenMoreItemsExist() {
+  void shouldTriggerNextBatchWithIntactStartMarkerWhenMoreItemsExist() {
     when(context.getInvokedFunctionArn()).thenReturn(TEST_FUNCTION_ARN);
     var request = getRequest();
 
@@ -139,23 +148,83 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
         .when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
         .thenAnswer(this::createSendMessageBatchResponse);
 
-    var smallScanPAge = 10;
-
-    handler =
-        new LoadDynamodbResourceBatchJobHandler(
-            sqsClient,
-            eventBridgeClient,
-            TEST_QUEUE_URL,
-            PROCESSING_ENABLED,
-            resourceService,
-            new BatchFilterService(),
-            smallScanPAge,
-            SQS_BATCH_SIZE,
-            TOTAL_SEGMENTS);
+    handler = createHandlerWithScanPageSize(SMALL_SCAN_PAGE_SIZE);
 
     handler.processInput(request, event, context);
 
     assertThat(eventBridgeClient.getRequestEntries().size(), is(greaterThanOrEqualTo(1)));
+
+    var continuationRequest =
+        parseRequest(eventBridgeClient.getRequestEntries().getFirst().detail());
+    assertThat(continuationRequest.startMarker(), is(notNullValue()));
+    assertThat(continuationRequest.startMarker().isEmpty(), is(false));
+    assertThat(continuationRequest.itemsProcessed(), is(equalTo(SMALL_SCAN_PAGE_SIZE)));
+  }
+
+  @Test
+  void shouldPreserveStartMarkerWhenContinuationEventIsSerialized() {
+    var startMarker =
+        Map.of(
+            "PK0", randomString(),
+            "SK0", randomString(),
+            "PK2", randomString(),
+            "SK2", randomString());
+    var request =
+        new LoadDynamodbRequest(
+            TEST_JOB_TYPE,
+            startMarker,
+            List.of(KeyField.RESOURCE),
+            SEGMENT,
+            ONE_TOTAL_SEGMENTS,
+            null);
+
+    var eventEntry = request.createNewEventEntry("eventBusName", "detailType", TEST_FUNCTION_ARN);
+    var deserializedRequest = parseRequest(eventEntry.detail());
+
+    assertThat(deserializedRequest.startMarker(), is(equalTo(startMarker)));
+  }
+
+  @Test
+  void shouldProcessEveryItemExactlyOnceWhenReplayingContinuationEventsUntilCompletion() {
+    when(context.getInvokedFunctionArn()).thenReturn(TEST_FUNCTION_ARN);
+    var itemCount = 25;
+    createTestItems(itemCount);
+
+    lenient()
+        .when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
+        .thenAnswer(this::createSendMessageBatchResponse);
+
+    var smallPageHandler = createHandlerWithScanPageSize(SMALL_SCAN_PAGE_SIZE);
+
+    var itemsProcessed = runToCompletion(smallPageHandler, getRequest());
+
+    assertThat(itemsProcessed, is(equalTo(itemCount)));
+  }
+
+  @Test
+  void shouldStopContinuationChainLoudlyWhenMaxScannedItemsReached() {
+    var logRecorder = LogRecorder.forClass(LoadDynamodbResourceBatchJobHandler.class);
+    createTestItems(21);
+
+    lenient()
+        .when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
+        .thenAnswer(this::createSendMessageBatchResponse);
+
+    var smallPageHandler = createHandlerWithScanPageSize(SMALL_SCAN_PAGE_SIZE);
+    var request =
+        new LoadDynamodbRequest(
+            TEST_JOB_TYPE,
+            null,
+            List.of(KeyField.RESOURCE),
+            SEGMENT,
+            ONE_TOTAL_SEGMENTS,
+            null,
+            LoadDynamodbResourceBatchJobHandler.MAX_SCANNED_ITEMS_PER_SEGMENT);
+
+    smallPageHandler.processInput(request, event, context);
+
+    assertThat(eventBridgeClient.getRequestEntries(), is(empty()));
+    assertThat(logRecorder.messages(), hasItem(containsString("maximum")));
   }
 
   @Test
@@ -503,6 +572,46 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
   private static LoadDynamodbRequest getRequest() {
     return new LoadDynamodbRequest(
         TEST_JOB_TYPE, null, List.of(KeyField.RESOURCE), SEGMENT, ONE_TOTAL_SEGMENTS, null);
+  }
+
+  private LoadDynamodbResourceBatchJobHandler createHandlerWithScanPageSize(int pageSize) {
+    return new LoadDynamodbResourceBatchJobHandler(
+        sqsClient,
+        eventBridgeClient,
+        TEST_QUEUE_URL,
+        PROCESSING_ENABLED,
+        resourceService,
+        new BatchFilterService(),
+        pageSize,
+        SQS_BATCH_SIZE,
+        TOTAL_SEGMENTS);
+  }
+
+  private static LoadDynamodbRequest parseRequest(String detail) {
+    return attempt(() -> JsonUtils.dtoObjectMapper.readValue(detail, LoadDynamodbRequest.class))
+        .orElseThrow();
+  }
+
+  private int runToCompletion(
+      LoadDynamodbResourceBatchJobHandler handlerUnderTest, LoadDynamodbRequest initialRequest) {
+    var itemsProcessed =
+        handlerUnderTest.processInput(initialRequest, event, context).itemsProcessed();
+    var replayedEvents = 0;
+    while (!eventBridgeClient.getRequestEntries().isEmpty()) {
+      var pendingEvents = new ArrayList<>(eventBridgeClient.getRequestEntries());
+      eventBridgeClient.getRequestEntries().clear();
+      replayedEvents += pendingEvents.size();
+      assertThat(
+          "Continuation events keep repeating, indicating the start marker is lost in transit",
+          replayedEvents,
+          is(lessThan(MAX_EXPECTED_CONTINUATION_EVENTS)));
+      for (var pendingEvent : pendingEvents) {
+        var continuationRequest = parseRequest(pendingEvent.detail());
+        itemsProcessed +=
+            handlerUnderTest.processInput(continuationRequest, event, context).itemsProcessed();
+      }
+    }
+    return itemsProcessed;
   }
 
   private SendMessageBatchResponse createSendMessageBatchResponse(InvocationOnMock invocation) {

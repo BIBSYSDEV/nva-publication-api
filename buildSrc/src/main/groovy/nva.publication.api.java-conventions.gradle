@@ -1,68 +1,37 @@
 plugins {
-    id 'nva.publication.api.formatting'
-    id 'java'
-    id 'pmd'
-    id 'jacoco-report-aggregation'
-    id 'com.diffplug.spotless'
+    id 'nva.java-conventions'
+    id 'java-test-fixtures'
 }
 
-
-group = 'com.github.bibsysdev'
+nva {
+    generatedCode = [
+        'no/scopus/generated/**',
+        'no/unit/nva/model/testing/**',
+        'org/datacite/schema/**'
+    ]
+    java {
+        languageVersion = 25
+    }
+    pmd {
+        rulesetFile = rootProject.file('config/pmd/ruleset.xml')
+    }
+}
 
 dependencies {
-    testImplementation nvaCatalog.bundles.testing.mockito
-    testImplementation nvaCatalog.bundles.testing.hamcrest
-    testImplementation nvaCatalog.bundles.testing.junit
+    implementation(platform(nvaCatalog.aws.sdk2.bom))
+    testImplementation(platform(nvaCatalog.junit.bom))
+    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
+    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
 }
 
 tasks.named('test') {
     environment("API_HOST", "localhost")
-    useJUnitPlatform {
-        excludeTags  = [
-            "RemoteTest",
-            "integrationTest",
-            "KarateTest"
-        ]
-    }
-    failFast = false
-    testLogging {
-        events = [
-            'skipped',
-            'passed',
-            'failed'
-        ]
-        showCauses = true
-        exceptionFormat = "full"
-    }
+    // DynamoDBLocal loads the native sqlite4java library via System.load,
+    // which JDK 24+ (JEP 472) blocks unless native access is granted.
+    jvmArgs '--enable-native-access=ALL-UNNAMED'
 }
 
-pmd {
-    toolVersion = '7.23.0'
-    ruleSetConfig = rootProject.resources.text.fromFile('config/pmd/ruleset.xml')
-    ruleSets = []
-    ignoreFailures = false
-}
-
-check.dependsOn jacocoTestCoverageVerification
-jacocoTestCoverageVerification.dependsOn(jacocoTestReport)
-
-jacocoTestCoverageVerification {
-
-    violationRules {
-        rule {
-            limit {
-                counter = 'METHOD'
-                value = 'COVEREDRATIO'
-                minimum = 1.000
-            }
-        }
-
-        rule {
-            limit {
-                counter = 'CLASS'
-                value = 'COVEREDRATIO'
-                minimum = 1.000
-            }
-        }
-    }
+tasks.withType(JavaCompile).configureEach {
+    // Disabled because of a bug in ErrorProne (https://github.com/google/error-prone/issues/4918)
+    options.errorprone.disable("StringConcatToTextBlock")
 }

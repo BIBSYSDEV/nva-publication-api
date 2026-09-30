@@ -18,7 +18,6 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(ExpandedDoiRequest.TYPE)
-@SuppressWarnings("PMD.TooManyFields")
 public final class ExpandedDoiRequest extends ExpandedTicket {
 
   public static final String TYPE = "DoiRequest";
@@ -32,8 +31,7 @@ public final class ExpandedDoiRequest extends ExpandedTicket {
       ResourceService resourceService,
       TicketService ticketService)
       throws NotFoundException {
-    var expandedDoiRequest =
-        ExpandedDoiRequest.fromDoiRequest(doiRequest, resourceService, expansionService);
+    var expandedDoiRequest = fromDoiRequest(doiRequest, resourceService, expansionService);
     expandedDoiRequest.setOrganization(expansionService.getOrganization(doiRequest));
     expandedDoiRequest.setMessages(
         expandMessages(doiRequest.fetchMessages(ticketService), expansionService));

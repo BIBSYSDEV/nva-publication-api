@@ -6,6 +6,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -55,7 +56,7 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UnixPath;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -212,7 +213,7 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
 
   @Test
   void shouldThrowOnAPIFailure() throws IOException, BadRequestException, InterruptedException {
-    final var logger = LogUtils.getTestingAppenderForRootLogger();
+    var logRecorder = LogRecorder.forRoot(HandleIdentifierEventHandlerTest.class);
     var oldImage = createUnpublishedPublicationWithAdditionalIdentifiers(null);
     var newImage = oldImage.copy().withStatus(PublicationStatus.PUBLISHED).build();
 
@@ -220,7 +221,7 @@ public class HandleIdentifierEventHandlerTest extends ResourcesLocalTest {
 
     var request = emulateSqsWrappedEvent(oldImage, newImage);
     assertThrows(RuntimeException.class, () -> handler.handleRequest(request, CONTEXT));
-    assertThat(logger.getMessages(), containsString("Error response from server: 400"));
+    assertThat(logRecorder.messages(), hasItem(containsString("Error response from server: 400")));
   }
 
   @Test

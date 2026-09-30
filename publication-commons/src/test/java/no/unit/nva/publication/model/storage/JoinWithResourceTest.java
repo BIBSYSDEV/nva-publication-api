@@ -12,13 +12,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 class JoinWithResourceTest extends ResourcesLocalTest {
 
@@ -38,15 +38,16 @@ class JoinWithResourceTest extends ResourcesLocalTest {
     client.putItem(toPutItemRequest(resourceDao));
     client.putItem(toPutItemRequest(doiRequestDao));
 
-    QueryResult result =
+    var result =
         client.query(
-            new QueryRequest()
-                .withTableName(RESOURCES_TABLE_NAME)
-                .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                .withKeyConditions(
+            QueryRequest.builder()
+                .tableName(RESOURCES_TABLE_NAME)
+                .indexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                .keyConditions(
                     resourceDao.byResource(
                         resourceDao.joinByResourceContainedOrderedType(),
-                        doiRequestDao.joinByResourceContainedOrderedType())));
+                        doiRequestDao.joinByResourceContainedOrderedType()))
+                .build());
 
     List<JoinWithResource> retrievedData = parseResult(result);
 
@@ -71,7 +72,7 @@ class JoinWithResourceTest extends ResourcesLocalTest {
 
     QueryRequest query =
         fetchResourceAndDoiRequest(resourceDao, doiRequestDao.joinByResourceContainedOrderedType());
-    QueryResult result = client.query(query);
+    var result = client.query(query);
 
     List<JoinWithResource> retrievedData = parseResult(result);
 
@@ -82,14 +83,15 @@ class JoinWithResourceTest extends ResourcesLocalTest {
 
   private QueryRequest fetchResourceAndDoiRequest(ResourceDao resourceDao, String selectedType) {
 
-    return new QueryRequest()
-        .withTableName(RESOURCES_TABLE_NAME)
-        .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-        .withKeyConditions(resourceDao.byResource(selectedType));
+    return QueryRequest.builder()
+        .tableName(RESOURCES_TABLE_NAME)
+        .indexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+        .keyConditions(resourceDao.byResource(selectedType))
+        .build();
   }
 
-  private List<JoinWithResource> parseResult(QueryResult result) {
-    return result.getItems().stream()
+  private List<JoinWithResource> parseResult(QueryResponse result) {
+    return result.items().stream()
         .map(item -> parseAttributeValuesMap(item, JoinWithResource.class))
         .collect(Collectors.toList());
   }

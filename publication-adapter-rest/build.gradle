@@ -2,6 +2,12 @@ plugins {
     id 'application'
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
 dependencies {
     implementation project(':publication-rest')
     implementation(project(':publication-commons')) {
@@ -17,11 +23,12 @@ dependencies {
     implementation nvaLibs.json
 
     implementation nvaCatalog.aws.lambda.core
-    implementation nvaCatalog.aws.sdk.dynamo
+    implementation nvaCatalog.aws.sdk2.dynamo
     implementation nvaCatalog.jackson.databind
-    implementation nvaCatalog.bundles.logging
+    implementation nvaCatalog.log4j.core
+    implementation nvaCatalog.slf4j.api
 
-    implementation(nvaCatalog.aws.dynamodb.local) {
+    implementation(nvaCatalog.aws.sdk2.dynamodblocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
         exclude group: 'org.eclipse.jetty'
@@ -38,5 +45,3 @@ dependencies {
 application {
     mainClass = 'no.unit.nva.publication.adapter.AdapterApplication'
 }
-
-jacocoTestCoverageVerification.enabled = false

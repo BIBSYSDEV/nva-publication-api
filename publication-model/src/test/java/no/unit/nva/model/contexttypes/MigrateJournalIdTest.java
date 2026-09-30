@@ -5,12 +5,13 @@ import static no.unit.nva.utils.MigrateSerialPublicationsUtil.constructExampleId
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 import no.unit.nva.model.contexttypes.utils.MigrateSerialPublicationUtil;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.Test;
 
 @Deprecated
@@ -41,30 +42,30 @@ public class MigrateJournalIdTest {
   @Test
   void shouldLogUriIfOldIdHasUnexpectedPath() {
     var oldId = constructExampleIdWithPath("unexpected-path");
-    var appender = LogUtils.getTestingAppender(MigrateSerialPublicationUtil.class);
+    var logRecorder = LogRecorder.forClass(MigrateSerialPublicationUtil.class);
 
     new Journal(oldId);
 
-    assertThat(appender.getMessages(), containsString(oldId.toString()));
+    assertThat(logRecorder.messages(), hasItem(containsString(oldId.toString())));
   }
 
   @Test
   void shouldLogUriIfOldIdHasUnexpectedForm() {
     var oldId = randomUri();
-    var appender = LogUtils.getTestingAppender(MigrateSerialPublicationUtil.class);
+    var logRecorder = LogRecorder.forClass(MigrateSerialPublicationUtil.class);
 
     new Journal(oldId);
 
-    assertThat(appender.getMessages(), containsString(oldId.toString()));
+    assertThat(logRecorder.messages(), hasItem(containsString(oldId.toString())));
   }
 
   @Test
   void shouldNotLogUriIfIdIsAlreadyMigrated() {
     var oldId = constructExampleIdWithPath("serial-publication");
-    var appender = LogUtils.getTestingAppender(MigrateSerialPublicationUtil.class);
+    var logRecorder = LogRecorder.forClass(MigrateSerialPublicationUtil.class);
 
     new Journal(oldId);
 
-    assertThat(appender.getMessages(), not(containsString(oldId.toString())));
+    assertThat(logRecorder.messages(), not(hasItem(containsString(oldId.toString()))));
   }
 }

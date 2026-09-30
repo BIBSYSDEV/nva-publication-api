@@ -1,17 +1,16 @@
-project.ext {
-    jaxbTargetDir = file("$buildDir/generated/sources/xjc")
+plugins {
+    id 'nva.publication.api.java-conventions'
 }
-
-sourceSets.main.java.srcDirs += jaxbTargetDir
 
 configurations {
     xjc
 }
 
 dependencies {
-    xjc libs.bundles.xsd2java
-    implementation libs.bundles.xsd2java
-    testImplementation nvaLibs.testutils
+    api(libs.xsd2java.jakarta)
+    runtimeOnly(libs.jaxb.runtime4)
+    xjc(libs.jaxb.runtime4)
+    xjc(libs.jaxb.xjc4)
 }
 
 @CacheableTask
@@ -38,7 +37,9 @@ abstract class Xsd2Pojo extends DefaultTask {
         ant.taskdef(
                 name: 'xjc',
                 classname: 'com.sun.tools.xjc.XJC2Task',
-                classpath: normalizedClasspath.collect { it.absolutePath }.join(File.pathSeparator)
+                classpath: normalizedClasspath.collect {
+                    it.absolutePath
+                }.join(File.pathSeparator)
                 )
         ant.xjc(
                 destdir: getOutputDir().get().asFile,
@@ -49,21 +50,15 @@ abstract class Xsd2Pojo extends DefaultTask {
     }
 }
 
-tasks.register('xsd2java', Xsd2Pojo) {
+def xsd2java = tasks.register('xsd2java', Xsd2Pojo) {
     schemaUri = 'https://schema.elsevier.com/dtds/document/abstracts/xocs-ani515.xsd'
     bindingFile = file('src/main/resources/xocs-ani515.xjb')
     xjcClasspath = configurations.xjc
-    outputDir = jaxbTargetDir
+    outputDir = layout.buildDirectory.dir('generated/sources/xjc')
 }
+
+sourceSets.main.java.srcDir(xsd2java.flatMap { it.outputDir })
 
 tasks.withType(Jar).configureEach {
     outputs.cacheIf { true }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    dependsOn(xsd2java)
-}
-
-tasks.withType(Pmd).configureEach {
-    exclude { '**/generated/*' }
 }

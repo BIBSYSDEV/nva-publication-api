@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.model.associatedartifacts.file.HiddenFile;
+import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.model.associatedartifacts.file.ImportUploadDetails;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -162,7 +162,7 @@ public class UpdatePublicationsFromBrageHandler implements RequestStreamHandler 
 
   private Optional<File> readDublinCoreFromResource(Resource resource, String archive) {
     return resource.getFiles().stream()
-        .filter(HiddenFile.class::isInstance)
+        .filter(file -> FileStatus.from(file) == FileStatus.HIDDEN)
         .filter(file -> DUBLIN_CORE_XML.equals(file.getName()))
         .filter(file -> isUploadedFrom(file, archive))
         .findFirst();

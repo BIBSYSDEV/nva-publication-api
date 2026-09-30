@@ -109,12 +109,12 @@ public class UpdatedPublicationChannelEventHandlerTest extends ResourcesLocalTes
     var pendingTicket =
         pendingFilesApprovalThesis(
                 publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var completedTicket =
         pendingFilesApprovalThesis(
                 publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
             .complete(publication, USER_INSTANCE)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
 
     var handler =
         new UpdatedPublicationChannelEventHandler(s3Client, ticketService, resourceService);
@@ -151,12 +151,12 @@ public class UpdatedPublicationChannelEventHandlerTest extends ResourcesLocalTes
     var pendingTicket =
         pendingFilesApprovalThesis(
                 publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var completedTicket =
         pendingFilesApprovalThesis(
                 publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
             .complete(publication, USER_INSTANCE)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
 
     var handler =
         new UpdatedPublicationChannelEventHandler(s3Client, ticketService, resourceService);
@@ -199,12 +199,12 @@ public class UpdatedPublicationChannelEventHandlerTest extends ResourcesLocalTes
         pendingFilesApprovalThesis(
                 publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
             .applyPublicationChannelClaim(claimingOrganizationId, channelClaimIdentifier)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var completedTicket =
         pendingFilesApprovalThesis(
                 publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
             .complete(publication, USER_INSTANCE)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
 
     var handler =
         new UpdatedPublicationChannelEventHandler(s3Client, ticketService, resourceService);
@@ -242,12 +242,12 @@ public class UpdatedPublicationChannelEventHandlerTest extends ResourcesLocalTes
         pendingFilesApprovalThesis(
                 publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
             .applyPublicationChannelClaim(claimingOrganizationId, channelClaimIdentifier)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var completedTicket =
         pendingFilesApprovalThesis(
                 publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
             .complete(publication, USER_INSTANCE)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
 
     var handler =
         new UpdatedPublicationChannelEventHandler(s3Client, ticketService, resourceService);
@@ -287,12 +287,12 @@ public class UpdatedPublicationChannelEventHandlerTest extends ResourcesLocalTes
                 publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
             .applyPublicationChannelClaim(
                 differentClaimingOrganizationId, differentChannelClaimIdentifier)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
     var completedTicket =
         pendingFilesApprovalThesis(
                 publication, userTopLevelOrganizationId, userAffiliationOrganizationId)
             .complete(publication, USER_INSTANCE)
-            .persistNewTicket(ticketService);
+            .persistNewTicket(ticketService, publication);
 
     var handler =
         new UpdatedPublicationChannelEventHandler(s3Client, ticketService, resourceService);

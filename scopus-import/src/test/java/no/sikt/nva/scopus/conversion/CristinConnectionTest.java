@@ -5,11 +5,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static no.unit.nva.publication.testing.CristinUriGenerator.cristinPersonUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.mock;
@@ -27,7 +29,7 @@ import no.unit.nva.expansion.model.cristin.CristinOrganization;
 import no.unit.nva.stubs.WiremockHttpClient;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -48,24 +50,25 @@ class CristinConnectionTest {
   @Test
   void shouldLogErrorIfCristinProxyRespondsWithErrorCodeForPerson(
       WireMockRuntimeInfo wireMockRuntimeInfo) {
-    var appender = LogUtils.getTestingAppender(CristinConnection.class);
+    var logRecorder = LogRecorder.forClass(CristinConnection.class);
     var randomPersonUri = getRandomPersonUri(wireMockRuntimeInfo);
     mockCristinPersonBadRequest();
     var actualPerson = cristinConnection.getCristinPersonByCristinId(randomPersonUri);
     assertThat(actualPerson.isEmpty(), is((true)));
-    assertThat(appender.getMessages(), containsString("Could not fetch cristin person"));
+    assertThat(logRecorder.messages(), hasItem(containsString("Could not fetch cristin person")));
   }
 
   @Test
   void shouldLogErrorIfCristinProxyRespondsWithErrorCodeForOrganization(
       WireMockRuntimeInfo wireMockRuntimeInfo) {
-    var appender = LogUtils.getTestingAppender(CristinConnection.class);
+    var logRecorder = LogRecorder.forClass(CristinConnection.class);
     var randomOrganizationUri = getRandomOrganizationUri(wireMockRuntimeInfo);
     mockCristinOrganizationBadRequest();
     var actualOrganization =
         cristinConnection.fetchCristinOrganizationByCristinId(randomOrganizationUri);
     assertThat(actualOrganization, is(nullValue()));
-    assertThat(appender.getMessages(), containsString("Could not fetch cristin organization"));
+    assertThat(
+        logRecorder.messages(), hasItem(containsString("Could not fetch cristin organization")));
   }
 
   @Test
@@ -145,12 +148,7 @@ class CristinConnectionTest {
   }
 
   private static URI getRandomPersonUri(WireMockRuntimeInfo wireMockRuntimeInfo) {
-    var baseUri = wireMockRuntimeInfo.getHttpsBaseUrl();
-    return UriWrapper.fromUri(baseUri)
-        .addChild("cristin")
-        .addChild("person")
-        .addChild(randomString())
-        .getUri();
+    return cristinPersonUri(URI.create(wireMockRuntimeInfo.getHttpsBaseUrl()), randomString());
   }
 
   private CristinOrganization createExpectedOrganization(URI organizationId) {

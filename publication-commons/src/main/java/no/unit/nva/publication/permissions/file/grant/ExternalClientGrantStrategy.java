@@ -1,8 +1,6 @@
 package no.unit.nva.publication.permissions.file.grant;
 
 import no.unit.nva.model.FileOperation;
-import no.unit.nva.model.associatedartifacts.file.InternalFile;
-import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -21,6 +19,6 @@ public class ExternalClientGrantStrategy extends FileStrategyBase implements Fil
   }
 
   private boolean isAllowedFileType() {
-    return file.getFile() instanceof OpenFile || file.getFile() instanceof InternalFile;
+    return file.getFile().isApproved();
   }
 }

@@ -41,7 +41,7 @@ public class ErrorDetails {
       return false;
     }
     var errorDetail = (ErrorDetails) o;
-    return this.errorCode.equals(errorDetail.errorCode);
+    return this.errorCode == errorDetail.errorCode;
   }
 
   @Override

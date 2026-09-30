@@ -13,16 +13,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.ListPartsRequest;
-import com.amazonaws.services.s3.model.PartListing;
-import com.amazonaws.services.s3.model.PartSummary;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import no.unit.nva.publication.file.upload.restmodel.ListPartsElement;
 import no.unit.nva.publication.file.upload.restmodel.ListPartsRequestBody;
 import no.unit.nva.publication.file.upload.restmodel.ListPartsResponseBody;
@@ -32,6 +26,11 @@ import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ListPartsRequest;
+import software.amazon.awssdk.services.s3.model.ListPartsResponse;
+import software.amazon.awssdk.services.s3.model.Part;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 public class ListPartsHandlerTest {
 
@@ -43,11 +42,11 @@ public class ListPartsHandlerTest {
   private ListPartsHandler listPartsHandler;
   private ByteArrayOutputStream outputStream;
   private Context context;
-  private AmazonS3Client s3client;
+  private S3Client s3client;
 
   @BeforeEach
   void setUp() {
-    s3client = mock(AmazonS3Client.class);
+    s3client = mock(S3Client.class);
     listPartsHandler = new ListPartsHandler(s3client, new Environment());
     context = mock(Context.class);
     outputStream = new ByteArrayOutputStream();
@@ -88,7 +87,7 @@ public class ListPartsHandlerTest {
 
   @Test
   void listPartsWithS3ErrorReturnsInternalServerError() throws IOException {
-    when(s3client.listParts(any(ListPartsRequest.class))).thenThrow(AmazonS3Exception.class);
+    when(s3client.listParts(any(ListPartsRequest.class))).thenThrow(S3Exception.class);
     listPartsHandler.handleRequest(listPartsRequestWithBody(), outputStream, context);
     var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
 
@@ -98,13 +97,15 @@ public class ListPartsHandlerTest {
   }
 
   @Test
-  void canCreateListPartsElementFromPartSummary() {
-    var partSummary = new PartSummary();
-    partSummary.setPartNumber(SAMPLE_PART_NUMBER);
-    partSummary.setETag(SAMPLE_ETAG);
-    partSummary.setSize(SAMPLE_SIZE);
+  void canCreateListPartsElementFromPart() {
+    var part =
+        Part.builder()
+            .partNumber(SAMPLE_PART_NUMBER)
+            .eTag(SAMPLE_ETAG)
+            .size((long) SAMPLE_SIZE)
+            .build();
 
-    var listPartsElement = ListPartsElement.create(partSummary);
+    var listPartsElement = ListPartsElement.create(part);
 
     assertThat(listPartsElement.etag(), is(equalTo(SAMPLE_ETAG)));
     assertThat(listPartsElement.partNumber(), is(equalTo(Integer.toString(SAMPLE_PART_NUMBER))));
@@ -136,28 +137,15 @@ public class ListPartsHandlerTest {
     return new ListPartsRequestBody(SAMPLE_UPLOAD_ID, SAMPLE_KEY);
   }
 
-  private PartListing listPartsResponse() {
-    var partSummary1 = new PartSummary();
-    partSummary1.setPartNumber(1);
-    partSummary1.setETag("ETag1");
-    partSummary1.setSize(1);
-    var partsSummary = new ArrayList<PartSummary>();
-    partsSummary.add(partSummary1);
-
-    var partSummary2 = new PartSummary();
-    partSummary2.setPartNumber(2);
-    partSummary2.setETag("ETag2");
-    partSummary2.setSize(2);
-    partsSummary.add(partSummary2);
-
-    var listPartsResponse = new PartListing();
-    listPartsResponse.setParts(partsSummary);
-    return listPartsResponse;
+  private ListPartsResponse listPartsResponse() {
+    var part1 = Part.builder().partNumber(1).eTag("ETag1").size(1L).build();
+    var part2 = Part.builder().partNumber(2).eTag("ETag2").size(2L).build();
+    return ListPartsResponse.builder().parts(part1, part2).build();
   }
 
-  private PartListing truncatedPartListing() {
-    var partListing = mock(PartListing.class);
-    when(partListing.getParts()).thenReturn(listPartsResponse().getParts());
+  private ListPartsResponse truncatedPartListing() {
+    var partListing = mock(ListPartsResponse.class);
+    when(partListing.parts()).thenReturn(listPartsResponse().parts());
     when(partListing.isTruncated()).thenReturn(true).thenReturn(false);
     return partListing;
   }

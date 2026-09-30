@@ -6,15 +6,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import no.unit.nva.publication.queue.QueueClient;
+import no.unit.nva.publication.queue.QueueMessageSender;
 import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchResultEntry;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
-public class FakeSqsClient implements QueueClient {
+public class FakeSqsClient implements QueueClient, QueueMessageSender {
 
   private final List<Message> deliveredMessages = new ArrayList<>();
 
   public List<Message> getDeliveredMessages() {
     return deliveredMessages;
+  }
+
+  public List<String> getMessageBodies() {
+    return deliveredMessages.stream().map(Message::body).toList();
   }
 
   @Override
@@ -26,6 +35,23 @@ public class FakeSqsClient implements QueueClient {
             .messageId(randomString())
             .build();
     deliveredMessages.add(message);
+  }
+
+  @Override
+  public SendMessageBatchResponse sendMessageBatch(
+      SendMessageBatchRequest sendMessageBatchRequest) {
+    sendMessageBatchRequest
+        .entries()
+        .forEach(
+            entry ->
+                deliveredMessages.add(
+                    Message.builder().body(entry.messageBody()).messageId(randomString()).build()));
+    var resultEntries =
+        sendMessageBatchRequest.entries().stream()
+            .map(SendMessageBatchRequestEntry::id)
+            .map(id -> SendMessageBatchResultEntry.builder().id(id).build())
+            .toList();
+    return SendMessageBatchResponse.builder().successful(resultEntries).build();
   }
 
   @Override

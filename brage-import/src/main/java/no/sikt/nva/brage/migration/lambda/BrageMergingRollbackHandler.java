@@ -3,11 +3,11 @@ package no.sikt.nva.brage.migration.lambda;
 import static no.sikt.nva.brage.migration.lambda.BrageEntryEventConsumer.UPDATE_REPORTS_PATH;
 import static nva.commons.core.attempt.Try.attempt;
 
-import com.amazonaws.services.kms.model.NotFoundException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import no.sikt.nva.brage.migration.merger.BrageMergingReport;
+import no.sikt.nva.brage.migration.rollback.NotFoundException;
 import no.sikt.nva.brage.migration.rollback.RollBackConflictException;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.EventHandler;

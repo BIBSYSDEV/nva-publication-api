@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-@SuppressWarnings("PMD.ShortClassName")
 public class Type {
 
   private final List<String> brage;

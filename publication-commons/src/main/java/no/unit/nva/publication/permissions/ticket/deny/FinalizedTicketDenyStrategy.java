@@ -23,7 +23,7 @@ public class FinalizedTicketDenyStrategy extends TicketStrategyBase implements T
 
   @Override
   public boolean deniesAction(TicketOperation permission) {
-    if (READ.equals(permission)) {
+    if (READ == permission) {
       return false;
     }
     return List.of(CLOSED, COMPLETED, REMOVED, NOT_APPLICABLE).contains(ticket.getStatus());

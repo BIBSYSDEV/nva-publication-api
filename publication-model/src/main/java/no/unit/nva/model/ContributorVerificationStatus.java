@@ -40,7 +40,7 @@ public enum ContributorVerificationStatus {
                     format(
                         ERROR_MESSAGE_TEMPLATE,
                         candidate,
-                        stream(ContributorVerificationStatus.values())
+                        stream(values())
                             .map(ContributorVerificationStatus::toString)
                             .collect(joining(DELIMITER)))));
   }

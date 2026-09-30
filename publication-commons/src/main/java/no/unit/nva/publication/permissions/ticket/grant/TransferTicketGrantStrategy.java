@@ -20,7 +20,7 @@ public class TransferTicketGrantStrategy extends TicketStrategyBase implements T
 
   @Override
   public boolean allowsAction(TicketOperation permission) {
-    if (!permission.equals(TRANSFER)) {
+    if (permission != TRANSFER) {
       return false;
     }
 

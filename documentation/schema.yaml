@@ -2698,7 +2698,6 @@ SeriesEpisode:
       type: string
 SoftwareSourceCode:
   required:
-    - softwareVersion
     - type
   type: object
   allOf:

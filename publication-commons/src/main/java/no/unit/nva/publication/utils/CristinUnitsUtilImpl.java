@@ -81,12 +81,12 @@ public class CristinUnitsUtilImpl implements CristinUnitsUtil {
   }
 
   private static Optional<CristinUnit> findTopLevelUnitOrSelf(String unitId) {
-    var unit = CristinUnitsUtilImpl.allUnits.get(unitId);
+    var unit = allUnits.get(unitId);
     if (isNull(unit)) {
       return Optional.empty();
     }
     while (nonNull(unit.parentUnit())) {
-      unit = CristinUnitsUtilImpl.allUnits.get(unit.parentUnit().id());
+      unit = allUnits.get(unit.parentUnit().id());
     }
     return Optional.of(unit);
   }
