@@ -59,6 +59,8 @@ EXTERNAL_USER_POOL_URI="http://localhost:8090/external" \
 API_HOST="localhost" \
 COGNITO_AUTHORIZER_URLS="http://localhost:3000" \
 NVA_FRONTEND_DOMAIN="localhost" \
+CUSTOM_DOMAIN_BASE_PATH="publication" \
+NVA_EVENT_BUS_NAME="local-event-bus" \
 ./gradlew :publication-adapter-rest:run
 ```
 
@@ -107,8 +109,7 @@ hits the stub instead of an external service.
    only `paths`, HTTP methods and extensions are used for routing.
 2. **If the handler only needs types already registered in `HandlerContainer`** —
    nothing else to do. The container picks the constructor with the most
-   matching parameter types (which naturally skips `@JacocoGenerated` no-arg
-   constructors), so the handler is instantiated automatically.
+   matching parameter types, so the handler is instantiated automatically.
 3. **If it needs a new collaborator** — register the type once in
    `buildLocalContainer()`:
    ```java
@@ -123,8 +124,18 @@ hits the stub instead of an external service.
                         buildSomethingCustom()));
    ```
 
-Currently registered types: `ResourceService`, `Environment`, `RawContentRetriever`,
-`IdentityServiceClient`, `SecretsManagerClient`, `HttpClient`.
+Currently registered types: `ResourceService`, `TicketService`, `MessageService`,
+`PublishingService`, `TicketResolver`, `Environment`, `RawContentRetriever`,
+`IdentityServiceClient`, `SecretsManagerClient`, `HttpClient`, `EventBridgeClient`,
+`DataCiteDoiClient` / `DoiClient`.
+
+Matching is on **exact** parameter type, not assignability — a handler declaring
+an interface needs that interface registered, which is why `DoiClient` and
+`DataCiteDoiClient` both point at the same instance.
+
+A handler whose collaborators aren't all registered fails loudly. It deliberately
+does **not** fall back to the no-arg constructor, since those call
+`ResourceService.defaultService()` and would quietly talk to real AWS.
 
 Operations without `x-handler-class` are skipped at startup with a `Skipping ...`
 log line. If the container can't satisfy any constructor for a registered class,
@@ -142,9 +153,9 @@ services. Registered: [...]`.
   don't run here — it's a harness, not shipping logic. JUnit is wired up
   directly in `build.gradle` instead, along with the env vars the handlers read
   at construction time.
-- **Only two handlers wired:** `FetchPublicationHandler` (GET) and
-  `CreatePublicationHandler` (POST), out of 29 operations in `docs/openapi.yaml`.
-  The remaining 27 mostly need new collaborator types registered, not factories.
+- **13 of 29 operations wired.** Publication CRUD, publish, by-owner, the four
+  ticket operations, log and context. `AdapterApplicationTest` asserts that every
+  `x-handler-class` in `docs/openapi.yaml` can actually be constructed.
 - **One handler instance per request.** `HandlerContainer.create()` runs on every
   call, so each request reflects over the constructor and builds a new handler.
   Fine for a harness; needs caching before this serves real traffic.
@@ -168,11 +179,14 @@ services. Registered: [...]`.
    from here on should get a case in it. Note that GET needs an explicit
    `Accept: application/json`; without it content negotiation picks a text type
    and the handler answers `303` with a landing-page `Location`.
-2. **Register the missing collaborator types.** `HandlerContainer` already picks
-   the constructor with the most matching parameter types, so most of the
-   remaining 27 operations need a type registered in `buildLocalContainer()`,
-   not a factory. Reserve `registerFactory` for handlers that genuinely need
-   per-instance configuration.
+2. ~~**Register the missing collaborator types.**~~ Done for everything that
+   doesn't need S3 — 13 of 29 operations now route. It took no factories at all,
+   only types registered in `buildLocalContainer()` plus two env vars
+   (`CUSTOM_DOMAIN_BASE_PATH`, `NVA_EVENT_BUS_NAME`). What remains:
+   - **7 file-upload + 2 download operations** need S3 (see "No S3" above).
+   - **2 message operations** live in a module this one doesn't depend on.
+   - **4 import-candidate operations** construct fine but would read the
+     resources table; they need their own table before being switched on.
 3. **Fail the build on drift.** A test that walks `docs/openapi.yaml` and reports
    operations without `x-handler-class` (against an explicit allow-list of
    not-yet-ported ones). Otherwise a handler added to `template.yaml` silently

@@ -1,6 +1,7 @@
 package no.unit.nva.publication.adapter;
 
 import java.lang.reflect.Constructor;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -45,9 +46,21 @@ public final class HandlerContainer {
     }
 
     private Optional<Constructor<?>> bestMatchingConstructor(Class<?> handlerClass) {
-        return java.util.Arrays.stream(handlerClass.getDeclaredConstructors())
+        return Arrays.stream(handlerClass.getDeclaredConstructors())
                    .filter(this::allParameterTypesRegistered)
+                   .filter(ctor -> takesArguments(ctor) || onlyHasNoArgConstructor(handlerClass))
                    .max(Comparator.comparingInt(Constructor::getParameterCount));
+    }
+
+    private static boolean takesArguments(Constructor<?> ctor) {
+        return ctor.getParameterCount() > 0;
+    }
+
+    // The no-arg constructors reach for real AWS services, so falling back to one
+    // silently turns an unwired handler into a live call
+    private static boolean onlyHasNoArgConstructor(Class<?> handlerClass) {
+        return Arrays.stream(handlerClass.getDeclaredConstructors())
+                   .noneMatch(HandlerContainer::takesArguments);
     }
 
     private boolean allParameterTypesRegistered(Constructor<?> ctor) {

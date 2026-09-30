@@ -144,6 +144,7 @@ paths:
                 $ref: "#/components/schemas/Problem"
     put:
       operationId: updatePublication
+      x-handler-class: no.unit.nva.publication.update.UpdatePublicationHandler
       summary: Update Publication for Identifier
       tags:
         - external
@@ -219,6 +220,7 @@ paths:
                 $ref: "#/components/schemas/Problem"
     delete:
       operationId: deletePublication
+      x-handler-class: no.unit.nva.publication.delete.DeletePublicationHandler
       summary: Delete Publication for Identifier
       tags:
         - external
@@ -255,6 +257,7 @@ paths:
   /{publicationIdentifier}/publish:
     post:
       operationId: publishPublication
+      x-handler-class: no.unit.nva.publication.update.PublishPublicationHandler
       summary: Publish publication by identifier
       security:
         - CognitoUserPool:
@@ -322,6 +325,7 @@ paths:
   /by-owner:
     get:
       operationId: listPublicationsByOwner
+      x-handler-class: no.unit.nva.publication.fetch.PublicationsByOwnerHandler
       summary: Get Publications by Owner
       tags:
         - external
@@ -425,6 +429,7 @@ paths:
         description: UUID of the publication
     post:
       operationId: createTicketForPublication
+      x-handler-class: no.unit.nva.publication.ticket.create.CreateTicketHandler
       description: Create a new ticket
       requestBody:
         content:
@@ -478,6 +483,7 @@ paths:
         description: UUID of the ticket
     put:
       operationId: updateTicketForPublication
+      x-handler-class: no.unit.nva.publication.ticket.update.UpdateTicketHandler
       description: Update existing ticket
       requestBody:
         description: A Ticket Object containing the status, assignee and viewedStatus
@@ -531,6 +537,7 @@ paths:
         type: AWS_PROXY
     delete:
       operationId: deleteTicketForPublication
+      x-handler-class: no.unit.nva.publication.ticket.delete.DeleteTicketHandler
       description: Delete existing ticket
       responses:
         "200":
@@ -574,6 +581,7 @@ paths:
         type: AWS_PROXY
     get:
       operationId: fetchTicketForPublication
+      x-handler-class: no.unit.nva.publication.ticket.read.GetTicketHandler
       description: Get an existing ticket
       responses:
         "200":
@@ -1235,6 +1243,7 @@ paths:
         description: UUID of the ticket
     get:
       operationId: listTicketsForPublication
+      x-handler-class: no.unit.nva.publication.ticket.read.ListTicketsForPublicationHandler
       description: List tickets for publication
       responses:
         "200":
@@ -1272,6 +1281,7 @@ paths:
   /{publicationIdentifier}/log:
     get:
       operationId: fetchPublicationLog
+      x-handler-class: no.unit.nva.publication.log.rest.FetchPublicationLogHandler
       summary: Fetch Publication log by identifier
       parameters:
         - in: path
@@ -1324,6 +1334,7 @@ paths:
   /context:
     get:
       operationId: fetchPublicationContext
+      x-handler-class: no.unit.nva.publication.fetch.FetchPublicationContextHandler
       summary: Fetch Publication context
       tags:
         - external

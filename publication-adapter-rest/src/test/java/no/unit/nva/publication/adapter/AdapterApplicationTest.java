@@ -4,9 +4,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
+import io.swagger.v3.oas.models.Operation;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -14,7 +16,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -27,6 +31,7 @@ class AdapterApplicationTest {
     private static final int HTTP_CREATED = 201;
     private static final int HTTP_NOT_FOUND = 404;
     private static final String OPENAPI_PATH = "../docs/openapi.yaml";
+    private static final String HANDLER_CLASS_EXTENSION = "x-handler-class";
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String ACCEPT = "Accept";
     private static final String APPLICATION_JSON = "application/json";
@@ -55,6 +60,47 @@ class AdapterApplicationTest {
     static void stopAdapter() {
         adapter.stop();
         mocks.stop();
+    }
+
+    @Test
+    void shouldInstantiateEveryHandlerDeclaredInOpenApi() {
+        var container = AdapterApplication.buildLocalContainer();
+
+        handlerClassesInOpenApi().forEach(handlerClass -> assertDoesNotThrow(
+            () -> container.create(handlerClass),
+            "%s is declared in openapi.yaml but cannot be constructed".formatted(handlerClass)));
+    }
+
+    @Test
+    void shouldNotLetIdentifierRouteSwallowLiteralPaths() throws IOException, InterruptedException {
+        var response = get("context");
+
+        assertThat(response.statusCode(), is(HTTP_OK));
+    }
+
+    @Test
+    void shouldListPublicationsByOwner() throws IOException, InterruptedException {
+        var response = getAuthenticated("by-owner");
+
+        assertThat(response.statusCode(), is(HTTP_OK));
+    }
+
+    @Test
+    void shouldListTicketsForPublication() throws IOException, InterruptedException {
+        var identifier = identifierOf(createPublication());
+
+        var response = getAuthenticated("%s/tickets".formatted(identifier));
+
+        assertThat(response.statusCode(), is(HTTP_OK));
+    }
+
+    @Test
+    void shouldFetchPublicationLog() throws IOException, InterruptedException {
+        var identifier = identifierOf(createPublication());
+
+        var response = getAuthenticated("%s/log".formatted(identifier));
+
+        assertThat(response.statusCode(), is(HTTP_OK));
     }
 
     @Test
@@ -91,11 +137,23 @@ class AdapterApplicationTest {
         return httpClient.send(request, BodyHandlers.ofString());
     }
 
-    private static HttpResponse<String> get(String identifier) throws IOException, InterruptedException {
-        var request = HttpRequest.newBuilder(URI.create("%s/%s".formatted(baseUri, identifier)))
-                          .header(ACCEPT, APPLICATION_JSON)
-                          .GET()
-                          .build();
+    private static HttpResponse<String> get(String path) throws IOException, InterruptedException {
+        return send(getRequest(path).build());
+    }
+
+    private static HttpResponse<String> getAuthenticated(String path) throws IOException, InterruptedException {
+        return send(getRequest(path)
+                        .header(TestHeaderAuthorizerProvider.HEADER, authorizerClaims())
+                        .build());
+    }
+
+    private static HttpRequest.Builder getRequest(String path) {
+        return HttpRequest.newBuilder(URI.create("%s/%s".formatted(baseUri, path)))
+                   .header(ACCEPT, APPLICATION_JSON)
+                   .GET();
+    }
+
+    private static HttpResponse<String> send(HttpRequest request) throws IOException, InterruptedException {
         return httpClient.send(request, BodyHandlers.ofString());
     }
 
@@ -113,6 +171,25 @@ class AdapterApplicationTest {
 
     private static String emptyIdentifier() {
         return "";
+    }
+
+    private static Stream<Class<?>> handlerClassesInOpenApi() {
+        return AdapterApplication.readOpenApi(OPENAPI_PATH).getPaths().values().stream()
+                   .flatMap(pathItem -> pathItem.readOperationsMap().values().stream())
+                   .map(Operation::getExtensions)
+                   .filter(Objects::nonNull)
+                   .map(extensions -> extensions.get(HANDLER_CLASS_EXTENSION))
+                   .filter(String.class::isInstance)
+                   .map(String.class::cast)
+                   .map(AdapterApplicationTest::classForName);
+    }
+
+    private static Class<?> classForName(String className) {
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("x-handler-class not on classpath: " + className, e);
+        }
     }
 
     private static String authorizerClaims() {
