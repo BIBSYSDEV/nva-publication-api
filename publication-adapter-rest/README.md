@@ -167,10 +167,13 @@ services. Registered: [...]`.
   `NoSuchMethodError` at startup.
 - **No S3.** Intentional — file-download/upload handlers will need either MinIO
   or LocalStack once that scope expands.
-- **No Cognito token validation.** `RestRequestHandler` will still validate the
-  bearer token signature against `COGNITO_AUTHORIZER_URLS` if one is present,
-  but the PoC flow bypasses that by populating `requestContext.authorizer`
-  directly.
+- **No Cognito token validation — and the adapter actively suppresses the one
+  that exists.** `RestRequestHandler.validateAuthorization` does full JWKS
+  signature validation, but only when `!requestInfo.isGatewayAuthorized()`. That
+  flag is true as soon as `requestContext.authorizer` is **any** object, and
+  `ApiGatewayProxyRequestBuilder.addRequestContext` writes an empty one when no
+  authorizer header is present. So the fallback never runs. See "JWT is nearly
+  free" below — omitting the key entirely is most of the work.
 
 ## Roadmap
 
@@ -219,10 +222,11 @@ get without S3, and both directions of drift now fail the build.
    request, while each request still gets its own instance.
    `shouldHandleConcurrentRequestsWithoutMixingUpResponses` drives 16 concurrent
    creates to keep that honest.
-5. **`JwtAuthorizerProvider`** — decode and validate the `Authorization: Bearer`
-   token against a JWKS endpoint, extract claims, populate `authorizer.claims`.
-   Replaces `TestHeaderAuthorizerProvider` in any real deployment. This is the
-   default; treat it as the one to build.
+5. **A production `AuthorizerContextProvider`** — smaller than it sounds. Rather
+   than decoding and validating the token itself, it should **omit** the
+   `requestContext.authorizer` key so that `nva-commons` performs its own JWKS
+   validation and reads claims from the token. See "JWT is nearly free" below.
+   Replaces `TestHeaderAuthorizerProvider` in any real deployment.
 6. **`HeaderClaimsAuthorizerProvider`** — only for deployments where Envoy/Kong
    validates the JWT at the edge. It trusts injected `x-user-*` headers
    unconditionally, so it is safe *only* if the pod is unreachable from outside
@@ -280,10 +284,13 @@ are simply subtly different from production.
   time believes it has more room than it does, and there is no request timeout in
   the adapter to catch it. Needs a real deadline, propagated from a server-side
   timeout.
-- **No request size limit.** `ctx.body()` reads the whole body into a `String`
-  (`ApiGatewayProxyRequestBuilder.addBody`). API Gateway caps payloads at 10 MB
-  and rejects larger ones before any code runs; here a large POST is simply
-  buffered in heap. This is a denial-of-service shape, not a correctness bug.
+- **The request size limit is stricter than production, not absent.** Javalin
+  defaults `http.maxRequestSize` to 1 MB and answers `413 Content Too Large`
+  (verified against a running adapter with a 3 MB body). API Gateway allows
+  10 MB, so a payload that works in production is rejected here. Raise
+  `maxRequestSize` to match rather than leaving it unbounded — the cap itself is
+  what keeps a large POST from being buffered in heap by
+  `ApiGatewayProxyRequestBuilder.addBody`.
 - **Binary bodies are corrupted.** `isBase64Encoded` is hardcoded `false` on the
   way in, and the body is treated as text. Responses handle base64 correctly
   (`GatewayResponseWriter.writeBody`), so this is an inbound-only gap — it will
@@ -349,3 +356,96 @@ rather than in this process.
 - **Nothing here has been profiled.** The concurrency test proves correctness
   under 16 parallel requests, not throughput. Any capacity claim needs real
   measurements first.
+
+### Closing those gaps on Platon
+
+Assuming Platon is the target, since that is Sikt's PaaS. The conclusions differ
+from what they would be on a self-managed cluster, so they are written down here
+rather than rediscovered.
+
+**A serverless framework is not the answer.** OpenFaaS, Knative and Nuclio all
+speak plain HTTP in and HTTP out — none of them knows what `requestContext.authorizer`
+or `pathParameters` are. `ApiGatewayProxyRequestBuilder`, `GatewayResponseWriter`
+and `HandlerContainer` would survive unchanged and merely run inside a different
+supervisor; the Javalin setup they would replace is the easy part. They also do
+nothing about per-request handler construction, which follows from `nva-commons`
+holding request state on the instance. Platon deploys plain Deployments anyway,
+so this is moot here — but it is worth knowing it was considered and rejected on
+its merits, not just on platform constraints.
+
+**The ingress cannot absorb the API Gateway features.** This is the important
+constraint. On a cluster where you control ingress, the natural move is to put
+Kong or Envoy Gateway in front and let it do CORS, OpenAPI request validation,
+rate limiting, JWT validation and payload limits — API Gateway's job, nearly 1:1,
+with no change to adapter code. Platon runs HAProxy Ingress with a deliberately
+conservative allowlist of seven annotations: `allow-list`, `auth-realm`,
+`auth-secret`, `auth-type`, `cr-backend`, `path-rewrite`, `timeout-server`.
+Notably, nginx's `proxy-body-size` was dropped in the HAProxy cut-over with no
+equivalent. So:
+
+| Gap | Where it has to live on Platon |
+|---|---|
+| CORS + `OPTIONS` preflight | the adapter — Javalin's CORS plugin |
+| Payload size limit | the adapter — Javalin `http.maxRequestSize` |
+| JWT validation | the adapter — but see below, `nva-commons` already does it |
+| OpenAPI request validation | the adapter, or accepted as a known difference |
+| Rate limiting | the adapter, or ask Platon |
+| Request timeout | ingress — `haproxy.org/timeout-server`, plus an in-process deadline so the server actually stops working |
+| IP allow-listing | ingress — `haproxy.org/allow-list` |
+
+The pattern is that most of it lands back in this module. That is the single
+biggest thing to know before estimating the work.
+
+**Almost none of it needs a new library.** That surprised me, so it is worth
+listing what is already available:
+
+| Need | What provides it |
+|---|---|
+| CORS + preflight | Javalin, `bundledPlugins.enableCors(...)` |
+| Payload limit | Javalin, `http.maxRequestSize` (already active at 1 MB) |
+| Access logging | Javalin, `requestLogger.http(...)` |
+| Rate limiting | Javalin, `NaiveRateLimit` — per pod and in-memory, so it bounds a single instance rather than the service |
+| Graceful shutdown | Jetty stop timeout via `jetty.modifyServer`, plus a shutdown hook |
+| Health / readiness | a couple of plain Javalin routes |
+| JWT validation | `nva-commons` — see below |
+| OpenAPI request validation | **new dependency**: `com.atlassian.oai:swagger-request-validator-javalin` |
+| Prometheus metrics | **new dependency**: Micrometer + its Javalin plugin |
+
+**JWT is nearly free.** `RestRequestHandler` already validates bearer tokens
+against JWKS (`com.auth0:jwks-rsa`, which caches keys), and `RequestInfo.fetchUserInfo`
+already falls back to reading claims straight from the token when the request is
+not gateway-authorized. Both paths are dead code today only because
+`ApiGatewayProxyRequestBuilder` always writes a `requestContext.authorizer`
+object — an empty one counts, since `isGatewayAuthorized()` only checks that the
+node exists and is an object.
+
+So a production authorizer provider does not mean writing a JWT validator. It
+means **omitting** the `authorizer` key when there is no trusted authorizer
+context, and letting `nva-commons` do what it already knows how to do. The
+`Authorization` header is already forwarded. Worth writing a test that asserts
+the key is absent, because the failure mode is silent: an empty object turns
+authentication off rather than on.
+
+**What Platon does give.** TLS termination, image scanning, review environments
+per branch, and a deployment template that already has liveness and readiness
+probes and resource limits. Two caveats on that template:
+
+- Its probes point at `/`, which for this adapter is the **POST** create route.
+  There is no `GET /`, so the probes need real endpoints — and readiness should
+  fail while DynamoDB is unreachable while liveness should not.
+- Its defaults are `500m` CPU and `512Mi` memory. The Lambda functions run at
+  `1800` MB by default, and `NvaUpdatePublicationFunction` and
+  `PublishPublicationFunction` — both wired in this adapter — run at `8192` MB.
+  A pod serving several concurrent requests needs sizing from measurements, not
+  from the template defaults.
+
+**One alternative worth naming.** The Lambda Runtime Interface Emulator (or
+`aws-lambda-java-runtime-interface-client`) would run the handlers in the real
+Lambda runtime inside a container: a genuine deadline behind
+`getRemainingTimeInMillis()`, a real request id, and one invocation at a time per
+instance — which is exactly the guarantee `nva-commons` is written against, so
+the thread-safety problem disappears rather than being fixed. The cost is the
+concurrency model: parallelism costs processes instead of threads, and you would
+still have to build the proxy event yourself, since RIE accepts a payload rather
+than an HTTP request. That is rebuilding Lambda on top of Kubernetes, which
+gives up much of the reason to move.
