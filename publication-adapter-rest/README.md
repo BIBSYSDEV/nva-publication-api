@@ -310,7 +310,7 @@ Platon**. The local stack stops being a simulation and becomes the deployment.
 
 | Needed | Runs in Platon, no AWS |
 |---|---|
-| DynamoDB | **Unresolved — see below.** Alternator was tried and does not work |
+| DynamoDB | **Open.** Alternator tested and rejected; ExtendDB (Postgres-backed) is the candidate |
 | S3 | MinIO — S3 wire protocol |
 | Cognito | Keycloak — real OIDC, real login page |
 | Secrets Manager | Vault, which Sikt already runs for Platon |
@@ -337,8 +337,37 @@ purpose is batching transactional writes. Pointing at `amazon/dynamodb-local`
 instead made the identical request succeed, which confirms transactions are the
 only difference.
 
-That leaves three options, and the choice is a real decision rather than an
-implementation detail:
+**A candidate that may resolve this: ExtendDB.** An Apache-2.0 project managed by
+AWS (announced May 2026) that implements the DynamoDB wire protocol in Rust over
+**PostgreSQL 14+** — so the AWS SDK talks to it unchanged, but the data lives in
+Postgres. On paper it clears every hurdle that stopped Alternator:
+
+- `TransactWriteItems` and `TransactGetItems` supported, up to 100 operations —
+  matching the batch limit `ServiceWithTransactions` already works within.
+- GSIs supported, with a configurable `index_propagation_delay_ms` that can be
+  set to zero for synchronous index updates.
+- Streams supported, which also bears on the Streams→EventBridge question that
+  the event-handler work treats as its hardest unknown.
+
+Its documented gaps do not appear to touch us: PartiQL (`ExecuteStatement`,
+`BatchExecuteStatement`, `ExecuteTransaction`) returns `UnknownOperationException`,
+and this repo uses none of them — verified, zero occurrences. Local secondary
+indexes are likewise unused here.
+
+**This has not been tested against our code.** That distinction matters:
+Alternator also looked right on paper and failed on the first write. Before any
+plan depends on ExtendDB, it should be run against the `publication-commons`
+suite the same way — that is the cheap experiment that settles it. Practical
+notes for whoever does: TLS is mandatory (self-signed is fine, but the SDK must
+trust it), the default port is 18443, and it needs a PostgreSQL instance
+alongside.
+
+If it holds up, the "keep DynamoDB or rewrite persistence" tradeoff below mostly
+dissolves — the data model survives and the cloud dependency does not. That is a
+large enough prize to justify testing it early.
+
+That leaves three options if ExtendDB does not work out, and the choice is a real
+decision rather than an implementation detail:
 
 1. **Keep DynamoDB.** Everything else on this list can leave AWS; the database
    cannot. This contradicts a strict no-AWS goal but costs nothing else.
@@ -351,10 +380,11 @@ implementation detail:
    identifier entries consistent. Giving that up trades a migration project for
    a class of data-integrity bugs.
 
-My reading is that (2) is the honest answer if no-AWS is firm, and that (1) is
-defensible if the real goal is leaving Lambda and API Gateway rather than leaving
-AWS entirely. What should not happen is drifting into (3) because it looks like
-less work.
+My reading: test ExtendDB first, since it is days of work to evaluate and would
+avoid the whole tradeoff. Failing that, (2) is the honest answer if no-AWS is
+firm, and (1) is defensible if the real goal is leaving Lambda and API Gateway
+rather than leaving AWS entirely. What should not happen is drifting into (3)
+because it looks like less work.
 
 Until that is decided, `compose.yaml` runs `amazon/dynamodb-local`. It is free
 but proprietary and test-only, so it is a local development choice, not a
