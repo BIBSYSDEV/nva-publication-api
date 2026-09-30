@@ -8,6 +8,34 @@ Gateway proxy event / `GatewayResponse` format that `nva-commons` already unders
 Purpose: evaluate what it would take to move the publication API to a Kubernetes
 deployment while keeping the existing handler code.
 
+## Status and where to pick up
+
+**Working today:** 13 of 29 REST operations route through the adapter against a
+DynamoDB-compatible database. Bearer tokens are validated for real. 17 tests,
+all green, no Docker required.
+
+**The open question is the database.** Everything else has a known path off AWS;
+this does not. ScyllaDB Alternator was tested and rejected (no
+`TransactWriteItems`). ExtendDB, which speaks DynamoDB over PostgreSQL, was
+tested and works — but only against 13 REST operations and a 7-test subset, not
+the full suite.
+
+**Next task: S3 and the file operations, via MinIO.** The point of this PoC is
+to surface blockers, and the nine file operations are the largest untouched area
+— the one most likely to hide another `TransactWriteItems`-shaped surprise.
+Presigned URLs are the specific worry (see [Known traps](#known-traps)).
+
+Finishing the ExtendDB validation is deliberately *not* next. It would confirm
+something that already looks right, whereas S3 could still invalidate the
+approach. It does have a prerequisite when the time comes — test isolation that
+survives a real database, item 3 under [Sequencing](#sequencing).
+
+**Two lists, deliberately separate.** [Roadmap](#roadmap) tracks *breadth* — how
+much of the REST API the adapter covers, numbered 1–13, items 1–4 done.
+[Sequencing](#sequencing) tracks the *no-AWS* work and is the one with the active
+next task. They overlap on MinIO and Keycloak; where they disagree, Sequencing is
+newer and wins.
+
 ## How it works
 
 ```
@@ -193,6 +221,9 @@ services. Registered: [...]`.
 
 ## Roadmap
 
+Breadth of REST coverage. The no-AWS work has its own ordered list under
+[Sequencing](#sequencing), which holds the active next task — start there.
+
 ### Short term — broaden the REST surface
 1. ~~**Integration test first.**~~ Done — `AdapterApplicationTest` boots the
    adapter on a random port and drives POST/GET over HTTP. Every handler wired
@@ -374,15 +405,44 @@ Run it with the `extenddb` profile in `compose.yaml`. Practical notes:
   user, an access key, and attach a policy with `extenddb manage`.
 - Port 18443, HTTPS, region `us-east-1` by default.
 
-**What this still does not prove.** The adapter exercises 13 REST operations;
-it is not the `publication-commons` test suite. Before committing, point that
-suite at ExtendDB — it covers transaction rollback, conditional writes and GSI
-consistency far more thoroughly than a smoke test can. The
-`index_propagation_delay_ms` default of 10 ms is worth setting to zero there,
-since several tests read back immediately through a GSI.
+- **Gradle caches test results** and environment variables are not task inputs,
+  so `--rerun` is needed when only the endpoint changed. Without it the suite
+  reports success without having run.
+- `index_propagation_delay_ms` defaults to 10 ms. Set it to zero
+  (`extenddb settings set index_propagation_delay_ms 0`) before running tests,
+  since several read back immediately through a GSI.
 
-That said, the tradeoff below has largely dissolved: the data model survives and
-the cloud dependency does not.
+### Running the real test suite against it
+
+`ResourceServiceTest` was pointed at ExtendDB: **4771 tests, 111 failures.**
+The failures were **not** ExtendDB's.
+
+They were dominated by `TransactionFailedException: Conflict` from
+`insertResource` — uniqueness conditions not holding. The cause was the test
+fixture: `deleteTable` is asynchronous, so the next test recreated the table
+while deletion was still in flight and tests inherited each other's rows. Adding
+`waitUntilTableNotExists` / `waitUntilTableExists` made the previously failing
+subset pass 7/7, including the exact tests that had failed.
+
+**The full suite has still not been run against ExtendDB**, and that is the
+honest state of the evidence. With waiters it exceeded ten minutes and was
+abandoned — 4771 tests each dropping and recreating a table with four GSIs
+against a real server is not viable.
+
+That is a finding in its own right: **drop-and-recreate per test only works
+because embedded DynamoDB is in-process.** Running this suite against any real
+database — ExtendDB, DynamoDB Local, or DynamoDB itself — first needs a
+different isolation strategy: deleting items rather than the table, or unique
+table names per test class. That work is the prerequisite for validating
+ExtendDB properly, and it touches `ResourcesLocalTest`, which is shared across
+modules.
+
+To reproduce: `ResourcesLocalTest.init` hardcodes `DynamoDBEmbedded`, so it
+needs a temporary edit to build the client from `AWS_ENDPOINT_URL_DYNAMODB`
+instead. That change was made, measured, and reverted — it is not in the tree.
+
+So: the data model survives and the cloud dependency does not, but the claim
+rests on 13 REST operations plus a 7-test subset, not on the full suite.
 
 ### If ExtendDB does not hold up
 
@@ -491,20 +551,53 @@ them.
 
 ### Sequencing
 
-Order matters, because each step de-risks the next.
+**This is the active list.** Ordered so that the steps most likely to surface a
+blocker come first — a PoC earns its keep by failing early, not by confirming
+what already looks right. Item 2 is next.
 
 1. ~~**Get `DynamoDBEmbedded` out of the production path.**~~ Done, and it paid
    for itself immediately: putting a real server behind the endpoint is what
    surfaced the Alternator transaction blocker, on ground we already had tests
    for. Which server it points at is now an open decision, not an assumption.
-2. **Vault-backed secrets and a real EventBridge-equivalent, deleting both
+2. **MinIO and the nine file operations.** ← next. Prioritised above finishing
+   the database validation because it can still surface a blocker, while that
+   would only confirm what already looks right. Groundwork below.
+3. **Test isolation that survives a real database.** Prerequisite for finishing
+   the ExtendDB validation, not for anything else. `ResourcesLocalTest` drops
+   and recreates the table per test, which is only affordable in-process.
+   Replace it with item deletion or per-class table names. Shared across
+   modules, so it needs care.
+4. **Vault-backed secrets and a real EventBridge-equivalent, deleting both
    `Proxy` fakes.** Small, and removes the two things that can never ship.
-3. **MinIO and the nine file operations.** The mechanism is established by then,
-   so this is about handler wiring rather than infrastructure.
-4. **Keycloak.** Independent of 1–3 and can run in parallel. The JWKS validation
-   it needs already works.
-5. **Split the harness out of the production artifact.** Do this before anything
+5. **Keycloak.** Independent of the rest and can run in parallel. The JWKS
+   validation it needs already works.
+6. **Split the harness out of the production artifact.** Do this before anything
    is deployed anywhere reachable, not after.
+
+#### Groundwork for step 2
+
+The handlers were surveyed but nothing was wired. What is known:
+
+- **They live in `publication-file`**, not `publication-rest`, and that module
+  is not yet a dependency of this one. `tickets` and `publication-log` had to be
+  added the same way when the ticket operations were wired.
+- **Types to register**, beyond `Environment` and `IdentityServiceClient` which
+  already are:
+
+  | Type | Needed by |
+  |---|---|
+  | `FileService` | `CreateUploadHandler`, `CompleteUploadHandler`, `UpdateFileHandler`, `DeleteFileHandler` |
+  | `S3Client` | `ListPartsHandler`, `AbortMultipartUploadHandler` |
+  | `S3Presigner` | `PrepareUploadPartHandler`, `CreatePresignedDownloadUrlHandler` |
+  | `UriShortener` | `CreatePresignedDownloadUrlHandler` |
+  | `UriResolver` | `ResolveShortenedUrlHandler` |
+
+- Expect the same exact-type matching issue as `DoiClient`: register the
+  interface the constructor declares, not only the concrete class.
+- `S3Client` and `S3Presigner` pick up `AWS_ENDPOINT_URL_S3`, so pointing them
+  at MinIO should need no code — but presigned URLs are signed for a specific
+  host and usually need path-style access, which is where this is most likely
+  to break.
 
 ### Known traps
 
@@ -516,6 +609,10 @@ Order matters, because each step de-risks the next.
   four GSIs and the buckets. It must be shared between `compose.yaml` and
   Testcontainers, or the two environments will differ in exactly the way this
   whole approach is meant to prevent.
+- **Asynchronous DDL.** `createTable` and `deleteTable` return before the work
+  is done on a real server. Code that creates a table and immediately writes to
+  it needs `waitUntilTableExists`, and this is exactly what made 111 tests fail
+  in a way that looked like a database incompatibility but was not.
 - **Issuer matching.** The token issuer must equal `COGNITO_AUTHORIZER_URLS`
   exactly, and Keycloak's issuer embeds the realm name. `UrlJwkProvider` appends
   `/.well-known/jwks.json` and only keeps the scheme if the value already starts
