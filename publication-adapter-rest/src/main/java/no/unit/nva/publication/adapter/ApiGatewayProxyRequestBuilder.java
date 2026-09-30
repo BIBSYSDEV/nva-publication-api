@@ -74,9 +74,10 @@ public final class ApiGatewayProxyRequestBuilder {
 
     private void addRequestContext(Context ctx, ObjectNode node) {
         var requestContext = node.putObject(REQUEST_CONTEXT);
+        // The key is left out entirely when there is no authorizer context. RequestInfo treats any
+        // authorizer object as proof the gateway authorized the request, so an empty one would
+        // suppress the JWKS validation and claim extraction nva-commons otherwise performs.
         authorizerContextProvider.buildAuthorizerNode(ctx)
-            .ifPresentOrElse(
-                authorizerNode -> requestContext.set(AUTHORIZER, authorizerNode),
-                () -> requestContext.putObject(AUTHORIZER));
+            .ifPresent(authorizerNode -> requestContext.set(AUTHORIZER, authorizerNode));
     }
 }

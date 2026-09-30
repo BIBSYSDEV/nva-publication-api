@@ -37,6 +37,8 @@ class AdapterApplicationTest {
     private static final int HTTP_OK = 200;
     private static final int HTTP_CREATED = 201;
     private static final int HTTP_NOT_FOUND = 404;
+    private static final int HTTP_UNAUTHORIZED = 401;
+    private static final String AUTHORIZATION = "Authorization";
     private static final String OPENAPI_PATH = "../docs/openapi.yaml";
     private static final String HANDLER_CLASS_EXTENSION = "x-handler-class";
     private static final int CONCURRENT_REQUESTS = 16;
@@ -125,6 +127,15 @@ class AdapterApplicationTest {
         }
 
         assertThat(createdIdentifiers, hasSize(CONCURRENT_REQUESTS));
+    }
+
+    @Test
+    void shouldRejectUnverifiableBearerTokenInsteadOfTrustingIt() throws IOException, InterruptedException {
+        var request = getRequest("by-owner")
+                          .header(AUTHORIZATION, "Bearer not.a.valid.token")
+                          .build();
+
+        assertThat(send(request).statusCode(), is(HTTP_UNAUTHORIZED));
     }
 
     @Test

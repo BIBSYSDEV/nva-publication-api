@@ -165,15 +165,15 @@ services. Registered: [...]`.
   than WireMock precisely to keep one Jetty on the classpath — `nvaCatalog`'s
   WireMock 4 pulls a newer Jetty that breaks Javalin's websocket-core with a
   `NoSuchMethodError` at startup.
-- **No S3.** Intentional — file-download/upload handlers will need either MinIO
-  or LocalStack once that scope expands.
-- **No Cognito token validation — and the adapter actively suppresses the one
-  that exists.** `RestRequestHandler.validateAuthorization` does full JWKS
-  signature validation, but only when `!requestInfo.isGatewayAuthorized()`. That
-  flag is true as soon as `requestContext.authorizer` is **any** object, and
-  `ApiGatewayProxyRequestBuilder.addRequestContext` writes an empty one when no
-  authorizer header is present. So the fallback never runs. See "JWT is nearly
-  free" below — omitting the key entirely is most of the work.
+- **No S3.** Intentional — the file-download/upload handlers need MinIO once
+  that scope expands. See "Target: no AWS dependency" below.
+- **Cognito token validation now runs.** `ApiGatewayProxyRequestBuilder` omits
+  `requestContext.authorizer` entirely when there is no authorizer context, so
+  `RestRequestHandler.validateAuthorization` performs its JWKS check and
+  `RequestInfo` reads claims from the token. Requests carrying
+  `X-Adapter-Authorizer` still bypass that, which is the point of the local
+  harness — but an unverifiable `Authorization: Bearer` is now rejected instead
+  of being treated as gateway-authorized.
 
 ## Roadmap
 
@@ -222,11 +222,11 @@ get without S3, and both directions of drift now fail the build.
    request, while each request still gets its own instance.
    `shouldHandleConcurrentRequestsWithoutMixingUpResponses` drives 16 concurrent
    creates to keep that honest.
-5. **A production `AuthorizerContextProvider`** — smaller than it sounds. Rather
-   than decoding and validating the token itself, it should **omit** the
-   `requestContext.authorizer` key so that `nva-commons` performs its own JWKS
-   validation and reads claims from the token. See "JWT is nearly free" below.
-   Replaces `TestHeaderAuthorizerProvider` in any real deployment.
+5. **Retire `TestHeaderAuthorizerProvider` for real deployments.** The JWKS
+   validation itself is already working — see "JWT came for free" below. What is
+   left is ensuring the `X-Adapter-Authorizer` bypass cannot be reached in a
+   deployed environment, either by not registering the provider outside local
+   runs or by dropping the class from the production path entirely.
 6. **`HeaderClaimsAuthorizerProvider`** — only for deployments where Envoy/Kong
    validates the JWT at the edge. It trusts injected `x-user-*` headers
    unconditionally, so it is safe *only* if the pod is unreachable from outside
@@ -241,12 +241,15 @@ get without S3, and both directions of drift now fail the build.
    handler → DynamoDB.
 
 ### Long term — replace the mocks with real services
-10. **Swap embedded DynamoDB for real DynamoDB (or ScyllaDB Alternator).** The
-    handler code is unchanged — only the client factory needs an endpoint override
-    and credentials provider.
-11. **Swap the stubs for the real Customer API / Cognito.** Same mechanism: env
-    vars. The PoC stubs are there to make local smoke-testing possible without
-    a dev environment.
+Detailed in "Target: no AWS dependency" below; summarised here to keep the
+roadmap readable.
+
+10. **Replace `DynamoDBEmbedded` with ScyllaDB Alternator.** Handler code is
+    unchanged — the client only needs an endpoint and credentials from config.
+    Same image locally and in Platon.
+11. **Replace the remaining fakes with real services:** MinIO for S3, Keycloak
+    for Cognito, Vault for Secrets Manager. The Customer API stub stays a stub,
+    but moves behind a URL so the real service can replace it by configuration.
 12. **Event handlers** — `publication-adapter-events` as a sibling module.
     Applies the same pattern (`EventHandler.handleRequest(in, out, ctx)`) with
     a Kafka/NATS consumer feeding `AwsEventBridgeEvent` JSON to handlers. Covers
@@ -260,11 +263,159 @@ get without S3, and both directions of drift now fail the build.
     dual deployment lasts.
 
 ### Out of scope for now
-- **DynamoDB single-table migration.** If a future decision is "leave AWS
-  entirely," the single-table design plus 4 GSIs is the hardest thing to move.
-  The adapter doesn't make that decision any easier or harder — it's orthogonal.
-- **DynamoDB Streams → EventBridge fanout.** Needs CDC (Debezium or similar) or
-  a keep-DynamoDB strategy. Decide before the event-handler adapter is built.
+- **Migrating off the DynamoDB data model.** Moving to Alternator keeps the
+  single-table design and all four GSIs, so it is not needed to leave AWS.
+  Redesigning onto something like PostgreSQL is a separate project — see "What
+  'no AWS' does and does not mean here" below.
+- **DynamoDB Streams → EventBridge fanout.** The streams feed the event handlers,
+  and Alternator's stream support differs from DynamoDB's. Needs CDC (Debezium or
+  similar) or a deliberate alternative. Decide before the event-handler adapter
+  is built — it is the hardest remaining unknown.
+
+## Target: no AWS dependency
+
+The goal is production-shaped code wherever we can manage it, and where we
+cannot, hacks that could survive in production. Combined with a hard constraint
+of **no runtime dependency on AWS**, that settles several design questions.
+
+### One seam, not two
+
+The tempting shortcut is LocalStack: one container emulating every AWS service.
+It is the wrong tool here. LocalStack exists to emulate AWS for testing, is not
+meant to be run in production, and would give us a local environment that
+deliberately does not resemble what we deploy. Every bug it hides is a bug we
+find in production instead.
+
+The alternative is better on every axis that matters: pick open source services
+that speak the same wire protocols, and run **the same image locally and in
+Platon**. The local stack stops being a simulation and becomes the deployment.
+
+| Needed | Runs in Platon, no AWS |
+|---|---|
+| DynamoDB | ScyllaDB Alternator — DynamoDB wire protocol |
+| S3 | MinIO — S3 wire protocol |
+| Cognito | Keycloak — real OIDC, real login page |
+| Secrets Manager | Vault, which Sikt already runs for Platon |
+| EventBridge | Kafka or NATS (shared with the event-handler work, item 12) |
+| API Gateway | HAProxy ingress plus what this module does itself |
+| Lambda | this adapter, in a plain Deployment |
+
+### What "no AWS" does and does not mean here
+
+Worth being precise, because the strict reading is a far bigger project.
+
+The AWS **SDK stays** as a client library. MinIO and ScyllaDB Alternator speak
+S3 and DynamoDB over the wire, so `S3Client` and `DynamoDbClient` keep working
+against servers that have nothing to do with Amazon. That is a protocol
+dependency, not a vendor one, and it is what makes this tractable: the DAO
+layer, the single-table design and all four GSIs survive untouched.
+
+The strict reading — no AWS SDK at all — means rewriting persistence onto
+something like PostgreSQL. Single-table design, four GSIs and the transaction
+patterns in `ServiceWithTransactions` would all have to be redesigned. That is a
+separate project with its own risk, and nothing in this adapter makes it easier
+or harder. If that is the real goal, it should be decided explicitly rather than
+arrived at through this module.
+
+One genuine leftover: `com.amazonaws:aws-lambda-java-core` supplies the `Context`
+interface that `handleRequest` takes, which is why `MockLambdaContext` exists.
+That comes from the `nva-commons` handler signature and only goes away if those
+signatures change.
+
+### Configuration is the only difference between environments
+
+Every client is pointed somewhere by configuration, never by a code path:
+
+- AWS SDK v2 (2.54.9 here) reads `AWS_ENDPOINT_URL` and the per-service
+  `AWS_ENDPOINT_URL_S3` / `_DYNAMODB` variants. Pointing at MinIO or Alternator
+  is an env var, not a branch. Prefer the per-service variants — the global one
+  redirects *every* service at once, which is rarely what you want.
+- Credentials come from the standard provider chain, so Vault or Kubernetes
+  secrets feed them as env vars without special handling.
+- The OIDC issuer is already `COGNITO_AUTHORIZER_URLS`, which Keycloak satisfies
+  unchanged.
+
+That rules out a "local mode" flag in the code. It also means the fakes now in
+`buildLocalContainer` are not something to point elsewhere — they are something
+to **delete**.
+
+### The fakes, judged against that bar
+
+| Today | Verdict |
+|---|---|
+| `DynamoDBEmbedded` | Replace with Alternator via endpoint config |
+| `fakeSecretsManagerClient()` — a `Proxy` returning canned credentials | Delete. Real client, Vault-provided secret |
+| `noopEventBridgeClient()` — a `Proxy` swallowing events | Delete. Silently dropping events is not a behaviour to ship |
+| `IdentityServiceClient.unauthorizedIdentityServiceClient()` | Replace with a configured client |
+| `TestHeaderAuthorizerProvider` | **Must not exist in the production artifact** — see below |
+| Customer API stub | Stays a stub, but moves out of process (see below) |
+
+### The one that is dangerous, not just untidy
+
+`TestHeaderAuthorizerProvider` turns an `X-Adapter-Authorizer` header into a
+trusted authorizer context. It is compiled into the same artifact that would be
+deployed, and nothing but the absence of that header stops it. Bearer token
+validation now works (see below), so this is the remaining hole.
+
+Configuration is not sufficient here — a misconfiguration would be an
+authentication bypass. The harness classes belong in a separate source set or
+module that the production build does not include, so that shipping the bypass
+becomes a compile error rather than a deployment mistake.
+
+### What genuinely cannot become real
+
+The Customer API is an NVA service, not a standard one, so there is no open
+source equivalent to run. It stays a stub — but it should move out of this
+process into its own container behind a URL, so that pointing at the real
+service later is a configuration change. A stub reachable over HTTP is a hack
+that can live in production wiring; a stub compiled into the adapter is not.
+
+### How it fits together
+
+One `compose.yaml` runs Alternator, MinIO, Keycloak and the Customer API stub.
+The same images back the integration tests through Testcontainers, which is
+already in `nvaCatalog` (2.0.5), so the demo environment and the test environment
+cannot drift apart. Keep the current in-process tests fast and untagged, and tag
+the container-backed ones `@Tag("integrationTest")`, matching the convention in
+the rest of this repo. Platon's runners have docker-in-docker, so CI can run
+them.
+
+### Sequencing
+
+Order matters, because each step de-risks the next.
+
+1. **Alternator replacing `DynamoDBEmbedded`.** No functional change, which is
+   exactly why it is first — it proves the endpoint-configuration pattern on
+   ground we already have tests for.
+2. **Vault-backed secrets and a real EventBridge-equivalent, deleting both
+   `Proxy` fakes.** Small, and removes the two things that can never ship.
+3. **MinIO and the nine file operations.** The mechanism is established by then,
+   so this is about handler wiring rather than infrastructure.
+4. **Keycloak.** Independent of 1–3 and can run in parallel. The JWKS validation
+   it needs already works.
+5. **Split the harness out of the production artifact.** Do this before anything
+   is deployed anywhere reachable, not after.
+
+### Known traps
+
+- **Presigned URLs.** `CreatePresignedDownloadUrlHandler` takes an `S3Presigner`.
+  Against MinIO this usually needs path-style access enabled, and the signed host
+  must be the one the *client* can reach — not the in-cluster service name. This
+  will not work by accident.
+- **Bootstrapping tables and buckets.** Something has to create the table, its
+  four GSIs and the buckets. It must be shared between `compose.yaml` and
+  Testcontainers, or the two environments will differ in exactly the way this
+  whole approach is meant to prevent.
+- **Issuer matching.** The token issuer must equal `COGNITO_AUTHORIZER_URLS`
+  exactly, and Keycloak's issuer embeds the realm name. `UrlJwkProvider` appends
+  `/.well-known/jwks.json` and only keeps the scheme if the value already starts
+  with `http`.
+- **Cognito's `custom:` claims.** `custom:customerId`, `custom:accessRights` and
+  the rest need Keycloak protocol mappers to come out under those exact names.
+  Commit the realm export so this is reproducible rather than hand-configured.
+- **Alternator is not DynamoDB.** It is close, but transaction and GSI semantics
+  are worth verifying against the existing `publication-commons` test suite early
+  rather than discovering differences during migration.
 
 ## If this were to run in production
 
@@ -411,20 +562,20 @@ listing what is already available:
 | OpenAPI request validation | **new dependency**: `com.atlassian.oai:swagger-request-validator-javalin` |
 | Prometheus metrics | **new dependency**: Micrometer + its Javalin plugin |
 
-**JWT is nearly free.** `RestRequestHandler` already validates bearer tokens
-against JWKS (`com.auth0:jwks-rsa`, which caches keys), and `RequestInfo.fetchUserInfo`
-already falls back to reading claims straight from the token when the request is
-not gateway-authorized. Both paths are dead code today only because
-`ApiGatewayProxyRequestBuilder` always writes a `requestContext.authorizer`
-object — an empty one counts, since `isGatewayAuthorized()` only checks that the
-node exists and is an object.
+**JWT came for free — already done.** `RestRequestHandler` validates bearer
+tokens against JWKS (`com.auth0:jwks-rsa`, which caches keys), and
+`RequestInfo.fetchUserInfo` reads claims straight from the token when the request
+is not gateway-authorized. Both paths used to be dead code, because
+`ApiGatewayProxyRequestBuilder` always wrote a `requestContext.authorizer`
+object — and an empty one counts, since `isGatewayAuthorized()` only checks that
+the node exists and is an object.
 
-So a production authorizer provider does not mean writing a JWT validator. It
-means **omitting** the `authorizer` key when there is no trusted authorizer
-context, and letting `nva-commons` do what it already knows how to do. The
-`Authorization` header is already forwarded. Worth writing a test that asserts
-the key is absent, because the failure mode is silent: an empty object turns
-authentication off rather than on.
+The fix was to omit the key rather than write a JWT validator.
+`ApiGatewayProxyRequestBuilderTest` pins both directions, because the failure
+mode is silent: an empty object turns authentication **off** rather than on, and
+nothing in the response distinguishes the two. What remains for production is
+deciding whether `TestHeaderAuthorizerProvider` should be compiled in at all, or
+swapped for one that never trusts a header.
 
 **What Platon does give.** TLS termination, image scanning, review environments
 per branch, and a deployment template that already has liveness and readiness
@@ -439,7 +590,7 @@ probes and resource limits. Two caveats on that template:
   A pod serving several concurrent requests needs sizing from measurements, not
   from the template defaults.
 
-**One alternative worth naming.** The Lambda Runtime Interface Emulator (or
+**One alternative worth naming (not chosen).** The Lambda Runtime Interface Emulator (or
 `aws-lambda-java-runtime-interface-client`) would run the handlers in the real
 Lambda runtime inside a container: a genuine deadline behind
 `getRemainingTimeInMillis()`, a real request id, and one invocation at a time per

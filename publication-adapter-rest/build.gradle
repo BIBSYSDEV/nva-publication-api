@@ -44,6 +44,7 @@ dependencies {
     testImplementation platform(nvaCatalog.junit.bom)
     testImplementation nvaCatalog.junit.jupiter.api
     testImplementation nvaCatalog.hamcrest
+    testImplementation nvaCatalog.mockito.core
     testRuntimeOnly nvaCatalog.junit.jupiter.engine
     testRuntimeOnly nvaCatalog.junit.platform.launcher
 }
