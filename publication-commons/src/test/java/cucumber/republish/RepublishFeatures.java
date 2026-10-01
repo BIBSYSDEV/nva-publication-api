@@ -5,13 +5,10 @@ import static java.util.stream.IntStream.range;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.model.business.TicketStatus.NOT_APPLICABLE;
-import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,9 +21,11 @@ import io.cucumber.java.en.When;
 import java.net.URI;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
+import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
 import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.FileEntry;
@@ -41,7 +40,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 public class RepublishFeatures {
 
   private final RepublishScenarioContext scenarioContext;
-  private Username assignedCurator;
 
   public RepublishFeatures(RepublishScenarioContext scenarioContext) {
     this.scenarioContext = scenarioContext;
@@ -86,6 +84,16 @@ public class RepublishFeatures {
     persistPendingFiles(institution, fileCount);
   }
 
+  @Given("institution {string} has {int} approved file(s)")
+  public void institutionHasApprovedFiles(String institution, int fileCount) {
+    persistFiles(institution, fileCount, AssociatedArtifactsGenerator::randomOpenFile);
+  }
+
+  @Given("institution {string} has {int} rejected file(s)")
+  public void institutionHasRejectedFiles(String institution, int fileCount) {
+    persistFiles(institution, fileCount, AssociatedArtifactsGenerator::randomRejectedFile);
+  }
+
   @Given("institution {string} has {int} pending file(s) with an approval ticket")
   public void institutionHasPendingFilesWithAnApprovalTicket(String institution, int fileCount)
       throws ApiGatewayException {
@@ -102,9 +110,8 @@ public class RepublishFeatures {
 
   @Given("the approval ticket of institution {string} is assigned to a curator")
   public void theApprovalTicketOfInstitutionIsAssignedToACurator(String institution) {
-    assignedCurator = new Username(randomString());
     var ticket = scenarioContext.originalTicket(institution);
-    ticket.setAssignee(assignedCurator);
+    ticket.setAssignee(new Username(randomString()));
     scenarioContext.ticketService().updateTicket(ticket);
   }
 
@@ -112,18 +119,6 @@ public class RepublishFeatures {
   public void aFileFromInstitutionIsRemovedWhileThePublicationIsUnpublished(String institution) {
     fileEntryOf(scenarioContext.filesOf(institution).getFirst())
         .softDelete(scenarioContext.resourceService(), new User(randomString()));
-  }
-
-  @Given("a file from institution {string} gets a new license while the publication is unpublished")
-  public void aFileFromInstitutionGetsANewLicenseWhileThePublicationIsUnpublished(
-      String institution) {
-    var fileEntry = fileEntryOf(scenarioContext.filesOf(institution).getFirst());
-    var fileWithNewLicense =
-        fileEntry.getFile().copy().withLicense(randomUri()).buildPendingOpenFile();
-    fileEntry.update(
-        fileWithNewLicense,
-        scenarioContext.uploaderAt(institution),
-        scenarioContext.resourceService());
   }
 
   @Given("the publication is changed into a degree while unpublished")
@@ -183,14 +178,12 @@ public class RepublishFeatures {
     assertThat(completedTickets.getFirst().getApprovedFiles()).hasSize(fileCount);
   }
 
-  @Then(
-      "the original approval ticket of institution {string} is pending again with the same curator")
-  public void theOriginalApprovalTicketOfInstitutionIsPendingAgainWithTheSameCurator(
-      String institution) {
-    var ticket = scenarioContext.originalTicket(institution);
+  @Then("the pending file approval ticket of institution {string} has no curator")
+  public void thePendingFileApprovalTicketOfInstitutionHasNoCurator(String institution) {
+    var tickets = pendingTicketsOwnedBy(scenarioContext.institutionUri(institution));
 
-    assertThat(ticket.getStatus()).isEqualTo(PENDING);
-    assertThat(ticket.getAssignee()).isEqualTo(assignedCurator);
+    assertThat(tickets).hasSize(1);
+    assertThat(tickets.getFirst().getAssignee()).isNull();
   }
 
   @Then("the original approval ticket of institution {string} is set aside")
@@ -204,14 +197,19 @@ public class RepublishFeatures {
   }
 
   private List<File> persistPendingFiles(String institution, int fileCount) {
+    return persistFiles(
+        institution, fileCount, AssociatedArtifactsGenerator::randomPendingOpenFile);
+  }
+
+  private List<File> persistFiles(String institution, int fileCount, Supplier<File> fileSupplier) {
     var uploader = scenarioContext.uploaderAt(institution);
-    var files = range(0, fileCount).mapToObj(ignored -> persistPendingFile(uploader)).toList();
+    var files =
+        range(0, fileCount).mapToObj(ignored -> persistFile(uploader, fileSupplier.get())).toList();
     scenarioContext.addFiles(institution, files);
     return files;
   }
 
-  private File persistPendingFile(UserInstance uploader) {
-    var file = randomPendingOpenFile();
+  private File persistFile(UserInstance uploader, File file) {
     FileEntry.create(file, scenarioContext.publication().getIdentifier(), uploader)
         .persist(scenarioContext.resourceService(), uploader);
     return file;
