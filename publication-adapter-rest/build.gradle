@@ -65,7 +65,7 @@ def localDefaults = { String mockUrl ->
         AWS_SECRET_ACCESS_KEY    : 'localsecret',
         AWS_REGION               : 'eu-west-1',
         BACKEND_CLIENT_AUTH_URL  : mockUrl,
-        BACKEND_CLIENT_SECRET_NAME: 'secret',
+        BACKEND_CLIENT_SECRET_NAME: 'backend-client',
         COGNITO_AUTHORIZER_URLS  : 'http://localhost:3000',
         COGNITO_HOST             : mockUrl,
         CUSTOM_DOMAIN_BASE_PATH  : 'publication',
@@ -75,7 +75,8 @@ def localDefaults = { String mockUrl ->
         NVA_FRONTEND_DOMAIN      : 'localhost',
         NVA_PERSISTED_STORAGE_BUCKET_NAME: 'nva-resource-storage',
         SHORTENED_URI_TABLE_NAME : 'nva-download-url-shortener',
-        TABLE_NAME               : 'nva-resources'
+        TABLE_NAME               : 'nva-resources',
+        SECRETS_DIR              : project.file('local/secrets').absolutePath
     ].collectEntries { name, value -> [name, System.getenv(name) ?: value] }
 }
 

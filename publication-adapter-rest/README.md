@@ -27,11 +27,12 @@ with a real bearer token comes back owned by the logged-in user. A tampered
 signature gets 401. `X-Adapter-Authorizer` is no longer needed for anything but
 convenience.
 
-**Next: delete the fakes that can never ship** — item 4 under
-[Sequencing](#sequencing): Vault-backed secrets and a real EventBridge
-equivalent, replacing the two `Proxy` stand-ins. Then item 6, splitting the
-harness out of the production artifact, which matters before this is deployed
-anywhere reachable.
+**Next: split the harness out of the production artifact** — item 6 under
+[Sequencing](#sequencing), and the last thing standing between this and being
+deployable somewhere reachable. `TestHeaderAuthorizerProvider` turns an HTTP
+header into a trusted authorizer context and is compiled into the same artifact
+that would be deployed. Now that real token validation works, it has no reason
+to ship.
 
 Finishing the ExtendDB validation remains deferred; it would confirm something
 that already looks right, and it needs test isolation first (item 3).
@@ -71,6 +72,8 @@ Manager, etc.).
 | `GatewayResponseWriter` | `GatewayResponse` JSON → HTTP |
 | `MockLambdaContext` | Minimal `com.amazonaws.services.lambda.runtime.Context` stub |
 | `ResourceTable` | Creates `nva-resources` and all 4 GSIs if missing, against whatever endpoint the client is configured for |
+| `FileBackedSecretsManagerClient` | Reads secrets from a directory, one file per secret — the shape Kubernetes mounts them in |
+| `LoggingEventBridgeClient` | Logs events at WARN instead of delivering them; there is no bus yet |
 | `HandlerContainer` | Type-based DI: `register(Class, instance)` + `create(Class)` picks the constructor with the most matching parameter types. Override via `registerFactory` for edge cases. |
 | `AuthorizerContextProvider` | Populates `requestContext.authorizer` — pluggable |
 | `TestHeaderAuthorizerProvider` | Reads `X-Adapter-Authorizer` JSON header (local/dev only) |
@@ -212,10 +215,11 @@ services. Registered: [...]`.
 
 ## Design choices / known limitations
 
-- **Not production code.** `IdentityServiceClient.unauthorizedIdentityServiceClient()`,
-  a `Proxy`-based fake `SecretsManagerClient`, and `TestHeaderAuthorizerProvider`
-  all take shortcuts that are acceptable for a local harness but not for a live
-  deployment.
+- **Two shortcuts left.** `TestHeaderAuthorizerProvider` is an authentication
+  bypass and must not reach a deployed artifact;
+  `IdentityServiceClient.unauthorizedIdentityServiceClient()` needs a configured
+  client. Everything else that used to be faked — secrets, events, the database,
+  storage, token validation — now runs against something real.
 - **No code-quality gates.** The module deliberately skips the
   `nva.publication.api.java-conventions` plugin, so Checkstyle, PMD and JaCoCo
   don't run here — it's a harness, not shipping logic. JUnit is wired up
@@ -541,9 +545,10 @@ to **delete**.
 | Today | Verdict |
 |---|---|
 | `DynamoDBEmbedded` | **Done** — gone from the production path, now a test-only dependency. The adapter builds a client from config and bootstraps the table |
-| `fakeSecretsManagerClient()` — a `Proxy` returning canned credentials | Delete. Real client, Vault-provided secret |
-| `noopEventBridgeClient()` — a `Proxy` swallowing events | Delete. Silently dropping events is not a behaviour to ship |
+| `fakeSecretsManagerClient()` — a `Proxy` returning canned credentials | **Done** — replaced by `FileBackedSecretsManagerClient`, reading a directory the way Kubernetes mounts secrets |
+| `noopEventBridgeClient()` — a `Proxy` swallowing events | **Done** — replaced by `LoggingEventBridgeClient`. Still no bus, but the loss is visible |
 | `IdentityServiceClient.unauthorizedIdentityServiceClient()` | Replace with a configured client |
+| Cognito token stub | **Done** — Keycloak issues real tokens, validated against its JWKS |
 | `TestHeaderAuthorizerProvider` | **Must not exist in the production artifact** — see below |
 | Customer API stub | Stays a stub, but moves out of process (see below) |
 
@@ -599,8 +604,17 @@ what already looks right. Item 5 is next.
    and recreates the table per test, which is only affordable in-process.
    Replace it with item deletion or per-class table names. Shared across
    modules, so it needs care.
-4. **Vault-backed secrets and a real EventBridge-equivalent, deleting both
-   `Proxy` fakes.** Small, and removes the two things that can never ship.
+4. ~~**Delete both `Proxy` fakes.**~~ Done. Neither is a stub any more:
+   - `FileBackedSecretsManagerClient` reads one file per secret from a
+     directory, which is how Kubernetes presents a mounted secret and therefore
+     how Vault-provided values reach a pod on Platon. Only the directory
+     contents differ between environments, so this is deployable as written.
+     Verified: pointing `SECRETS_DIR` at a missing directory makes the adapter
+     refuse to start rather than silently using canned credentials.
+   - `LoggingEventBridgeClient` logs each undelivered event at WARN. There is
+     still no bus — that is item 12 — but the previous stand-in dropped events
+     silently, which made the gap invisible. This is the "hack that can live in
+     production" case: honest about what it does, and harmless.
 5. ~~**Keycloak.**~~ Done. Real OIDC with a real login page, and bearer tokens
    validated against its JWKS. One blocker found and worked around: **nva-commons
    hardcodes the Cognito JWKS path.** `UrlJwkProvider` builds

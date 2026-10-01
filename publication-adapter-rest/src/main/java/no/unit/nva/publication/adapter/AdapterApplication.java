@@ -13,7 +13,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
@@ -56,10 +55,7 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.BucketAlreadyExistsException;
 import software.amazon.awssdk.services.s3.model.BucketAlreadyOwnedByYouException;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
-import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
-import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
 public final class AdapterApplication {
 
@@ -75,9 +71,6 @@ public final class AdapterApplication {
     private static final String STORAGE_BUCKET_ENV = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
     private static final char PATH_PARAMETER_START = '{';
     private static final ObjectMapper OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
-    private static final String FAKE_CREDENTIALS_JSON =
-        "{\"id\":\"fake-client-id\",\"secret\":\"fake-client-secret\"}";
-
     private final HandlerContainer container;
     private final OpenAPI openApi;
     private final ApiGatewayProxyRequestBuilder requestBuilder;
@@ -191,7 +184,7 @@ public final class AdapterApplication {
         var identityServiceClient = IdentityServiceClient.unauthorizedIdentityServiceClient();
         var ticketService = new TicketService(dynamoDb, uriRetriever, cristinUnitsUtil);
         var httpClient = HttpClient.newHttpClient();
-        var secretsManagerClient = fakeSecretsManagerClient();
+        var secretsManagerClient = FileBackedSecretsManagerClient.fromEnvironment();
         var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient,
                                               environment.readEnv(API_HOST_ENV));
         var s3Client = S3Client.builder().forcePathStyle(forcePathStyle()).build();
@@ -210,7 +203,7 @@ public final class AdapterApplication {
                    .register(IdentityServiceClient.class, identityServiceClient)
                    .register(SecretsManagerClient.class, secretsManagerClient)
                    .register(HttpClient.class, httpClient)
-                   .register(EventBridgeClient.class, noopEventBridgeClient())
+                   .register(EventBridgeClient.class, new LoggingEventBridgeClient())
                    .register(DataCiteDoiClient.class, doiClient)
                    // Handlers declare the interface, and the container matches on exact type
                    .register(DoiClient.class, doiClient)
@@ -274,40 +267,6 @@ public final class AdapterApplication {
             URI.create(environment.readEnv(BACKEND_CLIENT_AUTH_URL_ENV)));
         return new JavaHttpClientCustomerApiClient(
             AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, cognitoCredentials));
-    }
-
-    private static EventBridgeClient noopEventBridgeClient() {
-        return (EventBridgeClient) Proxy.newProxyInstance(
-            EventBridgeClient.class.getClassLoader(),
-            new Class<?>[]{EventBridgeClient.class},
-            (proxy, method, args) -> {
-                if ("putEvents".equals(method.getName())) {
-                    return PutEventsResponse.builder().failedEntryCount(0).build();
-                }
-                if ("close".equals(method.getName())) {
-                    return null;
-                }
-                throw new UnsupportedOperationException(
-                    "Local adapter has no EventBridge support for " + method.getName());
-            });
-    }
-
-    private static SecretsManagerClient fakeSecretsManagerClient() {
-        return (SecretsManagerClient) Proxy.newProxyInstance(
-            SecretsManagerClient.class.getClassLoader(),
-            new Class<?>[]{SecretsManagerClient.class},
-            (proxy, method, args) -> {
-                if ("getSecretValue".equals(method.getName())
-                    && args != null && args.length == 1
-                    && args[0] instanceof GetSecretValueRequest) {
-                    return GetSecretValueResponse.builder().secretString(FAKE_CREDENTIALS_JSON).build();
-                }
-                if ("close".equals(method.getName())) {
-                    return null;
-                }
-                throw new UnsupportedOperationException(
-                    "Local adapter has no SecretsManager support for " + method.getName());
-            });
     }
 
     private static final class NoopRawContentRetriever implements RawContentRetriever {
