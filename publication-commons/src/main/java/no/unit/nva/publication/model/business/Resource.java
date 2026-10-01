@@ -495,7 +495,7 @@ public class Resource implements Entity, Validatable<Resource> {
     var reactivatedTickets = reactivateTickets(tickets);
     var fileApprovalTickets = PendingFileTickets.changesFor(resource, tickets, customerApiClient);
 
-    var ticketChanges = reactivatedTickets.followedBy(fileApprovalTickets);
+    var ticketChanges = reactivatedTickets.combinedWith(fileApprovalTickets);
     resourceService.updateResourceWithTickets(resource, userInstance, ticketChanges);
   }
 
