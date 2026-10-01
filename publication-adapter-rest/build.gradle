@@ -17,6 +17,7 @@ dependencies {
     implementation project(':publication-model')
     implementation project(':tickets')
     implementation project(':publication-log')
+    implementation project(':publication-file')
 
     implementation nvaLibs.apigateway
     implementation nvaLibs.core
@@ -26,6 +27,7 @@ dependencies {
 
     implementation nvaCatalog.aws.lambda.core
     implementation nvaCatalog.aws.sdk2.dynamo
+    implementation nvaCatalog.aws.sdk2.s3
     implementation nvaCatalog.jackson.databind
     implementation nvaCatalog.log4j.core
     implementation nvaCatalog.slf4j.api
@@ -53,24 +55,48 @@ application {
     mainClass = 'no.unit.nva.publication.adapter.AdapterApplication'
 }
 
+// Settings the handlers read at construction time. Anything already set in the shell
+// wins, so a single export is enough to point at a different service.
+def localDefaults = { String mockUrl ->
+    [
+        ALLOWED_ORIGIN           : '*',
+        API_HOST                 : 'localhost',
+        AWS_ACCESS_KEY_ID        : 'local',
+        AWS_SECRET_ACCESS_KEY    : 'localsecret',
+        AWS_REGION               : 'eu-west-1',
+        BACKEND_CLIENT_AUTH_URL  : mockUrl,
+        BACKEND_CLIENT_SECRET_NAME: 'secret',
+        COGNITO_AUTHORIZER_URLS  : 'http://localhost:3000',
+        COGNITO_HOST             : mockUrl,
+        CUSTOM_DOMAIN_BASE_PATH  : 'publication',
+        EXTERNAL_USER_POOL_URI   : "$mockUrl/external",
+        ID_NAMESPACE             : 'https://www.example.org/publication',
+        NVA_EVENT_BUS_NAME       : 'local-event-bus',
+        NVA_FRONTEND_DOMAIN      : 'localhost',
+        NVA_PERSISTED_STORAGE_BUCKET_NAME: 'nva-resource-storage',
+        SHORTENED_URI_TABLE_NAME : 'nva-download-url-shortener',
+        TABLE_NAME               : 'nva-resources'
+    ].collectEntries { name, value -> [name, System.getenv(name) ?: value] }
+}
+
 tasks.named('test') {
     useJUnitPlatform()
     // DynamoDBLocal loads sqlite4java via System.load, blocked by JEP 472 without this
     jvmArgs '--enable-native-access=ALL-UNNAMED'
+    environment localDefaults(AdapterTestPorts.MOCK_URL)
+    // Fixed so the adapter and the tests agree on where the Cognito stub listens
     environment 'MOCK_PORT', AdapterTestPorts.MOCK_PORT
-    environment 'COGNITO_HOST', AdapterTestPorts.MOCK_URL
-    environment 'BACKEND_CLIENT_AUTH_URL', AdapterTestPorts.MOCK_URL
-    environment 'EXTERNAL_USER_POOL_URI', "${AdapterTestPorts.MOCK_URL}/external"
-    environment 'ALLOWED_ORIGIN', '*'
-    environment 'AWS_REGION', 'eu-west-1'
-    environment 'ID_NAMESPACE', 'https://www.example.org/publication'
-    environment 'BACKEND_CLIENT_SECRET_NAME', 'secret'
-    environment 'TABLE_NAME', 'nva-resources'
-    environment 'API_HOST', 'localhost'
-    environment 'COGNITO_AUTHORIZER_URLS', 'http://localhost:3000'
-    environment 'NVA_FRONTEND_DOMAIN', 'localhost'
-    environment 'CUSTOM_DOMAIN_BASE_PATH', 'publication'
-    environment 'NVA_EVENT_BUS_NAME', 'local-event-bus'
+}
+
+// `docker compose -f publication-adapter-rest/compose.yaml --profile dynamodb up -d`
+// then `./gradlew :publication-adapter-rest:run` — no exports needed. Point at the
+// ExtendDB profile by exporting AWS_ENDPOINT_URL_DYNAMODB and friends instead.
+tasks.named('run') {
+    environment localDefaults('http://localhost:8090')
+    environment 'OPENAPI_PATH', rootProject.file('docs/openapi.yaml').absolutePath
+    environment 'AWS_ENDPOINT_URL_DYNAMODB', System.getenv('AWS_ENDPOINT_URL_DYNAMODB') ?: 'http://localhost:8000'
+    environment 'AWS_ENDPOINT_URL_S3', System.getenv('AWS_ENDPOINT_URL_S3') ?: 'http://localhost:8333'
+    environment 'S3_FORCE_PATH_STYLE', System.getenv('S3_FORCE_PATH_STYLE') ?: 'true'
 }
 
 class AdapterTestPorts {

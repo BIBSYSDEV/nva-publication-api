@@ -34,8 +34,31 @@ import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 public final class ResourceTable {
 
     private static final Logger logger = LoggerFactory.getLogger(ResourceTable.class);
+    private static final String SHORTENED_URI_KEY = "shortenedUri";
 
     private ResourceTable() {
+    }
+
+    /**
+     * The shortened download URLs live in their own table, keyed only by the shortened URI. See
+     * DownloadUrlShorteningTable in template.yaml.
+     */
+    public static void createShortenedUriTableIfMissing(DynamoDbClient client, String tableName) {
+        var request = CreateTableRequest.builder()
+            .tableName(tableName)
+            .attributeDefinitions(attribute(SHORTENED_URI_KEY))
+            .keySchema(KeySchemaElement.builder()
+                           .attributeName(SHORTENED_URI_KEY)
+                           .keyType(KeyType.HASH)
+                           .build())
+            .billingMode(BillingMode.PAY_PER_REQUEST)
+            .build();
+        try {
+            client.createTable(request);
+            logger.info("Created table {}", tableName);
+        } catch (ResourceInUseException e) {
+            logger.info("Table {} already exists", tableName);
+        }
     }
 
     public static void createIfMissing(DynamoDbClient client, String tableName) {

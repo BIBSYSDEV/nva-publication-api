@@ -21,25 +21,41 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.Comparator;
 import java.util.Optional;
+import no.unit.nva.auth.AuthorizedBackendClient;
+import no.unit.nva.auth.CognitoCredentials;
 import no.unit.nva.auth.uriretriever.RawContentRetriever;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.DataCiteDoiClient;
 import no.unit.nva.doi.DoiClient;
+import no.unit.nva.publication.commons.customer.CustomerApiClient;
+import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.external.services.ChannelClaimClient;
+import no.unit.nva.publication.model.BackendClientCredentials;
+import no.unit.nva.publication.file.upload.FileService;
 import no.unit.nva.publication.model.utils.CustomerService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.PublishingService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.publication.services.UriResolver;
+import no.unit.nva.publication.services.UriResolverImpl;
+import no.unit.nva.publication.services.UriShortener;
+import no.unit.nva.publication.services.UriShortenerImpl;
 import no.unit.nva.publication.ticket.create.TicketResolver;
 import no.unit.nva.publication.utils.CristinUnitsUtil;
 import nva.commons.core.Environment;
+import nva.commons.secrets.SecretsReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.BucketAlreadyExistsException;
+import software.amazon.awssdk.services.s3.model.BucketAlreadyOwnedByYouException;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
@@ -52,6 +68,11 @@ public final class AdapterApplication {
     private static final String DEFAULT_OPENAPI_PATH = "../docs/openapi.yaml";
     private static final String HANDLER_CLASS_EXTENSION = "x-handler-class";
     private static final String API_HOST_ENV = "API_HOST";
+    private static final String BACKEND_CLIENT_SECRET_NAME_ENV = "BACKEND_CLIENT_SECRET_NAME";
+    private static final String BACKEND_CLIENT_AUTH_URL_ENV = "BACKEND_CLIENT_AUTH_URL";
+    private static final String SHORTENED_URI_TABLE_NAME_ENV = "SHORTENED_URI_TABLE_NAME";
+    private static final String S3_FORCE_PATH_STYLE_ENV = "S3_FORCE_PATH_STYLE";
+    private static final String STORAGE_BUCKET_ENV = "NVA_PERSISTED_STORAGE_BUCKET_NAME";
     private static final char PATH_PARAMETER_START = '{';
     private static final ObjectMapper OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
     private static final String FAKE_CREDENTIALS_JSON =
@@ -79,6 +100,9 @@ public final class AdapterApplication {
         MockIntegrations.start(mockPort);
         var dynamoDb = DynamoDbClient.create();
         ResourceTable.createIfMissing(dynamoDb, RESOURCES_TABLE_NAME);
+        ResourceTable.createShortenedUriTableIfMissing(
+            dynamoDb, new Environment().readEnv(SHORTENED_URI_TABLE_NAME_ENV));
+        createBucketIfMissing(new Environment().readEnv(STORAGE_BUCKET_ENV));
         var app = new AdapterApplication(buildContainer(dynamoDb), openApi);
         app.start(port);
     }
@@ -170,6 +194,9 @@ public final class AdapterApplication {
         var secretsManagerClient = fakeSecretsManagerClient();
         var doiClient = new DataCiteDoiClient(httpClient, secretsManagerClient,
                                               environment.readEnv(API_HOST_ENV));
+        var s3Client = S3Client.builder().forcePathStyle(forcePathStyle()).build();
+        var customerApiClient = customerApiClient(environment, httpClient, secretsManagerClient);
+        var uriShortener = UriShortenerImpl.createDefault(environment.readEnv(API_HOST_ENV));
         return new HandlerContainer()
                    .register(ResourceService.class, resourceService)
                    .register(TicketService.class, ticketService)
@@ -186,7 +213,38 @@ public final class AdapterApplication {
                    .register(EventBridgeClient.class, noopEventBridgeClient())
                    .register(DataCiteDoiClient.class, doiClient)
                    // Handlers declare the interface, and the container matches on exact type
-                   .register(DoiClient.class, doiClient);
+                   .register(DoiClient.class, doiClient)
+                   .register(S3Client.class, s3Client)
+                   .register(S3Presigner.class,
+                             S3Presigner.builder()
+                                 .serviceConfiguration(S3Configuration.builder()
+                                                           .pathStyleAccessEnabled(forcePathStyle())
+                                                           .build())
+                                 .build())
+                   .register(CustomerApiClient.class, customerApiClient)
+                   .register(FileService.class,
+                             new FileService(s3Client, customerApiClient, resourceService))
+                   .register(UriShortener.class, uriShortener)
+                   .register(UriResolver.class,
+                             new UriResolverImpl(dynamoDb,
+                                                 environment.readEnv(SHORTENED_URI_TABLE_NAME_ENV)));
+    }
+
+    private static void createBucketIfMissing(String bucketName) {
+        try (var s3Client = S3Client.builder().forcePathStyle(forcePathStyle()).build()) {
+            s3Client.createBucket(request -> request.bucket(bucketName));
+            logger.info("Created bucket {}", bucketName);
+        } catch (BucketAlreadyOwnedByYouException | BucketAlreadyExistsException e) {
+            logger.info("Bucket {} already exists", bucketName);
+        }
+    }
+
+    /**
+     * S3-compatible servers are reached by bucket-in-path rather than by subdomain, and the AWS SDK
+     * has no environment variable for this, unlike the endpoint itself.
+     */
+    private static boolean forcePathStyle() {
+        return Boolean.parseBoolean(System.getenv(S3_FORCE_PATH_STYLE_ENV));
     }
 
     private static ResourceService localResourceService(DynamoDbClient dynamoDb, UriRetriever uriRetriever,
@@ -199,6 +257,23 @@ public final class AdapterApplication {
             ChannelClaimClient.create(uriRetriever),
             new CustomerService(uriRetriever),
             cristinUnitsUtil);
+    }
+
+    /**
+     * JavaHttpClientCustomerApiClient.defaultInstance builds its own SecretsManager client, which
+     * bypasses the one registered here and reaches for real AWS, so the client is assembled
+     * explicitly instead.
+     */
+    private static CustomerApiClient customerApiClient(Environment environment, HttpClient httpClient,
+                                                       SecretsManagerClient secretsManagerClient) {
+        var credentials = new SecretsReader(secretsManagerClient)
+                              .fetchClassSecret(environment.readEnv(BACKEND_CLIENT_SECRET_NAME_ENV),
+                                                BackendClientCredentials.class);
+        var cognitoCredentials = new CognitoCredentials(
+            credentials::getId, credentials::getSecret,
+            URI.create(environment.readEnv(BACKEND_CLIENT_AUTH_URL_ENV)));
+        return new JavaHttpClientCustomerApiClient(
+            AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, cognitoCredentials));
     }
 
     private static EventBridgeClient noopEventBridgeClient() {

@@ -55,16 +55,6 @@ class AdapterApplicationTest {
 
     // Operations deliberately left unwired. Anything else missing x-handler-class is a mistake.
     private static final Set<String> KNOWN_UNWIRED_OPERATIONS = Set.of(
-        // Need S3 (MinIO or LocalStack) before they can run locally
-        "POST /{publicationIdentifier}/file-upload/create",
-        "POST /{publicationIdentifier}/file-upload/listparts",
-        "POST /{publicationIdentifier}/file-upload/prepare",
-        "POST /{publicationIdentifier}/file-upload/abort",
-        "POST /{publicationIdentifier}/file-upload/complete",
-        "POST /{publicationIdentifier}/file/{fileIdentifier}",
-        "DELETE /{publicationIdentifier}/file/{fileIdentifier}",
-        "GET /{publicationIdentifier}/filelink/{fileIdentifier}",
-        "GET /file/{fileIdentifier}",
         // Handlers live in a module this one does not depend on
         "POST /{publicationIdentifier}/ticket/{ticketIdentifier}/message",
         "DELETE /{publicationIdentifier}/ticket/{ticketIdentifier}/message/{messageIdentifier}",

@@ -10,9 +10,10 @@ deployment while keeping the existing handler code.
 
 ## Status and where to pick up
 
-**Working today:** 13 of 29 REST operations route through the adapter against a
-DynamoDB-compatible database. Bearer tokens are validated for real. 17 tests,
-all green, no Docker required.
+**Working today:** 22 of 29 REST operations route through the adapter, against a
+DynamoDB-compatible database and S3-compatible storage. The full multipart upload
+flow works end to end, presigned URLs included. Bearer tokens are validated for
+real. 17 tests, all green, no Docker required.
 
 **The open question is the database.** Everything else has a known path off AWS;
 this does not. ScyllaDB Alternator was tested and rejected (no
@@ -20,15 +21,18 @@ this does not. ScyllaDB Alternator was tested and rejected (no
 tested and works — but only against 13 REST operations and a 7-test subset, not
 the full suite.
 
-**Next task: S3 and the file operations, via MinIO.** The point of this PoC is
-to surface blockers, and the nine file operations are the largest untouched area
-— the one most likely to hide another `TransactWriteItems`-shaped surprise.
-Presigned URLs are the specific worry (see [Known traps](#known-traps)).
+**S3 is done and found no blocker.** The nine file operations were the largest
+untouched area and the most likely place for another `TransactWriteItems`-shaped
+surprise. Multipart upload, presigned PUT and completion all work against
+SeaweedFS. Two things did bite, both small: MinIO's images are no longer pullable
+without authentication, and presigned URLs need path-style addressing.
 
-Finishing the ExtendDB validation is deliberately *not* next. It would confirm
-something that already looks right, whereas S3 could still invalidate the
-approach. It does have a prerequisite when the time comes — test isolation that
-survives a real database, item 3 under [Sequencing](#sequencing).
+**Next: Keycloak**, item 5 under [Sequencing](#sequencing) — the last external
+service still faked, and the one that makes a real login demo possible. The JWKS
+validation it needs already works.
+
+Finishing the ExtendDB validation remains deferred; it would confirm something
+that already looks right, and it needs test isolation first (item 3).
 
 **Two lists, deliberately separate.** [Roadmap](#roadmap) tracks *breadth* — how
 much of the REST API the adapter covers, numbered 1–13, items 1–4 done.
@@ -72,32 +76,22 @@ Manager, etc.).
 
 ## Running locally
 
-Start the backing services first — the adapter no longer embeds a database:
+Two commands, no environment variables:
 
 ```bash
-docker compose -f publication-adapter-rest/compose.yaml up -d
+docker compose -f publication-adapter-rest/compose.yaml --profile dynamodb up -d
+./gradlew :publication-adapter-rest:run
 ```
 
-Then, from the repo root:
+The `run` task carries local defaults for everything the handlers read at
+construction time, and **anything already exported in your shell wins** — so
+pointing at a different service is a single `export`, not a re-listing of
+fifteen variables. To use the ExtendDB profile instead:
 
 ```bash
-AWS_ENDPOINT_URL_DYNAMODB="http://localhost:8000" \
-AWS_ACCESS_KEY_ID="local" \
-AWS_SECRET_ACCESS_KEY="local" \
-OPENAPI_PATH=/absolute/path/to/docs/openapi.yaml \
-ALLOWED_ORIGIN="*" \
-AWS_REGION="eu-west-1" \
-COGNITO_HOST="http://localhost:8090" \
-ID_NAMESPACE="https://www.example.org/publication" \
-BACKEND_CLIENT_SECRET_NAME="secret" \
-TABLE_NAME="nva-resources" \
-BACKEND_CLIENT_AUTH_URL="http://localhost:8090" \
-EXTERNAL_USER_POOL_URI="http://localhost:8090/external" \
-API_HOST="localhost" \
-COGNITO_AUTHORIZER_URLS="http://localhost:3000" \
-NVA_FRONTEND_DOMAIN="localhost" \
-CUSTOM_DOMAIN_BASE_PATH="publication" \
-NVA_EVENT_BUS_NAME="local-event-bus" \
+docker compose -f publication-adapter-rest/compose.yaml --profile extenddb up -d
+export AWS_ENDPOINT_URL_DYNAMODB=https://localhost:18443
+# ... plus credentials and truststore, see "ExtendDB works" below
 ./gradlew :publication-adapter-rest:run
 ```
 
@@ -105,14 +99,21 @@ Ports:
 - `8080` — adapter HTTP (override with `PORT`)
 - `8090` — mock integrations for Cognito + Customer API (override with `MOCK_PORT`)
 - `8000` — DynamoDB-compatible database from `compose.yaml`
+- `8333` — S3-compatible storage from `compose.yaml`
 
-The adapter creates `nva-resources` and its four GSIs on startup if they are
-missing, so there is no separate bootstrap step. The container runs in-memory,
-so state is lost when it stops.
+**Nothing needs provisioning.** On startup the adapter creates `nva-resources`
+with its four GSIs, the `nva-download-url-shortener` table, and the storage
+bucket, each only if missing. Both containers run in-memory, so state is lost
+when they stop.
 
-`AWS_ENDPOINT_URL_DYNAMODB` is the per-service form on purpose. The global
-`AWS_ENDPOINT_URL` would redirect *every* AWS client at once, which becomes wrong
-as soon as a second service is added.
+Two configuration details worth knowing:
+
+- `AWS_ENDPOINT_URL_DYNAMODB` and `AWS_ENDPOINT_URL_S3` are the per-service form
+  on purpose. The global `AWS_ENDPOINT_URL` would redirect *every* AWS client at
+  once, which is wrong as soon as there is more than one service.
+- `S3_FORCE_PATH_STYLE=true` is needed for any S3-compatible server, since
+  buckets are addressed in the path rather than as a subdomain. The AWS SDK has
+  no environment variable for this, so the adapter reads one of its own.
 
 ## Example requests
 
@@ -197,9 +198,10 @@ services. Registered: [...]`.
   don't run here — it's a harness, not shipping logic. JUnit is wired up
   directly in `build.gradle` instead, along with the env vars the handlers read
   at construction time.
-- **13 of 29 operations wired.** Publication CRUD, publish, by-owner, the four
-  ticket operations, log and context. `AdapterApplicationTest` asserts that every
-  `x-handler-class` in `docs/openapi.yaml` can actually be constructed.
+- **22 of 29 operations wired.** Publication CRUD, publish, by-owner, the four
+  ticket operations, log, context, and all nine file operations.
+  `AdapterApplicationTest` asserts that every `x-handler-class` in
+  `docs/openapi.yaml` can actually be constructed.
 - **One handler instance per request — by necessity, not by accident.** The
   `nva-commons` handler hierarchy keeps per-request state on the instance
   (`outputStream`, `allowedOrigin`, `isBase64Encoded`), so instances must not be
@@ -209,8 +211,9 @@ services. Registered: [...]`.
   than WireMock precisely to keep one Jetty on the classpath — `nvaCatalog`'s
   WireMock 4 pulls a newer Jetty that breaks Javalin's websocket-core with a
   `NoSuchMethodError` at startup.
-- **No S3.** Intentional — the file-download/upload handlers need MinIO once
-  that scope expands. See "Target: no AWS dependency" below.
+- **S3 is real, not faked.** `compose.yaml` runs SeaweedFS, and the adapter talks
+  to it with the ordinary `S3Client` and `S3Presigner` pointed at
+  `AWS_ENDPOINT_URL_S3`. Multipart upload works end to end.
 - **Cognito token validation now runs.** `ApiGatewayProxyRequestBuilder` omits
   `requestContext.authorizer` entirely when there is no authorizer context, so
   `RestRequestHandler.validateAuthorization` performs its JWKS check and
@@ -230,14 +233,13 @@ Breadth of REST coverage. The no-AWS work has its own ordered list under
    from here on should get a case in it. Note that GET needs an explicit
    `Accept: application/json`; without it content negotiation picks a text type
    and the handler answers `303` with a landing-page `Location`.
-2. ~~**Register the missing collaborator types.**~~ Done for everything that
-   doesn't need S3 — 13 of 29 operations now route. It took no factories at all,
-   only types registered in `buildContainer()` plus two env vars
-   (`CUSTOM_DOMAIN_BASE_PATH`, `NVA_EVENT_BUS_NAME`). What remains:
-   - **7 file-upload + 2 download operations** need S3 (see "No S3" above).
+2. ~~**Register the missing collaborator types.**~~ Done — 22 of 29 operations
+   now route, the nine file operations included. It took no factories at all,
+   only types registered in `buildContainer()` plus a few env vars. What remains:
    - **2 message operations** live in a module this one doesn't depend on.
    - **4 import-candidate operations** construct fine but would read the
      resources table; they need their own table before being switched on.
+   - **1 DOI operation** needs a real DataCite registrar to do anything useful.
 3. ~~**Fail the build on drift.**~~ Done — `shouldNotLeaveNewOperationsUnwiredWithoutSayingSo`
    compares the operations lacking `x-handler-class` against
    `KNOWN_UNWIRED_OPERATIONS`, which carries a reason per entry. A new operation
@@ -553,15 +555,19 @@ them.
 
 **This is the active list.** Ordered so that the steps most likely to surface a
 blocker come first — a PoC earns its keep by failing early, not by confirming
-what already looks right. Item 2 is next.
+what already looks right. Item 5 is next.
 
 1. ~~**Get `DynamoDBEmbedded` out of the production path.**~~ Done, and it paid
    for itself immediately: putting a real server behind the endpoint is what
    surfaced the Alternator transaction blocker, on ground we already had tests
    for. Which server it points at is now an open decision, not an assumption.
-2. **MinIO and the nine file operations.** ← next. Prioritised above finishing
-   the database validation because it can still surface a blocker, while that
-   would only confirm what already looks right. Groundwork below.
+2. ~~**S3 and the nine file operations.**~~ Done, and it surfaced no blocker.
+   Multipart create, presigned PUT, list parts and complete all work against
+   SeaweedFS — **not** MinIO, whose images are no longer pullable from Docker Hub
+   or quay.io without authentication. Presigned URLs needed `S3_FORCE_PATH_STYLE`,
+   as expected. `JavaHttpClientCustomerApiClient.defaultInstance` had to be
+   replaced with explicit construction, since it builds its own SecretsManager
+   client and reached for real AWS.
 3. **Test isolation that survives a real database.** Prerequisite for finishing
    the ExtendDB validation, not for anything else. `ResourcesLocalTest` drops
    and recreates the table per test, which is only affordable in-process.
@@ -574,37 +580,18 @@ what already looks right. Item 2 is next.
 6. **Split the harness out of the production artifact.** Do this before anything
    is deployed anywhere reachable, not after.
 
-#### Groundwork for step 2
-
-The handlers were surveyed but nothing was wired. What is known:
-
-- **They live in `publication-file`**, not `publication-rest`, and that module
-  is not yet a dependency of this one. `tickets` and `publication-log` had to be
-  added the same way when the ticket operations were wired.
-- **Types to register**, beyond `Environment` and `IdentityServiceClient` which
-  already are:
-
-  | Type | Needed by |
-  |---|---|
-  | `FileService` | `CreateUploadHandler`, `CompleteUploadHandler`, `UpdateFileHandler`, `DeleteFileHandler` |
-  | `S3Client` | `ListPartsHandler`, `AbortMultipartUploadHandler` |
-  | `S3Presigner` | `PrepareUploadPartHandler`, `CreatePresignedDownloadUrlHandler` |
-  | `UriShortener` | `CreatePresignedDownloadUrlHandler` |
-  | `UriResolver` | `ResolveShortenedUrlHandler` |
-
-- Expect the same exact-type matching issue as `DoiClient`: register the
-  interface the constructor declares, not only the concrete class.
-- `S3Client` and `S3Presigner` pick up `AWS_ENDPOINT_URL_S3`, so pointing them
-  at MinIO should need no code — but presigned URLs are signed for a specific
-  host and usually need path-style access, which is where this is most likely
-  to break.
-
 ### Known traps
 
-- **Presigned URLs.** `CreatePresignedDownloadUrlHandler` takes an `S3Presigner`.
-  Against MinIO this usually needs path-style access enabled, and the signed host
-  must be the one the *client* can reach — not the in-cluster service name. This
-  will not work by accident.
+- **Presigned URLs.** Confirmed: `S3_FORCE_PATH_STYLE=true` is required, because
+  S3-compatible servers address buckets in the path rather than as a subdomain,
+  and the AWS SDK exposes no environment variable for it. Still outstanding for a
+  real deployment: the signed host must be the one the *client* can reach, not
+  the in-cluster service name.
+- **Handlers that build their own AWS clients.**
+  `JavaHttpClientCustomerApiClient.defaultInstance` constructs its own
+  SecretsManager client, bypassing the one registered in the container and
+  reaching for real AWS. Any `defaultX()` factory is suspect this way; the fix is
+  to assemble the collaborator explicitly.
 - **Bootstrapping tables and buckets.** Something has to create the table, its
   four GSIs and the buckets. It must be shared between `compose.yaml` and
   Testcontainers, or the two environments will differ in exactly the way this

@@ -1,15 +1,16 @@
 # Local stack for the adapter.
 #
-# Default profile runs AWS's DynamoDB Local: free but proprietary and test-only.
-# It is the default only because it is the one DynamoDB-compatible server known
-# to support TransactWriteItems, which this codebase uses in 101 places.
+# Pick exactly one database profile. MinIO has no profile, so it starts with both.
 #
-#   docker compose -f publication-adapter-rest/compose.yaml up -d
+# Quick path — AWS's DynamoDB Local. Free but proprietary and test-only; it is
+# here because it supports TransactWriteItems, which this codebase uses in 101
+# places, and needs no TLS or IAM setup:
 #
-# The "extenddb" profile runs ExtendDB instead: an Apache-2.0 implementation of
-# the DynamoDB wire protocol backed by PostgreSQL, which is the candidate for
-# running this service without AWS. Platon provides managed PostgreSQL, so only
-# the adapter container would need deploying there.
+#   docker compose -f publication-adapter-rest/compose.yaml --profile dynamodb up -d
+#
+# Deployment-shaped path — ExtendDB, an Apache-2.0 implementation of the DynamoDB
+# wire protocol backed by PostgreSQL, and the candidate for running without AWS.
+# Platon provides managed PostgreSQL, so only the adapter would deploy there:
 #
 #   docker compose -f publication-adapter-rest/compose.yaml --profile extenddb up -d
 #
@@ -36,9 +37,21 @@ services:
   dynamodb:
     image: amazon/dynamodb-local:2.5.2
     command: -jar DynamoDBLocal.jar -inMemory -sharedDb
-    profiles: ["default"]
+    profiles: ["dynamodb"]
     ports:
       - "127.0.0.1:8000:8000"
+
+  # S3 wire protocol, no AWS. Runs in both profiles since the file handlers need it
+  # regardless of which database is behind the adapter.
+  #
+  # SeaweedFS rather than MinIO: the MinIO images are no longer pullable from Docker
+  # Hub or quay.io without authentication. SeaweedFS is Apache-2.0 and `server -s3`
+  # brings up master, volume, filer and the S3 gateway in one process.
+  s3:
+    image: chrislusf/seaweedfs:latest
+    command: server -s3 -s3.port=8333 -dir=/data -master.volumeSizeLimitMB=64
+    ports:
+      - "127.0.0.1:8333:8333"
 
   postgres:
     image: postgres:16.10-bookworm

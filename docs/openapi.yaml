@@ -736,6 +736,7 @@ paths:
       summary: Public pre signed download link for publication file
       description: Returns an S3 pre signed and temporal download URL to a publication file
       operationId: getPresignDownloadUri
+      x-handler-class: no.unit.nva.publication.download.CreatePresignedDownloadUrlHandler
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DownloadPublicationFileFunction.Arn}:live/invocations
@@ -789,6 +790,7 @@ paths:
                 $ref: "#/components/schemas/Problem"
   /{publicationIdentifier}/file-upload/create:
     post:
+      x-handler-class: no.unit.nva.publication.file.upload.CreateUploadHandler
       summary: Create a upload
       description: Creates a multipart upload for a file. This is later referenced for preparing file-parts, uploading, and finishing the upload..
       tags:
@@ -842,6 +844,7 @@ paths:
                 $ref: "#/components/schemas/Problem"
   /{publicationIdentifier}/file-upload/listparts:
     post:
+      x-handler-class: no.unit.nva.publication.file.upload.ListPartsHandler
       summary: List the parts of a file that have already been uploaded.
       tags:
         - external
@@ -894,6 +897,7 @@ paths:
                 $ref: "#/components/schemas/Problem"
   /{publicationIdentifier}/file-upload/prepare:
     post:
+      x-handler-class: no.unit.nva.publication.file.upload.PrepareUploadPartHandler
       summary: Generates a URL to upload a single file-part
       tags:
         - external
@@ -946,6 +950,7 @@ paths:
                 $ref: "#/components/schemas/Problem"
   /{publicationIdentifier}/file-upload/abort:
     post:
+      x-handler-class: no.unit.nva.publication.file.upload.AbortMultipartUploadHandler
       summary: Aborts a upload
       description: Aborts the Multipart upload, and deletes all parts that have been uploaded so far.
       tags:
@@ -995,6 +1000,7 @@ paths:
                 $ref: "#/components/schemas/Problem"
   /{publicationIdentifier}/file-upload/complete:
     post:
+      x-handler-class: no.unit.nva.publication.file.upload.CompleteUploadHandler
       summary: Completes a upload
       description: Completes a Multipart upload, combining all parts into a single object in the S3 bucket
       tags:
@@ -1051,6 +1057,7 @@ paths:
 
   /{publicationIdentifier}/file/{fileIdentifier}:
     post:
+      x-handler-class: no.unit.nva.publication.file.upload.UpdateFileHandler
       summary: Update file
       description: Updates file metadata
       tags:
@@ -1122,6 +1129,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
     delete:
+      x-handler-class: no.unit.nva.publication.file.upload.DeleteFileHandler
       summary: Delete file
       description: Deletes file metadata
       tags:
@@ -1185,6 +1193,7 @@ paths:
       summary: Resolves shortened URI to original presigned URI
       description: Returns 301 if successful with location header set to the original presigned URI
       operationId: resolveDownloadUriFromIdentifier
+      x-handler-class: no.unit.nva.publication.download.ResolveShortenedUrlHandler
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ResolveShortenedUrlFunction.Arn}:live/invocations
