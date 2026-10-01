@@ -27,12 +27,21 @@ with a real bearer token comes back owned by the logged-in user. A tampered
 signature gets 401. `X-Adapter-Authorizer` is no longer needed for anything but
 convenience.
 
-**Next: split the harness out of the production artifact** — item 6 under
-[Sequencing](#sequencing), and the last thing standing between this and being
-deployable somewhere reachable. `TestHeaderAuthorizerProvider` turns an HTTP
-header into a trusted authorizer context and is compiled into the same artifact
-that would be deployed. Now that real token validation works, it has no reason
-to ship.
+**The sequence is finished.** Every externally-facing dependency now runs against
+something real — database, S3 storage, OIDC, secrets — and the authentication
+bypass is gone from the artifact that would be deployed.
+
+**What is left is deployment itself**, which the roadmap covers rather than this
+sequence: a container image (item 7), Kubernetes manifests (8) and observability
+(9). Two things to carry into that work:
+
+- The image needs a **JRE 25**. The distribution's start script reads `JAVA_HOME`,
+  and classes are compiled at class-file version 69.
+- The remaining shortcut is
+  `IdentityServiceClient.unauthorizedIdentityServiceClient()`.
+
+Finishing the ExtendDB validation also remains open, and still needs test
+isolation first (item 3).
 
 Finishing the ExtendDB validation remains deferred; it would confirm something
 that already looks right, and it needs test isolation first (item 3).
@@ -91,7 +100,17 @@ docker compose -f publication-adapter-rest/compose.yaml --profile dynamodb up -d
 The `run` task carries local defaults for everything the handlers read at
 construction time, and **anything already exported in your shell wins** — so
 pointing at a different service is a single `export`, not a re-listing of
-fifteen variables. To use the ExtendDB profile instead:
+fifteen variables.
+
+`run` starts the **local harness**, which trusts the `X-Adapter-Authorizer`
+header so you can exercise handlers without obtaining a token. To run what would
+actually be deployed — no harness on the classpath, bearer token required:
+
+```bash
+./gradlew :publication-adapter-rest:runDist
+```
+
+To use the ExtendDB profile instead:
 
 ```bash
 docker compose -f publication-adapter-rest/compose.yaml --profile extenddb up -d
@@ -215,11 +234,11 @@ services. Registered: [...]`.
 
 ## Design choices / known limitations
 
-- **Two shortcuts left.** `TestHeaderAuthorizerProvider` is an authentication
-  bypass and must not reach a deployed artifact;
-  `IdentityServiceClient.unauthorizedIdentityServiceClient()` needs a configured
-  client. Everything else that used to be faked — secrets, events, the database,
-  storage, token validation — now runs against something real.
+- **One shortcut left:** `IdentityServiceClient.unauthorizedIdentityServiceClient()`
+  needs a configured client. Everything else that used to be faked — secrets,
+  events, the database, storage, token validation — now runs against something
+  real, and the header bypass is confined to a source set the distribution does
+  not include.
 - **No code-quality gates.** The module deliberately skips the
   `nva.publication.api.java-conventions` plugin, so Checkstyle, PMD and JaCoCo
   don't run here — it's a harness, not shipping logic. JUnit is wired up
@@ -549,20 +568,20 @@ to **delete**.
 | `noopEventBridgeClient()` — a `Proxy` swallowing events | **Done** — replaced by `LoggingEventBridgeClient`. Still no bus, but the loss is visible |
 | `IdentityServiceClient.unauthorizedIdentityServiceClient()` | Replace with a configured client |
 | Cognito token stub | **Done** — Keycloak issues real tokens, validated against its JWKS |
-| `TestHeaderAuthorizerProvider` | **Must not exist in the production artifact** — see below |
+| `TestHeaderAuthorizerProvider` | **Done** — moved to the `local` source set, absent from the distribution |
 | Customer API stub | Stays a stub, but moves out of process (see below) |
 
-### The one that is dangerous, not just untidy
+### The one that was dangerous, not just untidy
 
 `TestHeaderAuthorizerProvider` turns an `X-Adapter-Authorizer` header into a
-trusted authorizer context. It is compiled into the same artifact that would be
-deployed, and nothing but the absence of that header stops it. Bearer token
-validation now works (see below), so this is the remaining hole.
+trusted authorizer context. It used to be compiled into the same artifact that
+would be deployed, with nothing but the absence of that header stopping it.
 
-Configuration is not sufficient here — a misconfiguration would be an
-authentication bypass. The harness classes belong in a separate source set or
-module that the production build does not include, so that shipping the bypass
-becomes a compile error rather than a deployment mistake.
+Configuration would not have been sufficient, because a misconfiguration would
+then be an authentication bypass. So the harness lives in a `local` source set
+that the distribution does not include: using it from production code is a
+compile error, and shipping it takes a deliberate build change. See item 6 under
+[Sequencing](#sequencing) for how this was verified.
 
 ### What genuinely cannot become real
 
@@ -625,8 +644,22 @@ what already looks right. Item 5 is next.
    annotation list. The cleaner fix is for `nva-commons` to read `jwks_uri` from
    `/.well-known/openid-configuration` rather than assuming the path — that would
    make any OIDC provider work without a proxy.
-6. **Split the harness out of the production artifact.** Do this before anything
-   is deployed anywhere reachable, not after.
+6. ~~**Split the harness out of the production artifact.**~~ Done.
+   `TestHeaderAuthorizerProvider` and `LocalAdapterApplication` live in a `local`
+   source set that `installDist` does not include, so the header bypass is absent
+   from the jar rather than merely unused. `main` defaults to
+   `BearerTokenAuthorizerProvider`, which supplies no authorizer context at all,
+   leaving the bearer token as the only way in.
+
+   Verified by running both entry points against the same stack:
+
+   | | `./gradlew run` (harness) | `./gradlew runDist` (distribution) |
+   |---|---|---|
+   | `X-Adapter-Authorizer` header | 201 | **401** |
+   | Real bearer token | 201 | 201 |
+
+   Putting the bypass back into a deployment now takes a deliberate
+   `build.gradle` change, not a misconfiguration.
 
 ### Known traps
 

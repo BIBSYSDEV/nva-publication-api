@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.publication.adapter.local.TestHeaderAuthorizerProvider;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.dynamodb.services.local.embedded.DynamoDBEmbedded;
 import org.junit.jupiter.api.AfterAll;
@@ -76,7 +77,8 @@ class AdapterApplicationTest {
         var mockPort = Integer.parseInt(System.getenv("MOCK_PORT"));
         mocks = MockIntegrations.start(mockPort);
         adapter = new AdapterApplication(AdapterApplication.buildContainer(embeddedDynamoDb()),
-                                         AdapterApplication.readOpenApi(OPENAPI_PATH))
+                                         AdapterApplication.readOpenApi(OPENAPI_PATH),
+                                         new TestHeaderAuthorizerProvider(OBJECT_MAPPER))
                       .start(RANDOM_PORT);
         baseUri = "http://localhost:%s".formatted(adapter.port());
         httpClient = HttpClient.newHttpClient();

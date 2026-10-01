@@ -8,6 +8,21 @@ java {
     }
 }
 
+// The local harness — anything that weakens authentication to make manual testing easier —
+// is kept out of `main` so it cannot reach the distribution. Using it from production code
+// is a compile error rather than a configuration mistake.
+sourceSets {
+    local {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+configurations {
+    localImplementation.extendsFrom implementation
+    localRuntimeOnly.extendsFrom runtimeOnly
+}
+
 dependencies {
     implementation project(':publication-rest')
     implementation(project(':publication-commons')) {
@@ -39,6 +54,8 @@ dependencies {
     testImplementation nvaCatalog.junit.jupiter.api
     testImplementation nvaCatalog.hamcrest
     testImplementation nvaCatalog.mockito.core
+    // Tests drive the adapter through the harness, so they see the local source set too
+    testImplementation sourceSets.local.output
     // Embedded DynamoDB is a test fixture only — the adapter itself talks to a configured endpoint
     testImplementation(nvaCatalog.aws.sdk2.dynamodblocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
@@ -92,15 +109,39 @@ tasks.named('test') {
 // `docker compose -f publication-adapter-rest/compose.yaml --profile dynamodb up -d`
 // then `./gradlew :publication-adapter-rest:run` — no exports needed. Point at the
 // ExtendDB profile by exporting AWS_ENDPOINT_URL_DYNAMODB and friends instead.
+// Everything needed to talk to the services in compose.yaml, shared by both entry points
+def runEnvironment = {
+    localDefaults('http://localhost:8090') + [
+        OPENAPI_PATH             : rootProject.file('docs/openapi.yaml').absolutePath,
+        // Keycloak from compose.yaml, so bearer tokens are validated against real JWKS
+        COGNITO_AUTHORIZER_URLS  : 'http://localhost:8091/realms/nva',
+        AWS_ENDPOINT_URL_DYNAMODB: 'http://localhost:8000',
+        AWS_ENDPOINT_URL_S3      : 'http://localhost:8333',
+        S3_FORCE_PATH_STYLE      : 'true'
+    ].collectEntries { name, value -> [name, System.getenv(name) ?: value] }
+}
+
+// Runs the harness entry point, which trusts the X-Adapter-Authorizer header
 tasks.named('run') {
-    environment localDefaults('http://localhost:8090')
-    environment 'OPENAPI_PATH', rootProject.file('docs/openapi.yaml').absolutePath
-    // Keycloak from compose.yaml, so bearer tokens are validated against real JWKS
-    environment 'COGNITO_AUTHORIZER_URLS',
-                System.getenv('COGNITO_AUTHORIZER_URLS') ?: 'http://localhost:8091/realms/nva'
-    environment 'AWS_ENDPOINT_URL_DYNAMODB', System.getenv('AWS_ENDPOINT_URL_DYNAMODB') ?: 'http://localhost:8000'
-    environment 'AWS_ENDPOINT_URL_S3', System.getenv('AWS_ENDPOINT_URL_S3') ?: 'http://localhost:8333'
-    environment 'S3_FORCE_PATH_STYLE', System.getenv('S3_FORCE_PATH_STYLE') ?: 'true'
+    classpath = sourceSets.local.runtimeClasspath
+    mainClass = 'no.unit.nva.publication.adapter.local.LocalAdapterApplication'
+    environment runEnvironment()
+}
+
+// Runs what would actually be deployed: no harness classes on the classpath, so the
+// header bypass does not exist and a bearer token is the only way in.
+tasks.register('runDist', Exec) {
+    group = 'application'
+    description = 'Runs the installed distribution, without the local harness'
+    dependsOn tasks.named('installDist')
+    commandLine layout.buildDirectory
+                    .file("install/${project.name}/bin/${project.name}")
+                    .get().asFile.absolutePath
+    environment runEnvironment()
+    // The start script picks up JAVA_HOME, which on most machines is older than the
+    // toolchain this is compiled with. A deployment image needs a JRE 25 for the same reason.
+    environment 'JAVA_HOME', javaToolchains.launcherFor(java.toolchain)
+                                 .get().metadata.installationPath.asFile.absolutePath
 }
 
 class AdapterTestPorts {

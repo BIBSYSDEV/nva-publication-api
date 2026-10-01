@@ -77,14 +77,27 @@ public final class AdapterApplication {
     private final GatewayResponseWriter responseWriter;
 
     public AdapterApplication(HandlerContainer container, OpenAPI openApi) {
+        this(container, openApi, new BearerTokenAuthorizerProvider());
+    }
+
+    /**
+     * The authorizer provider is injected so that the local harness can supply one that trusts a
+     * header. That provider lives in the `local` source set and is deliberately absent from the
+     * artifact this module builds.
+     */
+    public AdapterApplication(HandlerContainer container, OpenAPI openApi,
+                              AuthorizerContextProvider authorizerContextProvider) {
         this.container = container;
         this.openApi = openApi;
-        this.requestBuilder = new ApiGatewayProxyRequestBuilder(
-            OBJECT_MAPPER, new TestHeaderAuthorizerProvider(OBJECT_MAPPER));
+        this.requestBuilder = new ApiGatewayProxyRequestBuilder(OBJECT_MAPPER, authorizerContextProvider);
         this.responseWriter = new GatewayResponseWriter(OBJECT_MAPPER);
     }
 
     public static void main(String[] args) {
+        startWith(new BearerTokenAuthorizerProvider());
+    }
+
+    public static void startWith(AuthorizerContextProvider authorizerContextProvider) {
         var openApiPath = System.getenv().getOrDefault("OPENAPI_PATH", DEFAULT_OPENAPI_PATH);
         var port = Integer.parseInt(System.getenv().getOrDefault("PORT", String.valueOf(DEFAULT_PORT)));
         var mockPort = Integer.parseInt(
@@ -96,7 +109,7 @@ public final class AdapterApplication {
         ResourceTable.createShortenedUriTableIfMissing(
             dynamoDb, new Environment().readEnv(SHORTENED_URI_TABLE_NAME_ENV));
         createBucketIfMissing(new Environment().readEnv(STORAGE_BUCKET_ENV));
-        var app = new AdapterApplication(buildContainer(dynamoDb), openApi);
+        var app = new AdapterApplication(buildContainer(dynamoDb), openApi, authorizerContextProvider);
         app.start(port);
     }
 

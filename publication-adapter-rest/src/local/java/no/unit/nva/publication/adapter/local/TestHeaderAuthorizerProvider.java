@@ -1,10 +1,11 @@
-package no.unit.nva.publication.adapter;
+package no.unit.nva.publication.adapter.local;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.javalin.http.Context;
 import java.util.Optional;
+import no.unit.nva.publication.adapter.AuthorizerContextProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
