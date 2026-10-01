@@ -1,17 +1,23 @@
 package cucumber.republish;
 
+import static java.util.Collections.emptyList;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
+import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.FakeCustomerApiClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -19,12 +25,15 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 
 /**
- * Holds the persistence layer and the publication under test for the republishing scenarios, and
- * keeps one stable institution URI per institution name used in a feature file.
+ * Holds the persistence layer and the publication under test for the republishing scenarios. Per
+ * institution name used in a feature file, it keeps a stable institution URI, the files uploaded
+ * from that institution, and the approval ticket it had before republishing.
  */
 public class RepublishScenarioContext extends ResourcesLocalTest {
 
   private final Map<String, URI> institutions = new HashMap<>();
+  private final Map<String, List<File>> filesByInstitution = new HashMap<>();
+  private final Map<String, SortableIdentifier> originalTicketByInstitution = new HashMap<>();
   private final FakeCustomerApiClient customerApiClient = new FakeCustomerApiClient();
   private ResourceService resourceService;
   private TicketService ticketService;
@@ -85,5 +94,26 @@ public class RepublishScenarioContext extends ResourcesLocalTest {
         .filter(FilesApprovalEntry.class::isInstance)
         .map(FilesApprovalEntry.class::cast)
         .toList();
+  }
+
+  public List<FilesApprovalEntry> pendingFileApprovalTickets() {
+    return fileApprovalTickets().stream().filter(TicketEntry::isPending).toList();
+  }
+
+  public void addFiles(String institution, List<File> files) {
+    filesByInstitution.computeIfAbsent(institution, ignored -> new ArrayList<>()).addAll(files);
+  }
+
+  public List<File> filesOf(String institution) {
+    return filesByInstitution.getOrDefault(institution, emptyList());
+  }
+
+  public void setOriginalTicket(String institution, TicketEntry ticket) {
+    originalTicketByInstitution.put(institution, ticket.getIdentifier());
+  }
+
+  public TicketEntry originalTicket(String institution) {
+    var identifier = originalTicketByInstitution.get(institution);
+    return attempt(() -> ticketService.fetchTicketByIdentifier(identifier)).orElseThrow();
   }
 }

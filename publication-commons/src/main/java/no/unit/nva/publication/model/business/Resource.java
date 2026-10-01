@@ -58,7 +58,6 @@ import no.unit.nva.model.validation.ValidationException;
 import no.unit.nva.model.validation.ValidationResult;
 import no.unit.nva.model.validation.Validator;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
-import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
@@ -494,14 +493,13 @@ public class Resource implements Entity, Validatable<Resource> {
     var tickets = resourceService.fetchAllTicketsForResource(resource).toList();
     resource.republish(userInstance);
     var reactivatedTickets = reactivateTickets(tickets);
-    var pendingTickets = tickets.stream().filter(TicketEntry::isPending).toList();
-    var uncoveredFileTickets =
-        UncoveredFileTickets.changesFor(resource, pendingTickets, customerApiClient);
+    var fileApprovalTickets = PendingFileTickets.changesFor(resource, tickets, customerApiClient);
 
-    var ticketChanges = reactivatedTickets.followedBy(uncoveredFileTickets);
+    var ticketChanges = reactivatedTickets.followedBy(fileApprovalTickets);
     resourceService.updateResourceWithTickets(resource, userInstance, ticketChanges);
   }
 
+  /** File approval tickets are not reactivated: {@link PendingFileTickets} decides those. */
   private TicketChanges reactivateTickets(Collection<TicketEntry> tickets) {
     var ticketsToReactivate = tickets.stream().filter(this::shouldRepublishTicket).toList();
     ticketsToReactivate.forEach(ticket -> ticket.setStatus(PENDING));
@@ -509,9 +507,7 @@ public class Resource implements Entity, Validatable<Resource> {
   }
 
   private boolean shouldRepublishTicket(TicketEntry ticket) {
-    return (ticket instanceof FilesApprovalEntry
-            || ticket instanceof GeneralSupportRequest
-            || ticket instanceof DoiRequest)
+    return (ticket instanceof GeneralSupportRequest || ticket instanceof DoiRequest)
         && NOT_APPLICABLE == ticket.getStatus();
   }
 
