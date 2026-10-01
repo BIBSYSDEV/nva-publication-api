@@ -964,9 +964,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
   }
 
   @Test
-  void shouldSetAllNotApplicableTicketsToPendingWhenRepublishingPublication()
+  void shouldReactivateDoiAndSupportTicketsButNotFileApprovalTicketsWhenRepublishing()
       throws ApiGatewayException {
-    var publication = createPublishedResource();
+    var publication = createPublishedResourceWithoutFiles();
     var userInstance = UserInstance.fromPublication(publication);
     var resource = Resource.fromPublication(publication);
 
@@ -1007,7 +1007,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
         hasItem(
             allOf(
                 instanceOf(PublishingRequestCase.class),
-                hasProperty("status", is(equalTo(TicketStatus.PENDING))))));
+                hasProperty("status", is(equalTo(TicketStatus.NOT_APPLICABLE))))));
     assertThat(
         resourceService.getPublicationByIdentifier(publication.getIdentifier()).getStatus(),
         is(equalTo(PUBLISHED)));
@@ -2387,6 +2387,18 @@ class ResourceServiceTest extends ResourcesLocalTest {
     Publication resource = createPersistedPublishedPublicationWithoutDoi();
     publishResource(resource);
     return resourceService.getPublicationByIdentifier(resource.getIdentifier());
+  }
+
+  private Publication createPublishedResourceWithoutFiles() throws ApiGatewayException {
+    var publicationWithoutFiles =
+        randomPublication(JournalArticle.class)
+            .copy()
+            .withAssociatedArtifacts(new AssociatedArtifactList(emptyList()))
+            .build();
+    var persistedPublication =
+        createPersistedPublishedPublicationWithoutDoi(publicationWithoutFiles);
+    publishResource(persistedPublication);
+    return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
   }
 
   private Resource createUnpublishedResourceWithPendingFileWithoutTicket() {
