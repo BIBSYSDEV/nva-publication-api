@@ -53,6 +53,27 @@ services:
     ports:
       - "127.0.0.1:8333:8333"
 
+  # Real OIDC, with a real login page. Reached through Caddy on 8091, never directly,
+  # because nva-commons looks for JWKS at the Cognito path — see local/Caddyfile.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://localhost:8091
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "false"
+    volumes:
+      - ./local/nva-realm.json:/opt/keycloak/data/import/nva-realm.json:ro
+
+  oidc:
+    image: caddy:2-alpine
+    depends_on: [keycloak]
+    ports:
+      - "127.0.0.1:8091:8080"
+    volumes:
+      - ./local/Caddyfile:/etc/caddy/Caddyfile:ro
+
   postgres:
     image: postgres:16.10-bookworm
     profiles: ["extenddb"]

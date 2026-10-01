@@ -21,15 +21,17 @@ this does not. ScyllaDB Alternator was tested and rejected (no
 tested and works — but only against 13 REST operations and a 7-test subset, not
 the full suite.
 
-**S3 is done and found no blocker.** The nine file operations were the largest
-untouched area and the most likely place for another `TransactWriteItems`-shaped
-surprise. Multipart upload, presigned PUT and completion all work against
-SeaweedFS. Two things did bite, both small: MinIO's images are no longer pullable
-without authentication, and presigned URLs need path-style addressing.
+**Real login works.** Keycloak issues tokens with Cognito-shaped `custom:` claims,
+`nva-commons` validates the signature against its JWKS, and a publication created
+with a real bearer token comes back owned by the logged-in user. A tampered
+signature gets 401. `X-Adapter-Authorizer` is no longer needed for anything but
+convenience.
 
-**Next: Keycloak**, item 5 under [Sequencing](#sequencing) — the last external
-service still faked, and the one that makes a real login demo possible. The JWKS
-validation it needs already works.
+**Next: delete the fakes that can never ship** — item 4 under
+[Sequencing](#sequencing): Vault-backed secrets and a real EventBridge
+equivalent, replacing the two `Proxy` stand-ins. Then item 6, splitting the
+harness out of the production artifact, which matters before this is deployed
+anywhere reachable.
 
 Finishing the ExtendDB validation remains deferred; it would confirm something
 that already looks right, and it needs test isolation first (item 3).
@@ -72,7 +74,7 @@ Manager, etc.).
 | `HandlerContainer` | Type-based DI: `register(Class, instance)` + `create(Class)` picks the constructor with the most matching parameter types. Override via `registerFactory` for edge cases. |
 | `AuthorizerContextProvider` | Populates `requestContext.authorizer` — pluggable |
 | `TestHeaderAuthorizerProvider` | Reads `X-Adapter-Authorizer` JSON header (local/dev only) |
-| `MockIntegrations` | Second Javalin instance stubbing Cognito token + Customer API |
+| `MockIntegrations` | Second Javalin instance stubbing the Customer API, plus a backend-client token for it. User-facing auth is Keycloak, not this. |
 
 ## Running locally
 
@@ -97,9 +99,30 @@ export AWS_ENDPOINT_URL_DYNAMODB=https://localhost:18443
 
 Ports:
 - `8080` — adapter HTTP (override with `PORT`)
-- `8090` — mock integrations for Cognito + Customer API (override with `MOCK_PORT`)
+- `8090` — Customer API stub (override with `MOCK_PORT`)
 - `8000` — DynamoDB-compatible database from `compose.yaml`
 - `8333` — S3-compatible storage from `compose.yaml`
+- `8091` — Keycloak, behind the rewrite proxy. Admin console at
+  `http://localhost:8091/admin`, admin/admin.
+
+### Logging in for real
+
+The `nva` realm ships a user `testuser` / `test` with the `custom:` claims the
+handlers expect. To get a token and use it:
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8091/realms/nva/protocol/openid-connect/token \
+  -d client_id=nva-frontend -d username=testuser -d password=test -d grant_type=password \
+  | python3 -c 'import sys,json; print(json.load(sys.stdin)["access_token"])')
+
+curl -X POST http://localhost:8080/ -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" -d '{}'
+```
+
+For a browser-based demo the authorization code flow is enabled on the same
+client, so `http://localhost:8091/realms/nva/protocol/openid-connect/auth?client_id=nva-frontend&response_type=code&redirect_uri=http://localhost:3000/&scope=openid`
+gives a real login page. Edit the user's attributes in the admin console to
+change what the claims say.
 
 **Nothing needs provisioning.** On startup the adapter creates `nva-resources`
 with its four GSIs, the `nva-download-url-shortener` table, and the storage
@@ -214,13 +237,16 @@ services. Registered: [...]`.
 - **S3 is real, not faked.** `compose.yaml` runs SeaweedFS, and the adapter talks
   to it with the ordinary `S3Client` and `S3Presigner` pointed at
   `AWS_ENDPOINT_URL_S3`. Multipart upload works end to end.
-- **Cognito token validation now runs.** `ApiGatewayProxyRequestBuilder` omits
-  `requestContext.authorizer` entirely when there is no authorizer context, so
-  `RestRequestHandler.validateAuthorization` performs its JWKS check and
-  `RequestInfo` reads claims from the token. Requests carrying
-  `X-Adapter-Authorizer` still bypass that, which is the point of the local
-  harness — but an unverifiable `Authorization: Bearer` is now rejected instead
-  of being treated as gateway-authorized.
+- **Token validation is real.** `ApiGatewayProxyRequestBuilder` omits
+  `requestContext.authorizer` when there is no authorizer context, so
+  `RestRequestHandler.validateAuthorization` performs its JWKS check against
+  Keycloak and `RequestInfo` reads claims from the token. Verified: a valid token
+  creates a publication owned by the logged-in user, a tampered signature gets
+  401. Requests carrying `X-Adapter-Authorizer` still bypass all of it, which is
+  why that class must not reach a deployed artifact.
+- **The JWKS path is hardcoded to the Cognito convention** in `nva-commons`, so
+  any other OIDC provider needs a path rewrite in front of it. See item 5 under
+  [Sequencing](#sequencing).
 
 ## Roadmap
 
@@ -345,7 +371,7 @@ Platon**. The local stack stops being a simulation and becomes the deployment.
 |---|---|
 | DynamoDB | ExtendDB over PostgreSQL — tested and working. Alternator was tested and rejected |
 | S3 | MinIO — S3 wire protocol |
-| Cognito | Keycloak — real OIDC, real login page |
+| Cognito | Keycloak — running, with a real login page |
 | Secrets Manager | Vault, which Sikt already runs for Platon |
 | EventBridge | Kafka or NATS (shared with the event-handler work, item 12) |
 | API Gateway | HAProxy ingress plus what this module does itself |
@@ -575,8 +601,16 @@ what already looks right. Item 5 is next.
    modules, so it needs care.
 4. **Vault-backed secrets and a real EventBridge-equivalent, deleting both
    `Proxy` fakes.** Small, and removes the two things that can never ship.
-5. **Keycloak.** Independent of the rest and can run in parallel. The JWKS
-   validation it needs already works.
+5. ~~**Keycloak.**~~ Done. Real OIDC with a real login page, and bearer tokens
+   validated against its JWKS. One blocker found and worked around: **nva-commons
+   hardcodes the Cognito JWKS path.** `UrlJwkProvider` builds
+   `{issuer}/.well-known/jwks.json`, while Keycloak serves
+   `/protocol/openid-connect/certs`, and Keycloak has no route override for it.
+   A rewrite in front of Keycloak solves it (`local/Caddyfile`); on Platon the
+   same rewrite is `haproxy.org/path-rewrite`, which is on the approved
+   annotation list. The cleaner fix is for `nva-commons` to read `jwks_uri` from
+   `/.well-known/openid-configuration` rather than assuming the path — that would
+   make any OIDC provider work without a proxy.
 6. **Split the harness out of the production artifact.** Do this before anything
    is deployed anywhere reachable, not after.
 
@@ -600,13 +634,16 @@ what already looks right. Item 5 is next.
   is done on a real server. Code that creates a table and immediately writes to
   it needs `waitUntilTableExists`, and this is exactly what made 111 tests fail
   in a way that looked like a database incompatibility but was not.
-- **Issuer matching.** The token issuer must equal `COGNITO_AUTHORIZER_URLS`
-  exactly, and Keycloak's issuer embeds the realm name. `UrlJwkProvider` appends
-  `/.well-known/jwks.json` and only keeps the scheme if the value already starts
-  with `http`.
-- **Cognito's `custom:` claims.** `custom:customerId`, `custom:accessRights` and
-  the rest need Keycloak protocol mappers to come out under those exact names.
-  Commit the realm export so this is reproducible rather than hand-configured.
+- **Issuer matching.** Confirmed: the token issuer must equal
+  `COGNITO_AUTHORIZER_URLS` exactly, which is why Keycloak runs with
+  `KC_HOSTNAME` set to its externally reachable URL — otherwise it issues tokens
+  with a container-internal issuer that fails validation.
+- **The JWKS path.** `UrlJwkProvider` appends `/.well-known/jwks.json` to the
+  issuer, which is Cognito's layout and not Keycloak's. Handled by the rewrite in
+  `local/Caddyfile`; see item 5 under [Sequencing](#sequencing) for the real fix.
+- **Cognito's `custom:` claims** come out under those exact names via protocol
+  mappers in `local/nva-realm.json`, which is committed so the setup is
+  reproducible rather than hand-configured in the admin console.
 - **Alternator is not DynamoDB.** Confirmed the hard way — see the transaction
   blocker above. The lesson generalises: verify any DynamoDB-compatible candidate
   against the existing `publication-commons` suite before planning around it.

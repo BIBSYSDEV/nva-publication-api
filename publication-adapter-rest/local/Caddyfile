@@ -1,0 +1,18 @@
+# Keycloak serves JWKS at /protocol/openid-connect/certs, but nva-commons builds the
+# URL as {issuer}/.well-known/jwks.json — the Cognito convention, hardcoded in auth0's
+# UrlJwkProvider. Keycloak has no route override for this, so the rewrite happens in
+# front of it.
+#
+# On Platon the same rewrite is available as the haproxy.org/path-rewrite annotation,
+# which is on the approved list. The cleaner long-term fix is for nva-commons to read
+# jwks_uri from /.well-known/openid-configuration instead of assuming the path.
+:8080 {
+	handle /realms/*/.well-known/jwks.json {
+		rewrite * /realms/nva/protocol/openid-connect/certs
+		reverse_proxy keycloak:8080
+	}
+
+	handle {
+		reverse_proxy keycloak:8080
+	}
+}
