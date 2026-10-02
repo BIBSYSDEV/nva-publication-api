@@ -46,7 +46,7 @@ final class PendingFileTickets {
   private static UserInstance uploaderOf(Resource resource, FileEntry fileEntry) {
     return nonNull(fileEntry.getCustomerId()) && nonNull(fileEntry.getOwnerAffiliation())
         ? UserInstance.fromFileEntry(fileEntry)
-        : UserInstance.fromResourceOwner(resource);
+        : UserInstance.fromPublication(resource.toPublication());
   }
 
   private static TicketEntry ticketFor(
