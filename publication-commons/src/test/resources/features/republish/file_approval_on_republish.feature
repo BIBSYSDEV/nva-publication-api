@@ -77,6 +77,14 @@ Feature: File approval when republishing a publication
 
   Rule: Unfinished approval tickets are replaced by new tickets for the current files
 
+    Scenario: A ticket created while unpublished is set aside and replaced
+      Given the publication is unpublished
+      And institution "A" has 1 pending file with an approval ticket
+      When the publication is republished
+      Then the original approval ticket of institution "A" is set aside
+      And institution "A" has a pending file approval ticket covering 1 file
+      And the publication has 1 pending file approval ticket
+
     Scenario: A ticket is replaced even when nothing changed
       Given institution "A" has 1 pending file with an approval ticket
       And the approval ticket of institution "A" is assigned to a curator
