@@ -199,8 +199,7 @@ public abstract class FilesApprovalEntry extends TicketEntry {
       return file;
     }
     if (status == FileStatus.PENDING_OPEN && !file.hasLicense()) {
-      throw new IllegalStateException(
-          FileStatus.CANNOT_APPROVE_FILE_WITHOUT_LICENSE.formatted(file.getIdentifier()));
+      throw new FileWithoutLicenseException(file.getIdentifier());
     }
     return file.copy().build(status.approve());
   }
