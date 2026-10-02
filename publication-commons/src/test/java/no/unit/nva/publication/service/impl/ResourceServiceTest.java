@@ -142,6 +142,7 @@ import no.unit.nva.publication.service.FakeCustomerApiClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
+import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -957,7 +958,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     resourceService.unpublishPublication(publication, userInstance);
     var spiedClient = spy(client);
 
-    resource.republish(getResourceService(spiedClient), customerApiClient, userInstance);
+    republishAsEditor(getResourceService(spiedClient), resource);
 
     verify(spiedClient, times(1)).transactWriteItems(any(TransactWriteItemsRequest.class));
     verify(spiedClient, never()).putItem(any(PutItemRequest.class));
@@ -973,7 +974,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     createTickets(resource, userInstance);
 
     resourceService.unpublishPublication(publication, userInstance);
-    resource.republish(resourceService, customerApiClient, userInstance);
+    republishAsEditor(resourceService, resource);
 
     var tickets =
         resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
@@ -1161,10 +1162,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     Resource.fromPublication(peristedPublication).publish(resourceService, userInstance);
     resourceService.unpublishPublication(peristedPublication, userInstance);
-    Resource.resourceQueryObject(peristedPublication.getIdentifier())
-        .fetch(resourceService)
-        .orElseThrow()
-        .republish(resourceService, customerApiClient, userInstance);
+    republishAsEditor(resourceService, Resource.fromPublication(peristedPublication));
 
     var republishedResource =
         Resource.resourceQueryObject(peristedPublication.getIdentifier())
@@ -1181,7 +1179,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
     var owner = UserInstance.fromPublication(unpublishedResource.toPublication());
     customerApiClient.withUnavailableCustomer(owner.getCustomerId());
 
-    assertThrows(CustomerNotAvailableException.class, () -> republish(unpublishedResource, owner));
+    assertThrows(
+        CustomerNotAvailableException.class,
+        () -> republishAsEditor(resourceService, unpublishedResource));
 
     assertEquals(UNPUBLISHED, fetchResource(unpublishedResource.getIdentifier()).getStatus());
   }
@@ -1189,10 +1189,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
   @Test
   void shouldWriteRepublishedResourceAndNewFilesApprovalTicketInOneTransaction() {
     var unpublishedResource = createUnpublishedResourceWithPendingFileWithoutTicket();
-    var owner = UserInstance.fromPublication(unpublishedResource.toPublication());
     var spiedClient = spy(client);
 
-    unpublishedResource.republish(getResourceService(spiedClient), customerApiClient, owner);
+    republishAsEditor(getResourceService(spiedClient), unpublishedResource);
 
     verify(spiedClient, times(1)).transactWriteItems(any(TransactWriteItemsRequest.class));
     verify(spiedClient, never()).putItem(any(PutItemRequest.class));
@@ -1218,7 +1217,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
             Resource.resourceQueryObject(peristedPublication.getIdentifier())
                 .fetch(resourceService)
                 .orElseThrow()
-                .republish(resourceService, customerApiClient, userInstance));
+                .republish(userInstance));
   }
 
   @Test
@@ -2414,8 +2413,22 @@ class ResourceServiceTest extends ResourcesLocalTest {
     }
   }
 
-  private void republish(Resource resource, UserInstance userInstance) {
-    resource.republish(resourceService, customerApiClient, userInstance);
+  private Resource republishAsEditor(ResourceService service, Resource resource) {
+    try {
+      return new RepublishingService(service, customerApiClient)
+          .republish(resource, editorAtOwnerInstitution(resource));
+    } catch (ApiGatewayException exception) {
+      throw new IllegalStateException("Could not republish resource", exception);
+    }
+  }
+
+  private static UserInstance editorAtOwnerInstitution(Resource resource) {
+    return UserInstance.create(
+        randomString(),
+        resource.getPublisher().getId(),
+        randomUri(),
+        List.of(AccessRight.MANAGE_RESOURCES_ALL),
+        resource.getResourceOwner().getOwnerAffiliation());
   }
 
   private Resource fetchResource(SortableIdentifier identifier) {

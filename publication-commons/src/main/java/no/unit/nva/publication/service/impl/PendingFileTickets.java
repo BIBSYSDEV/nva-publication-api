@@ -1,4 +1,4 @@
-package no.unit.nva.publication.model.business;
+package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.TicketStatus.NOT_APPLICABLE;
@@ -10,6 +10,11 @@ import java.util.stream.Collectors;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.FilesApprovalTickets;
+import no.unit.nva.publication.model.business.FileEntry;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.TicketChanges;
+import no.unit.nva.publication.model.business.TicketEntry;
+import no.unit.nva.publication.model.business.UserInstance;
 
 /**
  * Works out the file approval tickets a resource needs from its current state: one new ticket per

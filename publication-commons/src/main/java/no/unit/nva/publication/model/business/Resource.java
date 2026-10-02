@@ -6,8 +6,6 @@ import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.PublicationStatus.DELETED;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
-import static no.unit.nva.publication.model.business.TicketStatus.NOT_APPLICABLE;
-import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelType.PUBLISHER;
 import static no.unit.nva.publication.model.business.publicationchannel.ChannelType.SERIAL_PUBLICATION;
 import static nva.commons.core.attempt.Try.attempt;
@@ -57,7 +55,6 @@ import no.unit.nva.model.validation.Validatable;
 import no.unit.nva.model.validation.ValidationException;
 import no.unit.nva.model.validation.ValidationResult;
 import no.unit.nva.model.validation.Validator;
-import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.business.logentry.LogEntry;
 import no.unit.nva.publication.model.business.publicationchannel.ChannelType;
@@ -475,43 +472,7 @@ public class Resource implements Entity, Validatable<Resource> {
     return PUBLISHED == this.getStatus();
   }
 
-  public void republish(
-      ResourceService resourceService,
-      CustomerApiClient customerApiClient,
-      UserInstance userInstance) {
-    fetch(resourceService)
-        .filter(Resource::isNotPublished)
-        .ifPresent(
-            resource -> republish(resourceService, customerApiClient, userInstance, resource));
-  }
-
-  private void republish(
-      ResourceService resourceService,
-      CustomerApiClient customerApiClient,
-      UserInstance userInstance,
-      Resource resource) {
-    var tickets = resourceService.fetchAllTicketsForResource(resource).toList();
-    resource.republish(userInstance);
-    var reactivatedTickets = reactivateTickets(tickets);
-    var fileApprovalTickets = PendingFileTickets.changesFor(resource, tickets, customerApiClient);
-
-    var ticketChanges = reactivatedTickets.combinedWith(fileApprovalTickets);
-    resourceService.updateResourceWithTickets(resource, userInstance, ticketChanges);
-  }
-
-  /** File approval tickets are not reactivated: {@link PendingFileTickets} decides those. */
-  private TicketChanges reactivateTickets(Collection<TicketEntry> tickets) {
-    var ticketsToReactivate = tickets.stream().filter(this::shouldRepublishTicket).toList();
-    ticketsToReactivate.forEach(ticket -> ticket.setStatus(PENDING));
-    return new TicketChanges(ticketsToReactivate, Collections.emptyList());
-  }
-
-  private boolean shouldRepublishTicket(TicketEntry ticket) {
-    return (ticket instanceof GeneralSupportRequest || ticket instanceof DoiRequest)
-        && NOT_APPLICABLE == ticket.getStatus();
-  }
-
-  private void republish(UserInstance userInstance) {
+  public void republish(UserInstance userInstance) {
     if (UNPUBLISHED != this.getStatus()) {
       throw new IllegalStateException("Only unpublished resource can be republished!");
     }
