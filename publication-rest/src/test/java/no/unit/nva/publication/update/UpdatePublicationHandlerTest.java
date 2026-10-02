@@ -2073,6 +2073,43 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
   }
 
   @Test
+  void shouldReturnConflictAndStayUnpublishedWhenRepublishingAutoPublishedFileWithoutLicense()
+      throws JsonProcessingException {
+    var curatingInstitution = randomUri();
+    var publication = createUnpublishedPublicationWithPendingFileCuratedBy(curatingInstitution);
+    var fileWithoutLicense = persistPendingOpenFileWithoutLicense(publication);
+    stubCustomerResponseAcceptingFilesForAllTypes(customerId);
+
+    var response = editorAtInstitutionRepublishes(publication, curatingInstitution);
+
+    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CONFLICT)));
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(),
+        containsString(fileWithoutLicense.getIdentifier().toString()));
+    assertThat(fetchStatus(publication), is(equalTo(UNPUBLISHED)));
+  }
+
+  @Test
+  void shouldReturnConflictWhenUpdatingWithAutoPublishedFileWithoutLicense()
+      throws ApiGatewayException, IOException {
+    var publication =
+        TicketTestUtils.createPersistedPublicationWithOpenFiles(
+            customerId, PUBLISHED, resourceService);
+    var fileWithoutLicense = File.builder().withIdentifier(randomUUID()).buildPendingOpenFile();
+    updatePublicationWithFile(publication, fileWithoutLicense);
+    stubCustomerResponseAcceptingFilesForAllTypes(customerId);
+
+    var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
+    updatePublicationHandler.handleRequest(input, output, context);
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+
+    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CONFLICT)));
+    assertThat(
+        response.getBodyObject(Problem.class).getDetail(),
+        containsString(fileWithoutLicense.getIdentifier().toString()));
+  }
+
+  @Test
   void shouldReturnForbiddenWhenRepublishingUnpublishedPublication()
       throws ApiGatewayException, IOException {
     var publication = TicketTestUtils.createPersistedPublication(PUBLISHED, resourceService);
@@ -3220,6 +3257,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     } catch (ApiGatewayException exception) {
       throw new IllegalStateException("Could not set up unpublished publication", exception);
     }
+  }
+
+  private File persistPendingOpenFileWithoutLicense(Publication publication) {
+    var fileWithoutLicense = File.builder().withIdentifier(randomUUID()).buildPendingOpenFile();
+    var owner = UserInstance.fromPublication(publication);
+    FileEntry.create(fileWithoutLicense, publication.getIdentifier(), owner)
+        .persist(resourceService, owner);
+    return fileWithoutLicense;
   }
 
   private void stubCustomerApiAsUnavailable() {
