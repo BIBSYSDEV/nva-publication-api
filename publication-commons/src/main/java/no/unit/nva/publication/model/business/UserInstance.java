@@ -185,11 +185,28 @@ public class UserInstance implements JsonSerializable {
    * top-level institution doubles as person affiliation, making the whole institution responsible.
    */
   public static UserInstance fromFileEntry(FileEntry fileEntry) {
-    return new UserInstance(
+    return withWholeInstitutionResponsible(
         fileEntry.getOwner().toString(),
         fileEntry.getCustomerId(),
-        fileEntry.getOwnerAffiliation(),
-        fileEntry.getOwnerAffiliation(),
+        fileEntry.getOwnerAffiliation());
+  }
+
+  /** The owner of the resource, with the whole top-level institution responsible. */
+  public static UserInstance fromResourceOwner(Resource resource) {
+    var resourceOwner = resource.getResourceOwner();
+    return withWholeInstitutionResponsible(
+        resourceOwner.getUser().toString(),
+        resource.getPublisher().getId(),
+        resourceOwner.getOwnerAffiliation());
+  }
+
+  private static UserInstance withWholeInstitutionResponsible(
+      String userIdentifier, URI customerId, URI topLevelOrganizationId) {
+    return new UserInstance(
+        userIdentifier,
+        customerId,
+        topLevelOrganizationId,
+        topLevelOrganizationId,
         null,
         emptyList(),
         UserClientType.INTERNAL,
