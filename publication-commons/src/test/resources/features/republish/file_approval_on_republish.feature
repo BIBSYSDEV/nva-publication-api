@@ -46,6 +46,19 @@ Feature: File approval when republishing a publication
       And institution "B" has a pending file approval ticket covering 2 files
       And the publication has 2 pending file approval tickets
 
+    Scenario: Files from the same institution but different customers get separate tickets
+      Given the publication is unpublished
+      And institution "A" uploads 1 file while the publication is unpublished
+      And a user from institution "A" at another customer uploads 1 file while the publication is unpublished
+      When the publication is republished
+      Then institution "A" has 2 pending file approval tickets
+
+    Scenario: A file without an uploader institution goes to the publication owner's institution
+      Given the publication is unpublished
+      And a file without an uploader institution is uploaded while the publication is unpublished
+      When the publication is republished
+      Then the publication owner's institution has a pending file approval ticket covering 1 file
+
   Rule: Files that are already approved or rejected get no new approval ticket
 
     Scenario: An approved file is left out of the new ticket

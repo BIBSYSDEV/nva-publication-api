@@ -5,6 +5,8 @@ import static java.util.stream.IntStream.range;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
@@ -22,6 +24,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
@@ -77,6 +80,26 @@ public class RepublishFeatures {
     assertThat(scenarioContext.currentResource().getStatus()).isEqualTo(UNPUBLISHED);
 
     persistPendingFiles(institution, fileCount);
+  }
+
+  @Given(
+      "a user from institution {string} at another customer uploads {int} file(s) while the"
+          + " publication is unpublished")
+  public void aUserFromInstitutionAtAnotherCustomerUploadsFilesWhileThePublicationIsUnpublished(
+      String institution, int fileCount) {
+    var owner =
+        new ResourceOwner(
+            new Username(randomString()), scenarioContext.institutionUri(institution));
+    var uploaderAtOtherCustomer = UserInstance.create(owner, randomUri());
+    range(0, fileCount)
+        .forEach(ignored -> persistFile(uploaderAtOtherCustomer, randomPendingOpenFile()));
+  }
+
+  @Given("a file without an uploader institution is uploaded while the publication is unpublished")
+  public void aFileWithoutAnUploaderInstitutionIsUploadedWhileThePublicationIsUnpublished() {
+    var uploaderWithoutInstitution =
+        UserInstance.create(randomString(), scenarioContext.publication().getPublisher().getId());
+    persistFile(uploaderWithoutInstitution, randomPendingOpenFile());
   }
 
   @Given("institution {string} has {int} pending file(s) without an approval ticket")
@@ -154,6 +177,26 @@ public class RepublishFeatures {
 
     assertThat(tickets).hasSize(1);
     assertThat(tickets.getFirst().getFilesForApproval()).hasSize(fileCount);
+  }
+
+  @Then("institution {string} has {int} pending file approval tickets")
+  public void institutionHasPendingFileApprovalTickets(String institution, int ticketCount) {
+    assertThat(pendingTicketsOwnedBy(scenarioContext.institutionUri(institution)))
+        .hasSize(ticketCount);
+  }
+
+  @Then(
+      "the publication owner's institution has a pending file approval ticket covering {int}"
+          + " file(s)")
+  public void thePublicationOwnersInstitutionHasAPendingFileApprovalTicketCoveringFiles(
+      int fileCount) {
+    var ownerInstitution = scenarioContext.publication().getResourceOwner().getOwnerAffiliation();
+    var tickets = pendingTicketsOwnedBy(ownerInstitution);
+
+    assertThat(tickets).hasSize(1);
+    assertThat(tickets.getFirst().getFilesForApproval()).hasSize(fileCount);
+    assertThat(tickets.getFirst().getReceivingOrganizationDetails().topLevelOrganizationId())
+        .isEqualTo(ownerInstitution);
   }
 
   @Then("institution {string} has a pending degree file approval ticket covering {int} file(s)")

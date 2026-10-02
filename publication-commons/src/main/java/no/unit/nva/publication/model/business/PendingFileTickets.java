@@ -1,10 +1,11 @@
 package no.unit.nva.publication.model.business;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.model.business.TicketStatus.NOT_APPLICABLE;
 
+import java.net.URI;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.model.FilesApprovalEntry;
@@ -12,9 +13,10 @@ import no.unit.nva.publication.model.FilesApprovalTickets;
 
 /**
  * Works out the file approval tickets a resource needs from its current state: one new ticket per
- * uploading institution, covering that institution's pending files. File approval tickets that are
- * still pending are set aside, since the new tickets replace them. Nothing is persisted, but
- * set-aside tickets change status in place.
+ * uploading institution, covering that institution's pending files. A file without a known uploader
+ * institution counts as uploaded by the resource owner. File approval tickets that are still
+ * pending are set aside, since the new tickets replace them. Nothing is persisted, but set-aside
+ * tickets change status in place.
  */
 final class PendingFileTickets {
 
@@ -23,29 +25,38 @@ final class PendingFileTickets {
   static TicketChanges changesFor(
       Resource resource, Collection<TicketEntry> tickets, CustomerApiClient customerApiClient) {
     var newTickets =
-        pendingFilesByInstitution(resource).stream()
-            .map(fileEntries -> ticketFor(resource, fileEntries, customerApiClient))
-            .map(TicketEntry.class::cast)
+        pendingFilesByUploaderInstitution(resource).stream()
+            .map(uploaders -> ticketFor(resource, uploaders, customerApiClient))
             .toList();
     var replacedTickets = pendingFileApprovalTickets(tickets);
     replacedTickets.forEach(ticket -> ticket.setStatus(NOT_APPLICABLE));
     return new TicketChanges(replacedTickets, newTickets);
   }
 
-  private static Collection<List<FileEntry>> pendingFilesByInstitution(Resource resource) {
+  /** Customer and top-level institution are both part of the key, since both decide the ticket. */
+  private static Collection<List<PendingFile>> pendingFilesByUploaderInstitution(
+      Resource resource) {
     return resource.getFileEntries().stream()
         .filter(fileEntry -> fileEntry.getFile().isPending())
-        .collect(
-            Collectors.groupingBy(
-                fileEntry -> Optional.ofNullable(fileEntry.getOwnerAffiliation())))
+        .map(fileEntry -> new PendingFile(fileEntry, uploaderOf(resource, fileEntry)))
+        .collect(Collectors.groupingBy(PendingFile::uploaderInstitution))
         .values();
   }
 
-  private static FilesApprovalEntry ticketFor(
-      Resource resource, List<FileEntry> fileEntries, CustomerApiClient customerApiClient) {
-    var uploader = UserInstance.fromFileEntry(fileEntries.getFirst());
+  private static UserInstance uploaderOf(Resource resource, FileEntry fileEntry) {
+    return nonNull(fileEntry.getCustomerId()) && nonNull(fileEntry.getOwnerAffiliation())
+        ? UserInstance.fromFileEntry(fileEntry)
+        : UserInstance.fromResourceOwner(resource);
+  }
+
+  private static TicketEntry ticketFor(
+      Resource resource, List<PendingFile> pendingFiles, CustomerApiClient customerApiClient) {
+    var uploader = pendingFiles.getFirst().uploader();
     var customer = customerApiClient.fetch(uploader.getCustomerId());
-    var files = fileEntries.stream().map(FileEntry::getFile).collect(Collectors.toSet());
+    var files =
+        pendingFiles.stream()
+            .map(pendingFile -> pendingFile.fileEntry().getFile())
+            .collect(Collectors.toSet());
     return new FilesApprovalTickets(uploader, customer).newTicket(resource, files);
   }
 
@@ -55,4 +66,13 @@ final class PendingFileTickets {
         .filter(TicketEntry::isPending)
         .toList();
   }
+
+  private record PendingFile(FileEntry fileEntry, UserInstance uploader) {
+
+    private UploaderInstitution uploaderInstitution() {
+      return new UploaderInstitution(uploader.getCustomerId(), uploader.getTopLevelOrgCristinId());
+    }
+  }
+
+  private record UploaderInstitution(URI customerId, URI topLevelOrganizationId) {}
 }
