@@ -1,8 +1,10 @@
 Feature: File approval when republishing a publication
 
-  A pending file without a file approval ticket stays locked in "pending approval" with
-  nothing to approve it through. Republishing works out the tickets from the publication as
-  it is now, so every pending file is approvable and no ticket shows an outdated state.
+  Republishing gives every file waiting for approval a pending file approval ticket.
+  The tickets are built from the publication as it is now.
+  Each uploading institution gets one ticket.
+  Unfinished tickets from before are hidden, not reopened.
+  Files that are already approved or rejected are left as they are.
 
   Background:
     Given a published publication
