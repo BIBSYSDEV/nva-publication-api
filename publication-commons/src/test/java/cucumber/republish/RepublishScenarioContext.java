@@ -23,6 +23,7 @@ import no.unit.nva.publication.service.FakeCustomerApiClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import nva.commons.apigateway.AccessRight;
 
 /**
  * Holds the persistence layer and the publication under test for the republishing scenarios. Per
@@ -77,6 +78,15 @@ public class RepublishScenarioContext extends ResourcesLocalTest {
 
   public UserInstance publicationOwner() {
     return UserInstance.fromPublication(publication);
+  }
+
+  public UserInstance editorAtOwnerInstitution() {
+    return UserInstance.create(
+        randomString(),
+        publication.getPublisher().getId(),
+        randomUri(),
+        List.of(AccessRight.MANAGE_RESOURCES_ALL),
+        publication.getResourceOwner().getOwnerAffiliation());
   }
 
   public UserInstance uploaderAt(String institution) {

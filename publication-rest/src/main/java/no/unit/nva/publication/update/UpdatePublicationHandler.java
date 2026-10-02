@@ -42,6 +42,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FilePermissions;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.rightsretention.FileRightsRetentionService;
+import no.unit.nva.publication.service.impl.RepublishingService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.validation.ETag;
@@ -176,8 +177,7 @@ public class UpdatePublicationHandler
                   permissionStrategy,
                   userInstance);
 
-          case RepublishPublicationRequest ignored ->
-              republish(existingResource, permissionStrategy, userInstance);
+          case RepublishPublicationRequest ignored -> republish(existingResource, userInstance);
 
           case DeletePublicationRequest ignored ->
               terminatePublication(existingResource, permissionStrategy, userInstance);
@@ -247,11 +247,10 @@ public class UpdatePublicationHandler
         .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
   }
 
-  private Resource republish(
-      Resource resource, PublicationPermissions permissionStrategy, UserInstance userInstance)
+  private Resource republish(Resource resource, UserInstance userInstance)
       throws ApiGatewayException {
     try {
-      return RepublishUtil.create(resourceService, customerApiClient, permissionStrategy)
+      return new RepublishingService(resourceService, customerApiClient)
           .republish(resource, userInstance);
     } catch (CustomerNotAvailableException e) {
       throw customerApiNotResponding(e);

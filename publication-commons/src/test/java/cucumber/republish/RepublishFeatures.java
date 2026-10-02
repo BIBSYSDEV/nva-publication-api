@@ -34,9 +34,9 @@ import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
-import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.User;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.impl.RepublishingService;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 
@@ -162,12 +162,9 @@ public class RepublishFeatures {
   }
 
   @When("the publication is republished")
-  public void thePublicationIsRepublished() {
-    Resource.resourceQueryObject(scenarioContext.publication().getIdentifier())
-        .republish(
-            scenarioContext.resourceService(),
-            scenarioContext.customerApiClient(),
-            scenarioContext.publicationOwner());
+  public void thePublicationIsRepublished() throws ApiGatewayException {
+    new RepublishingService(scenarioContext.resourceService(), scenarioContext.customerApiClient())
+        .republish(scenarioContext.currentResource(), scenarioContext.editorAtOwnerInstitution());
   }
 
   @Then("institution {string} has a pending file approval ticket covering {int} file(s)")
