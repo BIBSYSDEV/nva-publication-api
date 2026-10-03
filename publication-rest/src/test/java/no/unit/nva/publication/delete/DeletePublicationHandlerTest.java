@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.clients.IdentityServiceNotFoundException;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
@@ -35,7 +36,6 @@ import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +62,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
   private GetExternalClientResponse getExternalClientResponse;
 
   @BeforeEach
-  public void setUp() throws NotFoundException {
+  public void setUp() {
     init();
     prepareEnvironment();
     prepareIdentityServiceClient();
@@ -158,7 +158,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
   @Test
   void handleRequestReturnsUnauthorizedWhenCallerIsMissingClientId()
-      throws IOException, NotFoundException, BadRequestException {
+      throws IOException, BadRequestException {
     prepareIdentityServiceClientForNotFound();
     Publication createdPublication = createAndPersistPublication();
 
@@ -197,7 +197,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     assertEquals(HttpStatus.SC_BAD_REQUEST, gatewayResponse.getStatusCode());
   }
 
-  private void prepareIdentityServiceClient() throws NotFoundException {
+  private void prepareIdentityServiceClient() {
     identityServiceClient = mock(IdentityServiceClient.class);
 
     getExternalClientResponse =
@@ -205,9 +205,10 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
     when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
   }
 
-  private void prepareIdentityServiceClientForNotFound() throws NotFoundException {
+  private void prepareIdentityServiceClientForNotFound() {
     identityServiceClient = mock(IdentityServiceClient.class);
-    when(identityServiceClient.getExternalClient(any())).thenThrow(NotFoundException.class);
+    when(identityServiceClient.getExternalClient(any()))
+        .thenThrow(IdentityServiceNotFoundException.class);
   }
 
   private void prepareEnvironment() {

@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.UUID;
 import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.clients.IdentityServiceNotFoundException;
 import no.unit.nva.clients.UserDto;
 import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.events.models.EventReference;
@@ -39,7 +40,6 @@ import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,7 +55,7 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
   private CristinClient cristinClient;
 
   @BeforeEach
-  public void setUp() throws NotFoundException {
+  public void setUp() {
     super.init();
     outputStream = new ByteArrayOutputStream();
     context = null;
@@ -85,9 +85,9 @@ class PersistLogEntryEventHandlerTest extends ResourcesLocalTest {
 
   @Test
   void shouldCreateLogEntryWithUserUsernameOnlyWhenFailingWhenFetchingUser()
-      throws BadRequestException, IOException, NotFoundException {
+      throws BadRequestException, IOException {
     var publication = createPublication();
-    when(identityServiceClient.getUser(any())).thenThrow(new NotFoundException("User not found"));
+    when(identityServiceClient.getUser(any())).thenThrow(IdentityServiceNotFoundException.class);
     var event = createEvent(null, publication);
 
     handler.handleRequest(event, outputStream, context);

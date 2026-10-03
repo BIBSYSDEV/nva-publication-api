@@ -6,6 +6,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomHiddenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.publication.model.business.UserInstanceFixture.getDegreeAndFileCuratorFromPublication;
+import static no.unit.nva.publication.service.CustomerGenerator.customerWithRightsRetention;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -15,15 +16,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
+import no.unit.nva.clients.CustomerDto.RightsRetentionStrategy;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Username;
@@ -40,9 +39,6 @@ import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.associatedartifacts.file.RejectedFile;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
-import no.unit.nva.publication.commons.customer.Customer;
-import no.unit.nva.publication.commons.customer.CustomerApiClient;
-import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
 import no.unit.nva.publication.file.upload.restmodel.ExternalCompleteUploadRequest;
 import no.unit.nva.publication.file.upload.restmodel.InternalCompleteUploadRequest;
@@ -54,6 +50,7 @@ import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.business.UserInstanceFixture;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.stubs.FakeIdentityServiceClient;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -79,7 +76,7 @@ class FileServiceTest extends ResourcesLocalTest {
   public static final int CONTENT_LENGTH = 12345;
   private ResourceService resourceService;
   private FileService fileService;
-  private CustomerApiClient customerApiClient;
+  private FakeIdentityServiceClient identityServiceClient;
   private S3Client s3client;
 
   public static Stream<Arguments> invalidFileConversionsProvider() {
@@ -151,9 +148,9 @@ class FileServiceTest extends ResourcesLocalTest {
   void setUp() {
     super.init();
     s3client = mock(S3Client.class);
-    customerApiClient = mock(CustomerApiClient.class);
+    identityServiceClient = new FakeIdentityServiceClient();
     resourceService = getResourceService(client);
-    fileService = new FileService(s3client, customerApiClient, resourceService);
+    fileService = new FileService(s3client, identityServiceClient, resourceService);
   }
 
   @Test
@@ -193,14 +190,6 @@ class FileServiceTest extends ResourcesLocalTest {
     UserInstance owner = UserInstance.fromPublication(publication);
     var resource = Resource.fromPublication(publication).persistNew(resourceService, owner);
     var uploadRequest = randomUploadRequest();
-    var instanceType =
-        publication
-            .getEntityDescription()
-            .getReference()
-            .getPublicationInstance()
-            .getInstanceType();
-    when(customerApiClient.fetch(owner.getCustomerId()))
-        .thenReturn(new Customer(Set.of(instanceType), null, null));
     when(s3client.createMultipartUpload(any(CreateMultipartUploadRequest.class)))
         .thenReturn(uploadResult());
 
@@ -219,12 +208,12 @@ class FileServiceTest extends ResourcesLocalTest {
             .persistNew(resourceService, UserInstance.fromPublication(publication));
     var uploadRequest = randomUploadRequest();
     var userInstance = externalUserInstance(resource);
+    identityServiceClient.withUnavailableIdentityService();
 
     when(s3client.createMultipartUpload(any(CreateMultipartUploadRequest.class)))
         .thenReturn(uploadResult());
     var uploadResponse =
         fileService.initiateMultipartUpload(resource.getIdentifier(), userInstance, uploadRequest);
-    verify(customerApiClient, never()).fetch(any());
 
     assertNotNull(uploadResponse.key());
   }
@@ -521,23 +510,17 @@ class FileServiceTest extends ResourcesLocalTest {
   }
 
   private void mockCustomerResponse(UserInstance userInstance) {
-    when(customerApiClient.fetch(userInstance.getCustomerId()))
-        .thenReturn(
-            new Customer(
-                null,
-                null,
-                new CustomerApiRightsRetention(
-                    RIGHTS_RETENTION_STRATEGY.getValue(), randomString())));
+    identityServiceClient.withCustomer(
+        userInstance.getCustomerId(),
+        customerWithRightsRetention(
+            new RightsRetentionStrategy(RIGHTS_RETENTION_STRATEGY.getValue(), randomUri())));
   }
 
   private void mockCustomerResponseWithNullRrs(UserInstance userInstance) {
-    when(customerApiClient.fetch(userInstance.getCustomerId()))
-        .thenReturn(
-            new Customer(
-                null,
-                null,
-                new CustomerApiRightsRetention(
-                    NULL_RIGHTS_RETENTION_STRATEGY.getValue(), randomString())));
+    identityServiceClient.withCustomer(
+        userInstance.getCustomerId(),
+        customerWithRightsRetention(
+            new RightsRetentionStrategy(NULL_RIGHTS_RETENTION_STRATEGY.getValue(), randomUri())));
   }
 
   private CompleteMultipartUploadResponse mockCompleteMultipartUpload() {

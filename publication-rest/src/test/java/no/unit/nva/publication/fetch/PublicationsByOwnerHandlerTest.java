@@ -33,7 +33,6 @@ import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -61,8 +60,7 @@ class PublicationsByOwnerHandlerTest {
   public void setUp(
       @Mock Environment environment,
       @Mock ResourceService resourceService,
-      @Mock IdentityServiceClient identityServiceClient)
-      throws NotFoundException {
+      @Mock IdentityServiceClient identityServiceClient) {
     when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
     when(environment.readEnv(COGNITO_AUTHORIZER_URLS)).thenReturn("http://localhost:3000");
 

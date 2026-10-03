@@ -1,6 +1,5 @@
 package cucumber.republish;
 
-import static java.util.Collections.emptySet;
 import static java.util.stream.IntStream.range;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.model.PublicationStatus.UNPUBLISHED;
@@ -11,6 +10,7 @@ import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRA
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.model.business.TicketStatus.NOT_APPLICABLE;
+import static no.unit.nva.publication.service.CustomerGenerator.customerWithWorkflow;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,7 +29,6 @@ import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator;
-import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
@@ -154,16 +153,16 @@ public class RepublishFeatures {
 
   @Given("the customer publishes files without curator approval")
   public void theCustomerPublishesFilesWithoutCuratorApproval() {
-    var autoPublishingCustomer =
-        new Customer(emptySet(), REGISTRATOR_PUBLISHES_METADATA_AND_FILES.getValue(), null);
+    var autoPublishingCustomer = customerWithWorkflow(REGISTRATOR_PUBLISHES_METADATA_AND_FILES);
     scenarioContext
-        .customerApiClient()
+        .identityServiceClient()
         .withCustomer(scenarioContext.publication().getPublisher().getId(), autoPublishingCustomer);
   }
 
   @When("the publication is republished")
   public void thePublicationIsRepublished() throws ApiGatewayException {
-    new RepublishingService(scenarioContext.resourceService(), scenarioContext.customerApiClient())
+    new RepublishingService(
+            scenarioContext.resourceService(), scenarioContext.identityServiceClient())
         .republish(scenarioContext.currentResource(), scenarioContext.editorAtOwnerInstitution());
   }
 
