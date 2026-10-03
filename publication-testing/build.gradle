@@ -9,6 +9,7 @@ dependencies {
     api(nvaCatalog.jackson.core)
     api(nvaCatalog.junit.jupiter.api)
     api(nvaLibs.auth)
+    api(nvaLibs.clients)
     api(nvaLibs.json)
     api(project(":publication-commons"))
     api(project(":publication-model"))

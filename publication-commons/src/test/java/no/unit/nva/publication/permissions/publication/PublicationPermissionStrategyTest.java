@@ -65,7 +65,6 @@ import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.Resource;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.RequestInfo;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.Assertions;
@@ -96,7 +95,7 @@ class PublicationPermissionStrategyTest {
       URI.create("https://example.com/external-client-org");
 
   @BeforeEach
-  void setUp() throws NotFoundException {
+  void setUp() {
     this.identityServiceClient = mock(IdentityServiceClient.class);
 
     when(this.identityServiceClient.getExternalClient(any()))

@@ -9,8 +9,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.FilesApprovalTickets;
 import no.unit.nva.publication.model.business.Resource;
@@ -26,13 +26,13 @@ public final class PublishingRequestResolver {
   private final TicketService ticketService;
   private final ResourceService resourceService;
   private final UserInstance userInstance;
-  private final Customer customer;
+  private final CustomerDto customer;
 
   public PublishingRequestResolver(
       ResourceService resourceService,
       TicketService ticketService,
       UserInstance userInstance,
-      Customer customer) {
+      CustomerDto customer) {
     this.ticketService = ticketService;
     this.resourceService = resourceService;
     this.userInstance = userInstance;

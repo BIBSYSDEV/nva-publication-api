@@ -7,6 +7,7 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUploadedFile;
 import static no.unit.nva.publication.model.business.TicketStatus.COMPLETED;
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
+import static no.unit.nva.publication.service.CustomerGenerator.customerWithWorkflow;
 import static no.unit.nva.publication.ticket.test.TicketTestUtils.createPersistedPublicationWithFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,14 +16,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
+import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
-import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
@@ -356,9 +356,8 @@ class PublishingRequestResolverTest extends ResourcesLocalTest {
     return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
   }
 
-  private static Customer customerNotAllowingPublishingFiles() {
-    return new Customer(
-        Set.of(), PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue(), null);
+  private static CustomerDto customerNotAllowingPublishingFiles() {
+    return customerWithWorkflow(PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY);
   }
 
   private PublishingRequestResolver publishingRequestResolver(Publication publication) {

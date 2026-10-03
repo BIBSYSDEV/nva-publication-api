@@ -25,11 +25,9 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingInternalFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomUploadedFile;
-import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
-import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles;
-import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
-import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulCustomerResponseAllowingFilesForNoTypes;
-import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulTokenResponse;
+import static no.unit.nva.publication.CustomerFixtures.customerAcceptingFilesForAllTypes;
+import static no.unit.nva.publication.CustomerFixtures.customerAcceptingFilesForAllTypesNotAllowingAutoPublishingFiles;
+import static no.unit.nva.publication.CustomerFixtures.customerAcceptingFilesForNoTypes;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
@@ -91,8 +89,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -101,9 +99,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -122,7 +117,6 @@ import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.auth.uriretriever.UriRetriever;
 import no.unit.nva.clients.GetExternalClientResponse;
-import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
@@ -165,7 +159,6 @@ import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
-import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -183,8 +176,7 @@ import no.unit.nva.publication.ticket.test.TicketTestUtils;
 import no.unit.nva.publication.validation.ETag;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
-import no.unit.nva.stubs.FakeSecretsManagerClient;
-import no.unit.nva.stubs.WiremockHttpClient;
+import no.unit.nva.stubs.FakeIdentityServiceClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.AccessRight;
@@ -208,7 +200,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.zalando.problem.Problem;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
-@WireMockTest(httpsEnabled = true)
 class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
   private static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE =
@@ -241,9 +232,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
   protected UpdatePublicationHandler updatePublicationHandler;
   Publication publication;
   private Environment environment;
-  private IdentityServiceClient identityServiceClient;
+  FakeIdentityServiceClient identityServiceClient;
   private TicketService ticketService;
-  private FakeSecretsManagerClient secretsManagerClient;
   private FakeEventBridgeClient eventBridgeClient;
   private URI customerId;
 
@@ -256,7 +246,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
   /** Set up environment. */
   @BeforeEach
-  public void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) throws NotFoundException {
+  public void setUp() {
     super.init();
 
     environment = mock(Environment.class);
@@ -266,42 +256,26 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         .thenReturn(NVA_PERSISTED_STORAGE_BUCKET_NAME_KEY);
     when(environment.readEnv(API_HOST_KEY)).thenReturn("localhost");
     when(environment.readEnv("COGNITO_AUTHORIZER_URLS")).thenReturn("http://localhost:3000");
-    lenient().when(environment.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("secret");
-    var baseUrl = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl());
-    lenient().when(environment.readEnv("BACKEND_CLIENT_AUTH_URL")).thenReturn(baseUrl.toString());
 
     resourceService = getResourceService(client);
     this.ticketService = getTicketService();
 
     this.eventBridgeClient = new FakeEventBridgeClient(EVENT_BUS_NAME);
 
-    identityServiceClient = mock(IdentityServiceClient.class);
-    when(identityServiceClient.getExternalClient(any())).thenReturn(getExternalClientResponse);
+    identityServiceClient = spy(new FakeIdentityServiceClient());
+    doReturn(getExternalClientResponse).when(identityServiceClient).getExternalClient(any());
 
-    secretsManagerClient = new FakeSecretsManagerClient();
-    var credentials = new BackendClientCredentials("id", "secret");
-    secretsManagerClient.putPlainTextSecret("secret", credentials.toString());
     output = new ByteArrayOutputStream();
-    var httpClient = WiremockHttpClient.create();
     updatePublicationHandler =
         new UpdatePublicationHandler(
-            resourceService,
-            ticketService,
-            environment,
-            identityServiceClient,
-            eventBridgeClient,
-            secretsManagerClient,
-            httpClient);
+            resourceService, ticketService, environment, identityServiceClient, eventBridgeClient);
 
     customerId =
-        UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl())
-            .addChild("customer", randomUUID().toString())
-            .getUri();
+        UriWrapper.fromHost(API_HOST_DOMAIN).addChild("customer", randomUUID().toString()).getUri();
 
     publication = randomPublicationWithPublisher();
 
-    stubSuccessfulTokenResponse();
-    stubCustomerResponseAcceptingFilesForAllTypes(customerId);
+    identityServiceClient.withCustomer(customerId, customerAcceptingFilesForAllTypes());
   }
 
   private Publication randomPublicationWithPublisher() {
@@ -370,7 +344,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     var inputStream =
         ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
-    stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+    identityServiceClient.withCustomer(
+        customerId, customerAcceptingFilesForAllTypesNotAllowingAutoPublishingFiles());
     updatePublicationHandler.handleRequest(inputStream, output, context);
     var gatewayResponse =
         GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
@@ -466,7 +441,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     var inputStream =
         ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
-    stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+    identityServiceClient.withCustomer(
+        customerId, customerAcceptingFilesForAllTypesNotAllowingAutoPublishingFiles());
     updatePublicationHandler.handleRequest(inputStream, output, context);
     var gatewayResponse =
         GatewayResponse.fromOutputStream(output, PublicationResponseElevatedUser.class);
@@ -599,7 +575,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     when(getExternalClientResponse.getCustomerUri()).thenReturn(customerId);
     when(getExternalClientResponse.getActingUser()).thenReturn(randomString());
-    stubCustomerResponseAcceptingFilesForAllTypes(customerId);
+    identityServiceClient.withCustomer(customerId, customerAcceptingFilesForAllTypes());
     var event =
         backendClientUpdatesPublication(publicationUpdate.getIdentifier(), publicationUpdate);
     updatePublicationHandler.handleRequest(event, output, context);
@@ -636,13 +612,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     updatePublicationHandler =
         new UpdatePublicationHandler(
-            resourceService,
-            ticketService,
-            environment,
-            identityServiceClient,
-            eventBridgeClient,
-            secretsManagerClient,
-            WiremockHttpClient.create());
+            resourceService, ticketService, environment, identityServiceClient, eventBridgeClient);
 
     var savedPublication = createSamplePublication();
     var event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication);
@@ -663,13 +633,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     resourceService = serviceFailsOnModifyRequestWithRuntimeError();
     updatePublicationHandler =
         new UpdatePublicationHandler(
-            resourceService,
-            ticketService,
-            environment,
-            identityServiceClient,
-            eventBridgeClient,
-            secretsManagerClient,
-            WiremockHttpClient.create());
+            resourceService, ticketService, environment, identityServiceClient, eventBridgeClient);
 
     var savedPublication = createSamplePublication();
     var event =
@@ -981,29 +945,32 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
   }
 
   @Test
-  void shouldReturnBadGatewayWhenHttpClientUnableToRetrievePublishingWorkflow()
+  void shouldReturnBadGatewayWhenIdentityServiceIsUnableToRetrievePublishingWorkflow()
       throws IOException, ApiGatewayException {
     var publishedPublication =
         TicketTestUtils.createPersistedPublication(customerId, PUBLISHED, resourceService);
+    var publicationUpdate = addAnotherUploadedFile(publishedPublication);
+    identityServiceClient.withUnavailableCustomer(customerId);
 
-    final var publicationUpdate = addAnotherUploadedFile(publishedPublication);
-
-    WireMock.reset();
-
-    stubSuccessfulTokenResponse();
-    stubCustomerResponseNotFound(customerId);
-
-    var inputStream =
-        ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
-    updatePublicationHandler.handleRequest(inputStream, output, context);
-
-    var response = GatewayResponse.fromOutputStream(output, Problem.class);
-    var problem = response.getBodyObject(Problem.class);
+    var response = ownerUpdatesOwnPublicationAndExpectsProblem(publicationUpdate);
 
     assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
     assertThat(
-        problem.getDetail(),
+        response.getBodyObject(Problem.class).getDetail(),
         is(equalTo("Customer API not responding or not responding as expected!")));
+  }
+
+  @Test
+  void shouldReturnInternalServerErrorWhenCustomerOfUserIsNotFound()
+      throws IOException, ApiGatewayException {
+    var publishedPublication =
+        TicketTestUtils.createPersistedPublication(customerId, PUBLISHED, resourceService);
+    var publicationUpdate = addAnotherUploadedFile(publishedPublication);
+    identityServiceClient.withMissingCustomer(customerId);
+
+    var response = ownerUpdatesOwnPublicationAndExpectsProblem(publicationUpdate);
+
+    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_INTERNAL_ERROR)));
   }
 
   @Test
@@ -1427,11 +1394,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
   void
       shouldReturnSuccessWhenUpdatingMetadataOnlyWhenPublishingFilesIsNotAllowedInCustomerConfiguration()
           throws BadRequestException, IOException {
-
-    WireMock.reset();
-
-    stubSuccessfulTokenResponse();
-    stubSuccessfulCustomerResponseAllowingFilesForNoTypes(customerId);
+    identityServiceClient.withCustomer(customerId, customerAcceptingFilesForNoTypes());
 
     var savedPublication = createSamplePublication();
     var publicationUpdate = updateTitle(savedPublication);
@@ -2064,11 +2027,23 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
   void shouldReturnBadGatewayAndStayUnpublishedWhenRepublishingAndCustomerIsUnavailable() {
     var curatingInstitution = randomUri();
     var publication = createUnpublishedPublicationWithPendingFileCuratedBy(curatingInstitution);
-    stubCustomerApiAsUnavailable();
+    identityServiceClient.withUnavailableCustomer(customerId);
 
     var response = editorAtInstitutionRepublishes(publication, curatingInstitution);
 
     assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
+    assertThat(fetchStatus(publication), is(equalTo(UNPUBLISHED)));
+  }
+
+  @Test
+  void shouldReturnInternalServerErrorAndStayUnpublishedWhenUploaderCustomerIsNotFound() {
+    var curatingInstitution = randomUri();
+    var publication = createUnpublishedPublicationWithPendingFileCuratedBy(curatingInstitution);
+    identityServiceClient.withMissingCustomer(customerId);
+
+    var response = editorAtInstitutionRepublishes(publication, curatingInstitution);
+
+    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_INTERNAL_ERROR)));
     assertThat(fetchStatus(publication), is(equalTo(UNPUBLISHED)));
   }
 
@@ -2078,7 +2053,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     var curatingInstitution = randomUri();
     var publication = createUnpublishedPublicationWithPendingFileCuratedBy(curatingInstitution);
     var fileWithoutLicense = persistPendingOpenFileWithoutLicense(publication);
-    stubCustomerResponseAcceptingFilesForAllTypes(customerId);
+    identityServiceClient.withCustomer(customerId, customerAcceptingFilesForAllTypes());
 
     var response = editorAtInstitutionRepublishes(publication, curatingInstitution);
 
@@ -2097,7 +2072,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             customerId, PUBLISHED, resourceService);
     var fileWithoutLicense = File.builder().withIdentifier(randomUUID()).buildPendingOpenFile();
     updatePublicationWithFile(publication, fileWithoutLicense);
-    stubCustomerResponseAcceptingFilesForAllTypes(customerId);
+    identityServiceClient.withCustomer(customerId, customerAcceptingFilesForAllTypes());
 
     var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
     updatePublicationHandler.handleRequest(input, output, context);
@@ -2155,7 +2130,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         File.builder().withIdentifier(randomUUID()).withLicense(randomUri()).buildPendingOpenFile();
     updatePublicationWithFile(publication, pendingOpenFile);
 
-    stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+    identityServiceClient.withCustomer(
+        customerId, customerAcceptingFilesForAllTypesNotAllowingAutoPublishingFiles());
     var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
     updatePublicationHandler.handleRequest(input, output, context);
 
@@ -2181,7 +2157,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     injectContributor(publication, contributor);
     updatePublicationWithFile(publication, newUnpublishedFile);
 
-    stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+    identityServiceClient.withCustomer(
+        customerId, customerAcceptingFilesForAllTypesNotAllowingAutoPublishingFiles());
     var input = contributorsUpdatesPublication(publication, cristinId, randomUri(), customerId);
     updatePublicationHandler.handleRequest(input, output, context);
 
@@ -2207,7 +2184,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     persistPublishingRequestContainingExistingUnpublishedFiles(publication);
     var publicationUpdate = updateTitle(publication);
 
-    stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+    identityServiceClient.withCustomer(
+        customerId, customerAcceptingFilesForAllTypesNotAllowingAutoPublishingFiles());
     var input =
         curatorWithAccessRightsUpdatesPublication(
             publicationUpdate,
@@ -2243,7 +2221,8 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     var contributor = createContributorForPublicationUpdate(cristinId);
     injectContributor(publication, contributor);
     updatePublicationWithFile(publication, newUnpublishedFile);
-    stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+    identityServiceClient.withCustomer(
+        customerId, customerAcceptingFilesForAllTypesNotAllowingAutoPublishingFiles());
     var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
     updatePublicationHandler.handleRequest(input, output, context);
 
@@ -2273,19 +2252,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     injectContributor(resource, contributor);
     var updatedFile = file.copy().buildPendingInternalFile();
     var updatedPublication = resource.copy().withAssociatedArtifacts(List.of(updatedFile)).build();
-    stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+    identityServiceClient.withCustomer(
+        customerId, customerAcceptingFilesForAllTypesNotAllowingAutoPublishingFiles());
     var input = ownerUpdatesOwnPublication(resource.getIdentifier(), updatedPublication);
 
     var resourceService = getResourceService(client);
     var handler =
         new UpdatePublicationHandler(
-            resourceService,
-            ticketService,
-            environment,
-            identityServiceClient,
-            eventBridgeClient,
-            secretsManagerClient,
-            WiremockHttpClient.create());
+            resourceService, ticketService, environment, identityServiceClient, eventBridgeClient);
     handler.handleRequest(input, output, context);
 
     assertNotEquals(
@@ -2300,18 +2274,13 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
   void shouldReturnNotFoundWhenFetchingPublicationWithFilesAndPublicationDoesNotExist()
       throws IOException {
     var publication = randomPublication();
-    stubCustomerResponseAcceptingFilesForAllTypesAndNotAllowingAutoPublishingFiles(customerId);
+    identityServiceClient.withCustomer(
+        customerId, customerAcceptingFilesForAllTypesNotAllowingAutoPublishingFiles());
     var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publication);
 
     var handler =
         new UpdatePublicationHandler(
-            resourceService,
-            ticketService,
-            environment,
-            identityServiceClient,
-            eventBridgeClient,
-            secretsManagerClient,
-            WiremockHttpClient.create());
+            resourceService, ticketService, environment, identityServiceClient, eventBridgeClient);
     handler.handleRequest(input, output, context);
     var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
 
@@ -2333,20 +2302,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     publication =
         Resource.fromPublication(publication)
             .persistNew(resourceService, UserInstance.fromPublication(publication));
-    stubSuccessfulCustomerResponseAllowingFilesForNoTypes(customerId);
+    identityServiceClient.withCustomer(customerId, customerAcceptingFilesForNoTypes());
     var file = ((File) publication.getAssociatedArtifacts().getFirst()).toPendingOpenFile();
     var publicationUpdate = publication.copy().withAssociatedArtifacts(List.of(file)).build();
     var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publicationUpdate);
 
     var handler =
         new UpdatePublicationHandler(
-            resourceService,
-            ticketService,
-            environment,
-            identityServiceClient,
-            eventBridgeClient,
-            secretsManagerClient,
-            WiremockHttpClient.create());
+            resourceService, ticketService, environment, identityServiceClient, eventBridgeClient);
     handler.handleRequest(input, output, context);
     var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
 
@@ -2368,20 +2331,14 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     publication =
         Resource.fromPublication(publication)
             .persistNew(resourceService, UserInstance.fromPublication(publication));
-    stubSuccessfulCustomerResponseAllowingFilesForNoTypes(customerId);
+    identityServiceClient.withCustomer(customerId, customerAcceptingFilesForNoTypes());
     var file = ((File) publication.getAssociatedArtifacts().getFirst()).toPendingOpenFile();
     var publicationUpdate = publication.copy().withAssociatedArtifacts(List.of(file)).build();
     var input = curatorPublicationOwnerUpdatesPublication(publicationUpdate);
 
     var handler =
         new UpdatePublicationHandler(
-            resourceService,
-            ticketService,
-            environment,
-            identityServiceClient,
-            eventBridgeClient,
-            secretsManagerClient,
-            WiremockHttpClient.create());
+            resourceService, ticketService, environment, identityServiceClient, eventBridgeClient);
     handler.handleRequest(input, output, context);
     var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
 
@@ -2415,13 +2372,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     var handler =
         new UpdatePublicationHandler(
-            resourceService,
-            ticketService,
-            environment,
-            identityServiceClient,
-            eventBridgeClient,
-            secretsManagerClient,
-            WiremockHttpClient.create());
+            resourceService, ticketService, environment, identityServiceClient, eventBridgeClient);
     handler.handleRequest(input, output, context);
     var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
 
@@ -2451,16 +2402,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             .withEntityDescription(randomEntityDescription(ConferenceAbstract.class))
             .build();
     var input = ownerUpdatesOwnPublication(publication.getIdentifier(), publicationUpdate);
-    stubSuccessfulCustomerResponseAllowingFilesForNoTypes(customerId);
+    identityServiceClient.withCustomer(customerId, customerAcceptingFilesForNoTypes());
     var handler =
         new UpdatePublicationHandler(
-            resourceService,
-            ticketService,
-            environment,
-            identityServiceClient,
-            eventBridgeClient,
-            secretsManagerClient,
-            WiremockHttpClient.create());
+            resourceService, ticketService, environment, identityServiceClient, eventBridgeClient);
     handler.handleRequest(input, output, context);
     var gatewayResponse = GatewayResponse.fromOutputStream(output, Publication.class);
 
@@ -2487,7 +2432,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
             updatedFundings,
             updatedProjects,
             new AssociatedArtifactList(updatedFile));
-    stubCustomerResponseAcceptingFilesForAllTypes(customerId);
+    identityServiceClient.withCustomer(customerId, customerAcceptingFilesForAllTypes());
     var input = request(userInstance, partialUpdateRequest, publication.getIdentifier());
     updatePublicationHandler.handleRequest(input, output, context);
 
@@ -2516,7 +2461,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     var partialUpdateRequest =
         new PartialUpdatePublicationRequest(
             publication.getIdentifier(), null, null, AssociatedArtifactList.empty());
-    stubCustomerResponseAcceptingFilesForAllTypes(customerId);
+    identityServiceClient.withCustomer(customerId, customerAcceptingFilesForAllTypes());
     var input = request(userInstance, partialUpdateRequest, publication.getIdentifier());
     updatePublicationHandler.handleRequest(input, output, context);
 
@@ -3267,10 +3212,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     return fileWithoutLicense;
   }
 
-  private void stubCustomerApiAsUnavailable() {
-    WireMock.reset();
-    stubSuccessfulTokenResponse();
-    stubCustomerResponseNotFound(customerId);
+  private GatewayResponse<Problem> ownerUpdatesOwnPublicationAndExpectsProblem(
+      Publication publicationUpdate) throws IOException {
+    var inputStream =
+        ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
+    updatePublicationHandler.handleRequest(inputStream, output, context);
+    return GatewayResponse.fromOutputStream(output, Problem.class);
   }
 
   private GatewayResponse<Problem> editorAtInstitutionRepublishes(

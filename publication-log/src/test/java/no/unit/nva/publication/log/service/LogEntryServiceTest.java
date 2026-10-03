@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.UUID;
 import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.clients.IdentityServiceNotFoundException;
 import no.unit.nva.clients.UserDto;
 import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.model.ImportSource;
@@ -49,7 +50,6 @@ import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -61,7 +61,7 @@ class LogEntryServiceTest extends ResourcesLocalTest {
   private LogEntryService logEntryService;
 
   @BeforeEach
-  public void setUp() throws NotFoundException {
+  public void setUp() {
     super.init();
     ticketService = getTicketService();
     resourceService = getResourceService(client);
@@ -106,9 +106,9 @@ class LogEntryServiceTest extends ResourcesLocalTest {
 
   @Test
   void shouldCreateLogEntryWithUserUsernameOnlyWhenFailingWhenFetchingUser()
-      throws BadRequestException, NotFoundException {
+      throws BadRequestException {
     var publication = createPublishedPublication();
-    when(identityServiceClient.getUser(any())).thenThrow(new NotFoundException("User not found"));
+    when(identityServiceClient.getUser(any())).thenThrow(IdentityServiceNotFoundException.class);
 
     logEntryService.persistLogEntry(Resource.fromPublication(publication));
 
@@ -139,8 +139,8 @@ class LogEntryServiceTest extends ResourcesLocalTest {
 
   @Test
   void shouldCreateFileLogEntryWithUserUsernameOnlyWhenFailingWhenFetchingUser()
-      throws BadRequestException, NotFoundException {
-    when(identityServiceClient.getUser(any())).thenThrow(new NotFoundException("User not found"));
+      throws BadRequestException {
+    when(identityServiceClient.getUser(any())).thenThrow(IdentityServiceNotFoundException.class);
 
     var publication = createPublishedPublication();
     var fileEntry =

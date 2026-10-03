@@ -19,10 +19,10 @@ import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.FakeCustomerApiClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
+import no.unit.nva.stubs.FakeIdentityServiceClient;
 import nva.commons.apigateway.AccessRight;
 
 /**
@@ -35,7 +35,7 @@ public class RepublishScenarioContext extends ResourcesLocalTest {
   private final Map<String, URI> institutions = new HashMap<>();
   private final Map<String, List<File>> filesByInstitution = new HashMap<>();
   private final Map<String, SortableIdentifier> originalTicketByInstitution = new HashMap<>();
-  private final FakeCustomerApiClient customerApiClient = new FakeCustomerApiClient();
+  private final FakeIdentityServiceClient identityServiceClient = new FakeIdentityServiceClient();
   private ResourceService resourceService;
   private TicketService ticketService;
   private Publication publication;
@@ -58,8 +58,8 @@ public class RepublishScenarioContext extends ResourcesLocalTest {
     return ticketService;
   }
 
-  public FakeCustomerApiClient customerApiClient() {
-    return customerApiClient;
+  public FakeIdentityServiceClient identityServiceClient() {
+    return identityServiceClient;
   }
 
   public Publication publication() {

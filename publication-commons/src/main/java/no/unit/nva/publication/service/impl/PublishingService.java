@@ -11,6 +11,7 @@ import no.unit.nva.clients.ChannelClaimDto.ChannelClaim;
 import no.unit.nva.clients.ChannelClaimDto.ChannelClaim.ChannelConstraint;
 import no.unit.nva.clients.ChannelClaimDto.CustomerSummaryDto;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.clients.IdentityServiceUnavailableException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationOperation;
 import no.unit.nva.model.associatedartifacts.file.File;
@@ -193,10 +194,8 @@ public class PublishingService {
   private Optional<ChannelClaimDto> getChannelClaimDto(Publisher publisher)
       throws BadGatewayException {
     try {
-      return Optional.of(identityServiceClient.getChannelClaim(createChannelClaimUri(publisher)));
-    } catch (NotFoundException exception) {
-      return Optional.empty();
-    } catch (Exception e) {
+      return identityServiceClient.findChannelClaim(createChannelClaimUri(publisher));
+    } catch (IdentityServiceUnavailableException e) {
       throw new BadGatewayException("Could not fetch channel owner!");
     }
   }
@@ -218,8 +217,7 @@ public class PublishingService {
         .getUri();
   }
 
-  private PublishingWorkflow getCustomerWorkflow(UserInstance userInstance)
-      throws NotFoundException {
+  private PublishingWorkflow getCustomerWorkflow(UserInstance userInstance) {
     var customer = identityServiceClient.getCustomerById(userInstance.getCustomerId());
     return PublishingWorkflow.lookUp(customer.publicationWorkflow());
   }

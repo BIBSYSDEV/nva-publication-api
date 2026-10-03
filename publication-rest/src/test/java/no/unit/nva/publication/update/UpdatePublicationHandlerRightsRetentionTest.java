@@ -2,8 +2,7 @@ package no.unit.nva.publication.update;
 
 import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfiguration.OVERRIDABLE_RIGHTS_RETENTION_STRATEGY;
 import static no.unit.nva.model.testing.PublicationGenerator.randomEntityDescription;
-import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs;
-import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulTokenResponse;
+import static no.unit.nva.publication.CustomerFixtures.customerAcceptingFilesForAllTypesAndOverridableRrs;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -12,9 +11,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -37,21 +33,13 @@ import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-@WireMockTest(httpsEnabled = true)
 class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandlerTest {
-
-  @BeforeEach
-  public void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) throws NotFoundException {
-    super.setUp(wireMockRuntimeInfo);
-  }
 
   @Test
   void shouldSetCustomersConfiguredRrsWithOverridenByWhenFileIsNew()
       throws BadRequestException, IOException, NotFoundException {
-    WireMock.reset();
     var academicArticle =
         publication
             .copy()
@@ -74,9 +62,8 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
     var update = persistedPublication.copy().withAssociatedArtifacts(List.of(file)).build();
     var input = ownerUpdatesOwnPublication(persistedPublication.getIdentifier(), update);
 
-    stubSuccessfulTokenResponse();
-    stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(
-        publication.getPublisher().getId());
+    identityServiceClient.withCustomer(
+        publication.getPublisher().getId(), customerAcceptingFilesForAllTypesAndOverridableRrs());
 
     updatePublicationHandler.handleRequest(input, output, context);
     var response = GatewayResponse.fromOutputStream(output, Publication.class);
@@ -97,8 +84,6 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
   @Test
   void shouldSetNullRightsRetentionWhenChangingAcademicArticleToSomethingElse()
       throws BadRequestException, IOException, NotFoundException {
-    WireMock.reset();
-
     OverriddenRightsRetentionStrategy userSetRrs =
         OverriddenRightsRetentionStrategy.create(
             OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, randomString());
@@ -121,9 +106,8 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
             .build();
     var input = ownerUpdatesOwnPublication(persistedPublication.getIdentifier(), update);
 
-    stubSuccessfulTokenResponse();
-    stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(
-        publication.getPublisher().getId());
+    identityServiceClient.withCustomer(
+        publication.getPublisher().getId(), customerAcceptingFilesForAllTypesAndOverridableRrs());
 
     updatePublicationHandler.handleRequest(input, output, context);
     var response = GatewayResponse.fromOutputStream(output, Publication.class);
@@ -139,7 +123,6 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
   @Test
   void shouldPreserveRrsOverridenByWhenChangingNonRrsFileMetadata()
       throws BadRequestException, IOException, NotFoundException {
-    WireMock.reset();
     var rrsOverriddenBy = randomString();
     OverriddenRightsRetentionStrategy userSetRrs =
         OverriddenRightsRetentionStrategy.create(
@@ -161,9 +144,8 @@ class UpdatePublicationHandlerRightsRetentionTest extends UpdatePublicationHandl
     var update = persistedPublication.copy().withAssociatedArtifacts(List.of(updatedFile)).build();
     var input = ownerUpdatesOwnPublication(persistedPublication.getIdentifier(), update);
 
-    stubSuccessfulTokenResponse();
-    stubCustomerResponseAcceptingFilesForAllTypesAndOverridableRrs(
-        publication.getPublisher().getId());
+    identityServiceClient.withCustomer(
+        publication.getPublisher().getId(), customerAcceptingFilesForAllTypesAndOverridableRrs());
 
     updatePublicationHandler.handleRequest(input, output, context);
     var response = GatewayResponse.fromOutputStream(output, Publication.class);

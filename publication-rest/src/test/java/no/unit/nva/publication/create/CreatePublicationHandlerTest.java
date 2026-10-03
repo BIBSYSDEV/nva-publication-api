@@ -2,10 +2,7 @@ package no.unit.nva.publication.create;
 
 import static no.unit.nva.PublicationUtil.PROTECTED_DEGREE_INSTANCE_TYPES;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
-import static no.unit.nva.publication.CustomerApiStubs.stubCustomSuccessfulCustomerResponse;
-import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseAcceptingFilesForAllTypes;
-import static no.unit.nva.publication.CustomerApiStubs.stubCustomerResponseNotFound;
-import static no.unit.nva.publication.CustomerApiStubs.stubSuccessfulTokenResponse;
+import static no.unit.nva.publication.CustomerFixtures.customerAcceptingFilesForAllTypes;
 import static no.unit.nva.publication.PublicationServiceConfig.ENVIRONMENT;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
@@ -27,9 +24,9 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -37,24 +34,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Stream;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
 import no.unit.nva.clients.GetExternalClientResponse;
-import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
@@ -63,16 +53,13 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.associatedartifacts.NullAssociatedArtifact;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
-import no.unit.nva.stubs.FakeSecretsManagerClient;
-import no.unit.nva.stubs.WiremockHttpClient;
+import no.unit.nva.stubs.FakeIdentityServiceClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.GatewayResponse;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.paths.UriWrapper;
 import org.hamcrest.core.IsEqual;
@@ -88,7 +75,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.Problem;
 
 @ExtendWith(MockitoExtension.class)
-@WireMockTest(httpsEnabled = true)
 class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
   public static final String NVA_UNIT_NO = "nva.unit.no";
@@ -112,65 +98,41 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
   private GetExternalClientResponse getExternalClientResponse;
   private ResourceService resourceService;
   private Environment environmentMock;
-  private IdentityServiceClient identityServiceClient;
-  private FakeSecretsManagerClient secretsManagerClient;
+  private FakeIdentityServiceClient identityServiceClient;
   private URI customerId;
-
-  public static Stream<Exception> httpClientExceptionsProvider() {
-    return Stream.of(new ConnectException(), new InterruptedException());
-  }
 
   /** Setting up test environment. */
   @BeforeEach
-  public void setUp(WireMockRuntimeInfo wireMockRuntimeInfo) throws NotFoundException {
+  public void setUp() {
     super.init();
 
     environmentMock = mock(Environment.class);
-    identityServiceClient = mock(IdentityServiceClient.class);
+    identityServiceClient = spy(new FakeIdentityServiceClient());
 
     lenient().when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
     when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
     when(environmentMock.readEnv(COGNITO_AUTHORIZER_URLS)).thenReturn("http://localhost:3000");
-    lenient().when(environmentMock.readEnv("BACKEND_CLIENT_SECRET_NAME")).thenReturn("secret");
-
-    var baseUrl = URI.create(wireMockRuntimeInfo.getHttpsBaseUrl());
-    lenient()
-        .when(environmentMock.readEnv("BACKEND_CLIENT_AUTH_URL"))
-        .thenReturn(baseUrl.toString());
 
     resourceService = getResourceService(client);
 
-    secretsManagerClient = new FakeSecretsManagerClient();
-    var credentials = new BackendClientCredentials("id", "secret");
-    secretsManagerClient.putPlainTextSecret("secret", credentials.toString());
-
-    var httpClient = WiremockHttpClient.create();
-
-    handler =
-        new CreatePublicationHandler(
-            resourceService,
-            environmentMock,
-            identityServiceClient,
-            secretsManagerClient,
-            httpClient);
+    handler = new CreatePublicationHandler(resourceService, environmentMock, identityServiceClient);
     outputStream = new ByteArrayOutputStream();
     samplePublication = randomPublication();
     testUserName = samplePublication.getResourceOwner().getOwner().getValue();
     topLevelCristinOrgId = randomUri();
     customerId =
-        UriWrapper.fromUri(wireMockRuntimeInfo.getHttpsBaseUrl())
+        UriWrapper.fromHost(NVA_UNIT_NO)
             .addChild("customer", UUID.randomUUID().toString())
             .getUri();
 
     getExternalClientResponse =
         new GetExternalClientResponse(EXTERNAL_CLIENT_ID, "someone@123", customerId, randomUri());
     lenient()
-        .when(identityServiceClient.getExternalClient(any()))
-        .thenReturn(getExternalClientResponse);
+        .doReturn(getExternalClientResponse)
+        .when(identityServiceClient)
+        .getExternalClient(any());
 
-    stubSuccessfulTokenResponse();
-
-    stubCustomerResponseAcceptingFilesForAllTypes(customerId);
+    identityServiceClient.withCustomer(customerId, customerAcceptingFilesForAllTypes());
   }
 
   private static Class<?>[] protectedDegreeInstanceTypeClassesProvider() {
@@ -382,73 +344,29 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
   }
 
-  @ParameterizedTest
-  @MethodSource("httpClientExceptionsProvider")
-  void shouldReturnBadGatewayIfCustomerApiHttpClientThrowsException(Exception exceptionToThrow)
-      throws IOException, InterruptedException {
-
-    var httpClient = mock(HttpClient.class);
-
-    doThrow(exceptionToThrow).when(httpClient).send(any(), any());
-
-    handler =
-        new CreatePublicationHandler(
-            resourceService,
-            environmentMock,
-            identityServiceClient,
-            secretsManagerClient,
-            httpClient);
-
+  @Test
+  void shouldReturnBadGatewayIfIdentityServiceIsUnavailable() throws IOException {
     var event = prepareRequestWithFileForTypeWhereNotAllowed();
+    identityServiceClient.withUnavailableCustomer(customerId);
 
     handler.handleRequest(event, outputStream, context);
 
     var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
     assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
-
-    var body = response.getBodyObject(Problem.class);
     assertThat(
-        body.getDetail(),
+        response.getBodyObject(Problem.class).getDetail(),
         containsString(CUSTOMER_API_NOT_RESPONDING_OR_NOT_RESPONDING_AS_EXPECTED));
   }
 
   @Test
-  void shouldReturnBadGatewayIfCustomerApiDoesNotRespondWithSuccessOk() throws IOException {
-    final var event = prepareRequestWithFileForTypeWhereNotAllowed();
-
-    WireMock.reset();
-
-    stubSuccessfulTokenResponse();
-    stubCustomerResponseNotFound(customerId);
+  void shouldReturnInternalServerErrorIfCustomerIsNotFound() throws IOException {
+    var event = prepareRequestWithFileForTypeWhereNotAllowed();
+    identityServiceClient.withMissingCustomer(customerId);
 
     handler.handleRequest(event, outputStream, context);
+
     var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
-    var body = response.getBodyObject(Problem.class);
-    assertThat(
-        body.getDetail(),
-        containsString(CUSTOMER_API_NOT_RESPONDING_OR_NOT_RESPONDING_AS_EXPECTED));
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"", "[]", "{\"allowFileUploadForTypes\": {}}"})
-  void shouldReturnBadRequestIfMalformedConfigReceivedFromCustomerApi(String customerResponse)
-      throws IOException {
-    final var event = prepareRequestWithFileForTypeWhereNotAllowed();
-    WireMock.reset();
-
-    stubSuccessfulTokenResponse();
-    stubCustomSuccessfulCustomerResponse(customerId, customerResponse);
-
-    handler.handleRequest(event, outputStream, context);
-    var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-
-    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_GATEWAY)));
-
-    var body = response.getBodyObject(Problem.class);
-    assertThat(
-        body.getDetail(),
-        containsString(CUSTOMER_API_NOT_RESPONDING_OR_NOT_RESPONDING_AS_EXPECTED));
+    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_INTERNAL_ERROR)));
   }
 
   // Following tests are commented out pending decision on how to handle user customer and not

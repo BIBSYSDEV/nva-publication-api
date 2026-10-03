@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import no.unit.nva.clients.CustomerDto;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Reference;
@@ -21,24 +23,22 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.model.associatedartifacts.file.PublisherVersion;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
-import no.unit.nva.publication.commons.customer.CustomerApiClient;
-import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 
 public class FileRightsRetentionService {
 
-  private final CustomerApiClient customerApiClient;
-  private final CustomerApiRightsRetention customerApiRightsRetention;
+  private final IdentityServiceClient identityServiceClient;
+  private final CustomerDto.RightsRetentionStrategy customerRightsRetention;
   private final UserInstance userInstance;
 
   public FileRightsRetentionService(
-      CustomerApiClient customerApiClient,
-      CustomerApiRightsRetention customerApiRightsRetention,
+      IdentityServiceClient identityServiceClient,
+      CustomerDto.RightsRetentionStrategy customerRightsRetention,
       UserInstance userInstance) {
-    this.customerApiClient = customerApiClient;
-    this.customerApiRightsRetention = customerApiRightsRetention;
+    this.identityServiceClient = identityServiceClient;
+    this.customerRightsRetention = customerRightsRetention;
     this.userInstance = userInstance;
   }
 
@@ -192,12 +192,12 @@ public class FileRightsRetentionService {
   //    }
   private RightsRetentionStrategyConfiguration resolveConfigWithCustomerOverride(
       FileEntry fileEntry) {
-    if (nonNull(fileEntry) && nonNull(fileEntry.getCustomerId()) && nonNull(customerApiClient)) {
-      var customer = customerApiClient.fetch(fileEntry.getCustomerId());
+    if (nonNull(fileEntry) && nonNull(fileEntry.getCustomerId())) {
+      var customer = identityServiceClient.getCustomerById(fileEntry.getCustomerId());
 
-      if (nonNull(customer) && nonNull(customer.getRightsRetentionStrategy())) {
+      if (nonNull(customer.rightsRetentionStrategy())) {
         return RightsRetentionStrategyConfiguration.fromValue(
-            customer.getRightsRetentionStrategy().getType());
+            customer.rightsRetentionStrategy().type());
       }
     }
     return getConfig();
@@ -209,7 +209,7 @@ public class FileRightsRetentionService {
   }
 
   private RightsRetentionStrategyConfiguration getConfig() {
-    return RightsRetentionStrategyConfiguration.fromValue(customerApiRightsRetention.getType());
+    return RightsRetentionStrategyConfiguration.fromValue(customerRightsRetention.type());
   }
 
   private List<File> getFiles(Resource resource) {

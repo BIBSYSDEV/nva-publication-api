@@ -7,7 +7,7 @@ import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsGenerator.randomPendingOpenFile;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
-import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
+import static no.unit.nva.publication.service.CustomerGenerator.customerWithWorkflow;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -19,17 +19,15 @@ import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.clients.ChannelClaimDto;
 import no.unit.nva.clients.ChannelClaimDto.ChannelClaim;
 import no.unit.nva.clients.ChannelClaimDto.ChannelClaim.ChannelConstraint;
 import no.unit.nva.clients.ChannelClaimDto.CustomerSummaryDto;
-import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.clients.IdentityServiceNotFoundException;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.contexttypes.Degree;
@@ -46,7 +44,6 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -64,13 +61,14 @@ class PublishingServiceTest extends ResourcesLocalTest {
   private PublishingService publishingService;
 
   @BeforeEach
-  void setUp() throws NotFoundException {
+  void setUp() {
     super.init();
     this.resourceService = getResourceService(client);
     var ticketService = getTicketService();
     this.identityServiceClient = mock(IdentityServiceClient.class);
     when(identityServiceClient.getCustomerById(any()))
-        .thenReturn(customerWithWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue()));
+        .thenReturn(customerWithWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY));
+    when(identityServiceClient.findChannelClaim(any())).thenCallRealMethod();
     this.publishingService =
         new PublishingService(resourceService, ticketService, identityServiceClient);
   }
@@ -184,7 +182,7 @@ class PublishingServiceTest extends ResourcesLocalTest {
         Resource.fromPublication(publication).persistNew(resourceService, userInstance);
 
     when(identityServiceClient.getChannelClaim(any()))
-        .thenThrow(new NotFoundException("Not found"));
+        .thenThrow(IdentityServiceNotFoundException.class);
 
     publishingService.publishResource(persistedPublication.getIdentifier(), userInstance);
 
@@ -413,23 +411,5 @@ class PublishingServiceTest extends ResourcesLocalTest {
         new CustomerSummaryDto(customerId, topLevelOrgCristinId),
         new ChannelClaim(
             id, new ChannelConstraint(publishingPolicy, randomString(), Arrays.asList(scope))));
-  }
-
-  private CustomerDto customerWithWorkflow(String workflow) {
-    return new CustomerDto(
-        RandomDataGenerator.randomUri(),
-        UUID.randomUUID(),
-        randomString(),
-        randomString(),
-        randomString(),
-        RandomDataGenerator.randomUri(),
-        workflow,
-        randomBoolean(),
-        randomBoolean(),
-        randomBoolean(),
-        Collections.emptyList(),
-        new CustomerDto.RightsRetentionStrategy(randomString(), RandomDataGenerator.randomUri()),
-        randomBoolean(),
-        randomString());
   }
 }

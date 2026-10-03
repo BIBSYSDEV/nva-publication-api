@@ -6,23 +6,17 @@ import static org.apache.http.HttpHeaders.LOCATION;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.PublicationResponseElevatedUser;
-import no.unit.nva.auth.AuthorizedBackendClient;
-import no.unit.nva.auth.CognitoCredentials;
+import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.clients.IdentityServiceUnavailableException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.ValidatingApiGatewayHandler;
-import no.unit.nva.publication.commons.customer.Customer;
-import no.unit.nva.publication.commons.customer.CustomerApiClient;
-import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
-import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
-import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.rightsretention.FileRightsRetentionService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -32,11 +26,9 @@ import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.secrets.SecretsReader;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 public class CreatePublicationHandler
     extends ValidatingApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
@@ -56,19 +48,11 @@ public class CreatePublicationHandler
   private final ResourceService publicationService;
   private final String apiHost;
   private final IdentityServiceClient identityServiceClient;
-  private final SecretsReader secretsReader;
-  private final HttpClient httpClient;
-  private final JavaHttpClientCustomerApiClient customerApiClient;
 
   /** Default constructor for CreatePublicationHandler. */
   @JacocoGenerated
   public CreatePublicationHandler() {
-    this(
-        ResourceService.defaultService(),
-        new Environment(),
-        IdentityServiceClient.prepare(),
-        SecretsReader.defaultSecretsManagerClient(),
-        HttpClient.newHttpClient());
+    this(ResourceService.defaultService(), new Environment(), IdentityServiceClient.prepare());
   }
 
   /**
@@ -80,16 +64,11 @@ public class CreatePublicationHandler
   public CreatePublicationHandler(
       ResourceService publicationService,
       Environment environment,
-      IdentityServiceClient identityServiceClient,
-      SecretsManagerClient secretsManagerClient,
-      HttpClient httpClient) {
+      IdentityServiceClient identityServiceClient) {
     super(CreatePublicationRequest.class, environment);
     this.publicationService = publicationService;
     this.apiHost = environment.readEnv(API_HOST);
     this.identityServiceClient = identityServiceClient;
-    this.secretsReader = new SecretsReader(secretsManagerClient);
-    this.httpClient = httpClient;
-    this.customerApiClient = getJavaHttpClientCustomerApiClient();
   }
 
   @Override
@@ -113,11 +92,10 @@ public class CreatePublicationHandler
             .orElseGet(Resource::new);
     var userInstance =
         RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-    var customer =
-        fetchCustomerOrFailWithBadGateway(customerApiClient, userInstance.getCustomerId());
+    var customer = fetchCustomerOrFailWithBadGateway(userInstance.getCustomerId());
 
     new FileRightsRetentionService(
-            customerApiClient, customer.getRightsRetentionStrategy(), userInstance)
+            identityServiceClient, customer.rightsRetentionStrategy(), userInstance)
         .applyRightsRetention(newResource);
 
     var createdPublication = newResource.persistNew(publicationService, userInstance);
@@ -126,25 +104,12 @@ public class CreatePublicationHandler
     return PublicationResponseElevatedUser.fromPublication(createdPublication);
   }
 
-  private JavaHttpClientCustomerApiClient getJavaHttpClientCustomerApiClient() {
-    var backendClientCredentials =
-        secretsReader.fetchClassSecret(
-            environment.readEnv("BACKEND_CLIENT_SECRET_NAME"), BackendClientCredentials.class);
-    var cognitoServerUri = URI.create(environment.readEnv("BACKEND_CLIENT_AUTH_URL"));
-    var cognitoCredentials =
-        new CognitoCredentials(
-            backendClientCredentials::getId, backendClientCredentials::getSecret, cognitoServerUri);
-    var authorizedBackendClient =
-        AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, cognitoCredentials);
-    return new JavaHttpClientCustomerApiClient(authorizedBackendClient);
-  }
-
-  private static Customer fetchCustomerOrFailWithBadGateway(
-      CustomerApiClient customerApiClient, URI customerUri) throws BadGatewayException {
+  private CustomerDto fetchCustomerOrFailWithBadGateway(URI customerUri)
+      throws BadGatewayException {
     try {
-      return customerApiClient.fetch(customerUri);
-    } catch (CustomerNotAvailableException e) {
-      logger.error("Problems fetching customer", e);
+      return identityServiceClient.getCustomerById(customerUri);
+    } catch (IdentityServiceUnavailableException e) {
+      logger.error("Identity service unavailable", e);
       throw new BadGatewayException("Customer API not responding or not responding as expected!");
     }
   }
