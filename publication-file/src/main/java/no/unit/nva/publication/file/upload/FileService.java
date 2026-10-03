@@ -6,6 +6,8 @@ import static no.unit.nva.publication.file.upload.config.MultipartUploadConfig.B
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import no.unit.nva.clients.CustomerDto;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.FileOperation;
 import no.unit.nva.model.PublicationOperation;
@@ -19,10 +21,6 @@ import no.unit.nva.model.associatedartifacts.file.InternalFile;
 import no.unit.nva.model.associatedartifacts.file.OpenFile;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
 import no.unit.nva.model.associatedartifacts.file.UserUploadDetails;
-import no.unit.nva.publication.commons.customer.Customer;
-import no.unit.nva.publication.commons.customer.CustomerApiClient;
-import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
-import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequest;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
 import no.unit.nva.publication.file.upload.restmodel.ExternalCompleteUploadRequest;
@@ -47,13 +45,15 @@ public class FileService {
   private static final String RESOURCE_NOT_FOUND_MESSAGE = "Resource not found!";
   private static final String FILE_NOT_FOUND_MESSAGE = "File not found!";
   private final S3Client s3Client;
-  private final CustomerApiClient customerApiClient;
+  private final IdentityServiceClient identityServiceClient;
   private final ResourceService resourceService;
 
   public FileService(
-      S3Client s3Client, CustomerApiClient customerApiClient, ResourceService resourceService) {
+      S3Client s3Client,
+      IdentityServiceClient identityServiceClient,
+      ResourceService resourceService) {
     this.s3Client = s3Client;
-    this.customerApiClient = customerApiClient;
+    this.identityServiceClient = identityServiceClient;
     this.resourceService = resourceService;
   }
 
@@ -61,7 +61,7 @@ public class FileService {
   public static FileService defaultFileService() {
     return new FileService(
         S3Client.builder().httpClient(UrlConnectionHttpClient.create()).build(),
-        JavaHttpClientCustomerApiClient.defaultInstance(),
+        IdentityServiceClient.prepare(),
         ResourceService.defaultService());
   }
 
@@ -214,9 +214,9 @@ public class FileService {
   }
 
   private RightsRetentionStrategy getRrs(UserInstance userInstance) {
-    return Optional.ofNullable(customerApiClient.fetch(userInstance.getCustomerId()))
-        .map(Customer::getRightsRetentionStrategy)
-        .map(CustomerApiRightsRetention::getType)
+    var customer = identityServiceClient.getCustomerById(userInstance.getCustomerId());
+    return Optional.ofNullable(customer.rightsRetentionStrategy())
+        .map(CustomerDto.RightsRetentionStrategy::type)
         .map(RightsRetentionStrategyConfiguration::fromValue)
         .map(this::createRightsRetentionStrategy)
         .orElse(null);

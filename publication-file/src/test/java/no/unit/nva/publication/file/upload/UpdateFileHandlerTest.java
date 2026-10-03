@@ -31,13 +31,13 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
-import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.stubs.FakeContext;
+import no.unit.nva.stubs.FakeIdentityServiceClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
@@ -62,7 +62,7 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
     this.resourceService = getResourceService(client);
     this.handler =
         new UpdateFileHandler(
-            new FileService(mock(S3Client.class), mock(CustomerApiClient.class), resourceService),
+            new FileService(mock(S3Client.class), new FakeIdentityServiceClient(), resourceService),
             new Environment());
   }
 
@@ -202,7 +202,7 @@ class UpdateFileHandlerTest extends ResourcesLocalTest {
                 FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance)));
     doThrow(new RuntimeException()).when(resourceService).updateFile(any());
     return new UpdateFileHandler(
-        new FileService(mock(S3Client.class), mock(CustomerApiClient.class), resourceService),
+        new FileService(mock(S3Client.class), new FakeIdentityServiceClient(), resourceService),
         new Environment());
   }
 

@@ -7,7 +7,7 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-import no.unit.nva.publication.commons.customer.CustomerApiClient;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.FilesApprovalTickets;
 import no.unit.nva.publication.model.business.FileEntry;
@@ -28,10 +28,12 @@ final class PendingFileTickets {
   private PendingFileTickets() {}
 
   static TicketChanges changesFor(
-      Resource resource, Collection<TicketEntry> tickets, CustomerApiClient customerApiClient) {
+      Resource resource,
+      Collection<TicketEntry> tickets,
+      IdentityServiceClient identityServiceClient) {
     var newTickets =
         pendingFilesByUploaderInstitution(resource).stream()
-            .map(uploaders -> ticketFor(resource, uploaders, customerApiClient))
+            .map(uploaders -> ticketFor(resource, uploaders, identityServiceClient))
             .toList();
     var replacedTickets = pendingFileApprovalTickets(tickets);
     replacedTickets.forEach(ticket -> ticket.setStatus(NOT_APPLICABLE));
@@ -55,9 +57,11 @@ final class PendingFileTickets {
   }
 
   private static TicketEntry ticketFor(
-      Resource resource, List<PendingFile> pendingFiles, CustomerApiClient customerApiClient) {
+      Resource resource,
+      List<PendingFile> pendingFiles,
+      IdentityServiceClient identityServiceClient) {
     var uploader = pendingFiles.getFirst().uploader();
-    var customer = customerApiClient.fetch(uploader.getCustomerId());
+    var customer = identityServiceClient.getCustomerById(uploader.getCustomerId());
     var files =
         pendingFiles.stream()
             .map(pendingFile -> pendingFile.fileEntry().getFile())

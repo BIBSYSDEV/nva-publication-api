@@ -12,8 +12,8 @@ import static no.unit.nva.model.testing.associatedartifacts.AssociatedArtifactsG
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER_NAME;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_ONLY;
+import static no.unit.nva.publication.service.CustomerGenerator.customerWithWorkflow;
 import static no.unit.nva.testutils.HandlerRequestBuilder.CLIENT_ID_CLAIM;
-import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -28,10 +28,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.Map;
-import java.util.UUID;
-import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -48,7 +45,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
-import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -72,7 +68,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
   private PublishPublicationHandler handler;
 
   @BeforeEach
-  void setUp() throws NotFoundException {
+  void setUp() {
     super.init();
     context = new FakeContext();
     output = new ByteArrayOutputStream();
@@ -80,7 +76,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
     ticketService = getTicketService();
     identityServiceClient = mock(IdentityServiceClient.class);
     when(identityServiceClient.getCustomerById(any()))
-        .thenReturn(customerWithWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY.getValue()));
+        .thenReturn(customerWithWorkflow(REGISTRATOR_PUBLISHES_METADATA_ONLY));
     var publishingService =
         new PublishingService(resourceService, ticketService, identityServiceClient);
     handler =
@@ -215,8 +211,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
   }
 
   @Test
-  void shouldPublishWhenExternalClientOwnsResource()
-      throws IOException, BadRequestException, NotFoundException {
+  void shouldPublishWhenExternalClientOwnsResource() throws IOException, BadRequestException {
     var publication = createPublication();
     var request = createExternalClientRequest(publication);
 
@@ -286,7 +281,7 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
   }
 
   private InputStream createExternalClientRequest(Publication publication)
-      throws JsonProcessingException, NotFoundException {
+      throws JsonProcessingException {
     var externalClientResponse =
         new GetExternalClientResponse(
             EXTERNAL_CLIENT_ID,
@@ -307,23 +302,5 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
     return new HandlerRequestBuilder<Void>(dtoObjectMapper)
         .withPathParameters(publicationIdentifierPathParam(publicationIdentifier))
         .build();
-  }
-
-  private CustomerDto customerWithWorkflow(String workflow) {
-    return new CustomerDto(
-        RandomDataGenerator.randomUri(),
-        UUID.randomUUID(),
-        randomString(),
-        randomString(),
-        randomString(),
-        RandomDataGenerator.randomUri(),
-        workflow,
-        randomBoolean(),
-        randomBoolean(),
-        randomBoolean(),
-        Collections.emptyList(),
-        new CustomerDto.RightsRetentionStrategy(randomString(), RandomDataGenerator.randomUri()),
-        randomBoolean(),
-        randomString());
   }
 }

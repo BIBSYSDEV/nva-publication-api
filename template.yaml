@@ -757,7 +757,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
-          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -815,7 +814,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
-          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
           NVA_EVENT_BUS_NAME: !Ref NewNvaEventBusName
       Policies:
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn
@@ -839,7 +837,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
-          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
       Policies:
         - !GetAtt ResourceServiceAccessManagedPolicy.PolicyArn
         - !GetAtt BackendCognitoClientCredentialsSecretManagedPolicy.PolicyArn

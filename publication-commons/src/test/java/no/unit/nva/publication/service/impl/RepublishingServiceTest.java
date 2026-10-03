@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
-import no.unit.nva.publication.service.FakeCustomerApiClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.stubs.FakeIdentityServiceClient;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +23,7 @@ class RepublishingServiceTest extends ResourcesLocalTest {
   void setUp() {
     super.init();
     resourceService = getResourceService(client);
-    republishingService = new RepublishingService(resourceService, new FakeCustomerApiClient());
+    republishingService = new RepublishingService(resourceService, new FakeIdentityServiceClient());
   }
 
   @Test
