@@ -27,12 +27,12 @@ import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
-import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.stubs.FakeIdentityServiceClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.AccessRight;
@@ -56,7 +56,7 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
     super.init();
     resourceService = getResourceService(client);
     var fileService =
-        new FileService(mock(S3Client.class), mock(CustomerApiClient.class), resourceService);
+        new FileService(mock(S3Client.class), new FakeIdentityServiceClient(), resourceService);
     handler = new DeleteFileHandler(fileService, new Environment());
     output = new ByteArrayOutputStream();
   }
@@ -215,7 +215,7 @@ class DeleteFileHandlerTest extends ResourcesLocalTest {
                 FileEntry.create(randomOpenFile(), publication.getIdentifier(), userInstance)));
     doThrow(new RuntimeException()).when(resourceService).updateFile(any());
     return new DeleteFileHandler(
-        new FileService(mock(S3Client.class), mock(CustomerApiClient.class), resourceService),
+        new FileService(mock(S3Client.class), new FakeIdentityServiceClient(), resourceService),
         new Environment());
   }
 }

@@ -3,8 +3,8 @@ package no.unit.nva.publication.model;
 import static no.unit.nva.publication.model.business.PublishingWorkflow.REGISTRATOR_PUBLISHES_METADATA_AND_FILES;
 
 import java.util.Set;
+import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.model.associatedartifacts.file.File;
-import no.unit.nva.publication.commons.customer.Customer;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingWorkflow;
@@ -22,9 +22,9 @@ public final class FilesApprovalTickets {
   private final UserInstance uploader;
   private final PublishingWorkflow workflow;
 
-  public FilesApprovalTickets(UserInstance uploader, Customer customer) {
+  public FilesApprovalTickets(UserInstance uploader, CustomerDto customer) {
     this.uploader = uploader;
-    this.workflow = PublishingWorkflow.lookUp(customer.getPublicationWorkflow());
+    this.workflow = PublishingWorkflow.lookUp(customer.publicationWorkflow());
   }
 
   public FilesApprovalEntry newTicket(Resource resource, Set<File> files) {

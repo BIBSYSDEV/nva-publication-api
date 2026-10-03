@@ -4,9 +4,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
 import java.nio.file.Path;
+import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-import no.unit.nva.publication.commons.customer.Customer;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -26,8 +26,8 @@ public class ResourcesContainsAllInstanceTypesTest {
       })
   void containsAllInstanceTypes(String resourcePath) throws Exception {
     String json = IoUtils.stringFromResources(Path.of(resourcePath));
-    var customer = JsonUtils.dtoObjectMapper.readValue(json, Customer.class);
-    var instanceTypesReferenced = customer.getAllowFileUploadForTypes();
+    var customer = JsonUtils.dtoObjectMapper.readValue(json, CustomerDto.class);
+    var instanceTypesReferenced = customer.allowFileUploadForTypes();
 
     var instanceTypes =
         PublicationInstanceBuilder.listPublicationInstanceTypes().stream()

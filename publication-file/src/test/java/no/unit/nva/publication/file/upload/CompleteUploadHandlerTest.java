@@ -31,7 +31,6 @@ import java.util.UUID;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.associatedartifacts.file.UploadedFile;
-import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CompleteUploadPart;
 import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequest;
 import no.unit.nva.publication.file.upload.restmodel.ExternalCompleteUploadRequest;
@@ -40,6 +39,7 @@ import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.stubs.FakeIdentityServiceClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -80,7 +80,8 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
     resourceService = getResourceService(client);
     handler =
         new CompleteUploadHandler(
-            new FileService(s3client, mock(CustomerApiClient.class), resourceService),
+            new FileService(
+                s3client, new FakeIdentityServiceClient().withDefaultCustomers(), resourceService),
             mock(IdentityServiceClient.class),
             new Environment());
     context = mock(Context.class);

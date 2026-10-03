@@ -19,6 +19,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.UUID;
 import java.util.stream.Stream;
+import no.unit.nva.clients.CustomerDto;
+import no.unit.nva.clients.IdentityServiceNotFoundException;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
@@ -38,10 +40,9 @@ import no.unit.nva.model.instancetypes.degree.DegreeBachelor;
 import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-import no.unit.nva.publication.commons.customer.CustomerApiClient;
-import no.unit.nva.publication.commons.customer.CustomerApiRightsRetention;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.stubs.FakeIdentityServiceClient;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import org.junit.jupiter.api.Test;
@@ -54,7 +55,8 @@ class FileRightsRetentionServiceTest {
 
   private static final String ILLEGAL_RIGHTS_RETENTION_STRATEGY_MESSAGE =
       "Invalid rights retention strategy";
-  private final CustomerApiClient customerApiClient = mock(CustomerApiClient.class);
+  private final FakeIdentityServiceClient identityServiceClient =
+      new FakeIdentityServiceClient().withDefaultCustomers();
 
   public static Stream<Arguments> publicationTypeAndForceNull() {
     return Stream.of(
@@ -111,7 +113,7 @@ class FileRightsRetentionServiceTest {
 
     var service =
         new FileRightsRetentionService(
-            customerApiClient,
+            identityServiceClient,
             getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY),
             UserInstance.fromPublication(publication));
 
@@ -132,7 +134,7 @@ class FileRightsRetentionServiceTest {
 
     var service =
         new FileRightsRetentionService(
-            customerApiClient,
+            identityServiceClient,
             getServerConfiguredRrs(rrs.getConfiguredType()),
             randomUserInstance());
 
@@ -160,7 +162,7 @@ class FileRightsRetentionServiceTest {
 
     var service =
         new FileRightsRetentionService(
-            customerApiClient,
+            identityServiceClient,
             getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY),
             UserInstance.fromPublication(publication));
 
@@ -193,7 +195,7 @@ class FileRightsRetentionServiceTest {
 
     var service =
         new FileRightsRetentionService(
-            customerApiClient,
+            identityServiceClient,
             getServerConfiguredRrs(NULL_RIGHTS_RETENTION_STRATEGY),
             UserInstance.fromPublication(originalPublication));
 
@@ -227,7 +229,7 @@ class FileRightsRetentionServiceTest {
 
     var service =
         new FileRightsRetentionService(
-            customerApiClient,
+            identityServiceClient,
             getServerConfiguredRrs(NULL_RIGHTS_RETENTION_STRATEGY),
             UserInstance.fromPublication(originalPublication));
 
@@ -258,7 +260,7 @@ class FileRightsRetentionServiceTest {
 
     var service =
         new FileRightsRetentionService(
-            customerApiClient,
+            identityServiceClient,
             getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY),
             UserInstance.fromPublication(originalPublication));
 
@@ -294,7 +296,7 @@ class FileRightsRetentionServiceTest {
 
     var service =
         new FileRightsRetentionService(
-            customerApiClient,
+            identityServiceClient,
             getServerConfiguredRrs(configuredType),
             UserInstance.fromPublication(originalPublication));
 
@@ -327,7 +329,7 @@ class FileRightsRetentionServiceTest {
 
     var service =
         new FileRightsRetentionService(
-            customerApiClient,
+            identityServiceClient,
             getServerConfiguredRrs(configuredType),
             UserInstance.fromPublication(originalPublication));
 
@@ -360,11 +362,44 @@ class FileRightsRetentionServiceTest {
 
     var service =
         new FileRightsRetentionService(
-            customerApiClient,
+            identityServiceClient,
             getServerConfiguredRrs(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY),
             UserInstance.fromPublication(originalPublication));
 
     assertDoesNotThrow(
+        () ->
+            service.applyRightsRetention(
+                Resource.fromPublication(updatedPublication),
+                Resource.fromPublication(originalPublication)));
+  }
+
+  @Test
+  void shouldThrowNotFoundWhenCustomerOfExistingFileDoesNotExist() {
+    var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
+    var originalFile =
+        createPendingOpenFileWithAcceptedVersionAndRrs(
+            CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
+    addFilesToPublication(originalPublication, originalFile);
+    var overriddenFile =
+        createPendingOpenFileWithAcceptedVersionAndRrs(
+            originalFile.getIdentifier(),
+            OverriddenRightsRetentionStrategy.create(
+                OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, randomString()));
+    var updatedPublication =
+        originalPublication
+            .copy()
+            .withAssociatedArtifacts(new AssociatedArtifactList(overriddenFile))
+            .build();
+    var identityServiceWithoutCustomers = new FakeIdentityServiceClient();
+
+    var service =
+        new FileRightsRetentionService(
+            identityServiceWithoutCustomers,
+            getServerConfiguredRrs(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY),
+            UserInstance.fromPublication(originalPublication));
+
+    assertThrows(
+        IdentityServiceNotFoundException.class,
         () ->
             service.applyRightsRetention(
                 Resource.fromPublication(updatedPublication),
@@ -388,7 +423,7 @@ class FileRightsRetentionServiceTest {
 
     var service =
         new FileRightsRetentionService(
-            customerApiClient,
+            identityServiceClient,
             getServerConfiguredRrs(NULL_RIGHTS_RETENTION_STRATEGY),
             UserInstance.fromPublication(originalPublication));
 
@@ -413,7 +448,7 @@ class FileRightsRetentionServiceTest {
 
     var service =
         new FileRightsRetentionService(
-            customerApiClient,
+            identityServiceClient,
             getServerConfiguredRrs(RIGHTS_RETENTION_STRATEGY),
             UserInstance.fromPublication(publication));
 
@@ -446,10 +481,10 @@ class FileRightsRetentionServiceTest {
         new UserUploadDetails(null, null));
   }
 
-  private CustomerApiRightsRetention getServerConfiguredRrs(
+  private CustomerDto.RightsRetentionStrategy getServerConfiguredRrs(
       RightsRetentionStrategyConfiguration rightsRetentionStrategyConfiguration) {
-    return new CustomerApiRightsRetention(
-        rightsRetentionStrategyConfiguration.getValue(), randomString());
+    return new CustomerDto.RightsRetentionStrategy(
+        rightsRetentionStrategyConfiguration.getValue(), RandomDataGenerator.randomUri());
   }
 
   private void addFilesToPublication(Publication publication, File... files) {
