@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.log;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultCristinClient;
 import static nva.commons.core.attempt.Try.attempt;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -34,7 +35,7 @@ public class PersistLogEntryEventHandler
         S3Driver.defaultS3Client().build(),
         ResourceService.defaultService(),
         IdentityServiceClient.prepare(),
-        CristinClient.defaultClient());
+        defaultCristinClient());
   }
 
   protected PersistLogEntryEventHandler(
