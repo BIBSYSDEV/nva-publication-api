@@ -431,17 +431,19 @@ paths:
               $ref: "#/components/schemas/NewTicketRequest"
       responses:
         "201":
-          description: ACCEPTED
+          description: Created. The response has no body, fetch the ticket from the Location header
           headers:
             Location:
               description: URI to created ticket
               schema:
                 type: string
                 format: URI
+        "409":
+          description: Conflict, the ticket can not be created in the current state of the publication
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ticket"
+                $ref: "#/components/schemas/Problem"
       security:
         - CognitoUserPool:
             [
@@ -579,7 +581,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ticket"
+                anyOf:
+                  - $ref: "#/components/schemas/DoiRequest"
+                  - $ref: "#/components/schemas/Ticket"
         "502":
           description: Bad gateway
           content:
@@ -1785,7 +1789,7 @@ components:
       properties:
         createdDate:
           type: string
-          format: date
+          format: date-time
         id:
           type: string
           format: uri
@@ -1810,6 +1814,8 @@ components:
           example: "Message value"
     NewTicketRequest:
       type: object
+      required:
+        - type
       properties:
         type:
           type: string
@@ -1817,6 +1823,16 @@ components:
             - DoiRequest
             - PublishingRequest
             - GeneralSupportCase
+            - UnpublishRequest
+            - FilesApprovalThesis
+        messages:
+          description: Optional. Only the text of the first message is used, and is stored as a message on the new ticket
+          type: array
+          items:
+            type: object
+            properties:
+              text:
+                type: string
     Doi:
       type: object
       properties:
@@ -1843,13 +1859,19 @@ components:
           description: Username to assign or empty string to deallocate
     Ticket:
       type: object
+      required:
+        - type
       properties:
         assignee:
           type: string
           example: "123@123.0.0.0"
         createdDate:
           type: string
-          format: date
+          format: date-time
+        id:
+          type: string
+          format: uri
+          example: "https://api.dev.nva.aws.unit.no/publication/0190c7f1a0b4-6a5b3c2d-1e0f-4a9b-8c7d-6e5f4a3b2c1d/ticket/0190c7f2b1c5-7b6c4d3e-2f1a-4b0c-9d8e-7f6a5b4c3d2e"
         identifier:
           type: string
         messages:
@@ -1858,7 +1880,7 @@ components:
             $ref: "#/components/schemas/Message"
         modifiedDate:
           type: string
-          format: date
+          format: date-time
         owner:
           type: string
           example: "123@123.0.0.0"
@@ -1871,15 +1893,19 @@ components:
         status:
           type: string
           enum:
+            - New
             - Pending
             - Completed
+            - NotApplicable
             - Closed
+            - Removed
         type:
           type: string
           enum:
             - DoiRequest
             - PublishingRequest
             - GeneralSupportCase
+            - UnpublishRequest
             - FilesApprovalThesis
         viewedBy:
           type: array
@@ -1891,7 +1917,31 @@ components:
           example: "123@123.0.0.0"
         finalizedDate:
           type: string
-          format: date
+          format: date-time
+        availableInstitutions:
+          type: array
+          items:
+            type: string
+            format: uri
+            example: "https://api.dev.nva.aws.unit.no/cristin/organization/123.0.0.0"
+        allowedOperations:
+          type: array
+          items:
+            type: string
+            enum:
+              - approve
+              - transfer
+              - read
+    DoiRequest:
+      description: Ticket requesting a DOI to be assigned to the publication
+      allOf:
+        - $ref: "#/components/schemas/Ticket"
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - DoiRequest
     TicketCollection:
       type: object
       properties:
