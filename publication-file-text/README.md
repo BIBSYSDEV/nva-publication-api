@@ -75,9 +75,24 @@ Then watch the pipeline drain:
 - Extracted text lands in `nva-publication-text-<account-id>` (parameter
   `TextStorageBucketName`) at `<source-key>.txt`.
 - Files that cannot be extracted (unsupported format, larger than the 9 GiB
-  source limit, blank content, extraction error) get a flag object at
-  `flags/<source-key>.json` instead, recording the reason. Text truncated at
-  the 100 000 000-character limit is stored _and_ flagged.
+  source limit, image-only scan, blank content, extraction error) get a flag
+  object at `flags/<source-key>.json` instead, recording the reason. Text
+  truncated at the 100 000 000-character limit is stored _and_ flagged.
+- Extraction targets body text only: PDF annotation text (sticky notes,
+  free-text markup) is never extracted, and annotations play no part in scan
+  detection — a scan carrying markup annotations still counts as image-only.
+- Scanned PDFs are detected structurally before any parsing — no font
+  resources anywhere in the document (PDF text cannot be drawn without a
+  font), no interactive form fields, and at least one embedded image — and
+  flagged `IMAGE_ONLY_CONTENT` with the evidence as detail (page and image
+  counts). There is no OCR in this pipeline, so the flag listing doubles as
+  the OCR-candidate inventory; the `ImageOnlyPdfProcessor` port is the seam
+  where an OCR implementation plugs in, replacing the flagging default with
+  no other pipeline change. Beware macOS Preview's Live Text, which OCRs
+  scanned PDFs on the fly — being able to copy text in Preview does not mean
+  the file has a text layer (check with `pdffonts` or `pdftotext`).
+  `BLANK_CONTENT` therefore means extraction genuinely ran and produced
+  nothing: an empty or whitespace-only document.
 
 ### Failure handling and retries
 
