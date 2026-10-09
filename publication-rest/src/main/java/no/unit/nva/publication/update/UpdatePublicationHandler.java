@@ -35,12 +35,14 @@ import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
 import no.unit.nva.publication.model.BackendClientCredentials;
+import no.unit.nva.publication.model.FileWithoutLicenseException;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.permissions.file.FilePermissions;
 import no.unit.nva.publication.permissions.publication.PublicationPermissions;
 import no.unit.nva.publication.rightsretention.FileRightsRetentionService;
+import no.unit.nva.publication.service.impl.RepublishingService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.TicketService;
 import no.unit.nva.publication.validation.ETag;
@@ -50,6 +52,7 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.PreconditionFailedException;
@@ -65,7 +68,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
-@SuppressWarnings("PMD.CouplingBetweenObjects")
+@SuppressWarnings({"PMD.CouplingBetweenObjects", "PMD.GodClass"})
 public class UpdatePublicationHandler
     extends ApiGatewayHandler<PublicationRequest, PublicationResponse> {
 
@@ -174,8 +177,7 @@ public class UpdatePublicationHandler
                   permissionStrategy,
                   userInstance);
 
-          case RepublishPublicationRequest ignored ->
-              republish(existingResource, permissionStrategy, userInstance);
+          case RepublishPublicationRequest ignored -> republish(existingResource, userInstance);
 
           case DeletePublicationRequest ignored ->
               terminatePublication(existingResource, permissionStrategy, userInstance);
@@ -229,8 +231,12 @@ public class UpdatePublicationHandler
 
     setRrsOnFiles(resourceUpdate, existingResource, customer, userInstance);
 
-    new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
-        .resolve(existingResource, resourceUpdate);
+    try {
+      new PublishingRequestResolver(resourceService, ticketService, userInstance, customer)
+          .resolve(existingResource, resourceUpdate);
+    } catch (FileWithoutLicenseException e) {
+      throw fileWithoutLicense(e);
+    }
 
     return resourceUpdate.update(resourceService, userInstance);
   }
@@ -241,11 +247,16 @@ public class UpdatePublicationHandler
         .orElseThrow(() -> new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE));
   }
 
-  private Resource republish(
-      Resource resource, PublicationPermissions permissionStrategy, UserInstance userInstance)
+  private Resource republish(Resource resource, UserInstance userInstance)
       throws ApiGatewayException {
-    return RepublishUtil.create(resourceService, permissionStrategy)
-        .republish(resource, userInstance);
+    try {
+      return new RepublishingService(resourceService, customerApiClient)
+          .republish(resource, userInstance);
+    } catch (CustomerNotAvailableException e) {
+      throw customerApiNotResponding(e);
+    } catch (FileWithoutLicenseException e) {
+      throw fileWithoutLicense(e);
+    }
   }
 
   private Resource terminatePublication(
@@ -414,9 +425,19 @@ public class UpdatePublicationHandler
     try {
       return customerApiClient.fetch(customerUri);
     } catch (CustomerNotAvailableException e) {
-      logger.error("Problems fetching customer", e);
-      throw new BadGatewayException("Customer API not responding or not responding as expected!");
+      throw customerApiNotResponding(e);
     }
+  }
+
+  /** A file that would be approved automatically but has no license. */
+  private static ConflictException fileWithoutLicense(FileWithoutLicenseException exception) {
+    return new ConflictException(exception, exception.getMessage());
+  }
+
+  private static BadGatewayException customerApiNotResponding(
+      CustomerNotAvailableException exception) {
+    logger.error("Problems fetching customer", exception);
+    return new BadGatewayException("Customer API not responding or not responding as expected!");
   }
 
   @Override

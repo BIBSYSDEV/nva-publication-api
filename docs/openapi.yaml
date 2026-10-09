@@ -1870,7 +1870,9 @@ components:
           type: string
         status:
           type: string
+          description: A pending ticket is New until it has an assignee, and Pending after that.
           enum:
+            - New
             - Pending
             - Completed
             - Closed
