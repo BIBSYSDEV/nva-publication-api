@@ -67,12 +67,12 @@ class FetchPublicationContextHandlerTest {
 
   @ParameterizedTest(name = "mediaType {0} is invalid")
   @MethodSource("unsupportedMediaTypes")
-  void shouldReturnUnsupportedMediaTypeIfRequestHeaderAcceptsAnythingOtherThanJsonOrJsonLdOrDefault(
+  void shouldReturnNotAcceptableIfRequestHeaderAcceptsAnythingOtherThanJsonOrJsonLdOrDefault(
       String mediaType) throws IOException {
     var request = generateHandlerRequest(Map.of(ACCEPT, mediaType));
     fetchPublicationContextHandler.handleRequest(request, output, context);
     var response = GatewayResponse.fromOutputStream(output, Problem.class);
-    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNSUPPORTED_TYPE)));
+    assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_NOT_ACCEPTABLE)));
     var problem = response.getBodyObject(Problem.class);
     assertThat(problem.getDetail(), is(containsString(UNSUPPORTED_ACCEPT_HEADER_MESSAGE)));
   }
