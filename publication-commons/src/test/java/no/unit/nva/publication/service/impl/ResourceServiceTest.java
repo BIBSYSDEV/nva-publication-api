@@ -72,6 +72,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.clients.IdentityServiceNotFoundException;
+import no.unit.nva.clients.IdentityServiceRequestFailedException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.importcandidate.CandidateStatus;
 import no.unit.nva.importcandidate.ImportStatusFactory;
@@ -106,7 +109,6 @@ import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.validation.ValidationException;
-import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.FilesApprovalEntry;
 import no.unit.nva.publication.model.ListingResult;
@@ -138,10 +140,10 @@ import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.FileDao;
 import no.unit.nva.publication.model.storage.ResourceRelationshipDao;
 import no.unit.nva.publication.model.storage.importcandidate.DatabaseEntryWithData;
-import no.unit.nva.publication.service.FakeCustomerApiClient;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.publication.ticket.test.TicketTestUtils;
+import no.unit.nva.stubs.FakeIdentityServiceClient;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -188,7 +190,8 @@ class ResourceServiceTest extends ResourcesLocalTest {
   private static final URI SOME_ORG = randomUri();
   private static final UserInstance SAMPLE_USER = UserInstance.create(randomString(), SOME_ORG);
   private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
-  private final FakeCustomerApiClient customerApiClient = new FakeCustomerApiClient();
+  private final FakeIdentityServiceClient identityServiceClient =
+      new FakeIdentityServiceClient().withDefaultCustomers();
   private ResourceService resourceService;
 
   private TicketService ticketService;
@@ -1174,14 +1177,27 @@ class ResourceServiceTest extends ResourcesLocalTest {
   }
 
   @Test
-  void shouldLeaveResourceUnpublishedWhenUploaderCustomerIsUnavailableOnRepublish() {
+  void shouldLeaveResourceUnpublishedWhenIdentityServiceIsUnavailableOnRepublish() {
     var unpublishedResource = createUnpublishedResourceWithPendingFileWithoutTicket();
-    var owner = UserInstance.fromPublication(unpublishedResource.toPublication());
-    customerApiClient.withUnavailableCustomer(owner.getCustomerId());
+    identityServiceClient.withUnavailableIdentityService();
 
     assertThrows(
-        CustomerNotAvailableException.class,
+        IdentityServiceRequestFailedException.class,
         () -> republishAsEditor(resourceService, unpublishedResource));
+
+    assertEquals(UNPUBLISHED, fetchResource(unpublishedResource.getIdentifier()).getStatus());
+  }
+
+  @Test
+  void shouldLeaveResourceUnpublishedWhenUploaderCustomerIsNotFoundOnRepublish() {
+    var unpublishedResource = createUnpublishedResourceWithPendingFileWithoutTicket();
+    var identityServiceWithoutCustomers = new FakeIdentityServiceClient();
+
+    assertThrows(
+        IdentityServiceNotFoundException.class,
+        () ->
+            republishAsEditor(
+                resourceService, unpublishedResource, identityServiceWithoutCustomers));
 
     assertEquals(UNPUBLISHED, fetchResource(unpublishedResource.getIdentifier()).getStatus());
   }
@@ -2414,8 +2430,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
   }
 
   private Resource republishAsEditor(ResourceService service, Resource resource) {
+    return republishAsEditor(service, resource, identityServiceClient);
+  }
+
+  private Resource republishAsEditor(
+      ResourceService service, Resource resource, IdentityServiceClient client) {
     try {
-      return new RepublishingService(service, customerApiClient)
+      return new RepublishingService(service, client)
           .republish(resource, editorAtOwnerInstitution(resource));
     } catch (ApiGatewayException exception) {
       throw new IllegalStateException("Could not republish resource", exception);

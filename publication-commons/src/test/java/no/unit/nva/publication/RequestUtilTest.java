@@ -35,7 +35,6 @@ import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -149,7 +148,7 @@ class RequestUtilTest {
 
   @Test
   void createExternalUserInstanceReturnsNonNullValue()
-      throws NotFoundException, JsonProcessingException, UnauthorizedException {
+      throws JsonProcessingException, UnauthorizedException {
     var requestInfo = getRequestInfo();
     requestInfo.setRequestContext(
         getRequestContextForClaim(
@@ -168,7 +167,7 @@ class RequestUtilTest {
 
   @Test
   void createExternalUserReturnsThirdPartySystemWhenProvided()
-      throws NotFoundException, JsonProcessingException, UnauthorizedException {
+      throws JsonProcessingException, UnauthorizedException {
     var requestInfo = getRequestInfo();
     requestInfo.setRequestContext(
         getRequestContextForClaim(
@@ -189,7 +188,7 @@ class RequestUtilTest {
 
   @Test
   void createExternalUserInstanceThrowsUnauthorizedWhenClientIdIsMissing()
-      throws NotFoundException, JsonProcessingException {
+      throws JsonProcessingException {
     var requestInfo = getRequestInfo();
     requestInfo.setRequestContext(
         getRequestContextForClaim(

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.update;
 
+import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.FileOperation.WRITE_METADATA;
 import static no.unit.nva.model.PublicationOperation.TERMINATE;
@@ -10,16 +11,15 @@ import static org.apache.hc.core5.http.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS
 import static org.apache.http.HttpHeaders.ETAG;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.URI;
-import java.net.http.HttpClient;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import no.unit.nva.api.PublicationResponse;
-import no.unit.nva.auth.AuthorizedBackendClient;
-import no.unit.nva.auth.CognitoCredentials;
+import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.clients.IdentityServiceRequestFailedException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.UnpublishingNote;
@@ -28,13 +28,8 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.associatedartifacts.file.FileStatus;
 import no.unit.nva.publication.PublicationResponseFactory;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.commons.customer.Customer;
-import no.unit.nva.publication.commons.customer.CustomerApiClient;
-import no.unit.nva.publication.commons.customer.CustomerNotAvailableException;
-import no.unit.nva.publication.commons.customer.JavaHttpClientCustomerApiClient;
 import no.unit.nva.publication.delete.LambdaDestinationInvocationDetail;
 import no.unit.nva.publication.events.bodies.DoiMetadataUpdateEvent;
-import no.unit.nva.publication.model.BackendClientCredentials;
 import no.unit.nva.publication.model.FileWithoutLicenseException;
 import no.unit.nva.publication.model.business.FileEntry;
 import no.unit.nva.publication.model.business.Resource;
@@ -59,14 +54,12 @@ import nva.commons.apigateway.exceptions.PreconditionFailedException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.secrets.SecretsReader;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
-import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 @SuppressWarnings({"PMD.CouplingBetweenObjects", "PMD.GodClass"})
 public class UpdatePublicationHandler
@@ -75,8 +68,6 @@ public class UpdatePublicationHandler
   private static final Logger logger = LoggerFactory.getLogger(UpdatePublicationHandler.class);
   public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE =
       "Identifiers in path and in body, do not match";
-  private static final String ENV_KEY_BACKEND_CLIENT_SECRET_NAME = "BACKEND_CLIENT_SECRET_NAME";
-  private static final String ENV_KEY_BACKEND_CLIENT_AUTH_URL = "BACKEND_CLIENT_AUTH_URL";
   public static final String ETAG_DOES_NOT_MATCH_MESSAGE =
       "The provided ETag does not match the current state of the resource.";
   public static final String ILLEGAL_FILE_TRANSITION_MESSAGE = "%s cannot be updated to %s";
@@ -90,10 +81,7 @@ public class UpdatePublicationHandler
   public static final String NVA_PUBLICATION_DELETE_SOURCE = "nva.publication.delete";
   private final EventBridgeClient eventBridgeClient;
   private final String nvaEventBusName;
-  private final SecretsReader secretsReader;
-  private final HttpClient httpClient;
   private final String apiHost;
-  private final JavaHttpClientCustomerApiClient customerApiClient;
 
   /** Default constructor for MainHandler. */
   @JacocoGenerated
@@ -103,9 +91,7 @@ public class UpdatePublicationHandler
         TicketService.defaultService(),
         new Environment(),
         IdentityServiceClient.prepare(),
-        defaultEventBridgeClient(),
-        SecretsReader.defaultSecretsManagerClient(),
-        HttpClient.newHttpClient());
+        defaultEventBridgeClient());
   }
 
   /**
@@ -119,9 +105,7 @@ public class UpdatePublicationHandler
       TicketService ticketService,
       Environment environment,
       IdentityServiceClient identityServiceClient,
-      EventBridgeClient eventBridgeClient,
-      SecretsManagerClient secretsManagerClient,
-      HttpClient httpClient) {
+      EventBridgeClient eventBridgeClient) {
     super(PublicationRequest.class, environment);
     this.resourceService = resourceService;
     this.ticketService = ticketService;
@@ -129,9 +113,6 @@ public class UpdatePublicationHandler
     this.eventBridgeClient = eventBridgeClient;
     this.nvaEventBusName = environment.readEnv(NVA_EVENT_BUS_NAME_KEY);
     this.apiHost = environment.readEnv(API_HOST_ENV_KEY);
-    this.secretsReader = new SecretsReader(secretsManagerClient);
-    this.httpClient = httpClient;
-    this.customerApiClient = getCustomerApiClient();
   }
 
   @Override
@@ -163,30 +144,42 @@ public class UpdatePublicationHandler
 
     var userInstance =
         RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
-    var permissionStrategy = PublicationPermissions.create(existingResource, userInstance);
-    var updatedResource =
-        switch (input) {
-          case UpdateRequest request ->
-              updatePublication(
-                  request, identifierInPath, existingResource, permissionStrategy, userInstance);
-
-          case UnpublishPublicationRequest unpublishPublicationRequest ->
-              unpublishPublication(
-                  unpublishPublicationRequest,
-                  existingResource.toPublication(),
-                  permissionStrategy,
-                  userInstance);
-
-          case RepublishPublicationRequest ignored -> republish(existingResource, userInstance);
-
-          case DeletePublicationRequest ignored ->
-              terminatePublication(existingResource, permissionStrategy, userInstance);
-
-          default -> throw new BadRequestException("Unknown input body type");
-        };
+    var updatedResource = applyRequest(input, identifierInPath, existingResource, userInstance);
     addEtagHeaderForUpdatedPublication(
         requestInfo.getUserNameOptional().orElse(null), updatedResource);
     return PublicationResponseFactory.create(updatedResource, requestInfo, identityServiceClient);
+  }
+
+  private Resource applyRequest(
+      PublicationRequest input,
+      SortableIdentifier identifierInPath,
+      Resource existingResource,
+      UserInstance userInstance)
+      throws ApiGatewayException {
+    var permissionStrategy = PublicationPermissions.create(existingResource, userInstance);
+    try {
+      return switch (input) {
+        case UpdateRequest request ->
+            updatePublication(
+                request, identifierInPath, existingResource, permissionStrategy, userInstance);
+
+        case UnpublishPublicationRequest unpublishPublicationRequest ->
+            unpublishPublication(
+                unpublishPublicationRequest,
+                existingResource.toPublication(),
+                permissionStrategy,
+                userInstance);
+
+        case RepublishPublicationRequest ignored -> republish(existingResource, userInstance);
+
+        case DeletePublicationRequest ignored ->
+            terminatePublication(existingResource, permissionStrategy, userInstance);
+
+        default -> throw new BadRequestException("Unknown input body type");
+      };
+    } catch (IdentityServiceRequestFailedException e) {
+      throw identityServiceRequestFailed(e);
+    }
   }
 
   private static String getVersion(Resource existingResource) {
@@ -214,8 +207,7 @@ public class UpdatePublicationHandler
     validateRequest(identifierInPath, input);
 
     var resourceUpdate = input.generateUpdate(existingResource);
-    var customer =
-        fetchCustomerOrFailWithBadGateway(customerApiClient, userInstance.getCustomerId());
+    var customer = identityServiceClient.getCustomerById(userInstance.getCustomerId());
     authorizeFileEntries(
         existingResource, userInstance, getUpdatedFiles(existingResource, resourceUpdate));
     validateFileTransitions(existingResource, resourceUpdate);
@@ -250,10 +242,8 @@ public class UpdatePublicationHandler
   private Resource republish(Resource resource, UserInstance userInstance)
       throws ApiGatewayException {
     try {
-      return new RepublishingService(resourceService, customerApiClient)
+      return new RepublishingService(resourceService, identityServiceClient)
           .republish(resource, userInstance);
-    } catch (CustomerNotAvailableException e) {
-      throw customerApiNotResponding(e);
     } catch (FileWithoutLicenseException e) {
       throw fileWithoutLicense(e);
     }
@@ -335,7 +325,7 @@ public class UpdatePublicationHandler
 
   private static boolean canUpdateFileToPendingOpenFile(
       File file,
-      Customer customer,
+      CustomerDto customer,
       Resource existingResource,
       Resource updatedResource,
       UserInstance userInstance) {
@@ -351,11 +341,10 @@ public class UpdatePublicationHandler
         || userInstance.getAccessRights().contains(AccessRight.MANAGE_RESOURCES_ALL);
   }
 
-  private static boolean customerAllowsOpenFiles(Customer customer, Resource resource) {
-    return resource
-        .getInstanceType()
-        .map(instanceType -> customer.getAllowFileUploadForTypes().contains(instanceType))
-        .orElse(false);
+  private static boolean customerAllowsOpenFiles(CustomerDto customer, Resource resource) {
+    var allowedInstanceTypes =
+        Optional.ofNullable(customer.allowFileUploadForTypes()).orElse(emptyList());
+    return resource.getInstanceType().map(allowedInstanceTypes::contains).orElse(false);
   }
 
   private static void validateFileTransitions(Resource existingResource, Resource updatedResource)
@@ -400,33 +389,11 @@ public class UpdatePublicationHandler
   private void setRrsOnFiles(
       Resource updatedResource,
       Resource existingResource,
-      Customer customer,
+      CustomerDto customer,
       UserInstance userInstance) {
     new FileRightsRetentionService(
-            customerApiClient, customer.getRightsRetentionStrategy(), userInstance)
+            identityServiceClient, customer.rightsRetentionStrategy(), userInstance)
         .applyRightsRetention(updatedResource, existingResource);
-  }
-
-  private JavaHttpClientCustomerApiClient getCustomerApiClient() {
-    var backendClientSecretName = environment.readEnv(ENV_KEY_BACKEND_CLIENT_SECRET_NAME);
-    var backendClientCredentials =
-        secretsReader.fetchClassSecret(backendClientSecretName, BackendClientCredentials.class);
-    var cognitoServerUri = URI.create(environment.readEnv(ENV_KEY_BACKEND_CLIENT_AUTH_URL));
-    var cognitoCredentials =
-        new CognitoCredentials(
-            backendClientCredentials::getId, backendClientCredentials::getSecret, cognitoServerUri);
-    var authorizedBackendClient =
-        AuthorizedBackendClient.prepareWithCognitoCredentials(httpClient, cognitoCredentials);
-    return new JavaHttpClientCustomerApiClient(authorizedBackendClient);
-  }
-
-  private static Customer fetchCustomerOrFailWithBadGateway(
-      CustomerApiClient customerApiClient, URI customerUri) throws BadGatewayException {
-    try {
-      return customerApiClient.fetch(customerUri);
-    } catch (CustomerNotAvailableException e) {
-      throw customerApiNotResponding(e);
-    }
   }
 
   /** A file that would be approved automatically but has no license. */
@@ -434,9 +401,9 @@ public class UpdatePublicationHandler
     return new ConflictException(exception, exception.getMessage());
   }
 
-  private static BadGatewayException customerApiNotResponding(
-      CustomerNotAvailableException exception) {
-    logger.error("Problems fetching customer", exception);
+  private static BadGatewayException identityServiceRequestFailed(
+      IdentityServiceRequestFailedException exception) {
+    logger.error("Request to identity service failed", exception);
     return new BadGatewayException("Customer API not responding or not responding as expected!");
   }
 
