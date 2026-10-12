@@ -21,7 +21,11 @@ public class CreateUploadHandler
 
   @JacocoGenerated
   public CreateUploadHandler() {
-    this(FileService.defaultFileService(), IdentityServiceClient.prepare(), new Environment());
+    var identityServiceClient = IdentityServiceClient.prepare();
+    this(
+        FileService.defaultFileService(identityServiceClient),
+        identityServiceClient,
+        new Environment());
   }
 
   @JacocoGenerated

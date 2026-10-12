@@ -3,6 +3,7 @@ package no.unit.nva.publication.file.upload;
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -17,7 +18,7 @@ public class DeleteFileHandler extends ApiGatewayHandler<Void, Void> {
 
   @JacocoGenerated
   public DeleteFileHandler() {
-    this(FileService.defaultFileService(), new Environment());
+    this(FileService.defaultFileService(IdentityServiceClient.prepare()), new Environment());
   }
 
   public DeleteFileHandler(FileService fileService, Environment environment) {

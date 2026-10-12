@@ -20,7 +20,11 @@ public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadReque
 
   @JacocoGenerated
   public CompleteUploadHandler() {
-    this(FileService.defaultFileService(), IdentityServiceClient.prepare(), new Environment());
+    var identityServiceClient = IdentityServiceClient.prepare();
+    this(
+        FileService.defaultFileService(identityServiceClient),
+        identityServiceClient,
+        new Environment());
   }
 
   public CompleteUploadHandler(

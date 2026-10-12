@@ -58,10 +58,10 @@ public class FileService {
   }
 
   @JacocoGenerated
-  public static FileService defaultFileService() {
+  public static FileService defaultFileService(IdentityServiceClient identityServiceClient) {
     return new FileService(
         S3Client.builder().httpClient(UrlConnectionHttpClient.create()).build(),
-        IdentityServiceClient.prepare(),
+        identityServiceClient,
         ResourceService.defaultService());
   }
 
