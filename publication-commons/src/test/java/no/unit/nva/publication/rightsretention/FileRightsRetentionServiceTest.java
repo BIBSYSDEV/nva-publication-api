@@ -6,6 +6,7 @@ import static no.unit.nva.model.associatedartifacts.RightsRetentionStrategyConfi
 import static no.unit.nva.model.associatedartifacts.file.PublisherVersion.ACCEPTED_VERSION;
 import static no.unit.nva.model.associatedartifacts.file.PublisherVersion.PUBLISHED_VERSION;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
+import static no.unit.nva.publication.service.CustomerGenerator.customerWithRightsRetention;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -15,14 +16,17 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.net.URI;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.clients.CustomerDto;
 import no.unit.nva.clients.IdentityServiceNotFoundException;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.CustomerRightsRetentionStrategy;
@@ -56,8 +60,7 @@ class FileRightsRetentionServiceTest {
 
   private static final String ILLEGAL_RIGHTS_RETENTION_STRATEGY_MESSAGE =
       "Invalid rights retention strategy";
-  private final FakeIdentityServiceClient identityServiceClient =
-      new FakeIdentityServiceClient().withDefaultCustomers();
+  private final FakeIdentityServiceClient identityServiceClient = new FakeIdentityServiceClient();
 
   public static Stream<Arguments> publicationTypeAndForceNull() {
     return Stream.of(
@@ -342,36 +345,41 @@ class FileRightsRetentionServiceTest {
   }
 
   @Test
-  void shouldAllowOverrideWhenUserHasPermission() {
+  void shouldApplyFileCustomersConfigurationWhenUserOverridesExistingStrategy() {
     var originalPublication = PublicationGenerator.randomPublication(AcademicArticle.class);
     var originalFile =
         createPendingOpenFileWithAcceptedVersionAndRrs(
             CustomerRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY));
     addFilesToPublication(originalPublication, originalFile);
+    var originalResource = Resource.fromPublication(originalPublication);
+    identityServiceClient.withCustomer(
+        customerWithRightsRetention(
+            customerIdOfFile(originalResource, originalFile),
+            getServerConfiguredRrs(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY)));
 
-    var userName = randomString();
     var overriddenFile =
         createPendingOpenFileWithAcceptedVersionAndRrs(
             originalFile.getIdentifier(),
-            OverriddenRightsRetentionStrategy.create(
-                OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, userName));
+            OverriddenRightsRetentionStrategy.create(RIGHTS_RETENTION_STRATEGY, randomString()));
     var updatedPublication =
         originalPublication
             .copy()
             .withAssociatedArtifacts(new AssociatedArtifactList(overriddenFile))
             .build();
 
+    var user = UserInstance.fromPublication(originalPublication);
     var service =
         new FileRightsRetentionService(
-            identityServiceClient,
-            getServerConfiguredRrs(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY),
-            UserInstance.fromPublication(originalPublication));
+            identityServiceClient, getServerConfiguredRrs(NULL_RIGHTS_RETENTION_STRATEGY), user);
 
-    assertDoesNotThrow(
-        () ->
-            service.applyRightsRetention(
-                Resource.fromPublication(updatedPublication),
-                Resource.fromPublication(originalPublication)));
+    service.applyRightsRetention(Resource.fromPublication(updatedPublication), originalResource);
+
+    var appliedStrategy =
+        assertInstanceOf(
+            OverriddenRightsRetentionStrategy.class, overriddenFile.getRightsRetentionStrategy());
+    assertThat(
+        appliedStrategy.getConfiguredType(), is(equalTo(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY)));
+    assertThat(appliedStrategy.getOverriddenBy(), is(equalTo(user.getUsername())));
   }
 
   @Test
@@ -391,11 +399,10 @@ class FileRightsRetentionServiceTest {
             .copy()
             .withAssociatedArtifacts(new AssociatedArtifactList(overriddenFile))
             .build();
-    var identityServiceWithoutCustomers = new FakeIdentityServiceClient();
 
     var service =
         new FileRightsRetentionService(
-            identityServiceWithoutCustomers,
+            identityServiceClient,
             getServerConfiguredRrs(OVERRIDABLE_RIGHTS_RETENTION_STRATEGY),
             UserInstance.fromPublication(originalPublication));
 
@@ -480,6 +487,11 @@ class FileRightsRetentionServiceTest {
         rrs,
         randomString(),
         new UserUploadDetails(null, null));
+  }
+
+  private static URI customerIdOfFile(Resource resource, File file) {
+    var fileIdentifier = new SortableIdentifier(file.getIdentifier().toString());
+    return resource.getFileEntry(fileIdentifier).orElseThrow().getCustomerId();
   }
 
   private CustomerDto.RightsRetentionStrategy getServerConfiguredRrs(
