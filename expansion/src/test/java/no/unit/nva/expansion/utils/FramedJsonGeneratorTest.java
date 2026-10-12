@@ -5,9 +5,12 @@ import static java.util.Collections.emptySet;
 import static java.util.stream.StreamSupport.stream;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLISHER_JSON_PTR;
+import static no.unit.nva.model.testing.PublicationGenerator.randomContributorWithAffiliation;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,8 +23,10 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import no.unit.nva.expansion.ExpansionConfig;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.CuratingInstitution;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.ResearchData;
@@ -36,7 +41,8 @@ import org.junit.jupiter.api.Test;
  * Covers the handling of contributor identities that occur more than once in the graph. The same
  * person is identified by the same URI, so Jena merges the occurrences into one node, which may
  * then carry several names. The chapter-in-anthology variant needs the parent publication from the
- * database and is covered in ExpandedResourceTest.
+ * database and is covered in ExpandedResourceTest. Organizations merge the same way, so
+ * publication-specific data on a curating institution must not reach the organization node.
  */
 class FramedJsonGeneratorTest {
 
@@ -118,6 +124,20 @@ class FramedJsonGeneratorTest {
         contributorNames(frame(publication)).stream().map(JsonNode::textValue).sorted().toList();
 
     assertEquals(List.of("Per Nille", "Per Sille"), contributorNames);
+  }
+
+  @Test
+  void shouldNotLeakCuratingInstitutionFieldContributorCristinIdsIntoExpandedOrganization() {
+    var organizationId = randomUri();
+    var personId = randomUri();
+    var contributor = randomContributorWithAffiliation(organizationId);
+    var publication = publicationWithContributors(contributor);
+    publication.setCuratingInstitutions(
+        Set.of(new CuratingInstitution(organizationId, Set.of(personId))));
+
+    var framedBody = ((ObjectNode) frame(publication)).without(CONTEXT_FIELD);
+
+    assertThat(framedBody.findValues("contributorCristinIds"), empty());
   }
 
   private static void assertSingleName(String expectedName, JsonNode nameNode) {

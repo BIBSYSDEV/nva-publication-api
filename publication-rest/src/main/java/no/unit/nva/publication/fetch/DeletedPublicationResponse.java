@@ -1,9 +1,6 @@
 package no.unit.nva.publication.fetch;
 
-import static nva.commons.core.attempt.Try.attempt;
-
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.List;
 import java.util.Set;
 import no.unit.nva.api.PublicationResponseElevatedUser;
@@ -25,8 +22,6 @@ public final class DeletedPublicationResponse {
     var tombstone =
         PublicationResponseElevatedUser.fromPublicationWithAllowedOperations(
             publicationWithoutAssociatedArtifacts, allowedOperations);
-    return attempt(
-            () -> JsonUtils.dtoObjectMapper.convertValue(tombstone, new TypeReference<>() {}))
-        .orElseThrow();
+    return JsonUtils.dtoObjectMapper.valueToTree(tombstone);
   }
 }
