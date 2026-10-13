@@ -88,11 +88,7 @@
   "createdDate": {
     "@type": "xsd:dateTime"
   },
-  "curatingInstitutions": {
-    "@container": "@set",
-    "@id": "curatingOrganization",
-    "@type": "@id"
-  },
+  "curatingInstitutions": null,
   "days": {
     "@type": "xsd:integer"
   },

@@ -76,9 +76,6 @@
       "@embed": "@always"
     }
   },
-  "curatingInstitutions": {
-    "@embed": "@never"
-  },
   "contributorOrganization": {
     "@embed": "@never"
   },

@@ -86,6 +86,8 @@ public class Publication
   private URI duplicateOf;
 
   private List<PublicationNoteBase> publicationNotes;
+  // TODO: Remove from Publication and publicationContext.json once Resource no longer relies on
+  //  Publication to carry it NP-52070
   private Set<CuratingInstitution> curatingInstitutions;
   private List<ImportDetail> importDetails;
 
