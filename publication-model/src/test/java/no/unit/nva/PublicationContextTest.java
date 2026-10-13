@@ -88,8 +88,7 @@ class PublicationContextTest {
   }
 
   // TODO: Remove .filter(property -> !CURATING_INSTITUTIONS.equals(property)) filter once Resource
-  // no longer relies on
-  //  Publication to carry it NP-52070
+  // no longer relies on Publication to carry it NP-52070
   @ParameterizedTest
   @MethodSource("publicationInstanceProvider")
   void shouldContainEveryCollectionInModel(Class<?> instanceType) {
