@@ -357,10 +357,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         PublicationResponseElevatedUser.fromPublication(
             publication.copy().withAssociatedArtifacts(List.of()).build());
 
-    var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
-    var actualPublication =
-        JsonUtils.dtoObjectMapper.convertValue(
-            problem.getParameters().get(RESOURCE), PublicationResponseElevatedUser.class);
+    var actualPublication = parseTombstone(gatewayResponse);
 
     assertThat(actualPublication, is(equalTo(expectedTombstone)));
   }
@@ -401,10 +398,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
         PublicationResponseElevatedUser.fromPublication(
             publication.copy().withAssociatedArtifacts(List.of()).build());
     var gatewayResponse = parseFailureResponse();
-    var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
-    var actualPublication =
-        JsonUtils.dtoObjectMapper.convertValue(
-            problem.getParameters().get(RESOURCE), PublicationResponseElevatedUser.class);
+    var actualPublication = parseTombstone(gatewayResponse);
     assertThat(actualPublication, is(equalTo(expectedTombstone)));
   }
 
@@ -544,10 +538,7 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
     var expectedTombstone =
         PublicationResponseElevatedUser.fromPublication(
             publication.copy().withAssociatedArtifacts(List.of()).build());
-    var problem = JsonUtils.dtoObjectMapper.readValue(gatewayResponse.getBody(), Problem.class);
-    var actualPublication =
-        JsonUtils.dtoObjectMapper.convertValue(
-            problem.getParameters().get(RESOURCE), PublicationResponseElevatedUser.class);
+    var actualPublication = parseTombstone(gatewayResponse);
     assertThat(actualPublication, is(equalTo(expectedTombstone)));
   }
 
@@ -831,6 +822,12 @@ class FetchPublicationHandlerTest extends ResourcesLocalTest {
   private String getProblemDetail(GatewayResponse<Problem> gatewayResponse)
       throws JsonProcessingException {
     return gatewayResponse.getBodyObject(Problem.class).getDetail();
+  }
+
+  private static PublicationResponseElevatedUser parseTombstone(
+      GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
+    var tombstone = JsonUtils.dtoObjectMapper.readTree(gatewayResponse.getBody()).get(RESOURCE);
+    return JsonUtils.dtoObjectMapper.treeToValue(tombstone, PublicationResponseElevatedUser.class);
   }
 
   private GatewayResponse<Problem> parseFailureResponse() throws JsonProcessingException {
