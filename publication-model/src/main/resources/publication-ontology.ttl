@@ -2591,12 +2591,6 @@ nva:uploadDetails a rdf:Property ;
                rdfs:isDefinedBy nva: ;
                rdfs:range nva:UploadDetails .
 
-nva:contributorCristinId a rdf:Property ;
-                       rdfs:comment "" ;
-                       rdfs:label "uploadDetails" ;
-                       rdfs:isDefinedBy nva: ;
-                       rdfs:range nva:Identity .
-
 nva:seriesName a rdf:Property ;
                        rdfs:comment "" ;
                        rdfs:label "uploadDetails" ;
