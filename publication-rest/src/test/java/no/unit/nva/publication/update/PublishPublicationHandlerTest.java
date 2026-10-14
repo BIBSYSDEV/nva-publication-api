@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.util.Map;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.clients.IdentityServiceNotFoundException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -196,6 +197,24 @@ class PublishPublicationHandlerTest extends ResourcesLocalTest {
     var response = GatewayResponse.fromOutputStream(output, Problem.class);
 
     assertEquals(HTTP_BAD_GATEWAY, response.getStatusCode());
+  }
+
+  @Test
+  void shouldReturnBadGatewayWithIdentityServiceMessageWhenCustomerDoesNotExist()
+      throws IOException, BadRequestException {
+    var publication = createPublication();
+    var customerId = publication.getPublisher().getId();
+    when(identityServiceClient.getCustomerById(any()))
+        .thenThrow(new IdentityServiceNotFoundException(customerId));
+    var request = createRequestWithUserWithPermissionsToPublishPublication(publication);
+
+    handler.handleRequest(request, output, context);
+
+    var response = GatewayResponse.fromOutputStream(output, Problem.class);
+    assertEquals(HTTP_BAD_GATEWAY, response.getStatusCode());
+    assertEquals(
+        "Identity service found nothing at: " + customerId,
+        response.getBodyObject(Problem.class).getDetail());
   }
 
   @Test
