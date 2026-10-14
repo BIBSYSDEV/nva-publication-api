@@ -1496,7 +1496,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
@@ -1517,7 +1516,6 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.tickets.DoiRequestEventProducer::handleRequest
-      ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
@@ -1625,7 +1623,6 @@ Resources:
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeleteImportCandidateEventHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
@@ -1848,7 +1845,6 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.batch.EventBasedBatchScanHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
       Timeout: 900
-      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
@@ -1881,7 +1877,6 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.recovery.RecoveryBatchScanHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
       Timeout: 900
-      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
@@ -1911,7 +1906,6 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.batch.EventBasedBatchScanHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
       Timeout: 900
-      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
@@ -1977,7 +1971,6 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
       Timeout: 360
       Tracing: Active
-      ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
@@ -2025,7 +2018,6 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.ImportCandidateDynamoDbStreamToEventBridgeHandler::handleRequest
       Timeout: 360
       Tracing: Active
-      ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
@@ -2075,7 +2067,6 @@ Resources:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FileEntriesEventEmitter::handleRequest
       Timeout: 600 # 10 min timeout
-      ReservedConcurrentExecutions: 50
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
@@ -2168,7 +2159,6 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.batch.BatchScanStartHandler::handleRequest
       Timeout: 60
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
@@ -2197,7 +2187,6 @@ Resources:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.UpdatePublicationsFromBrageHandler::handleRequest
       Timeout: 900 # 15 min timeout
-      ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
@@ -2212,7 +2201,6 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.batch.BatchScanStartHandler::handleRequest
       Timeout: 60
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
@@ -2227,7 +2215,6 @@ Resources:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FilenameEventEmitter::handleRequest
       Timeout: 900 # 15 min timeout
-      ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
@@ -2243,7 +2230,6 @@ Resources:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.DeleteEntriesEventEmitter::handleRequest
       Timeout: 900 # 15 min timeout
-      ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
