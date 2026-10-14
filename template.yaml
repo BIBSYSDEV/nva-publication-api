@@ -776,7 +776,6 @@ Resources:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
           NVA_FRONTEND_DOMAIN: !Ref NvaApplicationDomain
-          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -932,7 +931,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
-          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
       Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
@@ -1385,7 +1383,6 @@ Resources:
       ReservedConcurrentExecutions: 50
       Environment:
         Variables:
-          API_HOST: !Ref ApiDomain
           TABLE_NAME: !Ref NvaImportCandidatesTable
           RESOURCES_TABLE_NAME: !Ref NvaResourcesTable
           PIA_SECRETS_NAME: !Ref PiaRestCredentialsTokenName
@@ -1395,7 +1392,6 @@ Resources:
           SCOPUS_IMPORT_BUCKET: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
           XML_BUCKET_NAME: !Ref ScopusXmlBucket
           IMPORT_CANDIDATES_STORAGE_BUCKET: !Ref ImportCandidateStorageBucket
-          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
           CROSSREF_FETCH_DOI_URI: "https://api.crossref.org/v1/works/"
       Events:
         SqsEvent:
@@ -1415,7 +1411,6 @@ Resources:
       Timeout: 900
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           SCOPUS_IMPORT_BUCKET: !Sub "${ScopusImportReportBucketName}-${AWS::AccountId}"
@@ -1440,10 +1435,8 @@ Resources:
       Timeout: 900
       Environment:
         Variables:
-          API_HOST: !Ref ApiDomain
           TABLE_NAME: !Ref NvaImportCandidatesTable
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           ALLOWED_ORIGIN: !Ref AllowedOrigins
       Events:
         EventBridgeEvent:
@@ -1554,7 +1547,6 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           TABLE_NAME: !Ref NvaResourcesTable
           RECOVERY_QUEUE: !Ref RecoveryQueue
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
@@ -1595,10 +1587,8 @@ Resources:
       Timeout: 900
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
           TABLE_NAME: !Ref NvaImportCandidatesTable
-          API_HOST: !Ref ApiDomain
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1628,7 +1618,6 @@ Resources:
       ReservedConcurrentExecutions: 1
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
       Events:
         EventBridgeEvent:
@@ -1658,7 +1647,6 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
       Events:
         EventBridgeEvent:
@@ -1684,7 +1672,6 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           TABLE_NAME: !Ref NvaResourcesTable
       Events:
         EventBridgeEvent:
@@ -1713,7 +1700,6 @@ Resources:
       Timeout: 900
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           TABLE_NAME: !Ref NvaResourcesTable
           API_DOMAIN: !Ref ApiDomain
           HANDLE_BASE_PATH: handle
@@ -1823,9 +1809,7 @@ Resources:
         - !GetAtt S3AccessManagedPolicy.PolicyArn
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           TABLE_NAME: !Ref NvaResourcesTable
-          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1852,7 +1836,6 @@ Resources:
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: "ignored"
           TABLE_NAME: !Ref NvaResourcesTable
       Events:
@@ -1885,7 +1868,6 @@ Resources:
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           TABLE_NAME: !Ref NvaResourcesTable
           RECOVERY_QUEUE: !Ref RecoveryQueue
       Events:
@@ -1915,7 +1897,6 @@ Resources:
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: "ignored"
           TABLE_NAME: !Ref NvaImportCandidatesTable
       Events:
@@ -1981,7 +1962,6 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           RECOVERY_QUEUE: !Ref RecoveryQueue
@@ -2029,7 +2009,6 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
@@ -2102,7 +2081,6 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.delete.DeleteFileEventHandler::handleRequest
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           TABLE_NAME: !Ref NvaResourcesTable
           NVA_PERSISTED_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
@@ -2172,7 +2150,6 @@ Resources:
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: "ignored"
           OUTPUT_EVENT_TOPIC: "PublicationService.DataEntry.ScanAndUpdateRowVersion"
 
@@ -2188,7 +2165,6 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref NvaResourcesTable
-          API_HOST: !Ref ApiDomain
 
   UpdatePublicationsFromBrageHandler:
     Type: AWS::Serverless::Function
@@ -2216,7 +2192,6 @@ Resources:
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: "ignored"
           OUTPUT_EVENT_TOPIC: "ImportCandidates.DataEntry.ScanAndUpdateRowVersion"
 
@@ -2258,7 +2233,6 @@ Resources:
       Handler: no.unit.nva.doi.handlers.ReserveDoiHandler::handleRequest
       Environment:
         Variables:
-          BACKEND_CLIENT_SECRET_NAME: "BackendCognitoClientCredentials"
           ALLOWED_ORIGIN: !Ref AllowedOrigins
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
@@ -2919,7 +2893,6 @@ Resources:
         - !GetAtt S3AccessManagedPolicy.PolicyArn
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           TABLE_NAME: !Ref NvaResourcesTable
       Events:
         EventBridgeEvent:
@@ -2967,7 +2940,6 @@ Resources:
         - !GetAtt DeleteFromResourceStorageS3BucketManagedPolicy.PolicyArn
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           RESOURCE_STORAGE_BUCKET_NAME: !Ref ResourceStorageBucketName
           TABLE_NAME: !Ref NvaResourcesTable
       Events:
