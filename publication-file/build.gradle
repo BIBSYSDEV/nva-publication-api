@@ -17,6 +17,7 @@ dependencies {
     implementation(nvaCatalog.aws.sdk2.http.client)
     implementation(nvaCatalog.aws.sdk2.sdk.core)
     implementation(nvaCatalog.aws.sdk2.urlconnection)
+    implementation(nvaCatalog.slf4j.api)
     testFixturesRuntimeOnly(nvaCatalog.aws.sdk2.s3)
     testImplementation(nvaCatalog.aws.sdk2.dynamo)
     testImplementation(nvaCatalog.hamcrest)

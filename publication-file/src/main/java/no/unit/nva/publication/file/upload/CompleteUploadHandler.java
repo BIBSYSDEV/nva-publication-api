@@ -4,16 +4,22 @@ import static java.net.HttpURLConnection.HTTP_OK;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.clients.IdentityServiceClient;
+import no.unit.nva.clients.IdentityServiceRequestFailedException;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.file.upload.restmodel.CompleteUploadRequest;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadRequest, File> {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(CompleteUploadHandler.class);
 
   private final FileService fileService;
   private final IdentityServiceClient identityServiceClient;
@@ -51,7 +57,12 @@ public class CompleteUploadHandler extends ApiGatewayHandler<CompleteUploadReque
     var userInstance =
         RequestUtil.createUserInstanceFromRequest(requestInfo, identityServiceClient);
 
-    return fileService.completeMultipartUpload(resourceIdentifier, input, userInstance);
+    try {
+      return fileService.completeMultipartUpload(resourceIdentifier, input, userInstance);
+    } catch (IdentityServiceRequestFailedException e) {
+      LOGGER.error("Request to identity service failed", e);
+      throw new BadGatewayException("Customer API not responding or not responding as expected!");
+    }
   }
 
   @Override

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.file.upload;
 
+import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
@@ -71,6 +72,7 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
   private Context context;
   private S3Client s3client;
   private ResourceService resourceService;
+  private FakeIdentityServiceClient identityServiceClient;
 
   /** Setup test env. */
   @BeforeEach
@@ -78,10 +80,10 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
     super.init();
     s3client = mock(S3Client.class);
     resourceService = getResourceService(client);
+    identityServiceClient = new FakeIdentityServiceClient().withDefaultCustomers();
     handler =
         new CompleteUploadHandler(
-            new FileService(
-                s3client, new FakeIdentityServiceClient().withDefaultCustomers(), resourceService),
+            new FileService(s3client, identityServiceClient, resourceService),
             mock(IdentityServiceClient.class),
             new Environment());
     context = mock(Context.class);
@@ -143,6 +145,21 @@ public class CompleteUploadHandlerTest extends ResourcesLocalTest {
     assertThat(response, is(notNullValue()));
     assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
     assertThat(response.getBody(), is(notNullValue()));
+  }
+
+  @Test
+  void shouldReturnBadGatewayWhenIdentityServiceIsUnavailable()
+      throws IOException, BadRequestException {
+    var publication = randomPublication();
+    var userInstance = UserInstance.fromPublication(publication);
+    var resource = Resource.fromPublication(publication).persistNew(resourceService, userInstance);
+    identityServiceClient.withUnavailableIdentityService();
+
+    mockS3("filename=\"filename.pdf\"");
+    handler.handleRequest(request(resource.getIdentifier(), userInstance), outputStream, context);
+    var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+
+    assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_GATEWAY)));
   }
 
   @Test
