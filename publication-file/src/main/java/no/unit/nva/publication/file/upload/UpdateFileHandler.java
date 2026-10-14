@@ -3,6 +3,7 @@ package no.unit.nva.publication.file.upload;
 import static java.net.HttpURLConnection.HTTP_ACCEPTED;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -19,7 +20,7 @@ public class UpdateFileHandler extends ApiGatewayHandler<File, Void> {
 
   @JacocoGenerated
   public UpdateFileHandler() {
-    this(FileService.defaultFileService(), new Environment());
+    this(FileService.defaultFileService(IdentityServiceClient.prepare()), new Environment());
   }
 
   public UpdateFileHandler(FileService fileService, Environment environment) {

@@ -32,7 +32,6 @@ import no.unit.nva.publication.model.business.PublishingWorkflow;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.service.impl.ApprovalAssignmentServiceForImportCandidateFiles.ApprovalAssignmentException;
 import no.unit.nva.testutils.RandomDataGenerator;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,7 +61,7 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
   }
 
   @Test
-  void shouldThrowExceptionWhenUnableToFetchCustomer() throws NotFoundException {
+  void shouldThrowExceptionWhenUnableToFetchCustomer() {
     var customerId = randomUri();
     when(identityServiceClient.getCustomerById(customerId)).thenThrow(RuntimeException.class);
     var resource = createResource();
@@ -435,18 +434,16 @@ class ApprovalAssignmentServiceForImportCandidateFilesTest {
         .getUri();
   }
 
-  private void mockCustomer(CustomerSetup setup) throws NotFoundException {
+  private void mockCustomer(CustomerSetup setup) {
     mockCustomer(setup.customerId, setup.cristinId, false);
   }
 
-  private void mockCustomer(URI customerId, URI cristinId, boolean allowsPublishing)
-      throws NotFoundException {
+  private void mockCustomer(URI customerId, URI cristinId, boolean allowsPublishing) {
     mockCustomer(customerId, cristinId, allowsPublishing, REGISTRATOR_PUBLISHES_METADATA_ONLY);
   }
 
   private void mockCustomer(
-      URI customerId, URI cristinId, boolean allowsPublishing, PublishingWorkflow workflow)
-      throws NotFoundException {
+      URI customerId, URI cristinId, boolean allowsPublishing, PublishingWorkflow workflow) {
     when(identityServiceClient.getCustomerById(customerId))
         .thenReturn(createCustomerDto(customerId, cristinId, allowsPublishing, workflow));
   }

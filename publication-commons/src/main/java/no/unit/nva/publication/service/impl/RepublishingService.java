@@ -5,8 +5,8 @@ import static no.unit.nva.publication.model.business.TicketStatus.NOT_APPLICABLE
 import static no.unit.nva.publication.model.business.TicketStatus.PENDING;
 
 import java.util.Collection;
+import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.model.PublicationOperation;
-import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
 import no.unit.nva.publication.model.business.Resource;
@@ -22,11 +22,12 @@ public class RepublishingService {
 
   private static final String RESOURCE_NOT_FOUND_MESSAGE = "Resource not found!";
   private final ResourceService resourceService;
-  private final CustomerApiClient customerApiClient;
+  private final IdentityServiceClient identityServiceClient;
 
-  public RepublishingService(ResourceService resourceService, CustomerApiClient customerApiClient) {
+  public RepublishingService(
+      ResourceService resourceService, IdentityServiceClient identityServiceClient) {
     this.resourceService = resourceService;
-    this.customerApiClient = customerApiClient;
+    this.identityServiceClient = identityServiceClient;
   }
 
   /** Republishes the resource together with its tickets, in one write. */
@@ -56,7 +57,8 @@ public class RepublishingService {
     var tickets = resourceService.fetchAllTicketsForResource(resource).toList();
     resource.republish(userInstance);
     var reactivatedTickets = reactivateDoiAndSupportTickets(tickets);
-    var fileApprovalTickets = PendingFileTickets.changesFor(resource, tickets, customerApiClient);
+    var fileApprovalTickets =
+        PendingFileTickets.changesFor(resource, tickets, identityServiceClient);
 
     var ticketChanges = reactivatedTickets.combinedWith(fileApprovalTickets);
     resourceService.updateResourceWithTickets(resource, userInstance, ticketChanges);

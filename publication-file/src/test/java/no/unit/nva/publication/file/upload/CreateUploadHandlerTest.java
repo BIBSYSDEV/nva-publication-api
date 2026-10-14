@@ -24,18 +24,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-import java.util.Set;
 import no.unit.nva.clients.GetExternalClientResponse;
 import no.unit.nva.clients.IdentityServiceClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.commons.customer.Customer;
-import no.unit.nva.publication.commons.customer.CustomerApiClient;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadRequestBody;
 import no.unit.nva.publication.file.upload.restmodel.CreateUploadResponseBody;
 import no.unit.nva.publication.model.business.Resource;
 import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.stubs.FakeIdentityServiceClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
@@ -69,7 +67,6 @@ public class CreateUploadHandlerTest {
   private ByteArrayOutputStream outputStream;
   private Context context;
   private S3Client s3client;
-  private CustomerApiClient customerApiClient;
   private ResourceService resourceService;
 
   protected String getGeneratedKey(GatewayResponse<CreateUploadResponseBody> actual)
@@ -93,16 +90,15 @@ public class CreateUploadHandlerTest {
   }
 
   @BeforeEach
-  void setUp() throws NotFoundException {
+  void setUp() {
     s3client = mock(S3Client.class);
-    customerApiClient = mock(CustomerApiClient.class);
     resourceService = mock(ResourceService.class);
     var identityServiceClient = mock(IdentityServiceClient.class);
     when(identityServiceClient.getExternalClient(any()))
         .thenReturn(
             new GetExternalClientResponse(
                 randomString(), randomString(), randomUri(), randomUri()));
-    var fileservice = new FileService(s3client, customerApiClient, resourceService);
+    var fileservice = new FileService(s3client, new FakeIdentityServiceClient(), resourceService);
     createUploadHandler =
         new CreateUploadHandler(fileservice, identityServiceClient, new Environment());
     context = mock(Context.class);
@@ -119,17 +115,6 @@ public class CreateUploadHandlerTest {
     when(s3client.createMultipartUpload(any(CreateMultipartUploadRequest.class)))
         .thenReturn(uploadResult());
     when(resourceService.getResourceByIdentifier(any())).thenReturn(resource);
-    when(customerApiClient.fetch(any()))
-        .thenReturn(
-            new Customer(
-                Set.of(
-                    resource
-                        .getEntityDescription()
-                        .getReference()
-                        .getPublicationInstance()
-                        .getInstanceType()),
-                null,
-                null));
 
     createUploadHandler.handleRequest(
         createUploadRequestWithBody(resource.getIdentifier(), createUploadRequestBody(), user),
