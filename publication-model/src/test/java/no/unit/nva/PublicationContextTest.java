@@ -50,6 +50,7 @@ class PublicationContextTest {
 
   public static final ObjectMapper MAPPER = JsonUtils.dtoObjectMapper;
   public static final Set<String> SET_DEFINED_IN_JSON_LD_CONTEXT = getAllContextContainerSetTerms();
+  private static final String CURATING_INSTITUTIONS = "curatingInstitutions";
 
   public static Stream<Class<?>> publicationInstanceProvider() {
     return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
@@ -86,11 +87,15 @@ class PublicationContextTest {
     assertThat(nvaObjects, is(emptyList()));
   }
 
+  // TODO: Remove .filter(property -> !CURATING_INSTITUTIONS.equals(property)) filter once Resource
+  // no longer relies on Publication to carry it NP-52070
   @ParameterizedTest
   @MethodSource("publicationInstanceProvider")
   void shouldContainEveryCollectionInModel(Class<?> instanceType) {
     var allNvaCollectionProperties =
-        generateSetOfPropertiesThatHaveCollectionTypeForEveryNvaType(instanceType);
+        generateSetOfPropertiesThatHaveCollectionTypeForEveryNvaType(instanceType).stream()
+            .filter(property -> !CURATING_INSTITUTIONS.equals(property))
+            .toList();
     for (var modelProperty : allNvaCollectionProperties) {
       assertTrue(SET_DEFINED_IN_JSON_LD_CONTEXT.contains(modelProperty));
     }

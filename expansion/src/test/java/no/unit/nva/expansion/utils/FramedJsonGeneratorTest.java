@@ -140,6 +140,18 @@ class FramedJsonGeneratorTest {
     assertThat(framedBody.findValues("contributorCristinIds"), empty());
   }
 
+  @Test
+  void shouldNotIncludeCuratingInstitutionsInExpandedResource() {
+    var organizationId = randomUri();
+    var publication = publicationWithContributors(randomContributorWithAffiliation(organizationId));
+    publication.setCuratingInstitutions(
+        Set.of(new CuratingInstitution(organizationId, Set.of(randomUri()))));
+
+    var framedBody = ((ObjectNode) frame(publication)).without(CONTEXT_FIELD);
+
+    assertThat(framedBody.findValues("curatingInstitutions"), empty());
+  }
+
   private static void assertSingleName(String expectedName, JsonNode nameNode) {
     assertTrue(nameNode.isTextual(), "identity.name should be a single string but was " + nameNode);
     assertEquals(expectedName, nameNode.textValue());

@@ -2598,7 +2598,6 @@ nva:seriesName a rdf:Property ;
                        rdfs:domain nva:SeriesEpisode ;
                        rdfs:range xsd:string .
 
-nva:curatingOrganization a rdf:Property . # What is this? We have introduced (for some reason) CuratingInstitution.
 nva:rightsHolder a rdf:Property .
 nva:rightsRetentionStrategy a rdf:Property .
 nva:duration a rdf:Property .
