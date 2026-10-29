@@ -11,7 +11,9 @@ import java.util.List;
  * more generic one. Content types no extractor supports are flagged {@link
  * ExtractionFailureReason#UNSUPPORTED_FORMAT} by the dispatcher. Text-like content without a more
  * specific byte signature detects as {@code text/plain} and lands in the {@link
- * PlainTextExtractor}.
+ * PlainTextExtractor}. The default PDF extractor flags image-only scans as {@link
+ * ExtractionFailureReason#IMAGE_ONLY_CONTENT} via {@link FlaggingImageOnlyPdfProcessor}; wiring an
+ * OCR-backed {@link ImageOnlyPdfProcessor} here is the single change needed to OCR them instead.
  */
 public final class TextExtractors {
 
@@ -21,7 +23,7 @@ public final class TextExtractors {
 
   public static List<TextExtractor> defaultExtractors() {
     return List.of(
-        new PdfTextExtractor(),
+        new PdfTextExtractor(new FlaggingImageOnlyPdfProcessor()),
         new WordTextExtractor(),
         new LatexTextExtractor(),
         new PlainTextExtractor());
