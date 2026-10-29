@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch.dynamodb.jobs;
 
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultCristinClient;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 
 import java.net.URI;
@@ -43,7 +44,7 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
   @JacocoGenerated
   public UpdateVerificationStatusJob() {
     this(
-        ResourceService.defaultService(), CristinClient.defaultClient(),
+        ResourceService.defaultService(), defaultCristinClient(),
         DynamoDbClient.create(), new Environment().readEnv(TABLE_NAME_ENV));
   }
 
