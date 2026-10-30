@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -61,6 +62,7 @@ import no.unit.nva.model.contexttypes.Book.BookBuilder;
 import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.MediaContributionPeriodical;
 import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
@@ -68,12 +70,14 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedMediaContributionPeriodical;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.media.MediaFeatureArticle;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
@@ -675,6 +679,48 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
           assertEquals(unconfirmedJournal, updatedJournal);
         });
+  }
+
+  @Test
+  void shouldKeepMediaContributionPeriodicalTypeWhenUpdateTypeIsSerialPublication()
+      throws IOException {
+    var journalIdentifier = randomUUID().toString();
+    var newJournalIdentifier = randomUUID().toString();
+    var journalId =
+        createChannelIdWithIdentifier(
+            journalIdentifier, randomInteger().toString(), SERIAL_PUBLICATION);
+    var publication = createMediaPublication(new MediaContributionPeriodical(journalId));
+    var event =
+        createEvent(
+            ManualUpdateType.SERIAL_PUBLICATION, journalIdentifier, newJournalIdentifier, MATCHES);
+
+    mockSearchApiResponseWithPublications(List.of(publication));
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    var expectedJournalId =
+        URI.create(journalId.toString().replace(journalIdentifier, newJournalIdentifier));
+    assertIsMediaContributionPeriodicalWithId(publication, expectedJournalId);
+  }
+
+  @Test
+  void shouldConfirmUnconfirmedMediaContributionPeriodicalAsMediaContributionPeriodical()
+      throws IOException, InvalidIssnException {
+    var journalTitle = randomString();
+    var journalIdentifier = randomUUID().toString();
+    var publication =
+        createMediaPublication(
+            new UnconfirmedMediaContributionPeriodical(journalTitle, null, null));
+    var event =
+        createEvent(ManualUpdateType.UNCONFIRMED_JOURNAL, journalTitle, journalIdentifier, MATCHES);
+
+    mockSearchApiResponseWithPublications(List.of(publication));
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    var expectedJournalId =
+        createChannelIdWithIdentifier(journalIdentifier, getYear(publication), SERIAL_PUBLICATION);
+    assertIsMediaContributionPeriodicalWithId(publication, expectedJournalId);
   }
 
   @Test
@@ -1392,6 +1438,29 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
                 resourceService.createPublication(
                     UserInstance.fromPublication(publication), publication))
         .orElseThrow();
+  }
+
+  private Publication createMediaPublication(Periodical periodical) {
+    var publication = randomPublication(MediaFeatureArticle.class);
+    publication.getEntityDescription().getReference().setPublicationContext(periodical);
+    return attempt(
+            () ->
+                resourceService.createPublication(
+                    UserInstance.fromPublication(publication), publication))
+        .orElseThrow();
+  }
+
+  private void assertIsMediaContributionPeriodicalWithId(
+      Publication publication, URI expectedJournalId) {
+    var updatedContext =
+        getPublicationByIdentifier(publication)
+            .getEntityDescription()
+            .getReference()
+            .getPublicationContext();
+
+    assertEquals(
+        expectedJournalId,
+        assertInstanceOf(MediaContributionPeriodical.class, updatedContext).getId());
   }
 
   private Publication createPublicationWithContributor(Contributor contributor) {
