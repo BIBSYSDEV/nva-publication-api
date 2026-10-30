@@ -1,6 +1,7 @@
 package no.unit.nva.model.contexttypes;
 
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
+import static nva.commons.core.attempt.Try.attempt;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -43,6 +44,16 @@ public class Degree extends Book {
     return course;
   }
 
+  @Override
+  public Degree withSeries(BookSeries series) {
+    return rebuild(series, getPublisher());
+  }
+
+  @Override
+  public Degree withPublisher(PublishingHouse publisher) {
+    return rebuild(getSeries(), publisher);
+  }
+
   @JacocoGenerated
   @Override
   public int hashCode() {
@@ -60,6 +71,19 @@ public class Degree extends Book {
     }
     Degree degree = (Degree) o;
     return Objects.equals(course, degree.course);
+  }
+
+  private Degree rebuild(BookSeries series, PublishingHouse publisher) {
+    return attempt(
+            () ->
+                new Builder()
+                    .withSeries(series)
+                    .withSeriesNumber(getSeriesNumber())
+                    .withPublisher(publisher)
+                    .withIsbnList(getIsbnList())
+                    .withCourse(course)
+                    .build())
+        .orElseThrow();
   }
 
   public static final class Builder {

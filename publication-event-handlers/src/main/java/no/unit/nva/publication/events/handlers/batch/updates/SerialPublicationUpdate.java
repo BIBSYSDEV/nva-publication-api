@@ -37,8 +37,7 @@ public final class SerialPublicationUpdate extends ResourceUpdate {
 
     if (context instanceof Book book && book.getSeries() instanceof Series series) {
       var newSeriesUri = replacedUri(series.getId(), request);
-      PublicationChannels.setContextOf(
-          resource, book.copy().withSeries(new Series(newSeriesUri)).build());
+      PublicationChannels.setContextOf(resource, book.withSeries(new Series(newSeriesUri)));
     } else if (context instanceof Journal journal) {
       PublicationChannels.setContextOf(
           resource, new Journal(replacedUri(journal.getId(), request)));

@@ -33,8 +33,6 @@ public final class UnconfirmedPublisherUpdate extends UnconfirmedChannelUpdate {
   protected PublicationContext confirmedContext(Resource resource, URI channelUri) {
     return PublicationChannels.bookOf(resource)
         .orElseThrow()
-        .copy()
-        .withPublisher(new Publisher(channelUri))
-        .build();
+        .withPublisher(new Publisher(channelUri));
   }
 }

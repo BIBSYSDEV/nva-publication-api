@@ -34,8 +34,7 @@ public final class PublisherUpdate extends ResourceUpdate {
             .map(URI::create)
             .orElseThrow();
 
-    PublicationChannels.setContextOf(
-        resource, book.copy().withPublisher(new Publisher(publisherUri)).build());
+    PublicationChannels.setContextOf(resource, book.withPublisher(new Publisher(publisherUri)));
     return resource;
   }
 

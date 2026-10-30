@@ -1,5 +1,7 @@
 package no.unit.nva.model.contexttypes;
 
+import static nva.commons.core.attempt.Try.attempt;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
@@ -21,6 +23,28 @@ public class Report extends Book {
 
   private Report(Builder builder) throws InvalidUnconfirmedSeriesException {
     this(builder.series, null, builder.seriesNumber, builder.publisher, builder.isbnList);
+  }
+
+  @Override
+  public Report withSeries(BookSeries series) {
+    return rebuild(series, getPublisher());
+  }
+
+  @Override
+  public Report withPublisher(PublishingHouse publisher) {
+    return rebuild(getSeries(), publisher);
+  }
+
+  private Report rebuild(BookSeries series, PublishingHouse publisher) {
+    return attempt(
+            () ->
+                new Builder()
+                    .withSeries(series)
+                    .withSeriesNumber(getSeriesNumber())
+                    .withPublisher(publisher)
+                    .withIsbnList(getIsbnList())
+                    .build())
+        .orElseThrow();
   }
 
   public static final class Builder {
