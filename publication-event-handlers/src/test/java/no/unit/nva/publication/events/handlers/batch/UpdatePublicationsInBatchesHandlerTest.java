@@ -10,6 +10,7 @@ import static no.unit.nva.publication.events.handlers.batch.ManuallyUpdatePublic
 import static no.unit.nva.publication.testing.CristinUriGenerator.cristinPersonUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
+import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -20,6 +21,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +33,7 @@ import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,6 +50,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Revision;
+import no.unit.nva.model.UnconfirmedCourse;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifact;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
@@ -55,18 +59,22 @@ import no.unit.nva.model.associatedartifacts.file.File;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Book.BookBuilder;
 import no.unit.nva.model.contexttypes.BookSeries;
+import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
+import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.book.AcademicMonograph;
+import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.publication.model.ResourceWithId;
 import no.unit.nva.publication.model.SearchResourceApiResponse;
 import no.unit.nva.publication.model.business.UserInstance;
@@ -82,6 +90,8 @@ import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
@@ -529,6 +539,90 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
           assertEquals(unconfirmedSeries, updatedBook.getSeries());
         });
+  }
+
+  @ParameterizedTest
+  @ValueSource(classes = {Report.class, Degree.class})
+  void shouldOnlyChangeSeriesWhenUpdateTypeIsSerialPublication(Class<?> contextType)
+      throws IOException {
+    var seriesIdentifier = randomUUID().toString();
+    var seriesId =
+        createChannelIdWithIdentifier(
+            seriesIdentifier, randomInteger().toString(), SERIAL_PUBLICATION);
+    var publication =
+        createReportOrDegreePublication(contextType, new Series(seriesId), randomPublisher());
+    var event =
+        createEvent(
+            ManualUpdateType.SERIAL_PUBLICATION,
+            seriesIdentifier,
+            randomUUID().toString(),
+            MATCHES);
+
+    mockSearchApiResponseWithPublications(List.of(publication));
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    assertOnlyChannelWasChanged(publication, Book.JSON_PROPERTY_SERIES);
+  }
+
+  @ParameterizedTest
+  @ValueSource(classes = {Report.class, Degree.class})
+  void shouldOnlyChangePublisherWhenUpdateTypeIsPublisher(Class<?> contextType) throws IOException {
+    var publisherIdentifier = randomUUID().toString();
+    var publisherId =
+        createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
+    var publication =
+        createReportOrDegreePublication(contextType, randomSeries(), new Publisher(publisherId));
+    var event =
+        createEvent(
+            ManualUpdateType.PUBLISHER, publisherIdentifier, randomUUID().toString(), MATCHES);
+
+    mockSearchApiResponseWithPublications(List.of(publication));
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    assertOnlyChannelWasChanged(publication, Book.JSON_PROPERTY_PUBLISHER);
+  }
+
+  @ParameterizedTest
+  @ValueSource(classes = {Report.class, Degree.class})
+  void shouldOnlyChangeSeriesWhenUpdateTypeIsUnconfirmedSeries(Class<?> contextType)
+      throws IOException, InvalidIssnException {
+    var seriesTitle = randomString();
+    var publication =
+        createReportOrDegreePublication(
+            contextType, new UnconfirmedSeries(seriesTitle, null, null), randomPublisher());
+    var event =
+        createEvent(
+            ManualUpdateType.UNCONFIRMED_SERIES, seriesTitle, randomUUID().toString(), MATCHES);
+
+    mockSearchApiResponseWithPublications(List.of(publication));
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    assertOnlyChannelWasChanged(publication, Book.JSON_PROPERTY_SERIES);
+  }
+
+  @ParameterizedTest
+  @ValueSource(classes = {Report.class, Degree.class})
+  void shouldOnlyChangePublisherWhenUpdateTypeIsUnconfirmedPublisher(Class<?> contextType)
+      throws IOException {
+    var publisherName = randomString();
+    var publication =
+        createReportOrDegreePublication(
+            contextType, randomSeries(), new UnconfirmedPublisher(publisherName));
+    var event =
+        createEvent(
+            ManualUpdateType.UNCONFIRMED_PUBLISHER,
+            publisherName,
+            randomUUID().toString(),
+            MATCHES);
+
+    mockSearchApiResponseWithPublications(List.of(publication));
+
+    handler.handleRequest(event, output, CONTEXT);
+
+    assertOnlyChannelWasChanged(publication, Book.JSON_PROPERTY_PUBLISHER);
   }
 
   @Test
@@ -1340,5 +1434,73 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
                 resourceService.createPublication(
                     UserInstance.fromPublication(publication), publication))
         .orElseThrow();
+  }
+
+  private void assertOnlyChannelWasChanged(Publication publication, String channelField) {
+    var original = contextAsJson(publication);
+    var updated = contextAsJson(getPublicationByIdentifier(publication));
+
+    assertNotEquals(original.remove(channelField), updated.remove(channelField));
+    assertEquals(original, updated);
+  }
+
+  private static ObjectNode contextAsJson(Publication publication) {
+    return JsonUtils.dtoObjectMapper.valueToTree(
+        publication.getEntityDescription().getReference().getPublicationContext());
+  }
+
+  private Publication createReportOrDegreePublication(
+      Class<?> contextType, BookSeries series, PublishingHouse publisher) {
+    return Report.class.equals(contextType)
+        ? persistPublication(ReportResearch.class, randomReport(series, publisher))
+        : persistPublication(DegreeMaster.class, randomDegree(series, publisher));
+  }
+
+  private Publication persistPublication(
+      Class<?> instanceType, PublicationContext publicationContext) {
+    var publication = randomPublication(instanceType);
+    publication.getEntityDescription().getReference().setPublicationContext(publicationContext);
+    return attempt(
+            () ->
+                resourceService.createPublication(
+                    UserInstance.fromPublication(publication), publication))
+        .orElseThrow();
+  }
+
+  private static Report randomReport(BookSeries series, PublishingHouse publisher) {
+    return attempt(
+            () ->
+                new Report.Builder()
+                    .withSeries(series)
+                    .withSeriesNumber(randomString())
+                    .withPublisher(publisher)
+                    .withIsbnList(List.of(randomIsbn13()))
+                    .build())
+        .orElseThrow();
+  }
+
+  private static Degree randomDegree(BookSeries series, PublishingHouse publisher) {
+    return attempt(
+            () ->
+                new Degree.Builder()
+                    .withSeries(series)
+                    .withSeriesNumber(randomString())
+                    .withPublisher(publisher)
+                    .withIsbnList(List.of(randomIsbn13()))
+                    .withCourse(new UnconfirmedCourse(randomString()))
+                    .build())
+        .orElseThrow();
+  }
+
+  private static Series randomSeries() {
+    return new Series(
+        createChannelIdWithIdentifier(
+            randomUUID().toString(), randomInteger().toString(), SERIAL_PUBLICATION));
+  }
+
+  private static Publisher randomPublisher() {
+    return new Publisher(
+        createChannelIdWithIdentifier(
+            randomUUID().toString(), randomInteger().toString(), PUBLISHER));
   }
 }

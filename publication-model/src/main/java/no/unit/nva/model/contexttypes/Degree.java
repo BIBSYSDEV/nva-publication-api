@@ -1,6 +1,7 @@
 package no.unit.nva.model.contexttypes;
 
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
+import static nva.commons.core.attempt.Try.attempt;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -41,6 +42,20 @@ public class Degree extends Book {
 
   public Course getCourse() {
     return course;
+  }
+
+  @Override
+  protected Degree rebuild(BookSeries series, PublishingHouse publisher) {
+    return attempt(
+            () ->
+                new Builder()
+                    .withSeries(series)
+                    .withSeriesNumber(getSeriesNumber())
+                    .withPublisher(publisher)
+                    .withIsbnList(getIsbnList())
+                    .withCourse(course)
+                    .build())
+        .orElseThrow();
   }
 
   @JacocoGenerated

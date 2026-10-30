@@ -122,6 +122,18 @@ public class Book implements BasicContext {
         .withRevision(getRevision());
   }
 
+  public Book withSeries(BookSeries series) {
+    return rebuild(series, getPublisher());
+  }
+
+  public Book withPublisher(PublishingHouse publisher) {
+    return rebuild(getSeries(), publisher);
+  }
+
+  protected Book rebuild(BookSeries series, PublishingHouse publisher) {
+    return copy().withSeries(series).withPublisher(publisher).build();
+  }
+
   @JacocoGenerated
   @Override
   public int hashCode() {

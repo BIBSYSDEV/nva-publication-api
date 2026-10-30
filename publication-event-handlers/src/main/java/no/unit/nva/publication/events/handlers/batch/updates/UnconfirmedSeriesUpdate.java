@@ -35,10 +35,6 @@ public final class UnconfirmedSeriesUpdate extends UnconfirmedChannelUpdate {
 
   @Override
   protected PublicationContext confirmedContext(Resource resource, URI channelUri) {
-    return PublicationChannels.bookOf(resource)
-        .orElseThrow()
-        .copy()
-        .withSeries(new Series(channelUri))
-        .build();
+    return PublicationChannels.bookOf(resource).orElseThrow().withSeries(new Series(channelUri));
   }
 }
