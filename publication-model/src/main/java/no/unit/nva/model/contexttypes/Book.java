@@ -123,11 +123,15 @@ public class Book implements BasicContext {
   }
 
   public Book withSeries(BookSeries series) {
-    return copy().withSeries(series).build();
+    return rebuild(series, getPublisher());
   }
 
   public Book withPublisher(PublishingHouse publisher) {
-    return copy().withPublisher(publisher).build();
+    return rebuild(getSeries(), publisher);
+  }
+
+  protected Book rebuild(BookSeries series, PublishingHouse publisher) {
+    return copy().withSeries(series).withPublisher(publisher).build();
   }
 
   @JacocoGenerated

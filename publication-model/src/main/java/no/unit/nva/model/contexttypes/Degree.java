@@ -45,13 +45,17 @@ public class Degree extends Book {
   }
 
   @Override
-  public Degree withSeries(BookSeries series) {
-    return rebuild(series, getPublisher());
-  }
-
-  @Override
-  public Degree withPublisher(PublishingHouse publisher) {
-    return rebuild(getSeries(), publisher);
+  protected Degree rebuild(BookSeries series, PublishingHouse publisher) {
+    return attempt(
+            () ->
+                new Builder()
+                    .withSeries(series)
+                    .withSeriesNumber(getSeriesNumber())
+                    .withPublisher(publisher)
+                    .withIsbnList(getIsbnList())
+                    .withCourse(course)
+                    .build())
+        .orElseThrow();
   }
 
   @JacocoGenerated
@@ -71,19 +75,6 @@ public class Degree extends Book {
     }
     Degree degree = (Degree) o;
     return Objects.equals(course, degree.course);
-  }
-
-  private Degree rebuild(BookSeries series, PublishingHouse publisher) {
-    return attempt(
-            () ->
-                new Builder()
-                    .withSeries(series)
-                    .withSeriesNumber(getSeriesNumber())
-                    .withPublisher(publisher)
-                    .withIsbnList(getIsbnList())
-                    .withCourse(course)
-                    .build())
-        .orElseThrow();
   }
 
   public static final class Builder {

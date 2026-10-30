@@ -26,16 +26,7 @@ public class Report extends Book {
   }
 
   @Override
-  public Report withSeries(BookSeries series) {
-    return rebuild(series, getPublisher());
-  }
-
-  @Override
-  public Report withPublisher(PublishingHouse publisher) {
-    return rebuild(getSeries(), publisher);
-  }
-
-  private Report rebuild(BookSeries series, PublishingHouse publisher) {
+  protected Report rebuild(BookSeries series, PublishingHouse publisher) {
     return attempt(
             () ->
                 new Builder()

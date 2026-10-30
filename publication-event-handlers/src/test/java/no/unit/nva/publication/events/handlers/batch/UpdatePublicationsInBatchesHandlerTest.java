@@ -550,7 +550,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         createChannelIdWithIdentifier(
             seriesIdentifier, randomInteger().toString(), SERIAL_PUBLICATION);
     var publication =
-        createPublicationWithContext(contextType, new Series(seriesId), randomPublisher());
+        createReportOrDegreePublication(contextType, new Series(seriesId), randomPublisher());
     var event =
         createEvent(
             ManualUpdateType.SERIAL_PUBLICATION,
@@ -572,7 +572,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     var publisherId =
         createChannelIdWithIdentifier(publisherIdentifier, randomInteger().toString(), PUBLISHER);
     var publication =
-        createPublicationWithContext(contextType, randomSeries(), new Publisher(publisherId));
+        createReportOrDegreePublication(contextType, randomSeries(), new Publisher(publisherId));
     var event =
         createEvent(
             ManualUpdateType.PUBLISHER, publisherIdentifier, randomUUID().toString(), MATCHES);
@@ -590,7 +590,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
       throws IOException, InvalidIssnException {
     var seriesTitle = randomString();
     var publication =
-        createPublicationWithContext(
+        createReportOrDegreePublication(
             contextType, new UnconfirmedSeries(seriesTitle, null, null), randomPublisher());
     var event =
         createEvent(
@@ -609,7 +609,7 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
       throws IOException {
     var publisherName = randomString();
     var publication =
-        createPublicationWithContext(
+        createReportOrDegreePublication(
             contextType, randomSeries(), new UnconfirmedPublisher(publisherName));
     var event =
         createEvent(
@@ -1449,14 +1449,14 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         publication.getEntityDescription().getReference().getPublicationContext());
   }
 
-  private Publication createPublicationWithContext(
+  private Publication createReportOrDegreePublication(
       Class<?> contextType, BookSeries series, PublishingHouse publisher) {
     return Report.class.equals(contextType)
-        ? createPublicationWithContext(ReportResearch.class, randomReport(series, publisher))
-        : createPublicationWithContext(DegreeMaster.class, randomDegree(series, publisher));
+        ? persistPublication(ReportResearch.class, randomReport(series, publisher))
+        : persistPublication(DegreeMaster.class, randomDegree(series, publisher));
   }
 
-  private Publication createPublicationWithContext(
+  private Publication persistPublication(
       Class<?> instanceType, PublicationContext publicationContext) {
     var publication = randomPublication(instanceType);
     publication.getEntityDescription().getReference().setPublicationContext(publicationContext);
