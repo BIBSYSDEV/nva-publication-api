@@ -23,9 +23,7 @@ public final class UnconfirmedJournalUpdate extends UnconfirmedChannelUpdate {
 
   @Override
   public boolean matches(Resource resource, ManuallyUpdatePublicationsRequest request) {
-    return Optional.of(PublicationChannels.contextOf(resource))
-        .filter(UnconfirmedJournal.class::isInstance)
-        .map(UnconfirmedJournal.class::cast)
+    return unconfirmedJournalOf(resource)
         .map(UnconfirmedJournal::getTitle)
         .filter(title -> request.comparator().matches(title, request.oldValue()))
         .isPresent();
@@ -33,6 +31,12 @@ public final class UnconfirmedJournalUpdate extends UnconfirmedChannelUpdate {
 
   @Override
   protected PublicationContext confirmedContext(Resource resource, URI channelUri) {
-    return ((UnconfirmedJournal) PublicationChannels.contextOf(resource)).confirm(channelUri);
+    return unconfirmedJournalOf(resource).orElseThrow().confirm(channelUri);
+  }
+
+  private static Optional<UnconfirmedJournal> unconfirmedJournalOf(Resource resource) {
+    return Optional.of(PublicationChannels.contextOf(resource))
+        .filter(UnconfirmedJournal.class::isInstance)
+        .map(UnconfirmedJournal.class::cast);
   }
 }

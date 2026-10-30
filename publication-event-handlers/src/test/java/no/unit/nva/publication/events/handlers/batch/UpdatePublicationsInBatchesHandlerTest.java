@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -1457,8 +1458,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
             .getReference()
             .getPublicationContext();
 
-    assertEquals(MediaContributionPeriodical.class, updatedContext.getClass());
-    assertEquals(expectedJournalId, ((Journal) updatedContext).getId());
+    assertEquals(
+        expectedJournalId,
+        assertInstanceOf(MediaContributionPeriodical.class, updatedContext).getId());
   }
 
   private Publication createPublicationWithContributor(Contributor contributor) {

@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import java.net.URI;
@@ -60,6 +61,24 @@ class PeriodicalTest {
 
     assertEquals(MediaContributionPeriodical.class, confirmed.getClass());
     assertEquals(id, confirmed.getId());
+  }
+
+  @Test
+  void journalShouldNotEqualMediaContributionPeriodicalWithSameId() {
+    var id = randomUri();
+
+    assertNotEquals(new Journal(id), new MediaContributionPeriodical(id));
+    assertNotEquals(new MediaContributionPeriodical(id), new Journal(id));
+  }
+
+  @Test
+  void unconfirmedJournalShouldNotEqualUnconfirmedMediaContributionPeriodicalWithSameTitle()
+      throws InvalidIssnException {
+    var title = randomString();
+
+    assertNotEquals(
+        new UnconfirmedJournal(title, null, null),
+        new UnconfirmedMediaContributionPeriodical(title, null, null));
   }
 
   @Test

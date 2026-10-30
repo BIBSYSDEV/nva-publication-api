@@ -46,7 +46,7 @@ public class Journal implements Periodical {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof Journal)) {
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
     Journal journal = (Journal) o;

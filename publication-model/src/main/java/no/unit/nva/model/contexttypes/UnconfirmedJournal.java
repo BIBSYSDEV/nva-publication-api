@@ -48,7 +48,7 @@ public class UnconfirmedJournal implements Periodical {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof UnconfirmedJournal)) {
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
     UnconfirmedJournal that = (UnconfirmedJournal) o;
