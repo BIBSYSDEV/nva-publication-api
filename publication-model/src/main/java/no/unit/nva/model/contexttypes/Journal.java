@@ -30,6 +30,10 @@ public class Journal implements Periodical {
     return id;
   }
 
+  public Journal withId(URI id) {
+    return new Journal(id);
+  }
+
   @JacocoGenerated
   @Override
   public int hashCode() {

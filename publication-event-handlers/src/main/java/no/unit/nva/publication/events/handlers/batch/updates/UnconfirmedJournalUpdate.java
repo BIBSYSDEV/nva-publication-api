@@ -2,7 +2,6 @@ package no.unit.nva.publication.events.handlers.batch.updates;
 
 import java.net.URI;
 import java.util.Optional;
-import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.publication.events.handlers.batch.ManualUpdateType;
@@ -34,6 +33,6 @@ public final class UnconfirmedJournalUpdate extends UnconfirmedChannelUpdate {
 
   @Override
   protected PublicationContext confirmedContext(Resource resource, URI channelUri) {
-    return new Journal(channelUri);
+    return ((UnconfirmedJournal) PublicationChannels.contextOf(resource)).confirm(channelUri);
   }
 }
