@@ -3,6 +3,7 @@ package no.unit.nva.model.contexttypes;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.net.URI;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -19,5 +20,10 @@ public class UnconfirmedMediaContributionPeriodical extends UnconfirmedJournal {
       @JsonProperty(ONLINE_ISSN_FIELD) String onlineIssn)
       throws InvalidIssnException {
     super(title, printIssn, onlineIssn);
+  }
+
+  @Override
+  public MediaContributionPeriodical confirm(URI id) {
+    return new MediaContributionPeriodical(id);
   }
 }

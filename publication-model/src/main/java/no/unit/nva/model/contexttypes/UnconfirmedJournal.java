@@ -3,6 +3,7 @@ package no.unit.nva.model.contexttypes;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.model.contexttypes.utils.IssnUtil;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -37,13 +38,17 @@ public class UnconfirmedJournal implements Periodical {
     return onlineIssn;
   }
 
+  public Journal confirm(URI id) {
+    return new Journal(id);
+  }
+
   @JacocoGenerated
   @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof UnconfirmedJournal)) {
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
     UnconfirmedJournal that = (UnconfirmedJournal) o;

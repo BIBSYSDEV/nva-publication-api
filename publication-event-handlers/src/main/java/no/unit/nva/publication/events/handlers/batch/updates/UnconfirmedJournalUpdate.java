@@ -2,7 +2,6 @@ package no.unit.nva.publication.events.handlers.batch.updates;
 
 import java.net.URI;
 import java.util.Optional;
-import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.publication.events.handlers.batch.ManualUpdateType;
@@ -24,9 +23,7 @@ public final class UnconfirmedJournalUpdate extends UnconfirmedChannelUpdate {
 
   @Override
   public boolean matches(Resource resource, ManuallyUpdatePublicationsRequest request) {
-    return Optional.of(PublicationChannels.contextOf(resource))
-        .filter(UnconfirmedJournal.class::isInstance)
-        .map(UnconfirmedJournal.class::cast)
+    return unconfirmedJournalOf(resource)
         .map(UnconfirmedJournal::getTitle)
         .filter(title -> request.comparator().matches(title, request.oldValue()))
         .isPresent();
@@ -34,6 +31,12 @@ public final class UnconfirmedJournalUpdate extends UnconfirmedChannelUpdate {
 
   @Override
   protected PublicationContext confirmedContext(Resource resource, URI channelUri) {
-    return new Journal(channelUri);
+    return unconfirmedJournalOf(resource).orElseThrow().confirm(channelUri);
+  }
+
+  private static Optional<UnconfirmedJournal> unconfirmedJournalOf(Resource resource) {
+    return Optional.of(PublicationChannels.contextOf(resource))
+        .filter(UnconfirmedJournal.class::isInstance)
+        .map(UnconfirmedJournal.class::cast);
   }
 }

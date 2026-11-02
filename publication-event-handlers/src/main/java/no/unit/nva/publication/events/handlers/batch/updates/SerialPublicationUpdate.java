@@ -40,7 +40,7 @@ public final class SerialPublicationUpdate extends ResourceUpdate {
       PublicationChannels.setContextOf(resource, book.withSeries(new Series(newSeriesUri)));
     } else if (context instanceof Journal journal) {
       PublicationChannels.setContextOf(
-          resource, new Journal(replacedUri(journal.getId(), request)));
+          resource, journal.withId(replacedUri(journal.getId(), request)));
     }
     return resource;
   }

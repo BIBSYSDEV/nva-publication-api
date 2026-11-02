@@ -15,4 +15,9 @@ public class MediaContributionPeriodical extends Journal {
   public MediaContributionPeriodical(@JsonProperty(ID_FIELD) URI id) {
     super(id);
   }
+
+  @Override
+  public MediaContributionPeriodical withId(URI id) {
+    return new MediaContributionPeriodical(id);
+  }
 }
