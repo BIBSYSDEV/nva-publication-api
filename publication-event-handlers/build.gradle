@@ -35,7 +35,6 @@ dependencies {
     implementation(nvaCatalog.aws.sdk2.sdk.core)
     implementation(nvaCatalog.aws.sdk2.urlconnection)
     implementation(nvaCatalog.log4j.core)
-    implementation(nvaCatalog.resilience4j.all)
     implementation(nvaCatalog.resilience4j.core)
     implementation(nvaCatalog.resilience4j.ratelimiter)
     implementation(nvaCatalog.resilience4j.retry)
