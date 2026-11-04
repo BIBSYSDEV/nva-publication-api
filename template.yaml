@@ -1967,6 +1967,11 @@ Resources:
             StartingPosition: TRIM_HORIZON
             BatchSize: 1
             Enabled: true
+            # Only import candidates invoke the handler; other item types in the table are skipped.
+            # Filters on the key, since REMOVE records have no NewImage.
+            FilterCriteria:
+              Filters:
+                - Pattern: '{"dynamodb": {"Keys": {"PK0": {"S": [{"prefix": "ImportCandidate:"}]}}}}'
 
   UpdateDoiStatusHandlerFunction:
     DependsOn: EventsLambdaManagedPolicy
