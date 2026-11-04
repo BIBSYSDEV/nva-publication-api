@@ -5,7 +5,6 @@ import static nva.commons.core.attempt.Try.attempt;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.resilience4j.core.IntervalFunction;
-import io.github.resilience4j.decorators.Decorators;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
@@ -57,10 +56,8 @@ public class HandleService {
     var retryWithDefaultConfig = createRetryConfig();
 
     Supplier<T> decoratedSupplier =
-        Decorators.ofSupplier(action)
-            .withRateLimiter(rateLimiter)
-            .withRetry(retryWithDefaultConfig)
-            .decorate();
+        Retry.decorateSupplier(
+            retryWithDefaultConfig, RateLimiter.decorateSupplier(rateLimiter, action));
 
     return Try.ofSupplier(decoratedSupplier).get();
   }

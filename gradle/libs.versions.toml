@@ -1,6 +1,6 @@
 [versions]
 apache-bval = { strictly = '3.1.0' }
-apacheCommonsCollections = { strictly = '4.5.0' }
+apacheCommonsCollections = { strictly = '4.6.0' }
 apacheCommonsText = { strictly = '1.15.0' }
 aws-lambda-events-sdk-transformer = { strictly = '3.1.1' }
 glassfish-jakarta-json = { strictly = '2.0.1' }
@@ -15,7 +15,7 @@ pdfbox = { strictly = '3.0.8' }
 reflections = { strictly = '0.10.2' }
 jaxb-ri = { strictly = '4.0.9' }
 swaggerCoreVersion = { strictly = '2.2.53' }
-tika = { strictly = '3.3.2' }
+tika = { strictly = '3.3.3' }
 titanium-json-ld = { strictly = '1.7.0' }
 
 [libraries]
