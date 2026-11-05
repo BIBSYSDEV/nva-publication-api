@@ -114,6 +114,10 @@ final class ScopusMappingFixtures {
     return changedItem;
   }
 
+  static Stream<Arguments> malformedCurrentItems() {
+    return Stream.concat(malformedAuthorItems(), malformedAffiliationItems());
+  }
+
   static Stream<Arguments> malformedAuthorItems() {
     var authorItem = toCurrentItem(migratedAuthorMapping(SCOPUS_AUTHOR_ID));
     return Stream.concat(
