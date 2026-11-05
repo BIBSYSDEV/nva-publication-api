@@ -1,5 +1,6 @@
 package no.unit.nva.publication.scopusmapping;
 
+import static java.util.Collections.emptyList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static no.unit.nva.publication.model.business.StorageModelConfig.dynamoDbObjectMapper;
@@ -7,7 +8,9 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.List;
@@ -27,7 +30,13 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
  */
 final class ScopusMappingItems {
 
+  static final String HISTORY_SORT_KEY_PREFIX = "HISTORY#";
   static final String REVISION = "revision";
+  private static final String HISTORY_SORT_KEY_SEPARATOR = "#";
+  private static final String SCOPUS_PUBLICATION_ID = "scopusPublicationId";
+  private static final String CANDIDATES = "candidates";
+  private static final TypeReference<List<Map<String, String>>> CANDIDATES_TYPE =
+      new TypeReference<>() {};
   private static final String AUTHOR_PARTITION_KEY_PREFIX = "AUTHOR#SCOPUS#";
   private static final String AFFILIATION_PARTITION_KEY_PREFIX = "AFFILIATION#SCOPUS#";
   private static final String CURRENT_SORT_KEY = "CURRENT";
@@ -87,6 +96,32 @@ final class ScopusMappingItems {
 
   static Map<String, AttributeValue> toCurrentItem(ScopusAuthorMapping mapping) {
     return toAttributeValues(authorJson(mapping, CURRENT_SORT_KEY));
+  }
+
+  static Map<String, AttributeValue> toHistoryItem(
+      ScopusAuthorMapping mapping, ScopusCorrectionContext correctionContext) {
+    var json = authorJson(mapping, historySortKey(mapping.updatedAt(), mapping.revision()));
+    json.setAll(dynamoDbObjectMapper.<ObjectNode>valueToTree(correctionContext));
+    return toAttributeValues(json);
+  }
+
+  /**
+   * Reads a {@code HISTORY} item. The values of the PIA candidates are read as text, whether they
+   * are stored as strings, numbers or booleans.
+   */
+  static <T> ScopusMappingHistoryEntry<T> toHistoryEntry(
+      Map<String, AttributeValue> item, Function<Map<String, AttributeValue>, T> mappingReader) {
+    var json = toJson(item);
+    var correctionContext =
+        json.has(SCOPUS_PUBLICATION_ID)
+            ? dynamoDbObjectMapper.convertValue(json, ScopusCorrectionContext.class)
+            : null;
+    List<Map<String, String>> candidates =
+        json.has(CANDIDATES)
+            ? dynamoDbObjectMapper.convertValue(json.get(CANDIDATES), CANDIDATES_TYPE)
+            : emptyList();
+    return new ScopusMappingHistoryEntry<>(
+        mappingReader.apply(item), correctionContext, candidates);
   }
 
   static ScopusAuthorMapping toAuthorMapping(Map<String, AttributeValue> item) {
@@ -195,6 +230,13 @@ final class ScopusMappingItems {
         AttributeValue.fromS(partitionKey),
         PRIMARY_KEY_SORT_KEY_NAME,
         AttributeValue.fromS(CURRENT_SORT_KEY));
+  }
+
+  private static String historySortKey(Instant updatedAt, int revision) {
+    return HISTORY_SORT_KEY_PREFIX
+        + TIMESTAMP_FORMAT.format(updatedAt)
+        + HISTORY_SORT_KEY_SEPARATOR
+        + revision;
   }
 
   private static ObjectNode authorJson(ScopusAuthorMapping mapping, String sortKey) {
