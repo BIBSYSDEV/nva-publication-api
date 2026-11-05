@@ -16,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -46,7 +47,8 @@ class ScopusIdentifierMappingRepositoryWithMockedClientTest {
   @BeforeEach
   void setUp() {
     client = mock(DynamoDbClient.class);
-    repository = new ScopusIdentifierMappingRepository(client, TABLE_NAME, Duration.ZERO);
+    repository =
+        new ScopusIdentifierMappingRepository(client, TABLE_NAME, Clock.systemUTC(), Duration.ZERO);
   }
 
   @Test
