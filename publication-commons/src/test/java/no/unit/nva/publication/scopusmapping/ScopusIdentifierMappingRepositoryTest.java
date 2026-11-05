@@ -3,6 +3,7 @@ package no.unit.nva.publication.scopusmapping;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.CURATOR_USERNAME;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.FIXTURES;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.MIGRATED_AT;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.SCOPUS_AUTHOR_ID;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.TABLE_NAME;
@@ -10,6 +11,7 @@ import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.curato
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.migratedAuthorMapping;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.with;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.without;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.authorPartitionKey;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toCurrentItem;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toHistoryItem;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingSource.CURATOR;
@@ -48,6 +50,7 @@ class ScopusIdentifierMappingRepositoryTest extends ResourcesLocalTest {
   private static final String OTHER_SCOPUS_AUTHOR_ID = "99999990202";
   private static final String CRISTIN_PERSON_ID = "cristinPersonId";
   private static final String CANDIDATES = "candidates";
+  private static final String REVISION = "revision";
   private static final ScopusCorrectionContext FIRST_CONTEXT =
       new ScopusCorrectionContext("2-s2.0-85200000010", 1);
   private static final ScopusCorrectionContext SECOND_CONTEXT =
@@ -337,6 +340,45 @@ class ScopusIdentifierMappingRepositoryTest extends ResourcesLocalTest {
                 "candidates that are not a list",
                 with(secondVersion, CANDIDATES, fromS("not a list"))),
             "Cannot deserialize"));
+  }
+
+  @ParameterizedTest
+  @MethodSource(FIXTURES + "#malformedAuthorItemsWithReadableRevision")
+  void shouldReplaceMalformedMappingKeepingItsScopusNameAndOrcidWhenCallerExpectsNoMapping(
+      Map<String, AttributeValue> malformedItem, String expectedReason)
+      throws ScopusMappingConflictException {
+    var logRecorder = LogRecorder.forClass(ScopusMappingItems.class);
+    var mappingBeforeItWasMalformed = migratedAuthorMapping(SCOPUS_AUTHOR_ID);
+    putItem(malformedItem);
+
+    var savedMapping =
+        repository.saveCristinPersonId(
+            SCOPUS_AUTHOR_ID, SECOND_PERSON, SECOND_CONTEXT, CURATOR_USERNAME, Optional.empty());
+
+    assertThat(savedMapping.cristinPersonId()).isEqualTo(SECOND_PERSON);
+    assertThat(savedMapping.revision()).isEqualTo(mappingBeforeItWasMalformed.revision() + 1);
+    assertThat(savedMapping.scopusName()).isEqualTo(mappingBeforeItWasMalformed.scopusName());
+    assertThat(savedMapping.orcid()).isEqualTo(mappingBeforeItWasMalformed.orcid());
+    assertThat(fetchCurrentAuthorMapping()).contains(savedMapping);
+    assertThat(logRecorder.messages()).singleElement().asString().contains(expectedReason);
+  }
+
+  @Test
+  void shouldFailNamingTheItemWithoutWritingWhenMalformedMappingHasNoReadableRevision() {
+    putItem(with(toCurrentItem(migratedAuthorMapping(SCOPUS_AUTHOR_ID)), REVISION, fromS("1")));
+
+    assertThatThrownBy(
+            () ->
+                repository.saveCristinPersonId(
+                    SCOPUS_AUTHOR_ID,
+                    SECOND_PERSON,
+                    SECOND_CONTEXT,
+                    CURATOR_USERNAME,
+                    Optional.empty()))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining(authorPartitionKey(SCOPUS_AUTHOR_ID))
+        .hasMessageContaining(REVISION);
+    assertThat(repository.fetchAuthorMappingHistory(SCOPUS_AUTHOR_ID)).isEmpty();
   }
 
   private static ScopusAuthorMapping curatorMapping(String cristinPersonId, int revision) {

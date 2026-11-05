@@ -32,6 +32,8 @@ final class ScopusMappingItems {
 
   static final String HISTORY_SORT_KEY_PREFIX = "HISTORY#";
   static final String REVISION = "revision";
+  static final String SCOPUS_NAME = "scopusName";
+  static final String ORCID = "orcid";
   private static final String HISTORY_SORT_KEY_SEPARATOR = "#";
   private static final String SCOPUS_PUBLICATION_ID = "scopusPublicationId";
   private static final String CANDIDATES = "candidates";
@@ -148,6 +150,11 @@ final class ScopusMappingItems {
    */
   static int revisionOf(Map<String, AttributeValue> item) {
     return revisionOf(toJson(item));
+  }
+
+  /** The text of an attribute, or null when the item has no such text attribute. */
+  static String textOf(Map<String, AttributeValue> item, String attributeName) {
+    return Optional.ofNullable(item.get(attributeName)).map(AttributeValue::s).orElse(null);
   }
 
   /** Parses an item, or logs it as malformed and returns empty. */

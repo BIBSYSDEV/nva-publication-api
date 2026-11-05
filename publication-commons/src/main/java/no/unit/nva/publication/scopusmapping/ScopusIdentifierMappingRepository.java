@@ -2,6 +2,7 @@ package no.unit.nva.publication.scopusmapping;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingIds.requireNumericId;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.HISTORY_SORT_KEY_PREFIX;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.REVISION;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.affiliationPartitionKey;
@@ -25,18 +26,21 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.CancellationReason;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes;
 import software.amazon.awssdk.services.dynamodb.model.Put;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
 
 /**
  * Scopus id mappings (AUID to Cristin person, AFID to Cristin institution and unit), stored as
@@ -47,6 +51,8 @@ public class ScopusIdentifierMappingRepository {
   static final int MAX_BATCH_GET_RETRIES = 6;
   private static final int MAX_KEYS_PER_BATCH_GET = 100;
   private static final Duration DEFAULT_INITIAL_BACKOFF = Duration.ofMillis(50);
+  private static final Set<String> CONCURRENT_CHANGE_CANCELLATION_CODES =
+      Set.of("ConditionalCheckFailed", "TransactionConflict");
   private static final String REVISION_NAME_PLACEHOLDER = "#revision";
   private static final String PARTITION_KEY_VALUE_PLACEHOLDER = ":partitionKey";
   private static final String HISTORY_PREFIX_VALUE_PLACEHOLDER = ":historyPrefix";
@@ -108,14 +114,16 @@ public class ScopusIdentifierMappingRepository {
 
   /**
    * Maps a Scopus author id to a Cristin person, as a curator correction. The stored mapping must
-   * have {@code expectedRevision}, or, when it is empty, there must be no mapping (a deleted
-   * mapping counts as none). A new {@code HISTORY} item is written and {@code CURRENT} replaced in
-   * one transaction, conditioned on the same revision. Saving the person the author is already
-   * mapped to is a confirmation: it writes a new version like any other correction, which clears
-   * {@code needsReview}.
+   * have {@code expectedRevision}, or, when it is empty, there must be no mapping (a deleted or
+   * malformed mapping counts as none, and is replaced). A new {@code HISTORY} item is written and
+   * {@code CURRENT} replaced in one transaction, conditioned on the same revision. Saving the
+   * person the author is already mapped to is a confirmation: it writes a new version like any
+   * other correction, which clears {@code needsReview}.
    *
    * @throws ScopusMappingConflictException if the stored mapping does not have the expected
-   *     revision
+   *     revision, or changes before the write
+   * @throws IllegalStateException if the stored mapping has no readable revision to condition the
+   *     write on, which is a fault in the stored data that no retry can fix
    */
   public ScopusAuthorMapping saveCristinPersonId(
       String scopusAuthorId,
@@ -124,6 +132,11 @@ public class ScopusIdentifierMappingRepository {
       String username,
       Optional<Integer> expectedRevision)
       throws ScopusMappingConflictException {
+    requireNumericId(scopusAuthorId, "scopusAuthorId");
+    requireNumericId(cristinPersonId, "cristinPersonId");
+    requireNonNull(correctionContext, "correctionContext");
+    requireNonNull(username, "username");
+    requireNonNull(expectedRevision, "expectedRevision");
     var storedMapping = fetchStoredAuthorMapping(scopusAuthorId);
     if (!storedMapping.hasExpectedRevision(expectedRevision)) {
       throw new ScopusMappingConflictException(
@@ -179,6 +192,17 @@ public class ScopusIdentifierMappingRepository {
     return ids.stream().map(id -> requireNonNull(id, name + " must not contain null")).distinct();
   }
 
+  /**
+   * A failed condition means the mapping changed after it was read. A transaction conflict means
+   * another write to the same items was in progress. Both are a concurrent change to the caller.
+   */
+  private static boolean isCancelledByConcurrentChange(TransactionCanceledException exception) {
+    return exception.hasCancellationReasons()
+        && exception.cancellationReasons().stream()
+            .map(CancellationReason::code)
+            .anyMatch(CONCURRENT_CHANGE_CANCELLATION_CODES::contains);
+  }
+
   /** Reads one batch of keys, asking again for the keys DynamoDB leaves unprocessed. */
   private List<Map<String, AttributeValue>> fetchConsistently(
       List<Map<String, AttributeValue>> keys) {
@@ -227,9 +251,8 @@ public class ScopusIdentifierMappingRepository {
   }
 
   private void writeNewVersion(
-      ScopusAuthorMapping mapping,
-      ScopusCorrectionContext correctionContext,
-      int replacedRevision) {
+      ScopusAuthorMapping mapping, ScopusCorrectionContext correctionContext, int replacedRevision)
+      throws ScopusMappingConflictException {
     var historyPut = putIfItemDoesNotExist(toHistoryItem(mapping, correctionContext));
     var currentPut =
         replacedRevision == NO_REVISION
@@ -241,7 +264,17 @@ public class ScopusIdentifierMappingRepository {
                 TransactWriteItem.builder().put(historyPut).build(),
                 TransactWriteItem.builder().put(currentPut).build())
             .build();
-    client.transactWriteItems(request);
+    try {
+      client.transactWriteItems(request);
+    } catch (TransactionCanceledException exception) {
+      if (isCancelledByConcurrentChange(exception)) {
+        throw new ScopusMappingConflictException(
+            "Scopus author mapping %s changed while revision %d was being written"
+                .formatted(mapping.scopusAuthorId(), mapping.revision()),
+            exception);
+      }
+      throw exception;
+    }
   }
 
   private Put putIfItemDoesNotExist(Map<String, AttributeValue> item) {
