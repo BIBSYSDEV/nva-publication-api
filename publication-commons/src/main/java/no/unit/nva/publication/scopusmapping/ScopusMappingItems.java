@@ -2,15 +2,22 @@ package no.unit.nva.publication.scopusmapping;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
+import static nva.commons.core.attempt.Try.attempt;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
@@ -42,6 +49,7 @@ final class ScopusMappingItems {
   private static final DateTimeFormatter TIMESTAMP_FORMAT =
       new DateTimeFormatterBuilder().appendInstant(MILLISECOND_DIGITS).toFormatter();
   private static final String UNKNOWN_PARTITION_KEY = "without " + PRIMARY_KEY_PARTITION_KEY_NAME;
+  private static final Logger logger = LoggerFactory.getLogger(ScopusMappingItems.class);
 
   private ScopusMappingItems() {}
 
@@ -59,6 +67,28 @@ final class ScopusMappingItems {
 
   static Map<String, AttributeValue> affiliationCurrentKey(String scopusAffiliationId) {
     return currentKey(affiliationPartitionKey(scopusAffiliationId));
+  }
+
+  /**
+   * Turns the {@code CURRENT} items of a batch read into mappings, leaving out deleted ones. The
+   * key decides whether an item is an author or an affiliation mapping. A malformed item is logged
+   * and left out, so one bad item does not hide the other mappings of a Scopus record.
+   */
+  static ScopusMappings toCurrentMappings(List<Map<String, AttributeValue>> currentItems) {
+    var authorMappings =
+        currentItems.stream()
+            .filter(ScopusMappingItems::hasAuthorPartitionKey)
+            .flatMap(item -> toAuthorMappingOrLog(item).stream())
+            .filter(mapping -> !mapping.deleted())
+            .collect(toMap(ScopusAuthorMapping::scopusAuthorId, identity()));
+    var affiliationMappings =
+        currentItems.stream()
+            .filter(item -> !hasAuthorPartitionKey(item))
+            .flatMap(
+                item -> parseOrLogAndSkip(item, ScopusMappingItems::toAffiliationMapping).stream())
+            .filter(mapping -> !mapping.deleted())
+            .collect(toMap(ScopusAffiliationMapping::scopusAffiliationId, identity()));
+    return new ScopusMappings(authorMappings, affiliationMappings);
   }
 
   static Map<String, AttributeValue> toCurrentItem(ScopusAuthorMapping mapping) {
@@ -101,8 +131,30 @@ final class ScopusMappingItems {
         isTrue(item, DELETED));
   }
 
+  /** Parses an author item, or logs it as malformed and returns empty. */
+  static Optional<ScopusAuthorMapping> toAuthorMappingOrLog(Map<String, AttributeValue> item) {
+    return parseOrLogAndSkip(item, ScopusMappingItems::toAuthorMapping);
+  }
+
   static int revisionOf(Map<String, AttributeValue> item) {
     return requiredInteger(item, REVISION);
+  }
+
+  private static boolean hasAuthorPartitionKey(Map<String, AttributeValue> item) {
+    return partitionKeyOf(item).startsWith(AUTHOR_PARTITION_KEY_PREFIX);
+  }
+
+  private static <T> Optional<T> parseOrLogAndSkip(
+      Map<String, AttributeValue> item, Function<Map<String, AttributeValue>, T> parser) {
+    return attempt(() -> parser.apply(item))
+        .toOptional(failure -> logMalformedItem(item, failure.getException()));
+  }
+
+  private static void logMalformedItem(Map<String, AttributeValue> item, Exception exception) {
+    logger.error(
+        "Treating malformed Scopus mapping item {} as no mapping: {}",
+        partitionKeyOf(item),
+        exception.getMessage());
   }
 
   private static void requireType(Map<String, AttributeValue> item, String expectedType) {
