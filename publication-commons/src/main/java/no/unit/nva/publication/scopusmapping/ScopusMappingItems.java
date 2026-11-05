@@ -1,13 +1,16 @@
 package no.unit.nva.publication.scopusmapping;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
@@ -21,8 +24,11 @@ final class ScopusMappingItems {
   private static final String AFFILIATION_PARTITION_KEY_PREFIX = "AFFILIATION#SCOPUS#";
   private static final String CURRENT_SORT_KEY = "CURRENT";
   private static final String AUTHOR_MAPPING_TYPE = "ScopusAuthorMapping";
+  private static final String AFFILIATION_MAPPING_TYPE = "ScopusAffiliationMapping";
   private static final String TYPE = "type";
   private static final String CRISTIN_PERSON_ID = "cristinPersonId";
+  private static final String CRISTIN_INSTITUTION_ID = "cristinInstitutionId";
+  private static final String CRISTIN_UNIT_ID = "cristinUnitId";
   private static final String SCOPUS_NAME = "scopusName";
   private static final String ORCID = "orcid";
   private static final String MAPPING_COUNT = "mappingCount";
@@ -35,6 +41,7 @@ final class ScopusMappingItems {
   private static final int MILLISECOND_DIGITS = 3;
   private static final DateTimeFormatter TIMESTAMP_FORMAT =
       new DateTimeFormatterBuilder().appendInstant(MILLISECOND_DIGITS).toFormatter();
+  private static final String UNKNOWN_PARTITION_KEY = "without " + PRIMARY_KEY_PARTITION_KEY_NAME;
 
   private ScopusMappingItems() {}
 
@@ -58,6 +65,53 @@ final class ScopusMappingItems {
     var item = authorAttributes(mapping);
     item.put(PRIMARY_KEY_SORT_KEY_NAME, AttributeValue.fromS(CURRENT_SORT_KEY));
     return item;
+  }
+
+  static ScopusAuthorMapping toAuthorMapping(Map<String, AttributeValue> item) {
+    requireType(item, AUTHOR_MAPPING_TYPE);
+    return new ScopusAuthorMapping(
+        idFromPartitionKey(item, AUTHOR_PARTITION_KEY_PREFIX),
+        requiredString(item, CRISTIN_PERSON_ID),
+        optionalString(item, SCOPUS_NAME),
+        optionalString(item, ORCID),
+        optionalInteger(item, MAPPING_COUNT),
+        optionalInteger(item, TOTAL_MAPPING_COUNT),
+        isTrue(item, NEEDS_REVIEW),
+        ScopusMappingSource.valueOf(requiredString(item, SOURCE)),
+        Instant.parse(requiredString(item, UPDATED_AT)),
+        requiredString(item, UPDATED_BY),
+        revisionOf(item),
+        isTrue(item, DELETED));
+  }
+
+  static ScopusAffiliationMapping toAffiliationMapping(Map<String, AttributeValue> item) {
+    requireType(item, AFFILIATION_MAPPING_TYPE);
+    return new ScopusAffiliationMapping(
+        idFromPartitionKey(item, AFFILIATION_PARTITION_KEY_PREFIX),
+        requiredString(item, CRISTIN_INSTITUTION_ID),
+        requiredString(item, CRISTIN_UNIT_ID),
+        optionalString(item, SCOPUS_NAME),
+        optionalInteger(item, MAPPING_COUNT),
+        optionalInteger(item, TOTAL_MAPPING_COUNT),
+        isTrue(item, NEEDS_REVIEW),
+        ScopusMappingSource.valueOf(requiredString(item, SOURCE)),
+        Instant.parse(requiredString(item, UPDATED_AT)),
+        requiredString(item, UPDATED_BY),
+        revisionOf(item),
+        isTrue(item, DELETED));
+  }
+
+  static int revisionOf(Map<String, AttributeValue> item) {
+    return requiredInteger(item, REVISION);
+  }
+
+  private static void requireType(Map<String, AttributeValue> item, String expectedType) {
+    var type = requiredString(item, TYPE);
+    if (!expectedType.equals(type)) {
+      throw new IllegalArgumentException(
+          "Scopus mapping item %s has type %s, not %s"
+              .formatted(partitionKeyOf(item), type, expectedType));
+    }
   }
 
   private static Map<String, AttributeValue> currentKey(String partitionKey) {
@@ -111,5 +165,87 @@ final class ScopusMappingItems {
 
   private static AttributeValue number(int value) {
     return AttributeValue.fromN(String.valueOf(value));
+  }
+
+  private static String idFromPartitionKey(Map<String, AttributeValue> item, String prefix) {
+    var partitionKey = requiredString(item, PRIMARY_KEY_PARTITION_KEY_NAME);
+    if (!partitionKey.startsWith(prefix)) {
+      throw new IllegalArgumentException(
+          "Scopus mapping item %s does not start with %s".formatted(partitionKey, prefix));
+    }
+    return partitionKey.substring(prefix.length());
+  }
+
+  private static boolean isTrue(Map<String, AttributeValue> item, String attributeName) {
+    return attributeOfType(item, attributeName, AttributeValue.Type.BOOL)
+        .map(AttributeValue::bool)
+        .orElse(false);
+  }
+
+  private static Integer optionalInteger(Map<String, AttributeValue> item, String attributeName) {
+    return attributeOfType(item, attributeName, AttributeValue.Type.N)
+        .map(attribute -> parseInteger(item, attributeName, attribute.n()))
+        .orElse(null);
+  }
+
+  private static int requiredInteger(Map<String, AttributeValue> item, String attributeName) {
+    return parseInteger(
+        item,
+        attributeName,
+        requiredAttributeOfType(item, attributeName, AttributeValue.Type.N).n());
+  }
+
+  private static String optionalString(Map<String, AttributeValue> item, String attributeName) {
+    return attributeOfType(item, attributeName, AttributeValue.Type.S)
+        .map(AttributeValue::s)
+        .orElse(null);
+  }
+
+  private static String requiredString(Map<String, AttributeValue> item, String attributeName) {
+    return requiredAttributeOfType(item, attributeName, AttributeValue.Type.S).s();
+  }
+
+  private static AttributeValue requiredAttributeOfType(
+      Map<String, AttributeValue> item, String attributeName, AttributeValue.Type expectedType) {
+    return attributeOfType(item, attributeName, expectedType)
+        .orElseThrow(() -> missingAttribute(item, attributeName));
+  }
+
+  private static Optional<AttributeValue> attributeOfType(
+      Map<String, AttributeValue> item, String attributeName, AttributeValue.Type expectedType) {
+    var attribute = item.get(attributeName);
+    if (isNull(attribute)) {
+      return Optional.empty();
+    }
+    if (attribute.type() != expectedType) {
+      throw new IllegalArgumentException(
+          "Scopus mapping item %s has %s of type %s, not %s"
+              .formatted(partitionKeyOf(item), attributeName, attribute.type(), expectedType));
+    }
+    return Optional.of(attribute);
+  }
+
+  private static int parseInteger(
+      Map<String, AttributeValue> item, String attributeName, String number) {
+    try {
+      return Integer.parseInt(number);
+    } catch (NumberFormatException exception) {
+      throw new IllegalArgumentException(
+          "Scopus mapping item %s has %s %s, which is not an integer"
+              .formatted(partitionKeyOf(item), attributeName, number),
+          exception);
+    }
+  }
+
+  private static IllegalArgumentException missingAttribute(
+      Map<String, AttributeValue> item, String attributeName) {
+    return new IllegalArgumentException(
+        "Scopus mapping item %s has no %s".formatted(partitionKeyOf(item), attributeName));
+  }
+
+  private static String partitionKeyOf(Map<String, AttributeValue> item) {
+    return Optional.ofNullable(item.get(PRIMARY_KEY_PARTITION_KEY_NAME))
+        .map(AttributeValue::s)
+        .orElse(UNKNOWN_PARTITION_KEY);
   }
 }
