@@ -2,6 +2,7 @@ package no.unit.nva.publication.scopusmapping;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingIds.requireNumericId;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.HISTORY_SORT_KEY_PREFIX;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.REVISION;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.affiliationPartitionKey;
@@ -28,12 +29,14 @@ import java.util.stream.Stream;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.CancellationReason;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes;
 import software.amazon.awssdk.services.dynamodb.model.Put;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
 
 /**
  * Scopus id mappings (AUID to Cristin person, AFID to Cristin institution and unit), stored as
@@ -46,6 +49,7 @@ public class ScopusIdentifierMappingRepository {
   private static final Duration DEFAULT_INITIAL_BACKOFF = Duration.ofMillis(50);
   private static final Duration MAX_BACKOFF = Duration.ofSeconds(2);
   private static final int NO_REVISION = 0;
+  private static final String CONDITIONAL_CHECK_FAILED = "ConditionalCheckFailed";
   private static final String PARTITION_KEY_NAME_PLACEHOLDER = "#partitionKey";
   private static final String SORT_KEY_NAME_PLACEHOLDER = "#sortKey";
   private static final String REVISION_NAME_PLACEHOLDER = "#revision";
@@ -111,13 +115,14 @@ public class ScopusIdentifierMappingRepository {
 
   /**
    * Maps a Scopus author id to a Cristin person, as a curator correction. The stored mapping must
-   * have {@code expectedRevision}, or, when it is empty, there must be no mapping (a deleted
-   * mapping counts as none). If the author is already mapped to the person, nothing is written and
-   * the stored mapping is returned. Otherwise a new {@code HISTORY} item is written and {@code
-   * CURRENT} replaced in one transaction, conditioned on the same revision.
+   * have {@code expectedRevision}, or, when it is empty, there must be no mapping (a deleted or
+   * malformed mapping counts as none, and is replaced). If the author is already mapped to the
+   * person, nothing is written and the stored mapping is returned. Otherwise a new {@code HISTORY}
+   * item is written and {@code CURRENT} replaced in one transaction, conditioned on the same
+   * revision.
    *
    * @throws ScopusMappingConflictException if the stored mapping does not have the expected
-   *     revision
+   *     revision, changes before the write, or is malformed without a readable revision
    */
   public ScopusAuthorMapping saveCristinPersonId(
       String scopusAuthorId,
@@ -126,6 +131,11 @@ public class ScopusIdentifierMappingRepository {
       String username,
       Optional<Integer> expectedRevision)
       throws ScopusMappingConflictException {
+    requireNumericId(scopusAuthorId, "scopusAuthorId");
+    requireNumericId(cristinPersonId, "cristinPersonId");
+    requireNonNull(correctionContext, "correctionContext");
+    requireNonNull(username, "username");
+    requireNonNull(expectedRevision, "expectedRevision");
     var storedMapping = fetchStoredAuthorMapping(scopusAuthorId);
     if (!storedMapping.hasExpectedRevision(expectedRevision)) {
       throw new ScopusMappingConflictException(
@@ -166,6 +176,13 @@ public class ScopusIdentifierMappingRepository {
     return ids.stream().filter(Objects::nonNull).distinct();
   }
 
+  private static boolean isConditionalCheckFailure(TransactionCanceledException exception) {
+    return exception.hasCancellationReasons()
+        && exception.cancellationReasons().stream()
+            .map(CancellationReason::code)
+            .anyMatch(CONDITIONAL_CHECK_FAILED::equals);
+  }
+
   private List<Map<String, AttributeValue>> fetchConsistently(
       List<Map<String, AttributeValue>> keys) {
     var keysWithConsistentRead =
@@ -202,7 +219,8 @@ public class ScopusIdentifierMappingRepository {
     }
   }
 
-  private StoredAuthorMapping fetchStoredAuthorMapping(String scopusAuthorId) {
+  private StoredAuthorMapping fetchStoredAuthorMapping(String scopusAuthorId)
+      throws ScopusMappingConflictException {
     var response =
         client.getItem(
             GetItemRequest.builder()
@@ -239,7 +257,8 @@ public class ScopusIdentifierMappingRepository {
   private void writeNewVersion(
       ScopusAuthorMapping mapping,
       ScopusCorrectionContext correctionContext,
-      Optional<Integer> replacedRevision) {
+      Optional<Integer> replacedRevision)
+      throws ScopusMappingConflictException {
     var historyPut = putIfItemDoesNotExist(toHistoryItem(mapping, correctionContext));
     var currentPut =
         replacedRevision
@@ -251,7 +270,17 @@ public class ScopusIdentifierMappingRepository {
                 TransactWriteItem.builder().put(historyPut).build(),
                 TransactWriteItem.builder().put(currentPut).build())
             .build();
-    client.transactWriteItems(request);
+    try {
+      client.transactWriteItems(request);
+    } catch (TransactionCanceledException exception) {
+      if (isConditionalCheckFailure(exception)) {
+        throw new ScopusMappingConflictException(
+            "Scopus author mapping %s changed while revision %d was being written"
+                .formatted(mapping.scopusAuthorId(), mapping.revision()),
+            exception);
+      }
+      throw exception;
+    }
   }
 
   private Put putIfItemDoesNotExist(Map<String, AttributeValue> item) {

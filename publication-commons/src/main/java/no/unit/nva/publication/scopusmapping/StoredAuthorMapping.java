@@ -1,21 +1,25 @@
 package no.unit.nva.publication.scopusmapping;
 
-import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toAuthorMapping;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.revisionOf;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toAuthorMappingOrLog;
 
 import java.util.Map;
 import java.util.Optional;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-/** The stored {@code CURRENT} item of an author mapping, as the write path sees it. */
+/**
+ * The stored {@code CURRENT} item of an author mapping, as the write path sees it. A malformed item
+ * counts as no mapping, like a deleted one, so a curator correction replaces it; its revision still
+ * guards that write.
+ */
 record StoredAuthorMapping(Optional<ScopusAuthorMapping> mapping, Optional<Integer> revision) {
 
   static final StoredAuthorMapping NONE =
       new StoredAuthorMapping(Optional.empty(), Optional.empty());
 
-  static StoredAuthorMapping fromItem(Map<String, AttributeValue> item) {
-    var storedMapping = toAuthorMapping(item);
-    return new StoredAuthorMapping(
-        Optional.of(storedMapping), Optional.of(storedMapping.revision()));
+  static StoredAuthorMapping fromItem(Map<String, AttributeValue> item)
+      throws ScopusMappingConflictException {
+    return new StoredAuthorMapping(toAuthorMappingOrLog(item), Optional.of(readableRevision(item)));
   }
 
   /** An empty expected revision means the caller saw no mapping: there must be no live one. */
@@ -32,5 +36,16 @@ record StoredAuthorMapping(Optional<ScopusAuthorMapping> mapping, Optional<Integ
 
   private Optional<ScopusAuthorMapping> liveMapping() {
     return mapping.filter(storedMapping -> !storedMapping.deleted());
+  }
+
+  private static int readableRevision(Map<String, AttributeValue> item)
+      throws ScopusMappingConflictException {
+    try {
+      return revisionOf(item);
+    } catch (IllegalArgumentException exception) {
+      throw new ScopusMappingConflictException(
+          "Malformed Scopus author mapping can't be replaced: " + exception.getMessage(),
+          exception);
+    }
   }
 }
