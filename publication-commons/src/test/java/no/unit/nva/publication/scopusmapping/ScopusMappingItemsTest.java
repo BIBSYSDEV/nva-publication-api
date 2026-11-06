@@ -14,6 +14,7 @@ import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.authorCur
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toAffiliationMapping;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toAuthorMapping;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toCurrentItem;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toCurrentMappings;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingSource.PIA_MIGRATION;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
@@ -26,6 +27,7 @@ import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.from
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -35,6 +37,8 @@ class ScopusMappingItemsTest {
 
   private static final String FIXTURES =
       "no.unit.nva.publication.scopusmapping.ScopusMappingFixtures";
+  private static final String OTHER_AUTHOR_ID = "99999990202";
+  private static final String OTHER_AFFILIATION_ID = "99990202";
   private static final String CURRENT = "CURRENT";
   private static final String DELETED = "deleted";
   private static final String UPDATED_AT = "updatedAt";
@@ -147,6 +151,44 @@ class ScopusMappingItemsTest {
       Map<String, AttributeValue> malformedItem, String expectedReason) {
     assertThatThrownBy(() -> toAffiliationMapping(malformedItem))
         .hasMessageContaining(expectedReason);
+  }
+
+  @Test
+  void shouldTurnCurrentItemsIntoMappingsLeavingOutDeletedOnes() {
+    var authorMapping = migratedAuthorMapping(SCOPUS_AUTHOR_ID);
+    var deletedAuthorItem =
+        with(toCurrentItem(migratedAuthorMapping(OTHER_AUTHOR_ID)), DELETED, fromBool(true));
+    var affiliationItem = affiliationItem(SCOPUS_AFFILIATION_ID, "194", "194.0.0.0");
+
+    var mappings =
+        toCurrentMappings(
+            List.of(toCurrentItem(authorMapping), deletedAuthorItem, affiliationItem));
+
+    assertThat(mappings.authorMappings()).isEqualTo(Map.of(SCOPUS_AUTHOR_ID, authorMapping));
+    assertThat(mappings.authorMapping(OTHER_AUTHOR_ID)).isEmpty();
+    assertThat(mappings.affiliationMapping(SCOPUS_AFFILIATION_ID))
+        .contains(toAffiliationMapping(affiliationItem));
+  }
+
+  @ParameterizedTest
+  @MethodSource(FIXTURES + "#malformedCurrentItems")
+  void shouldLeaveOutAndLogMalformedItemButKeepTheOtherMappings(
+      Map<String, AttributeValue> malformedItem, String expectedReason) {
+    var logRecorder = LogRecorder.forClass(ScopusMappingItems.class);
+    var otherAuthorMapping = migratedAuthorMapping(OTHER_AUTHOR_ID);
+    var otherAffiliationItem = affiliationItem(OTHER_AFFILIATION_ID, "194", "194.0.0.0");
+
+    var mappings =
+        toCurrentMappings(
+            List.of(malformedItem, toCurrentItem(otherAuthorMapping), otherAffiliationItem));
+
+    assertThat(mappings.authorMappings()).isEqualTo(Map.of(OTHER_AUTHOR_ID, otherAuthorMapping));
+    assertThat(mappings.affiliationMappings()).containsOnlyKeys(OTHER_AFFILIATION_ID);
+    assertThat(logRecorder.messages())
+        .singleElement()
+        .asString()
+        .contains(malformedItem.get(PRIMARY_KEY_PARTITION_KEY_NAME).s())
+        .contains(expectedReason);
   }
 
   private static ScopusAuthorMapping curatorMapping(boolean deleted) {
