@@ -1,5 +1,6 @@
 package no.unit.nva.publication.scopusmapping;
 
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.SCOPUS_AUTHOR_ID;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.migratedAuthorMapping;
@@ -10,13 +11,20 @@ import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toHistory
 import static no.unit.nva.publication.scopusmapping.ScopusMappingSource.CURATOR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.fromS;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import nva.commons.apigateway.exceptions.ConflictException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -25,18 +33,202 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 class ScopusIdentifierMappingRepositoryTest extends ResourcesLocalTest {
 
   private static final String TABLE_NAME = "import-candidates";
+  private static final Instant NOW = Instant.parse("2026-11-04T12:00:00.123Z");
+  private static final String FIRST_PERSON = "1001";
+  private static final String SECOND_PERSON = "1002";
+  private static final String THIRD_PERSON = "1003";
+  private static final String CURATOR_USERNAME = "1234567@20754.0.0.0";
   private static final String OTHER_SCOPUS_AUTHOR_ID = "99999990202";
   private static final String CRISTIN_PERSON_ID = "cristinPersonId";
   private static final String CANDIDATES = "candidates";
   private static final ScopusCorrectionContext FIRST_CONTEXT =
       new ScopusCorrectionContext("2-s2.0-85200000010", 1);
+  private static final ScopusCorrectionContext SECOND_CONTEXT =
+      new ScopusCorrectionContext("2-s2.0-85200000011", 2);
+  private static final ScopusCorrectionContext THIRD_CONTEXT =
+      new ScopusCorrectionContext("2-s2.0-85200000012", 3);
 
   private ScopusIdentifierMappingRepository repository;
 
   @BeforeEach
   void setUp() {
     super.init(TABLE_NAME);
-    repository = new ScopusIdentifierMappingRepository(client, TABLE_NAME);
+    repository =
+        new ScopusIdentifierMappingRepository(
+            client, TABLE_NAME, Clock.fixed(NOW, ZoneOffset.UTC), Duration.ZERO);
+  }
+
+  @Test
+  void shouldCreateMappingWhenNoneExists() throws ScopusMappingConflictException {
+    var savedMapping = saveFirstPersonAsNewMapping();
+
+    var expectedMapping = curatorMapping(FIRST_PERSON, 1);
+    assertThat(savedMapping).isEqualTo(expectedMapping);
+    assertThat(fetchCurrentAuthorMapping()).contains(expectedMapping);
+    assertThat(repository.fetchAuthorMappingHistory(SCOPUS_AUTHOR_ID))
+        .containsExactly(
+            new ScopusMappingHistoryEntry<>(expectedMapping, FIRST_CONTEXT, emptyList()));
+  }
+
+  @Test
+  void shouldReplaceMappingWhenExpectedRevisionMatches() throws ScopusMappingConflictException {
+    saveFirstPersonAsNewMapping();
+
+    var savedMapping =
+        repository.saveCristinPersonId(
+            SCOPUS_AUTHOR_ID, SECOND_PERSON, SECOND_CONTEXT, CURATOR_USERNAME, Optional.of(1));
+
+    assertThat(savedMapping).isEqualTo(curatorMapping(SECOND_PERSON, 2));
+    assertThat(fetchCurrentAuthorMapping()).contains(savedMapping);
+  }
+
+  @Test
+  void shouldThrowConflictAndKeepMappingWhenExpectedRevisionIsStale()
+      throws ScopusMappingConflictException {
+    saveFirstPersonAsNewMapping();
+    var currentMapping =
+        repository.saveCristinPersonId(
+            SCOPUS_AUTHOR_ID, SECOND_PERSON, SECOND_CONTEXT, CURATOR_USERNAME, Optional.of(1));
+
+    assertThatThrownBy(
+            () ->
+                repository.saveCristinPersonId(
+                    SCOPUS_AUTHOR_ID,
+                    THIRD_PERSON,
+                    THIRD_CONTEXT,
+                    CURATOR_USERNAME,
+                    Optional.of(1)))
+        .isInstanceOf(ScopusMappingConflictException.class)
+        .hasMessageContaining(SCOPUS_AUTHOR_ID)
+        .asInstanceOf(type(ConflictException.class))
+        .extracting(ConflictException::getStatusCode)
+        .isEqualTo(HTTP_CONFLICT);
+    assertThat(fetchCurrentAuthorMapping()).contains(currentMapping);
+    assertThat(repository.fetchAuthorMappingHistory(SCOPUS_AUTHOR_ID)).hasSize(2);
+  }
+
+  @Test
+  void shouldNotWriteWhenPersonIsUnchanged() throws ScopusMappingConflictException {
+    var storedMapping = saveFirstPersonAsNewMapping();
+
+    var returnedMapping =
+        repository.saveCristinPersonId(
+            SCOPUS_AUTHOR_ID, FIRST_PERSON, SECOND_CONTEXT, "another-curator", Optional.of(1));
+
+    assertThat(returnedMapping).isEqualTo(storedMapping);
+    assertThat(fetchCurrentAuthorMapping()).contains(storedMapping);
+    assertThat(repository.fetchAuthorMappingHistory(SCOPUS_AUTHOR_ID)).hasSize(1);
+  }
+
+  @Test
+  void shouldThrowConflictWhenRevisionIsStaleEvenIfPersonIsUnchanged()
+      throws ScopusMappingConflictException {
+    saveFirstPersonAsNewMapping();
+    repository.saveCristinPersonId(
+        SCOPUS_AUTHOR_ID, SECOND_PERSON, SECOND_CONTEXT, CURATOR_USERNAME, Optional.of(1));
+
+    assertThatThrownBy(
+            () ->
+                repository.saveCristinPersonId(
+                    SCOPUS_AUTHOR_ID,
+                    SECOND_PERSON,
+                    THIRD_CONTEXT,
+                    CURATOR_USERNAME,
+                    Optional.of(1)))
+        .isInstanceOf(ScopusMappingConflictException.class);
+    assertThat(repository.fetchAuthorMappingHistory(SCOPUS_AUTHOR_ID)).hasSize(2);
+  }
+
+  @Test
+  void shouldThrowConflictWhenCallerExpectsNoMappingButPersonIsAlreadyMapped()
+      throws ScopusMappingConflictException {
+    saveFirstPersonAsNewMapping();
+
+    assertThatThrownBy(
+            () ->
+                repository.saveCristinPersonId(
+                    SCOPUS_AUTHOR_ID,
+                    FIRST_PERSON,
+                    SECOND_CONTEXT,
+                    CURATOR_USERNAME,
+                    Optional.empty()))
+        .isInstanceOf(ScopusMappingConflictException.class);
+    assertThat(repository.fetchAuthorMappingHistory(SCOPUS_AUTHOR_ID)).hasSize(1);
+  }
+
+  @Test
+  void shouldAddOneHistoryItemPerWrite() throws ScopusMappingConflictException {
+    saveFirstPersonAsNewMapping();
+    repository.saveCristinPersonId(
+        SCOPUS_AUTHOR_ID, SECOND_PERSON, SECOND_CONTEXT, CURATOR_USERNAME, Optional.of(1));
+    repository.saveCristinPersonId(
+        SCOPUS_AUTHOR_ID, THIRD_PERSON, THIRD_CONTEXT, CURATOR_USERNAME, Optional.of(2));
+
+    assertThat(repository.fetchAuthorMappingHistory(SCOPUS_AUTHOR_ID))
+        .containsExactly(
+            new ScopusMappingHistoryEntry<>(
+                curatorMapping(FIRST_PERSON, 1), FIRST_CONTEXT, emptyList()),
+            new ScopusMappingHistoryEntry<>(
+                curatorMapping(SECOND_PERSON, 2), SECOND_CONTEXT, emptyList()),
+            new ScopusMappingHistoryEntry<>(
+                curatorMapping(THIRD_PERSON, 3), THIRD_CONTEXT, emptyList()));
+  }
+
+  @Test
+  void shouldThrowConflictWhenMappingExistsButCallerExpectsNone()
+      throws ScopusMappingConflictException {
+    saveFirstPersonAsNewMapping();
+
+    assertThatThrownBy(
+            () ->
+                repository.saveCristinPersonId(
+                    SCOPUS_AUTHOR_ID,
+                    SECOND_PERSON,
+                    SECOND_CONTEXT,
+                    CURATOR_USERNAME,
+                    Optional.empty()))
+        .isInstanceOf(ScopusMappingConflictException.class);
+  }
+
+  @Test
+  void shouldThrowConflictWhenCallerExpectsRevisionButNoMappingExists() {
+    assertThatThrownBy(
+            () ->
+                repository.saveCristinPersonId(
+                    SCOPUS_AUTHOR_ID,
+                    FIRST_PERSON,
+                    FIRST_CONTEXT,
+                    CURATOR_USERNAME,
+                    Optional.of(1)))
+        .isInstanceOf(ScopusMappingConflictException.class);
+    assertThat(fetchCurrentAuthorMapping()).isEmpty();
+    assertThat(repository.fetchAuthorMappingHistory(SCOPUS_AUTHOR_ID)).isEmpty();
+  }
+
+  @Test
+  void shouldKeepScopusNameAndOrcidButNotMigrationFieldsWhenCuratorReplacesMigratedMapping()
+      throws ScopusMappingConflictException {
+    putItem(toCurrentItem(migratedAuthorMapping(SCOPUS_AUTHOR_ID)));
+
+    var savedMapping =
+        repository.saveCristinPersonId(
+            SCOPUS_AUTHOR_ID, SECOND_PERSON, SECOND_CONTEXT, CURATOR_USERNAME, Optional.of(1));
+
+    assertThat(savedMapping)
+        .isEqualTo(
+            new ScopusAuthorMapping(
+                SCOPUS_AUTHOR_ID,
+                SECOND_PERSON,
+                "Nordmann, Ola",
+                "0000-0002-1825-0097",
+                null,
+                null,
+                false,
+                CURATOR,
+                NOW,
+                CURATOR_USERNAME,
+                2,
+                false));
   }
 
   @Test
@@ -163,6 +355,33 @@ class ScopusIdentifierMappingRepositoryTest extends ResourcesLocalTest {
     assertThatThrownBy(() -> repository.fetchAuthorMappingHistory(SCOPUS_AUTHOR_ID))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(CRISTIN_PERSON_ID);
+  }
+
+  private static ScopusAuthorMapping curatorMapping(String cristinPersonId, int revision) {
+    return new ScopusAuthorMapping(
+        SCOPUS_AUTHOR_ID,
+        cristinPersonId,
+        null,
+        null,
+        null,
+        null,
+        false,
+        CURATOR,
+        NOW,
+        CURATOR_USERNAME,
+        revision,
+        false);
+  }
+
+  private ScopusAuthorMapping saveFirstPersonAsNewMapping() throws ScopusMappingConflictException {
+    return repository.saveCristinPersonId(
+        SCOPUS_AUTHOR_ID, FIRST_PERSON, FIRST_CONTEXT, CURATOR_USERNAME, Optional.empty());
+  }
+
+  private Optional<ScopusAuthorMapping> fetchCurrentAuthorMapping() {
+    return repository
+        .fetchCurrentMappings(List.of(SCOPUS_AUTHOR_ID), emptyList())
+        .authorMapping(SCOPUS_AUTHOR_ID);
   }
 
   private void putHistoryItemWithCandidates(

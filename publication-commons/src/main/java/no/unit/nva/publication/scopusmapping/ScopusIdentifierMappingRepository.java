@@ -3,26 +3,37 @@ package no.unit.nva.publication.scopusmapping;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.HISTORY_SORT_KEY_PREFIX;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.REVISION;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.affiliationPartitionKey;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.authorCurrentKey;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.authorPartitionKey;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toCurrentItem;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toCurrentMappings;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toHistoryEntry;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toHistoryItem;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes;
+import software.amazon.awssdk.services.dynamodb.model.Put;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
 
 /**
  * Scopus id mappings (AUID to Cristin person, AFID to Cristin institution and unit), stored as
@@ -34,10 +45,17 @@ public class ScopusIdentifierMappingRepository {
   private static final int MAX_BATCH_GET_RETRIES = 7;
   private static final Duration DEFAULT_INITIAL_BACKOFF = Duration.ofMillis(50);
   private static final Duration MAX_BACKOFF = Duration.ofSeconds(2);
+  private static final int NO_REVISION = 0;
   private static final String PARTITION_KEY_NAME_PLACEHOLDER = "#partitionKey";
   private static final String SORT_KEY_NAME_PLACEHOLDER = "#sortKey";
+  private static final String REVISION_NAME_PLACEHOLDER = "#revision";
   private static final String PARTITION_KEY_VALUE_PLACEHOLDER = ":partitionKey";
   private static final String HISTORY_PREFIX_VALUE_PLACEHOLDER = ":historyPrefix";
+  private static final String EXPECTED_REVISION_VALUE_PLACEHOLDER = ":expectedRevision";
+  private static final String ITEM_DOES_NOT_EXIST_CONDITION =
+      "attribute_not_exists(" + PARTITION_KEY_NAME_PLACEHOLDER + ")";
+  private static final String REVISION_MATCHES_CONDITION =
+      REVISION_NAME_PLACEHOLDER + " = " + EXPECTED_REVISION_VALUE_PLACEHOLDER;
   private static final String HISTORY_KEY_CONDITION =
       PARTITION_KEY_NAME_PLACEHOLDER
           + " = "
@@ -49,19 +67,22 @@ public class ScopusIdentifierMappingRepository {
           + ")";
   private static final String INTERRUPTED_MESSAGE =
       "Interrupted while waiting to retry unprocessed keys";
+  private static final String NO_EXPECTED_REVISION = "none";
 
   private final DynamoDbClient client;
   private final String tableName;
+  private final Clock clock;
   private final Duration initialBackoff;
 
   public ScopusIdentifierMappingRepository(DynamoDbClient client, String tableName) {
-    this(client, tableName, DEFAULT_INITIAL_BACKOFF);
+    this(client, tableName, Clock.systemUTC(), DEFAULT_INITIAL_BACKOFF);
   }
 
   ScopusIdentifierMappingRepository(
-      DynamoDbClient client, String tableName, Duration initialBackoff) {
+      DynamoDbClient client, String tableName, Clock clock, Duration initialBackoff) {
     this.client = client;
     this.tableName = tableName;
+    this.clock = clock;
     this.initialBackoff = initialBackoff;
   }
 
@@ -86,6 +107,43 @@ public class ScopusIdentifierMappingRepository {
             .flatMap(batchOfKeys -> fetchConsistently(batchOfKeys).stream())
             .toList();
     return toCurrentMappings(items);
+  }
+
+  /**
+   * Maps a Scopus author id to a Cristin person, as a curator correction. The stored mapping must
+   * have {@code expectedRevision}, or, when it is empty, there must be no mapping (a deleted
+   * mapping counts as none). If the author is already mapped to the person, nothing is written and
+   * the stored mapping is returned. Otherwise a new {@code HISTORY} item is written and {@code
+   * CURRENT} replaced in one transaction, conditioned on the same revision.
+   *
+   * @throws ScopusMappingConflictException if the stored mapping does not have the expected
+   *     revision
+   */
+  public ScopusAuthorMapping saveCristinPersonId(
+      String scopusAuthorId,
+      String cristinPersonId,
+      ScopusCorrectionContext correctionContext,
+      String username,
+      Optional<Integer> expectedRevision)
+      throws ScopusMappingConflictException {
+    var storedMapping = fetchStoredAuthorMapping(scopusAuthorId);
+    if (!storedMapping.hasExpectedRevision(expectedRevision)) {
+      throw new ScopusMappingConflictException(
+          "Scopus author mapping %s is not at the expected revision (%s)"
+              .formatted(
+                  scopusAuthorId,
+                  expectedRevision.map(String::valueOf).orElse(NO_EXPECTED_REVISION)));
+    }
+    var unchangedMapping = storedMapping.liveMappingTo(cristinPersonId);
+    if (unchangedMapping.isPresent()) {
+      return unchangedMapping.get();
+    }
+    var replacedRevision = storedMapping.revision();
+    var newMapping =
+        newCuratorMapping(
+            scopusAuthorId, cristinPersonId, username, storedMapping.mapping(), replacedRevision);
+    writeNewVersion(newMapping, correctionContext, replacedRevision);
+    return newMapping;
   }
 
   /** Returns every written version of an author mapping, oldest first. */
@@ -142,6 +200,81 @@ public class ScopusIdentifierMappingRepository {
       Thread.currentThread().interrupt();
       throw new IllegalStateException(INTERRUPTED_MESSAGE, exception);
     }
+  }
+
+  private StoredAuthorMapping fetchStoredAuthorMapping(String scopusAuthorId) {
+    var response =
+        client.getItem(
+            GetItemRequest.builder()
+                .tableName(tableName)
+                .key(authorCurrentKey(scopusAuthorId))
+                .consistentRead(true)
+                .build());
+    return response.hasItem()
+        ? StoredAuthorMapping.fromItem(response.item())
+        : StoredAuthorMapping.NONE;
+  }
+
+  private ScopusAuthorMapping newCuratorMapping(
+      String scopusAuthorId,
+      String cristinPersonId,
+      String username,
+      Optional<ScopusAuthorMapping> storedMapping,
+      Optional<Integer> replacedRevision) {
+    return new ScopusAuthorMapping(
+        scopusAuthorId,
+        cristinPersonId,
+        storedMapping.map(ScopusAuthorMapping::scopusName).orElse(null),
+        storedMapping.map(ScopusAuthorMapping::orcid).orElse(null),
+        null,
+        null,
+        false,
+        ScopusMappingSource.CURATOR,
+        clock.instant().truncatedTo(ChronoUnit.MILLIS),
+        username,
+        replacedRevision.orElse(NO_REVISION) + 1,
+        false);
+  }
+
+  private void writeNewVersion(
+      ScopusAuthorMapping mapping,
+      ScopusCorrectionContext correctionContext,
+      Optional<Integer> replacedRevision) {
+    var historyPut = putIfItemDoesNotExist(toHistoryItem(mapping, correctionContext));
+    var currentPut =
+        replacedRevision
+            .map(revision -> putIfRevisionMatches(toCurrentItem(mapping), revision))
+            .orElseGet(() -> putIfItemDoesNotExist(toCurrentItem(mapping)));
+    var request =
+        TransactWriteItemsRequest.builder()
+            .transactItems(
+                TransactWriteItem.builder().put(historyPut).build(),
+                TransactWriteItem.builder().put(currentPut).build())
+            .build();
+    client.transactWriteItems(request);
+  }
+
+  private Put putIfItemDoesNotExist(Map<String, AttributeValue> item) {
+    return Put.builder()
+        .tableName(tableName)
+        .item(item)
+        .conditionExpression(ITEM_DOES_NOT_EXIST_CONDITION)
+        .expressionAttributeNames(
+            Map.of(PARTITION_KEY_NAME_PLACEHOLDER, PRIMARY_KEY_PARTITION_KEY_NAME))
+        .build();
+  }
+
+  private Put putIfRevisionMatches(Map<String, AttributeValue> item, int expectedRevision) {
+    return Put.builder()
+        .tableName(tableName)
+        .item(item)
+        .conditionExpression(REVISION_MATCHES_CONDITION)
+        .expressionAttributeNames(Map.of(REVISION_NAME_PLACEHOLDER, REVISION))
+        .expressionAttributeValues(
+            Map.of(
+                EXPECTED_REVISION_VALUE_PLACEHOLDER,
+                AttributeValue.fromN(String.valueOf(expectedRevision))))
+        .build();
   }
 
   /**
