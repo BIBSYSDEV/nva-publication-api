@@ -6,6 +6,7 @@ import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.SCOPUS
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.migratedAuthorMapping;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.with;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.without;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.authorPartitionKey;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toCurrentItem;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toHistoryItem;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingSource.CURATOR;
@@ -25,13 +26,18 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 class ScopusIdentifierMappingRepositoryTest extends ResourcesLocalTest {
 
+  private static final String FIXTURES =
+      "no.unit.nva.publication.scopusmapping.ScopusMappingFixtures";
   private static final String TABLE_NAME = "import-candidates";
   private static final Instant NOW = Instant.parse("2026-11-04T12:00:00.123Z");
   private static final String FIRST_PERSON = "1001";
@@ -41,6 +47,7 @@ class ScopusIdentifierMappingRepositoryTest extends ResourcesLocalTest {
   private static final String OTHER_SCOPUS_AUTHOR_ID = "99999990202";
   private static final String CRISTIN_PERSON_ID = "cristinPersonId";
   private static final String CANDIDATES = "candidates";
+  private static final String REVISION = "revision";
   private static final ScopusCorrectionContext FIRST_CONTEXT =
       new ScopusCorrectionContext("2-s2.0-85200000010", 1);
   private static final ScopusCorrectionContext SECOND_CONTEXT =
@@ -355,6 +362,40 @@ class ScopusIdentifierMappingRepositoryTest extends ResourcesLocalTest {
     assertThatThrownBy(() -> repository.fetchAuthorMappingHistory(SCOPUS_AUTHOR_ID))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(CRISTIN_PERSON_ID);
+  }
+
+  @ParameterizedTest
+  @MethodSource(FIXTURES + "#malformedAuthorItemsWithReadableRevision")
+  void shouldReplaceMalformedMappingWhenCallerExpectsNoMapping(
+      Map<String, AttributeValue> malformedItem, String expectedReason)
+      throws ScopusMappingConflictException {
+    var logRecorder = LogRecorder.forClass(ScopusMappingItems.class);
+    putItem(malformedItem);
+
+    var savedMapping =
+        repository.saveCristinPersonId(
+            SCOPUS_AUTHOR_ID, SECOND_PERSON, SECOND_CONTEXT, CURATOR_USERNAME, Optional.empty());
+
+    assertThat(savedMapping).isEqualTo(curatorMapping(SECOND_PERSON, 2));
+    assertThat(fetchCurrentAuthorMapping()).contains(savedMapping);
+    assertThat(logRecorder.messages()).singleElement().asString().contains(expectedReason);
+  }
+
+  @Test
+  void shouldThrowConflictNamingTheItemWhenMalformedMappingHasNoReadableRevision() {
+    putItem(with(toCurrentItem(migratedAuthorMapping(SCOPUS_AUTHOR_ID)), REVISION, fromS("1")));
+
+    assertThatThrownBy(
+            () ->
+                repository.saveCristinPersonId(
+                    SCOPUS_AUTHOR_ID,
+                    SECOND_PERSON,
+                    SECOND_CONTEXT,
+                    CURATOR_USERNAME,
+                    Optional.empty()))
+        .isInstanceOf(ScopusMappingConflictException.class)
+        .hasMessageContaining(authorPartitionKey(SCOPUS_AUTHOR_ID))
+        .hasMessageContaining(REVISION);
   }
 
   private static ScopusAuthorMapping curatorMapping(String cristinPersonId, int revision) {
