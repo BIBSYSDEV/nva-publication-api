@@ -1,9 +1,11 @@
 package no.unit.nva.publication.scopusmapping;
 
+import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static nva.commons.core.attempt.Try.attempt;
@@ -26,10 +28,12 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
  */
 final class ScopusMappingItems {
 
+  static final String HISTORY_SORT_KEY_PREFIX = "HISTORY#";
   static final String REVISION = "revision";
   private static final String AUTHOR_PARTITION_KEY_PREFIX = "AUTHOR#SCOPUS#";
   private static final String AFFILIATION_PARTITION_KEY_PREFIX = "AFFILIATION#SCOPUS#";
   private static final String CURRENT_SORT_KEY = "CURRENT";
+  private static final String HISTORY_SORT_KEY_SEPARATOR = "#";
   private static final String AUTHOR_MAPPING_TYPE = "ScopusAuthorMapping";
   private static final String AFFILIATION_MAPPING_TYPE = "ScopusAffiliationMapping";
   private static final String TYPE = "type";
@@ -45,6 +49,9 @@ final class ScopusMappingItems {
   private static final String UPDATED_AT = "updatedAt";
   private static final String UPDATED_BY = "updatedBy";
   private static final String DELETED = "deleted";
+  private static final String SCOPUS_PUBLICATION_ID = "scopusPublicationId";
+  private static final String SEQUENCE_NUMBER = "sequenceNumber";
+  private static final String CANDIDATES = "candidates";
   private static final int MILLISECOND_DIGITS = 3;
   private static final DateTimeFormatter TIMESTAMP_FORMAT =
       new DateTimeFormatterBuilder().appendInstant(MILLISECOND_DIGITS).toFormatter();
@@ -97,6 +104,17 @@ final class ScopusMappingItems {
     return item;
   }
 
+  static Map<String, AttributeValue> toHistoryItem(
+      ScopusAuthorMapping mapping, ScopusCorrectionContext correctionContext) {
+    var item = authorAttributes(mapping);
+    item.put(
+        PRIMARY_KEY_SORT_KEY_NAME,
+        AttributeValue.fromS(historySortKey(mapping.updatedAt(), mapping.revision())));
+    item.put(SCOPUS_PUBLICATION_ID, AttributeValue.fromS(correctionContext.scopusPublicationId()));
+    item.put(SEQUENCE_NUMBER, number(correctionContext.sequenceNumber()));
+    return item;
+  }
+
   static ScopusAuthorMapping toAuthorMapping(Map<String, AttributeValue> item) {
     requireType(item, AUTHOR_MAPPING_TYPE);
     return new ScopusAuthorMapping(
@@ -129,6 +147,12 @@ final class ScopusMappingItems {
         requiredString(item, UPDATED_BY),
         revisionOf(item),
         isTrue(item, DELETED));
+  }
+
+  static <T> ScopusMappingHistoryEntry<T> toHistoryEntry(
+      Map<String, AttributeValue> item, Function<Map<String, AttributeValue>, T> mappingReader) {
+    return new ScopusMappingHistoryEntry<>(
+        mappingReader.apply(item), correctionContextOf(item), candidatesOf(item));
   }
 
   /** Parses an author item, or logs it as malformed and returns empty. */
@@ -172,6 +196,13 @@ final class ScopusMappingItems {
         AttributeValue.fromS(partitionKey),
         PRIMARY_KEY_SORT_KEY_NAME,
         AttributeValue.fromS(CURRENT_SORT_KEY));
+  }
+
+  private static String historySortKey(Instant updatedAt, int revision) {
+    return HISTORY_SORT_KEY_PREFIX
+        + TIMESTAMP_FORMAT.format(updatedAt)
+        + HISTORY_SORT_KEY_SEPARATOR
+        + revision;
   }
 
   private static Map<String, AttributeValue> authorAttributes(ScopusAuthorMapping mapping) {
@@ -226,6 +257,42 @@ final class ScopusMappingItems {
           "Scopus mapping item %s does not start with %s".formatted(partitionKey, prefix));
     }
     return partitionKey.substring(prefix.length());
+  }
+
+  private static ScopusCorrectionContext correctionContextOf(Map<String, AttributeValue> item) {
+    return Optional.ofNullable(optionalString(item, SCOPUS_PUBLICATION_ID))
+        .map(
+            scopusPublicationId ->
+                new ScopusCorrectionContext(
+                    scopusPublicationId, requiredInteger(item, SEQUENCE_NUMBER)))
+        .orElse(null);
+  }
+
+  private static List<Map<String, String>> candidatesOf(Map<String, AttributeValue> item) {
+    return Optional.ofNullable(item.get(CANDIDATES))
+        .filter(AttributeValue::hasL)
+        .map(AttributeValue::l)
+        .orElse(emptyList())
+        .stream()
+        .filter(AttributeValue::hasM)
+        .map(candidate -> scalarValues(candidate.m()))
+        .toList();
+  }
+
+  private static Map<String, String> scalarValues(Map<String, AttributeValue> attributes) {
+    return attributes.entrySet().stream()
+        .flatMap(
+            attribute ->
+                scalarValue(attribute.getValue())
+                    .map(value -> Map.entry(attribute.getKey(), value))
+                    .stream())
+        .collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  private static Optional<String> scalarValue(AttributeValue value) {
+    return Optional.ofNullable(value.s())
+        .or(() -> Optional.ofNullable(value.n()))
+        .or(() -> Optional.ofNullable(value.bool()).map(String::valueOf));
   }
 
   private static boolean isTrue(Map<String, AttributeValue> item, String attributeName) {
