@@ -175,10 +175,6 @@ Resources:
 
   #===========================DynamoDB Table========================================================
 
-  # NB! for compatibility reasons (ResourceService is re-used) NvaImportCandidatesTable should be a copy of NvaResourcesTable
-  # Any changes done to the structure of NvaResourcesTable should be duplicated in NvaImportCandidatesTable
-  # Remove this message if they no longer need to be compatible.
-
   NvaResourcesTable:
     Type: AWS::DynamoDB::Table
     UpdateReplacePolicy: Retain
@@ -253,7 +249,7 @@ Resources:
         - Key: IncludedInBackup
           Value: "true"
 
-  # NB! for compatibility reasons NvaImportCandidatesTable should be a copy of NvaResourcesTable
+  # Uses the same PK0/SK0 key names as NvaResourcesTable, since ResourceService reads and writes import candidates here.
   NvaImportCandidatesTable:
     Type: AWS::DynamoDB::Table
     UpdateReplacePolicy: Retain
@@ -266,60 +262,11 @@ Resources:
           AttributeType: S
         - AttributeName: SK0
           AttributeType: S
-      #        - AttributeName: PK1
-      #          AttributeType: S
-      #        - AttributeName: SK1
-      #          AttributeType: S
-      #        - AttributeName: PK2
-      #          AttributeType: S
-      #        - AttributeName: SK2
-      #          AttributeType: S
-      #        - AttributeName: PK3
-      #          AttributeType: S
-      #        - AttributeName: SK3
-      #          AttributeType: S
-      #        - AttributeName: PK4
-      #          AttributeType: S
-      #        - AttributeName: SK4
-      #          AttributeType: S
       KeySchema:
         - AttributeName: PK0
           KeyType: HASH
         - AttributeName: SK0
           KeyType: RANGE
-      #      GlobalSecondaryIndexes:
-      #        - IndexName: GSI_1
-      #          KeySchema:
-      #            - AttributeName: PK1
-      #              KeyType: HASH
-      #            - AttributeName: SK1
-      #              KeyType: RANGE
-      #          Projection:
-      #            ProjectionType: ALL
-      #        - IndexName: ByCustomerResource
-      #          KeySchema:
-      #            - AttributeName: PK2
-      #              KeyType: HASH
-      #            - AttributeName: SK2
-      #              KeyType: RANGE
-      #          Projection:
-      #            ProjectionType: ALL
-      #        - IndexName: ResourcesByIdentifier
-      #          KeySchema:
-      #            - AttributeName: PK3
-      #              KeyType: HASH
-      #            - AttributeName: SK3
-      #              KeyType: RANGE
-      #          Projection:
-      #            ProjectionType: ALL
-      #        - IndexName: ResourceByCristinId
-      #          KeySchema:
-      #            - AttributeName: PK4
-      #              KeyType: HASH
-      #            - AttributeName: SK4
-      #              KeyType: RANGE
-      #          Projection:
-      #            ProjectionType: ALL
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
       PointInTimeRecoverySpecification:
@@ -2020,6 +1967,11 @@ Resources:
             StartingPosition: TRIM_HORIZON
             BatchSize: 1
             Enabled: true
+            # Only import candidates invoke the handler; other item types in the table are skipped.
+            # Filters on the key, since REMOVE records have no NewImage.
+            FilterCriteria:
+              Filters:
+                - Pattern: '{"dynamodb": {"Keys": {"PK0": {"S": [{"prefix": "ImportCandidate:"}]}}}}'
 
   UpdateDoiStatusHandlerFunction:
     DependsOn: EventsLambdaManagedPolicy
