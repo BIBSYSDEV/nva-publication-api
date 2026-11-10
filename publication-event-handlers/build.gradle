@@ -56,6 +56,8 @@ dependencies {
 }
 
 test {
+    // ImportCandidateStreamFilterTest reads the stream filter from the SAM template
+    inputs.file(rootProject.file("template.yaml")).withPropertyName("samTemplate")
     environment "EVENTS_BUCKET", "theEventsBucket"
     environment "EVENT_BUS_NAME", "eventBus"
     environment "HANDLER_EVENTS_FOLDER", "reource-updates-events"
