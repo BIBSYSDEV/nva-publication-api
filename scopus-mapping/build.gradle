@@ -3,10 +3,11 @@ plugins {
 }
 
 dependencies {
-    implementation(nvaCatalog.aws.sdk2.dynamo)
+    api(nvaCatalog.aws.sdk2.dynamo)
     implementation(nvaCatalog.aws.sdk2.dynamodbenhanced)
     implementation(nvaCatalog.jackson.annotations)
     implementation(nvaCatalog.jackson.databind)
+    implementation(nvaCatalog.slf4j.api)
     implementation(nvaLibs.core)
     implementation(nvaLibs.json)
     implementation(project(":publication-constants"))
@@ -14,4 +15,7 @@ dependencies {
     testImplementation(nvaCatalog.assertj.core)
     testImplementation(nvaCatalog.junit.jupiter.api)
     testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaLibs.logutils)
+    testImplementation(nvaCatalog.aws.sdk2.dynamodblocal)
 }
