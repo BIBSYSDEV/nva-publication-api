@@ -12,6 +12,7 @@ import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappi
 import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingItems.partitionKeyOf;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -41,7 +42,7 @@ class FindCurrentMappingsTest {
   @BeforeEach
   void setUp() {
     table = new LocalImportCandidatesTable();
-    service = new ScopusMappingService(table.repository());
+    service = new ScopusMappingService(table.repository(), Clock.systemUTC());
   }
 
   @Test

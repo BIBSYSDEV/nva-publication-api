@@ -9,6 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import no.unit.nva.publication.scopusmapping.application.ScopusMappingService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -26,7 +27,8 @@ class MappingHistoryWithMockedClientTest {
     when(client.query(any(QueryRequest.class)))
         .thenReturn(QueryResponse.builder().items(emptyList()).build());
     var service =
-        new ScopusMappingService(new DynamoDbScopusMappingRepository(client, DEFAULT_TABLE_NAME));
+        new ScopusMappingService(
+            new DynamoDbScopusMappingRepository(client, DEFAULT_TABLE_NAME), Clock.systemUTC());
 
     assertThat(service.findAuthorMappingHistory(SCOPUS_AUTHOR)).isEmpty();
 
