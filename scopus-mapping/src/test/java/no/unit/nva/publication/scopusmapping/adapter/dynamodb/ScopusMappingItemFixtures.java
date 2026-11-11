@@ -80,6 +80,10 @@ final class ScopusMappingItemFixtures {
     return changedItem;
   }
 
+  static Stream<Arguments> malformedCurrentItems() {
+    return Stream.concat(malformedAuthorItems(), malformedAffiliationItems());
+  }
+
   static Stream<Arguments> malformedAuthorItems() {
     var authorItem = migratedAuthorItem();
     return Stream.concat(
