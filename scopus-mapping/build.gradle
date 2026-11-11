@@ -3,6 +3,14 @@ plugins {
 }
 
 dependencies {
+    implementation(nvaCatalog.aws.sdk2.dynamo)
+    implementation(nvaCatalog.aws.sdk2.dynamodbenhanced)
+    implementation(nvaCatalog.jackson.annotations)
+    implementation(nvaCatalog.jackson.databind)
+    implementation(nvaLibs.core)
+    implementation(nvaLibs.json)
+    implementation(project(":publication-constants"))
+
     testImplementation(nvaCatalog.assertj.core)
     testImplementation(nvaCatalog.junit.jupiter.api)
     testImplementation(nvaCatalog.junit.jupiter.params)
