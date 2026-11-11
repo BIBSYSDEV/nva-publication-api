@@ -4,6 +4,7 @@ import static java.util.Map.entry;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.MIGRATED_CRISTIN_PERSON_ID;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.MIGRATION_MARKER;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.SCOPUS_AUTHOR_ID;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.curatorAuthorMapping;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.migratedAuthorMapping;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.affiliationCurrentKey;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.authorCurrentKey;
@@ -83,18 +84,6 @@ class ScopusMappingItemsTest {
   }
 
   private static ScopusAuthorMapping curatorMapping(boolean deleted) {
-    return new ScopusAuthorMapping(
-        SCOPUS_AUTHOR_ID,
-        "1002",
-        null,
-        null,
-        null,
-        null,
-        false,
-        ScopusMappingSource.CURATOR,
-        CORRECTED_AT,
-        "1234567@20754.0.0.0",
-        2,
-        deleted);
+    return curatorAuthorMapping(SCOPUS_AUTHOR_ID, "1002", CORRECTED_AT, 2, deleted);
   }
 }
