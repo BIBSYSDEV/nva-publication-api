@@ -22,6 +22,7 @@ import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorIdentifier;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorMapping;
 import no.unit.nva.publication.scopusmapping.domain.ScopusCorrectionContext;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMapping;
+import no.unit.nva.publication.scopusmapping.domain.ScopusMappingConflictException;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappingHistoryEntry;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappingRepository;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappings;
@@ -106,7 +107,8 @@ public class DynamoDbScopusMappingRepository implements ScopusMappingRepository 
 
   @Override
   public void saveCorrection(
-      ScopusAuthorMapping newVersion, ScopusCorrectionContext correctionContext) {
+      ScopusAuthorMapping newVersion, ScopusCorrectionContext correctionContext)
+      throws ScopusMappingConflictException {
     correctionStore.saveCorrection(newVersion, correctionContext);
   }
 
