@@ -2,13 +2,13 @@ package no.unit.nva.publication.scopusmapping;
 
 import static java.util.Collections.emptyList;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.SCOPUS_AUTHOR_ID;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.TABLE_NAME;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.migratedAuthorMapping;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.with;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toCurrentItem;
 import static org.assertj.core.api.Assertions.assertThat;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.fromS;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -20,7 +20,6 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
 class ScopusIdentifierMappingRepositoryTest extends ResourcesLocalTest {
 
-  private static final String TABLE_NAME = "import-candidates";
   private static final String OTHER_SCOPUS_AUTHOR_ID = "99999990202";
 
   private ScopusIdentifierMappingRepository repository;
@@ -45,13 +44,13 @@ class ScopusIdentifierMappingRepositoryTest extends ResourcesLocalTest {
   }
 
   @Test
-  void shouldAcceptDuplicateAndNullIds() {
+  void shouldAcceptDuplicateIds() {
     var mapping = migratedAuthorMapping(SCOPUS_AUTHOR_ID);
     putItem(toCurrentItem(mapping));
 
     var mappings =
         repository.fetchCurrentMappings(
-            Arrays.asList(SCOPUS_AUTHOR_ID, null, SCOPUS_AUTHOR_ID), List.of("1", "1"));
+            List.of(SCOPUS_AUTHOR_ID, SCOPUS_AUTHOR_ID), List.of("1", "1"));
 
     assertThat(mappings.authorMappings()).isEqualTo(Map.of(SCOPUS_AUTHOR_ID, mapping));
   }

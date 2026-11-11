@@ -1,6 +1,9 @@
 package no.unit.nva.publication.scopusmapping;
 
 import static java.util.Collections.emptyList;
+import static no.unit.nva.publication.scopusmapping.ScopusIdentifierMappingRepository.MAX_BATCH_GET_RETRIES;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.TABLE_NAME;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.curatorAuthorMapping;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.authorCurrentKey;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toCurrentItem;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,12 +36,9 @@ import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes;
  */
 class ScopusIdentifierMappingRepositoryWithMockedClientTest {
 
-  private static final String TABLE_NAME = "import-candidates";
   private static final String FIRST_AUTHOR = "99999990301";
   private static final String SECOND_AUTHOR = "99999990302";
   private static final String CRISTIN_PERSON_ID = "1001";
-  private static final String CURATOR_USERNAME = "1234567@20754.0.0.0";
-  private static final int MAX_BATCH_GET_RETRIES = 7;
 
   private DynamoDbClient client;
   private ScopusIdentifierMappingRepository repository;
@@ -95,19 +96,25 @@ class ScopusIdentifierMappingRepositoryWithMockedClientTest {
     verifyNoInteractions(client);
   }
 
+  @Test
+  void shouldRejectNullIdsBeforeCallingDynamoDb() {
+    assertThatNullPointerException()
+        .isThrownBy(
+            () -> repository.fetchCurrentMappings(Arrays.asList(FIRST_AUTHOR, null), emptyList()))
+        .withMessageContaining("scopusAuthorIds");
+    assertThatNullPointerException()
+        .isThrownBy(
+            () -> repository.fetchCurrentMappings(emptyList(), Arrays.asList("99990301", null)))
+        .withMessageContaining("scopusAffiliationIds");
+    verifyNoInteractions(client);
+  }
+
   private static Map<String, AttributeValue> currentItem(String scopusAuthorId) {
     return toCurrentItem(
-        new ScopusAuthorMapping(
+        curatorAuthorMapping(
             scopusAuthorId,
             CRISTIN_PERSON_ID,
-            null,
-            null,
-            null,
-            null,
-            false,
-            ScopusMappingSource.CURATOR,
             Instant.parse("2026-11-04T12:00:00.000Z"),
-            CURATOR_USERNAME,
             1,
             false));
   }

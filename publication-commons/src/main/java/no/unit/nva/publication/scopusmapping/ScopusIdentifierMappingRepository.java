@@ -5,11 +5,10 @@ import static java.util.Objects.requireNonNull;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toCurrentMappings;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -22,10 +21,9 @@ import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes;
  */
 public class ScopusIdentifierMappingRepository {
 
+  static final int MAX_BATCH_GET_RETRIES = 6;
   private static final int MAX_KEYS_PER_BATCH_GET = 100;
-  private static final int MAX_BATCH_GET_RETRIES = 7;
   private static final Duration DEFAULT_INITIAL_BACKOFF = Duration.ofMillis(50);
-  private static final Duration MAX_BACKOFF = Duration.ofSeconds(2);
   private static final String INTERRUPTED_MESSAGE =
       "Interrupted while waiting to retry unprocessed keys";
 
@@ -47,60 +45,59 @@ public class ScopusIdentifierMappingRepository {
   /**
    * Returns the current, non-deleted mappings for the given Scopus ids, with consistent reads and
    * one {@code BatchGetItem} per 100 keys. Ids without a mapping, or with a deleted one, are absent
-   * from the result. So are ids whose item is malformed; those are logged as errors.
+   * from the result. So are ids whose item is malformed; those are logged as errors. Duplicate ids
+   * are fine, null ids are not.
    */
   public ScopusMappings fetchCurrentMappings(
       Collection<String> scopusAuthorIds, Collection<String> scopusAffiliationIds) {
-    requireNonNull(scopusAuthorIds, "scopusAuthorIds");
-    requireNonNull(scopusAffiliationIds, "scopusAffiliationIds");
     var keys =
         Stream.concat(
-                distinctIds(scopusAuthorIds).map(ScopusMappingItems::authorCurrentKey),
-                distinctIds(scopusAffiliationIds).map(ScopusMappingItems::affiliationCurrentKey))
+                distinctIds(scopusAuthorIds, "scopusAuthorIds")
+                    .map(ScopusMappingItems::authorCurrentKey),
+                distinctIds(scopusAffiliationIds, "scopusAffiliationIds")
+                    .map(ScopusMappingItems::affiliationCurrentKey))
             .toList();
-    var items =
-        IntStream.iterate(0, start -> start < keys.size(), start -> start + MAX_KEYS_PER_BATCH_GET)
-            .mapToObj(
-                start -> keys.subList(start, Math.min(start + MAX_KEYS_PER_BATCH_GET, keys.size())))
-            .flatMap(batchOfKeys -> fetchConsistently(batchOfKeys).stream())
-            .toList();
+    var items = new ArrayList<Map<String, AttributeValue>>();
+    for (var start = 0; start < keys.size(); start += MAX_KEYS_PER_BATCH_GET) {
+      var batchOfKeys = keys.subList(start, Math.min(start + MAX_KEYS_PER_BATCH_GET, keys.size()));
+      items.addAll(fetchConsistently(batchOfKeys));
+    }
     return toCurrentMappings(items);
   }
 
-  private static Stream<String> distinctIds(Collection<String> ids) {
-    return ids.stream().filter(Objects::nonNull).distinct();
+  private static Stream<String> distinctIds(Collection<String> ids, String name) {
+    requireNonNull(ids, name);
+    return ids.stream().map(id -> requireNonNull(id, name + " must not contain null")).distinct();
   }
 
+  /** Reads one batch of keys, asking again for the keys DynamoDB leaves unprocessed. */
   private List<Map<String, AttributeValue>> fetchConsistently(
       List<Map<String, AttributeValue>> keys) {
-    var keysWithConsistentRead =
-        KeysAndAttributes.builder().keys(keys).consistentRead(true).build();
-    return fetchRetryingUnprocessedKeys(Map.of(tableName, keysWithConsistentRead), 0);
+    var items = new ArrayList<Map<String, AttributeValue>>();
+    var unprocessedKeys =
+        Map.of(tableName, KeysAndAttributes.builder().keys(keys).consistentRead(true).build());
+    for (var retryCount = 0; !unprocessedKeys.isEmpty(); retryCount++) {
+      if (retryCount > MAX_BATCH_GET_RETRIES) {
+        throw new IllegalStateException(
+            "DynamoDB left keys unprocessed after %d retries".formatted(MAX_BATCH_GET_RETRIES));
+      }
+      waitBeforeRetry(retryCount);
+      var response =
+          client.batchGetItem(BatchGetItemRequest.builder().requestItems(unprocessedKeys).build());
+      items.addAll(response.responses().getOrDefault(tableName, emptyList()));
+      unprocessedKeys = response.unprocessedKeys();
+    }
+    return items;
   }
 
-  private List<Map<String, AttributeValue>> fetchRetryingUnprocessedKeys(
-      Map<String, KeysAndAttributes> requestItems, int retryCount) {
-    var response =
-        client.batchGetItem(BatchGetItemRequest.builder().requestItems(requestItems).build());
-    var fetchedItems = response.responses().getOrDefault(tableName, emptyList());
-    if (response.unprocessedKeys().isEmpty()) {
-      return fetchedItems;
-    }
-    if (retryCount >= MAX_BATCH_GET_RETRIES) {
-      throw new IllegalStateException(
-          "DynamoDB left keys unprocessed after %d retries".formatted(MAX_BATCH_GET_RETRIES));
-    }
-    waitBeforeRetry(retryCount);
-    var retriedItems = fetchRetryingUnprocessedKeys(response.unprocessedKeys(), retryCount + 1);
-    return Stream.concat(fetchedItems.stream(), retriedItems.stream()).toList();
-  }
-
+  /** Waits twice as long before each retry, and not at all before the first request. */
   @SuppressWarnings("PMD.DoNotUseThreads")
   private void waitBeforeRetry(int retryCount) {
-    var exponentialBackoff = initialBackoff.multipliedBy(1L << retryCount);
+    if (retryCount == 0) {
+      return;
+    }
     try {
-      Thread.sleep(
-          exponentialBackoff.compareTo(MAX_BACKOFF) > 0 ? MAX_BACKOFF : exponentialBackoff);
+      Thread.sleep(initialBackoff.multipliedBy(1L << (retryCount - 1)));
     } catch (InterruptedException exception) {
       Thread.currentThread().interrupt();
       throw new IllegalStateException(INTERRUPTED_MESSAGE, exception);
