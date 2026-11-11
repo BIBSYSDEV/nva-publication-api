@@ -11,8 +11,10 @@ import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.affili
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.curatorAuthorMapping;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.migratedAuthorMapping;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.with;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.without;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.affiliationCurrentKey;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.authorCurrentKey;
+import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.revisionOf;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toAffiliationMapping;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toAuthorMapping;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingItems.toCurrentItem;
@@ -140,6 +142,14 @@ class ScopusMappingItemsTest {
     var item = with(toCurrentItem(mapping), "needsReview", fromS("true"));
 
     assertThat(toAuthorMapping(item)).isEqualTo(mapping);
+  }
+
+  @Test
+  void shouldReadRevisionOfItemThatIsOtherwiseMalformed() {
+    var mapping = migratedAuthorMapping(SCOPUS_AUTHOR_ID);
+    var malformedItem = without(toCurrentItem(mapping), "cristinPersonId");
+
+    assertThat(revisionOf(malformedItem)).isEqualTo(mapping.revision());
   }
 
   @ParameterizedTest
