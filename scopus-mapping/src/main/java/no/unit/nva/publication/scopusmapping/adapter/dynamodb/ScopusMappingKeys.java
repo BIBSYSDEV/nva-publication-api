@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.util.Map;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAffiliationIdentifier;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorIdentifier;
+import no.unit.nva.publication.scopusmapping.domain.ScopusMappingVersion;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
@@ -18,6 +19,8 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 final class ScopusMappingKeys {
 
   static final String CURRENT_SORT_KEY = "CURRENT";
+  static final String HISTORY_SORT_KEY_PREFIX = "HISTORY#";
+  private static final String HISTORY_SORT_KEY_SEPARATOR = "#";
   private static final String AUTHOR_PARTITION_KEY_PREFIX = "AUTHOR#SCOPUS#";
   private static final String AFFILIATION_PARTITION_KEY_PREFIX = "AFFILIATION#SCOPUS#";
   private static final int MILLISECOND_DIGITS = 3;
@@ -53,6 +56,14 @@ final class ScopusMappingKeys {
         AttributeValue.fromS(partitionKey),
         PRIMARY_KEY_SORT_KEY_NAME,
         AttributeValue.fromS(CURRENT_SORT_KEY));
+  }
+
+  /** Each written version is kept under {@code HISTORY#{updatedAt}#{revision}}. */
+  static String historySortKey(ScopusMappingVersion version) {
+    return HISTORY_SORT_KEY_PREFIX
+        + timestamp(version.updatedAt())
+        + HISTORY_SORT_KEY_SEPARATOR
+        + version.revision();
   }
 
   /** Timestamps are stored with milliseconds, so keys built from them have a fixed width. */
