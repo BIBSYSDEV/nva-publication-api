@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import java.util.Map;
 import no.unit.nva.publication.scopusmapping.domain.CristinOrganizationIdentifier;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAffiliationMapping;
+import no.unit.nva.publication.scopusmapping.domain.ScopusMappingHistoryEntry;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
@@ -22,7 +23,8 @@ record ScopusAffiliationMappingDao(
     String type,
     String cristinInstitutionIdentifier,
     String cristinUnitIdentifier,
-    @JsonUnwrapped MappingAttributesDao attributes) {
+    @JsonUnwrapped MappingAttributesDao attributes,
+    @JsonUnwrapped HistoryAttributesDao history) {
 
   static final String TYPE = "ScopusAffiliationMapping";
 
@@ -44,5 +46,10 @@ record ScopusAffiliationMappingDao(
         attributes.reviewNeeded(),
         attributes.toPiaMappingCounts(),
         attributes.toVersion());
+  }
+
+  ScopusMappingHistoryEntry<ScopusAffiliationMapping> toHistoryEntry() {
+    return new ScopusMappingHistoryEntry<>(
+        toMapping(), history.toCorrectionContext(), history.candidatesOrEmpty());
   }
 }

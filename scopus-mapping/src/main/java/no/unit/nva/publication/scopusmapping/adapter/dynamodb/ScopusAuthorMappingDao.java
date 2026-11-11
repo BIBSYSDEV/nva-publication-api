@@ -3,6 +3,7 @@ package no.unit.nva.publication.scopusmapping.adapter.dynamodb;
 import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingKeys.CURRENT_SORT_KEY;
 import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingKeys.authorIdentifierOf;
 import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingKeys.authorPartitionKey;
+import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingKeys.historySortKey;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 
@@ -11,6 +12,8 @@ import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import java.util.Map;
 import no.unit.nva.publication.scopusmapping.domain.CristinPersonIdentifier;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorMapping;
+import no.unit.nva.publication.scopusmapping.domain.ScopusCorrectionContext;
+import no.unit.nva.publication.scopusmapping.domain.ScopusMappingHistoryEntry;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
@@ -23,22 +26,20 @@ record ScopusAuthorMappingDao(
     String type,
     String cristinPersonIdentifier,
     String orcid,
-    @JsonUnwrapped MappingAttributesDao attributes) {
+    @JsonUnwrapped MappingAttributesDao attributes,
+    @JsonUnwrapped HistoryAttributesDao history) {
 
   static final String TYPE = "ScopusAuthorMapping";
 
   static ScopusAuthorMappingDao current(ScopusAuthorMapping mapping) {
-    return new ScopusAuthorMappingDao(
-        authorPartitionKey(mapping.scopusAuthorIdentifier()),
-        CURRENT_SORT_KEY,
-        TYPE,
-        mapping.cristinPersonIdentifier().value(),
-        mapping.orcid(),
-        MappingAttributesDao.of(
-            mapping.scopusName(),
-            mapping.needsReview(),
-            mapping.piaMappingCounts(),
-            mapping.version()));
+    return of(mapping, CURRENT_SORT_KEY, null);
+  }
+
+  /** The immutable copy of a version that a curator's correction wrote. */
+  static ScopusAuthorMappingDao history(
+      ScopusAuthorMapping mapping, ScopusCorrectionContext correctionContext) {
+    return of(
+        mapping, historySortKey(mapping.version()), HistoryAttributesDao.of(correctionContext));
   }
 
   static ScopusAuthorMappingDao fromItem(Map<String, AttributeValue> item) {
@@ -63,5 +64,26 @@ record ScopusAuthorMappingDao(
         attributes.reviewNeeded(),
         attributes.toPiaMappingCounts(),
         attributes.toVersion());
+  }
+
+  ScopusMappingHistoryEntry<ScopusAuthorMapping> toHistoryEntry() {
+    return new ScopusMappingHistoryEntry<>(
+        toMapping(), history.toCorrectionContext(), history.candidatesOrEmpty());
+  }
+
+  private static ScopusAuthorMappingDao of(
+      ScopusAuthorMapping mapping, String sortKey, HistoryAttributesDao history) {
+    return new ScopusAuthorMappingDao(
+        authorPartitionKey(mapping.scopusAuthorIdentifier()),
+        sortKey,
+        TYPE,
+        mapping.cristinPersonIdentifier().value(),
+        mapping.orcid(),
+        MappingAttributesDao.of(
+            mapping.scopusName(),
+            mapping.needsReview(),
+            mapping.piaMappingCounts(),
+            mapping.version()),
+        history);
   }
 }
