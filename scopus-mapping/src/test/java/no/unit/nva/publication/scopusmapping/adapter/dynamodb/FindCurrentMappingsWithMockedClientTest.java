@@ -3,6 +3,7 @@ package no.unit.nva.publication.scopusmapping.adapter.dynamodb;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.SCOPUS_AFFILIATION;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.migratedAuthorMapping;
+import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.BatchItemReader.MAX_RETRIES;
 import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingKeys.authorPartitionKey;
 import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingKeys.currentKey;
 import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingLocalTest.TABLE_NAME;
@@ -11,10 +12,12 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +40,8 @@ class FindCurrentMappingsWithMockedClientTest {
 
   private static final ScopusAuthorIdentifier FIRST_AUTHOR =
       new ScopusAuthorIdentifier("99999990301");
+  private static final ScopusAuthorIdentifier SECOND_AUTHOR =
+      new ScopusAuthorIdentifier("99999990302");
 
   private DynamoDbClient client;
   private ScopusMappingService service;
@@ -44,7 +49,26 @@ class FindCurrentMappingsWithMockedClientTest {
   @BeforeEach
   void setUp() {
     client = mock(DynamoDbClient.class);
-    service = new ScopusMappingService(new DynamoDbScopusMappingRepository(client, TABLE_NAME));
+    service =
+        new ScopusMappingService(
+            new DynamoDbScopusMappingRepository(client, TABLE_NAME, Duration.ZERO));
+  }
+
+  @Test
+  void shouldAskAgainForUnprocessedKeysUntilEveryKeyIsRead() {
+    when(client.batchGetItem(any(BatchGetItemRequest.class)))
+        .thenReturn(batchGetResponse(List.of(currentItem(FIRST_AUTHOR)), SECOND_AUTHOR))
+        .thenReturn(batchGetResponse(List.of(currentItem(SECOND_AUTHOR))));
+
+    var mappings = service.findCurrentMappings(List.of(FIRST_AUTHOR, SECOND_AUTHOR), emptyList());
+
+    assertThat(mappings.authorMappings()).containsOnlyKeys(FIRST_AUTHOR, SECOND_AUTHOR);
+    var requestCaptor = ArgumentCaptor.forClass(BatchGetItemRequest.class);
+    verify(client, times(2)).batchGetItem(requestCaptor.capture());
+    var keysAskedForAgain = requestCaptor.getAllValues().get(1).requestItems().get(TABLE_NAME);
+    assertThat(keysAskedForAgain.keys())
+        .containsExactly(currentKey(authorPartitionKey(SECOND_AUTHOR)));
+    assertThat(keysAskedForAgain.consistentRead()).isTrue();
   }
 
   @Test
@@ -60,13 +84,14 @@ class FindCurrentMappingsWithMockedClientTest {
   }
 
   @Test
-  void shouldFailWhenDynamoDbLeavesKeysUnprocessed() {
+  void shouldFailWhenKeysStayUnprocessed() {
     when(client.batchGetItem(any(BatchGetItemRequest.class)))
         .thenReturn(batchGetResponse(emptyList(), FIRST_AUTHOR));
 
     assertThatThrownBy(() -> service.findCurrentMappings(List.of(FIRST_AUTHOR), emptyList()))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("unprocessed");
+    verify(client, times(MAX_RETRIES + 1)).batchGetItem(any(BatchGetItemRequest.class));
   }
 
   @Test
