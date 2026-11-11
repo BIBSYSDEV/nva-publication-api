@@ -1,5 +1,6 @@
 package no.unit.nva.publication.scopusmapping;
 
+import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.TABLE_NAME;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingSource.CURATOR;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingSource.PIA_MIGRATION;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,7 +18,6 @@ import org.junit.jupiter.api.Test;
  */
 class ScopusMappingGoldenFileTest extends ResourcesLocalTest {
 
-  private static final String TABLE_NAME = "import-candidates";
   private static final Instant MIGRATED_AT = Instant.parse("2026-11-02T08:00:00.000Z");
   private static final String MIGRATION_MARKER = "pia-migration";
   private static final String AUTHOR_NEEDING_REVIEW = "99999990101";

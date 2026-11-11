@@ -35,22 +35,21 @@ final class ScopusMappingTestItems {
 
   static void writeWithBatchWriteItem(
       DynamoDbClient client, String tableName, List<Map<String, AttributeValue>> items) {
-    for (var start = 0; start < items.size(); start += MAX_ITEMS_PER_BATCH_WRITE) {
-      var writeRequests =
-          items.subList(start, Math.min(start + MAX_ITEMS_PER_BATCH_WRITE, items.size())).stream()
-              .map(
-                  item ->
-                      WriteRequest.builder()
-                          .putRequest(PutRequest.builder().item(item).build())
-                          .build())
-              .toList();
-      var response =
-          client.batchWriteItem(
-              BatchWriteItemRequest.builder()
-                  .requestItems(Map.of(tableName, writeRequests))
-                  .build());
-      assertThat(response.unprocessedItems()).isEmpty();
-    }
+    assertThat(items)
+        .as("items in one BatchWriteItem")
+        .hasSizeLessThanOrEqualTo(MAX_ITEMS_PER_BATCH_WRITE);
+    var writeRequests =
+        items.stream()
+            .map(
+                item ->
+                    WriteRequest.builder()
+                        .putRequest(PutRequest.builder().item(item).build())
+                        .build())
+            .toList();
+    var response =
+        client.batchWriteItem(
+            BatchWriteItemRequest.builder().requestItems(Map.of(tableName, writeRequests)).build());
+    assertThat(response.unprocessedItems()).isEmpty();
   }
 
   private static Map<String, AttributeValue> toItem(JsonNode itemNode) {
