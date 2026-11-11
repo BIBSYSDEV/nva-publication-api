@@ -3,6 +3,7 @@ package no.unit.nva.publication.scopusmapping.adapter.dynamodb;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import no.unit.nva.publication.scopusmapping.domain.ScopusAffiliationIdentifier;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorIdentifier;
 
 /**
@@ -13,6 +14,7 @@ final class ScopusMappingKeys {
 
   static final String CURRENT_SORT_KEY = "CURRENT";
   private static final String AUTHOR_PARTITION_KEY_PREFIX = "AUTHOR#SCOPUS#";
+  private static final String AFFILIATION_PARTITION_KEY_PREFIX = "AFFILIATION#SCOPUS#";
   private static final int MILLISECOND_DIGITS = 3;
   private static final DateTimeFormatter TIMESTAMP_FORMAT =
       new DateTimeFormatterBuilder().appendInstant(MILLISECOND_DIGITS).toFormatter();
@@ -25,6 +27,15 @@ final class ScopusMappingKeys {
 
   static ScopusAuthorIdentifier authorIdentifierOf(String partitionKey) {
     return new ScopusAuthorIdentifier(withoutPrefix(partitionKey, AUTHOR_PARTITION_KEY_PREFIX));
+  }
+
+  static String affiliationPartitionKey(ScopusAffiliationIdentifier scopusAffiliationIdentifier) {
+    return AFFILIATION_PARTITION_KEY_PREFIX + scopusAffiliationIdentifier.value();
+  }
+
+  static ScopusAffiliationIdentifier affiliationIdentifierOf(String partitionKey) {
+    return new ScopusAffiliationIdentifier(
+        withoutPrefix(partitionKey, AFFILIATION_PARTITION_KEY_PREFIX));
   }
 
   /** Timestamps are stored with milliseconds, so keys built from them have a fixed width. */
