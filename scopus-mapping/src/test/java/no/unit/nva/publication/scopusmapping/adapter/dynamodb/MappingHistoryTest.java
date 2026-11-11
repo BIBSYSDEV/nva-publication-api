@@ -21,6 +21,7 @@ import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.from
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.fromN;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.fromS;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -51,7 +52,7 @@ class MappingHistoryTest {
   @BeforeEach
   void setUp() {
     table = new LocalImportCandidatesTable();
-    service = new ScopusMappingService(table.repository());
+    service = new ScopusMappingService(table.repository(), Clock.systemUTC());
   }
 
   @Test
