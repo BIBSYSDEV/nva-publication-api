@@ -3,6 +3,7 @@ package no.unit.nva.publication.scopusmapping.adapter.dynamodb;
 import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingItems.parseOrLogAndSkip;
 import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingItems.partitionKeyOf;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -23,10 +24,17 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
  */
 public class DynamoDbScopusMappingRepository implements ScopusMappingRepository {
 
+  private static final Duration DEFAULT_INITIAL_BACKOFF = Duration.ofMillis(50);
+
   private final BatchItemReader batchItemReader;
 
   public DynamoDbScopusMappingRepository(DynamoDbClient client, String tableName) {
-    this.batchItemReader = new BatchItemReader(client, tableName);
+    this(client, tableName, DEFAULT_INITIAL_BACKOFF);
+  }
+
+  DynamoDbScopusMappingRepository(
+      DynamoDbClient client, String tableName, Duration initialBackoff) {
+    this.batchItemReader = new BatchItemReader(client, tableName, initialBackoff);
   }
 
   @Override
