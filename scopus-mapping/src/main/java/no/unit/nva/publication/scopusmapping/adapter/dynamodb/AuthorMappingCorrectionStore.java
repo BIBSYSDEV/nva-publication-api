@@ -10,19 +10,25 @@ import static nva.commons.core.attempt.Try.attempt;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorIdentifier;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorMapping;
 import no.unit.nva.publication.scopusmapping.domain.ScopusCorrectionContext;
+import no.unit.nva.publication.scopusmapping.domain.ScopusMappingConflictException;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.CancellationReason;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.Put;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem;
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
 
 /** Reads the stored mapping a correction starts from, and saves the correction. */
 final class AuthorMappingCorrectionStore {
 
+  private static final Set<String> CONCURRENT_CHANGE_CANCELLATION_CODES =
+      Set.of("ConditionalCheckFailed", "TransactionConflict");
   private static final String REVISION_NAME_PLACEHOLDER = "#revision";
   private static final String EXPECTED_REVISION_VALUE_PLACEHOLDER = ":expectedRevision";
   private static final String ITEM_DOES_NOT_EXIST_CONDITION =
@@ -57,8 +63,11 @@ final class AuthorMappingCorrectionStore {
    * Writes a new {@code HISTORY} item and replaces {@code CURRENT} in one transaction. The first
    * version requires that no {@code CURRENT} item exists, and a later version that the stored
    * revision is the one before it.
+   *
+   * @throws ScopusMappingConflictException if the stored mapping changed after it was read
    */
-  void saveCorrection(ScopusAuthorMapping newVersion, ScopusCorrectionContext correctionContext) {
+  void saveCorrection(ScopusAuthorMapping newVersion, ScopusCorrectionContext correctionContext)
+      throws ScopusMappingConflictException {
     var historyItem = ScopusAuthorMappingDao.history(newVersion, correctionContext).toItem();
     var currentItem = ScopusAuthorMappingDao.current(newVersion).toItem();
     var newRevision = newVersion.version().revision();
@@ -66,12 +75,34 @@ final class AuthorMappingCorrectionStore {
         newRevision == FIRST_REVISION
             ? putIfItemDoesNotExist(currentItem)
             : putIfRevisionMatches(currentItem, newRevision - 1);
-    client.transactWriteItems(
+    var request =
         TransactWriteItemsRequest.builder()
             .transactItems(
                 TransactWriteItem.builder().put(putIfItemDoesNotExist(historyItem)).build(),
                 TransactWriteItem.builder().put(currentPut).build())
-            .build());
+            .build();
+    try {
+      client.transactWriteItems(request);
+    } catch (TransactionCanceledException exception) {
+      if (isCancelledByConcurrentChange(exception)) {
+        throw new ScopusMappingConflictException(
+            "Scopus author mapping %s changed while revision %d was being written"
+                .formatted(newVersion.scopusAuthorIdentifier().value(), newRevision),
+            exception);
+      }
+      throw exception;
+    }
+  }
+
+  /**
+   * A failed condition means the mapping changed after it was read. A transaction conflict means
+   * another write to the same items was in progress. Both are a concurrent change to the caller.
+   */
+  private static boolean isCancelledByConcurrentChange(TransactionCanceledException exception) {
+    return exception.hasCancellationReasons()
+        && exception.cancellationReasons().stream()
+            .map(CancellationReason::code)
+            .anyMatch(CONCURRENT_CHANGE_CANCELLATION_CODES::contains);
   }
 
   private static ScopusAuthorMapping readableMappingOf(Map<String, AttributeValue> item) {
