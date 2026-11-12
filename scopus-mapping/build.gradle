@@ -1,0 +1,9 @@
+plugins {
+    id 'nva.publication.api.java-conventions'
+}
+
+dependencies {
+    testImplementation(nvaCatalog.assertj.core)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+}
