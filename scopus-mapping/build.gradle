@@ -5,6 +5,7 @@ plugins {
 dependencies {
     api(nvaCatalog.aws.sdk2.dynamo)
     implementation(nvaCatalog.aws.sdk2.dynamodbenhanced)
+    implementation(nvaCatalog.aws.sdk2.sdk.core)
     implementation(nvaCatalog.jackson.annotations)
     implementation(nvaCatalog.jackson.databind)
     implementation(nvaCatalog.slf4j.api)
