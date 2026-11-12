@@ -17,6 +17,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -51,7 +52,8 @@ class FindCurrentMappingsWithMockedClientTest {
     client = mock(DynamoDbClient.class);
     service =
         new ScopusMappingService(
-            new DynamoDbScopusMappingRepository(client, TABLE_NAME, Duration.ZERO));
+            new DynamoDbScopusMappingRepository(client, TABLE_NAME, Duration.ZERO),
+            Clock.systemUTC());
   }
 
   @Test

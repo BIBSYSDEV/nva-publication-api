@@ -3,6 +3,9 @@ package no.unit.nva.publication.scopusmapping.adapter.dynamodb;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Map;
 import no.unit.nva.publication.scopusmapping.application.ScopusMappingService;
 import org.junit.jupiter.api.AfterEach;
@@ -26,8 +29,10 @@ import software.amazon.dynamodb.services.local.embedded.DynamoDBEmbedded;
 abstract class ScopusMappingLocalTest {
 
   static final String TABLE_NAME = "import-candidates";
+  static final Instant NOW = Instant.parse("2026-11-04T12:00:00.123Z");
 
   protected DynamoDbClient client;
+  protected DynamoDbScopusMappingRepository repository;
   protected ScopusMappingService service;
 
   @BeforeEach
@@ -44,7 +49,8 @@ abstract class ScopusMappingLocalTest {
                 keyElement(PRIMARY_KEY_SORT_KEY_NAME, KeyType.RANGE))
             .billingMode(BillingMode.PAY_PER_REQUEST)
             .build());
-    service = new ScopusMappingService(new DynamoDbScopusMappingRepository(client, TABLE_NAME));
+    repository = new DynamoDbScopusMappingRepository(client, TABLE_NAME);
+    service = new ScopusMappingService(repository, Clock.fixed(NOW, ZoneOffset.UTC));
   }
 
   @AfterEach

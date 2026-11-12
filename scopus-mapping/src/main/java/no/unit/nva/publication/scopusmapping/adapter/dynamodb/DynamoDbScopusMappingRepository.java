@@ -13,12 +13,14 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAffiliationIdentifier;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAffiliationMapping;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorIdentifier;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorMapping;
+import no.unit.nva.publication.scopusmapping.domain.ScopusCorrectionContext;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMapping;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappingHistoryEntry;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappingRepository;
@@ -48,6 +50,7 @@ public class DynamoDbScopusMappingRepository implements ScopusMappingRepository 
   private final DynamoDbClient client;
   private final String tableName;
   private final BatchItemReader batchItemReader;
+  private final AuthorMappingCorrectionStore correctionStore;
 
   public DynamoDbScopusMappingRepository(DynamoDbClient client, String tableName) {
     this(client, tableName, DEFAULT_INITIAL_BACKOFF);
@@ -58,6 +61,7 @@ public class DynamoDbScopusMappingRepository implements ScopusMappingRepository 
     this.client = client;
     this.tableName = tableName;
     this.batchItemReader = new BatchItemReader(client, tableName, initialBackoff);
+    this.correctionStore = new AuthorMappingCorrectionStore(client, tableName);
   }
 
   @Override
@@ -92,6 +96,18 @@ public class DynamoDbScopusMappingRepository implements ScopusMappingRepository 
     return findHistoryOldestFirst(
         affiliationPartitionKey(scopusAffiliationIdentifier),
         item -> ScopusAffiliationMappingDao.fromItem(item).toHistoryEntry());
+  }
+
+  @Override
+  public Optional<ScopusAuthorMapping> findAuthorMapping(
+      ScopusAuthorIdentifier scopusAuthorIdentifier) {
+    return correctionStore.findMapping(scopusAuthorIdentifier);
+  }
+
+  @Override
+  public void saveCorrection(
+      ScopusAuthorMapping newVersion, ScopusCorrectionContext correctionContext) {
+    correctionStore.saveCorrection(newVersion, correctionContext);
   }
 
   /**

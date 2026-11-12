@@ -27,4 +27,16 @@ public record ScopusMappingVersion(
           "revision must be at least %d: %d".formatted(FIRST_REVISION, revision));
     }
   }
+
+  /** The first version of a mapping, written by a curator. */
+  public static ScopusMappingVersion firstByCurator(String username, Instant writtenAt) {
+    return new ScopusMappingVersion(
+        ScopusMappingSource.CURATOR, writtenAt, username, FIRST_REVISION, false);
+  }
+
+  /** The version a curator writes after this one. It is never a deletion. */
+  public ScopusMappingVersion nextByCurator(String username, Instant writtenAt) {
+    return new ScopusMappingVersion(
+        ScopusMappingSource.CURATOR, writtenAt, username, revision + 1, false);
+  }
 }
