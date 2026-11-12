@@ -2,11 +2,15 @@ package no.unit.nva.publication.scopusmapping.adapter.dynamodb;
 
 import static no.unit.nva.commons.json.JsonUtils.dynamoObjectMapper;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.enhanced.dynamodb.document.EnhancedDocument;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
@@ -19,6 +23,8 @@ final class ScopusMappingItems {
   static final String REVISION = "revision";
   private static final Pattern WHOLE_NUMBER = Pattern.compile("\\d+");
   private static final String UNKNOWN_PARTITION_KEY = "without " + PRIMARY_KEY_PARTITION_KEY_NAME;
+  private static final String UNKNOWN_SORT_KEY = "without " + PRIMARY_KEY_SORT_KEY_NAME;
+  private static final Logger logger = LoggerFactory.getLogger(ScopusMappingItems.class);
 
   private ScopusMappingItems() {}
 
@@ -61,8 +67,23 @@ final class ScopusMappingItems {
   }
 
   static String partitionKeyOf(Map<String, AttributeValue> item) {
-    return Optional.ofNullable(item.get(PRIMARY_KEY_PARTITION_KEY_NAME))
-        .map(AttributeValue::s)
-        .orElse(UNKNOWN_PARTITION_KEY);
+    return textOf(item, PRIMARY_KEY_PARTITION_KEY_NAME).orElse(UNKNOWN_PARTITION_KEY);
+  }
+
+  /** Parses an item, or logs it as malformed and returns empty. */
+  static <T> Optional<T> parseOrLogAndSkip(
+      Map<String, AttributeValue> item, Function<Map<String, AttributeValue>, T> parser) {
+    return attempt(() -> parser.apply(item))
+        .toOptional(
+            failure ->
+                logger.error(
+                    "Leaving out malformed Scopus mapping item {} {}: {}",
+                    partitionKeyOf(item),
+                    textOf(item, PRIMARY_KEY_SORT_KEY_NAME).orElse(UNKNOWN_SORT_KEY),
+                    failure.getException().getMessage()));
+  }
+
+  private static Optional<String> textOf(Map<String, AttributeValue> item, String attributeName) {
+    return Optional.ofNullable(item.get(attributeName)).map(AttributeValue::s);
   }
 }
