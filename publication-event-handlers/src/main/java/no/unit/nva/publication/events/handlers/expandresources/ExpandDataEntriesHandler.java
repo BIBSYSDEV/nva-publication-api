@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.redirectFollowingHttpClient;
 import static no.unit.nva.publication.events.handlers.persistence.PersistenceConfig.PERSISTED_ENTRIES_BUCKET;
 import static no.unit.nva.publication.queue.RecoveryEntry.FILE;
 import static no.unit.nva.publication.queue.RecoveryEntry.MESSAGE;
@@ -35,6 +36,7 @@ import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
+import nva.commons.secrets.SecretsReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -127,6 +129,8 @@ public class ExpandDataEntriesHandler
     var uriRetriever = new UriRetriever();
     var authorizedUriRetriever =
         new AuthorizedBackendUriRetriever(
+            redirectFollowingHttpClient(),
+            SecretsReader.defaultSecretsManagerClient(),
             ENVIRONMENT.readEnv(BACKEND_CLIENT_AUTH_URL),
             ENVIRONMENT.readEnv(BACKEND_CLIENT_SECRET_NAME));
     return new ResourceExpansionServiceImpl(
