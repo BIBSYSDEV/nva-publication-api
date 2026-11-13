@@ -1,5 +1,6 @@
 plugins{
     id 'nva.publication.api.rootplugin'
+    id 'nva.publication.api.git-hooks'
 }
 
 // DynamoDBLocal ships a shaded copy of ion-java that clashes with the canonical
