@@ -444,6 +444,42 @@ class FileServiceTest extends ResourcesLocalTest {
     assertInstanceOf(expectedFileClass, fileEntry.getFile());
   }
 
+  @ParameterizedTest
+  @MethodSource("fileTypeProvider")
+  void
+      shouldPersistRequestedFinalizedFileEntryInDatabaseWhenCompletingMultipartUploadAsBackendClient(
+          Class<? extends File> expectedFileClass, String fileType)
+          throws BadRequestException, NotFoundException, ForbiddenException {
+    var publication = randomPublication();
+    var resource =
+        Resource.fromPublication(publication)
+            .persistNew(resourceService, UserInstance.fromPublication(publication));
+    var completeMultipartUploadResult = mockCompleteMultipartUpload();
+    var request =
+        new ExternalCompleteUploadRequest(
+            randomString(),
+            randomString(),
+            List.of(),
+            fileType,
+            randomUri(),
+            PublisherVersion.ACCEPTED_VERSION,
+            null);
+    var userInstance =
+        UserInstance.createBackendUser(
+            publication.getResourceOwner(), publication.getPublisher().getId());
+    fileService.completeMultipartUpload(resource.getIdentifier(), request, userInstance);
+
+    var fileEntry =
+        FileEntry.queryObject(
+                UUID.fromString(completeMultipartUploadResult.key()), resource.getIdentifier())
+            .fetch(resourceService)
+            .orElseThrow();
+
+    assertEquals(request.license(), fileEntry.getFile().getLicense());
+    assertEquals(request.publisherVersion(), fileEntry.getFile().getPublisherVersion());
+    assertInstanceOf(expectedFileClass, fileEntry.getFile());
+  }
+
   @Test
   void shouldThrowForbiddenWhenAttemptingToPersistNotSupportedFileTypeAsExternalClient()
       throws BadRequestException {
