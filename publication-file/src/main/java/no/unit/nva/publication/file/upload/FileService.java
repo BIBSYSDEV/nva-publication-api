@@ -95,7 +95,7 @@ public class FileService {
     var objectMetadata = getObjectMetadata(s3ObjectKey);
 
     var file =
-        userInstance.isExternalClient()
+        isClientCredentialsUser(userInstance)
                 && request instanceof ExternalCompleteUploadRequest externalRequest
             ? constructFileForExternalClient(
                 UUID.fromString(s3ObjectKey), externalRequest, objectMetadata)
@@ -162,6 +162,10 @@ public class FileService {
     validateUpdateFilePermissions(resource, fileEntry, userInstance);
 
     fileEntry.update(file, userInstance, resourceService);
+  }
+
+  private static boolean isClientCredentialsUser(UserInstance userInstance) {
+    return userInstance.isExternalClient() || userInstance.isBackendClient();
   }
 
   private static void validateDeletePermissions(
