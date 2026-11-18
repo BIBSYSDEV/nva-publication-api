@@ -1431,8 +1431,8 @@ Resources:
   LogicallyDeleteEntriesHandler:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
-    Description: "Listens for Delete event emitted from LogicallyDeleteImportedPublicationsButton. Removes resource from DynamoDB. Parses a DeleteEntryEvent"
     Properties:
+      Description: "Listens for Delete event emitted from LogicallyDeleteImportedPublicationsButton. Removes resource from DynamoDB. Parses a DeleteEntryEvent"
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
@@ -2105,8 +2105,8 @@ Resources:
   ManuallyUpdatePublicationsHandler:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
-    Description: "Lambda function to update publications fetched from search-api"
     Properties:
+      Description: "Lambda function to update publications fetched from search-api"
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.batch.ManuallyUpdatePublicationsHandler::handleRequest
       Timeout: 900
