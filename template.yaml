@@ -1743,7 +1743,6 @@ Resources:
                 aws:SourceArn: !GetAtt PublicationServiceUpdateRule.Arn
 
   PersistLogEntryEventHandler:
-    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -2026,7 +2025,6 @@ Resources:
                 subtopic: ["PublicationService.BrageData.PatchEntry"]
 
   DeleteFileEventHandler:
-    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -2061,7 +2059,6 @@ Resources:
             Destination: !GetAtt DeleteFileFromS3EventHandlerDLQ.Arn
 
   PublicationChannelBatchUpdateFunction:
-    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -2834,7 +2831,6 @@ Resources:
         - !Ref SlackSnsArn
 
   UpdatedPublicationChannelEventHandler:
-    DependsOn: ResourceServiceAccessManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
