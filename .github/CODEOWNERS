@@ -1,7 +1,2 @@
-# Dependency files, so that Dependabot pull requests get a reviewer
-build.gradle                @BIBSYSDEV/nva-backend
-/gradle/libs.versions.toml  @BIBSYSDEV/nva-backend
-/gradle/wrapper/            @BIBSYSDEV/nva-backend
-/gradlew                    @BIBSYSDEV/nva-backend
-/gradlew.bat                @BIBSYSDEV/nva-backend
-/.github/workflows/         @BIBSYSDEV/nva-backend
+# Default reviewers, so that Dependabot pull requests are not missed
+* @BIBSYSDEV/nva-backend
