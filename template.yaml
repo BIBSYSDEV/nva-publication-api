@@ -2197,7 +2197,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.lambda_handler
-      Runtime: python3.12
+      Runtime: python3.14
       Timeout: 900
       Environment:
         Variables:
