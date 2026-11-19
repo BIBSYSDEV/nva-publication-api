@@ -3,12 +3,12 @@ plugins {
 }
 
 dependencies {
-    api(libs.titanium.json.ld)
     api(nvaCatalog.jackson.annotations)
     api(nvaCatalog.jackson.core)
     api(nvaCatalog.jackson.databind)
     api(nvaCatalog.jena.core)
     api(nvaCatalog.slf4j.api)
+    api(nvaCatalog.titanium.json.ld)
     api(nvaLibs.apigateway)
     api(nvaLibs.auth)
     api(nvaLibs.identifiers)
