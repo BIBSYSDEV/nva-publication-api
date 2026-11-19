@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.net.HttpURLConnection;
@@ -111,6 +112,7 @@ class CristinConnectionTest {
 
   @Test
   void shouldRetrySearchWhenCristinProxyRespondsWithServerError() {
+    var logRecorder = LogRecorder.forClass(CristinConnection.class);
     var organizationName = randomString();
     mockServerErrorOnFirstSearchRequest();
     mockCristinSearchOrganizationResponse(organizationName);
@@ -118,6 +120,7 @@ class CristinConnectionTest {
     var searchResponse = cristinConnection.searchCristinOrganization(organizationName);
 
     assertThat(searchResponse.isPresent(), is(equalTo(true)));
+    assertThat(logRecorder.messages(), hasItem(containsString("Retrying cristin request")));
   }
 
   @Test
@@ -125,6 +128,18 @@ class CristinConnectionTest {
     stubFor(
         WireMock.get(urlPathEqualTo(ORGANIZATION_SEARCH_PATH))
             .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_INTERNAL_ERROR)));
+
+    var searchResponse = cristinConnection.searchCristinOrganization(randomString());
+
+    assertThat(searchResponse.isEmpty(), is(equalTo(true)));
+    verify(MAX_ATTEMPTS, getRequestedFor(urlPathEqualTo(ORGANIZATION_SEARCH_PATH)));
+  }
+
+  @Test
+  void shouldRetryWhenConnectionToCristinProxyIsReset() {
+    stubFor(
+        WireMock.get(urlPathEqualTo(ORGANIZATION_SEARCH_PATH))
+            .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
     var searchResponse = cristinConnection.searchCristinOrganization(randomString());
 

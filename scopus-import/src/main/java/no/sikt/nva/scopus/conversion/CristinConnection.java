@@ -12,11 +12,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
+import io.github.resilience4j.retry.event.RetryOnRetryEvent;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.Optional;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
@@ -44,6 +47,9 @@ public class CristinConnection {
   private static final String APPLICATION_JSON = "application/json";
   private static final String QUERY = "query";
   private static final String RETRY_NAME = "cristinRequest";
+  private static final String RETRYING_CRISTIN_REQUEST =
+      "Retrying cristin request after failed attempt {}: {}";
+  private static final String SERVER_ERROR_RESPONSE = "server error response";
   private static final int MAX_ATTEMPTS = 3;
   private static final Duration DEFAULT_RETRY_INTERVAL = Duration.ofMillis(500);
   private final HttpClient httpClient;
@@ -155,14 +161,28 @@ public class CristinConnection {
   }
 
   private static Retry createRetry(Duration retryInterval) {
-    return Retry.of(
-        RETRY_NAME,
-        RetryConfig.<HttpResponse<String>>custom()
-            .maxAttempts(MAX_ATTEMPTS)
-            .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(retryInterval))
-            .retryOnResult(CristinConnection::isServerError)
-            .ignoreExceptions(Exception.class)
-            .build());
+    var retry =
+        Retry.of(
+            RETRY_NAME,
+            RetryConfig.<HttpResponse<String>>custom()
+                .maxAttempts(MAX_ATTEMPTS)
+                .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(retryInterval))
+                .retryOnResult(CristinConnection::isServerError)
+                .retryExceptions(IOException.class)
+                .ignoreExceptions(HttpTimeoutException.class)
+                .build());
+    retry.getEventPublisher().onRetry(CristinConnection::logRetry);
+    return retry;
+  }
+
+  private static void logRetry(RetryOnRetryEvent event) {
+    logger.warn(RETRYING_CRISTIN_REQUEST, event.getNumberOfRetryAttempts(), describeCause(event));
+  }
+
+  private static String describeCause(RetryOnRetryEvent event) {
+    return Optional.ofNullable(event.getLastThrowable())
+        .map(Throwable::toString)
+        .orElse(SERVER_ERROR_RESPONSE);
   }
 
   private static boolean isServerError(HttpResponse<String> response) {
