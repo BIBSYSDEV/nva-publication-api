@@ -1,10 +1,13 @@
 package no.sikt.nva.scopus.conversion;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static no.unit.nva.publication.testing.CristinUriGenerator.cristinPersonUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -22,6 +25,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.utils.CristinGenerator;
@@ -36,6 +40,12 @@ import org.junit.jupiter.api.Test;
 @WireMockTest(httpsEnabled = true)
 class CristinConnectionTest {
 
+  private static final String ORGANIZATION_SEARCH_PATH = "/cristin/organization";
+  private static final String RETRY_SCENARIO = "retry";
+  private static final String RECOVERED = "recovered";
+  private static final int HIGH_PRIORITY = 1;
+  private static final int MAX_ATTEMPTS = 3;
+  private static final Duration RETRY_INTERVAL = Duration.ofMillis(1);
   private CristinConnection cristinConnection;
 
   @BeforeEach
@@ -44,7 +54,7 @@ class CristinConnectionTest {
     var environment = mock(Environment.class);
     when(environment.readEnv("API_HOST"))
         .thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", ""));
-    cristinConnection = new CristinConnection(httpClient, environment);
+    cristinConnection = new CristinConnection(httpClient, environment, RETRY_INTERVAL);
   }
 
   @Test
@@ -97,6 +107,48 @@ class CristinConnectionTest {
     var searchResponse = cristinConnection.searchCristinOrganization(organizationName);
 
     assertThat(searchResponse.isPresent(), is(equalTo(true)));
+  }
+
+  @Test
+  void shouldRetrySearchWhenCristinProxyRespondsWithServerError() {
+    var organizationName = randomString();
+    mockServerErrorOnFirstSearchRequest();
+    mockCristinSearchOrganizationResponse(organizationName);
+
+    var searchResponse = cristinConnection.searchCristinOrganization(organizationName);
+
+    assertThat(searchResponse.isPresent(), is(equalTo(true)));
+  }
+
+  @Test
+  void shouldGiveUpWhenCristinProxyKeepsRespondingWithServerError() {
+    stubFor(
+        WireMock.get(urlPathEqualTo(ORGANIZATION_SEARCH_PATH))
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_INTERNAL_ERROR)));
+
+    var searchResponse = cristinConnection.searchCristinOrganization(randomString());
+
+    assertThat(searchResponse.isEmpty(), is(equalTo(true)));
+    verify(MAX_ATTEMPTS, getRequestedFor(urlPathEqualTo(ORGANIZATION_SEARCH_PATH)));
+  }
+
+  @Test
+  void shouldNotRetryWhenCristinProxyRespondsWithClientError() {
+    mockCristinPersonBadRequest();
+
+    cristinConnection.getCristinPersonByOrcId(randomString());
+
+    verify(1, getRequestedFor(urlMatching("/cristin/person/.*")));
+  }
+
+  private void mockServerErrorOnFirstSearchRequest() {
+    stubFor(
+        WireMock.get(urlPathEqualTo(ORGANIZATION_SEARCH_PATH))
+            .atPriority(HIGH_PRIORITY)
+            .inScenario(RETRY_SCENARIO)
+            .whenScenarioStateIs(STARTED)
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_INTERNAL_ERROR))
+            .willSetStateTo(RECOVERED));
   }
 
   private void mockCristinSearchOrganizationResponse(String organizationName) {
