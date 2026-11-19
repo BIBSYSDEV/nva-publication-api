@@ -284,9 +284,8 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     persistLogEntry(persistedPublication);
 
-    assertDoesNotThrow(
-        () ->
-            handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context));
+    assertDoesNotThrow(() ->
+        handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context));
   }
 
   private void persistLogEntry(Publication persistedPublication) throws NotFoundException {

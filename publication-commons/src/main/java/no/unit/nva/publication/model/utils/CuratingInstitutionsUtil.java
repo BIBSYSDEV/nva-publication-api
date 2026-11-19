@@ -36,11 +36,10 @@ public class CuratingInstitutionsUtil {
     var affiliatedContributors = getAffiliatedContributors(contributors).toList();
     return toCuratingInstitutionSet(
         affiliatedContributors.stream()
-            .flatMap(
-                contributor ->
-                    affiliatedContributors.size() > CONTRIBUTOR_CACHE_THRESHOLD
-                        ? toCuratingInstitution(contributor, cristinUnitsUtil)
-                        : toCuratingInstitutionOnline(contributor)));
+            .flatMap(contributor ->
+                affiliatedContributors.size() > CONTRIBUTOR_CACHE_THRESHOLD
+                    ? toCuratingInstitution(contributor, cristinUnitsUtil)
+                    : toCuratingInstitutionOnline(contributor)));
   }
 
   public Set<CuratingInstitution> getCuratingInstitutionsOnline(
@@ -79,14 +78,13 @@ public class CuratingInstitutionsUtil {
     return getOrganizationIds(contributor)
         .map(cristinUnitsUtil::getTopLevel)
         .filter(Objects::nonNull)
-        .map(
-            id ->
-                new SimpleEntry<>(
-                    id,
-                    Optional.of(contributor)
-                        .map(Contributor::identity)
-                        .map(Identity::getId)
-                        .orElse(null)));
+        .map(id ->
+            new SimpleEntry<>(
+                id,
+                Optional.of(contributor)
+                    .map(Contributor::identity)
+                    .map(Identity::getId)
+                    .orElse(null)));
   }
 
   private static Stream<URI> getOrganizationIds(Contributor contributor) {

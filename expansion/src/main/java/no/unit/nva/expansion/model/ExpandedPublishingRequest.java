@@ -138,10 +138,9 @@ public class ExpandedPublishingRequest extends ExpandedTicket {
 
   private static Publication fetchPublication(
       PublishingRequestCase publishingRequestCase, ResourceService resourceService) {
-    return attempt(
-            () ->
-                resourceService.getPublicationByIdentifier(
-                    publishingRequestCase.getResourceIdentifier()))
+    return attempt(() ->
+            resourceService.getPublicationByIdentifier(
+                publishingRequestCase.getResourceIdentifier()))
         .orElseThrow();
   }
 }

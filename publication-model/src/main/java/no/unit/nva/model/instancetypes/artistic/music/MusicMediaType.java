@@ -35,15 +35,12 @@ public enum MusicMediaType {
     return stream(values())
         .filter(value -> value.getValue().equalsIgnoreCase(candidate))
         .findAny()
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    format(
-                        ERROR_MESSAGE_TEMPLATE,
-                        candidate,
-                        stream(values())
-                            .map(MusicMediaType::toString)
-                            .collect(joining(DELIMITER)))));
+        .orElseThrow(() ->
+            new IllegalArgumentException(
+                format(
+                    ERROR_MESSAGE_TEMPLATE,
+                    candidate,
+                    stream(values()).map(MusicMediaType::toString).collect(joining(DELIMITER)))));
   }
 
   @JsonValue

@@ -61,10 +61,8 @@ public class SqsBatchMessenger {
         request.entries().stream()
             .map(SendMessageBatchRequestEntry::id)
             .map(requestIdToMessageBody::get)
-            .map(
-                reference ->
-                    new PutSqsMessageResultFailureEntry(
-                        reference, failure.getException().toString()))
+            .map(reference ->
+                new PutSqsMessageResultFailureEntry(reference, failure.getException().toString()))
             .collect(Collectors.toList()));
     return result;
   }
@@ -73,10 +71,9 @@ public class SqsBatchMessenger {
     var result = new PutSqsMessageResult();
     var failures =
         response.failed().stream()
-            .map(
-                errorEntry ->
-                    new PutSqsMessageResultFailureEntry(
-                        requestIdToMessageBody.get(errorEntry.id()), errorEntry.message()))
+            .map(errorEntry ->
+                new PutSqsMessageResultFailureEntry(
+                    requestIdToMessageBody.get(errorEntry.id()), errorEntry.message()))
             .collect(Collectors.toList());
     result.setFailures(failures);
     result.setSuccesses(mapToEventReferences(getSuccesses(response)));
@@ -101,9 +98,8 @@ public class SqsBatchMessenger {
     var counter = new AtomicInteger();
     return eventReferenceStream
         .collect(
-            groupingBy(
-                item ->
-                    counter.getAndIncrement() / MAX_NUMBER_OF_MESSAGES_PER_BATCH_ALLOWED_BY_AWS))
+            groupingBy(item ->
+                counter.getAndIncrement() / MAX_NUMBER_OF_MESSAGES_PER_BATCH_ALLOWED_BY_AWS))
         .values();
   }
 

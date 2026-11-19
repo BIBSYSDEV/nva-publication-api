@@ -49,19 +49,17 @@ public final class FilesApprovalTickets {
     var channelClaimOfOtherInstitution =
         resource
             .getPrioritizedClaimedPublicationChannelWithinScope()
-            .filter(
-                channelClaim ->
-                    !channelClaim.getOrganizationId().equals(uploader.getTopLevelOrgCristinId()));
+            .filter(channelClaim ->
+                !channelClaim.getOrganizationId().equals(uploader.getTopLevelOrgCristinId()));
     var filesApprovalThesis =
         channelClaimOfOtherInstitution
-            .map(
-                channelClaim ->
-                    FilesApprovalThesis.createForChannelOwningInstitution(
-                        resource,
-                        uploader,
-                        channelClaim.getOrganizationId(),
-                        channelClaim.getIdentifier(),
-                        workflow))
+            .map(channelClaim ->
+                FilesApprovalThesis.createForChannelOwningInstitution(
+                    resource,
+                    uploader,
+                    channelClaim.getOrganizationId(),
+                    channelClaim.getIdentifier(),
+                    workflow))
             .orElseGet(
                 () -> FilesApprovalThesis.createForUserInstitution(resource, uploader, workflow));
     return filesApprovalThesis.withFilesForApproval(files);

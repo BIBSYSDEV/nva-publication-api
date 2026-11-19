@@ -67,13 +67,12 @@ public class ListTicketsForPublicationHandler extends TicketHandler<Void, Ticket
     var tickets = fetchTickets(resource);
 
     return tickets
-        .map(
-            ticketEntry ->
-                createDto(
-                    ticketEntry,
-                    resource,
-                    TicketPermissions.create(
-                        ticketEntry, userInstance, resource, publicationPermissions)))
+        .map(ticketEntry ->
+            createDto(
+                ticketEntry,
+                resource,
+                TicketPermissions.create(
+                    ticketEntry, userInstance, resource, publicationPermissions)))
         .filter(ticket -> !ticket.getAllowedOperations().isEmpty())
         .toList();
   }

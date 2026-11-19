@@ -136,7 +136,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             resourceService, ticketService, uriRetriever, uriRetriever, sqsClient);
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @MethodSource("importCandidateContextTypeProvider")
   void shouldExpandImportCandidateSuccessfully(PublicationContext publicationContext) {
     var importCandidate = randomImportCandidate(publicationContext);
@@ -179,13 +179,12 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     FakeUriResponse.setupFakeForType(importCandidate, uriRetriever, resourceService, false);
     importCandidate.getEntityDescription().contributors().stream()
         .map(ImportContributor::affiliations)
-        .flatMap(
-            i ->
-                i.stream()
-                    .map(Affiliation::targetOrganization)
-                    .filter(Organization.class::isInstance)
-                    .map(Organization.class::cast)
-                    .map(Organization::getId))
+        .flatMap(i ->
+            i.stream()
+                .map(Affiliation::targetOrganization)
+                .filter(Organization.class::isInstance)
+                .map(Organization.class::cast)
+                .map(Organization::getId))
         .forEach(this::addResponsesForCristinCustomer);
     ExpandedImportCandidate.fromImportCandidate(importCandidate, uriRetriever);
     assertThat(logRecorder.messages(), hasItem(containsString("is nva customer: true")));
@@ -451,10 +450,9 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
             TicketEntry.requestNewTicket(publication, DoiRequest.class)
                 .persistNewTicket(ticketService, publication);
     messageService.createMessage(doiRequest, userInstance, randomString());
-    return attempt(
-            () ->
-                ExpandedDoiRequest.createEntry(
-                    doiRequest, resourceExpansionService, resourceService, ticketService))
+    return attempt(() ->
+            ExpandedDoiRequest.createEntry(
+                doiRequest, resourceExpansionService, resourceService, ticketService))
         .orElseThrow();
   }
 
@@ -678,13 +676,12 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     private ExpandedDataEntryWithAssociatedPublication createExpandedResource(
         Publication publication, RawContentRetriever uriRetriever) {
       ExpandedResource expandedResource =
-          attempt(
-                  () ->
-                      fromPublication(
-                          uriRetriever,
-                          resourceService,
-                          sqsClient,
-                          Resource.fromPublication(publication)))
+          attempt(() ->
+                  fromPublication(
+                      uriRetriever,
+                      resourceService,
+                      sqsClient,
+                      Resource.fromPublication(publication)))
               .orElseThrow();
       return new ExpandedDataEntryWithAssociatedPublication(expandedResource);
     }

@@ -221,10 +221,9 @@ class MigrationTests extends ResourcesLocalTest {
     var key = entries.getFirst().toDao().toDynamoFormat();
 
     key.keySet()
-        .removeIf(
-            attributeKey ->
-                !Set.of(PRIMARY_KEY_PARTITION_KEY_NAME, PRIMARY_KEY_SORT_KEY_NAME)
-                    .contains(attributeKey));
+        .removeIf(attributeKey ->
+            !Set.of(PRIMARY_KEY_PARTITION_KEY_NAME, PRIMARY_KEY_SORT_KEY_NAME)
+                .contains(attributeKey));
     return key;
   }
 
@@ -252,16 +251,14 @@ class MigrationTests extends ResourcesLocalTest {
     var publication = randomPublication(JournalArticle.class);
     publication
         .getContributors()
-        .forEach(
-            contributor ->
-                contributor
-                    .affiliations()
-                    .forEach(
-                        affiliation ->
-                            ((Organization) affiliation)
-                                .setId(
-                                    URI.create(
-                                        "https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0"))));
+        .forEach(contributor ->
+            contributor
+                .affiliations()
+                .forEach(affiliation ->
+                    ((Organization) affiliation)
+                        .setId(
+                            URI.create(
+                                "https://api.dev.nva.aws.unit.no/cristin/organization/20754.6.0.0"))));
     publication.setCuratingInstitutions(null);
     publication.setIdentifier(hardCodedIdentifier);
     updatePublication(publication);

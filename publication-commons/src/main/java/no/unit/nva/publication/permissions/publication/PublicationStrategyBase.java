@@ -119,10 +119,8 @@ public class PublicationStrategyBase {
   protected boolean isImportedStudentThesis() {
     return resource.getAdditionalIdentifiers().stream()
         .filter(AdditionalIdentifier.class::isInstance)
-        .anyMatch(
-            identifier ->
-                IMPORT_IDENTIFIER_SOURCES.contains(
-                    identifier.sourceName().toLowerCase(Locale.ROOT)));
+        .anyMatch(identifier ->
+            IMPORT_IDENTIFIER_SOURCES.contains(identifier.sourceName().toLowerCase(Locale.ROOT)));
   }
 
   protected boolean isOwner() {

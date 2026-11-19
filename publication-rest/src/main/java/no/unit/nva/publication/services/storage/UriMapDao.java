@@ -32,11 +32,10 @@ public class UriMapDao {
   }
 
   public Map<String, AttributeValue> toDynamoFormat() {
-    return attempt(
-            () ->
-                EnhancedDocument.fromJson(
-                        JsonUtils.dynamoObjectMapper.writeValueAsString(this.getUriMap()))
-                    .toMap())
+    return attempt(() ->
+            EnhancedDocument.fromJson(
+                    JsonUtils.dynamoObjectMapper.writeValueAsString(this.getUriMap()))
+                .toMap())
         .orElseThrow();
   }
 

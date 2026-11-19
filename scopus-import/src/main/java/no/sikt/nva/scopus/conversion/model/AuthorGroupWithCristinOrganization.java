@@ -92,12 +92,10 @@ public class AuthorGroupWithCristinOrganization {
     var name = getOrganizationNameFromAuthorGroup();
     var labels =
         name.isPresent() && !name.get().isEmpty()
-            ? name.map(
-                organizationName ->
-                    Map.of(
-                        LanguageUtil.guessTheLanguageOfTheInputStringAsIso6391Code(
-                            organizationName),
-                        organizationName))
+            ? name.map(organizationName ->
+                Map.of(
+                    LanguageUtil.guessTheLanguageOfTheInputStringAsIso6391Code(organizationName),
+                    organizationName))
             : extractCountryNameAsAffiliation();
     return isNotNorway(labels.orElse(Map.of())) && name.isPresent() && !name.get().isBlank()
         ? List.of(
@@ -110,10 +108,8 @@ public class AuthorGroupWithCristinOrganization {
   private Optional<Map<String, String>> extractCountryNameAsAffiliation() {
     return Optional.ofNullable(scopusAuthors.getAffiliation())
         .map(AffiliationTp::getCountry)
-        .map(
-            country ->
-                Map.of(
-                    LanguageUtil.guessTheLanguageOfTheInputStringAsIso6391Code(country), country));
+        .map(country ->
+            Map.of(LanguageUtil.guessTheLanguageOfTheInputStringAsIso6391Code(country), country));
   }
 
   private Optional<String> getOrganizationNameFromAuthorGroup() {

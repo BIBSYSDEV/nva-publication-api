@@ -133,14 +133,11 @@ public abstract class FilesApprovalEntry extends TicketEntry {
 
   public void rejectRejectedFiles(ResourceService resourceService) {
     getFilesForApproval()
-        .forEach(
-            file ->
-                FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
-                    .fetch(resourceService)
-                    .ifPresent(
-                        fileEntry ->
-                            fileEntry.reject(
-                                resourceService, new User(getFinalizedBy().getValue()))));
+        .forEach(file ->
+            FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
+                .fetch(resourceService)
+                .ifPresent(fileEntry ->
+                    fileEntry.reject(resourceService, new User(getFinalizedBy().getValue()))));
   }
 
   @Override
@@ -178,14 +175,11 @@ public abstract class FilesApprovalEntry extends TicketEntry {
 
   public void publishApprovedFiles(ResourceService resourceService) {
     getApprovedFiles()
-        .forEach(
-            file ->
-                FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
-                    .fetch(resourceService)
-                    .ifPresent(
-                        fileEntry ->
-                            fileEntry.approve(
-                                resourceService, new User(getFinalizedBy().getValue()))));
+        .forEach(file ->
+            FileEntry.queryObject(file.getIdentifier(), getResourceIdentifier())
+                .fetch(resourceService)
+                .ifPresent(fileEntry ->
+                    fileEntry.approve(resourceService, new User(getFinalizedBy().getValue()))));
   }
 
   public FilesApprovalEntry withFilesForApproval(Collection<File> filesForApproval) {

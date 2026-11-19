@@ -148,10 +148,8 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
             : replaceContextWithInlineContext(expandedResource);
 
     return Optional.of(
-        attempt(
-                () ->
-                    objectMapper.readValue(
-                        resourceWithContextUri.toString(), ExpandedResource.class))
+        attempt(() ->
+                objectMapper.readValue(resourceWithContextUri.toString(), ExpandedResource.class))
             .orElseThrow());
   }
 
@@ -171,10 +169,8 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
       var partOf =
           RdfUtils.getAllNestedPartOfs(uriRetriever, organizationId).stream()
-              .map(
-                  uri ->
-                      new ExpandedOrganization(
-                          uri, UriWrapper.fromUri(uri).getLastPathElement(), null))
+              .map(uri ->
+                  new ExpandedOrganization(uri, UriWrapper.fromUri(uri).getLastPathElement(), null))
               .toList();
 
       return new ExpandedOrganization(organizationId, organizationIdentifier, partOf);

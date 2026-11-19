@@ -197,14 +197,13 @@ public class LoadDynamodbResourceBatchJobHandler
   private static List<BatchWorkItem> createWorkItems(
       String jobType, Collection<Map<String, AttributeValue>> items) {
     return items.stream()
-        .map(
-            item -> {
-              var dynamoDbKey =
-                  new DynamodbResourceBatchDynamoDbKey(
-                      item.get(PRIMARY_KEY_PARTITION_KEY_NAME).s(),
-                      item.get(PRIMARY_KEY_SORT_KEY_NAME).s());
-              return new BatchWorkItem(dynamoDbKey, jobType);
-            })
+        .map(item -> {
+          var dynamoDbKey =
+              new DynamodbResourceBatchDynamoDbKey(
+                  item.get(PRIMARY_KEY_PARTITION_KEY_NAME).s(),
+                  item.get(PRIMARY_KEY_SORT_KEY_NAME).s());
+          return new BatchWorkItem(dynamoDbKey, jobType);
+        })
         .toList();
   }
 
@@ -212,12 +211,11 @@ public class LoadDynamodbResourceBatchJobHandler
     var validInput =
         Optional.ofNullable(input)
             .filter(request -> StringUtils.isNotBlank(request.jobType()))
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "Missing required field 'jobType'. This lambda requires a jobType to be"
-                            + " specified in the input. Example input: {\"jobType\":"
-                            + " \"REINDEX_RECORD\"}"));
+            .orElseThrow(() ->
+                new IllegalArgumentException(
+                    "Missing required field 'jobType'. This lambda requires a jobType to be"
+                        + " specified in the input. Example input: {\"jobType\":"
+                        + " \"REINDEX_RECORD\"}"));
     BatchFilterValidator.validate(validInput.filter());
   }
 
@@ -242,13 +240,12 @@ public class LoadDynamodbResourceBatchJobHandler
         logger.error("Failed to send {} messages to SQS", response.failed().size());
         response
             .failed()
-            .forEach(
-                failure ->
-                    logger.error(
-                        "Failed message ID: {}, Code: {}, Message: {}",
-                        failure.id(),
-                        failure.code(),
-                        failure.message()));
+            .forEach(failure ->
+                logger.error(
+                    "Failed message ID: {}, Code: {}, Message: {}",
+                    failure.id(),
+                    failure.code(),
+                    failure.message()));
       }
 
       return response.successful().size();

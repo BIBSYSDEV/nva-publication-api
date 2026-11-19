@@ -27,14 +27,13 @@ public class Report extends Book {
 
   @Override
   protected Report rebuild(BookSeries series, PublishingHouse publisher) {
-    return attempt(
-            () ->
-                new Builder()
-                    .withSeries(series)
-                    .withSeriesNumber(getSeriesNumber())
-                    .withPublisher(publisher)
-                    .withIsbnList(getIsbnList())
-                    .build())
+    return attempt(() ->
+            new Builder()
+                .withSeries(series)
+                .withSeriesNumber(getSeriesNumber())
+                .withPublisher(publisher)
+                .withIsbnList(getIsbnList())
+                .build())
         .orElseThrow();
   }
 

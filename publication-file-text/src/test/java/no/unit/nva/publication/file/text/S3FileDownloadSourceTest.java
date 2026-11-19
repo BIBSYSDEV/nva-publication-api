@@ -92,15 +92,13 @@ class S3FileDownloadSourceTest {
     stubObjectSize(s3Client, FILE_CONTENT.length());
     var capturedRequest = ArgumentCaptor.forClass(GetObjectRequest.class);
     when(s3Client.getObject(capturedRequest.capture(), any(ResponseTransformer.class)))
-        .thenAnswer(
-            invocation -> {
-              ResponseTransformer<GetObjectResponse, GetObjectResponse> transformer =
-                  invocation.getArgument(1);
-              return transformer.transform(
-                  GetObjectResponse.builder().eTag(ETAG).build(),
-                  AbortableInputStream.create(
-                      new ByteArrayInputStream(FILE_CONTENT.getBytes(UTF_8))));
-            });
+        .thenAnswer(invocation -> {
+          ResponseTransformer<GetObjectResponse, GetObjectResponse> transformer =
+              invocation.getArgument(1);
+          return transformer.transform(
+              GetObjectResponse.builder().eTag(ETAG).build(),
+              AbortableInputStream.create(new ByteArrayInputStream(FILE_CONTENT.getBytes(UTF_8))));
+        });
 
     var downloadedObject = new S3FileDownloadSource(s3Client).downloadToFile(BUCKET, KEY);
 

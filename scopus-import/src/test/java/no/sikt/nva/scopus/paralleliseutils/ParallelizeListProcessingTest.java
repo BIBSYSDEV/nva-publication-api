@@ -19,10 +19,9 @@ class ParallelizeListProcessingTest {
   @Test
   void shouldHandleEmptyList() {
     List<String> emptyList = new ArrayList<>();
-    assertDoesNotThrow(
-        () ->
-            ParallelizeListProcessing.runAsVirtualNetworkingCallingThreads(
-                emptyList, String::toLowerCase));
+    assertDoesNotThrow(() ->
+        ParallelizeListProcessing.runAsVirtualNetworkingCallingThreads(
+            emptyList, String::toLowerCase));
   }
 
   @Test

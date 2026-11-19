@@ -177,9 +177,8 @@ class DynamodbResourceBatchJobHandlerTest {
 
     verify(mockDynamoDbClient)
         .query(
-            argThat(
-                (QueryRequest request) ->
-                    BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.indexName())));
+            argThat((QueryRequest request) ->
+                BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.indexName())));
 
     // Verify the executor was called with resolved primary keys
     ArgumentCaptor<List<BatchWorkItem>> captor = ArgumentCaptor.forClass(List.class);
@@ -336,10 +335,9 @@ class DynamodbResourceBatchJobHandlerTest {
 
     verify(mockDynamoDbClient)
         .query(
-            argThat(
-                (QueryRequest request) ->
-                    BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.indexName())
-                        && TEST_TABLE_NAME.equals(request.tableName())));
+            argThat((QueryRequest request) ->
+                BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.indexName())
+                    && TEST_TABLE_NAME.equals(request.tableName())));
 
     ArgumentCaptor<List<BatchWorkItem>> captor = ArgumentCaptor.forClass(List.class);
     verify(mockExecutor).executeBatch(captor.capture());
@@ -465,16 +463,15 @@ class DynamodbResourceBatchJobHandlerTest {
             .build();
 
     when(mockDynamoDbClient.query(any(QueryRequest.class)))
-        .thenAnswer(
-            invocation -> {
-              QueryRequest request = invocation.getArgument(0);
-              if (BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.indexName())) {
-                return queryResult1;
-              } else if (RESOURCE_BY_CRISTIN_ID_INDEX_NAME.equals(request.indexName())) {
-                return queryResult2;
-              }
-              return QueryResponse.builder().build();
-            });
+        .thenAnswer(invocation -> {
+          QueryRequest request = invocation.getArgument(0);
+          if (BY_CUSTOMER_RESOURCE_INDEX_NAME.equals(request.indexName())) {
+            return queryResult1;
+          } else if (RESOURCE_BY_CRISTIN_ID_INDEX_NAME.equals(request.indexName())) {
+            return queryResult2;
+          }
+          return QueryResponse.builder().build();
+        });
 
     var sqsEvent = createSqsEventWithMultipleMessages(List.of(workItem1, workItem2));
     handler.handleRequest(sqsEvent, context);

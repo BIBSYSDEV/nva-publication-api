@@ -202,12 +202,11 @@ class DynamodbStreamToEventBridgeHandlerTest {
     var records =
         IntStream.range(0, numberOfEvents)
             .boxed()
-            .map(
-                i ->
-                    randomRecord(
-                        randomDynamoRecord(OperationType.MODIFY),
-                        toDynamoDbFormat(Resource.fromPublication(randomPublication())),
-                        toDynamoDbFormat(Resource.fromPublication(randomPublication()))))
+            .map(i ->
+                randomRecord(
+                    randomDynamoRecord(OperationType.MODIFY),
+                    toDynamoDbFormat(Resource.fromPublication(randomPublication())),
+                    toDynamoDbFormat(Resource.fromPublication(randomPublication()))))
             .toList();
     event.setRecords(records);
     return event;

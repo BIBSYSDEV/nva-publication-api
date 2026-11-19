@@ -1725,11 +1725,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
 
     var fileEntries = resource.getFileEntries();
 
-    fileEntries.forEach(
-        entry -> {
-          assertEquals(userInstance.getTopLevelOrgCristinId(), entry.getOwnerAffiliation());
-          assertEquals(userInstance.getUser(), entry.getOwner());
-        });
+    fileEntries.forEach(entry -> {
+      assertEquals(userInstance.getTopLevelOrgCristinId(), entry.getOwnerAffiliation());
+      assertEquals(userInstance.getUser(), entry.getOwner());
+    });
   }
 
   @Test
@@ -1922,10 +1921,9 @@ class ResourceServiceTest extends ResourcesLocalTest {
             .toLogEntry(
                 SortableIdentifier.next(),
                 new LogOrganization(randomUri(), randomString(), Map.of())));
-    assertDoesNotThrow(
-        () ->
-            resourceService.scanResources(
-                BIG_PAGE, ListingResult.empty().getStartMarker(), Collections.emptyList()));
+    assertDoesNotThrow(() ->
+        resourceService.scanResources(
+            BIG_PAGE, ListingResult.empty().getStartMarker(), Collections.emptyList()));
   }
 
   @Test
@@ -2244,11 +2242,10 @@ class ResourceServiceTest extends ResourcesLocalTest {
     var exceptionsThrown =
         logRecorder.events().stream().map(LogEvent::getThrown).map(Throwable::toString).toList();
     assertThat(exceptionsThrown, hasItem(containsString("DynamoDbException")));
-    userResources.forEach(
-        publication -> {
-          var expected = "Resource:" + publication.getIdentifier().toString();
-          assertThat(logRecorder.messages(), hasItem(containsString(expected)));
-        });
+    userResources.forEach(publication -> {
+      var expected = "Resource:" + publication.getIdentifier().toString();
+      assertThat(logRecorder.messages(), hasItem(containsString(expected)));
+    });
   }
 
   private Publication createPersistedPublicationWithManyContributions(int amount)

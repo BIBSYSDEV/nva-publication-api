@@ -187,13 +187,12 @@ public class UpdatePublicationHandler
   }
 
   private void addEtagHeaderForUpdatedPublication(String userName, Resource updatedResource) {
-    addAdditionalHeaders(
-        () ->
-            Map.of(
-                ETAG,
-                ETag.create(userName, getVersion(updatedResource)).toString(),
-                ACCESS_CONTROL_EXPOSE_HEADERS,
-                ETAG));
+    addAdditionalHeaders(() ->
+        Map.of(
+            ETAG,
+            ETag.create(userName, getVersion(updatedResource)).toString(),
+            ACCESS_CONTROL_EXPOSE_HEADERS,
+            ETAG));
   }
 
   private Resource updatePublication(
@@ -214,10 +213,9 @@ public class UpdatePublicationHandler
 
     var updatedFiles = resourceUpdate.getFiles();
     if (!updatedFiles.stream()
-        .allMatch(
-            file ->
-                canUpdateFileToPendingOpenFile(
-                    file, customer, existingResource, resourceUpdate, userInstance))) {
+        .allMatch(file ->
+            canUpdateFileToPendingOpenFile(
+                file, customer, existingResource, resourceUpdate, userInstance))) {
       throw new ForbiddenException();
     }
 

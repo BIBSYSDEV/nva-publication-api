@@ -311,10 +311,9 @@ public class PublicationResponse
   @Override
   public List<AssociatedArtifactDto> getAssociatedArtifacts() {
     return this.associatedArtifacts.stream()
-        .filter(
-            artifactResponse ->
-                AssociatedArtifact.getPublicArtifactTypeNames()
-                    .contains(artifactResponse.getArtifactType()))
+        .filter(artifactResponse ->
+            AssociatedArtifact.getPublicArtifactTypeNames()
+                .contains(artifactResponse.getArtifactType()))
         .toList();
   }
 

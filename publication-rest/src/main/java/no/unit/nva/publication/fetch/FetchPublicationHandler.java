@@ -253,11 +253,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
   private String createPublicationResponse(RequestInfo requestInfo, Resource resource) {
     var response = PublicationResponseFactory.create(resource, requestInfo, identityServiceClient);
-    addAdditionalHeaders(
-        () ->
-            Map.of(
-                ETAG,
-                ETag.create(getUsername(requestInfo), getResourceVersion(resource)).toString()));
+    addAdditionalHeaders(() ->
+        Map.of(
+            ETAG, ETag.create(getUsername(requestInfo), getResourceVersion(resource)).toString()));
     return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(response)).orElseThrow();
   }
 

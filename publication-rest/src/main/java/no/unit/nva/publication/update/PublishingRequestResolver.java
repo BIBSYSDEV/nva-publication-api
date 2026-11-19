@@ -70,9 +70,8 @@ public final class PublishingRequestResolver {
 
   private void autoCompletePendingPublishingRequestsIfNeeded(
       Resource resource, List<FilesApprovalEntry> filesApprovalEntries) {
-    filesApprovalEntries.forEach(
-        ticket ->
-            ticket.complete(resource.toPublication(), userInstance).persistUpdate(ticketService));
+    filesApprovalEntries.forEach(ticket ->
+        ticket.complete(resource.toPublication(), userInstance).persistUpdate(ticketService));
   }
 
   private boolean thereAreNoPendingFiles(Resource resource) {
@@ -141,9 +140,8 @@ public final class PublishingRequestResolver {
   private static Set<File> getUpdatedTicketFiles(
       FilesApprovalEntry filesApprovalEntry, Resource newImage) {
     return filesApprovalEntry.getFilesForApproval().stream()
-        .map(
-            fileForApproval ->
-                newImage.getFileByIdentifier(fileForApproval.getIdentifier()).orElse(null))
+        .map(fileForApproval ->
+            newImage.getFileByIdentifier(fileForApproval.getIdentifier()).orElse(null))
         .filter(Objects::nonNull)
         .filter(File::isPending)
         .collect(Collectors.toSet());
@@ -152,11 +150,10 @@ public final class PublishingRequestResolver {
   private Stream<File> getNewPendingFiles(Resource oldImage, Resource newImage) {
     var existingPendingFiles = getPendingFiles(oldImage).toList();
     var newPendingFiles = new ArrayList<>(getPendingFiles(newImage).toList());
-    newPendingFiles.removeIf(
-        newFile ->
-            existingPendingFiles.stream()
-                .map(File::getIdentifier)
-                .anyMatch(oldFile -> oldFile.equals(newFile.getIdentifier())));
+    newPendingFiles.removeIf(newFile ->
+        existingPendingFiles.stream()
+            .map(File::getIdentifier)
+            .anyMatch(oldFile -> oldFile.equals(newFile.getIdentifier())));
     return newPendingFiles.stream();
   }
 

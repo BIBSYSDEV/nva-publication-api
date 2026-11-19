@@ -231,10 +231,9 @@ class DegreeDenyStrategyTest extends PublicationPermissionStrategyTest {
   private static Stream<Arguments> generateAllCombinationsOfOperationsAndInstanceClasses(
       final Set<PublicationOperation> operations) {
     return operations.stream()
-        .flatMap(
-            operation ->
-                Arrays.stream(PROTECTED_DEGREE_INSTANCE_TYPES).toList().stream()
-                    .map(instanceClass -> Arguments.of(operation, instanceClass)));
+        .flatMap(operation ->
+            Arrays.stream(PROTECTED_DEGREE_INSTANCE_TYPES).toList().stream()
+                .map(instanceClass -> Arguments.of(operation, instanceClass)));
   }
 
   private static Contributor createContributorWithoutId(Role role, URI cristinOrganizationId) {

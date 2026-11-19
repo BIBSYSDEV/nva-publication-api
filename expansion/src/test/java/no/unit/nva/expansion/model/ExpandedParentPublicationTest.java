@@ -74,10 +74,9 @@ class ExpandedParentPublicationTest extends ResourcesLocalTest {
     when(mockedUriRetriever.fetchResponse(any(), any()))
         .thenReturn(Optional.of(FakeHttpResponse.create(emptyJsonBody(), 404)));
 
-    assertDoesNotThrow(
-        () ->
-            new ExpandedParentPublication(mockedUriRetriever, resourceService, queueClient)
-                .getExpandedParentPublication(publicationId));
+    assertDoesNotThrow(() ->
+        new ExpandedParentPublication(mockedUriRetriever, resourceService, queueClient)
+            .getExpandedParentPublication(publicationId));
   }
 
   @Test

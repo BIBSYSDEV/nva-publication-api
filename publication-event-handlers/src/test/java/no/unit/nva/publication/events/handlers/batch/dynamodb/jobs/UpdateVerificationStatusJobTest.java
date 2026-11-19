@@ -203,10 +203,9 @@ class UpdateVerificationStatusJobTest extends ResourcesLocalTest {
     var persistedPublication = persistPublication(publication);
 
     contributors.stream()
-        .map(
-            contributor -> {
-              return contributor.identity().getId();
-            })
+        .map(contributor -> {
+          return contributor.identity().getId();
+        })
         .forEach(this::mockCristinClientReturnsVerifiedPerson);
 
     var workItem = createWorkItemForPublication(persistedPublication);

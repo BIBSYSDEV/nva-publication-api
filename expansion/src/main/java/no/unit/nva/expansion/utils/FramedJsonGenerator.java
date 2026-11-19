@@ -94,13 +94,12 @@ public class FramedJsonGenerator {
 
     var tempModel = ModelFactory.createDefaultModel();
     Stream.of(PROJECT_PROPERTY_URI, SOURCE_PROPERTY_URI, PROJECT_SOURCE_URI)
-        .forEach(
-            uri -> {
-              tempModel.removeAll();
-              fetchDataFromModelResource(projectsModel, ResourceFactory.createProperty(uri))
-                  .forEach(stream -> loadDataIntoModel(tempModel, stream));
-              projectsModel.add(tempModel);
-            });
+        .forEach(uri -> {
+          tempModel.removeAll();
+          fetchDataFromModelResource(projectsModel, ResourceFactory.createProperty(uri))
+              .forEach(stream -> loadDataIntoModel(tempModel, stream));
+          projectsModel.add(tempModel);
+        });
     return projectsModel;
   }
 

@@ -53,10 +53,9 @@ public class TicketStrategyBase {
   public boolean userBelongsToReceivingTopLevelOrg() {
     return Optional.ofNullable(userInstance)
         .map(UserInstance::getTopLevelOrgCristinId)
-        .map(
-            userTopLevelOrg ->
-                userTopLevelOrg.equals(
-                    ticket.getReceivingOrganizationDetails().topLevelOrganizationId()))
+        .map(userTopLevelOrg ->
+            userTopLevelOrg.equals(
+                ticket.getReceivingOrganizationDetails().topLevelOrganizationId()))
         .orElse(false);
   }
 }

@@ -42,10 +42,8 @@ public final class LandingPageUtil {
     return Optional.of(publicationIdentifier)
         .map(attempt(this::createLandingPageUri))
         .flatMap(attempt -> attempt.toOptional(LandingPageUtil::logFailure))
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    ERROR_PUBLICATION_LANDING_PAGE_COULD_NOT_BE_CONSTRUCTED));
+        .orElseThrow(() ->
+            new IllegalArgumentException(ERROR_PUBLICATION_LANDING_PAGE_COULD_NOT_BE_CONSTRUCTED));
   }
 
   @JacocoGenerated

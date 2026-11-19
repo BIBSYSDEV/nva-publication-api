@@ -64,9 +64,7 @@ class ImportCandidateStreamFilterTest {
         .filter(Matcher::matches)
         .map(matcher -> matcher.group(1))
         .findFirst()
-        .orElseThrow(
-            () ->
-                new AssertionError(
-                    "No FilterCriteria pattern on the import candidate stream handler"));
+        .orElseThrow(() ->
+            new AssertionError("No FilterCriteria pattern on the import candidate stream handler"));
   }
 }

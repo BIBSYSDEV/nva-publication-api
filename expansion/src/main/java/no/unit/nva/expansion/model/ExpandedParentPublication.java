@@ -123,10 +123,8 @@ public class ExpandedParentPublication {
         .fetchResponse(externalReference, APPLICATION_JSON_LD.toString())
         .filter(response -> processResponse(response, publicationIdentifier))
         .map(HttpResponse::body)
-        .orElseThrow(
-            () ->
-                new RuntimeException(
-                    ERROR_MESSAGE_FETCHING_REFERENCE.formatted(externalReference)));
+        .orElseThrow(() ->
+            new RuntimeException(ERROR_MESSAGE_FETCHING_REFERENCE.formatted(externalReference)));
   }
 
   private String fetchParentPublication(URI publicationId) {
@@ -138,9 +136,7 @@ public class ExpandedParentPublication {
 
   private Publication fetchPublication(SortableIdentifier publicationIdentifier) {
     return attempt(() -> resourceService.getPublicationByIdentifier(publicationIdentifier))
-        .orElseThrow(
-            failure ->
-                new RuntimeException(
-                    PARENT_PUBLICATION_NOT_FOUND_S.formatted(publicationIdentifier)));
+        .orElseThrow(failure ->
+            new RuntimeException(PARENT_PUBLICATION_NOT_FOUND_S.formatted(publicationIdentifier)));
   }
 }

@@ -96,16 +96,13 @@ class ResourceDeletedEventHandlerTest extends ResourcesLocalTest {
 
     context
         .identifiers()
-        .forEach(
-            identifier -> {
-              assertThrows(
-                  NoSuchKeyException.class,
-                  () -> resourceStorageS3Driver.getFile(UnixPath.of(identifier.key().toString())));
-              assertTrue(
-                  FileEntry.queryObject(identifier.fileIdentifier())
-                      .fetch(resourceService)
-                      .isEmpty());
-            });
+        .forEach(identifier -> {
+          assertThrows(
+              NoSuchKeyException.class,
+              () -> resourceStorageS3Driver.getFile(UnixPath.of(identifier.key().toString())));
+          assertTrue(
+              FileEntry.queryObject(identifier.fileIdentifier()).fetch(resourceService).isEmpty());
+        });
   }
 
   @ParameterizedTest(name = "shouldDeleteFilesForResourceWithFiles; files present on s3: {0}")
@@ -118,16 +115,13 @@ class ResourceDeletedEventHandlerTest extends ResourcesLocalTest {
 
     context
         .identifiers()
-        .forEach(
-            identifier -> {
-              assertThrows(
-                  NoSuchKeyException.class,
-                  () -> resourceStorageS3Driver.getFile(UnixPath.of(identifier.key().toString())));
-              assertTrue(
-                  FileEntry.queryObject(identifier.fileIdentifier())
-                      .fetch(resourceService)
-                      .isEmpty());
-            });
+        .forEach(identifier -> {
+          assertThrows(
+              NoSuchKeyException.class,
+              () -> resourceStorageS3Driver.getFile(UnixPath.of(identifier.key().toString())));
+          assertTrue(
+              FileEntry.queryObject(identifier.fileIdentifier()).fetch(resourceService).isEmpty());
+        });
   }
 
   private record FileIdentifiers(UUID key, SortableIdentifier fileIdentifier) {}
@@ -158,10 +152,9 @@ class ResourceDeletedEventHandlerTest extends ResourcesLocalTest {
 
     if (filesPresentOnS3) {
       for (FileIdentifiers identifiers : fileIdentifiers) {
-        attempt(
-                () ->
-                    resourceStorageS3Driver.insertFile(
-                        UnixPath.of(identifiers.key().toString()), "dummy"))
+        attempt(() ->
+                resourceStorageS3Driver.insertFile(
+                    UnixPath.of(identifiers.key().toString()), "dummy"))
             .orElseThrow();
       }
     }

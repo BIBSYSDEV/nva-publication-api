@@ -36,9 +36,8 @@ public final class AssociatedArtifactsMerger {
   private static Collection<AssociatedArtifact> filterOutOpenFilesWithPublishedVersion(
       AssociatedArtifactList artifacts) {
     return artifacts.stream()
-        .filter(
-            associatedArtifact ->
-                !(associatedArtifact instanceof OpenFile openFile && hasPublishedVersion(openFile)))
+        .filter(associatedArtifact ->
+            !(associatedArtifact instanceof OpenFile openFile && hasPublishedVersion(openFile)))
         .toList();
   }
 
@@ -50,11 +49,10 @@ public final class AssociatedArtifactsMerger {
       AssociatedArtifactList existing, File file) {
     return PUBLISHED_VERSION == file.getPublisherVersion()
         && existing.stream()
-            .noneMatch(
-                associatedArtifact ->
-                    associatedArtifact instanceof OpenFile openFile
-                        && hasPublishedVersion(openFile)
-                        && openFile.getName().equals(file.getName()));
+            .noneMatch(associatedArtifact ->
+                associatedArtifact instanceof OpenFile openFile
+                    && hasPublishedVersion(openFile)
+                    && openFile.getName().equals(file.getName()));
   }
 
   private static boolean hasMultipleOrNoOpenFilesWithPublishedVersion(

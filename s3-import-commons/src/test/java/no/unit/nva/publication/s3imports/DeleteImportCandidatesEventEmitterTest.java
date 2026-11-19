@@ -126,13 +126,10 @@ public class DeleteImportCandidatesEventEmitterTest {
   private List<ImportCandidateDeleteEvent> collectBodiesOfEmittedEventReferences() {
     return eventBridgeClient.getRequestEntries().stream()
         .map(PutEventsRequestEntry::detail)
-        .map(
-            event ->
-                attempt(
-                        () ->
-                            JsonUtils.dtoObjectMapper.readValue(
-                                event, ImportCandidateDeleteEvent.class))
-                    .orElseThrow())
+        .map(event ->
+            attempt(() ->
+                    JsonUtils.dtoObjectMapper.readValue(event, ImportCandidateDeleteEvent.class))
+                .orElseThrow())
         .collect(Collectors.toList());
   }
 

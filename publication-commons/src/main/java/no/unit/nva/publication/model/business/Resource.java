@@ -368,10 +368,9 @@ public class Resource implements Entity, Validatable<Resource> {
     return publication.getAssociatedArtifacts().stream()
         .filter(File.class::isInstance)
         .map(File.class::cast)
-        .map(
-            file ->
-                FileEntry.create(
-                    file, publication.getIdentifier(), UserInstance.fromPublication(publication)))
+        .map(file ->
+            FileEntry.create(
+                file, publication.getIdentifier(), UserInstance.fromPublication(publication)))
         .toList();
   }
 

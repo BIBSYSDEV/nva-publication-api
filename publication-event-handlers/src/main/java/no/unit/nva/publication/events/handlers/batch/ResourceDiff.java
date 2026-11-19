@@ -44,13 +44,12 @@ public final class ResourceDiff {
   private static void collectObjectChanges(
       String path, JsonNode before, JsonNode after, List<FieldChange> changes) {
     fieldNames(before, after)
-        .forEach(
-            fieldName ->
-                collectChanges(
-                    FIELD_PATH_FORMAT.formatted(path, fieldName),
-                    before.path(fieldName),
-                    after.path(fieldName),
-                    changes));
+        .forEach(fieldName ->
+            collectChanges(
+                FIELD_PATH_FORMAT.formatted(path, fieldName),
+                before.path(fieldName),
+                after.path(fieldName),
+                changes));
   }
 
   /**
