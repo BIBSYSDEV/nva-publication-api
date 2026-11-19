@@ -11,7 +11,6 @@ import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -213,7 +212,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     createRandomResources(2);
     handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
     var emittedEvent = consumeLatestEmittedEvent();
-    assertThat(emittedEvent.getStartMarker(), is(not(nullValue())));
+    assertThat(emittedEvent.getStartMarker().isPresent(), is(true));
   }
 
   @Test
@@ -346,7 +345,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
   }
 
   private Map<String, AttributeValue> getLatestEmittedStartingPoint() {
-    return consumeLatestEmittedEvent().getStartMarker();
+    return consumeLatestEmittedEvent().getStartMarker().orElse(null);
   }
 
   private ScanDatabaseRequest consumeLatestEmittedEvent() {

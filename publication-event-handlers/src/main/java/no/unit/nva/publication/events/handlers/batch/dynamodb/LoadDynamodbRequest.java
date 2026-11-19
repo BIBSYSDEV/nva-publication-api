@@ -7,6 +7,7 @@ import static java.util.stream.Collectors.toMap;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.publication.model.storage.KeyField;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -40,17 +41,8 @@ public record LoadDynamodbRequest(
     return isNull(itemsProcessed) ? 0 : itemsProcessed;
   }
 
-  public Map<String, AttributeValue> toDynamodbStartMarker() {
-    Map<String, AttributeValue> dynamodbStartMarker = null;
-    if (nonNull(startMarker)) {
-      dynamodbStartMarker =
-          startMarker.entrySet().stream()
-              .collect(
-                  toMap(
-                      Map.Entry::getKey,
-                      entry -> AttributeValue.builder().s(entry.getValue()).build()));
-    }
-    return dynamodbStartMarker;
+  public Optional<Map<String, AttributeValue>> toDynamodbStartMarker() {
+    return Optional.ofNullable(startMarker).map(LoadDynamodbRequest::toAttributeValueMap);
   }
 
   public LoadDynamodbRequest nextPageRequest(
@@ -66,6 +58,13 @@ public record LoadDynamodbRequest(
         totalSegments,
         filter,
         currentItemsProcessed() + scannedItemCount);
+  }
+
+  private static Map<String, AttributeValue> toAttributeValueMap(Map<String, String> startMarker) {
+    return startMarker.entrySet().stream()
+        .collect(
+            toMap(
+                Map.Entry::getKey, entry -> AttributeValue.builder().s(entry.getValue()).build()));
   }
 
   public PutEventsRequestEntry createNewEventEntry(

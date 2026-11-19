@@ -27,7 +27,7 @@ public final class LandingPageUtil {
   private final Environment environment;
   private final String resourcesHost;
 
-  protected LandingPageUtil(Environment environment) {
+  LandingPageUtil(Environment environment) {
     this.environment = environment;
     this.resourcesHost = readHostFromEnvironment();
   }

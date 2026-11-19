@@ -8,6 +8,7 @@ nva {
     }
     generatedCode = [
         'no/scopus/generated/**',
+        'no/unit/nva/model/config/**',
         'no/unit/nva/model/testing/**',
         'org/datacite/schema/**'
     ]

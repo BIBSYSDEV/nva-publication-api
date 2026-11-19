@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.publication.model.storage.KeyField;
@@ -83,12 +84,13 @@ public class ScanDatabaseRequest implements JsonSerializable {
   }
 
   @JsonIgnore
-  public Map<String, AttributeValue> getStartMarker() {
-    return nonNull(startMarker) ? toAttributeValueMap(startMarker) : null;
+  public Optional<Map<String, AttributeValue>> getStartMarker() {
+    return Optional.ofNullable(startMarker).map(ScanDatabaseRequest::toAttributeValueMap);
   }
 
   public ScanDatabaseRequest newScanDatabaseRequest(Map<String, AttributeValue> newStartMarker) {
-    return new ScanDatabaseRequest(this.getPageSize(), toWireFormat(newStartMarker), topic, types);
+    return new ScanDatabaseRequest(
+        this.getPageSize(), toWireFormat(newStartMarker).orElse(null), topic, types);
   }
 
   public PutEventsRequestEntry createNewEventEntry(
@@ -107,11 +109,14 @@ public class ScanDatabaseRequest implements JsonSerializable {
     return pageSize > 0 && pageSize <= MAX_PAGE_SIZE;
   }
 
-  private static Map<String, String> toWireFormat(Map<String, AttributeValue> startMarker) {
-    return nonNull(startMarker)
-        ? startMarker.entrySet().stream()
-            .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().s()))
-        : null;
+  private static Optional<Map<String, String>> toWireFormat(
+      Map<String, AttributeValue> startMarker) {
+    return Optional.ofNullable(startMarker).map(ScanDatabaseRequest::toStringValueMap);
+  }
+
+  private static Map<String, String> toStringValueMap(Map<String, AttributeValue> startMarker) {
+    return startMarker.entrySet().stream()
+        .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().s()));
   }
 
   private static Map<String, AttributeValue> toAttributeValueMap(Map<String, String> startMarker) {
@@ -129,7 +134,7 @@ public class ScanDatabaseRequest implements JsonSerializable {
     private Builder() {}
 
     public Builder withStartMarker(Map<String, AttributeValue> startMarker) {
-      this.startMarker = toWireFormat(startMarker);
+      this.startMarker = toWireFormat(startMarker).orElse(null);
       return this;
     }
 

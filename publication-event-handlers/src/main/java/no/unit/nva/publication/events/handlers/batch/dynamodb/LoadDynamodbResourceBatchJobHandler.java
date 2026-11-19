@@ -147,7 +147,7 @@ public class LoadDynamodbResourceBatchJobHandler
     var scan =
         resourceService.scanResourcesRaw(
             scanPageSize,
-            input.toDynamodbStartMarker(),
+            input.toDynamodbStartMarker().orElse(null),
             input.types(),
             input.segment(),
             input.totalSegments());
