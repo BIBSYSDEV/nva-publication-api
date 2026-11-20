@@ -3,9 +3,9 @@ package no.unit.nva.publication.scopusmapping.adapter.dynamodb;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.SCOPUS_AFFILIATION;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.migratedAuthorMapping;
+import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.LocalImportCandidatesTable.DEFAULT_TABLE_NAME;
 import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingKeys.authorPartitionKey;
 import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingKeys.currentKey;
-import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingLocalTest.TABLE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,7 +44,8 @@ class FindCurrentMappingsWithMockedClientTest {
   @BeforeEach
   void setUp() {
     client = mock(DynamoDbClient.class);
-    service = new ScopusMappingService(new DynamoDbScopusMappingRepository(client, TABLE_NAME));
+    service =
+        new ScopusMappingService(new DynamoDbScopusMappingRepository(client, DEFAULT_TABLE_NAME));
   }
 
   @Test
@@ -56,7 +57,8 @@ class FindCurrentMappingsWithMockedClientTest {
 
     var requestCaptor = ArgumentCaptor.forClass(BatchGetItemRequest.class);
     verify(client).batchGetItem(requestCaptor.capture());
-    assertThat(requestCaptor.getValue().requestItems().get(TABLE_NAME).consistentRead()).isTrue();
+    assertThat(requestCaptor.getValue().requestItems().get(DEFAULT_TABLE_NAME).consistentRead())
+        .isTrue();
   }
 
   @Test
@@ -98,7 +100,7 @@ class FindCurrentMappingsWithMockedClientTest {
   }
 
   private static BatchGetItemResponse batchGetResponse(List<Map<String, AttributeValue>> items) {
-    return BatchGetItemResponse.builder().responses(Map.of(TABLE_NAME, items)).build();
+    return BatchGetItemResponse.builder().responses(Map.of(DEFAULT_TABLE_NAME, items)).build();
   }
 
   private static BatchGetItemResponse batchGetResponse(
@@ -109,8 +111,8 @@ class FindCurrentMappingsWithMockedClientTest {
             .consistentRead(true)
             .build();
     return BatchGetItemResponse.builder()
-        .responses(Map.of(TABLE_NAME, items))
-        .unprocessedKeys(Map.of(TABLE_NAME, unprocessedKeys))
+        .responses(Map.of(DEFAULT_TABLE_NAME, items))
+        .unprocessedKeys(Map.of(DEFAULT_TABLE_NAME, unprocessedKeys))
         .build();
   }
 }

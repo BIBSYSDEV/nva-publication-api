@@ -4,9 +4,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 
 import java.util.Map;
-import no.unit.nva.publication.scopusmapping.application.ScopusMappingService;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -18,24 +15,24 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.dynamodb.services.local.embedded.DynamoDBEmbedded;
 
-/**
- * Runs the use cases against the DynamoDB adapter and a local DynamoDB table with the same keys as
- * the import candidates table.
- */
-@SuppressWarnings("PMD.AbstractClassWithoutAbstractMethod")
-abstract class ScopusMappingLocalTest {
+/** A local DynamoDB table with the same keys as the import candidates table. */
+final class LocalImportCandidatesTable implements AutoCloseable {
 
-  static final String TABLE_NAME = "import-candidates";
+  static final String DEFAULT_TABLE_NAME = "import-candidates";
 
-  protected DynamoDbClient client;
-  protected ScopusMappingService service;
+  private final DynamoDbClient client;
+  private final String tableName;
 
-  @BeforeEach
-  void createTableAndService() {
-    client = DynamoDBEmbedded.create(null, true).dynamoDbClient();
+  LocalImportCandidatesTable() {
+    this(DEFAULT_TABLE_NAME);
+  }
+
+  LocalImportCandidatesTable(String tableName) {
+    this.tableName = tableName;
+    this.client = DynamoDBEmbedded.create(null, true).dynamoDbClient();
     client.createTable(
         CreateTableRequest.builder()
-            .tableName(TABLE_NAME)
+            .tableName(tableName)
             .attributeDefinitions(
                 stringAttribute(PRIMARY_KEY_PARTITION_KEY_NAME),
                 stringAttribute(PRIMARY_KEY_SORT_KEY_NAME))
@@ -44,16 +41,27 @@ abstract class ScopusMappingLocalTest {
                 keyElement(PRIMARY_KEY_SORT_KEY_NAME, KeyType.RANGE))
             .billingMode(BillingMode.PAY_PER_REQUEST)
             .build());
-    service = new ScopusMappingService(new DynamoDbScopusMappingRepository(client, TABLE_NAME));
   }
 
-  @AfterEach
-  void closeClient() {
+  DynamoDbClient client() {
+    return client;
+  }
+
+  String tableName() {
+    return tableName;
+  }
+
+  DynamoDbScopusMappingRepository repository() {
+    return new DynamoDbScopusMappingRepository(client, tableName);
+  }
+
+  void putItem(Map<String, AttributeValue> item) {
+    client.putItem(PutItemRequest.builder().tableName(tableName).item(item).build());
+  }
+
+  @Override
+  public void close() {
     client.close();
-  }
-
-  protected void putItem(Map<String, AttributeValue> item) {
-    client.putItem(PutItemRequest.builder().tableName(TABLE_NAME).item(item).build());
   }
 
   private static AttributeDefinition stringAttribute(String attributeName) {
