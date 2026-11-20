@@ -36,6 +36,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -110,7 +111,7 @@ public class ContributorExtractorTest {
     var fakeSecretsManager = createFakeSecretsManager();
     var secretsReader = new SecretsReader(fakeSecretsManager);
 
-    cristinConnection = new CristinConnection(httpClient, environment);
+    cristinConnection = new CristinConnection(httpClient, environment, Duration.ofMillis(1));
     piaConnection = new PiaConnection(httpClient, secretsReader, environment);
   }
 

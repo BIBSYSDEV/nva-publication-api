@@ -1,27 +1,37 @@
 package no.sikt.nva.scopus.conversion;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static no.unit.nva.publication.testing.CristinUriGenerator.cristinPersonUri;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpTimeoutException;
+import java.time.Duration;
 import java.util.List;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.utils.CristinGenerator;
@@ -32,10 +42,17 @@ import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 @WireMockTest(httpsEnabled = true)
 class CristinConnectionTest {
 
+  private static final String ORGANIZATION_SEARCH_PATH = "/cristin/organization";
+  private static final String RETRY_SCENARIO = "retry";
+  private static final String RECOVERED = "recovered";
+  private static final int HIGH_PRIORITY = 1;
+  private static final int MAX_ATTEMPTS = 3;
+  private static final Duration RETRY_INTERVAL = Duration.ofMillis(1);
   private CristinConnection cristinConnection;
 
   @BeforeEach
@@ -44,7 +61,7 @@ class CristinConnectionTest {
     var environment = mock(Environment.class);
     when(environment.readEnv("API_HOST"))
         .thenReturn(wireMockRuntimeInfo.getHttpsBaseUrl().replace("https://", ""));
-    cristinConnection = new CristinConnection(httpClient, environment);
+    cristinConnection = new CristinConnection(httpClient, environment, RETRY_INTERVAL);
   }
 
   @Test
@@ -97,6 +114,85 @@ class CristinConnectionTest {
     var searchResponse = cristinConnection.searchCristinOrganization(organizationName);
 
     assertThat(searchResponse.isPresent(), is(equalTo(true)));
+  }
+
+  @Test
+  void shouldRetrySearchWhenCristinProxyRespondsWithServerError() {
+    var logRecorder = LogRecorder.forClass(CristinConnection.class);
+    var organizationName = randomString();
+    mockServerErrorOnFirstSearchRequest();
+    mockCristinSearchOrganizationResponse(organizationName);
+
+    var searchResponse = cristinConnection.searchCristinOrganization(organizationName);
+
+    assertThat(searchResponse.isPresent(), is(equalTo(true)));
+    assertThat(
+        logRecorder.messages(),
+        hasItem(
+            allOf(
+                containsString("Retrying cristin request"),
+                containsString(ORGANIZATION_SEARCH_PATH))));
+  }
+
+  @Test
+  void shouldGiveUpWhenCristinProxyKeepsRespondingWithServerError() {
+    var logRecorder = LogRecorder.forClass(CristinConnection.class);
+    stubFor(
+        WireMock.get(urlPathEqualTo(ORGANIZATION_SEARCH_PATH))
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_INTERNAL_ERROR)));
+
+    var searchResponse = cristinConnection.searchCristinOrganization(randomString());
+
+    assertThat(searchResponse.isEmpty(), is(equalTo(true)));
+    verify(MAX_ATTEMPTS, getRequestedFor(urlPathEqualTo(ORGANIZATION_SEARCH_PATH)));
+    assertThat(logRecorder.messages(), hasItem(containsString("Giving up cristin request")));
+    assertThat(
+        logRecorder.messages(), hasItem(containsString("Could not fetch cristin organization")));
+  }
+
+  @Test
+  void shouldRetryWhenConnectionToCristinProxyIsReset() {
+    var logRecorder = LogRecorder.forClass(CristinConnection.class);
+    stubFor(
+        WireMock.get(urlPathEqualTo(ORGANIZATION_SEARCH_PATH))
+            .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
+
+    var searchResponse = cristinConnection.searchCristinOrganization(randomString());
+
+    assertThat(searchResponse.isEmpty(), is(equalTo(true)));
+    verify(MAX_ATTEMPTS, getRequestedFor(urlPathEqualTo(ORGANIZATION_SEARCH_PATH)));
+    assertThat(logRecorder.messages(), hasItem(containsString("Giving up cristin request")));
+  }
+
+  @Test
+  void shouldNotRetryWhenRequestToCristinProxyTimesOut() throws IOException, InterruptedException {
+    var httpClient = mock(HttpClient.class);
+    when(httpClient.send(any(), any())).thenThrow(new HttpTimeoutException(randomString()));
+    var connection = new CristinConnection(httpClient, mock(Environment.class), RETRY_INTERVAL);
+
+    var organization = connection.fetchCristinOrganizationByCristinId(randomUri());
+
+    assertThat(organization, is(nullValue()));
+    Mockito.verify(httpClient).send(any(), any());
+  }
+
+  @Test
+  void shouldNotRetryWhenCristinProxyRespondsWithClientError() {
+    mockCristinPersonBadRequest();
+
+    cristinConnection.getCristinPersonByOrcId(randomString());
+
+    verify(1, getRequestedFor(urlMatching("/cristin/person/.*")));
+  }
+
+  private void mockServerErrorOnFirstSearchRequest() {
+    stubFor(
+        WireMock.get(urlPathEqualTo(ORGANIZATION_SEARCH_PATH))
+            .atPriority(HIGH_PRIORITY)
+            .inScenario(RETRY_SCENARIO)
+            .whenScenarioStateIs(STARTED)
+            .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_INTERNAL_ERROR))
+            .willSetStateTo(RECOVERED));
   }
 
   private void mockCristinSearchOrganizationResponse(String organizationName) {

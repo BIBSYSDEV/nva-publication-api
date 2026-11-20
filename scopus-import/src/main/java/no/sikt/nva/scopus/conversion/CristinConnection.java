@@ -1,19 +1,28 @@
 package no.sikt.nva.scopus.conversion;
 
+import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.HTTP_CONNECT_TIMEOUT;
 import static no.sikt.nva.scopus.ScopusConstants.HTTP_REQUEST_TIMEOUT;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.github.resilience4j.core.IntervalFunction;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
+import io.github.resilience4j.retry.event.RetryOnErrorEvent;
+import io.github.resilience4j.retry.event.RetryOnRetryEvent;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpTimeoutException;
+import java.time.Duration;
 import java.util.Optional;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
 import no.sikt.nva.scopus.conversion.model.cristin.SearchOrganizationResponse;
@@ -39,17 +48,31 @@ public class CristinConnection {
   private static final String ORGANIZATION = "organization";
   private static final String APPLICATION_JSON = "application/json";
   private static final String QUERY = "query";
+  private static final String RETRY_NAME = "cristinRequest";
+  private static final String RETRYING_AFTER_SERVER_ERROR =
+      "Retrying cristin request {} after failed attempt {}: status {}";
+  private static final String RETRYING_AFTER_EXCEPTION =
+      "Retrying cristin request after failed attempt {}: {}";
+  private static final String GIVING_UP_CRISTIN_REQUEST =
+      "Giving up cristin request after {} attempts: {}";
+  private static final int MAX_ATTEMPTS = 3;
+  private static final Duration DEFAULT_RETRY_INTERVAL = Duration.ofMillis(500);
   private final HttpClient httpClient;
   private final Environment environment;
+  private final Retry retry;
 
-  public CristinConnection(HttpClient httpClient, Environment environment) {
+  public CristinConnection(HttpClient httpClient, Environment environment, Duration retryInterval) {
     this.httpClient = httpClient;
     this.environment = environment;
+    this.retry = createRetry(retryInterval);
   }
 
   @JacocoGenerated
   public CristinConnection() {
-    this(HttpClient.newBuilder().connectTimeout(HTTP_CONNECT_TIMEOUT).build(), new Environment());
+    this(
+        HttpClient.newBuilder().connectTimeout(HTTP_CONNECT_TIMEOUT).build(),
+        new Environment(),
+        DEFAULT_RETRY_INTERVAL);
   }
 
   public Optional<CristinPerson> getCristinPersonByCristinId(URI cristinPersonId) {
@@ -138,9 +161,51 @@ public class CristinConnection {
     return response.body();
   }
 
-  private HttpResponse<String> getCristinResponse(HttpRequest httpRequest)
-      throws IOException, InterruptedException {
-    return httpClient.send(httpRequest, BodyHandlers.ofString());
+  private HttpResponse<String> getCristinResponse(HttpRequest httpRequest) throws Exception {
+    return retry.executeCallable(() -> httpClient.send(httpRequest, BodyHandlers.ofString()));
+  }
+
+  private static Retry createRetry(Duration retryInterval) {
+    var retry =
+        Retry.of(
+            RETRY_NAME,
+            RetryConfig.<HttpResponse<String>>custom()
+                .maxAttempts(MAX_ATTEMPTS)
+                .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(retryInterval))
+                .retryOnResult(CristinConnection::isServerError)
+                .consumeResultBeforeRetryAttempt(CristinConnection::logRetryAfterServerError)
+                .retryExceptions(IOException.class)
+                .ignoreExceptions(HttpTimeoutException.class)
+                .build());
+    retry
+        .getEventPublisher()
+        .onRetry(CristinConnection::logRetryAfterException)
+        .onError(CristinConnection::logGivingUp);
+    return retry;
+  }
+
+  private static void logRetryAfterServerError(Integer attempt, HttpResponse<String> response) {
+    logger.warn(RETRYING_AFTER_SERVER_ERROR, response.uri(), attempt, response.statusCode());
+  }
+
+  private static void logRetryAfterException(RetryOnRetryEvent event) {
+    if (nonNull(event.getLastThrowable())) {
+      logger.warn(
+          RETRYING_AFTER_EXCEPTION,
+          event.getNumberOfRetryAttempts(),
+          event.getLastThrowable().toString());
+    }
+  }
+
+  private static void logGivingUp(RetryOnErrorEvent event) {
+    logger.error(
+        GIVING_UP_CRISTIN_REQUEST,
+        event.getNumberOfRetryAttempts(),
+        event.getLastThrowable().toString());
+  }
+
+  private static boolean isServerError(HttpResponse<String> response) {
+    return response.statusCode() >= HTTP_INTERNAL_ERROR;
   }
 
   private HttpRequest createRequest(URI uri) {
