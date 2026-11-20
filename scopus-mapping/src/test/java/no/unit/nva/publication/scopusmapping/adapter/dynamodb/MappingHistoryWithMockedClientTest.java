@@ -2,7 +2,7 @@ package no.unit.nva.publication.scopusmapping.adapter.dynamodb;
 
 import static java.util.Collections.emptyList;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.SCOPUS_AUTHOR;
-import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingLocalTest.TABLE_NAME;
+import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.LocalImportCandidatesTable.DEFAULT_TABLE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -25,13 +25,14 @@ class MappingHistoryWithMockedClientTest {
     when(client.queryPaginator(any(QueryRequest.class))).thenCallRealMethod();
     when(client.query(any(QueryRequest.class)))
         .thenReturn(QueryResponse.builder().items(emptyList()).build());
-    var service = new ScopusMappingService(new DynamoDbScopusMappingRepository(client, TABLE_NAME));
+    var service =
+        new ScopusMappingService(new DynamoDbScopusMappingRepository(client, DEFAULT_TABLE_NAME));
 
     assertThat(service.findAuthorMappingHistory(SCOPUS_AUTHOR)).isEmpty();
 
     var requestCaptor = ArgumentCaptor.forClass(QueryRequest.class);
     verify(client).query(requestCaptor.capture());
     assertThat(requestCaptor.getValue().consistentRead()).isTrue();
-    assertThat(requestCaptor.getValue().tableName()).isEqualTo(TABLE_NAME);
+    assertThat(requestCaptor.getValue().tableName()).isEqualTo(DEFAULT_TABLE_NAME);
   }
 }
