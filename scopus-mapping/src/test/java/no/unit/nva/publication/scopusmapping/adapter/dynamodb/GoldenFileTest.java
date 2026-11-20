@@ -6,9 +6,11 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import no.unit.nva.publication.scopusmapping.application.ScopusMappingService;
 import no.unit.nva.publication.scopusmapping.domain.CristinOrganizationIdentifier;
 import no.unit.nva.publication.scopusmapping.domain.CristinPersonIdentifier;
 import no.unit.nva.publication.scopusmapping.domain.PiaMappingCounts;
@@ -19,6 +21,7 @@ import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorMapping;
 import no.unit.nva.publication.scopusmapping.domain.ScopusCorrectionContext;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappingVersion;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappings;
+import org.junit.jupiter.api.AutoClose;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -29,7 +32,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
  * out here, not taken from shared fixtures, so the test shows what the file means. The items a
  * curator's correction writes are in the file too, so what Java writes is held to the same format.
  */
-class GoldenFileTest extends ScopusMappingLocalTest {
+class GoldenFileTest {
 
   static final ScopusAuthorIdentifier AUTHOR_NEEDING_REVIEW =
       new ScopusAuthorIdentifier("99999990101");
@@ -87,9 +90,14 @@ class GoldenFileTest extends ScopusMappingLocalTest {
   private static final ScopusAffiliationIdentifier UNKNOWN_AFFILIATION =
       new ScopusAffiliationIdentifier("99990999");
 
+  @AutoClose private LocalImportCandidatesTable table;
+  private ScopusMappingService service;
+
   @BeforeEach
   void writeGoldenFileItems() {
-    GoldenFile.writeWithBatchWriteItem(client, TABLE_NAME, GoldenFile.readItems());
+    table = new LocalImportCandidatesTable();
+    service = new ScopusMappingService(table.repository(), Clock.systemUTC());
+    GoldenFile.writeWithBatchWriteItem(table.client(), table.tableName(), GoldenFile.readItems());
   }
 
   @Test
