@@ -24,23 +24,35 @@ import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.from
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import no.unit.nva.publication.scopusmapping.application.ScopusMappingService;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAffiliationIdentifier;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorMapping;
 import no.unit.nva.publication.scopusmapping.domain.ScopusCorrectionContext;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappingHistoryEntry;
 import nva.commons.logutils.LogRecorder;
+import org.junit.jupiter.api.AutoClose;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class MappingHistoryTest extends ScopusMappingLocalTest {
+class MappingHistoryTest {
 
   private static final String CANDIDATES = "candidates";
   private static final String MIGRATED_HISTORY_SORT_KEY = "HISTORY#2026-11-02T08:00:00.000Z#1";
   private static final ScopusCorrectionContext CORRECTION_CONTEXT =
       new ScopusCorrectionContext("2-s2.0-85200000010", 1);
+
+  @AutoClose private LocalImportCandidatesTable table;
+  private ScopusMappingService service;
+
+  @BeforeEach
+  void setUp() {
+    table = new LocalImportCandidatesTable();
+    service = new ScopusMappingService(table.repository());
+  }
 
   @Test
   void shouldKeepEachVersionUnderItsTimestampAndRevisionWithWhereItWasCorrected() {
@@ -59,8 +71,8 @@ class MappingHistoryTest extends ScopusMappingLocalTest {
     var firstVersion = migratedAuthorMapping(SCOPUS_AUTHOR);
     var secondVersion =
         curatorAuthorMapping(SCOPUS_AUTHOR, "1002", MIGRATED_AT.minusSeconds(60), 2, false);
-    putItem(historyItem(secondVersion));
-    putItem(historyItem(firstVersion));
+    table.putItem(historyItem(secondVersion));
+    table.putItem(historyItem(firstVersion));
 
     assertThat(service.findAuthorMappingHistory(SCOPUS_AUTHOR))
         .containsExactly(
@@ -79,7 +91,7 @@ class MappingHistoryTest extends ScopusMappingLocalTest {
                 fromN("4"),
                 "stillActive",
                 fromBool(true)));
-    putItem(
+    table.putItem(
         with(
             historyItem(migratedAuthorMapping(SCOPUS_AUTHOR)),
             CANDIDATES,
@@ -102,7 +114,7 @@ class MappingHistoryTest extends ScopusMappingLocalTest {
   @Test
   void shouldReadMigratedAffiliationVersionWithoutCorrectionContext() {
     var institution = "194.0.0.0";
-    putItem(
+    table.putItem(
         with(
             migratedAffiliationItem(SCOPUS_AFFILIATION, institution, institution),
             PRIMARY_KEY_SORT_KEY_NAME,
@@ -127,8 +139,8 @@ class MappingHistoryTest extends ScopusMappingLocalTest {
       Map<String, AttributeValue> malformedSecondVersion, String expectedReason) {
     var logRecorder = LogRecorder.forClass(ScopusMappingItems.class);
     var firstVersion = migratedAuthorMapping(SCOPUS_AUTHOR);
-    putItem(historyItem(firstVersion));
-    putItem(malformedSecondVersion);
+    table.putItem(historyItem(firstVersion));
+    table.putItem(malformedSecondVersion);
 
     assertThat(service.findAuthorMappingHistory(SCOPUS_AUTHOR))
         .containsExactly(
