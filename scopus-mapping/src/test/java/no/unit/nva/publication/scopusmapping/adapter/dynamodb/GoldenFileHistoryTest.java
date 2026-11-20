@@ -14,10 +14,12 @@ import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.GoldenFileT
 import static no.unit.nva.publication.scopusmapping.domain.ScopusMappingSource.CURATOR;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import no.unit.nva.publication.scopusmapping.application.ScopusMappingService;
 import no.unit.nva.publication.scopusmapping.domain.CristinPersonIdentifier;
 import no.unit.nva.publication.scopusmapping.domain.PiaMappingCounts;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorMapping;
@@ -25,11 +27,12 @@ import no.unit.nva.publication.scopusmapping.domain.ScopusCorrectionContext;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappingConflictException;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappingHistoryEntry;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappingVersion;
+import org.junit.jupiter.api.AutoClose;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Reads the history items of the golden file through the use cases. */
-class GoldenFileHistoryTest extends ScopusMappingLocalTest {
+class GoldenFileHistoryTest {
 
   private static final String PUBLICATION_COUNT = "publicationCount";
   private static final ScopusAuthorMapping MIGRATED_CORRECTED_AUTHOR =
@@ -61,9 +64,14 @@ class GoldenFileHistoryTest extends ScopusMappingLocalTest {
           new ScopusMappingVersion(
               CURATOR, Instant.parse("2026-12-01T09:00:00.000Z"), "7654321@194.0.0.0", 2, true));
 
+  @AutoClose private LocalImportCandidatesTable table;
+  private ScopusMappingService service;
+
   @BeforeEach
   void writeGoldenFileItems() {
-    GoldenFile.writeWithBatchWriteItem(client, TABLE_NAME, GoldenFile.readItems());
+    table = new LocalImportCandidatesTable();
+    service = new ScopusMappingService(table.repository(), Clock.systemUTC());
+    GoldenFile.writeWithBatchWriteItem(table.client(), table.tableName(), GoldenFile.readItems());
   }
 
   @Test
