@@ -1,4 +1,5 @@
 .meta.volume
+.meta.relatedItem
 .meta.uniqueAuthor
 .meta.uniqueAuthCount
 .meta.timestamp
