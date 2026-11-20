@@ -12,11 +12,13 @@ import static no.unit.nva.publication.testing.CristinUriGenerator.cristinPersonU
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -24,8 +26,11 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.List;
 import no.sikt.nva.scopus.conversion.model.cristin.CristinPerson;
@@ -37,6 +42,7 @@ import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 @WireMockTest(httpsEnabled = true)
 class CristinConnectionTest {
@@ -120,7 +126,12 @@ class CristinConnectionTest {
     var searchResponse = cristinConnection.searchCristinOrganization(organizationName);
 
     assertThat(searchResponse.isPresent(), is(equalTo(true)));
-    assertThat(logRecorder.messages(), hasItem(containsString("Retrying cristin request")));
+    assertThat(
+        logRecorder.messages(),
+        hasItem(
+            allOf(
+                containsString("Retrying cristin request"),
+                containsString(ORGANIZATION_SEARCH_PATH))));
   }
 
   @Test
@@ -137,6 +148,7 @@ class CristinConnectionTest {
 
   @Test
   void shouldRetryWhenConnectionToCristinProxyIsReset() {
+    var logRecorder = LogRecorder.forClass(CristinConnection.class);
     stubFor(
         WireMock.get(urlPathEqualTo(ORGANIZATION_SEARCH_PATH))
             .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
@@ -145,6 +157,19 @@ class CristinConnectionTest {
 
     assertThat(searchResponse.isEmpty(), is(equalTo(true)));
     verify(MAX_ATTEMPTS, getRequestedFor(urlPathEqualTo(ORGANIZATION_SEARCH_PATH)));
+    assertThat(logRecorder.messages(), hasItem(containsString("Giving up cristin request")));
+  }
+
+  @Test
+  void shouldNotRetryWhenRequestToCristinProxyTimesOut() throws IOException, InterruptedException {
+    var httpClient = mock(HttpClient.class);
+    when(httpClient.send(any(), any())).thenThrow(new HttpTimeoutException(randomString()));
+    var connection = new CristinConnection(httpClient, mock(Environment.class), RETRY_INTERVAL);
+
+    var organization = connection.fetchCristinOrganizationByCristinId(randomUri());
+
+    assertThat(organization, is(nullValue()));
+    Mockito.verify(httpClient).send(any(), any());
   }
 
   @Test
