@@ -1908,7 +1908,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
     createPersistedPublicationWithDoi();
     var entries =
         resourceService.scanResources(
-            BIG_PAGE, ListingResult.empty().getStartMarker(), Collections.emptyList());
+            BIG_PAGE, ListingResult.empty().getStartMarker(), emptyList());
 
     assertTrue(entries.getDatabaseEntries().stream().anyMatch(FileEntry.class::isInstance));
   }
@@ -1923,13 +1923,13 @@ class ResourceServiceTest extends ResourcesLocalTest {
                 new LogOrganization(randomUri(), randomString(), Map.of())));
     assertDoesNotThrow(() ->
         resourceService.scanResources(
-            BIG_PAGE, ListingResult.empty().getStartMarker(), Collections.emptyList()));
+            BIG_PAGE, ListingResult.empty().getStartMarker(), emptyList()));
   }
 
   @Test
   void scanResourcesRawShouldReturnRawItems() throws BadRequestException {
     createPersistedPublicationWithDoi();
-    var result = resourceService.scanResourcesRaw(BIG_PAGE, null, Collections.emptyList());
+    var result = resourceService.scanResourcesRaw(BIG_PAGE, null, emptyList());
 
     assertFalse(result.items().isEmpty());
     assertTrue(
@@ -2073,9 +2073,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
   void shouldReturnEmptyListWhenNoPublicationWithProvidedScopusIdentifier() {
     var scopusIdentifier = ScopusIdentifier.fromValue(randomString());
 
-    assertEquals(
-        Collections.emptyList(),
-        resourceService.getPublicationsByScopusIdentifier(scopusIdentifier));
+    assertEquals(emptyList(), resourceService.getPublicationsByScopusIdentifier(scopusIdentifier));
   }
 
   @Test
@@ -2344,8 +2342,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
   }
 
   private ListingResult<Entity> fetchRestOfDatabaseEntries(ListingResult<Entity> listingResult) {
-    return resourceService.scanResources(
-        BIG_PAGE, listingResult.getStartMarker(), Collections.emptyList());
+    return resourceService.scanResources(BIG_PAGE, listingResult.getStartMarker(), emptyList());
   }
 
   private SortableIdentifier extractIdentifierFromFirstScanResult(
@@ -2358,8 +2355,7 @@ class ResourceServiceTest extends ResourcesLocalTest {
   private ListingResult<Entity> fetchFirstDataEntry() {
     ListingResult<Entity> listingResult = ListingResult.empty();
     while (listingResult.isEmpty()) {
-      listingResult =
-          resourceService.scanResources(1, listingResult.getStartMarker(), Collections.emptyList());
+      listingResult = resourceService.scanResources(1, listingResult.getStartMarker(), emptyList());
     }
     return listingResult;
   }
