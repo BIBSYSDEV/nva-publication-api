@@ -71,11 +71,10 @@ public class ExpandImportCandidateHandler
     var blob = readBlobFromS3(input);
     return blob.getNewData()
         .map(this::expand)
-        .map(
-            expandedImportCandidate ->
-                shouldBeExpanded(expandedImportCandidate)
-                    ? createOutPutEventAndPersistDocument(expandedImportCandidate)
-                    : emptyEvent(expandedImportCandidate))
+        .map(expandedImportCandidate ->
+            shouldBeExpanded(expandedImportCandidate)
+                ? createOutPutEventAndPersistDocument(expandedImportCandidate)
+                : emptyEvent(expandedImportCandidate))
         .orElseGet(() -> new EventReference(EMPTY_EVENT_TOPIC, null));
   }
 

@@ -315,11 +315,10 @@ public final class PublicationGenerator {
       Contributor contributor) {
     return contributor.affiliations().stream()
         .map(Organization.class::cast)
-        .map(
-            affiliation -> {
-              return new CuratingInstitution(
-                  affiliation.getId(), Set.of(contributor.identity().getId()));
-            });
+        .map(affiliation -> {
+          return new CuratingInstitution(
+              affiliation.getId(), Set.of(contributor.identity().getId()));
+        });
   }
 
   private static Set<AdditionalIdentifierBase> randomAdditionalIdentifiers() {

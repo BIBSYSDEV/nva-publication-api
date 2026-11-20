@@ -102,9 +102,7 @@ public class TransactionFailedException extends RuntimeException {
         .map(Put::conditionExpression)
         .or(() -> Optional.ofNullable(item.update()).map(Update::conditionExpression))
         .or(() -> Optional.ofNullable(item.delete()).map(Delete::conditionExpression))
-        .or(
-            () ->
-                Optional.ofNullable(item.conditionCheck())
-                    .map(ConditionCheck::conditionExpression));
+        .or(() ->
+            Optional.ofNullable(item.conditionCheck()).map(ConditionCheck::conditionExpression));
   }
 }

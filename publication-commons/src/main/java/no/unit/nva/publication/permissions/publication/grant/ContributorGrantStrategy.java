@@ -41,13 +41,9 @@ public final class ContributorGrantStrategy extends PublicationStrategyBase
             .stream()
             .flatMap(List::stream)
             .filter(this::isVerifiedContributor)
-            .anyMatch(
-                contributor -> {
-                  return contributor
-                      .identity()
-                      .getId()
-                      .equals(this.userInstance.getPersonCristinId());
-                });
+            .anyMatch(contributor -> {
+              return contributor.identity().getId().equals(this.userInstance.getPersonCristinId());
+            });
   }
 
   private boolean userIsVerifiedContributorAtCurrentInstitution() {
@@ -56,8 +52,7 @@ public final class ContributorGrantStrategy extends PublicationStrategyBase
 
   private boolean userInstitutionIsCuratingInstitution() {
     return resource.getCuratingInstitutions().stream()
-        .anyMatch(
-            curatingInstitution ->
-                curatingInstitution.id().equals(userInstance.getTopLevelOrgCristinId()));
+        .anyMatch(curatingInstitution ->
+            curatingInstitution.id().equals(userInstance.getTopLevelOrgCristinId()));
   }
 }

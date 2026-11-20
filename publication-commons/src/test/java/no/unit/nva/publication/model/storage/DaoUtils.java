@@ -101,10 +101,8 @@ public final class DaoUtils extends TestDataSource {
   }
 
   private static TicketEntry randomTicket(Publication publication) {
-    return attempt(
-            () ->
-                TicketEntry.createNewTicket(
-                    publication, randomTicketType(), SortableIdentifier::next))
+    return attempt(() ->
+            TicketEntry.createNewTicket(publication, randomTicketType(), SortableIdentifier::next))
         .map(ticketEntry -> ticketEntry.withOwner(randomString()))
         .orElseThrow();
   }

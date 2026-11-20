@@ -541,17 +541,15 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
 
     eventBridgeClient
         .getRequestEntries()
-        .forEach(
-            entry -> {
-              var segmentRequest =
-                  attempt(
-                          () ->
-                              JsonUtils.dtoObjectMapper.readValue(
-                                  entry.detail(), LoadDynamodbRequest.class))
-                      .orElseThrow();
-              assertThat(segmentRequest.filter().publicationYears(), is(equalTo(List.of("2025"))));
-              assertThat(segmentRequest.filter().statuses(), is(equalTo(List.of("PUBLISHED"))));
-            });
+        .forEach(entry -> {
+          var segmentRequest =
+              attempt(() ->
+                      JsonUtils.dtoObjectMapper.readValue(
+                          entry.detail(), LoadDynamodbRequest.class))
+                  .orElseThrow();
+          assertThat(segmentRequest.filter().publicationYears(), is(equalTo(List.of("2025"))));
+          assertThat(segmentRequest.filter().statuses(), is(equalTo(List.of("PUBLISHED"))));
+        });
   }
 
   @Test
@@ -634,27 +632,21 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
   private void createTestItems(int count) {
     IntStream.range(0, count)
         .mapToObj(index -> randomPublication())
-        .forEach(
-            publication ->
-                attempt(
-                        () ->
-                            Resource.fromPublication(publication)
-                                .persistNew(
-                                    resourceService, UserInstance.fromPublication(publication)))
-                    .orElseThrow());
+        .forEach(publication ->
+            attempt(() ->
+                    Resource.fromPublication(publication)
+                        .persistNew(resourceService, UserInstance.fromPublication(publication)))
+                .orElseThrow());
   }
 
   private void createTestItemsWithYear(int count, String year) {
     IntStream.range(0, count)
         .mapToObj(index -> randomPublicationWithYear(year))
-        .forEach(
-            publication ->
-                attempt(
-                        () ->
-                            Resource.fromPublication(publication)
-                                .persistNew(
-                                    resourceService, UserInstance.fromPublication(publication)))
-                    .orElseThrow());
+        .forEach(publication ->
+            attempt(() ->
+                    Resource.fromPublication(publication)
+                        .persistNew(resourceService, UserInstance.fromPublication(publication)))
+                .orElseThrow());
   }
 
   private static Publication randomPublicationWithYear(String year) {
@@ -667,12 +659,11 @@ class LoadDynamodbResourceBatchJobHandlerTest extends ResourcesLocalTest {
   private void createPublishedTestItems(int count) {
     IntStream.range(0, count)
         .mapToObj(index -> randomPublication())
-        .forEach(
-            publication ->
-                Resource.fromPublication(publication)
-                    .importResource(
-                        resourceService,
-                        ImportSource.fromSource(Source.CRISTIN),
-                        UserInstance.create(randomString(), randomUri())));
+        .forEach(publication ->
+            Resource.fromPublication(publication)
+                .importResource(
+                    resourceService,
+                    ImportSource.fromSource(Source.CRISTIN),
+                    UserInstance.create(randomString(), randomUri())));
   }
 }

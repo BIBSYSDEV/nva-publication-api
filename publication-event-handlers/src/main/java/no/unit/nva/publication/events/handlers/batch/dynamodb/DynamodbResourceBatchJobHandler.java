@@ -154,11 +154,10 @@ public class DynamodbResourceBatchJobHandler implements RequestHandler<SQSEvent,
     if (isNull(executor)) {
       logger.error("No executor found for job type: {}", jobType);
       return messages.stream()
-          .map(
-              messageWithWorkItem ->
-                  createBatchItemFailure(
-                      messageWithWorkItem.message,
-                      new UnsupportedOperationException("Unsupported job type: " + jobType)))
+          .map(messageWithWorkItem ->
+              createBatchItemFailure(
+                  messageWithWorkItem.message,
+                  new UnsupportedOperationException("Unsupported job type: " + jobType)))
           .toList();
     }
 

@@ -103,13 +103,12 @@ class PublicationChannelsBatchUpdateServiceTest extends PublicationChannelLocalT
 
     getUpdatedChannels(identifier).stream()
         .map(ClaimedPublicationChannel.class::cast)
-        .forEach(
-            channel -> {
-              assertEquals(event.publicationChannelSummary().constraint(), channel.getConstraint());
-              assertEquals(
-                  event.publicationChannelSummary().organizationId(), channel.getOrganizationId());
-              assertEquals(event.publicationChannelSummary().customerId(), channel.getCustomerId());
-            });
+        .forEach(channel -> {
+          assertEquals(event.publicationChannelSummary().constraint(), channel.getConstraint());
+          assertEquals(
+              event.publicationChannelSummary().organizationId(), channel.getOrganizationId());
+          assertEquals(event.publicationChannelSummary().customerId(), channel.getCustomerId());
+        });
   }
 
   private static ClaimedPublicationChannel createExpectedClaimedChannel(

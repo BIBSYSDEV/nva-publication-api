@@ -39,10 +39,9 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
   @Override
   protected Void processInput(
       ScanDatabaseRequest input, AwsEventBridgeEvent<ScanDatabaseRequest> event, Context context) {
-    logger.info("Query starting point: {}", input.getStartMarker());
-    var result =
-        resourceService.scanResources(
-            input.getPageSize(), input.getStartMarker(), input.getTypes());
+    var startMarker = input.getStartMarker().orElse(null);
+    logger.info("Query starting point: {}", startMarker);
+    var result = resourceService.scanResources(input.getPageSize(), startMarker, input.getTypes());
     resourceService.refreshResources(result.getDatabaseEntries());
     if (result.isTruncated()) {
       sendEventToInvokeNewRefreshRowVersionExecution(input, context, result);

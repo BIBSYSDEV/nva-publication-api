@@ -27,10 +27,9 @@ public class CristinIdentifierFinder implements FindExistingPublicationService {
     if (nonNull(cristinIdentifier)) {
       var publications =
           resourceService.getPublicationsByCristinIdentifier(cristinIdentifier).stream()
-              .filter(
-                  item ->
-                      PublicationComparator.publicationsMatchIgnoringTypeAndContributors(
-                          item, publicationRepresentation.publication()))
+              .filter(item ->
+                  PublicationComparator.publicationsMatchIgnoringTypeAndContributors(
+                      item, publicationRepresentation.publication()))
               .toList();
       if (FindExistingPublicationService.moreThanOneDuplicateFound(publications)) {
         duplicatePublicationReporter.reportDuplicatePublications(

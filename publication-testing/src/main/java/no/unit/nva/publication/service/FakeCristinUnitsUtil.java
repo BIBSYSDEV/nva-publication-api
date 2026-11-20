@@ -20,7 +20,6 @@ public class FakeCristinUnitsUtil implements CristinUnitsUtil {
 
   private final CristinUnitsUtilImpl cristinUnitsUtil;
 
-  @SuppressWarnings("PMD.CloseResource") // Mock object doesn't need to be closed
   public FakeCristinUnitsUtil() {
     var s3Client = mock(S3Client.class);
     try (var realS3Client = S3Client.create()) {

@@ -9,7 +9,6 @@ import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
-@SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Organization extends Corporation {
 

@@ -674,10 +674,9 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
     assertEquals(customerDto.cristinId(), publishingRequest.getOwnerAffiliation());
     resource
         .getFileEntries()
-        .forEach(
-            fileEntry -> {
-              assertEquals(customerDto.cristinId(), fileEntry.getOwnerAffiliation());
-            });
+        .forEach(fileEntry -> {
+          assertEquals(customerDto.cristinId(), fileEntry.getOwnerAffiliation());
+        });
   }
 
   @Test
@@ -733,10 +732,9 @@ class CreatePublicationFromImportCandidateHandlerTest extends ResourcesLocalTest
 
     resource
         .getFileEntries()
-        .forEach(
-            fileEntry -> {
-              assertEquals(customerDto.cristinId(), fileEntry.getOwnerAffiliation());
-            });
+        .forEach(fileEntry -> {
+          assertEquals(customerDto.cristinId(), fileEntry.getOwnerAffiliation());
+        });
   }
 
   @Test

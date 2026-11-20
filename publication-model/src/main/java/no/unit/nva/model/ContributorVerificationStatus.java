@@ -34,15 +34,14 @@ public enum ContributorVerificationStatus {
     return stream(values())
         .filter(nameType -> nameType.getValue().equalsIgnoreCase(candidate))
         .findAny()
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    format(
-                        ERROR_MESSAGE_TEMPLATE,
-                        candidate,
-                        stream(values())
-                            .map(ContributorVerificationStatus::toString)
-                            .collect(joining(DELIMITER)))));
+        .orElseThrow(() ->
+            new IllegalArgumentException(
+                format(
+                    ERROR_MESSAGE_TEMPLATE,
+                    candidate,
+                    stream(values())
+                        .map(ContributorVerificationStatus::toString)
+                        .collect(joining(DELIMITER)))));
   }
 
   @JsonValue

@@ -185,10 +185,9 @@ public class PublicationContextBuilder {
   private static PublicationContext randomMediaContributionPeriodical() {
     return randomBoolean()
         ? new MediaContributionPeriodical(randomPublicationChannelsUri())
-        : attempt(
-                () ->
-                    new UnconfirmedMediaContributionPeriodical(
-                        randomString(), randomIssn(), randomIssn()))
+        : attempt(() ->
+                new UnconfirmedMediaContributionPeriodical(
+                    randomString(), randomIssn(), randomIssn()))
             .orElseThrow();
   }
 

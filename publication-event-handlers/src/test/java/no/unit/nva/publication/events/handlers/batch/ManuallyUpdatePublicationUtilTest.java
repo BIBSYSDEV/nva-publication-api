@@ -116,12 +116,11 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
     publicationUtil.update(resources, updateRequest);
 
-    resources.forEach(
-        resource -> {
-          var updatedContributor = findContributor(resource, contributor);
-          assertContainsUpdatedAffiliation(updatedContributor);
-          assertOtherAffiliationsUnchanged(updatedContributor, originalAffiliations);
-        });
+    resources.forEach(resource -> {
+      var updatedContributor = findContributor(resource, contributor);
+      assertContainsUpdatedAffiliation(updatedContributor);
+      assertOtherAffiliationsUnchanged(updatedContributor, originalAffiliations);
+    });
   }
 
   @Test
@@ -149,10 +148,9 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
     publicationUtil.update(resources, createProjectUpdateRequest());
 
-    resources.forEach(
-        resource ->
-            assertThat(
-                fetchProjects(resource), contains(oldProjectWithNewIdentifier(), otherProject())));
+    resources.forEach(resource ->
+        assertThat(
+            fetchProjects(resource), contains(oldProjectWithNewIdentifier(), otherProject())));
   }
 
   @Test
@@ -190,9 +188,8 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
     publicationUtil.update(resources, createProjectUpdateRequest());
 
-    resources.forEach(
-        resource ->
-            assertThat(fetchProjects(resource), contains(projectOutsideCristinProjectPath())));
+    resources.forEach(resource ->
+        assertThat(fetchProjects(resource), contains(projectOutsideCristinProjectPath())));
   }
 
   @Test
@@ -245,10 +242,8 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
     publicationUtil.update(resources, createAffiliationDryRunRequest());
 
-    resources.forEach(
-        resource ->
-            assertThat(
-                affiliationsOf(resource), hasItem(Organization.fromUri(OLD_AFFILIATION_ID))));
+    resources.forEach(resource ->
+        assertThat(affiliationsOf(resource), hasItem(Organization.fromUri(OLD_AFFILIATION_ID))));
   }
 
   private List<Corporation> affiliationsOf(Resource resource) {
@@ -264,15 +259,14 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
     var changes = publicationUtil.update(resources, createProjectDryRunRequest()).changes();
 
     assertEquals(resources.size(), changes.size());
-    changes.forEach(
-        change ->
-            assertThat(
-                change.fieldChanges(),
-                contains(
-                    new FieldChange(
-                        PROJECT_ID_PATH,
-                        projectUri(OLD_PROJECT_IDENTIFIER).toString(),
-                        projectUri(NEW_PROJECT_IDENTIFIER).toString()))));
+    changes.forEach(change ->
+        assertThat(
+            change.fieldChanges(),
+            contains(
+                new FieldChange(
+                    PROJECT_ID_PATH,
+                    projectUri(OLD_PROJECT_IDENTIFIER).toString(),
+                    projectUri(NEW_PROJECT_IDENTIFIER).toString()))));
   }
 
   @Test
@@ -303,13 +297,12 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
     var changes = publicationUtil.update(resources, createProjectDryRunRequest()).changes();
 
     assertEquals(resources.size(), changes.size());
-    changes.forEach(
-        change -> {
-          var removal = singleFieldChange(change);
-          assertEquals(PROJECT_PATH_AT_INDEX_0, removal.path());
-          assertThat(removal.oldValue(), containsString(OLD_PROJECT_IDENTIFIER));
-          assertNull(removal.newValue());
-        });
+    changes.forEach(change -> {
+      var removal = singleFieldChange(change);
+      assertEquals(PROJECT_PATH_AT_INDEX_0, removal.path());
+      assertThat(removal.oldValue(), containsString(OLD_PROJECT_IDENTIFIER));
+      assertNull(removal.newValue());
+    });
   }
 
   @Test
@@ -330,11 +323,10 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
 
     resources.forEach(resource -> projectUpdate.plan(resource, createProjectUpdateRequest()));
 
-    resources.forEach(
-        resource -> {
-          assertThat(resource.getProjects(), contains(oldProject()));
-          assertThat(fetchProjects(resource), contains(oldProject()));
-        });
+    resources.forEach(resource -> {
+      assertThat(resource.getProjects(), contains(oldProject()));
+      assertThat(fetchProjects(resource), contains(oldProject()));
+    });
   }
 
   @Test
@@ -368,11 +360,10 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
     var changes = publicationUtil.update(resources, createProjectUpdateRequest()).changes();
 
     assertEquals(resources.size(), changes.size());
-    changes.forEach(
-        change ->
-            assertEquals(
-                singleFieldChange(change).newValue(),
-                persistedProjectId(resources, change.identifier())));
+    changes.forEach(change ->
+        assertEquals(
+            singleFieldChange(change).newValue(),
+            persistedProjectId(resources, change.identifier())));
   }
 
   @Test
@@ -568,10 +559,9 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
   }
 
   private Publication savePublication(Publication publication) {
-    return attempt(
-            () ->
-                resourceService.createPublication(
-                    UserInstance.fromPublication(publication), publication))
+    return attempt(() ->
+            resourceService.createPublication(
+                UserInstance.fromPublication(publication), publication))
         .orElseThrow();
   }
 
@@ -595,9 +585,8 @@ class ManuallyUpdatePublicationUtilTest extends ResourcesLocalTest {
             .filter(affiliation -> !hasAffiliationId(affiliation, OLD_AFFILIATION_ID))
             .toList();
 
-    unchangedOriginalAffiliations.forEach(
-        originalAffiliation ->
-            assertThat(updatedContributor.affiliations(), hasItem(originalAffiliation)));
+    unchangedOriginalAffiliations.forEach(originalAffiliation ->
+        assertThat(updatedContributor.affiliations(), hasItem(originalAffiliation)));
   }
 
   private Contributor findContributor(Resource resource, Contributor contributor) {

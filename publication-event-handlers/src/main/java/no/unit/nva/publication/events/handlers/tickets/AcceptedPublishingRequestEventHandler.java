@@ -165,13 +165,12 @@ public class AcceptedPublishingRequestEventHandler
       FilesApprovalEntry ticket, URI ownerAffiliation, ResourceService resourceService) {
     ticket
         .getFilesForApproval()
-        .forEach(
-            file ->
-                updateOwnerAffiliation(
-                    ticket.getResourceIdentifier(),
-                    file.getIdentifier(),
-                    ownerAffiliation,
-                    resourceService));
+        .forEach(file ->
+            updateOwnerAffiliation(
+                ticket.getResourceIdentifier(),
+                file.getIdentifier(),
+                ownerAffiliation,
+                resourceService));
   }
 
   private static void updateOwnerAffiliation(
@@ -227,11 +226,9 @@ public class AcceptedPublishingRequestEventHandler
   private FilesApprovalEntry fetchTicket(FilesApprovalEntry entry) {
     return attempt(() -> ticketService.fetchTicket(entry))
         .map(FilesApprovalEntry.class::cast)
-        .orElseThrow(
-            failure ->
-                throwException(
-                    COULD_NOT_FETCH_TICKET_MESSAGE + entry.getIdentifier(),
-                    failure.getException()));
+        .orElseThrow(failure ->
+            throwException(
+                COULD_NOT_FETCH_TICKET_MESSAGE + entry.getIdentifier(), failure.getException()));
   }
 
   private RuntimeException throwException(String message, Exception exception) {

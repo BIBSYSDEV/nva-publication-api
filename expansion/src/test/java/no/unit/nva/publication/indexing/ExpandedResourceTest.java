@@ -271,10 +271,9 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     var channel =
         ((Journal) resource.getEntityDescription().getReference().getPublicationContext()).getId();
     fakeUriRetriever.registerResponse(channel, 404, APPLICATION_JSON_LD, "");
-    assertDoesNotThrow(
-        () ->
-            fromPublication(
-                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)));
+    assertDoesNotThrow(() ->
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)));
 
     var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
     assertEquals(resource.getIdentifier().toString(), id);
@@ -293,10 +292,9 @@ class ExpandedResourceTest extends ResourcesLocalTest {
             .persistNew(resourceService, UserInstance.fromPublication(publication));
     FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
     fakeUriRetriever.registerResponse(affiliation.getId(), 500, APPLICATION_JSON_LD, "");
-    assertDoesNotThrow(
-        () ->
-            fromPublication(
-                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)));
+    assertDoesNotThrow(() ->
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)));
 
     var id = sqsClient.readMessages(1).getFirst().messageAttributes().get("id").stringValue();
 
@@ -550,11 +548,9 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         .filter(ConfirmedFunding.class::isInstance)
         .map(ConfirmedFunding.class::cast)
         .map(ConfirmedFunding::getSource)
-        .forEach(
-            uri -> {
-              fakeUriRetriever.registerResponse(
-                  uri, statusCode, MediaType.ANY_APPLICATION_TYPE, "");
-            });
+        .forEach(uri -> {
+          fakeUriRetriever.registerResponse(uri, statusCode, MediaType.ANY_APPLICATION_TYPE, "");
+        });
     var expandedResource =
         fromPublication(
                 fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource))
@@ -689,12 +685,11 @@ class ExpandedResourceTest extends ResourcesLocalTest {
             .asJsonNode();
 
     var affiliations = framedResultNode.findValues("affiliations").getFirst();
-    affiliations.forEach(
-        aff -> {
-          if (!aff.has("id")) {
-            assertThat(aff.has("topLevelOrganization"), is(equalTo(false)));
-          }
-        });
+    affiliations.forEach(aff -> {
+      if (!aff.has("id")) {
+        assertThat(aff.has("topLevelOrganization"), is(equalTo(false)));
+      }
+    });
   }
 
   @ParameterizedTest(
@@ -1107,10 +1102,9 @@ class ExpandedResourceTest extends ResourcesLocalTest {
         Resource.fromPublication(publication)
             .persistNew(resourceService, UserInstance.fromPublication(publication));
     FakeUriResponse.setupFakeForType(resource, fakeUriRetriever, resourceService, false);
-    assertDoesNotThrow(
-        () ->
-            fromPublication(
-                fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)));
+    assertDoesNotThrow(() ->
+        fromPublication(
+            fakeUriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)));
   }
 
   @Test
@@ -1232,22 +1226,21 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     resource.getContributors().stream()
         .map(Contributor::affiliations)
         .flatMap(i -> i.stream().map(Organization.class::cast).map(Organization::getId))
-        .forEach(
-            uri -> {
-              var responseBody =
-                  """
-                  {
-                    "@context": "https://bibsysdev.github.io/src/organization-context.json",
-                    "id": "%s",
-                    "type": "Organization",
-                    "labels": {
-                      "en": "Happy duck"
-                    }
-                  }\
-                  """
-                      .formatted(uri);
-              uriRetriever.registerResponse(uri, 200, versionedType, responseBody);
-            });
+        .forEach(uri -> {
+          var responseBody =
+              """
+              {
+                "@context": "https://bibsysdev.github.io/src/organization-context.json",
+                "id": "%s",
+                "type": "Organization",
+                "labels": {
+                  "en": "Happy duck"
+                }
+              }\
+              """
+                  .formatted(uri);
+          uriRetriever.registerResponse(uri, 200, versionedType, responseBody);
+        });
 
     var actual =
         fromPublication(
@@ -1274,10 +1267,9 @@ class ExpandedResourceTest extends ResourcesLocalTest {
     uriRetriever.registerResponse(
         unconfirmedFunding.getSource(), 404, APPLICATION_JSON_LD, "Not Found");
 
-    assertDoesNotThrow(
-        () ->
-            fromPublication(
-                uriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)));
+    assertDoesNotThrow(() ->
+        fromPublication(
+            uriRetriever, resourceService, sqsClient, Resource.fromPublication(resource)));
   }
 
   @Test

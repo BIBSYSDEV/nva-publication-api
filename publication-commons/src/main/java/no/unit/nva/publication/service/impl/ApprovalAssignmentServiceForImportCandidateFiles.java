@@ -223,10 +223,9 @@ public class ApprovalAssignmentServiceForImportCandidateFiles {
 
   private CustomerDto getCustomerById(URI customerId) throws ApprovalAssignmentException {
     return attempt(() -> identityServiceClient.getCustomerById(customerId))
-        .orElseThrow(
-            failure ->
-                new ApprovalAssignmentException(
-                    FETCH_CUSTOMER_EXCEPTION_MESSAGE.formatted(customerId)));
+        .orElseThrow(failure ->
+            new ApprovalAssignmentException(
+                FETCH_CUSTOMER_EXCEPTION_MESSAGE.formatted(customerId)));
   }
 
   public enum AssignmentServiceStatus {

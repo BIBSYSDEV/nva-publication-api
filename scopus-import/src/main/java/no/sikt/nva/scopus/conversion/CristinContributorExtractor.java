@@ -168,10 +168,9 @@ public final class CristinContributorExtractor {
         .stream()
         .flatMap(Collection::stream)
         .distinct()
-        .map(
-            cristinOrganization ->
-                toOrganization(
-                    cristinOrganization, authorGroupWithCristinOrganization.getScopusAuthors()));
+        .map(cristinOrganization ->
+            toOrganization(
+                cristinOrganization, authorGroupWithCristinOrganization.getScopusAuthors()));
   }
 
   private static int getSequenceNumber(AuthorTp authorTp) {

@@ -51,17 +51,16 @@ class SchemaOrgDocumentTest {
 
   private String generateExpected(
       Publication publication, Class<? extends PublicationInstance<?>> instance) {
-    return attempt(
-            () ->
-                MAPPER.writeValueAsString(
-                    FramedSchemaOrgDocumentBuilder.newInstance()
-                        .withCreator(publication.getContributors())
-                        .withName(publication.getEntityDescription().getMainTitle())
-                        .withId(constructExpectedId(publication))
-                        .withProvider(URI.create("https://sikt.no"), "Sikt")
-                        .withContext(URI.create("https://schema.org/"))
-                        .withType(calculateExpectedTypes(instance))
-                        .build()))
+    return attempt(() ->
+            MAPPER.writeValueAsString(
+                FramedSchemaOrgDocumentBuilder.newInstance()
+                    .withCreator(publication.getContributors())
+                    .withName(publication.getEntityDescription().getMainTitle())
+                    .withId(constructExpectedId(publication))
+                    .withProvider(URI.create("https://sikt.no"), "Sikt")
+                    .withContext(URI.create("https://schema.org/"))
+                    .withType(calculateExpectedTypes(instance))
+                    .build()))
         .orElseThrow();
   }
 

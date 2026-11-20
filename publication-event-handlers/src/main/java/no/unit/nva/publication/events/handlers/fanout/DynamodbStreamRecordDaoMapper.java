@@ -27,10 +27,8 @@ public final class DynamodbStreamRecordDaoMapper {
   public static Optional<ImportCandidate> toImportCandidate(
       Map<String, AttributeValue> recordImage) {
     return Optional.ofNullable(DynamodbAttributeValueTransformer.toAttributeValueMapV2(recordImage))
-        .map(
-            attributeMap ->
-                DatabaseEntryWithData.fromAttributeValuesMap(
-                    attributeMap, ImportCandidateDao.class))
+        .map(attributeMap ->
+            DatabaseEntryWithData.fromAttributeValuesMap(attributeMap, ImportCandidateDao.class))
         .map(ImportCandidateDao::getData);
   }
 }

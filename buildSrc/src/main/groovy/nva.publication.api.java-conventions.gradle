@@ -6,6 +6,7 @@ plugins {
 nva {
     generatedCode = [
         'no/scopus/generated/**',
+        'no/unit/nva/model/config/**',
         'no/unit/nva/model/testing/**',
         'org/datacite/schema/**'
     ]
@@ -13,7 +14,28 @@ nva {
         languageVersion = 25
     }
     pmd {
-        rulesetFile = rootProject.file('config/pmd/ruleset.xml')
+        analyzeTests = false
+        excludedRules = [
+                'AvoidCatchingGenericException',
+                'AvoidPrintStackTrace',
+                'AvoidThrowingRawExceptionTypes',
+                'ClassNamingConventions',
+                'ConfusingTernary',
+                'ConstructorCallsOverridableMethod',
+                'CyclomaticComplexity',
+                'FieldNamingConventions',
+                'GuardLogStatement',
+                'ImplicitFunctionalInterface',
+                'LooseCoupling',
+                'NonSerializableClass',
+                'NPathComplexity',
+                'PublicMemberInNonPublicType',
+                'RelianceOnDefaultCharset',
+                'ShortMethodName',
+                'SimplifyBooleanReturns',
+                'SystemPrintln',
+                'VariableCanBeInlined'
+        ]
     }
 }
 

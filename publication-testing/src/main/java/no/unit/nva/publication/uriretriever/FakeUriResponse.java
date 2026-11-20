@@ -209,14 +209,13 @@ public final class FakeUriResponse {
       Publication parentPublication) {
 
     extractPublicationContext(publication)
-        .ifPresent(
-            publicationContext ->
-                selectResponsesToFake(
-                    fakeUriRetriever,
-                    resourceService,
-                    publicationContext,
-                    publicationContextRedirects,
-                    parentPublication));
+        .ifPresent(publicationContext ->
+            selectResponsesToFake(
+                fakeUriRetriever,
+                resourceService,
+                publicationContext,
+                publicationContextRedirects,
+                parentPublication));
   }
 
   private static void selectResponsesToFake(
@@ -293,10 +292,9 @@ public final class FakeUriResponse {
       Anthology anthologyContext,
       Publication parentPublication) {
     var persistedParent =
-        attempt(
-                () ->
-                    resourceService.createPublication(
-                        UserInstance.fromPublication(parentPublication), parentPublication))
+        attempt(() ->
+                resourceService.createPublication(
+                    UserInstance.fromPublication(parentPublication), parentPublication))
             .orElseThrow();
     anthologyContext.setId(getPublicationId(persistedParent));
     var parentResponse = PublicationResponse.fromPublication(parentPublication);

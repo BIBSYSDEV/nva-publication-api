@@ -62,10 +62,9 @@ public record ImportEntityDescription(
   private List<ImportContributor> updatedContributorSequence(
       List<ImportContributor> contributorList) {
     return IntStream.range(0, contributorList.size())
-        .mapToObj(
-            sequenceCounter ->
-                updateContributorWithSequence(
-                    contributorList.get(sequenceCounter), sequenceCounter + 1))
+        .mapToObj(sequenceCounter ->
+            updateContributorWithSequence(
+                contributorList.get(sequenceCounter), sequenceCounter + 1))
         .toList();
   }
 }

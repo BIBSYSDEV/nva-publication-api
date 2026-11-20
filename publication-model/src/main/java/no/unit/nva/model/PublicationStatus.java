@@ -45,14 +45,13 @@ public enum PublicationStatus {
     return stream(values())
         .filter(publicationStatus -> publicationStatus.getValue().equalsIgnoreCase(value))
         .findAny()
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    format(
-                        ERROR_MESSAGE_TEMPLATE,
-                        value,
-                        stream(values())
-                            .map(PublicationStatus::toString)
-                            .collect(joining(DELIMITER)))));
+        .orElseThrow(() ->
+            new IllegalArgumentException(
+                format(
+                    ERROR_MESSAGE_TEMPLATE,
+                    value,
+                    stream(values())
+                        .map(PublicationStatus::toString)
+                        .collect(joining(DELIMITER)))));
   }
 }

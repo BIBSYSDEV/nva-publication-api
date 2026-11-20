@@ -119,9 +119,8 @@ public class ImportCandidateDynamoDbStreamToEventBridgeHandler
   }
 
   private URI saveBlobToS3(ImportCandidateDataEntryUpdate blob) {
-    return attempt(
-            () ->
-                s3Driver.insertFile(UnixPath.of(UUID.randomUUID().toString()), blob.toJsonString()))
+    return attempt(() ->
+            s3Driver.insertFile(UnixPath.of(UUID.randomUUID().toString()), blob.toJsonString()))
         .orElseThrow(
             failure -> new RuntimeException("Failed to save blob to S3: " + blob.toJsonString()));
   }

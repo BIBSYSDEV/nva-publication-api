@@ -66,7 +66,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
   private TicketService ticketService;
 
-  @BeforeEach()
+  @BeforeEach
   public void init() {
     super.init();
     this.outputStream = new ByteArrayOutputStream();

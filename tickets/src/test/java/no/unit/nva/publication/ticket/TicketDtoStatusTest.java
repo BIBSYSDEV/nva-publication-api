@@ -20,11 +20,10 @@ class TicketDtoStatusTest {
 
   @Test
   void shouldParseAllValidTicketStatuses() {
-    assertDoesNotThrow(
-        () ->
-            Arrays.stream(TicketStatus.values())
-                .map(TicketStatus::toString)
-                .map(TicketDtoStatus::parse)
-                .toList());
+    assertDoesNotThrow(() ->
+        Arrays.stream(TicketStatus.values())
+            .map(TicketStatus::toString)
+            .map(TicketDtoStatus::parse)
+            .toList());
   }
 }

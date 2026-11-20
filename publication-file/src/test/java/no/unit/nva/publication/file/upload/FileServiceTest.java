@@ -345,10 +345,9 @@ class FileServiceTest extends ResourcesLocalTest {
 
     var updatedFile = originalFile.copy().build(FileStatus.from(updatedClazz));
 
-    assertDoesNotThrow(
-        () ->
-            fileService.updateFile(
-                originalFile.getIdentifier(), resource.getIdentifier(), curator, updatedFile));
+    assertDoesNotThrow(() ->
+        fileService.updateFile(
+            originalFile.getIdentifier(), resource.getIdentifier(), curator, updatedFile));
   }
 
   @Test

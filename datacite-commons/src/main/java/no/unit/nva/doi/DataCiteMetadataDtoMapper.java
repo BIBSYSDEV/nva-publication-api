@@ -148,12 +148,8 @@ public final class DataCiteMetadataDtoMapper {
         .map(SortableIdentifier::toString)
         .map(LANDING_PAGE_UTIL::constructResourceUri)
         .map(URI::toString)
-        .map(
-            uriString ->
-                new IdentifierDto.Builder()
-                    .withType(IdentifierType.URL)
-                    .withValue(uriString)
-                    .build())
+        .map(uriString ->
+            new IdentifierDto.Builder().withType(IdentifierType.URL).withValue(uriString).build())
         .orElse(null);
   }
 

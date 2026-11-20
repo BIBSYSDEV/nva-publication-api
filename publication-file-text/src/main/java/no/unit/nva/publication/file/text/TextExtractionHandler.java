@@ -137,10 +137,9 @@ public final class TextExtractionHandler implements RequestHandler<SQSEvent, SQS
         .filter(extractor -> extractor.supports(input.contentType()))
         .findFirst()
         .map(extractor -> extractor.extract(input, file))
-        .orElseGet(
-            () ->
-                new ExtractionResult.Flagged(
-                    input, ExtractionFailureReason.UNSUPPORTED_FORMAT, input.contentType()));
+        .orElseGet(() ->
+            new ExtractionResult.Flagged(
+                input, ExtractionFailureReason.UNSUPPORTED_FORMAT, input.contentType()));
   }
 
   private void handleResult(ExtractionResult result) {

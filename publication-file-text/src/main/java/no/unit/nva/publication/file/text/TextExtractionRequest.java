@@ -31,10 +31,9 @@ public record TextExtractionRequest(
    */
   public static TextExtractionRequest fromJson(String body) {
     return attempt(() -> JsonUtils.dtoObjectMapper.readValue(body, TextExtractionRequest.class))
-        .orElseThrow(
-            failure ->
-                new IllegalArgumentException(
-                    UNPARSEABLE_MESSAGE_BODY + describeParseFailure(failure.getException())));
+        .orElseThrow(failure ->
+            new IllegalArgumentException(
+                UNPARSEABLE_MESSAGE_BODY + describeParseFailure(failure.getException())));
   }
 
   private static String describeParseFailure(Exception exception) {

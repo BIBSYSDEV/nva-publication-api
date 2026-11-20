@@ -1431,8 +1431,8 @@ Resources:
   LogicallyDeleteEntriesHandler:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
-    Description: "Listens for Delete event emitted from LogicallyDeleteImportedPublicationsButton. Removes resource from DynamoDB. Parses a DeleteEntryEvent"
     Properties:
+      Description: "Listens for Delete event emitted from LogicallyDeleteImportedPublicationsButton. Removes resource from DynamoDB. Parses a DeleteEntryEvent"
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationHandler::handleRequest
       Role: !GetAtt LambdaRole.Arn
@@ -1743,7 +1743,6 @@ Resources:
                 aws:SourceArn: !GetAtt PublicationServiceUpdateRule.Arn
 
   PersistLogEntryEventHandler:
-    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -2026,7 +2025,6 @@ Resources:
                 subtopic: ["PublicationService.BrageData.PatchEntry"]
 
   DeleteFileEventHandler:
-    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -2061,7 +2059,6 @@ Resources:
             Destination: !GetAtt DeleteFileFromS3EventHandlerDLQ.Arn
 
   PublicationChannelBatchUpdateFunction:
-    DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
@@ -2108,8 +2105,8 @@ Resources:
   ManuallyUpdatePublicationsHandler:
     DependsOn: EventsLambdaManagedPolicy
     Type: AWS::Serverless::Function
-    Description: "Lambda function to update publications fetched from search-api"
     Properties:
+      Description: "Lambda function to update publications fetched from search-api"
       CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.batch.ManuallyUpdatePublicationsHandler::handleRequest
       Timeout: 900
@@ -2834,7 +2831,6 @@ Resources:
         - !Ref SlackSnsArn
 
   UpdatedPublicationChannelEventHandler:
-    DependsOn: ResourceServiceAccessManagedPolicy
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers

@@ -191,11 +191,8 @@ public class CristinImportPublicationMerger {
   private List<String> mergeTags() {
     var tags = new HashSet<>(existingPublication.getEntityDescription().getTags());
     bragePublicationRepresentation.publication().getEntityDescription().getTags().stream()
-        .filter(
-            tag ->
-                tags.stream()
-                    .filter(Objects::nonNull)
-                    .noneMatch(exTag -> exTag.equalsIgnoreCase(tag)))
+        .filter(tag ->
+            tags.stream().filter(Objects::nonNull).noneMatch(exTag -> exTag.equalsIgnoreCase(tag)))
         .forEach(tags::add);
     return tags.stream().filter(Objects::nonNull).toList();
   }
@@ -425,17 +422,15 @@ public class CristinImportPublicationMerger {
   private void removePossiblyRedundantCristinIdentifier(
       HashSet<AdditionalIdentifierBase> additionalIdentifiers) {
     var cristinIdentifierOptional = getCristinIdentifier();
-    cristinIdentifierOptional.ifPresent(
-        cristinIdentifier ->
-            removeCristinIdentifierFromBrage(additionalIdentifiers, cristinIdentifier));
+    cristinIdentifierOptional.ifPresent(cristinIdentifier ->
+        removeCristinIdentifierFromBrage(additionalIdentifiers, cristinIdentifier));
   }
 
   private void removeCristinIdentifierFromBrage(
       HashSet<AdditionalIdentifierBase> additionalIdentifiers,
       AdditionalIdentifierBase cristinIdentifier) {
-    additionalIdentifiers.removeIf(
-        additionalIdentifierBase ->
-            cristinIdentifierFromBrageIsIdentical(cristinIdentifier, additionalIdentifierBase));
+    additionalIdentifiers.removeIf(additionalIdentifierBase ->
+        cristinIdentifierFromBrageIsIdentical(cristinIdentifier, additionalIdentifierBase));
   }
 
   private boolean cristinIdentifierFromBrageIsIdentical(
@@ -447,9 +442,8 @@ public class CristinImportPublicationMerger {
 
   private Optional<AdditionalIdentifierBase> getCristinIdentifier() {
     return existingPublication.getAdditionalIdentifiers().stream()
-        .filter(
-            additionalIdentifierBase ->
-                "Cristin".equalsIgnoreCase(additionalIdentifierBase.sourceName()))
+        .filter(additionalIdentifierBase ->
+            "Cristin".equalsIgnoreCase(additionalIdentifierBase.sourceName()))
         .findFirst();
   }
 

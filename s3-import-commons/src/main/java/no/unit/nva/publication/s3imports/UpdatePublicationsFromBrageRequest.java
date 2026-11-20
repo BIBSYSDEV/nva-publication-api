@@ -18,10 +18,9 @@ public record UpdatePublicationsFromBrageRequest(URI uri, String archive, boolea
   }
 
   public static UpdatePublicationsFromBrageRequest fromInputStream(InputStream inputStream) {
-    return attempt(
-            () ->
-                JsonUtils.dtoObjectMapper.readValue(
-                    IoUtils.streamToString(inputStream), UpdatePublicationsFromBrageRequest.class))
+    return attempt(() ->
+            JsonUtils.dtoObjectMapper.readValue(
+                IoUtils.streamToString(inputStream), UpdatePublicationsFromBrageRequest.class))
         .orElseThrow();
   }
 }

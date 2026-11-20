@@ -118,12 +118,11 @@ public class ServiceWithTransactions {
     transactWriteItemsRequest.transactItems().stream()
         .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / TRANSACTION_BATCH_SIZE))
         .values()
-        .forEach(
-            batch -> {
-              var batchRequest = transactWriteItemsRequest.toBuilder().transactItems(batch).build();
-              attempt(() -> getClient().transactWriteItems(batchRequest))
-                  .orElseThrow(failure -> handleTransactionFailure(failure, batchRequest));
-            });
+        .forEach(batch -> {
+          var batchRequest = transactWriteItemsRequest.toBuilder().transactItems(batch).build();
+          attempt(() -> getClient().transactWriteItems(batchRequest))
+              .orElseThrow(failure -> handleTransactionFailure(failure, batchRequest));
+        });
   }
 
   private TransactionFailedException handleTransactionFailure(

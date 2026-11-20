@@ -29,11 +29,10 @@ public final class TrustedThirdPartyGrantStrategy extends PublicationStrategyBas
   private boolean canModify() {
     return nonNull(userInstance)
         && userInstance.isExternalClient()
-        && attempt(
-                () ->
-                    userInstance
-                        .getTopLevelOrgCristinId()
-                        .equals(resource.getResourceOwner().getOwnerAffiliation()))
+        && attempt(() ->
+                userInstance
+                    .getTopLevelOrgCristinId()
+                    .equals(resource.getResourceOwner().getOwnerAffiliation()))
             .orElse(fail -> false);
   }
 }

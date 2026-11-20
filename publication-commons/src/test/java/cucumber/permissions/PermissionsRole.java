@@ -42,9 +42,8 @@ public enum PermissionsRole {
   public static Set<PermissionsRole> lookup(String search) {
     var result =
         stream(values())
-            .filter(
-                permissionsRole ->
-                    stream(permissionsRole.values).anyMatch(search::equalsIgnoreCase))
+            .filter(permissionsRole ->
+                stream(permissionsRole.values).anyMatch(search::equalsIgnoreCase))
             .collect(Collectors.toSet());
     if (result.isEmpty()) {
       throw new IllegalArgumentException("No PermissionsRole found for: " + search);

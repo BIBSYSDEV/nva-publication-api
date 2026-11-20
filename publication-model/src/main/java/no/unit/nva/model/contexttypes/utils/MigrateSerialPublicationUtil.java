@@ -21,11 +21,10 @@ public class MigrateSerialPublicationUtil {
   @Deprecated
   public static URI migratePath(URI id) {
     var oldPath =
-        attempt(
-                () ->
-                    UriWrapper.fromUri(id)
-                        .getPath()
-                        .getPathElementByIndexFromEnd(INDEX_FROM_END_CHANNEL_TYPE_PATH_ELEMENT))
+        attempt(() ->
+                UriWrapper.fromUri(id)
+                    .getPath()
+                    .getPathElementByIndexFromEnd(INDEX_FROM_END_CHANNEL_TYPE_PATH_ELEMENT))
             .toOptional();
     return oldPath
         .filter(MigrateSerialPublicationUtil::isDeprecated)

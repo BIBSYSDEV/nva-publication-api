@@ -51,10 +51,9 @@ public final class CristinOrganizationFixtures {
     var selfReferentialLeafNode = FakeCristinOrganization.asLeafNode(organizationId);
     var subOrganizations =
         IntStream.range(0, numberOfSubOrganizations)
-            .mapToObj(
-                i ->
-                    randomCristinOrganization(randomOrganizationId())
-                        .withPartOf(List.of(selfReferentialLeafNode)))
+            .mapToObj(i ->
+                randomCristinOrganization(randomOrganizationId())
+                    .withPartOf(List.of(selfReferentialLeafNode)))
             .map(FakeCristinOrganization.Builder::build)
             .toList();
 

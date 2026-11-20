@@ -143,13 +143,12 @@ public class ContributorExtractor {
       Map<AuthorIdentifiers, CristinPerson> cristinPersons,
       PersonalnameType correspondencePerson) {
     return authorGroupWithCristinOrganization.getScopusAuthors().getAuthorOrCollaboration().stream()
-        .map(
-            authorOrCollaboration ->
-                createContributor(
-                    authorOrCollaboration,
-                    authorGroupWithCristinOrganization,
-                    cristinPersons,
-                    correspondencePerson))
+        .map(authorOrCollaboration ->
+            createContributor(
+                authorOrCollaboration,
+                authorGroupWithCristinOrganization,
+                cristinPersons,
+                correspondencePerson))
         .toList();
   }
 
@@ -178,17 +177,12 @@ public class ContributorExtractor {
     var authorIdentifiers = new AuthorIdentifiers(author.getAuid(), author.getOrcid());
 
     return Optional.ofNullable(cristinPersons.get(authorIdentifiers))
-        .map(
-            cristinPerson ->
-                generateContributorFromCristinPerson(
-                    cristinPerson,
-                    author,
-                    correspondencePerson,
-                    authorGroupWithCristinOrganization))
-        .orElseGet(
-            () ->
-                buildFromScopusAuthor(
-                    author, authorGroupWithCristinOrganization, correspondencePerson));
+        .map(cristinPerson ->
+            generateContributorFromCristinPerson(
+                cristinPerson, author, correspondencePerson, authorGroupWithCristinOrganization))
+        .orElseGet(() ->
+            buildFromScopusAuthor(
+                author, authorGroupWithCristinOrganization, correspondencePerson));
   }
 
   private ImportContributor buildFromScopusAuthor(
