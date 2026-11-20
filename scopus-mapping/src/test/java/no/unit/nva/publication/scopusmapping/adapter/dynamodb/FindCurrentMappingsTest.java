@@ -15,16 +15,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
+import no.unit.nva.publication.scopusmapping.application.ScopusMappingService;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAffiliationIdentifier;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorIdentifier;
 import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorMapping;
 import nva.commons.logutils.LogRecorder;
+import org.junit.jupiter.api.AutoClose;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class FindCurrentMappingsTest extends ScopusMappingLocalTest {
+class FindCurrentMappingsTest {
 
   private static final ScopusAuthorIdentifier OTHER_AUTHOR =
       new ScopusAuthorIdentifier("99999990202");
@@ -32,11 +35,20 @@ class FindCurrentMappingsTest extends ScopusMappingLocalTest {
       new ScopusAffiliationIdentifier("99990202");
   private static final String INSTITUTION = "194.0.0.0";
 
+  @AutoClose private LocalImportCandidatesTable table;
+  private ScopusMappingService service;
+
+  @BeforeEach
+  void setUp() {
+    table = new LocalImportCandidatesTable();
+    service = new ScopusMappingService(table.repository());
+  }
+
   @Test
   void shouldFindAuthorAndAffiliationMappings() {
     var authorMapping = migratedAuthorMapping(SCOPUS_AUTHOR);
     putCurrent(authorMapping);
-    putItem(migratedAffiliationItem(SCOPUS_AFFILIATION, INSTITUTION, "194.63.10.0"));
+    table.putItem(migratedAffiliationItem(SCOPUS_AFFILIATION, INSTITUTION, "194.63.10.0"));
 
     var mappings =
         service.findCurrentMappings(
@@ -98,9 +110,9 @@ class FindCurrentMappingsTest extends ScopusMappingLocalTest {
       Map<String, AttributeValue> malformedItem, String expectedReason) {
     var logRecorder = LogRecorder.forClass(ScopusMappingItems.class);
     var otherAuthorMapping = migratedAuthorMapping(OTHER_AUTHOR);
-    putItem(malformedItem);
+    table.putItem(malformedItem);
     putCurrent(otherAuthorMapping);
-    putItem(migratedAffiliationItem(OTHER_AFFILIATION, INSTITUTION, INSTITUTION));
+    table.putItem(migratedAffiliationItem(OTHER_AFFILIATION, INSTITUTION, INSTITUTION));
 
     var mappings =
         service.findCurrentMappings(
@@ -116,6 +128,6 @@ class FindCurrentMappingsTest extends ScopusMappingLocalTest {
   }
 
   private void putCurrent(ScopusAuthorMapping mapping) {
-    putItem(ScopusAuthorMappingDao.current(mapping).toItem());
+    table.putItem(ScopusAuthorMappingDao.current(mapping).toItem());
   }
 }
