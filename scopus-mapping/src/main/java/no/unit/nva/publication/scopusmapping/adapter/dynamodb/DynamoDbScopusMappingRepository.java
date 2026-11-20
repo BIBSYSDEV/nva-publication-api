@@ -35,11 +35,8 @@ public class DynamoDbScopusMappingRepository implements ScopusMappingRepository 
       Collection<ScopusAffiliationIdentifier> scopusAffiliationIdentifiers) {
     var keys =
         Stream.concat(
-                scopusAuthorIdentifiers.stream()
-                    .distinct()
-                    .map(ScopusMappingKeys::authorPartitionKey),
+                scopusAuthorIdentifiers.stream().map(ScopusMappingKeys::authorPartitionKey),
                 scopusAffiliationIdentifiers.stream()
-                    .distinct()
                     .map(ScopusMappingKeys::affiliationPartitionKey))
             .map(ScopusMappingKeys::currentKey)
             .toList();

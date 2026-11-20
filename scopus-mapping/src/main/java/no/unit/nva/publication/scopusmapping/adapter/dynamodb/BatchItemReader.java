@@ -2,9 +2,10 @@ package no.unit.nva.publication.scopusmapping.adapter.dynamodb;
 
 import static java.util.Collections.emptyList;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Gatherers;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemRequest;
@@ -23,14 +24,17 @@ final class BatchItemReader {
     this.tableName = tableName;
   }
 
-  /** Returns the items that exist. A key without an item gives nothing. */
-  List<Map<String, AttributeValue>> read(List<Map<String, AttributeValue>> keys) {
-    var items = new ArrayList<Map<String, AttributeValue>>();
-    for (var start = 0; start < keys.size(); start += MAX_KEYS_PER_BATCH_GET) {
-      var batchOfKeys = keys.subList(start, Math.min(start + MAX_KEYS_PER_BATCH_GET, keys.size()));
-      items.addAll(readBatch(batchOfKeys));
-    }
-    return items;
+  /**
+   * Returns the items that exist. A key without an item gives nothing. A key given more than once
+   * is read once, since {@code BatchGetItem} rejects duplicate keys.
+   */
+  List<Map<String, AttributeValue>> read(Collection<Map<String, AttributeValue>> keys) {
+    return keys.stream()
+        .distinct()
+        .gather(Gatherers.windowFixed(MAX_KEYS_PER_BATCH_GET))
+        .map(this::readBatch)
+        .flatMap(List::stream)
+        .toList();
   }
 
   /**
