@@ -136,6 +136,7 @@ class CristinConnectionTest {
 
   @Test
   void shouldGiveUpWhenCristinProxyKeepsRespondingWithServerError() {
+    var logRecorder = LogRecorder.forClass(CristinConnection.class);
     stubFor(
         WireMock.get(urlPathEqualTo(ORGANIZATION_SEARCH_PATH))
             .willReturn(aResponse().withStatus(HttpURLConnection.HTTP_INTERNAL_ERROR)));
@@ -144,6 +145,9 @@ class CristinConnectionTest {
 
     assertThat(searchResponse.isEmpty(), is(equalTo(true)));
     verify(MAX_ATTEMPTS, getRequestedFor(urlPathEqualTo(ORGANIZATION_SEARCH_PATH)));
+    assertThat(logRecorder.messages(), hasItem(containsString("Giving up cristin request")));
+    assertThat(
+        logRecorder.messages(), hasItem(containsString("Could not fetch cristin organization")));
   }
 
   @Test
