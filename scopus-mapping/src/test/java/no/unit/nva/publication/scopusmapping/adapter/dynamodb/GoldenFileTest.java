@@ -21,7 +21,7 @@ import no.unit.nva.publication.scopusmapping.domain.ScopusAuthorMapping;
 import no.unit.nva.publication.scopusmapping.domain.ScopusCorrectionContext;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappingVersion;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappings;
-import org.junit.jupiter.api.AutoClose;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -90,7 +90,7 @@ class GoldenFileTest {
   private static final ScopusAffiliationIdentifier UNKNOWN_AFFILIATION =
       new ScopusAffiliationIdentifier("99990999");
 
-  @AutoClose private LocalImportCandidatesTable table;
+  private LocalImportCandidatesTable table;
   private ScopusMappingService service;
 
   @BeforeEach
@@ -98,6 +98,11 @@ class GoldenFileTest {
     table = new LocalImportCandidatesTable();
     service = new ScopusMappingService(table.repository(), Clock.systemUTC());
     GoldenFile.writeWithBatchWriteItem(table.client(), table.tableName(), GoldenFile.readItems());
+  }
+
+  @AfterEach
+  void closeTable() {
+    table.close();
   }
 
   @Test
