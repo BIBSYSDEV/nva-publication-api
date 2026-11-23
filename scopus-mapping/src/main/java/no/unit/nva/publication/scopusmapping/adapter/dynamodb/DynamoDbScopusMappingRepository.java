@@ -48,11 +48,10 @@ public class DynamoDbScopusMappingRepository implements ScopusMappingRepository 
       List<Map<String, AttributeValue>> items) {
     return items.stream()
         .filter(DynamoDbScopusMappingRepository::isAuthorItem)
-        .flatMap(
-            item ->
-                parseOrLogAndSkip(
-                    item, authorItem -> ScopusAuthorMappingDao.fromItem(authorItem).toMapping())
-                    .stream())
+        .flatMap(item ->
+            parseOrLogAndSkip(
+                item, authorItem -> ScopusAuthorMappingDao.fromItem(authorItem).toMapping())
+                .stream())
         .toList();
   }
 
@@ -60,13 +59,12 @@ public class DynamoDbScopusMappingRepository implements ScopusMappingRepository 
       List<Map<String, AttributeValue>> items) {
     return items.stream()
         .filter(item -> !isAuthorItem(item))
-        .flatMap(
-            item ->
-                parseOrLogAndSkip(
-                    item,
-                    affiliationItem ->
-                        ScopusAffiliationMappingDao.fromItem(affiliationItem).toMapping())
-                    .stream())
+        .flatMap(item ->
+            parseOrLogAndSkip(
+                item,
+                affiliationItem ->
+                    ScopusAffiliationMappingDao.fromItem(affiliationItem).toMapping())
+                .stream())
         .toList();
   }
 

@@ -72,13 +72,12 @@ final class ScopusMappingItems {
   static <T> Optional<T> parseOrLogAndSkip(
       Map<String, AttributeValue> item, Function<Map<String, AttributeValue>, T> parser) {
     return attempt(() -> parser.apply(item))
-        .toOptional(
-            failure ->
-                logger.error(
-                    "Leaving out malformed Scopus mapping item {} {}: {}",
-                    partitionKeyOf(item),
-                    textOf(item, PRIMARY_KEY_SORT_KEY_NAME).orElse(UNKNOWN_SORT_KEY),
-                    failure.getException().getMessage()));
+        .toOptional(failure ->
+            logger.error(
+                "Leaving out malformed Scopus mapping item {} {}: {}",
+                partitionKeyOf(item),
+                textOf(item, PRIMARY_KEY_SORT_KEY_NAME).orElse(UNKNOWN_SORT_KEY),
+                failure.getException().getMessage()));
   }
 
   private static Optional<String> textOf(Map<String, AttributeValue> item, String attributeName) {
