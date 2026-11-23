@@ -55,9 +55,8 @@ class NumericIdentifierTest {
                 "")
             .toList();
     return numericIdentifierTypes()
-        .flatMap(
-            identifierType ->
-                valuesThatAreNotPlainNumbers.stream()
-                    .map(value -> Arguments.of(identifierType, value)));
+        .flatMap(identifierType ->
+            valuesThatAreNotPlainNumbers.stream()
+                .map(value -> Arguments.of(identifierType, value)));
   }
 }
