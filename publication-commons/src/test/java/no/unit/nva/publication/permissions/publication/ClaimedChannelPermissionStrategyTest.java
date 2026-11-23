@@ -442,7 +442,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
   }
 
   @Disabled("Disabled until publishing policy is validated")
-  @Test()
+  @Test
   @DisplayName(
       value =
           "Should deny curator from curating institution {0} operation on publication with "
@@ -920,7 +920,7 @@ public class ClaimedChannelPermissionStrategyTest extends PublicationPermissionS
         PublicationPermissions.create(resource, userInstance).allowsAction(UPDATE));
   }
 
-  @Test()
+  @Test
   void shouldAllowEditorFromNonCuratingInstitutionWhenChannelIsNotClaimedByAnyone()
       throws JsonProcessingException, UnauthorizedException {
     var suite = InstitutionSuite.random();

@@ -93,10 +93,8 @@ public class FixFileOwnershipJob extends ServiceWithTransactions
     return fetchPublishingRequestTicket(resourceIdentifier)
         .map(PublishingRequestCase::getOwnerAffiliation)
         .filter(ticketAffiliation -> !ticketAffiliation.equals(fileEntry.getOwnerAffiliation()))
-        .map(
-            newAffiliation ->
-                createUpdatedFileDao(
-                    fileEntry, newAffiliation, fileDaoWithVersion.originalVersion()));
+        .map(newAffiliation ->
+            createUpdatedFileDao(fileEntry, newAffiliation, fileDaoWithVersion.originalVersion()));
   }
 
   private Optional<PublishingRequestCase> fetchPublishingRequestTicket(

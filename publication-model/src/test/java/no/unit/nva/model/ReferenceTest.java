@@ -30,10 +30,9 @@ class ReferenceTest {
             "ExhibitionContent");
     return IntStream.range(0, contextTypes.size())
         .boxed()
-        .flatMap(
-            i ->
-                IntStream.range(i + 1, contextTypes.size())
-                    .mapToObj(j -> Arguments.of(contextTypes.get(i), contextTypes.get(j))));
+        .flatMap(i ->
+            IntStream.range(i + 1, contextTypes.size())
+                .mapToObj(j -> Arguments.of(contextTypes.get(i), contextTypes.get(j))));
   }
 
   @ParameterizedTest(name = "References with instance type {0} and {1} are not equal")
@@ -109,9 +108,8 @@ class ReferenceTest {
 
     return IntStream.range(0, types.size())
         .boxed()
-        .flatMap(
-            i ->
-                IntStream.range(i + 1, types.size())
-                    .mapToObj(j -> Arguments.of(types.get(i), types.get(j))));
+        .flatMap(i ->
+            IntStream.range(i + 1, types.size())
+                .mapToObj(j -> Arguments.of(types.get(i), types.get(j))));
   }
 }

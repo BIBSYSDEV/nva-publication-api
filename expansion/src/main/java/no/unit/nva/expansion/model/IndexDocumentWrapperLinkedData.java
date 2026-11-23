@@ -130,9 +130,8 @@ public class IndexDocumentWrapperLinkedData {
   }
 
   private Optional<HttpResponse<String>> fetchNviCandidate(String publicationId) {
-    return attempt(
-            () ->
-                uriRetriever.fetchResponse(fetchNviCandidateUri(publicationId), CONTENT_TYPE_JSON))
+    return attempt(() ->
+            uriRetriever.fetchResponse(fetchNviCandidateUri(publicationId), CONTENT_TYPE_JSON))
         .orElseThrow();
   }
 
@@ -183,10 +182,9 @@ public class IndexDocumentWrapperLinkedData {
 
   private Optional<InputStream> getAnthology(JsonNode indexDocument) {
     return extractPublicationContextUri(indexDocument)
-        .map(
-            uri ->
-                new ExpandedParentPublication(uriRetriever, resourceService, queueClient)
-                    .getExpandedParentPublication(uri))
+        .map(uri ->
+            new ExpandedParentPublication(uriRetriever, resourceService, queueClient)
+                .getExpandedParentPublication(uri))
         .map(IoUtils::stringToStream);
   }
 

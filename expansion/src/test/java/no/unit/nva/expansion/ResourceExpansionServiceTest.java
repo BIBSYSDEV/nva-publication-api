@@ -1042,10 +1042,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
   private static List<Contributor> extractContributorsWithId(URI id, Publication publication) {
     return publication.getContributors().stream()
-        .filter(
-            contributor -> {
-              return nonNull(contributor.identity());
-            })
+        .filter(contributor -> {
+          return nonNull(contributor.identity());
+        })
         .filter(contributor -> nonNull(getId(contributor)))
         .filter(contributor -> getId(contributor).equals(id))
         .toList();

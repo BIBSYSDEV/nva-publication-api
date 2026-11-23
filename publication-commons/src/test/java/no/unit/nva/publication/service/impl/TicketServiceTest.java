@@ -247,9 +247,8 @@ public class TicketServiceTest extends ResourcesLocalTest {
     var retrievedTickets =
         tickets.stream()
             .map(
-                attempt(
-                    ticket ->
-                        ticketService.fetchTicket(fromTicket(ticket), ticket.getIdentifier())))
+                attempt(ticket ->
+                    ticketService.fetchTicket(fromTicket(ticket), ticket.getIdentifier())))
             .map(Try::orElseThrow)
             .toList();
     assertThat(retrievedTickets, containsInAnyOrder(tickets.toArray(TicketEntry[]::new)));
@@ -548,12 +547,11 @@ public class TicketServiceTest extends ResourcesLocalTest {
   void shouldBePossibleToCreateSeveralPublishingRequestTicketsForSinglePublication()
       throws ApiGatewayException {
     var publication = persistPublication(owner, DRAFT);
-    assertDoesNotThrow(
-        () ->
-            IntStream.range(0, 2)
-                .boxed()
-                .map(ticketType -> createPersistedTicket(publication, PublishingRequestCase.class))
-                .toList());
+    assertDoesNotThrow(() ->
+        IntStream.range(0, 2)
+            .boxed()
+            .map(ticketType -> createPersistedTicket(publication, PublishingRequestCase.class))
+            .toList());
     var ticketsFromDatabase =
         resourceService.fetchAllTicketsForResource(Resource.fromPublication(publication)).toList();
     assertThat(
@@ -759,7 +757,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
         () -> ticket.remove(UserInstance.create(randomString(), randomUri())));
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @MethodSource("ticketTypeProvider")
   void shouldResetViewedByListAndKeepUserCompletingTicketOnlyWhenCompletingTicket(
       Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
@@ -777,7 +775,7 @@ public class TicketServiceTest extends ResourcesLocalTest {
     assertTrue(completedTicket.getViewedBy().contains(userInstance.getUser()));
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @MethodSource("ticketTypeProvider")
   void shouldResetViewedByListAndKeepUserClosingTicketOnlyWhenClosingTicket(
       Class<? extends TicketEntry> ticketType) throws ApiGatewayException {
@@ -864,14 +862,12 @@ public class TicketServiceTest extends ResourcesLocalTest {
     return TicketTestUtils.ticketTypeAndPublicationStatusProvider()
         .map(Arguments::get)
         .filter(argument -> Arrays.asList(argument).get(1) == publication.getStatus())
+        .map(arg ->
+            TicketEntry.requestNewTicket(
+                publication, (Class<? extends TicketEntry>) Arrays.asList(arg).getFirst()))
         .map(
-            arg ->
-                TicketEntry.requestNewTicket(
-                    publication, (Class<? extends TicketEntry>) Arrays.asList(arg).getFirst()))
-        .map(
-            attempt(
-                ticket ->
-                    ticket.withOwner(randomString()).persistNewTicket(ticketService, publication)))
+            attempt(ticket ->
+                ticket.withOwner(randomString()).persistNewTicket(ticketService, publication)))
         .map(Try::orElseThrow)
         .toList();
   }
@@ -888,10 +884,9 @@ public class TicketServiceTest extends ResourcesLocalTest {
   }
 
   private TicketEntry createPersistedTicket(Publication publication, Class<?> ticketType) {
-    return attempt(
-            () ->
-                createUnpersistedTicket(publication, ticketType)
-                    .persistNewTicket(ticketService, publication))
+    return attempt(() ->
+            createUnpersistedTicket(publication, ticketType)
+                .persistNewTicket(ticketService, publication))
         .orElseThrow();
   }
 

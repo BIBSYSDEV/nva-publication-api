@@ -304,11 +304,10 @@ class FileRightsRetentionServiceTest {
             getServerConfiguredRrs(configuredType),
             UserInstance.fromPublication(originalPublication));
 
-    assertDoesNotThrow(
-        () ->
-            service.applyRightsRetention(
-                Resource.fromPublication(updatedPublication),
-                Resource.fromPublication(originalPublication)));
+    assertDoesNotThrow(() ->
+        service.applyRightsRetention(
+            Resource.fromPublication(updatedPublication),
+            Resource.fromPublication(originalPublication)));
   }
 
   @ParameterizedTest
@@ -337,11 +336,10 @@ class FileRightsRetentionServiceTest {
             getServerConfiguredRrs(configuredType),
             UserInstance.fromPublication(originalPublication));
 
-    assertDoesNotThrow(
-        () ->
-            service.applyRightsRetention(
-                Resource.fromPublication(updatedPublication),
-                Resource.fromPublication(originalPublication)));
+    assertDoesNotThrow(() ->
+        service.applyRightsRetention(
+            Resource.fromPublication(updatedPublication),
+            Resource.fromPublication(originalPublication)));
   }
 
   @Test

@@ -115,15 +115,13 @@ class WithPrimaryKeyTest extends ResourcesLocalTest {
         .map(Named::getPayload)
         .map(ticketType -> (Class<TicketEntry>) ticketType)
         .map(
-            attempt(
-                ticketType ->
-                    TicketEntry.createNewTicket(
-                        resource.toPublication(), ticketType, SortableIdentifier::next)))
+            attempt(ticketType ->
+                TicketEntry.createNewTicket(
+                    resource.toPublication(), ticketType, SortableIdentifier::next)))
         .map(Try::orElseThrow)
-        .map(
-            ticketEntry ->
-                ticketEntry.withOwner(
-                    UserInstance.fromPublication(resource.toPublication()).getUsername()))
+        .map(ticketEntry ->
+            ticketEntry.withOwner(
+                UserInstance.fromPublication(resource.toPublication()).getUsername()))
         .toList();
   }
 

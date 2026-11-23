@@ -433,16 +433,15 @@ class PublicationChannelTest extends PublicationChannelLocalTestUtil {
     when(channelClaimClient.fetchChannelClaim(toChannelClaimId(channelIdentifier)))
         .thenReturn(claim);
     IntStream.range(0, 2000)
-        .forEach(
-            i -> {
-              var publication = randomPublication(DegreeBachelor.class);
-              publication
-                  .getEntityDescription()
-                  .getReference()
-                  .setPublicationContext(degreeWithPublisherId(publisherId));
-              var userInstance = UserInstance.fromPublication(publication);
-              attempt(() -> resourceService.createPublication(userInstance, publication));
-            });
+        .forEach(i -> {
+          var publication = randomPublication(DegreeBachelor.class);
+          publication
+              .getEntityDescription()
+              .getReference()
+              .setPublicationContext(degreeWithPublisherId(publisherId));
+          var userInstance = UserInstance.fromPublication(publication);
+          attempt(() -> resourceService.createPublication(userInstance, publication));
+        });
   }
 
   private NonClaimedPublicationChannel constructExpectedNonClaimedChannel(

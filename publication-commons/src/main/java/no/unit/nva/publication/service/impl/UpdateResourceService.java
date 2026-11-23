@@ -144,9 +144,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
     var newPublisherIdentifier = getPublisherIdentifierWhenDegree(resource);
 
     if (!Objects.equals(oldPublisherIdentifier, newPublisherIdentifier)) {
-      oldPublisherIdentifier.ifPresent(
-          identifier ->
-              removePublicationChannel(persistedResource, identifier, transactWriteItems));
+      oldPublisherIdentifier.ifPresent(identifier ->
+          removePublicationChannel(persistedResource, identifier, transactWriteItems));
       newPublisherIdentifier.ifPresent(
           identifier -> addPublicationChannel(resource, transactWriteItems));
     }
@@ -301,9 +300,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
       ImportSource importSource) {
     return persistedResource.getFileEntries().stream()
         .filter(fileEntry -> hasEffectiveChanges(fileEntry, resource))
-        .map(
-            fileEntry ->
-                updateFileEntry(fileEntry, resource.toPublication(), userInstance, importSource))
+        .map(fileEntry ->
+            updateFileEntry(fileEntry, resource.toPublication(), userInstance, importSource))
         .map(FileEntry::toDao)
         .map(dao -> dao.toPutTransactionItem(tableName))
         .toList();
@@ -323,11 +321,10 @@ public class UpdateResourceService extends ServiceWithTransactions {
       ImportSource importSource) {
     return publication
         .getFile(fileEntry.getFile().getIdentifier())
-        .map(
-            file ->
-                nonNull(importSource)
-                    ? fileEntry.updateFromImport(file, userInstance, importSource)
-                    : fileEntry.update(file, userInstance))
+        .map(file ->
+            nonNull(importSource)
+                ? fileEntry.updateFromImport(file, userInstance, importSource)
+                : fileEntry.update(file, userInstance))
         .orElse(fileEntry);
   }
 
@@ -337,11 +334,10 @@ public class UpdateResourceService extends ServiceWithTransactions {
       List<TransactWriteItem> transactWriteItems) {
     persistedResource
         .getPublicationChannelByIdentifier(new SortableIdentifier(publisherIdentifier.toString()))
-        .ifPresent(
-            publicationChannel -> {
-              TransactWriteItem deleteAction = newDeleteTransactionItem(publicationChannel.toDao());
-              transactWriteItems.add(deleteAction);
-            });
+        .ifPresent(publicationChannel -> {
+          TransactWriteItem deleteAction = newDeleteTransactionItem(publicationChannel.toDao());
+          transactWriteItems.add(deleteAction);
+        });
   }
 
   private void addPublicationChannel(
@@ -373,10 +369,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
     var persistedImportCandidate =
         readResourceService
             .getImportCandidateByIdentifier(importCandidate.getIdentifier())
-            .orElseThrow(
-                () ->
-                    new NotFoundException(
-                        RESOURCE_NOT_FOUND_MESSAGE + importCandidate.getIdentifier()));
+            .orElseThrow(() ->
+                new NotFoundException(
+                    RESOURCE_NOT_FOUND_MESSAGE + importCandidate.getIdentifier()));
     if (isNotImported(persistedImportCandidate)) {
       importCandidate.setCreatedDate(persistedImportCandidate.getCreatedDate());
       importCandidate.setModifiedDate(clockForTimestamps.instant());
@@ -485,10 +480,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
       Resource resource, Collection<TicketEntry> newTickets) {
     var publication = resource.toPublication();
     return newTickets.stream()
-        .map(
-            ticket ->
-                attempt(() -> ticket.prepareForCreation(publication, SortableIdentifier::next))
-                    .orElseThrow())
+        .map(ticket ->
+            attempt(() -> ticket.prepareForCreation(publication, SortableIdentifier::next))
+                .orElseThrow())
         .map(TicketEntry::toDao)
         .flatMap(ticketDao -> ticketDao.createInsertionTransactionItems().stream())
         .toList();

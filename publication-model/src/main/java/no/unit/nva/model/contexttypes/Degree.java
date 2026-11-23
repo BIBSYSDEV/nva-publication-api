@@ -46,15 +46,14 @@ public class Degree extends Book {
 
   @Override
   protected Degree rebuild(BookSeries series, PublishingHouse publisher) {
-    return attempt(
-            () ->
-                new Builder()
-                    .withSeries(series)
-                    .withSeriesNumber(getSeriesNumber())
-                    .withPublisher(publisher)
-                    .withIsbnList(getIsbnList())
-                    .withCourse(course)
-                    .build())
+    return attempt(() ->
+            new Builder()
+                .withSeries(series)
+                .withSeriesNumber(getSeriesNumber())
+                .withPublisher(publisher)
+                .withIsbnList(getIsbnList())
+                .withCourse(course)
+                .build())
         .orElseThrow();
   }
 

@@ -79,9 +79,8 @@ public class DeleteEntriesEventEmitter implements RequestStreamHandler {
   private List<DeleteEntryEvent> createDeleteEvents(List<UnixPath> files) {
     return files.stream()
         .map(this::convertToIdentifier)
-        .map(
-            sortableIdentifier ->
-                new DeleteEntryEvent(DeleteEntryEvent.EVENT_TOPIC, sortableIdentifier))
+        .map(sortableIdentifier ->
+            new DeleteEntryEvent(DeleteEntryEvent.EVENT_TOPIC, sortableIdentifier))
         .collect(Collectors.toList());
   }
 

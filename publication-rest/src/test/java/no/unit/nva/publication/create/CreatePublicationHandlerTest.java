@@ -604,10 +604,9 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
   private Publication setAllFieldsThatAreNotCopiedFromTheCreateRequest(
       Publication samplePublication, PublicationResponse actualPublicationResponse) {
     return attempt(() -> removeAllFieldsThatAreNotCopiedFromTheCreateRequest(samplePublication))
-        .map(
-            publication ->
-                setAllFieldsThatAreAutomaticallySetByResourceService(
-                    publication, actualPublicationResponse))
+        .map(publication ->
+            setAllFieldsThatAreAutomaticallySetByResourceService(
+                publication, actualPublicationResponse))
         .orElseThrow();
   }
 

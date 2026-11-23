@@ -298,11 +298,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
   private SearchService mockedSearchService(List<Publication> publications) {
     var hits = publications.stream().map(ScopusHandlerTest::toResourceWithId).toList();
     when(uriRetriever.fetchResponse(
-            argThat(
-                (uri) ->
-                    nonNull(uri)
-                        && uri.toString()
-                            .contains(searchUriWithParam("scopusIdentifier").toString())),
+            argThat(uri ->
+                nonNull(uri)
+                    && uri.toString().contains(searchUriWithParam("scopusIdentifier").toString())),
             eq(APPLICATION_JSON)))
         .thenReturn(
             Optional.of(
@@ -316,9 +314,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
                         .formatted(hits),
                     200)));
     when(uriRetriever.fetchResponse(
-            argThat(
-                (uri) ->
-                    nonNull(uri) && uri.toString().contains(searchUriWithParam("doi").toString())),
+            argThat(uri ->
+                nonNull(uri) && uri.toString().contains(searchUriWithParam("doi").toString())),
             eq(APPLICATION_JSON)))
         .thenReturn(
             Optional.of(
@@ -1198,9 +1195,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     var piaCristinAffiliationIdAndAuthors = new HashMap<String, AuthorGroupTp>();
     authorGroupTpList.forEach(
         group -> piaCristinAffiliationIdAndAuthors.put(randomString(), group));
-    piaCristinAffiliationIdAndAuthors.forEach(
-        (cristinOrganizationId, authorGroupTp) ->
-            generatePiaAffiliationsResponse(authorGroupTp, cristinOrganizationId));
+    piaCristinAffiliationIdAndAuthors.forEach((cristinOrganizationId, authorGroupTp) ->
+        generatePiaAffiliationsResponse(authorGroupTp, cristinOrganizationId));
     var event = createNewScopusPublicationEvent();
     var publication = scopusHandler.handleRequest(event, CONTEXT);
     var actualContributors = publication.getEntityDescription().contributors();
@@ -1254,7 +1250,7 @@ class ScopusHandlerTest extends ResourcesLocalTest {
     var authorTypes = keepOnlyTheAuthors();
     var authors = new ArrayList<List<Author>>();
     authorTypes.forEach(
-        (authorTp) -> authors.add(PiaResponseGenerator.generateAuthors(authorTp.getAuid(), 0)));
+        authorTp -> authors.add(PiaResponseGenerator.generateAuthors(authorTp.getAuid(), 0)));
     authors.forEach(this::createPiaAuthorMock);
     var event = createNewScopusPublicationEvent();
     var publication = scopusHandler.handleRequest(event, CONTEXT);
@@ -1443,20 +1439,18 @@ class ScopusHandlerTest extends ResourcesLocalTest {
   private Publication persistPublicationWithScopusIdentifier(ScopusIdentifier scopusIdentifier) {
     var publication = randomPublication();
     publication.setAdditionalIdentifiers(Set.of(scopusIdentifier));
-    return attempt(
-            () ->
-                resourcesService.createPublication(
-                    UserInstance.create(randomString(), randomUri()), publication))
+    return attempt(() ->
+            resourcesService.createPublication(
+                UserInstance.create(randomString(), randomUri()), publication))
         .orElseThrow();
   }
 
   private Publication persistPublicationWithDoi(URI doi) {
     var publication = randomPublication();
     publication.getEntityDescription().getReference().setDoi(doi);
-    return attempt(
-            () ->
-                resourcesService.createPublication(
-                    UserInstance.create(randomString(), randomUri()), publication))
+    return attempt(() ->
+            resourcesService.createPublication(
+                UserInstance.create(randomString(), randomUri()), publication))
         .orElseThrow();
   }
 
@@ -1711,10 +1705,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
         authorGroupTp.getAuthorOrCollaboration().stream()
             .filter(author -> author instanceof AuthorTp)
             .map(authorTp -> (AuthorTp) authorTp)
-            .map(
-                author ->
-                    attempt(() -> generatePersonResponse(piaCristinIdAndAuthors, author))
-                        .orElseThrow());
+            .map(author ->
+                attempt(() -> generatePersonResponse(piaCristinIdAndAuthors, author))
+                    .orElseThrow());
   }
 
   private AuthorTp generatePersonResponse(
@@ -1833,9 +1826,8 @@ class ScopusHandlerTest extends ResourcesLocalTest {
   private boolean isEqualContributor(ImportContributor contributor, AuthorTp authorTp) {
     var authorId =
         contributor.identity().getAdditionalIdentifiers().stream()
-            .filter(
-                additionalIdentifier ->
-                    "scopus-auid".equalsIgnoreCase(additionalIdentifier.sourceName()))
+            .filter(additionalIdentifier ->
+                "scopus-auid".equalsIgnoreCase(additionalIdentifier.sourceName()))
             .map(AdditionalIdentifierBase::value)
             .collect(SingletonCollector.collectOrElse(""));
     return authorTp.getAuid().equals(authorId);
@@ -1941,10 +1933,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
 
   private Contributor findContributorByName(String givenName, List<Contributor> contributors) {
     return contributors.stream()
-        .filter(
-            contributor -> {
-              return contributor.identity().getName().contains(givenName);
-            })
+        .filter(contributor -> {
+          return contributor.identity().getName().contains(givenName);
+        })
         .findAny()
         .orElseThrow();
   }
@@ -1991,10 +1982,9 @@ class ScopusHandlerTest extends ResourcesLocalTest {
   private Optional<Contributor> findContributorByOrcid(
       String orcid, List<Contributor> contributors) {
     return contributors.stream()
-        .filter(
-            contributor -> {
-              return orcid.equals(contributor.identity().getOrcId());
-            })
+        .filter(contributor -> {
+          return orcid.equals(contributor.identity().getOrcId());
+        })
         .findFirst();
   }
 

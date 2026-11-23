@@ -34,9 +34,8 @@ public class RdfUtils {
         .map(Optional::orElseThrow)
         .map(str -> createModel(stringToStream(str)))
         .map(model -> model.listObjectsOfProperty(model.createProperty(PART_OF_PROPERTY)))
-        .map(
-            nodeIterator ->
-                nodeIterator.toList().stream().map(RDFNode::toString).map(URI::create).toList())
+        .map(nodeIterator ->
+            nodeIterator.toList().stream().map(RDFNode::toString).map(URI::create).toList())
         .orElseThrow();
   }
 

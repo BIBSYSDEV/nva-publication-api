@@ -358,22 +358,19 @@ public class ContributorExtractorTest {
     var contributors =
         contributorExtractorFromDocument().generateContributors(document).contributors();
 
-    authors.forEach(
-        author -> {
-          var matchingContributor =
-              contributors.stream()
-                  .filter(
-                      contributor -> contributor.sequence() == Integer.parseInt(author.getSeq()))
-                  .findFirst()
-                  .orElseThrow();
+    authors.forEach(author -> {
+      var matchingContributor =
+          contributors.stream()
+              .filter(contributor -> contributor.sequence() == Integer.parseInt(author.getSeq()))
+              .findFirst()
+              .orElseThrow();
 
-          var orcid = getOrcid(author);
-          if (StringUtils.isNotBlank(orcid)) {
-            assertThat(matchingContributor.identity().getOrcId(), is(equalTo(orcid)));
-          }
-          assertThat(
-              matchingContributor.sequence(), is(equalTo(Integer.parseInt(author.getSeq()))));
-        });
+      var orcid = getOrcid(author);
+      if (StringUtils.isNotBlank(orcid)) {
+        assertThat(matchingContributor.identity().getOrcId(), is(equalTo(orcid)));
+      }
+      assertThat(matchingContributor.sequence(), is(equalTo(Integer.parseInt(author.getSeq()))));
+    });
   }
 
   @Test

@@ -48,7 +48,6 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
-import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.FilesApprovalThesis;
 import no.unit.nva.publication.model.business.GeneralSupportRequest;
@@ -63,6 +62,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import org.junit.jupiter.params.provider.Arguments;
 
+@SuppressWarnings("PMD.GodClass")
 public final class TicketTestUtils {
 
   private static final Set<PublicationStatus> PUBLISHED_STATUSES =
@@ -318,7 +318,7 @@ public final class TicketTestUtils {
     var persistedPublication =
         Resource.fromPublication(publication)
             .persistNew(resourceService, UserInstance.fromPublication(publication));
-    if (PUBLISHED.equals(status)) {
+    if (PUBLISHED == status) {
       publishPublication(resourceService, persistedPublication);
       return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
     }
@@ -341,7 +341,7 @@ public final class TicketTestUtils {
     var publication = randomPublicationWithStatusAndOwner(status, owner);
     var persistedPublication =
         Resource.fromPublication(publication).persistNew(resourceService, owner);
-    if (PUBLISHED.equals(status) || PUBLISHED_METADATA.equals(status)) {
+    if (PUBLISHED == status || PUBLISHED_METADATA == status) {
       publishPublication(resourceService, persistedPublication);
       return resourceService.getPublicationByIdentifier(persistedPublication.getIdentifier());
     }
@@ -489,7 +489,7 @@ public final class TicketTestUtils {
   }
 
   private static Publication publicationWithStatusAndDoi(PublicationStatus status) {
-    return PublicationGenerator.randomPublication(AcademicArticle.class)
+    return randomPublication(AcademicArticle.class)
         .copy()
         .withDoi(randomDoi())
         .withStatus(status)

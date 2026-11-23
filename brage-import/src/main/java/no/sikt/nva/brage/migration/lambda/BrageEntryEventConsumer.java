@@ -97,9 +97,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
   @Override
   public PublicationRepresentation handleRequest(S3Event s3Event, Context context) {
     return attempt(() -> parseBrageRecord(s3Event))
-        .map(
-            publicationRepresentation ->
-                pushAssociatedFilesToPersistedStorage(publicationRepresentation, s3Event, context))
+        .map(publicationRepresentation ->
+            pushAssociatedFilesToPersistedStorage(publicationRepresentation, s3Event, context))
         .map(publicationRepresentation -> persistMetadataChange(s3Event, publicationRepresentation))
         .orElse(fail -> handleSavingError(fail, s3Event));
   }
@@ -108,10 +107,9 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
       S3Event s3Event, PublicationRepresentation publicationRepresentation) {
     var publicationForUpdateOptional = findExistingPublication(s3Event, publicationRepresentation);
     return publicationForUpdateOptional
-        .map(
-            publicationForUpdate ->
-                attemptToUpdateExistingPublication(
-                    publicationRepresentation, s3Event, publicationForUpdate))
+        .map(publicationForUpdate ->
+            attemptToUpdateExistingPublication(
+                publicationRepresentation, s3Event, publicationForUpdate))
         .orElseGet(() -> createNewPublication(publicationRepresentation, s3Event));
   }
 
@@ -182,9 +180,8 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
       PublicationForUpdate publicationForUpdate) {
     return attempt(
             () -> mergeTwoPublications(publicationRepresentation, publicationForUpdate, s3Event))
-        .map(
-            publication ->
-                new PublicationRepresentation(publicationRepresentation.brageRecord(), publication))
+        .map(publication ->
+            new PublicationRepresentation(publicationRepresentation.brageRecord(), publication))
         .orElseThrow();
   }
 
@@ -217,20 +214,17 @@ public class BrageEntryEventConsumer implements RequestHandler<S3Event, Publicat
       PublicationRepresentation publicationRepresentation,
       PublicationForUpdate existingPublication,
       S3Event s3Event) {
-    return attempt(
-            () ->
-                updatedPublication(
-                    publicationRepresentation, existingPublication.existingPublication()))
-        .map(
-            publicationForUpdate ->
-                persistInDatabaseAndCreateMergeReport(
-                    publicationForUpdate,
-                    existingPublication.existingPublication(),
-                    publicationRepresentation))
-        .map(
-            mergeReport ->
-                persistMergeReports(
-                    mergeReport, s3Event, publicationRepresentation, existingPublication))
+    return attempt(() ->
+            updatedPublication(
+                publicationRepresentation, existingPublication.existingPublication()))
+        .map(publicationForUpdate ->
+            persistInDatabaseAndCreateMergeReport(
+                publicationForUpdate,
+                existingPublication.existingPublication(),
+                publicationRepresentation))
+        .map(mergeReport ->
+            persistMergeReports(
+                mergeReport, s3Event, publicationRepresentation, existingPublication))
         .orElseThrow();
   }
 

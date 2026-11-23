@@ -139,14 +139,9 @@ public class FileEntriesEventEmitter extends EventHandler<EventReference, PutSqs
     var fileUri = input.getUri();
     var timestamp = input.getTimestamp();
     return contents.stream()
-        .map(
-            json ->
-                new FileContentsEvent<>(
-                    FILE_CONTENTS_EMISSION_EVENT_TOPIC,
-                    input.getSubtopic(),
-                    fileUri,
-                    timestamp,
-                    json));
+        .map(json ->
+            new FileContentsEvent<>(
+                FILE_CONTENTS_EMISSION_EVENT_TOPIC, input.getSubtopic(), fileUri, timestamp, json));
   }
 
   private PutSqsMessageResult placeOnQueue(List<EventReference> eventBodies, EventReference input) {

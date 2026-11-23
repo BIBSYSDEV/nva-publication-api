@@ -20,9 +20,8 @@ public record ResourceRelationship(
 
   public static Optional<ResourceRelationship> fromResource(Resource resource) {
     return getAnthologyPublicationIdentifierForPublishedResource(resource)
-        .map(
-            parentIdentifier ->
-                new ResourceRelationship(parentIdentifier, resource.getIdentifier()));
+        .map(parentIdentifier ->
+            new ResourceRelationship(parentIdentifier, resource.getIdentifier()));
   }
 
   public static Optional<SortableIdentifier> getAnthologyPublicationIdentifierForPublishedResource(

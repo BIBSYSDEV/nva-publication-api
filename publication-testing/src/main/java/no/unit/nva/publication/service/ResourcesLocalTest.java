@@ -109,9 +109,8 @@ public class ResourcesLocalTest extends TestDataSource {
             .build());
     resource
         .getPublicationChannels()
-        .forEach(
-            channel ->
-                client.transactWriteItems(channel.toDao().createInsertionTransactionRequest()));
+        .forEach(channel ->
+            client.transactWriteItems(channel.toDao().createInsertionTransactionRequest()));
     resource
         .getFileEntries()
         .forEach(

@@ -662,10 +662,9 @@ public class ResourceService extends ServiceWithTransactions {
   private static List<FileEntry> createFileEntries(
       Resource resource, ImportSource importSource, UserInstance fileOwner) {
     return resource.getFiles().stream()
-        .map(
-            file ->
-                FileEntry.createFromImportSource(
-                    file, resource.getIdentifier(), fileOwner, importSource))
+        .map(file ->
+            FileEntry.createFromImportSource(
+                file, resource.getIdentifier(), fileOwner, importSource))
         .toList();
   }
 
@@ -675,12 +674,11 @@ public class ResourceService extends ServiceWithTransactions {
 
     resource
         .getPublisherWhenDegree()
-        .ifPresent(
-            publisher -> {
-              var publicationChannelDao =
-                  createPublicationChannelDao(channelClaimClient, resource, publisher);
-              transactWriteItems.add(publicationChannelDao.toPutNewTransactionItem(tableName));
-            });
+        .ifPresent(publisher -> {
+          var publicationChannelDao =
+              createPublicationChannelDao(channelClaimClient, resource, publisher);
+          transactWriteItems.add(publicationChannelDao.toPutNewTransactionItem(tableName));
+        });
 
     return transactWriteItems;
   }
@@ -954,10 +952,9 @@ public class ResourceService extends ServiceWithTransactions {
   }
 
   private Resource markResourceForDeletion(Resource resource) throws ApiGatewayException {
-    return attempt(
-            () ->
-                updateResourceService.updatePublicationDraftToDraftForDeletion(
-                    resource.toPublication()))
+    return attempt(() ->
+            updateResourceService.updatePublicationDraftToDraftForDeletion(
+                resource.toPublication()))
         .map(Resource::fromPublication)
         .orElseThrow(failure -> markForDeletionError(failure, resource));
   }

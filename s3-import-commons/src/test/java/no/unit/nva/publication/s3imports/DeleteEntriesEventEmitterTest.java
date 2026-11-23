@@ -129,11 +129,10 @@ public class DeleteEntriesEventEmitterTest {
   }
 
   private void putObjectsInBucket(List<String> keys) {
-    keys.forEach(
-        object ->
-            s3Client.putObject(
-                PutObjectRequest.builder().bucket(bucketName).key(HARDCODED_PATH + object).build(),
-                RequestBody.empty()));
+    keys.forEach(object ->
+        s3Client.putObject(
+            PutObjectRequest.builder().bucket(bucketName).key(HARDCODED_PATH + object).build(),
+            RequestBody.empty()));
   }
 
   static class FakeEventBridgeClientThatFailsAllPutEvents extends FakeEventBridgeClient {

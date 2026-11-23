@@ -237,10 +237,9 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
     var body = response.getBodyObject(TicketCollection.class);
     var ticketsWithWriteAccess =
         body.getTickets().stream()
-            .filter(
-                ticket ->
-                    ticket.getAllowedOperations().stream()
-                        .anyMatch(a -> !a.equals(TicketOperation.READ)))
+            .filter(ticket ->
+                ticket.getAllowedOperations().stream()
+                    .anyMatch(a -> !a.equals(TicketOperation.READ)))
             .toList();
 
     assertThat(ticketsWithWriteAccess, hasSize(1));
@@ -298,17 +297,14 @@ class ListTicketsForPublicationHandlerTest extends TicketTestLocal {
   private void persistCompletedTicketsForPublication(
       Publication publication, Class<? extends TicketEntry>... ticketTypes) {
     Arrays.stream(ticketTypes)
-        .forEach(
-            ticketType -> {
-              URI ownerAffiliation = randomUri();
-              attempt(
-                      () ->
-                          TicketTestUtils.createPersistedTicket(
-                              publication, ticketType, ticketService))
-                  .map(ticket -> ticket.withOwnerAffiliation(ownerAffiliation))
-                  .map(ticket -> ticket.complete(publication, randomUserInstance()))
-                  .forEach(ticketEntry -> ticketEntry.persistUpdate(ticketService));
-            });
+        .forEach(ticketType -> {
+          URI ownerAffiliation = randomUri();
+          attempt(() ->
+                  TicketTestUtils.createPersistedTicket(publication, ticketType, ticketService))
+              .map(ticket -> ticket.withOwnerAffiliation(ownerAffiliation))
+              .map(ticket -> ticket.complete(publication, randomUserInstance()))
+              .forEach(ticketEntry -> ticketEntry.persistUpdate(ticketService));
+        });
   }
 
   private UserInstance randomUserInstance() {

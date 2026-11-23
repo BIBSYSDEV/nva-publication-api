@@ -60,10 +60,9 @@ public class IsbnPublicationFinder implements FindExistingPublicationService {
         isbnList.stream()
             .map(isbn -> searchApiFinder.fetchPublicationsByParam(ISBN, isbn))
             .flatMap(List::stream)
-            .filter(
-                item ->
-                    PublicationComparator.publicationsMatch(
-                        item, publicationRepresentation.publication()))
+            .filter(item ->
+                PublicationComparator.publicationsMatch(
+                    item, publicationRepresentation.publication()))
             .toList();
     if (FindExistingPublicationService.moreThanOneDuplicateFound(publicationsToMerge)) {
       duplicatePublicationReporter.reportDuplicatePublications(

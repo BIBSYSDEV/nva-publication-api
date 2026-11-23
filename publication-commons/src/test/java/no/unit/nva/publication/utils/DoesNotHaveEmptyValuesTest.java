@@ -81,13 +81,12 @@ class DoesNotHaveEmptyValuesTest {
     assertThat(exception.getMessage(), containsString("Empty fields found"));
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @DisplayName("Should not throw when actually empty field is excluded")
   @MethodSource("emptyValueProvider")
   void shouldNotThrowWhenEmptyFieldsAreExcluded(Pair pair) {
-    assertDoesNotThrow(
-        () ->
-            DoesNotHaveEmptyValues.checkForEmptyFields(pair.sampleObject(), pair.excludedFields()));
+    assertDoesNotThrow(() ->
+        DoesNotHaveEmptyValues.checkForEmptyFields(pair.sampleObject(), pair.excludedFields()));
   }
 
   @ParameterizedTest

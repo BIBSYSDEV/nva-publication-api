@@ -79,13 +79,12 @@ public class CristinIdentifierCounterService implements CounterService {
   @Override
   public CounterDao next() {
     return attempt(this::incrementAndReturn)
-        .orElse(
-            failure -> {
-              logger.error(UPDATING_COUNTER_EXCEPTION_MESSAGE, failure.getException().getMessage());
-              // Assuming the counter does not exist, we create it
-              createCounterStartingAt(client);
-              return fetchCount(client);
-            });
+        .orElse(failure -> {
+          logger.error(UPDATING_COUNTER_EXCEPTION_MESSAGE, failure.getException().getMessage());
+          // Assuming the counter does not exist, we create it
+          createCounterStartingAt(client);
+          return fetchCount(client);
+        });
   }
 
   private void createCounterStartingAt(DynamoDbClient client) {

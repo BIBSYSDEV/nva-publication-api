@@ -100,14 +100,11 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
     return Optional.ofNullable(resource.getEntityDescription())
         .map(EntityDescription::getContributors)
         .map(contributors -> updateContributors(contributors, resourceIdentifier))
-        .filter(
-            updatedContributors ->
-                hasChanges(resource.getEntityDescription().getContributors(), updatedContributors))
+        .filter(updatedContributors ->
+            hasChanges(resource.getEntityDescription().getContributors(), updatedContributors))
         .map(updatedContributors -> applyContributorUpdates(resource, updatedContributors))
-        .map(
-            updatedResource ->
-                new ResourceWithOriginalVersion(
-                    updatedResource, resourceWithVersion.originalVersion()))
+        .map(updatedResource ->
+            new ResourceWithOriginalVersion(updatedResource, resourceWithVersion.originalVersion()))
         .stream();
   }
 
@@ -174,11 +171,10 @@ public class UpdateVerificationStatusJob extends ServiceWithTransactions
     var person =
         cristinClient
             .getPerson(cristinId)
-            .orElseThrow(
-                () ->
-                    new RuntimeException(
-                        "Cristin person not found: %s for publication: %s"
-                            .formatted(cristinId, resourceIdentifier)));
+            .orElseThrow(() ->
+                new RuntimeException(
+                    "Cristin person not found: %s for publication: %s"
+                        .formatted(cristinId, resourceIdentifier)));
     return person.verified()
         ? ContributorVerificationStatus.VERIFIED
         : ContributorVerificationStatus.NOT_VERIFIED;

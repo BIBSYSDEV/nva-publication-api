@@ -185,10 +185,9 @@ public class PiaConnection {
     var uri = constructAuthorUri(scopusAUId);
     return attempt(() -> getResponse(uri))
         .map(this::getBodyFromResponse)
-        .orElseThrow(
-            fail ->
-                logExceptionAndThrowRuntimeError(
-                    fail.getException(), COULD_NOT_GET_ERROR_MESSAGE + scopusAUId));
+        .orElseThrow(fail ->
+            logExceptionAndThrowRuntimeError(
+                fail.getException(), COULD_NOT_GET_ERROR_MESSAGE + scopusAUId));
   }
 
   private URI constructAuthorUri(String scopusAuthorId) {

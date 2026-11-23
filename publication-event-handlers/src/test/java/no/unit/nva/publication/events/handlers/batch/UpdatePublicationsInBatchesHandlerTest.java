@@ -157,16 +157,14 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var updatedPublisher = getPublisher(updatedPublication);
-          var id =
-              URI.create(
-                  publisherId.toString().replace(publisherIdentifier, newPublisherIdentifier));
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var updatedPublisher = getPublisher(updatedPublication);
+      var id =
+          URI.create(publisherId.toString().replace(publisherIdentifier, newPublisherIdentifier));
 
-          assertEquals(new Publisher(id), updatedPublisher);
-        });
+      assertEquals(new Publisher(id), updatedPublisher);
+    });
   }
 
   @Test
@@ -190,19 +188,18 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var updatedPublicationContext =
-              updatedPublication.getEntityDescription().getReference().getPublicationContext();
-          var updatedChannelId = getSerialPublicationId(updatedPublicationContext);
-          var expectedJournal =
-              serialPublicationId
-                  .toString()
-                  .replace(serialPublicationIdentifier, newSerialPublicationIdentifier);
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var updatedPublicationContext =
+          updatedPublication.getEntityDescription().getReference().getPublicationContext();
+      var updatedChannelId = getSerialPublicationId(updatedPublicationContext);
+      var expectedJournal =
+          serialPublicationId
+              .toString()
+              .replace(serialPublicationIdentifier, newSerialPublicationIdentifier);
 
-          assertEquals(URI.create(expectedJournal), updatedChannelId);
-        });
+      assertEquals(URI.create(expectedJournal), updatedChannelId);
+    });
   }
 
   @Test
@@ -225,15 +222,14 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var publicationContext =
-              (Journal)
-                  updatedPublication.getEntityDescription().getReference().getPublicationContext();
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var publicationContext =
+          (Journal)
+              updatedPublication.getEntityDescription().getReference().getPublicationContext();
 
-          assertEquals(journal, publicationContext);
-        });
+      assertEquals(journal, publicationContext);
+    });
   }
 
   @Test
@@ -252,13 +248,12 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var publisher = (Publisher) getPublisher(updatedPublication);
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var publisher = (Publisher) getPublisher(updatedPublication);
 
-          assertEquals(publisherIdToKeep, publisher.getId());
-        });
+      assertEquals(publisherIdToKeep, publisher.getId());
+    });
   }
 
   @Test
@@ -275,18 +270,17 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
 
-          assertEquals(
-              publication.getAssociatedArtifacts().size(),
-              updatedPublication.getAssociatedArtifacts().size());
+      assertEquals(
+          publication.getAssociatedArtifacts().size(),
+          updatedPublication.getAssociatedArtifacts().size());
 
-          var updatedFiles = getFiles(updatedPublication);
+      var updatedFiles = getFiles(updatedPublication);
 
-          updatedFiles.forEach(file -> assertEquals(newLicense, file.getLicense()));
-        });
+      updatedFiles.forEach(file -> assertEquals(newLicense, file.getLicense()));
+    });
   }
 
   @Test
@@ -301,11 +295,10 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication ->
-            assertThat(
-                getFiles(getPublicationByIdentifier(publication)),
-                containsInAnyOrder(hasLicense(newLicense), hasLicense(null))));
+    publicationsToUpdate.forEach(publication ->
+        assertThat(
+            getFiles(getPublicationByIdentifier(publication)),
+            containsInAnyOrder(hasLicense(newLicense), hasLicense(null))));
   }
 
   @Test
@@ -320,18 +313,17 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
 
-          assertEquals(
-              publication.getAssociatedArtifacts().size(),
-              updatedPublication.getAssociatedArtifacts().size());
+      assertEquals(
+          publication.getAssociatedArtifacts().size(),
+          updatedPublication.getAssociatedArtifacts().size());
 
-          var updatedFiles = getFiles(updatedPublication);
+      var updatedFiles = getFiles(updatedPublication);
 
-          updatedFiles.forEach(file -> assertEquals(license, file.getLicense()));
-        });
+      updatedFiles.forEach(file -> assertEquals(license, file.getLicense()));
+    });
   }
 
   @Test
@@ -350,15 +342,14 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var updatedPublisher = (Publisher) getPublisher(updatedPublication);
-          var expectedPublisher =
-              createChannelIdWithIdentifier(publisherIdentifier, getYear(publication), PUBLISHER);
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var updatedPublisher = (Publisher) getPublisher(updatedPublication);
+      var expectedPublisher =
+          createChannelIdWithIdentifier(publisherIdentifier, getYear(publication), PUBLISHER);
 
-          assertEquals(expectedPublisher, updatedPublisher.getId());
-        });
+      assertEquals(expectedPublisher, updatedPublisher.getId());
+    });
   }
 
   @Test
@@ -378,15 +369,14 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var updatedPublisher = (Publisher) getPublisher(updatedPublication);
-          var expectedPublisher =
-              createChannelIdWithIdentifier(publisherIdentifier, getYear(publication), PUBLISHER);
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var updatedPublisher = (Publisher) getPublisher(updatedPublication);
+      var expectedPublisher =
+          createChannelIdWithIdentifier(publisherIdentifier, getYear(publication), PUBLISHER);
 
-          assertEquals(expectedPublisher, updatedPublisher.getId());
-        });
+      assertEquals(expectedPublisher, updatedPublisher.getId());
+    });
   }
 
   @Test
@@ -404,13 +394,12 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var updatedPublisher = getPublisher(updatedPublication);
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var updatedPublisher = getPublisher(updatedPublication);
 
-          assertEquals(unconfirmedPublisher, updatedPublisher);
-        });
+      assertEquals(unconfirmedPublisher, updatedPublisher);
+    });
   }
 
   @Test
@@ -428,13 +417,12 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var updatedPublisher = getPublisher(updatedPublication);
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var updatedPublisher = getPublisher(updatedPublication);
 
-          assertEquals(unconfirmedPublisher, updatedPublisher);
-        });
+      assertEquals(unconfirmedPublisher, updatedPublisher);
+    });
   }
 
   @Test
@@ -451,19 +439,16 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var updatedBook =
-              (Book)
-                  updatedPublication.getEntityDescription().getReference().getPublicationContext();
-          var updatedSeries = (Series) updatedBook.getSeries();
-          var expectedSeriesId =
-              createChannelIdWithIdentifier(
-                  seriesIdentifier, getYear(publication), SERIAL_PUBLICATION);
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var updatedBook =
+          (Book) updatedPublication.getEntityDescription().getReference().getPublicationContext();
+      var updatedSeries = (Series) updatedBook.getSeries();
+      var expectedSeriesId =
+          createChannelIdWithIdentifier(seriesIdentifier, getYear(publication), SERIAL_PUBLICATION);
 
-          assertEquals(expectedSeriesId, updatedSeries.getId());
-        });
+      assertEquals(expectedSeriesId, updatedSeries.getId());
+    });
   }
 
   @Test
@@ -482,19 +467,16 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var updatedBook =
-              (Book)
-                  updatedPublication.getEntityDescription().getReference().getPublicationContext();
-          var updatedSeries = (Series) updatedBook.getSeries();
-          var expectedSeriesId =
-              createChannelIdWithIdentifier(
-                  seriesIdentifier, getYear(publication), SERIAL_PUBLICATION);
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var updatedBook =
+          (Book) updatedPublication.getEntityDescription().getReference().getPublicationContext();
+      var updatedSeries = (Series) updatedBook.getSeries();
+      var expectedSeriesId =
+          createChannelIdWithIdentifier(seriesIdentifier, getYear(publication), SERIAL_PUBLICATION);
 
-          assertEquals(expectedSeriesId, updatedSeries.getId());
-        });
+      assertEquals(expectedSeriesId, updatedSeries.getId());
+    });
   }
 
   @Test
@@ -510,15 +492,13 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var updatedBook =
-              (Book)
-                  updatedPublication.getEntityDescription().getReference().getPublicationContext();
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var updatedBook =
+          (Book) updatedPublication.getEntityDescription().getReference().getPublicationContext();
 
-          assertEquals(unconfirmedSeries, updatedBook.getSeries());
-        });
+      assertEquals(unconfirmedSeries, updatedBook.getSeries());
+    });
   }
 
   @Test
@@ -534,15 +514,13 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var updatedBook =
-              (Book)
-                  updatedPublication.getEntityDescription().getReference().getPublicationContext();
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var updatedBook =
+          (Book) updatedPublication.getEntityDescription().getReference().getPublicationContext();
 
-          assertEquals(unconfirmedSeries, updatedBook.getSeries());
-        });
+      assertEquals(unconfirmedSeries, updatedBook.getSeries());
+    });
   }
 
   @ParameterizedTest
@@ -643,18 +621,17 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var updatedJournal =
-              (Journal)
-                  updatedPublication.getEntityDescription().getReference().getPublicationContext();
-          var expectedJournalId =
-              createChannelIdWithIdentifier(
-                  journalIdentifier, getYear(publication), SERIAL_PUBLICATION);
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var updatedJournal =
+          (Journal)
+              updatedPublication.getEntityDescription().getReference().getPublicationContext();
+      var expectedJournalId =
+          createChannelIdWithIdentifier(
+              journalIdentifier, getYear(publication), SERIAL_PUBLICATION);
 
-          assertEquals(expectedJournalId, updatedJournal.getId());
-        });
+      assertEquals(expectedJournalId, updatedJournal.getId());
+    });
   }
 
   @Test
@@ -670,15 +647,14 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var updatedJournal =
-              (UnconfirmedJournal)
-                  updatedPublication.getEntityDescription().getReference().getPublicationContext();
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var updatedJournal =
+          (UnconfirmedJournal)
+              updatedPublication.getEntityDescription().getReference().getPublicationContext();
 
-          assertEquals(unconfirmedJournal, updatedJournal);
-        });
+      assertEquals(unconfirmedJournal, updatedJournal);
+    });
   }
 
   @Test
@@ -742,21 +718,20 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
-          var updatedContributorIdentifier =
-              findContributorByIdentifier(updatedPublication, newContributorIdentifier);
-          var contributorsToKeepUnchanged =
-              publication.getContributors().stream()
-                  .filter(contributor -> !hasIdentifier(contributor, oldContributorIdentifier))
-                  .toList();
-          assertEquals(
-              newContributorIdentifier, getContributorIdentifier(updatedContributorIdentifier));
-          assertEquals(
-              publication.getContributors().size(), updatedPublication.getContributors().size());
-          assertTrue(updatedPublication.getContributors().containsAll(contributorsToKeepUnchanged));
-        });
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
+      var updatedContributorIdentifier =
+          findContributorByIdentifier(updatedPublication, newContributorIdentifier);
+      var contributorsToKeepUnchanged =
+          publication.getContributors().stream()
+              .filter(contributor -> !hasIdentifier(contributor, oldContributorIdentifier))
+              .toList();
+      assertEquals(
+          newContributorIdentifier, getContributorIdentifier(updatedContributorIdentifier));
+      assertEquals(
+          publication.getContributors().size(), updatedPublication.getContributors().size());
+      assertTrue(updatedPublication.getContributors().containsAll(contributorsToKeepUnchanged));
+    });
   }
 
   @Test
@@ -772,13 +747,11 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication -> {
-          var updatedPublication = getPublicationByIdentifier(publication);
+    publicationsToUpdate.forEach(publication -> {
+      var updatedPublication = getPublicationByIdentifier(publication);
 
-          assertTrue(
-              updatedPublication.getContributors().containsAll(publication.getContributors()));
-        });
+      assertTrue(updatedPublication.getContributors().containsAll(publication.getContributors()));
+    });
   }
 
   @Test
@@ -824,10 +797,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication ->
-            assertEquals(
-                new Publisher(publisherId), getPublisher(getPublicationByIdentifier(publication))));
+    publicationsToUpdate.forEach(publication ->
+        assertEquals(
+            new Publisher(publisherId), getPublisher(getPublicationByIdentifier(publication))));
   }
 
   @Test
@@ -850,17 +822,16 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
     assertEquals(publicationsToUpdate.size(), report.changes().size());
     report
         .changes()
-        .forEach(
-            change ->
-                assertThat(
-                    change.fieldChanges(),
-                    hasItem(
-                        new FieldChange(
-                            PUBLISHER_ID_PATH,
-                            publisherId.toString(),
-                            publisherId
-                                .toString()
-                                .replace(publisherIdentifier, newPublisherIdentifier)))));
+        .forEach(change ->
+            assertThat(
+                change.fieldChanges(),
+                hasItem(
+                    new FieldChange(
+                        PUBLISHER_ID_PATH,
+                        publisherId.toString(),
+                        publisherId
+                            .toString()
+                            .replace(publisherIdentifier, newPublisherIdentifier)))));
   }
 
   @Test
@@ -876,10 +847,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
 
     handler.handleRequest(event, output, CONTEXT);
 
-    publicationsToUpdate.forEach(
-        publication ->
-            getFiles(getPublicationByIdentifier(publication))
-                .forEach(file -> assertEquals(license, file.getLicense())));
+    publicationsToUpdate.forEach(publication ->
+        getFiles(getPublicationByIdentifier(publication))
+            .forEach(file -> assertEquals(license, file.getLicense())));
     assertEquals(publicationsToUpdate.size(), readReport().resourcesChanged());
   }
 
@@ -1295,10 +1265,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   private Publication createPublicationWithLicense(URI license) {
     var publication = randomPublication();
     publication.setAssociatedArtifacts(new AssociatedArtifactList(randomFileWithLicense(license)));
-    return attempt(
-            () ->
-                resourceService.createPublication(
-                    UserInstance.fromPublication(publication), publication))
+    return attempt(() ->
+            resourceService.createPublication(
+                UserInstance.fromPublication(publication), publication))
         .orElseThrow();
   }
 
@@ -1316,10 +1285,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
             List.of(
                 File.builder().withLicense(license).withIdentifier(randomUUID()).buildOpenFile(),
                 File.builder().withIdentifier(randomUUID()).buildOpenFile())));
-    return attempt(
-            () ->
-                resourceService.createPublication(
-                    UserInstance.fromPublication(publication), publication))
+    return attempt(() ->
+            resourceService.createPublication(
+                UserInstance.fromPublication(publication), publication))
         .orElseThrow();
   }
 
@@ -1373,10 +1341,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
       URI serialPublicationId) {
     return IntStream.range(0, 10)
         .boxed()
-        .map(
-            i ->
-                attempt(() -> createPublicationWithSerialPublication(serialPublicationId))
-                    .orElseThrow())
+        .map(i ->
+            attempt(() -> createPublicationWithSerialPublication(serialPublicationId))
+                .orElseThrow())
         .toList();
   }
 
@@ -1415,10 +1382,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
         .getEntityDescription()
         .getReference()
         .setPublicationContext(new BookBuilder().withPublisher(publishingHouse).build());
-    return attempt(
-            () ->
-                resourceService.createPublication(
-                    UserInstance.fromPublication(publication), publication))
+    return attempt(() ->
+            resourceService.createPublication(
+                UserInstance.fromPublication(publication), publication))
         .orElseThrow();
   }
 
@@ -1433,20 +1399,18 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
   private Publication createPublicationWithJournal(Periodical periodical) {
     var publication = randomPublication(JournalArticle.class);
     publication.getEntityDescription().getReference().setPublicationContext(periodical);
-    return attempt(
-            () ->
-                resourceService.createPublication(
-                    UserInstance.fromPublication(publication), publication))
+    return attempt(() ->
+            resourceService.createPublication(
+                UserInstance.fromPublication(publication), publication))
         .orElseThrow();
   }
 
   private Publication createMediaPublication(Periodical periodical) {
     var publication = randomPublication(MediaFeatureArticle.class);
     publication.getEntityDescription().getReference().setPublicationContext(periodical);
-    return attempt(
-            () ->
-                resourceService.createPublication(
-                    UserInstance.fromPublication(publication), publication))
+    return attempt(() ->
+            resourceService.createPublication(
+                UserInstance.fromPublication(publication), publication))
         .orElseThrow();
   }
 
@@ -1473,10 +1437,9 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
                 contributor,
                 randomContributorWithId(randomUri()),
                 new Contributor.Builder().withIdentity(new Identity.Builder().build()).build()));
-    return attempt(
-            () ->
-                resourceService.createPublication(
-                    UserInstance.fromPublication(publication), publication))
+    return attempt(() ->
+            resourceService.createPublication(
+                UserInstance.fromPublication(publication), publication))
         .orElseThrow();
   }
 
@@ -1487,21 +1450,14 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
             ? unconfirmedSeries.getTitle()
             : randomString();
     var publicationContext =
-        attempt(
-                () ->
-                    new Book(
-                        bookSeries,
-                        seriesTitle,
-                        randomString(),
-                        null,
-                        List.of(),
-                        Revision.UNREVISED))
+        attempt(() ->
+                new Book(
+                    bookSeries, seriesTitle, randomString(), null, List.of(), Revision.UNREVISED))
             .orElseThrow();
     publication.getEntityDescription().getReference().setPublicationContext(publicationContext);
-    return attempt(
-            () ->
-                resourceService.createPublication(
-                    UserInstance.fromPublication(publication), publication))
+    return attempt(() ->
+            resourceService.createPublication(
+                UserInstance.fromPublication(publication), publication))
         .orElseThrow();
   }
 
@@ -1529,35 +1485,32 @@ class UpdatePublicationsInBatchesHandlerTest extends ResourcesLocalTest {
       Class<?> instanceType, PublicationContext publicationContext) {
     var publication = randomPublication(instanceType);
     publication.getEntityDescription().getReference().setPublicationContext(publicationContext);
-    return attempt(
-            () ->
-                resourceService.createPublication(
-                    UserInstance.fromPublication(publication), publication))
+    return attempt(() ->
+            resourceService.createPublication(
+                UserInstance.fromPublication(publication), publication))
         .orElseThrow();
   }
 
   private static Report randomReport(BookSeries series, PublishingHouse publisher) {
-    return attempt(
-            () ->
-                new Report.Builder()
-                    .withSeries(series)
-                    .withSeriesNumber(randomString())
-                    .withPublisher(publisher)
-                    .withIsbnList(List.of(randomIsbn13()))
-                    .build())
+    return attempt(() ->
+            new Report.Builder()
+                .withSeries(series)
+                .withSeriesNumber(randomString())
+                .withPublisher(publisher)
+                .withIsbnList(List.of(randomIsbn13()))
+                .build())
         .orElseThrow();
   }
 
   private static Degree randomDegree(BookSeries series, PublishingHouse publisher) {
-    return attempt(
-            () ->
-                new Degree.Builder()
-                    .withSeries(series)
-                    .withSeriesNumber(randomString())
-                    .withPublisher(publisher)
-                    .withIsbnList(List.of(randomIsbn13()))
-                    .withCourse(new UnconfirmedCourse(randomString()))
-                    .build())
+    return attempt(() ->
+            new Degree.Builder()
+                .withSeries(series)
+                .withSeriesNumber(randomString())
+                .withPublisher(publisher)
+                .withIsbnList(List.of(randomIsbn13()))
+                .withCourse(new UnconfirmedCourse(randomString()))
+                .build())
         .orElseThrow();
   }
 

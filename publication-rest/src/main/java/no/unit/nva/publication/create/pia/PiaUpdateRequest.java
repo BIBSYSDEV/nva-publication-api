@@ -63,9 +63,8 @@ public record PiaUpdateRequest(
 
   private static Optional<AdditionalIdentifier> extractAuid(Contributor contributor) {
     return contributor.identity().getAdditionalIdentifiers().stream()
-        .filter(
-            additionalIdentifier ->
-                "scopus-auid".equalsIgnoreCase(additionalIdentifier.sourceName()))
+        .filter(additionalIdentifier ->
+            "scopus-auid".equalsIgnoreCase(additionalIdentifier.sourceName()))
         .findFirst();
   }
 }

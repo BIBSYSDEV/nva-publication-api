@@ -86,10 +86,8 @@ public class DeleteImportCandidateEventConsumer
   }
 
   private static ImportCandidateSearchApiResponse toSearchApiResponse(String response) {
-    return attempt(
-            () ->
-                JsonUtils.dtoObjectMapper.readValue(
-                    response, ImportCandidateSearchApiResponse.class))
+    return attempt(() ->
+            JsonUtils.dtoObjectMapper.readValue(response, ImportCandidateSearchApiResponse.class))
         .orElseThrow();
   }
 

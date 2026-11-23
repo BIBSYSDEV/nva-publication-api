@@ -11,7 +11,7 @@ public class MusicMediaSubtypeOther extends MusicMediaSubtype {
 
   @JsonCreator
   public MusicMediaSubtypeOther(
-      @JsonProperty(TYPE_FIELD) MusicMediaType type, @JsonProperty() String description) {
+      @JsonProperty(TYPE_FIELD) MusicMediaType type, @JsonProperty String description) {
     super(type);
 
     this.description = description;

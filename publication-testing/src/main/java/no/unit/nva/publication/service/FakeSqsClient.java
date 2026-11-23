@@ -42,10 +42,9 @@ public class FakeSqsClient implements QueueClient, QueueMessageSender {
       SendMessageBatchRequest sendMessageBatchRequest) {
     sendMessageBatchRequest
         .entries()
-        .forEach(
-            entry ->
-                deliveredMessages.add(
-                    Message.builder().body(entry.messageBody()).messageId(randomString()).build()));
+        .forEach(entry ->
+            deliveredMessages.add(
+                Message.builder().body(entry.messageBody()).messageId(randomString()).build()));
     var resultEntries =
         sendMessageBatchRequest.entries().stream()
             .map(SendMessageBatchRequestEntry::id)

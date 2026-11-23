@@ -38,14 +38,11 @@ public enum FileOperation {
     return stream(values())
         .filter(nameType -> nameType.getValue().equalsIgnoreCase(value))
         .findAny()
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    format(
-                        ERROR_MESSAGE_TEMPLATE,
-                        value,
-                        stream(values())
-                            .map(FileOperation::toString)
-                            .collect(joining(DELIMITER)))));
+        .orElseThrow(() ->
+            new IllegalArgumentException(
+                format(
+                    ERROR_MESSAGE_TEMPLATE,
+                    value,
+                    stream(values()).map(FileOperation::toString).collect(joining(DELIMITER)))));
   }
 }

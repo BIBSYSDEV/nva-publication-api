@@ -193,10 +193,9 @@ class RecoveryBatchScanHandlerTest extends ResourcesLocalTest {
 
   private Publication persistedPublication() {
     var publication = randomPublication();
-    return attempt(
-            () ->
-                resourceService.createPublication(
-                    UserInstance.fromPublication(publication), publication))
+    return attempt(() ->
+            resourceService.createPublication(
+                UserInstance.fromPublication(publication), publication))
         .orElseThrow();
   }
 }

@@ -138,13 +138,12 @@ public class CreatePublicationHandler
 
   private boolean isThesis(CreatePublicationRequest request) {
     var requestInstanceType =
-        attempt(
-                () ->
-                    request
-                        .getEntityDescription()
-                        .getReference()
-                        .getPublicationInstance()
-                        .getInstanceType())
+        attempt(() ->
+                request
+                    .getEntityDescription()
+                    .getReference()
+                    .getPublicationInstance()
+                    .getInstanceType())
             .toOptional();
 
     return requestInstanceType.isPresent()

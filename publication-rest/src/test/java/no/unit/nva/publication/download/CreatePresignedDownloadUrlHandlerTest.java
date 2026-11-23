@@ -153,12 +153,11 @@ class CreatePresignedDownloadUrlHandlerTest extends ResourcesLocalTest {
     attempt(() -> when(mockedResponse.body()).thenReturn(dtoObjectMapper.writeValueAsString(user)))
         .orElseThrow();
     when(mockedResponse.statusCode()).thenReturn(SC_OK);
-    attempt(
-            () ->
-                when(httpClient.send(
-                        argThat(request -> request.uri().toString().endsWith("/oauth2/userInfo")),
-                        ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
-                    .thenReturn(mockedResponse))
+    attempt(() ->
+            when(httpClient.send(
+                    argThat(request -> request.uri().toString().endsWith("/oauth2/userInfo")),
+                    ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(mockedResponse))
         .orElseThrow();
   }
 

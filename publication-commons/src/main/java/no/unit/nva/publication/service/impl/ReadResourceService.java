@@ -100,24 +100,23 @@ public class ReadResourceService {
     var publicationChannels = extractPublicationChannels(entries);
     var resourceRelationships = extractResourceRelationships(entries);
 
-    resource.ifPresent(
-        res -> {
-          var associatedArtifacts = new ArrayList<AssociatedArtifact>();
+    resource.ifPresent(res -> {
+      var associatedArtifacts = new ArrayList<AssociatedArtifact>();
 
-          var files = fileEntries.stream().map(FileEntry::getFile).toList();
-          var associatedLinks =
-              res.getAssociatedArtifacts().stream()
-                  .filter(associatedArtifact -> !(associatedArtifact instanceof File))
-                  .toList();
+      var files = fileEntries.stream().map(FileEntry::getFile).toList();
+      var associatedLinks =
+          res.getAssociatedArtifacts().stream()
+              .filter(associatedArtifact -> !(associatedArtifact instanceof File))
+              .toList();
 
-          associatedArtifacts.addAll(files);
-          associatedArtifacts.addAll(associatedLinks);
+      associatedArtifacts.addAll(files);
+      associatedArtifacts.addAll(associatedLinks);
 
-          res.setFileEntries(fileEntries);
-          res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
-          res.setPublicationChannels(publicationChannels);
-          res.setRelatedResources(resourceRelationships);
-        });
+      res.setFileEntries(fileEntries);
+      res.setAssociatedArtifacts(new AssociatedArtifactList(associatedArtifacts));
+      res.setPublicationChannels(publicationChannels);
+      res.setRelatedResources(resourceRelationships);
+    });
     return resource;
   }
 

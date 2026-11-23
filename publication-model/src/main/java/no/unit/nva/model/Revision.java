@@ -38,12 +38,11 @@ public enum Revision {
     return stream(values())
         .filter(revision -> revision.getValue().equalsIgnoreCase(value))
         .findAny()
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    format(
-                        ERROR_MESSAGE_TEMPLATE,
-                        value,
-                        stream(values()).map(Revision::toString).collect(joining(DELIMITER)))));
+        .orElseThrow(() ->
+            new IllegalArgumentException(
+                format(
+                    ERROR_MESSAGE_TEMPLATE,
+                    value,
+                    stream(values()).map(Revision::toString).collect(joining(DELIMITER)))));
   }
 }

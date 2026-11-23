@@ -77,10 +77,9 @@ public class FileEventTest {
             UserInstance.create(randomUser(), randomUri()));
 
     assertEquals(state, roundTrippedState);
-    assertDoesNotThrow(
-        () ->
-            roundTrippedState.toLogEntry(
-                fileEntry, LogUser.fromResourceEvent(randomUser(), randomUri())));
+    assertDoesNotThrow(() ->
+        roundTrippedState.toLogEntry(
+            fileEntry, LogUser.fromResourceEvent(randomUser(), randomUri())));
   }
 
   private static User randomUser() {

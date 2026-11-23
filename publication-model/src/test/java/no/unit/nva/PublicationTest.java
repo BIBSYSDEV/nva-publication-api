@@ -352,10 +352,9 @@ public class PublicationTest {
     var publication = PublicationGenerator.randomPublication();
     assertTrue(publication.getImportDetails().isEmpty());
     assertDoesNotThrow(() -> publication.setImportDetails(List.of()));
-    assertDoesNotThrow(
-        () ->
-            publication.addImportDetail(
-                new ImportDetail(Instant.now(), ImportSource.fromBrageArchive(randomString()))));
+    assertDoesNotThrow(() ->
+        publication.addImportDetail(
+            new ImportDetail(Instant.now(), ImportSource.fromBrageArchive(randomString()))));
     assertDoesNotThrow(
         () -> publication.addImportDetail(ImportDetail.fromSource(Source.CRISTIN, Instant.now())));
   }

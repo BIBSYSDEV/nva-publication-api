@@ -98,27 +98,25 @@ class BookTest {
   }
 
   private static Report randomReport() {
-    return attempt(
-            () ->
-                new Report.Builder()
-                    .withSeries(new Series(randomUri()))
-                    .withSeriesNumber(randomString())
-                    .withPublisher(new Publisher(randomUri()))
-                    .withIsbnList(List.of(randomIsbn13()))
-                    .build())
+    return attempt(() ->
+            new Report.Builder()
+                .withSeries(new Series(randomUri()))
+                .withSeriesNumber(randomString())
+                .withPublisher(new Publisher(randomUri()))
+                .withIsbnList(List.of(randomIsbn13()))
+                .build())
         .orElseThrow();
   }
 
   private static Degree randomDegree() {
-    return attempt(
-            () ->
-                new Degree.Builder()
-                    .withSeries(new Series(randomUri()))
-                    .withSeriesNumber(randomString())
-                    .withPublisher(new Publisher(randomUri()))
-                    .withIsbnList(List.of(randomIsbn13()))
-                    .withCourse(new UnconfirmedCourse(randomString()))
-                    .build())
+    return attempt(() ->
+            new Degree.Builder()
+                .withSeries(new Series(randomUri()))
+                .withSeriesNumber(randomString())
+                .withPublisher(new Publisher(randomUri()))
+                .withIsbnList(List.of(randomIsbn13()))
+                .withCourse(new UnconfirmedCourse(randomString()))
+                .build())
         .orElseThrow();
   }
 }

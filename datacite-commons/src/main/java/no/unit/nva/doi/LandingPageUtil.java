@@ -27,7 +27,7 @@ public final class LandingPageUtil {
   private final Environment environment;
   private final String resourcesHost;
 
-  protected LandingPageUtil(Environment environment) {
+  LandingPageUtil(Environment environment) {
     this.environment = environment;
     this.resourcesHost = readHostFromEnvironment();
   }
@@ -42,10 +42,8 @@ public final class LandingPageUtil {
     return Optional.of(publicationIdentifier)
         .map(attempt(this::createLandingPageUri))
         .flatMap(attempt -> attempt.toOptional(LandingPageUtil::logFailure))
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    ERROR_PUBLICATION_LANDING_PAGE_COULD_NOT_BE_CONSTRUCTED));
+        .orElseThrow(() ->
+            new IllegalArgumentException(ERROR_PUBLICATION_LANDING_PAGE_COULD_NOT_BE_CONSTRUCTED));
   }
 
   @JacocoGenerated

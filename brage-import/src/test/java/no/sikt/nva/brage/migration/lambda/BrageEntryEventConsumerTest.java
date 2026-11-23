@@ -2303,10 +2303,9 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
     var s3Event = createNewBrageRecordEvent(generator.getBrageRecord());
     var updatedPublication = handler.handleRequest(s3Event, CONTEXT);
 
-    assertDoesNotThrow(
-        () ->
-            extractUpdateReportFromS3ByUpdateSource(
-                s3Event, existingPublication, generator.getBrageRecord().getId(), "SEARCH"));
+    assertDoesNotThrow(() ->
+        extractUpdateReportFromS3ByUpdateSource(
+            s3Event, existingPublication, generator.getBrageRecord().getId(), "SEARCH"));
 
     assertThat(
         updatedPublication.publication().getIdentifier().toString(),
@@ -2813,7 +2812,6 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
   void importedFileOnPublicationUpdateShouldHaveFileImportedEvent() throws IOException {
     var generator = generateBrageRecordAndPersistDuplicate(new Lecture(), TYPE_CONFERENCE_REPORT);
     var existingPublication = generator.getExistingPublication();
-    ;
     var contentFile =
         new ContentFile(
             "dublin_core.xml",
@@ -2862,14 +2860,13 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         .filter(artifact -> artifact instanceof File)
         .map(artifact -> (File) artifact)
         .map(File::getIdentifier)
-        .forEach(
-            id -> {
-              try {
-                s3Driver.insertFile(UnixPath.of(id.toString()), new FileInputStream(file));
-              } catch (IOException e) {
-                throw new RuntimeException(e);
-              }
-            });
+        .forEach(id -> {
+          try {
+            s3Driver.insertFile(UnixPath.of(id.toString()), new FileInputStream(file));
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 
   private String getPartOfReport(
@@ -2930,12 +2927,11 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
   private void mockMultipleHitSearchApiResponse(List<SortableIdentifier> identifiers) {
     var resourceWithIds =
         identifiers.stream()
-            .map(
-                identifier ->
-                    UriWrapper.fromHost(API_HOST)
-                        .addChild("publication")
-                        .addChild(identifier.toString())
-                        .getUri())
+            .map(identifier ->
+                UriWrapper.fromHost(API_HOST)
+                    .addChild("publication")
+                    .addChild(identifier.toString())
+                    .getUri())
             .map(ResourceWithId::new)
             .toList();
     var searchResourceApiResponse =
@@ -3061,22 +3057,20 @@ public class BrageEntryEventConsumerTest extends ResourcesLocalTest {
         hasSize(expectedPublication.getAssociatedArtifacts().size()));
     actualPublication.getAssociatedArtifacts().stream()
         .filter(File.class::isInstance)
-        .forEach(
-            associatedArtifact -> {
-              var file = (File) associatedArtifact;
-              assertThat(
-                  ((ImportUploadDetails) file.getUploadDetails()).archive(), is(equalTo("NTNU")));
-            });
+        .forEach(associatedArtifact -> {
+          var file = (File) associatedArtifact;
+          assertThat(
+              ((ImportUploadDetails) file.getUploadDetails()).archive(), is(equalTo("NTNU")));
+        });
   }
 
   private List<SortableIdentifier> persistMultiplePublicationWithSameCristinId(Record record) {
     return IntStream.range(0, 5)
         .boxed()
         .map(i -> publicationThatMatchesRecord(record))
-        .map(
-            publication ->
-                resourceService.createPublicationFromImportedEntry(
-                    publication, ImportSource.fromSource(Source.CRISTIN)))
+        .map(publication ->
+            resourceService.createPublicationFromImportedEntry(
+                publication, ImportSource.fromSource(Source.CRISTIN)))
         .map(Publication::getIdentifier)
         .toList();
   }

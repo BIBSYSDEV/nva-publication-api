@@ -191,9 +191,8 @@ public class ExpandDataEntriesHandler
 
   private Optional<ExpandedDataEntry> expandEntityOrThrow(Entity entity) {
     return attempt(() -> resourceExpansionService.expandEntry(entity, true))
-        .orElseThrow(
-            failure ->
-                new EntityExpansionException("Failed to expand " + entity, failure.getException()));
+        .orElseThrow(failure ->
+            new EntityExpansionException("Failed to expand " + entity, failure.getException()));
   }
 
   private EventReference createEnrichedEventReference(ExpandedDataEntry expandedDataEntry) {

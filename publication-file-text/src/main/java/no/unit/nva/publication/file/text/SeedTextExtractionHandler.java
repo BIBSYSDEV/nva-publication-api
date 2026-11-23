@@ -209,12 +209,11 @@ public final class SeedTextExtractionHandler implements RequestHandler<S3Event, 
   private static int logFailedEntries(SendMessageBatchResponse response, List<String> keys) {
     response
         .failed()
-        .forEach(
-            failedEntry ->
-                LOGGER.warn(
-                    "Failed to enqueue key: {} code={}",
-                    LogSanitizer.sanitize(keys.get(Integer.parseInt(failedEntry.id()))),
-                    LogSanitizer.sanitize(failedEntry.code())));
+        .forEach(failedEntry ->
+            LOGGER.warn(
+                "Failed to enqueue key: {} code={}",
+                LogSanitizer.sanitize(keys.get(Integer.parseInt(failedEntry.id()))),
+                LogSanitizer.sanitize(failedEntry.code())));
     return response.failed().size();
   }
 

@@ -151,10 +151,9 @@ public class ScopusFileConverter {
   }
 
   private static Optional<String> extractFileNameFromContentDisposition(String contentType) {
-    return attempt(
-            () ->
-                contentType.split(FILENAME_CONTENT_TYPE_HEADER_VALUE)[1]
-                    .split(CONTENT_TYPE_DELIMITER)[0].replace(QUOTE, StringUtils.EMPTY_STRING))
+    return attempt(() ->
+            contentType.split(FILENAME_CONTENT_TYPE_HEADER_VALUE)[1]
+                .split(CONTENT_TYPE_DELIMITER)[0].replace(QUOTE, StringUtils.EMPTY_STRING))
         .toOptional();
   }
 

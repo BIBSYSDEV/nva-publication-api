@@ -1334,12 +1334,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     resourceWithRrs
         .getFileEntries()
-        .forEach(
-            file ->
-                file.getFile()
-                    .setRightsRetentionStrategy(
-                        OverriddenRightsRetentionStrategy.create(
-                            OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null)));
+        .forEach(file ->
+            file.getFile()
+                .setRightsRetentionStrategy(
+                    OverriddenRightsRetentionStrategy.create(
+                        OVERRIDABLE_RIGHTS_RETENTION_STRATEGY, null)));
 
     var request =
         curatorWithAccessRightsUpdatesPublication(
@@ -1563,7 +1562,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
                 hasProperty("status", equalTo(NOT_APPLICABLE)))));
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @DisplayName(
       "User with access right should be able to unpublish publication with published files")
   @MethodSource("privilegedUserProvider")
@@ -1628,12 +1627,9 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     assertTrue(
         eventBridgeClient.getRequestEntries().stream()
-            .anyMatch(
-                entry ->
-                    entry.source().equals(NVA_PUBLICATION_DELETE_SOURCE)
-                        && entry
-                            .detailType()
-                            .equals(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)));
+            .anyMatch(entry ->
+                entry.source().equals(NVA_PUBLICATION_DELETE_SOURCE)
+                    && entry.detailType().equals(LAMBDA_DESTINATIONS_INVOCATION_RESULT_SUCCESS)));
   }
 
   @Test
