@@ -27,7 +27,7 @@ import no.unit.nva.publication.scopusmapping.domain.ScopusCorrectionContext;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappingConflictException;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappingHistoryEntry;
 import no.unit.nva.publication.scopusmapping.domain.ScopusMappingVersion;
-import org.junit.jupiter.api.AutoClose;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -64,7 +64,7 @@ class GoldenFileHistoryTest {
           new ScopusMappingVersion(
               CURATOR, Instant.parse("2026-12-01T09:00:00.000Z"), "7654321@194.0.0.0", 2, true));
 
-  @AutoClose private LocalImportCandidatesTable table;
+  private LocalImportCandidatesTable table;
   private ScopusMappingService service;
 
   @BeforeEach
@@ -72,6 +72,11 @@ class GoldenFileHistoryTest {
     table = new LocalImportCandidatesTable();
     service = new ScopusMappingService(table.repository(), Clock.systemUTC());
     GoldenFile.writeWithBatchWriteItem(table.client(), table.tableName(), GoldenFile.readItems());
+  }
+
+  @AfterEach
+  void closeTable() {
+    table.close();
   }
 
   @Test
