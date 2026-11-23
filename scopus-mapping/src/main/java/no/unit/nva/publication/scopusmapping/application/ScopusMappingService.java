@@ -38,7 +38,7 @@ public class ScopusMappingService {
    * confirmation: it saves a new version like any other correction, which clears the review flag.
    *
    * @throws ScopusMappingConflictException if the stored mapping does not have the expected
-   *     revision
+   *     revision, or changes before the correction is saved
    * @throws IllegalStateException if what is stored for the author can't be read as a mapping. That
    *     is a fault in the stored data, which has to be repaired before the author can be corrected.
    */

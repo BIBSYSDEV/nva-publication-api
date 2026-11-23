@@ -9,4 +9,8 @@ public class ScopusMappingConflictException extends Exception {
   public ScopusMappingConflictException(String message) {
     super(message);
   }
+
+  public ScopusMappingConflictException(String message, Exception cause) {
+    super(message, cause);
+  }
 }

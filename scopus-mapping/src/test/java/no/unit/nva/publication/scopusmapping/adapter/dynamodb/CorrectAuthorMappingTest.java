@@ -212,7 +212,8 @@ class CorrectAuthorMappingTest {
 
     assertThatThrownBy(
             () -> repository.saveCorrection(versionBuiltOnAnOlderRevision, SECOND_CONTEXT))
-        .isInstanceOf(TransactionCanceledException.class);
+        .isInstanceOf(ScopusMappingConflictException.class)
+        .hasCauseInstanceOf(TransactionCanceledException.class);
     assertThat(findCurrentMapping()).contains(storedMapping);
     assertThat(service.findAuthorMappingHistory(SCOPUS_AUTHOR)).isEmpty();
   }
@@ -225,7 +226,8 @@ class CorrectAuthorMappingTest {
 
     assertThatThrownBy(
             () -> repository.saveCorrection(firstVersionOfAnotherCurator, SECOND_CONTEXT))
-        .isInstanceOf(TransactionCanceledException.class);
+        .isInstanceOf(ScopusMappingConflictException.class)
+        .hasCauseInstanceOf(TransactionCanceledException.class);
     assertThat(findCurrentMapping()).contains(storedMapping);
     assertThat(service.findAuthorMappingHistory(SCOPUS_AUTHOR)).isEmpty();
   }
