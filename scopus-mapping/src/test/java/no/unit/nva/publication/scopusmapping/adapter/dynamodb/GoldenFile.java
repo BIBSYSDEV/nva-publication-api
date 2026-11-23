@@ -41,11 +41,8 @@ final class GoldenFile {
         .hasSizeLessThanOrEqualTo(MAX_ITEMS_PER_BATCH_WRITE);
     var writeRequests =
         items.stream()
-            .map(
-                item ->
-                    WriteRequest.builder()
-                        .putRequest(PutRequest.builder().item(item).build())
-                        .build())
+            .map(item ->
+                WriteRequest.builder().putRequest(PutRequest.builder().item(item).build()).build())
             .toList();
     var response =
         client.batchWriteItem(
