@@ -66,10 +66,9 @@ public class ScopusMappingService {
     var newVersion =
         storedMapping
             .map(stored -> stored.correctedTo(cristinPersonIdentifier, username, correctedAt))
-            .orElseGet(
-                () ->
-                    ScopusAuthorMapping.createdByCurator(
-                        scopusAuthorIdentifier, cristinPersonIdentifier, username, correctedAt));
+            .orElseGet(() ->
+                ScopusAuthorMapping.createdByCurator(
+                    scopusAuthorIdentifier, cristinPersonIdentifier, username, correctedAt));
     repository.saveCorrection(newVersion, correctionContext);
     return newVersion;
   }
@@ -81,9 +80,8 @@ public class ScopusMappingService {
   private static boolean isWhatTheCallerExpects(
       Optional<ScopusAuthorMapping> storedMapping, Optional<Integer> expectedRevision) {
     return expectedRevision
-        .map(
-            expected ->
-                storedMapping.filter(stored -> stored.version().revision() == expected).isPresent())
+        .map(expected ->
+            storedMapping.filter(stored -> stored.version().revision() == expected).isPresent())
         .orElseGet(() -> storedMapping.filter(stored -> !stored.version().deleted()).isEmpty());
   }
 

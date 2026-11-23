@@ -76,12 +76,11 @@ final class AuthorMappingCorrectionStore {
 
   private static ScopusAuthorMapping readableMappingOf(Map<String, AttributeValue> item) {
     return attempt(() -> ScopusAuthorMappingDao.fromItem(item).toMapping())
-        .orElseThrow(
-            failure ->
-                new IllegalStateException(
-                    "Stored Scopus author mapping %s can't be read and has to be repaired: %s"
-                        .formatted(partitionKeyOf(item), failure.getException().getMessage()),
-                    failure.getException()));
+        .orElseThrow(failure ->
+            new IllegalStateException(
+                "Stored Scopus author mapping %s can't be read and has to be repaired: %s"
+                    .formatted(partitionKeyOf(item), failure.getException().getMessage()),
+                failure.getException()));
   }
 
   private Put putIfItemDoesNotExist(Map<String, AttributeValue> item) {

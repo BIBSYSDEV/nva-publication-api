@@ -233,34 +233,29 @@ class CorrectAuthorMappingTest {
   @Test
   void shouldRejectNullArguments() {
     assertThatNullPointerException()
-        .isThrownBy(
-            () ->
-                service.correctAuthorMapping(
-                    null, FIRST_PERSON, FIRST_CONTEXT, CURATOR_USERNAME, Optional.empty()))
+        .isThrownBy(() ->
+            service.correctAuthorMapping(
+                null, FIRST_PERSON, FIRST_CONTEXT, CURATOR_USERNAME, Optional.empty()))
         .withMessage("scopusAuthorIdentifier");
     assertThatNullPointerException()
-        .isThrownBy(
-            () ->
-                service.correctAuthorMapping(
-                    SCOPUS_AUTHOR, null, FIRST_CONTEXT, CURATOR_USERNAME, Optional.empty()))
+        .isThrownBy(() ->
+            service.correctAuthorMapping(
+                SCOPUS_AUTHOR, null, FIRST_CONTEXT, CURATOR_USERNAME, Optional.empty()))
         .withMessage("cristinPersonIdentifier");
     assertThatNullPointerException()
-        .isThrownBy(
-            () ->
-                service.correctAuthorMapping(
-                    SCOPUS_AUTHOR, FIRST_PERSON, null, CURATOR_USERNAME, Optional.empty()))
+        .isThrownBy(() ->
+            service.correctAuthorMapping(
+                SCOPUS_AUTHOR, FIRST_PERSON, null, CURATOR_USERNAME, Optional.empty()))
         .withMessage("correctionContext");
     assertThatNullPointerException()
-        .isThrownBy(
-            () ->
-                service.correctAuthorMapping(
-                    SCOPUS_AUTHOR, FIRST_PERSON, FIRST_CONTEXT, null, Optional.empty()))
+        .isThrownBy(() ->
+            service.correctAuthorMapping(
+                SCOPUS_AUTHOR, FIRST_PERSON, FIRST_CONTEXT, null, Optional.empty()))
         .withMessage("username");
     assertThatNullPointerException()
-        .isThrownBy(
-            () ->
-                service.correctAuthorMapping(
-                    SCOPUS_AUTHOR, FIRST_PERSON, FIRST_CONTEXT, CURATOR_USERNAME, null))
+        .isThrownBy(() ->
+            service.correctAuthorMapping(
+                SCOPUS_AUTHOR, FIRST_PERSON, FIRST_CONTEXT, CURATOR_USERNAME, null))
         .withMessage("expectedRevision");
     assertThat(service.findAuthorMappingHistory(SCOPUS_AUTHOR)).isEmpty();
   }
