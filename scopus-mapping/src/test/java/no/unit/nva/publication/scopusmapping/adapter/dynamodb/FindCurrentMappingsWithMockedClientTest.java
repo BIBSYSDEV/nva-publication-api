@@ -15,6 +15,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,8 @@ class FindCurrentMappingsWithMockedClientTest {
     client = mock(DynamoDbClient.class);
     when(client.batchGetItemPaginator(any(BatchGetItemRequest.class))).thenCallRealMethod();
     service =
-        new ScopusMappingService(new DynamoDbScopusMappingRepository(client, DEFAULT_TABLE_NAME));
+        new ScopusMappingService(
+            new DynamoDbScopusMappingRepository(client, DEFAULT_TABLE_NAME), Clock.systemUTC());
   }
 
   @Test
