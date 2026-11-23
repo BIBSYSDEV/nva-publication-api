@@ -35,12 +35,7 @@ phases:
       # Triggering a manual run of tests so that reports end up in the expected folders (sam build doesn't re-run the task)
       - ./gradlew test
       - sam build
-      - sam package --s3-bucket $S3_BUCKET --output-template-file packaged_raw.yaml
-  post_build:
-    commands:
-      # Use timestamp to force update of ApiGatewayCreateDeploymentCustomResource
-      - BUILD_TIMESTAMP=$(date '+%s')
-      - envsubst '${BUILD_TIMESTAMP}' < packaged_raw.yaml > packaged.yaml
+      - sam package --s3-bucket $S3_BUCKET --output-template-file packaged.yaml
 artifacts:
   files:
     - packaged.yaml
