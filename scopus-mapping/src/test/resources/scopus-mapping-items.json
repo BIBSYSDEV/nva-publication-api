@@ -1,0 +1,233 @@
+[
+  {
+    "PK0": {"S": "AUTHOR#SCOPUS#99999990101"},
+    "SK0": {"S": "CURRENT"},
+    "type": {"S": "ScopusAuthorMapping"},
+    "cristinPersonIdentifier": {"S": "12345"},
+    "scopusName": {"S": "Nordmann, Ola"},
+    "orcid": {"S": "0000-0002-1825-0097"},
+    "mappingCount": {"N": "5"},
+    "totalMappingCount": {"N": "7"},
+    "needsReview": {"BOOL": true},
+    "source": {"S": "PIA_MIGRATION"},
+    "updatedAt": {"S": "2026-11-02T08:00:00.000Z"},
+    "updatedBy": {"S": "pia-migration"},
+    "revision": {"N": "1"}
+  },
+  {
+    "PK0": {"S": "AUTHOR#SCOPUS#99999990101"},
+    "SK0": {"S": "HISTORY#2026-11-02T08:00:00.000Z#1"},
+    "type": {"S": "ScopusAuthorMapping"},
+    "cristinPersonIdentifier": {"S": "12345"},
+    "scopusName": {"S": "Nordmann, Ola"},
+    "orcid": {"S": "0000-0002-1825-0097"},
+    "mappingCount": {"N": "5"},
+    "totalMappingCount": {"N": "7"},
+    "needsReview": {"BOOL": true},
+    "source": {"S": "PIA_MIGRATION"},
+    "updatedAt": {"S": "2026-11-02T08:00:00.000Z"},
+    "updatedBy": {"S": "pia-migration"},
+    "revision": {"N": "1"},
+    "candidates": {
+      "L": [
+        {
+          "M": {
+            "cristinPersonIdentifier": {"S": "12345"},
+            "publicationCount": {"N": "5"},
+            "lastChanged": {"S": "2025-06-01T10:15:30.000Z"}
+          }
+        },
+        {
+          "M": {
+            "cristinPersonIdentifier": {"S": "67890"},
+            "publicationCount": {"N": "2"},
+            "lastChanged": {"S": "2024-03-15T08:00:00.000Z"}
+          }
+        }
+      ]
+    }
+  },
+  {
+    "PK0": {"S": "AUTHOR#SCOPUS#99999990102"},
+    "SK0": {"S": "CURRENT"},
+    "type": {"S": "ScopusAuthorMapping"},
+    "cristinPersonIdentifier": {"S": "54321"},
+    "scopusName": {"S": "Hansen, Kari"},
+    "source": {"S": "CURATOR"},
+    "updatedAt": {"S": "2026-11-20T13:45:00.000Z"},
+    "updatedBy": {"S": "1234567@20754.0.0.0"},
+    "revision": {"N": "2"}
+  },
+  {
+    "PK0": {"S": "AUTHOR#SCOPUS#99999990102"},
+    "SK0": {"S": "HISTORY#2026-11-02T08:00:00.000Z#1"},
+    "type": {"S": "ScopusAuthorMapping"},
+    "cristinPersonIdentifier": {"S": "11111"},
+    "scopusName": {"S": "Hansen, Kari"},
+    "mappingCount": {"N": "3"},
+    "totalMappingCount": {"N": "3"},
+    "source": {"S": "PIA_MIGRATION"},
+    "updatedAt": {"S": "2026-11-02T08:00:00.000Z"},
+    "updatedBy": {"S": "pia-migration"},
+    "revision": {"N": "1"},
+    "candidates": {
+      "L": [
+        {
+          "M": {
+            "cristinPersonIdentifier": {"S": "11111"},
+            "publicationCount": {"N": "3"},
+            "lastChanged": {"S": "2025-01-10T12:00:00.000Z"}
+          }
+        }
+      ]
+    }
+  },
+  {
+    "PK0": {"S": "AUTHOR#SCOPUS#99999990102"},
+    "SK0": {"S": "HISTORY#2026-11-20T13:45:00.000Z#2"},
+    "type": {"S": "ScopusAuthorMapping"},
+    "cristinPersonIdentifier": {"S": "54321"},
+    "scopusName": {"S": "Hansen, Kari"},
+    "source": {"S": "CURATOR"},
+    "updatedAt": {"S": "2026-11-20T13:45:00.000Z"},
+    "updatedBy": {"S": "1234567@20754.0.0.0"},
+    "revision": {"N": "2"},
+    "scopusPublicationIdentifier": {"S": "2-s2.0-85200000001"},
+    "sequenceNumber": {"N": "3"}
+  },
+  {
+    "PK0": {"S": "AUTHOR#SCOPUS#99999990103"},
+    "SK0": {"S": "CURRENT"},
+    "type": {"S": "ScopusAuthorMapping"},
+    "cristinPersonIdentifier": {"S": "22222"},
+    "scopusName": {"S": "Olsen, Per"},
+    "source": {"S": "CURATOR"},
+    "updatedAt": {"S": "2026-12-01T09:00:00.000Z"},
+    "updatedBy": {"S": "7654321@194.0.0.0"},
+    "revision": {"N": "2"},
+    "deleted": {"BOOL": true}
+  },
+  {
+    "PK0": {"S": "AUTHOR#SCOPUS#99999990103"},
+    "SK0": {"S": "HISTORY#2026-11-02T08:00:00.000Z#1"},
+    "type": {"S": "ScopusAuthorMapping"},
+    "cristinPersonIdentifier": {"S": "22222"},
+    "scopusName": {"S": "Olsen, Per"},
+    "mappingCount": {"N": "1"},
+    "totalMappingCount": {"N": "1"},
+    "source": {"S": "PIA_MIGRATION"},
+    "updatedAt": {"S": "2026-11-02T08:00:00.000Z"},
+    "updatedBy": {"S": "pia-migration"},
+    "revision": {"N": "1"},
+    "candidates": {
+      "L": [
+        {
+          "M": {
+            "cristinPersonIdentifier": {"S": "22222"},
+            "publicationCount": {"N": "1"},
+            "lastChanged": {"S": "2023-09-01T00:00:00.000Z"}
+          }
+        }
+      ]
+    }
+  },
+  {
+    "PK0": {"S": "AUTHOR#SCOPUS#99999990103"},
+    "SK0": {"S": "HISTORY#2026-12-01T09:00:00.000Z#2"},
+    "type": {"S": "ScopusAuthorMapping"},
+    "cristinPersonIdentifier": {"S": "22222"},
+    "scopusName": {"S": "Olsen, Per"},
+    "source": {"S": "CURATOR"},
+    "updatedAt": {"S": "2026-12-01T09:00:00.000Z"},
+    "updatedBy": {"S": "7654321@194.0.0.0"},
+    "revision": {"N": "2"},
+    "deleted": {"BOOL": true}
+  },
+  {
+    "PK0": {"S": "AFFILIATION#SCOPUS#99990101"},
+    "SK0": {"S": "CURRENT"},
+    "type": {"S": "ScopusAffiliationMapping"},
+    "cristinInstitutionIdentifier": {"S": "194.0.0.0"},
+    "cristinUnitIdentifier": {"S": "194.0.0.0"},
+    "scopusName": {"S": "Norwegian University of Science and Technology"},
+    "mappingCount": {"N": "40"},
+    "totalMappingCount": {"N": "40"},
+    "source": {"S": "PIA_MIGRATION"},
+    "updatedAt": {"S": "2026-11-02T08:00:00.000Z"},
+    "updatedBy": {"S": "pia-migration"},
+    "revision": {"N": "1"}
+  },
+  {
+    "PK0": {"S": "AFFILIATION#SCOPUS#99990101"},
+    "SK0": {"S": "HISTORY#2026-11-02T08:00:00.000Z#1"},
+    "type": {"S": "ScopusAffiliationMapping"},
+    "cristinInstitutionIdentifier": {"S": "194.0.0.0"},
+    "cristinUnitIdentifier": {"S": "194.0.0.0"},
+    "scopusName": {"S": "Norwegian University of Science and Technology"},
+    "mappingCount": {"N": "40"},
+    "totalMappingCount": {"N": "40"},
+    "source": {"S": "PIA_MIGRATION"},
+    "updatedAt": {"S": "2026-11-02T08:00:00.000Z"},
+    "updatedBy": {"S": "pia-migration"},
+    "revision": {"N": "1"},
+    "candidates": {
+      "L": [
+        {
+          "M": {
+            "cristinInstitutionIdentifier": {"S": "194.0.0.0"},
+            "cristinUnitIdentifier": {"S": "194.0.0.0"},
+            "publicationCount": {"N": "40"}
+          }
+        }
+      ]
+    }
+  },
+  {
+    "PK0": {"S": "AFFILIATION#SCOPUS#99990102"},
+    "SK0": {"S": "CURRENT"},
+    "type": {"S": "ScopusAffiliationMapping"},
+    "cristinInstitutionIdentifier": {"S": "185.0.0.0"},
+    "cristinUnitIdentifier": {"S": "185.15.2.10"},
+    "scopusName": {"S": "University of Oslo, Department of Informatics"},
+    "mappingCount": {"N": "3"},
+    "totalMappingCount": {"N": "5"},
+    "needsReview": {"BOOL": true},
+    "source": {"S": "PIA_MIGRATION"},
+    "updatedAt": {"S": "2026-11-02T08:00:00.000Z"},
+    "updatedBy": {"S": "pia-migration"},
+    "revision": {"N": "1"}
+  },
+  {
+    "PK0": {"S": "AFFILIATION#SCOPUS#99990102"},
+    "SK0": {"S": "HISTORY#2026-11-02T08:00:00.000Z#1"},
+    "type": {"S": "ScopusAffiliationMapping"},
+    "cristinInstitutionIdentifier": {"S": "185.0.0.0"},
+    "cristinUnitIdentifier": {"S": "185.15.2.10"},
+    "scopusName": {"S": "University of Oslo, Department of Informatics"},
+    "mappingCount": {"N": "3"},
+    "totalMappingCount": {"N": "5"},
+    "needsReview": {"BOOL": true},
+    "source": {"S": "PIA_MIGRATION"},
+    "updatedAt": {"S": "2026-11-02T08:00:00.000Z"},
+    "updatedBy": {"S": "pia-migration"},
+    "revision": {"N": "1"},
+    "candidates": {
+      "L": [
+        {
+          "M": {
+            "cristinInstitutionIdentifier": {"S": "185.0.0.0"},
+            "cristinUnitIdentifier": {"S": "185.15.2.10"},
+            "publicationCount": {"N": "3"}
+          }
+        },
+        {
+          "M": {
+            "cristinInstitutionIdentifier": {"S": "194.0.0.0"},
+            "cristinUnitIdentifier": {"S": "194.0.0.0"},
+            "publicationCount": {"N": "2"}
+          }
+        }
+      ]
+    }
+  }
+]
