@@ -38,17 +38,16 @@ final class BatchItemReader {
   }
 
   /**
-   * Reads one batch of keys. Fails if DynamoDB leaves keys unprocessed, rather than report an
-   * existing item as missing.
+   * Reads one batch of keys. DynamoDB may leave keys unprocessed, and the paginator asks again for
+   * those until every key is read, so an existing item is never reported as missing.
    */
   private List<Map<String, AttributeValue>> readBatch(List<Map<String, AttributeValue>> keys) {
     var requestedKeys =
         Map.of(tableName, KeysAndAttributes.builder().keys(keys).consistentRead(true).build());
-    var response =
-        client.batchGetItem(BatchGetItemRequest.builder().requestItems(requestedKeys).build());
-    if (!response.unprocessedKeys().isEmpty()) {
-      throw new IllegalStateException("DynamoDB left keys unprocessed");
-    }
-    return response.responses().getOrDefault(tableName, emptyList());
+    return client
+        .batchGetItemPaginator(BatchGetItemRequest.builder().requestItems(requestedKeys).build())
+        .stream()
+        .flatMap(response -> response.responses().getOrDefault(tableName, emptyList()).stream())
+        .toList();
   }
 }
