@@ -71,14 +71,13 @@ class CorrectAuthorMappingWithMockedClientTest {
     when(client.transactWriteItems(any(TransactWriteItemsRequest.class)))
         .thenThrow(concurrentChange);
 
-    assertThatThrownBy(
-            () ->
-                service.correctAuthorMapping(
-                    SCOPUS_AUTHOR,
-                    CRISTIN_PERSON,
-                    CORRECTION_CONTEXT,
-                    CURATOR_USERNAME,
-                    Optional.of(1)))
+    assertThatThrownBy(() ->
+            service.correctAuthorMapping(
+                SCOPUS_AUTHOR,
+                CRISTIN_PERSON,
+                CORRECTION_CONTEXT,
+                CURATOR_USERNAME,
+                Optional.of(1)))
         .isInstanceOf(ScopusMappingConflictException.class)
         .hasMessageContaining(SCOPUS_AUTHOR.value())
         .hasCause(concurrentChange);
@@ -90,14 +89,13 @@ class CorrectAuthorMappingWithMockedClientTest {
     var throttled = transactionCanceled("ThrottlingError");
     when(client.transactWriteItems(any(TransactWriteItemsRequest.class))).thenThrow(throttled);
 
-    assertThatThrownBy(
-            () ->
-                service.correctAuthorMapping(
-                    SCOPUS_AUTHOR,
-                    CRISTIN_PERSON,
-                    CORRECTION_CONTEXT,
-                    CURATOR_USERNAME,
-                    Optional.empty()))
+    assertThatThrownBy(() ->
+            service.correctAuthorMapping(
+                SCOPUS_AUTHOR,
+                CRISTIN_PERSON,
+                CORRECTION_CONTEXT,
+                CURATOR_USERNAME,
+                Optional.empty()))
         .isSameAs(throttled);
   }
 
