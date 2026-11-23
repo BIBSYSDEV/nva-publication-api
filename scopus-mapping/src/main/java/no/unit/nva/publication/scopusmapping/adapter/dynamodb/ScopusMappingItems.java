@@ -36,12 +36,11 @@ final class ScopusMappingItems {
     revisionOf(item);
     var json = EnhancedDocument.fromAttributeValueMap(item).toJson();
     return attempt(() -> dynamoObjectMapper.readValue(json, daoClass))
-        .orElseThrow(
-            failure ->
-                new IllegalArgumentException(
-                    "Scopus mapping item %s is malformed: %s"
-                        .formatted(partitionKeyOf(item), failure.getException().getMessage()),
-                    failure.getException()));
+        .orElseThrow(failure ->
+            new IllegalArgumentException(
+                "Scopus mapping item %s is malformed: %s"
+                    .formatted(partitionKeyOf(item), failure.getException().getMessage()),
+                failure.getException()));
   }
 
   /**
@@ -53,11 +52,10 @@ final class ScopusMappingItems {
         .map(AttributeValue::n)
         .filter(number -> WHOLE_NUMBER.matcher(number).matches())
         .map(Integer::valueOf)
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    "Scopus mapping item %s has no whole-number revision"
-                        .formatted(partitionKeyOf(item))));
+        .orElseThrow(() ->
+            new IllegalArgumentException(
+                "Scopus mapping item %s has no whole-number revision"
+                    .formatted(partitionKeyOf(item))));
   }
 
   static String partitionKeyOf(Map<String, AttributeValue> item) {
