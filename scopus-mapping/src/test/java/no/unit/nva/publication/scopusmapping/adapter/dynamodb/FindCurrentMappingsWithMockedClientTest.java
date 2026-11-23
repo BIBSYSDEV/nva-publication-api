@@ -3,13 +3,11 @@ package no.unit.nva.publication.scopusmapping.adapter.dynamodb;
 import static java.util.Collections.emptyList;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.SCOPUS_AFFILIATION;
 import static no.unit.nva.publication.scopusmapping.ScopusMappingFixtures.migratedAuthorMapping;
-import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.BatchItemReader.MAX_RETRIES;
 import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.LocalImportCandidatesTable.DEFAULT_TABLE_NAME;
 import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingKeys.authorPartitionKey;
 import static no.unit.nva.publication.scopusmapping.adapter.dynamodb.ScopusMappingKeys.currentKey;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -17,7 +15,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -49,9 +46,9 @@ class FindCurrentMappingsWithMockedClientTest {
   @BeforeEach
   void setUp() {
     client = mock(DynamoDbClient.class);
+    when(client.batchGetItemPaginator(any(BatchGetItemRequest.class))).thenCallRealMethod();
     service =
-        new ScopusMappingService(
-            new DynamoDbScopusMappingRepository(client, DEFAULT_TABLE_NAME, Duration.ZERO));
+        new ScopusMappingService(new DynamoDbScopusMappingRepository(client, DEFAULT_TABLE_NAME));
   }
 
   @Test
@@ -83,17 +80,6 @@ class FindCurrentMappingsWithMockedClientTest {
     verify(client).batchGetItem(requestCaptor.capture());
     assertThat(requestCaptor.getValue().requestItems().get(DEFAULT_TABLE_NAME).consistentRead())
         .isTrue();
-  }
-
-  @Test
-  void shouldFailWhenKeysStayUnprocessed() {
-    when(client.batchGetItem(any(BatchGetItemRequest.class)))
-        .thenReturn(batchGetResponse(emptyList(), FIRST_AUTHOR));
-
-    assertThatThrownBy(() -> service.findCurrentMappings(List.of(FIRST_AUTHOR), emptyList()))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("unprocessed");
-    verify(client, times(MAX_RETRIES + 1)).batchGetItem(any(BatchGetItemRequest.class));
   }
 
   @Test
